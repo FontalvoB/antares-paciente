@@ -1,4 +1,5 @@
-import { IonIcon } from '@ionic/react'
+import { type CSSProperties } from 'react'
+import { IonIcon, IonProgressBar } from '@ionic/react'
 import {
   bluetooth,
   calendar,
@@ -211,9 +212,11 @@ export function HomePage() {
                 <span>{l}</span>
                 <span>{r}</span>
               </div>
-              <div className="ptrack">
-                <div className="pfill" style={{ width: `${w}%`, background: String(c) }} />
-              </div>
+              <IonProgressBar
+                className="pb"
+                style={{ '--progress-background': String(c) } as CSSProperties}
+                value={Number(w) / 100}
+              />
             </div>
           ))}
         </div>

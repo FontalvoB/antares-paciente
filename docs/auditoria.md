@@ -233,3 +233,106 @@ Nada más. **No se usan** (aunque son los estándar del ecosistema): `IonButton`
 - Comportamiento de `IonProgressBar` con gradientes (el design usa gradientes teal→gold).
 - `IonCard` vs `.card` custom: mantener custom si no aporta.
 - `framer-motion` + router de Ionic: compatibilidad de transiciones al migrar navegación.
+
+---
+
+## Fase 3 — Migración Ionic
+
+> **Fecha:** 2026-08-13 · **Alcance:** migración progresiva de HTML/CSS custom → componentes Ionic (Ionic 8.8.18), preservando diseño, lógica y navegación.
+> **Regla aplicada:** Ionic-first, no Ionic-everything. Cada cambio responde "¿Ionic tiene una solución adecuada?".
+> **Verificación:** `npm run build` + `npm run lint` pasan tras cada grupo.
+
+### 3.1 Componentes migrados
+
+| Componente Ionic | Instancias | Reemplaza | Archivos |
+|---|---|---|---|
+| `IonButton` | ~22 | `<button class="btn btn-*">` (primarios, teal, gold, pur, panic, ghost, outline, circulares) | Onboarding, Tests, Chat, Program, Community, Appointments, Academy, Infinito, Wearable, VoiceOverlay |
+| `IonInput` | 13 | `input.field`, `input.vital-inp`, input chat | Onboarding, Program, Chat |
+| `IonSelect` + `IonSelectOption` | 2 | `select.field` (seguro, parentesco) | Onboarding |
+| `IonCheckbox` | 3 | `.checkbox` custom en `.check-row` (consentimientos HIPAA) | Onboarding |
+| `IonTextarea` | 4 | `<textarea>` (tests propósito, comunidad, programa) | Tests, Community, Program |
+| `IonDatetime` (en `IonModal`) | 1 | `<input type="date">` (fecha nacimiento) | Onboarding |
+| `IonProgressBar` | 19 | `.ptrack/.pfill` (fuerza password, hero, macros, semanal, academia) | Onboarding, Tests, Home, Nutrition, Academy, Program |
+| `IonToast` | 1 | `ToastHost` custom (framer-motion) | `components/ToastHost.tsx` |
+| `IonAlert` | 1 | toast usado como confirmación de cancelación | Appointments |
+| `IonLoading` | 2 | bloques emoji+setTimeout (análisis IA, scan BT) | Tests, Wearable |
+| `IonModal` | 2 | `VoiceOverlay` custom fullscreen; contenedor de `IonDatetime` | VoiceOverlay, Onboarding |
+| `IonSearchbar` | 1 | `<input>` "Buscar amigos" | Community |
+
+**Total: 12 tipos de componentes Ionic nuevos (~47 instancias).** El proyecto pasa de usar 2 componentes Ionic (`IonApp`, `IonIcon`) a 15.
+
+### 3.2 Archivos modificados
+
+| Archivo | Cambios |
+|---|---|
+| `src/pages/OnboardingPage.tsx` | inputs→IonInput, selects→IonSelect, fecha→IonDatetime+IonModal, checkboxes→IonCheckbox, fuerza password→IonProgressBar, botones→IonButton |
+| `src/pages/ChatPage.tsx` | input→IonInput, mic/send→IonButton circulares, pánico→IonButton |
+| `src/pages/ProgramPage.tsx` | inputs vitales→IonInput, textarea→IonTextarea, 6 botones→IonButton, hero→IonProgressBar |
+| `src/pages/CommunityPage.tsx` | textarea→IonTextarea, publicar/mensaje→IonButton, búsqueda→IonSearchbar |
+| `src/pages/TestsPage.tsx` | loading→IonLoading, 7 barras→IonProgressBar, 3 botones→IonButton, textarea→IonTextarea |
+| `src/pages/AppointmentsPage.tsx` | recordatorio/cancelar→IonButton, cancelación→IonAlert |
+| `src/pages/AcademyPage.tsx` | 3 botones→IonButton, 3 barras→IonProgressBar |
+| `src/pages/InfinitoPage.tsx` | botón UPPER MIND→IonButton |
+| `src/pages/WearablePage.tsx` | scan/desconectar→IonButton, scan→IonLoading |
+| `src/pages/HomePage.tsx` | 4 barras progreso semanal→IonProgressBar |
+| `src/pages/NutritionPage.tsx` | macros+historial→IonProgressBar (5) |
+| `src/components/ToastHost.tsx` | reescrito: framer-motion→`IonToast` declarativo |
+| `src/components/VoiceOverlay.tsx` | reescrito: overlay custom→`IonModal` fullscreen + IonButton |
+| `src/theme/global.css` | sección "FASE 3": overrides de diseño para ion-button/input/select/textarea/progress/toast/loading/modal/searchbar/checkbox; eliminado CSS huérfano (`.ptrack/.pfill/.toast`) |
+
+### 3.3 Componentes que permanecen custom (excluidos justificadamente)
+
+**COMPONENTE EXCLUIDO DE MIGRACIÓN — resumen** (cada uno con motivo técnico):
+
+| Elemento | Clase(s) | Motivo |
+|---|---|---|
+| `PanicOverlay` (SOS completo) | `.overlay-panic`, `.panic-ring` | Emergencia con countdown 5s (`setInterval`), z-index crítico sobre toda la UI y animación pulsante propia; `IonModal` añadiría latencia y capa de presentación en un flujo donde cada ms importa. Migración documentada como posible pero desaconsejada |
+| Selección por chips | `.tq-opt`, `.choice`, `.sig-ch`, `.qrchip`, `.hyd-glass`, prioridades tests | Selectores de dominio con estados sel/unsel propios y touch 40px+; `IonChip`/`IonButton` no replican el grid de selección múltiple sin sobre-ingeniería CSS |
+| Tabs de sección | `.ptab` (Nutrición), `.com-tab` (Comunidad) | Estilo tab-underlined con borde inferior; equivalentes reales son `IonSegment` (visual distinto) o `IonTabs` (requiere router). **MIGRACIÓN FUTURA** → `IonSegment` con CSS override |
+| Acordeones | `.hc-sec` (Historia), `.prog-step` (Programa), SISTEMAS (Tests) | Layout propietario (header con gradiente, estados done, grid de síntomas) con estado local; `IonAccordionGroup` no preserva el look sin reescribir el CSS completo. **MIGRACIÓN FUTURA** evaluada |
+| Filas de lista | `.prow` (Perfil), `.row-card` (Comunidad), filas de citas | Rows de dominio con icono+texto+chevron; `IonList/IonItem` cambian paddings/bordes. **MIGRACIÓN FUTURA** → `IonList/IonItem` |
+| Cards y módulos | `.card`, `.card-accent`, `ts-card`, banners gradiente (Home, Tests) | Diseño propio sólido con variantes de acento (auditoría: "Evaluar — mantener custom si no aporta"); `IonCard` no aporta y añade estilos por defecto |
+| Avatares | `.avatar` | Decorativo (iniciales/emoji con gradientes); `IonAvatar` es para imágenes |
+| Chips/badges de marca | `.chip` + 8 variantes | Identidad visual centralizada en CSS con 8 tonos; `IonChip` tendría que ser re-estilizado por variante sin ganancia funcional |
+| OTP 6 dígitos | `.otp` | Autofocus encadenado `nextElementSibling` incompatible con shadow DOM de `IonInput`; `IonCodeInput` sin validar en Ionic 8.8 |
+| Firma DocuSign | botón firma | Zona de firma bespoke (90px, dashed border) — no es un botón de acción |
+| Botones header | back "←", "Después", like/comment, icon-rows | Chips de header/interacción inline del diseño |
+| `BottomNav` | `.bnav`, `.ni` | **Grupo 5 — ver 3.5** |
+| `Forms.tsx` (ScaleList/ChipGrid) | `.tq-opt`, `.choice` | Componentes de dominio de tests (ver selección por chips) |
+| Banners de acción (Home: pánico, voz, programa) | botones con gradiente + layout interno | Layout complejo (icono+2 líneas de texto+chevron) que `IonButton` no alinea sin romper la composición |
+
+### 3.4 Problemas encontrados y solucionados
+
+1. **`IonButton` vs `.btn`**: el CSS existente de `.btn` (padding, display, border-radius) choca con las custom props internas de `ion-button`. Solución: variantes propias `bt bt-*` (`.bt-primary/.bt-teal/.bt-gold/.bt-pur/.bt-panic/.bt-ghost/.bt-outline/.bt-sm/.bt-mini/.bt-round*`) que mapean los gradientes de marca vía `--background` — diseño idéntico.
+2. **Doble toggle en checkboxes**: `IonCheckbox` dentro del `<button class="check-row">` burbujea el click y anula el toggle. Solución: `onClick={(e) => e.stopPropagation()}` en el checkbox + `onIonChange` para el estado.
+3. **Fecha**: `IonDatetime` devuelve ISO con hora → normalizado con `.split('T')[0]` para mantener el formato `YYYY-MM-DD` de `UserProfile`.
+4. **`IonProgressBar` con gradientes**: los gradientes teal→gold se logran con `--progress-background: linear-gradient(...)` — validado.
+5. **CSS huérfano**: eliminados `.ptrack/.pfill/.toast` (sin uso tras la migración).
+6. **Estructura TSX**: al quitar el bloque de loading emoji quedó un `)}` colgante en TestsPage (TS1381) — corregido.
+7. **IonToast con emojis**: el emoji de severidad ahora viaja en el `message` (IonToast v8 no tiene slot de icono) — mismo feedback visual.
+
+### 3.5 Grupo 5 — Tabs y navegación (MIGRACIÓN ARQUITECTÓNICA FUTURA)
+
+`BottomNav` (5 tabs + SOS) sigue custom **a propósito**: convertirlo a `IonTabs`/`IonTabBar`/`IonTabButton` requiere `IonReactRouter` + `IonRouterOutlet` (cambia la arquitectura de navegación por estado de `AppContext`). Documentado en `ionic-navigation` — **no se ejecutó** (requiere autorización y tarea planificada).
+
+### 3.6 Métricas
+
+```text
+HTML UI antes:  ~90 elementos custom (botones, inputs, selects, textareas, checkboxes, progreso, toast, overlays)
+HTML UI después: ~40 (selectores de dominio, cards, tabs de sección, listas, avatares, chips, OTP, PanicOverlay — todos justificados)
+
+Componentes Ionic antes: 2 (IonApp, IonIcon)
+Componentes Ionic después: 15 tipos (IonApp, IonIcon, IonButton, IonInput, IonSelect, IonSelectOption,
+                            IonCheckbox, IonTextarea, IonDatetime, IonProgressBar, IonToast, IonAlert,
+                            IonLoading, IonModal, IonSearchbar)
+
+Componentes migrados: 12 tipos / ~47 instancias
+Componentes custom justificados: 17 grupos (documentados en 3.3)
+Migraciones futuras: IonTabs+router (crítico), IonSegment, IonList/IonItem, IonAccordion, IonChip, IonAvatar, OTP/IonCodeInput
+```
+
+### 3.7 Notas de verificación visual pendiente
+
+- Ejecutar `npm run dev` y revisar a ojo: botones con gradiente, inputs `fill="outline"` con focus, modal de fecha, modal de voz, toast dark, searchbar compacto (posibles desviaciones de 1-2px que el build no detecta).
+- `IonButton` con gradiente y estado `:active` (hover/ripple) — verificar sensación táctil en móvil.
+- Landscape y teclado móvil en `IonInput` (auto scroll-into-view) — beneficios esperados de la migración.

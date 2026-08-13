@@ -1,4 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
+import {
+  IonButton,
+  IonCheckbox,
+  IonDatetime,
+  IonInput,
+  IonModal,
+  IonProgressBar,
+  IonSelect,
+  IonSelectOption,
+} from '@ionic/react'
 import { useApp } from '../context/AppContext'
 import type { UserProfile } from '../types'
 
@@ -20,6 +30,7 @@ export function OnboardingPage() {
   const [checks, setChecks] = useState([false, false, false])
   const [signed, setSigned] = useState(false)
   const [sigCh, setSigCh] = useState('SMS')
+  const [dateOpen, setDateOpen] = useState(false)
   const [pwd, setPwd] = useState('')
   const [pwd2, setPwd2] = useState('')
   const [form, setForm] = useState<UserProfile>({
@@ -150,9 +161,9 @@ export function OnboardingPage() {
                 </div>
               ))}
             </div>
-            <button className="btn btn-teal" onClick={() => finishOnboarding(form)}>
+            <IonButton expand="block" className="bt bt-teal" onClick={() => finishOnboarding(form)}>
               Entrar a mi programa ANTARES
-            </button>
+            </IonButton>
           </div>
         ) : (
           <>
@@ -160,43 +171,43 @@ export function OnboardingPage() {
               <>
                 <div className="field">
                   <label>Nombre completo</label>
-                  <input value={form.nombre} onChange={(e) => set('nombre', e.target.value)} />
+                  <IonInput className="fld" value={form.nombre} onIonInput={(e) => set('nombre', e.detail.value ?? '')} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div className="field">
                     <label>Cédula / ID</label>
-                    <input value={form.cedula} onChange={(e) => set('cedula', e.target.value)} />
+                    <IonInput className="fld" value={form.cedula} inputmode="numeric" onIonInput={(e) => set('cedula', e.detail.value ?? '')} />
                   </div>
                   <div className="field">
                     <label>Fecha de nacimiento</label>
-                    <input type="date" value={form.dob} onChange={(e) => set('dob', e.target.value)} />
+                    <IonInput className="fld" value={form.dob} readonly onClick={() => setDateOpen(true)} />
                   </div>
                 </div>
                 <div className="field">
                   <label>Seguro médico</label>
-                  <select value={form.seguro} onChange={(e) => set('seguro', e.target.value)}>
+                  <IonSelect className="fld" value={form.seguro} onIonChange={(e) => set('seguro', e.detail.value as string)}>
                     {['BlueCross BlueShield', 'Aetna', 'UnitedHealth', 'Cigna', 'Medicare Part B', 'Medicaid'].map((s) => (
-                      <option key={s}>{s}</option>
+                      <IonSelectOption key={s} value={s}>{s}</IonSelectOption>
                     ))}
-                  </select>
+                  </IonSelect>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div className="field">
                     <label>No. de póliza</label>
-                    <input value={form.poliza} onChange={(e) => set('poliza', e.target.value)} />
+                    <IonInput className="fld" value={form.poliza} onIonInput={(e) => set('poliza', e.detail.value ?? '')} />
                   </div>
                   <div className="field">
                     <label>Grupo</label>
-                    <input value={form.grupo} onChange={(e) => set('grupo', e.target.value)} />
+                    <IonInput className="fld" value={form.grupo} onIonInput={(e) => set('grupo', e.detail.value ?? '')} />
                   </div>
                 </div>
                 <div className="field">
                   <label>Correo</label>
-                  <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
+                  <IonInput className="fld" type="email" value={form.email} onIonInput={(e) => set('email', e.detail.value ?? '')} />
                 </div>
                 <div className="field">
                   <label>Celular / WhatsApp</label>
-                  <input value={form.celular} onChange={(e) => set('celular', e.target.value)} />
+                  <IonInput className="fld" type="tel" value={form.celular} onIonInput={(e) => set('celular', e.detail.value ?? '')} />
                 </div>
                 <div style={{ background: 'var(--teal-l)', borderRadius: 12, padding: 12, fontSize: 12, color: '#0F6E56', lineHeight: 1.5 }}>
                   🔒 Datos cifrados con TLS 1.3 y protegidos bajo HIPAA.
@@ -218,15 +229,12 @@ export function OnboardingPage() {
                   ))}
                 </div>
                 {!otpSent ? (
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      setOtpSent(true)
-                      showToast(`Código enviado por ${otpCh}`, 'ok')
-                    }}
-                  >
+                  <IonButton expand="block" className="bt bt-primary" onClick={() => {
+                    setOtpSent(true)
+                    showToast(`Código enviado por ${otpCh}`, 'ok')
+                  }}>
                     Enviar código de verificación
-                  </button>
+                  </IonButton>
                 ) : (
                   <>
                     <div style={{ background: 'var(--blue-l)', borderRadius: 12, padding: 12, fontSize: 12, color: '#185FA5', marginBottom: 14 }}>
@@ -262,19 +270,19 @@ export function OnboardingPage() {
                   <div style={{ fontWeight: 700, marginBottom: 10 }}>1 · Familiar principal</div>
                   <div className="field">
                     <label>Nombre</label>
-                    <input value={form.fam1Nombre} onChange={(e) => set('fam1Nombre', e.target.value)} />
+                    <IonInput className="fld" value={form.fam1Nombre} onIonInput={(e) => set('fam1Nombre', e.detail.value ?? '')} />
                   </div>
                   <div className="field">
                     <label>Parentesco</label>
-                    <select value={form.fam1Parentesco} onChange={(e) => set('fam1Parentesco', e.target.value)}>
+                    <IonSelect className="fld" value={form.fam1Parentesco} onIonChange={(e) => set('fam1Parentesco', e.detail.value as string)}>
                       {['Esposo/a', 'Padre/Madre', 'Hijo/a', 'Hermano/a', 'Amigo/a'].map((p) => (
-                        <option key={p}>{p}</option>
+                        <IonSelectOption key={p} value={p}>{p}</IonSelectOption>
                       ))}
-                    </select>
+                    </IonSelect>
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
                     <label>Celular</label>
-                    <input value={form.fam1Cel} onChange={(e) => set('fam1Cel', e.target.value)} />
+                    <IonInput className="fld" type="tel" value={form.fam1Cel} onIonInput={(e) => set('fam1Cel', e.detail.value ?? '')} />
                   </div>
                 </div>
                 <div style={{ background: 'var(--org-l)', borderRadius: 12, padding: 12, fontSize: 12, color: '#854F0B', lineHeight: 1.5 }}>
@@ -304,7 +312,11 @@ export function OnboardingPage() {
                 </div>
                 {['He leído y acepto el consentimiento informado.', 'Autorizo el manejo de mis datos de salud según HIPAA.', 'Autorizo notificar a mis contactos de emergencia.'].map((t, i) => (
                   <button key={t} className={`check-row ${checks[i] ? 'on' : ''}`} onClick={() => setChecks((c) => c.map((x, j) => (j === i ? !x : x)))}>
-                    <span className="checkbox">{checks[i] ? '✓' : ''}</span>
+                    <IonCheckbox
+                      checked={checks[i]}
+                      onClick={(e) => e.stopPropagation()}
+                      onIonChange={(e) => setChecks((c) => c.map((x, j) => (j === i ? e.detail.checked : x)))}
+                    />
                     <span style={{ fontSize: 12, lineHeight: 1.45 }}>{t}</span>
                   </button>
                 ))}
@@ -340,14 +352,16 @@ export function OnboardingPage() {
               <>
                 <div className="field">
                   <label>Nueva contraseña</label>
-                  <input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Mínimo 8 caracteres" />
-                  <div className="ptrack" style={{ marginTop: 8 }}>
-                    <div className="pfill" style={{ width: `${strength}%`, background: strength < 50 ? 'var(--red)' : strength < 100 ? 'var(--org)' : 'var(--teal)' }} />
-                  </div>
+                  <IonInput className="fld" type="password" value={pwd} placeholder="Mínimo 8 caracteres" onIonInput={(e) => setPwd(e.detail.value ?? '')} />
+                  <IonProgressBar
+                    className="pb"
+                    style={{ marginTop: 8, '--progress-background': strength < 50 ? 'var(--red)' : strength < 100 ? 'var(--org)' : 'var(--teal)' } as CSSProperties}
+                    value={strength / 100}
+                  />
                 </div>
                 <div className="field">
                   <label>Confirmar</label>
-                  <input type="password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} />
+                  <IonInput className="fld" type="password" value={pwd2} onIonInput={(e) => setPwd2(e.detail.value ?? '')} />
                 </div>
                 <div style={{ background: 'var(--g1)', borderRadius: 12, padding: 12, fontSize: 12, lineHeight: 1.9 }}>
                   <div style={{ color: pwd.length >= 8 ? 'var(--teal)' : 'var(--mu)' }}>{pwd.length >= 8 ? '✅' : '⬜'} Mínimo 8 caracteres</div>
@@ -372,9 +386,9 @@ export function OnboardingPage() {
             background: 'linear-gradient(transparent, #fff 28%)',
           }}
         >
-          <button className="btn btn-primary" onClick={next}>
+          <IonButton expand="block" className="bt bt-primary" onClick={next}>
             {step === 5 ? 'Crear cuenta' : step === 2 ? 'Verificar identidad' : 'Continuar'}
-          </button>
+          </IonButton>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
             {step > 1 ? (
               <button style={{ background: 'none', border: 'none', color: 'var(--mu)', fontSize: 12 }} onClick={() => setStep((s) => s - 1)}>
@@ -387,6 +401,17 @@ export function OnboardingPage() {
           </div>
         </div>
       )}
+
+      <IonModal isOpen={dateOpen} onDidDismiss={() => setDateOpen(false)} className="date-modal">
+        <IonDatetime
+          presentation="date"
+          value={form.dob}
+          onIonChange={(e) => set('dob', String(e.detail.value).split('T')[0])}
+        />
+        <IonButton expand="block" className="bt bt-teal" onClick={() => setDateOpen(false)}>
+          Listo
+        </IonButton>
+      </IonModal>
     </div>
   )
 }

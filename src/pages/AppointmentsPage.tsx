@@ -1,3 +1,5 @@
+import { useState, type CSSProperties } from 'react'
+import { IonAlert, IonButton } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -39,6 +41,7 @@ const upcoming = [
 
 export function AppointmentsPage() {
   const { showToast } = useApp()
+  const [cancelId, setCancelId] = useState<string | null>(null)
 
   return (
     <Screen>
@@ -96,16 +99,16 @@ export function AppointmentsPage() {
                 <strong style={{ color: 'var(--tx)' }}>Seguro:</strong> BlueCross BlueShield · Copago $20
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-teal" style={{ flex: 1, minHeight: 42, padding: 10, fontSize: 12 }} onClick={() => showToast('Recordatorio configurado', 'ok')}>
+                <IonButton expand="block" className="bt bt-sm bt-teal" onClick={() => showToast('Recordatorio configurado', 'ok')}>
                   🔔 Recordatorio
-                </button>
-                <button
-                  className="btn"
-                  style={{ width: 42, minHeight: 42, padding: 0, background: 'var(--red-l)', color: 'var(--red)' }}
-                  onClick={() => showToast('Solicitud de cancelación enviada', 'warn')}
+                </IonButton>
+                <IonButton
+                  className="bt bt-sm"
+                  style={{ '--background': 'var(--red-l)', '--color': 'var(--red)' } as CSSProperties}
+                  onClick={() => setCancelId(a.name)}
                 >
                   ✕
-                </button>
+                </IonButton>
               </div>
             </div>
           </div>
@@ -132,11 +135,29 @@ export function AppointmentsPage() {
         </div>
 
         <div style={{ padding: '0 14px 8px' }}>
-          <button className="btn btn-primary" onClick={() => showToast('Abriendo portal.antares.health', 'info')}>
+          <IonButton expand="block" className="bt bt-primary" onClick={() => showToast('Abriendo portal.antares.health', 'info')}>
             Solicitar nueva cita · Plataforma ANTARES
-          </button>
+          </IonButton>
         </div>
       </Scroll>
+
+      <IonAlert
+        isOpen={!!cancelId}
+        header="¿Cancelar la cita?"
+        message="Se notificará al equipo médico."
+        buttons={[
+          { text: 'Volver', role: 'cancel' },
+          {
+            text: 'Cancelar cita',
+            role: 'destructive',
+            handler: () => {
+              setCancelId(null)
+              showToast('Solicitud de cancelación enviada', 'warn')
+            },
+          },
+        ]}
+        onDidDismiss={() => setCancelId(null)}
+      />
     </Screen>
   )
 }

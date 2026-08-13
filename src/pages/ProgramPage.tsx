@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { IonButton, IonInput, IonProgressBar, IonTextarea } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -88,9 +89,11 @@ export function ProgramPage() {
               </div>
             </div>
           </div>
-          <div className="ptrack" style={{ background: 'rgba(255,255,255,.12)', marginTop: 12 }}>
-            <div className="pfill" style={{ width: `${(doneCount / 5) * 100}%`, background: 'linear-gradient(90deg,#D4AF37,#1D9E75)' }} />
-          </div>
+          <IonProgressBar
+            className="pb"
+            style={{ marginTop: 12, '--background': 'rgba(255,255,255,.12)', '--progress-background': 'linear-gradient(90deg,#D4AF37,#1D9E75)' } as CSSProperties}
+            value={doneCount / 5}
+          />
         </div>
 
         <div style={{ height: 10 }} />
@@ -100,13 +103,13 @@ export function ProgramPage() {
             {['❤️ FC', '🩺 Presión', '💨 SpO2', '🩸 Glucosa', '⚖️ Peso', '🌡️ Temp'].map((l) => (
               <div key={l} className="vital-inp">
                 <label>{l}</label>
-                <input placeholder="—" />
+                <IonInput className="vital-i" placeholder="—" />
               </div>
             ))}
           </div>
-          <button className="btn btn-primary" onClick={() => { completeStep('vitals', 100); showToast('+100 pts por signos vitales', 'ok') }}>
+          <IonButton expand="block" className="bt bt-primary" onClick={() => { completeStep('vitals', 100); showToast('+100 pts por signos vitales', 'ok') }}>
             Registrar signos · +100 pts
-          </button>
+          </IonButton>
         </Step>
 
         <Step id="nut" n={2} title="Seguir el plan nutricional" sub="Registra comidas con foto" pts={200}>
@@ -122,13 +125,13 @@ export function ProgramPage() {
               </div>
             ))}
           </div>
-          <button className="btn btn-teal" onClick={() => navigate('nut')}>
+          <IonButton expand="block" className="bt bt-teal" onClick={() => navigate('nut')}>
             Ir a registrar comidas
-          </button>
+          </IonButton>
           {mealsLogged.length >= 2 && (
-            <button className="btn btn-gold" style={{ marginTop: 8 }} onClick={() => { completeStep('nut', 200); showToast('+200 pts nutrición', 'ok') }}>
+            <IonButton expand="block" className="bt bt-gold" style={{ marginTop: 8 }} onClick={() => { completeStep('nut', 200); showToast('+200 pts nutrición', 'ok') }}>
               Validar adherencia · +200
-            </button>
+            </IonButton>
           )}
         </Step>
 
@@ -142,9 +145,9 @@ export function ProgramPage() {
           <div style={{ background: 'var(--g1)', borderRadius: 12, padding: 12, fontSize: 12, lineHeight: 1.8, marginBottom: 10 }}>
             ① Calentamiento 2 min · ② Sentadillas 2 min · ③ Plancha 1 min · ④ Caminata 3 min · ⑤ Estiramiento 2 min · ⑥ Respiración 4-7-8
           </div>
-          <button className="btn btn-pur" onClick={() => setRunning((r) => !r)}>
+          <IonButton expand="block" className="bt bt-pur" onClick={() => setRunning((r) => !r)}>
             {running ? 'Detener' : 'Iniciar cronómetro'}
-          </button>
+          </IonButton>
         </Step>
 
         <Step id="psico" n={4} title="Ver video del día" sub="PSICO · Mindfulness 12:34" pts={100}>
@@ -158,9 +161,10 @@ export function ProgramPage() {
         </Step>
 
         <Step id="comunidad" n={5} title="Comentar en comunidad" sub="Comparte tu experiencia · 20 caracteres" pts={150}>
-          <textarea value={post} onChange={(e) => setPost(e.target.value)} placeholder="¿Cómo te sientes hoy?" style={{ width: '100%', minHeight: 80, border: '1.5px solid var(--bd)', borderRadius: 12, padding: 10, marginBottom: 8 }} />
-          <button
-            className="btn btn-pur"
+          <IonTextarea className="fld post-tx" value={post} placeholder="¿Cómo te sientes hoy?" onIonInput={(e) => setPost(e.detail.value ?? '')} autoGrow />
+          <IonButton
+            expand="block"
+            className="bt bt-pur"
             onClick={() => {
               if (post.trim().length < 20) {
                 showToast('Escribe al menos 20 caracteres', 'warn')
@@ -171,10 +175,10 @@ export function ProgramPage() {
             }}
           >
             Publicar y ganar +150 pts
-          </button>
-          <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => navigate('com')}>
+          </IonButton>
+          <IonButton expand="block" className="bt bt-ghost" style={{ marginTop: 8 }} onClick={() => navigate('com')}>
             Ver comunidad completa
-          </button>
+          </IonButton>
         </Step>
 
         {allDone && (

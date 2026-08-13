@@ -1,6 +1,6 @@
-import { IonIcon } from '@ionic/react'
+import { IonButton, IonIcon, IonInput } from '@ionic/react'
 import { mic, send as sendIcon } from 'ionicons/icons'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Screen } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -77,9 +77,9 @@ export function ChatPage() {
         <div ref={end} />
       </div>
       <div style={{ padding: '6px 12px 0', background: '#fff' }}>
-        <button className="btn btn-panic" style={{ minHeight: 42, fontSize: 13 }} onClick={openPanic}>
+        <IonButton expand="block" className="bt bt-sm bt-panic" onClick={openPanic}>
           🆘 Activar botón de pánico
-        </button>
+        </IonButton>
       </div>
       <div
         style={{
@@ -89,27 +89,30 @@ export function ChatPage() {
           background: '#fff',
           borderTop: '1px solid var(--bd)',
           marginBottom: 'var(--nav-h)',
+          alignItems: 'center',
         }}
       >
-        <button
+        <IonButton
+          className="bt bt-round"
+          style={{ '--background': 'linear-gradient(135deg,var(--pur),#5B21B6)', '--color': '#fff' } as CSSProperties}
           onClick={openVoice}
-          style={{ width: 42, height: 42, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,var(--pur),#5B21B6)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <IonIcon icon={mic} />
-        </button>
-        <input
+          <IonIcon icon={mic} style={{ fontSize: 20 }} />
+        </IonButton>
+        <IonInput
+          className="chat-inp"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onIonInput={(e) => setText(e.detail.value ?? '')}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           placeholder="Habla con ANTARES AI…"
-          style={{ flex: 1, border: '1.5px solid var(--bd)', borderRadius: 22, padding: '10px 14px', fontSize: 14, outline: 'none' }}
         />
-        <button
+        <IonButton
+          className="bt bt-round"
+          style={{ '--background': 'var(--navy)', '--color': '#fff' } as CSSProperties}
           onClick={() => send()}
-          style={{ width: 42, height: 42, borderRadius: '50%', border: 'none', background: 'var(--navy)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <IonIcon icon={sendIcon} />
-        </button>
+          <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
+        </IonButton>
       </div>
     </Screen>
   )
