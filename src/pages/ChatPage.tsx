@@ -77,7 +77,7 @@ export function ChatPage() {
         <div ref={end} />
       </div>
       <div style={{ padding: '6px 12px 0', background: '#fff' }}>
-        <IonButton expand="block" className="bt bt-sm bt-panic" onClick={openPanic}>
+        <IonButton expand="block" className="bt bt-sm bt-panic" style={{ fontSize: 13 }} onClick={openPanic}>
           🆘 Activar botón de pánico
         </IonButton>
       </div>

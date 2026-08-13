@@ -33,7 +33,8 @@ src/
 
 - **Toda pantalla nueva** → archivo en `pages/`, exportada como `NombrePage`, registrada en el switch de `App.tsx` y en `Screen` type de `types.ts`.
 - **Toda pieza reutilizable** → `components/`, export nombrada.
-- **NO crear** `services/`, `hooks/`, `routes/`, `utils/` por ahora — no existen; si se necesita un helper, va en `components/Forms.tsx` (patrón existente) o en el contexto.
+- **NO crear** `services/`, `hooks/`, `routes/` por ahora — no existen; si se necesita un helper, va en `components/Forms.tsx` (patrón existente) o en el contexto.
+- **`utils/`**: existe `src/utils/dates.ts` (formato de fechas dd/mm/aaaa ↔ ISO) — helpers de presentación puros pueden vivir aquí, con nombre de archivo por dominio (`dates.ts`).
 - **Datos simulados** → dentro del archivo (constantes en el page) o en `data/`. No crear APIs falsas.
 - **Estado global** → SOLO a través de `useApp()` de `context/AppContext.tsx`. No duplicar estado en props si afecta a 2+ pantallas.
 - **Estilos**: clases en `theme/global.css` o `style={{}}` inline para casos únicos. NUNCA CSS modules ni styled-components (no están en el proyecto).

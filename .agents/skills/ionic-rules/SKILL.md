@@ -104,6 +104,11 @@ Ante duda: preguntar. Justificar por escrito en el PR/comentario por qué se cre
 - Sin backend integrado: datos simulados en `data/` o constantes del archivo. NO inventar endpoints.
 - Estado global de datos → `useApp()`; no prop-drilling si 2+ pantallas lo usan.
 - No persistir sin pedirlo (no hay localStorage ni API).
+- **Fechas**: toda fecha visible al usuario en `dd/mm/aaaa`; formato interno/API/BD siempre ISO (`yyyy-mm-dd`). Conversión centralizada en `src/utils/dates.ts` (`formatDateForDisplay` / `toISODate`) — nunca duplicada por pantalla, nunca cambiar el formato persistido por una necesidad visual.
+
+## Validación visual (regla post-migración)
+
+Build ✓ y lint ✓ NO terminan una migración de UI. Verificar en runtime (`npm run dev`) y comparar visualmente contra la versión original: tipografía real del texto, alturas, padding, bordes, radios, alineación vertical, estados focus/disabled, responsive. Herramienta: `scripts/probe-ionic.mjs` (computed styles del native-input real).
 
 ## Verificación obligatoria al terminar
 

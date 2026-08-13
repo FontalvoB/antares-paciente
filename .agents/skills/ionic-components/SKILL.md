@@ -13,6 +13,71 @@ Versiones reales (`package.json`): `@ionic/react ^8.8.18`, `ionicons ^8.1.0`, `r
 
 > Antes de crear HTML nativo / CSS custom / librería externa para interacción, formulario, overlay, navegación o feedback → buscar aquí. Si existe componente Ionic → usarlo. Si no encaja, justificar (ver excepciones al final).
 
+## REGLA DE PRESERVACIÓN VISUAL (obligatoria en toda migración)
+
+> **Ionic reemplaza la tecnología del componente, NO su diseño.** El diseño que debe verse ya existe en el proyecto (`theme/variables.css` + `theme/global.css`).
+
+Antes de migrar cualquier componente HTML a Ionic:
+
+1. Identificar el estilo visual existente del componente original (altura, padding, border-radius, borde, tipografía, colores, gradientes, focus).
+2. Identificar la clase CSS / token que lo proporciona (`.btn`, `.field`, `.ptrack`, `--teal`, …).
+3. Migrar el componente a Ionic.
+4. Hacer que el componente Ionic adopte los estilos existentes mediante:
+   - **CSS variables de Ionic** (`--border-radius`, `--padding-*`, `--background`, `--border-color`, `--border-width`, `--highlight-color-focused`, `--progress-background`, `--size`…) → valores EXACTOS del diseño original;
+   - `::part()` para partes internas cuando las vars no alcancen;
+   - clases existentes del proyecto reutilizadas (nunca duplicadas).
+5. Comparar visualmente antes/después. Si difiere, ajustar con los mecanismos anteriores — **nunca** volver al HTML anterior ni aceptar el estilo por defecto de Ionic.
+
+**NO rediseñar**: no cambiar tamaños, tipografías, colores, bordes, radios, alturas, espaciados, paddings, layout ni apariencia de formularios/botones sin instrucción explícita.
+
+**Jerarquía de estilos (de mayor a menor prioridad):**
+
+```text
+Ionic component (tecnología)
+        ↓
+CSS variables/props Ionic + tokens existentes (variables.css)
+        ↓
+clases existentes del proyecto (global.css)
+        ↓
+CSS específico SOLO si es necesario (nunca duplicar lo que ya existe)
+```
+
+Ejemplo verificado (FASE 3): `.field input` (font 15px, padding 12/13px, border 1.5px `--bd`, radius 12px) → `ion-input.fld` con `--border-radius:12px; --border-width:1.5px; --border-color:var(--bd); --padding-*:12px/13px; font-size:15px`. `.btn` (48px alto, radius 12, gradientes) → `ion-button.bt*` con `height:48px` + `--background: linear-gradient(...)` de la marca.
+
+## Shadow DOM y DOM scoped — cómo adaptar estilos (lecciones FASE 3)
+
+Cuando un componente Ionic (Shadow DOM o scoped CSS) no responde a estilos del host:
+
+1. **No asumir que un estilo del host controla el elemento interno.** Cadena real: `HOST → (shadow/scoped) → ELEMENTO REAL`.
+2. Determinar los mecanismos disponibles, en orden:
+   - **CSS variables de Ionic** documentadas (`--padding-*`, `--border-radius`, `--background`, `--border-color`, `--highlight-color-*`, `--placeholder-*`, `--size`…) — cruzan la frontera del shadow;
+   - **`::part()`** — SOLO si el componente lo expone (verificado: `IonSelect` expone `part="icon"` y `part="text"`; `IonInput`/`IonTextarea` NO exponen parts en Ionic 8.8). **No inventar parts** — verificarlas en la fuente o en devtools antes de usarlas;
+   - **clases dinámicas reales en el host**: `.has-focus` (input/select/textarea), `.has-value` — usables desde el CSS del proyecto;
+   - **propiedades heredables** (`font-*`, `color`, `letter-spacing`): se heredan del host al elemento interno si el interno no las fija.
+3. **Ojo con DOM scoped (no shadow)**: los componentes con `shadow: false` (IonInput en v8 — DOM abierto) son alcanzables por selectores del proyecto. Reglas amplias como `.field label` o `.field input` matchean sus internos (`<label class="input-wrapper">`, `.native-input`) y los corrompen → restringir a hijos directos (`.field > label`).
+4. **`fill="outline"` NO pinta borde en `mode: ios`** (los vars `--border-*` solo alimentan `.input-bottom`). Para borde visible: dibujarlo en el host y usar `.has-focus` para el estado.
+5. El **CSS interno de Ionic no es fuente de verdad** — la fuente de verdad es el diseño existente de la app. El CSS interno solo sirve para entender qué controla qué.
+6. **`mode: ios`**: el proyecto usa `setupIonicReact({ mode: 'ios' })` — los estilos internos dependen del modo (p.ej. min-height 44px en inputs, borde solo-top). Revisar el CSS de la versión instalada (`node_modules/@ionic/core/dist/esm/*.entry.js`) antes de concluir que "el CSS no funciona".
+
+## Validación visual — obligatoria tras migrar
+
+`build ✓` + `lint ✓` NO significan migración terminada. Secuencia completa:
+
+```text
+Código → Build → Lint → Ejecución real → Comparación visual
+```
+
+El criterio final es visual (captura original vs actual). Herramienta del repo: `scripts/probe-ionic.mjs` (puppeteer-core) mide computed styles reales del elemento que renderiza el texto (`ion-input .native-input`) sin abrir navegador manual.
+
+## Regla de no rediseño
+
+> Si un diseño ya existe, NO crear un diseño nuevo para adaptarlo a Ionic.
+
+```text
+¿Existe el estilo? → SÍ → Reutilizar/adaptar
+                  → NO → Crear únicamente lo necesario
+```
+
 ## Matriz de decisión
 
 | Necesidad | Preferencia (Ionic) | Alternativa aceptable | No usar por defecto |

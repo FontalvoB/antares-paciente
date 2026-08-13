@@ -10,6 +10,7 @@ import {
   IonSelectOption,
 } from '@ionic/react'
 import { useApp } from '../context/AppContext'
+import { formatDateForDisplay } from '../utils/dates'
 import type { UserProfile } from '../types'
 
 const STEPS = [
@@ -180,12 +181,12 @@ export function OnboardingPage() {
                   </div>
                   <div className="field">
                     <label>Fecha de nacimiento</label>
-                    <IonInput className="fld" value={form.dob} readonly onClick={() => setDateOpen(true)} />
+                    <IonInput className="fld" value={formatDateForDisplay(form.dob)} readonly onClick={() => setDateOpen(true)} />
                   </div>
                 </div>
                 <div className="field">
                   <label>Seguro médico</label>
-                  <IonSelect className="fld" value={form.seguro} onIonChange={(e) => set('seguro', e.detail.value as string)}>
+                  <IonSelect className="fld" interface="popover" value={form.seguro} onIonChange={(e) => set('seguro', e.detail.value as string)}>
                     {['BlueCross BlueShield', 'Aetna', 'UnitedHealth', 'Cigna', 'Medicare Part B', 'Medicaid'].map((s) => (
                       <IonSelectOption key={s} value={s}>{s}</IonSelectOption>
                     ))}
@@ -274,7 +275,7 @@ export function OnboardingPage() {
                   </div>
                   <div className="field">
                     <label>Parentesco</label>
-                    <IonSelect className="fld" value={form.fam1Parentesco} onIonChange={(e) => set('fam1Parentesco', e.detail.value as string)}>
+                    <IonSelect className="fld" interface="popover" value={form.fam1Parentesco} onIonChange={(e) => set('fam1Parentesco', e.detail.value as string)}>
                       {['Esposo/a', 'Padre/Madre', 'Hijo/a', 'Hermano/a', 'Amigo/a'].map((p) => (
                         <IonSelectOption key={p} value={p}>{p}</IonSelectOption>
                       ))}

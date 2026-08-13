@@ -16,6 +16,10 @@ description: Tema y diseño de ANTARES Paciente. Convivencia de Ionic + design s
 
 > **Regla**: Ionic proporciona comportamiento y primitives de interacción; el design system (variables + global) controla identidad visual cuando sea compatible. Al usar un componente Ionic nuevo: colorear con tokens (`color="primary"` = teal, o CSS vars), nunca inventar colores.
 
+> **Capa de adaptación Ionic (FASE 3)**: los componentes Ionic se estilizan con sus CSS variables apuntando a los tokens existentes (`--border-radius: 12px`, `--border-color: var(--bd)`, `--background: linear-gradient(...)`, `--padding-*`, `--highlight-color-focused: var(--teal)`). La sección "FASE 3 — Integración de componentes Ionic" de `global.css` es la única capa de adaptación — toda variante nueva va ahí y reutiliza tokens; no duplicar valores en línea. Regla de preservación visual completa en `ionic-components`.
+
+> **`mode: ios`**: el proyecto configura `setupIonicReact({ mode: 'ios' })`. Los estilos internos de Ionic dependen del modo (ej.: inputs con `min-height:44px`, `fill="outline"` sin borde visible, `.input-bottom` con border-top). El CSS interno de la versión instalada (`node_modules/@ionic/core/dist/esm/*.entry.js`) sirve para entender qué controla qué, pero **nunca es fuente de verdad visual** — la fuente es el design system (`variables.css` + `global.css`).
+
 ## Fuentes de verdad
 
 - **Tokens**: `src/theme/variables.css` (variables `--ion-*` + paleta ANTARES)

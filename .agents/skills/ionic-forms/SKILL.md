@@ -164,6 +164,33 @@ const [saving, setSaving] = useState(false)
 - `inputmode` correcto por tipo (numeric, email, tel, text) y `enterkeyhint` (`next` entre campos, `done` en el último).
 - NO `maximum-scale=1`/`user-scalable=no` (index.html:8 — PENDIENTE de corrección, WCAG 1.4.4): bloquea zoom y empeora la UX de inputs en móvil.
 
+## Lecciones de la migración FASE 3 (NO repetir)
+
+### Problema 1 — min-height artificial
+Añadir `min-height` a un `IonInput`/`IonSelect` podía dejarlos MÁS grandes que el original (Ionic iOS ya fuerza `min-height:44px` en el host; sumar encima distorsiona).
+**Solución:** reproducir primero `font-size + line-height + padding + border` y dejar que la altura resulte naturalmente. Si Ionic fuerza altura interna, neutralizarla con `min-height: 0` — no añadir otra altura "que se parezca".
+
+### Problema 2 — font-size en host ≠ tipografía del texto
+Aplicar `font-size` al host NO garantiza el texto interno. Verificado en runtime: los `IonInput` de Ionic 8 usan DOM scoped abierto (no shadow cerrado) con `<label class="input-wrapper">` interno. Una regla existente del proyecto como `.field label { font-size:10px; font-weight:700 }` matcheaba ese label interno y el `native-input` (con `font-size: inherit`) heredaba los 10px — TODO el texto del input quedaba pequeño y bold.
+**Solución:** verificar el elemento real que renderiza el texto (native-input) con devtools/computed styles; restringir selectores viejos a hijos directos (`.field > label`, `.field > input`) para no pisar internos de Ionic. El `<select>` no sufría el bug porque su wrapper es un `<div>`.
+
+### Problema 3 — fill="outline" no dibuja borde en iOS
+En `mode: ios`, `fill="outline"` NO pinta borde visible (los vars `--border-color/--border-width` solo alimentan `.input-bottom`). El borde del diseño se dibuja en el HOST (`border: 1.5px solid var(--bd)`), y el focus usa la clase real `.has-focus` que Ionic aplica al host (verificada en input/select/textarea).
+
+### Problema 4 — elementos visuales propios de Ionic
+`IonSelect` pinta su chevron (`part: "icon"`, 18px gris #595959). Adaptarlo al diseño con `::part(icon)` verificando ANTES que el componente lo exponga (IonSelect SÍ lo expone; IonInput NO expone parts — para él el borde va en el host).
+
+### Problema 5 — build/lint no validan lo visual
+Build ✓ + lint ✓ no significan migración terminada. Verificar con runtime (dev server) y comparación visual contra la versión original. Herramienta del repo: `scripts/probe-ionic.mjs` (puppeteer-core) mide computed styles reales del native-input.
+
+## Fechas — regla global de formato
+
+- **Display SIEMPRE `dd/mm/aaaa`** (`12/04/1988`), para toda fecha visible al usuario.
+- **Formato interno/API/BD SIEMPRE ISO** (`1988-04-12`). Nunca cambiar el formato persistido por una necesidad visual.
+- Util central: `src/utils/dates.ts` → `formatDateForDisplay(iso)` / `toISODate(display)`. No duplicar conversiones por pantalla.
+- `IonDatetime` recibe/setea ISO; el campo de presentación (readonly) muestra `formatDateForDisplay(...)`.
+- En textos estáticos de UI, las fechas se escriben directamente en `dd/mm/aaaa`.
+
 ## Reglas
 
 1. Formularios nuevos → componentes Ionic; no añadir más `input.field` nativos.
@@ -171,3 +198,7 @@ const [saving, setSaving] = useState(false)
 3. Estado local con `useState`; solo `useApp()` si 2+ pantallas lo consumen.
 4. Labels SIEMPRE presentes (`labelPlacement="stacked"` o `IonLabel`), nunca placeholder como único texto.
 5. Validación en español; toasts para errores de submit, `danger` para errores de campo.
+6. **Preservación visual (obligatoria)**: el diseño de los formularios YA existe en `.field` de `global.css` (font 15px, padding 12/13px, border 1.5px `var(--bd)`, radius 12px, focus teal). Todo `IonInput`/`IonSelect`/`IonTextarea` debe replicar esos valores EXACTOS con sus CSS vars (`--border-radius`, `--border-width`, `--border-color`, `--padding-*`, `--highlight-color-focused: var(--teal)`). No crear diseño nuevo, no aceptar estilos por defecto de Ionic, no duplicar CSS — reutilizar tokens.
+7. Alturas: replicar la del input original (los `.field` no tenían min-height; la altura la daba padding+font ≈42px). No fijar min-heights arbitrarios que alteren el layout.
+8. **`IonSelect` SIEMPRE con `interface="popover"`** (estándar de la app, mejor UX móvil que el picker por defecto).
+9. **Restringir selectores viejos**: al migrar, reglas como `.field label` / `.field input` deben limitarse a hijos directos (`.field > label`, `.field > input`) — si no, matchean los internos de Ionic (`<label class="input-wrapper">`) y corrompen la tipografía del texto.

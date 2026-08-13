@@ -396,7 +396,10 @@ body {
 .field {
   margin-bottom: 12px;
 }
-.field label {
+/* Solo label/control directos del formulario — > para NO pisar los elementos
+   internos de Ionic (IonInput usa <label class="input-wrapper"> en su DOM scoped,
+   que caía bajo `.field label` y le aplicaba 10px/700/gris al texto del input). */
+.field > label {
   display: block;
   font-size: 10px;
   font-weight: 700;
@@ -405,9 +408,9 @@ body {
   letter-spacing: 0.5px;
   margin-bottom: 6px;
 }
-.field input,
-.field select,
-.field textarea {
+.field > input,
+.field > select,
+.field > textarea {
   width: 100%;
   border: 1.5px solid var(--bd);
   border-radius: 12px;
@@ -418,9 +421,9 @@ body {
   background: #fff;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
+.field > input:focus,
+.field > select:focus,
+.field > textarea:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 4px rgba(29, 158, 117, 0.12);
 }
@@ -1041,7 +1044,9 @@ ion-button {
   --padding-bottom: 13px;
   --padding-start: 16px;
   --padding-end: 16px;
+  height: 48px;
   min-height: 48px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.2px;
   margin: 0;
@@ -1079,17 +1084,21 @@ ion-button.bt-outline {
   --border-style: solid;
 }
 ion-button.bt-sm {
-  min-height: 40px;
-  --padding-top: 8px;
-  --padding-bottom: 8px;
+  height: 42px;
+  min-height: 42px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --padding-start: 10px;
+  --padding-end: 10px;
   font-size: 12px;
 }
 ion-button.bt-mini {
-  min-height: 34px;
-  --padding-top: 6px;
-  --padding-bottom: 6px;
-  --padding-start: 10px;
-  --padding-end: 10px;
+  height: 36px;
+  min-height: 36px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  --padding-start: 16px;
+  --padding-end: 16px;
   font-size: 12px;
 }
 ion-button.bt-round {
@@ -1112,51 +1121,111 @@ ion-button.bt:active {
   transform: scale(0.97);
 }
 
-/* --- IonInput / IonSelect / IonTextarea: reemplazan .field manteniendo el aspecto --- */
+/* --- IonInput / IonSelect / IonTextarea: reemplazan .field manteniendo el aspecto ---
+   VALORES ORIGINALES (global.css .field input/select/textarea):
+   font-family: inherit (Inter); font-size: 15px; font-weight: 400; line-height: normal;
+   padding: 12px 13px; min-height: NINGUNA (altura natural); border: 1.5px solid var(--bd);
+   border-radius: 12px; box-sizing: border-box; color: var(--tx).
+   Adaptación: --padding-* = 12/13 (wrapper interno), tipografía completa en host (el
+   native-input hereda con font-size/line-height: inherit), y min-height: 0 para
+   neutralizar la regla interna de Ionic `:host { min-height: 44px }` que hace crecer
+   el componente (el original no tenía min-height). La altura resultante = padding +
+   line-height + border, idéntica por construcción al input original. */
 ion-input.fld,
 ion-textarea.fld,
 ion-select.fld {
-  --border-radius: 12px;
-  --border-color: var(--bd);
-  --border-width: 1.5px;
   --padding-start: 13px;
   --padding-end: 13px;
   --padding-top: 12px;
   --padding-bottom: 12px;
-  font-size: 15px;
+  --border-radius: 12px;
   --background: #fff;
-}
-ion-input.fld,
-ion-select.fld {
-  --min-height: 48px;
+  --highlight-color-focused: var(--tx);
+  --placeholder-opacity: 1;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: normal;
+  color: var(--tx);
+  border: 1.5px solid var(--bd);
+  border-radius: 12px;
+  background: #fff;
+  box-sizing: border-box;
+  min-height: 0;
   width: 100%;
 }
+ion-input.fld.has-focus,
+ion-select.fld.has-focus,
+ion-textarea.fld.has-focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(29, 158, 117, 0.12);
+}
 ion-input.vital-i {
-  --border-radius: 10px;
-  --border-color: var(--bd);
-  --border-width: 1.5px;
   --padding-start: 10px;
   --padding-end: 10px;
   --padding-top: 10px;
   --padding-bottom: 10px;
-  --min-height: 40px;
+  --border-radius: 10px;
   --background: #fff;
+  --highlight-color-focused: var(--tx);
+  --placeholder-opacity: 1;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: normal;
+  color: var(--tx);
+  border: 1.5px solid var(--bd);
+  border-radius: 10px;
+  background: #fff;
+  box-sizing: border-box;
+  min-height: 0;
   width: 100%;
 }
+ion-input.vital-i.has-focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(29, 158, 117, 0.12);
+}
 ion-input.chat-inp {
-  --border-radius: 22px;
-  --border-color: var(--bd);
-  --border-width: 1.5px;
   --padding-start: 14px;
   --padding-end: 14px;
   --padding-top: 10px;
   --padding-bottom: 10px;
-  --min-height: 44px;
+  --border-radius: 22px;
   --background: #fff;
+  --highlight-color-focused: var(--tx);
+  --placeholder-opacity: 1;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: normal;
+  color: var(--tx);
+  border: 1.5px solid var(--bd);
+  border-radius: 22px;
+  background: #fff;
+  box-sizing: border-box;
+  min-height: 0;
   flex: 1;
+}
+ion-input.chat-inp.has-focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(29, 158, 117, 0.12);
+}
+/* Flecha del select: se estiliza el chevron de Ionic (part:icon) para que se vea
+   como la flecha nativa del select original (pequeña, gris del diseño --mu). */
+ion-select.fld::part(icon) {
+  width: 14px;
+  height: 14px;
+  color: var(--mu);
 }
 ion-textarea.fld {
   min-height: 70px;
+  /* El wrapper del textarea iOS tiene padding-top/bottom fijos en 0 (no consume
+     --padding-* verticales, verificado en fuente Ionic) — el padding vertical del
+     diseño original se pone en el host; el horizontal lo da --padding-start/end. */
+  padding: 12px 0;
 }
 ion-textarea.fld.post-tx {
   min-height: 80px;

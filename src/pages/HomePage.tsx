@@ -182,9 +182,9 @@ export function HomePage() {
         <div className="card" style={{ margin: '0 14px', padding: 0 }}>
           {[
             ['🩺', 'Dr. Carlos Ramírez, MD', 'Hoy · 3:00 PM · Telemedicina', 'Hoy', 'chip-teal'],
-            ['🥗', 'Nut. Ana Torres, RDN', 'Jue 8 ago · 10:00 AM · MNT #4', 'Próx.', 'chip-blue'],
-            ['🧠', 'Coach Marco Reyes, NBHWC', 'Vie 9 ago · 11:00 AM · SMART', 'Próx.', 'chip-blue'],
-            ['∞', 'SUMMIT INFINITO Virtual', 'Sáb 10 ago · 9:00 AM', 'Evento', 'chip-org'],
+            ['🥗', 'Nut. Ana Torres, RDN', '08/08/2026 · 10:00 AM · MNT #4', 'Próx.', 'chip-blue'],
+            ['🧠', 'Coach Marco Reyes, NBHWC', '09/08/2026 · 11:00 AM · SMART', 'Próx.', 'chip-blue'],
+            ['∞', 'SUMMIT INFINITO Virtual', '10/08/2026 · 9:00 AM', 'Evento', 'chip-org'],
           ].map(([e, n, t, b, c]) => (
             <div key={n} style={{ display: 'flex', gap: 10, padding: '11px 12px', borderTop: '1px solid var(--g1)', alignItems: 'center' }}>
               <div className="ico" style={{ marginBottom: 0, background: 'var(--blue-l)', fontSize: 16 }}>

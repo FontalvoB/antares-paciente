@@ -202,9 +202,9 @@ export function NutritionPage() {
               </div>
             </div>
             {[
-              ['Lunes 4 ago', '1,720 kcal · 96%', 0],
-              ['Martes 5 ago · HOY', '1,650 kcal · 88%', 1],
-              ['Miércoles 6 ago', 'Plan 1,760 kcal', 2],
+              ['04/08/2026', '1,720 kcal · 96%', 0],
+              ['05/08/2026 · HOY', '1,650 kcal · 88%', 1],
+              ['06/08/2026', 'Plan 1,760 kcal', 2],
             ].map(([n, k, i]) => (
               <button
                 key={String(n)}
@@ -250,8 +250,8 @@ export function NutritionPage() {
             <div style={{ background: 'var(--navy)', color: '#fff', padding: 12, fontWeight: 700 }}>📉 Evolución de peso</div>
             {[
               ['1 may', '71.7 kg', 'IMC 27.6 · Inicio', ''],
-              ['1 jun', '70.2 kg', 'IMC 27.0', '↓ 1.5 kg'],
-              ['5 ago', '68.5 kg', 'IMC 26.4 · HbA1c 5.9%', '↓ 0.8 kg'],
+              ['01/06/2026', '70.2 kg', 'IMC 27.0', '↓ 1.5 kg'],
+              ['05/08/2026', '68.5 kg', 'IMC 26.4 · HbA1c 5.9%', '↓ 0.8 kg'],
             ].map(([d, k, s, ch]) => (
               <div key={d} style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid var(--g1)', alignItems: 'center' }}>
                 <div style={{ width: 48, fontSize: 11, color: 'var(--mu)' }}>{d}</div>
