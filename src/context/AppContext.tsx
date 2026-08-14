@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { logoutUser } from '../utils/authApi'
 import type {
   ChatMessage,
   CommunityPost,
@@ -29,6 +30,8 @@ interface AppState {
   pointsTotal: number
   posts: CommunityPost[]
   navigate: (s: Screen) => void
+  finishLogin: () => void
+  backToLogin: () => void
   finishOnboarding: (user: UserProfile) => void
   finishTests: () => void
   skipTests: () => void
@@ -172,7 +175,7 @@ function botReply(text: string): { role: ChatMessage['role']; text: string } {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [flow, setFlow] = useState<Flow>('onboarding')
+  const [flow, setFlow] = useState<Flow>('login')
   const [screen, setScreen] = useState<Screen>('home')
   const [toast, setToast] = useState<ToastState | null>(null)
   const [panicOpen, setPanicOpen] = useState(false)
@@ -216,6 +219,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pointsTotal,
       posts,
       navigate: (s) => setScreen(s),
+      finishLogin: () => setFlow('onboarding'),
+      backToLogin: () => {
+        setFlow('login')
+        setScreen('home')
+      },
       finishOnboarding: (u) => {
         setUser(u)
         setFlow('tests')
@@ -267,7 +275,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ),
         ),
       logout: () => {
-        setFlow('onboarding')
+        void logoutUser()
+        setFlow('login')
         setScreen('home')
       },
       addPost: (text) =>

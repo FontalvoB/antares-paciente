@@ -22,7 +22,7 @@ const STEPS = [
 ]
 
 export function OnboardingPage() {
-  const { finishOnboarding, showToast } = useApp()
+  const { finishOnboarding, showToast, backToLogin } = useApp()
   const [step, setStep] = useState(1)
   const [done, setDone] = useState(false)
   const [otpCh, setOtpCh] = useState('SMS')
@@ -102,7 +102,7 @@ export function OnboardingPage() {
   const meta = STEPS[step - 1]
 
   return (
-    <div className="screen" style={{ background: '#fff' }}>
+    <div className="screen onb-page" style={{ background: '#fff' }}>
       <div className="hero hero-cosmos" style={{ paddingBottom: 16 }}>
         <div className="kicker">ANTARES BIOHACKING · COPP-ADRESD</div>
         <div className="h2">{done ? '¡Registro completado!' : meta.title}</div>
@@ -399,6 +399,11 @@ export function OnboardingPage() {
               <span />
             )}
             <span style={{ fontSize: 11, color: 'var(--mu)' }}>Paso {step} de 5</span>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 6 }}>
+            <IonButton fill="clear" className="onb-back-login" onClick={backToLogin}>
+              ← Volver al inicio de sesión
+            </IonButton>
           </div>
         </div>
       )}

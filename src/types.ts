@@ -11,7 +11,7 @@ export type Screen =
   | 'prog'
   | 'com'
 
-export type Flow = 'onboarding' | 'tests' | 'app'
+export type Flow = 'login' | 'onboarding' | 'tests' | 'app'
 
 export type TabId = 'home' | 'book' | 'nut' | 'chat' | 'prof'
 
