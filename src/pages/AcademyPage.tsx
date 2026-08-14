@@ -1,3 +1,5 @@
+import { type CSSProperties } from 'react'
+import { IonButton, IonProgressBar } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -25,12 +27,10 @@ export function AcademyPage() {
               <span className="chip chip-teal" style={{ marginTop: 6 }}>Certificado obtenido</span>
             </div>
           </div>
-          <div className="ptrack" style={{ margin: '12px 0' }}>
-            <div className="pfill" style={{ width: '100%', background: 'var(--teal)' }} />
-          </div>
-          <button className="btn btn-ghost" onClick={() => showToast('Certificado ABOM descargado', 'ok')}>
+          <IonProgressBar className="pb" style={{ margin: '12px 0' } as CSSProperties} value={1} />
+          <IonButton expand="block" className="bt bt-ghost" onClick={() => showToast('Certificado ABOM descargado', 'ok')}>
             📄 Ver certificado
-          </button>
+          </IonButton>
         </div>
         <div className="card" style={{ margin: '0 14px 10px' }}>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -40,12 +40,10 @@ export function AcademyPage() {
               <div className="cs">CDC · ACSM 2024 · Módulo 5 activo</div>
             </div>
           </div>
-          <div className="ptrack" style={{ margin: '12px 0' }}>
-            <div className="pfill" style={{ width: '68%', background: 'var(--blue)' }} />
-          </div>
-          <button className="btn btn-primary" onClick={() => showToast('Iniciando módulo 5: rutinas en casa', 'info')}>
+          <IonProgressBar className="pb" style={{ margin: '12px 0', '--progress-background': 'var(--blue)' } as CSSProperties} value={0.68} />
+          <IonButton expand="block" className="bt bt-primary" onClick={() => showToast('Iniciando módulo 5: rutinas en casa', 'info')}>
             Continuar módulo 5
-          </button>
+          </IonButton>
         </div>
         <div className="sec">PSICO — La mente</div>
         <div className="card" style={{ margin: '0 14px 10px' }}>
@@ -56,12 +54,15 @@ export function AcademyPage() {
               <div className="cs">APA CBT · MBSR · 33%</div>
             </div>
           </div>
-          <div className="ptrack" style={{ margin: '12px 0' }}>
-            <div className="pfill" style={{ width: '33%', background: '#D4537E' }} />
-          </div>
-          <button className="btn" style={{ background: '#D4537E', color: '#fff' }} onClick={() => showToast('Módulo 3: hábitos', 'info')}>
+          <IonProgressBar className="pb" style={{ margin: '12px 0', '--progress-background': '#D4537E' } as CSSProperties} value={0.33} />
+          <IonButton
+            expand="block"
+            className="bt"
+            style={{ '--background': '#D4537E', '--color': '#fff' } as CSSProperties}
+            onClick={() => showToast('Módulo 3: hábitos', 'info')}
+          >
             Continuar módulo 3
-          </button>
+          </IonButton>
         </div>
         <div className="sec">Marketplace</div>
         <div className="grid-2" style={{ marginBottom: 16 }}>

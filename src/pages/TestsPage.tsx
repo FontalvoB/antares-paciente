@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
+import { IonButton, IonLoading, IonProgressBar, IonTextarea } from '@ionic/react'
 import {
   ADHER_QS,
   ANTECS,
@@ -101,41 +102,36 @@ export function TestsPage() {
           <span>{completed} de 9 evaluaciones</span>
           <span>{pct}%</span>
         </div>
-        <div className="ptrack" style={{ background: 'rgba(255,255,255,.12)', marginTop: 6 }}>
-          <div className="pfill" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#1D9E75,#D4AF37)' }} />
-        </div>
+        <IonProgressBar
+          className="pb"
+          style={{ marginTop: 6, '--background': 'rgba(255,255,255,.12)', '--progress-background': 'linear-gradient(90deg,#1D9E75,#D4AF37)' } as CSSProperties}
+          value={pct / 100}
+        />
       </div>
 
       {showResult ? (
         <div className="screen-scroll no-nav" style={{ padding: 14 }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🧬</div>
-              <div className="display" style={{ fontSize: 18, fontWeight: 700 }}>
-                Analizando tu perfil…
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--mu)' }}>Correlacionando variables clínicas, conducta y propósito.</p>
+          <>
+            <div style={{ background: 'linear-gradient(135deg,#06091A,#1A0A3C)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+              {[
+                ['Metabolismo', 62, '#E87B2B'],
+                ['Nutrición', 74, '#1D9E75'],
+                ['Movimiento', 58, '#1B6CA8'],
+                ['Sueño', 51, '#7C3AED'],
+                ['Adherencia', 81, '#D4AF37'],
+                ['Estrés', 44, '#E24B4A'],
+              ].map(([n, w, c]) => (
+                <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ width: 92, fontSize: 11, color: 'rgba(255,255,255,.6)' }}>{n}</span>
+                  <IonProgressBar
+                    className="pb"
+                    style={{ flex: 1, '--background': 'rgba(255,255,255,.1)', '--progress-background': String(c) } as CSSProperties}
+                    value={Number(w) / 100}
+                  />
+                  <span style={{ width: 28, fontSize: 11, color: '#fff', textAlign: 'right' }}>{w}</span>
+                </div>
+              ))}
             </div>
-          ) : (
-            <>
-              <div style={{ background: 'linear-gradient(135deg,#06091A,#1A0A3C)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
-                {[
-                  ['Metabolismo', 62, '#E87B2B'],
-                  ['Nutrición', 74, '#1D9E75'],
-                  ['Movimiento', 58, '#1B6CA8'],
-                  ['Sueño', 51, '#7C3AED'],
-                  ['Adherencia', 81, '#D4AF37'],
-                  ['Estrés', 44, '#E24B4A'],
-                ].map(([n, w, c]) => (
-                  <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ width: 92, fontSize: 11, color: 'rgba(255,255,255,.6)' }}>{n}</span>
-                    <div className="ptrack" style={{ flex: 1, background: 'rgba(255,255,255,.1)' }}>
-                      <div className="pfill" style={{ width: `${w}%`, background: String(c) }} />
-                    </div>
-                    <span style={{ width: 28, fontSize: 11, color: '#fff', textAlign: 'right' }}>{w}</span>
-                  </div>
-                ))}
-              </div>
               <div className="card" style={{ marginBottom: 10, borderColor: 'var(--pur)' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pur)', marginBottom: 8 }}>🤖 ANTARES AI</div>
                 <p style={{ fontSize: 13, lineHeight: 1.65, margin: 0 }}>
@@ -154,12 +150,16 @@ export function TestsPage() {
               </div>
               <div style={{ background: 'linear-gradient(135deg,#0C3D2C,var(--teal))', borderRadius: 16, padding: 16, textAlign: 'center' }}>
                 <div style={{ color: '#fff', fontWeight: 700, marginBottom: 8 }}>Tu programa está personalizado</div>
-                <button className="btn" style={{ background: 'rgba(255,255,255,.2)', color: '#fff', border: '1px solid rgba(255,255,255,.3)' }} onClick={finishTests}>
+                <IonButton
+                  expand="block"
+                  className="bt"
+                  style={{ '--background': 'rgba(255,255,255,.2)', '--color': '#fff', '--border-color': 'rgba(255,255,255,.3)', '--border-width': '1px', '--border-style': 'solid' } as CSSProperties}
+                  onClick={finishTests}
+                >
                   Entrar a mi programa ANTARES
-                </button>
+                </IonButton>
               </div>
             </>
-          )}
         </div>
       ) : !openId ? (
         <div className="screen-scroll no-nav" style={{ padding: 14 }}>
@@ -185,9 +185,9 @@ export function TestsPage() {
             )
           })}
           {completed >= 3 && (
-            <button className="btn btn-gold" style={{ marginTop: 8 }} onClick={openIA}>
+            <IonButton expand="block" className="bt bt-gold" style={{ marginTop: 8 }} onClick={openIA}>
               Ver mi perfil de salud ANTARES · IA
-            </button>
+            </IonButton>
           )}
         </div>
       ) : (
@@ -250,7 +250,7 @@ export function TestsPage() {
               {PURPOSE_OPEN.map((p) => (
                 <div key={p.q} className="tq-card">
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{p.q}</div>
-                  <textarea className="field" placeholder={p.ph} style={{ width: '100%', minHeight: 70, border: '1.5px solid var(--bd)', borderRadius: 10, padding: 10 }} />
+                  <IonTextarea className="fld" placeholder={p.ph} />
                 </div>
               ))}
               <ScaleList
@@ -287,11 +287,13 @@ export function TestsPage() {
 
       {openId && !showResult && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 14px calc(16px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(transparent,#fff 30%)' }}>
-          <button className="btn btn-teal" onClick={saveTest}>
+          <IonButton expand="block" className="bt bt-teal" onClick={saveTest}>
             Guardar evaluación
-          </button>
+          </IonButton>
         </div>
       )}
+
+      <IonLoading className="app-loading" isOpen={loading} message="Analizando tu perfil…" />
     </div>
   )
 }

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
+import { IonProgressBar } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -100,9 +101,11 @@ export function NutritionPage() {
           ].map(([n, v, w, c]) => (
             <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
               <span style={{ fontSize: 10, color: 'var(--mu)', width: 78 }}>{n}</span>
-              <div className="ptrack" style={{ flex: 1 }}>
-                <div className="pfill" style={{ width: `${w}%`, background: String(c) }} />
-              </div>
+              <IonProgressBar
+                className="pb"
+                style={{ flex: 1, '--progress-background': String(c) } as CSSProperties}
+                value={Number(w) / 100}
+              />
               <span style={{ fontSize: 11, fontWeight: 700, width: 36, textAlign: 'right' }}>{v}</span>
             </div>
           ))}
@@ -199,9 +202,9 @@ export function NutritionPage() {
               </div>
             </div>
             {[
-              ['Lunes 4 ago', '1,720 kcal · 96%', 0],
-              ['Martes 5 ago · HOY', '1,650 kcal · 88%', 1],
-              ['Miércoles 6 ago', 'Plan 1,760 kcal', 2],
+              ['04/08/2026', '1,720 kcal · 96%', 0],
+              ['05/08/2026 · HOY', '1,650 kcal · 88%', 1],
+              ['06/08/2026', 'Plan 1,760 kcal', 2],
             ].map(([n, k, i]) => (
               <button
                 key={String(n)}
@@ -247,8 +250,8 @@ export function NutritionPage() {
             <div style={{ background: 'var(--navy)', color: '#fff', padding: 12, fontWeight: 700 }}>📉 Evolución de peso</div>
             {[
               ['1 may', '71.7 kg', 'IMC 27.6 · Inicio', ''],
-              ['1 jun', '70.2 kg', 'IMC 27.0', '↓ 1.5 kg'],
-              ['5 ago', '68.5 kg', 'IMC 26.4 · HbA1c 5.9%', '↓ 0.8 kg'],
+              ['01/06/2026', '70.2 kg', 'IMC 27.0', '↓ 1.5 kg'],
+              ['05/08/2026', '68.5 kg', 'IMC 26.4 · HbA1c 5.9%', '↓ 0.8 kg'],
             ].map(([d, k, s, ch]) => (
               <div key={d} style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid var(--g1)', alignItems: 'center' }}>
                 <div style={{ width: 48, fontSize: 11, color: 'var(--mu)' }}>{d}</div>
@@ -262,9 +265,7 @@ export function NutritionPage() {
             <div style={{ padding: 12, background: '#F8FBF8' }}>
               <div style={{ fontSize: 11, color: 'var(--mu)' }}>Meta semana 24</div>
               <div style={{ fontWeight: 800 }}>65 kg · IMC≤25 · HbA1c&lt;5.7%</div>
-              <div className="ptrack" style={{ marginTop: 8 }}>
-                <div className="pfill" style={{ width: '50%', background: 'var(--teal)' }} />
-              </div>
+              <IonProgressBar className="pb" style={{ marginTop: 8, '--progress-background': 'var(--teal)' } as CSSProperties} value={0.5} />
             </div>
           </div>
         )}

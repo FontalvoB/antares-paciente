@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import { IonButton, IonLoading } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -54,9 +55,9 @@ export function WearablePage() {
                 </div>
               ))}
             </div>
-            <button className="btn btn-pur" onClick={scan}>
+            <IonButton expand="block" className="bt bt-pur" onClick={scan}>
               {scanning ? 'Buscando…' : 'Activar Bluetooth y buscar'}
-            </button>
+            </IonButton>
             {found.length > 0 && (
               <div style={{ marginTop: 12, textAlign: 'left' }}>
                 {found.map((d) => (
@@ -129,20 +130,23 @@ export function WearablePage() {
               </div>
             </div>
             <div style={{ padding: '0 14px 16px' }}>
-              <button
-                className="btn"
-                style={{ background: 'var(--red-l)', color: 'var(--red)' }}
+              <IonButton
+                expand="block"
+                className="bt"
+                style={{ '--background': 'var(--red-l)', '--color': 'var(--red)' } as CSSProperties}
                 onClick={() => {
                   disconnectWatch()
                   showToast('Reloj desconectado', 'warn')
                 }}
               >
                 Desconectar reloj
-              </button>
+              </IonButton>
             </div>
           </>
         )}
       </Scroll>
+
+      <IonLoading className="app-loading" isOpen={scanning} message="Buscando dispositivos…" />
     </Screen>
   )
 }

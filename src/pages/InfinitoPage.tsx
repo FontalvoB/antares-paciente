@@ -1,3 +1,4 @@
+import { IonButton } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -38,9 +39,9 @@ export function InfinitoPage() {
         <div style={{ margin: '0 14px 12px', background: 'linear-gradient(135deg,#2D1B69,#1A0A3C)', borderRadius: 16, padding: 16, color: '#fff' }}>
           <div style={{ fontWeight: 800, marginBottom: 8 }}>∞ Sistema UPPER MIND</div>
           <div style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.6 }}>Integra neurociencia, espiritualidad y biohacking para crear una nueva versión de ti.</div>
-          <button className="btn btn-pur" style={{ marginTop: 12 }} onClick={() => showToast('Accediendo a UPPER MIND…', 'info')}>
+          <IonButton expand="block" className="bt bt-pur" style={{ marginTop: 12 }} onClick={() => showToast('Accediendo a UPPER MIND…', 'info')}>
             Acceder al sistema
-          </button>
+          </IonButton>
         </div>
         <div className="grid-2" style={{ marginBottom: 16 }}>
           <button className="card card-accent ac-pur" style={{ textAlign: 'left' }} onClick={() => navigate('com')}>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { IonButton, IonSearchbar, IonTextarea } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -38,12 +39,11 @@ export function CommunityPage() {
                 <div className="avatar" style={{ width: 36, height: 36, background: 'linear-gradient(135deg,var(--teal),#0F6E56)', fontSize: 12 }}>
                   MG
                 </div>
-                <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="¿Qué quieres compartir hoy?" style={{ flex: 1, border: '1.5px solid var(--bd)', borderRadius: 10, padding: 8, minHeight: 48 }} />
+                <IonTextarea className="fld draft-tx" value={draft} placeholder="¿Qué quieres compartir hoy?" onIonInput={(e) => setDraft(e.detail.value ?? '')} autoGrow />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                <button
-                  className="btn btn-pur"
-                  style={{ width: 'auto', minHeight: 36, padding: '8px 16px', fontSize: 12 }}
+                <IonButton
+                  className="bt bt-pur bt-mini"
                   onClick={() => {
                     if (!draft.trim()) return
                     addPost(draft.trim())
@@ -52,7 +52,7 @@ export function CommunityPage() {
                   }}
                 >
                   Publicar
-                </button>
+                </IonButton>
               </div>
             </div>
             {posts.map((p) => (
@@ -119,7 +119,12 @@ export function CommunityPage() {
         {tab === 'amigos' && (
           <>
             <div style={{ padding: 14 }}>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar amigos en ANTARES…" style={{ width: '100%', border: '1.5px solid var(--bd)', borderRadius: 22, padding: '10px 14px' }} />
+              <IonSearchbar
+                className="sbar"
+                value={q}
+                placeholder="Buscar amigos en ANTARES…"
+                onIonInput={(e) => setQ(e.detail.value ?? '')}
+              />
             </div>
             {friends
               .filter((f) => f.n.toLowerCase().includes(q.toLowerCase()))
@@ -132,9 +137,9 @@ export function CommunityPage() {
                     <div style={{ fontWeight: 800, fontSize: 13 }}>{f.n}</div>
                     <div style={{ fontSize: 11, color: 'var(--mu)' }}>{f.m}</div>
                   </div>
-                  <button className="btn btn-outline" style={{ width: 'auto', minHeight: 34, padding: '6px 10px', fontSize: 12 }} onClick={() => showToast(`Mensaje a ${f.n}`, 'ok')}>
+                  <IonButton className="bt bt-outline bt-mini" onClick={() => showToast(`Mensaje a ${f.n}`, 'ok')}>
                     💬
-                  </button>
+                  </IonButton>
                 </div>
               ))}
           </>

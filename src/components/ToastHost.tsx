@@ -1,21 +1,18 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { IonToast } from '@ionic/react'
 import { useApp } from '../context/AppContext'
+
+const EMOJI = { ok: '✓', warn: '🔔', err: '⚠️', info: 'ℹ️' } as const
 
 export function ToastHost() {
   const { toast } = useApp()
   return (
-    <AnimatePresence>
-      {toast && (
-        <motion.div
-          className="toast"
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 40, opacity: 0 }}
-        >
-          <span>{toast.kind === 'err' ? '⚠️' : toast.kind === 'warn' ? '🔔' : '✓'}</span>
-          <span>{toast.message}</span>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <IonToast
+      className="app-toast"
+      isOpen={!!toast}
+      message={toast ? `${EMOJI[toast.kind]} ${toast.message}` : ''}
+      duration={2600}
+      position="bottom"
+      onDidDismiss={() => {}}
+    />
   )
 }

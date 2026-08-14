@@ -1,3 +1,5 @@
+import { useState, type CSSProperties } from 'react'
+import { IonAlert, IonButton } from '@ionic/react'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -14,24 +16,24 @@ const upcoming = [
     color: 'var(--teal)',
   },
   {
-    when: 'JUE 8 AGO · CONFIRMADA',
+    when: 'JUE 08/08 · CONFIRMADA',
     mode: 'Presencial',
     accent: 'linear-gradient(90deg,#0A1F36,var(--navy))',
     emoji: '🥗',
     name: 'Nut. Ana Torres, RDN',
     role: 'Nutricionista · CDR · CPT 97803',
-    time: 'Jue 8 ago · 10:00 AM',
+    time: '08/08/2026 · 10:00 AM',
     motivo: 'Seguimiento plan nutricional MNT #4',
     color: 'var(--blue)',
   },
   {
-    when: 'VIE 9 AGO · CONFIRMADA',
+    when: 'VIE 09/08 · CONFIRMADA',
     mode: 'Telemedicina',
     accent: 'linear-gradient(90deg,#2D1B69,#4C1D95)',
     emoji: '💪',
     name: 'Coach Marco Reyes, NBHWC',
     role: 'Health Coach · Certificado NBHWC',
-    time: 'Vie 9 ago · 11:00 AM',
+    time: '09/08/2026 · 11:00 AM',
     motivo: 'Revisión de metas SMART · Semana 12',
     color: 'var(--pur)',
   },
@@ -39,6 +41,7 @@ const upcoming = [
 
 export function AppointmentsPage() {
   const { showToast } = useApp()
+  const [cancelId, setCancelId] = useState<string | null>(null)
 
   return (
     <Screen>
@@ -96,16 +99,16 @@ export function AppointmentsPage() {
                 <strong style={{ color: 'var(--tx)' }}>Seguro:</strong> BlueCross BlueShield · Copago $20
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-teal" style={{ flex: 1, minHeight: 42, padding: 10, fontSize: 12 }} onClick={() => showToast('Recordatorio configurado', 'ok')}>
+                <IonButton expand="block" className="bt bt-sm bt-teal" onClick={() => showToast('Recordatorio configurado', 'ok')}>
                   🔔 Recordatorio
-                </button>
-                <button
-                  className="btn"
-                  style={{ width: 42, minHeight: 42, padding: 0, background: 'var(--red-l)', color: 'var(--red)' }}
-                  onClick={() => showToast('Solicitud de cancelación enviada', 'warn')}
+                </IonButton>
+                <IonButton
+                  className="bt"
+                  style={{ width: 42, height: 42, '--padding': '0', '--background': 'var(--red-l)', '--color': 'var(--red)' } as CSSProperties}
+                  onClick={() => setCancelId(a.name)}
                 >
                   ✕
-                </button>
+                </IonButton>
               </div>
             </div>
           </div>
@@ -114,9 +117,9 @@ export function AppointmentsPage() {
         <div className="sec">Citas anteriores</div>
         <div className="card" style={{ margin: '0 14px 12px', padding: 0 }}>
           {[
-            ['🩺', 'Dr. Ramírez · Control sem. 8', '8 jul 2026 · Telemedicina'],
-            ['🥗', 'Nut. Ana Torres · MNT #3', '1 jul 2026 · Presencial'],
-            ['🧠', 'Psic. Luis Mora · CBT #2', '25 jun 2026 · Telemedicina'],
+            ['🩺', 'Dr. Ramírez · Control sem. 8', '08/07/2026 · Telemedicina'],
+            ['🥗', 'Nut. Ana Torres · MNT #3', '01/07/2026 · Presencial'],
+            ['🧠', 'Psic. Luis Mora · CBT #2', '25/06/2026 · Telemedicina'],
           ].map(([e, n, t]) => (
             <div key={n} style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid var(--g1)', alignItems: 'center' }}>
               <div className="ico" style={{ marginBottom: 0, background: 'var(--g1)' }}>
@@ -132,11 +135,29 @@ export function AppointmentsPage() {
         </div>
 
         <div style={{ padding: '0 14px 8px' }}>
-          <button className="btn btn-primary" onClick={() => showToast('Abriendo portal.antares.health', 'info')}>
+          <IonButton expand="block" className="bt bt-primary" onClick={() => showToast('Abriendo portal.antares.health', 'info')}>
             Solicitar nueva cita · Plataforma ANTARES
-          </button>
+          </IonButton>
         </div>
       </Scroll>
+
+      <IonAlert
+        isOpen={!!cancelId}
+        header="¿Cancelar la cita?"
+        message="Se notificará al equipo médico."
+        buttons={[
+          { text: 'Volver', role: 'cancel' },
+          {
+            text: 'Cancelar cita',
+            role: 'destructive',
+            handler: () => {
+              setCancelId(null)
+              showToast('Solicitud de cancelación enviada', 'warn')
+            },
+          },
+        ]}
+        onDidDismiss={() => setCancelId(null)}
+      />
     </Screen>
   )
 }

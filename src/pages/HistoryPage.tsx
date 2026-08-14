@@ -7,7 +7,7 @@ const sections = [
     rows: [
       ['Nombre', 'María González'],
       ['Documento', 'CC 10247381'],
-      ['Fecha nac.', '12 abril 1988 · 38 años'],
+      ['Fecha nac.', '12/04/1988 · 38 años'],
       ['Sexo', 'Femenino'],
       ['Grupo sangre', 'O+'],
       ['Seguro', 'BlueCross BlueShield · #BCB-20247381'],
@@ -41,7 +41,7 @@ const sections = [
       ['Colesterol', 'LDL 98 · HDL 62 · TG 145'],
       ['TA', '118/76 mmHg · Óptima'],
       ['Vitamina D', '32 ng/mL · Suficiente'],
-      ['Fecha lab', '28 julio 2026 · Quest Diagnostics'],
+      ['Fecha lab', '28/07/2026 · Quest Diagnostics'],
     ],
   },
   {
@@ -63,7 +63,7 @@ export function HistoryPage() {
       <Scroll>
         <div className="hero hero-navy">
           <div className="h1">📋 Historia clínica</div>
-          <div className="sub">HIPAA protegida · Actualizada 5 ago 2026</div>
+          <div className="sub">HIPAA protegida · Actualizada 05/08/2026</div>
           <div className="chips">
             <span className="chip chip-glass">ID: COPP-2024-00142</span>
             <span className="chip chip-gold">NPI verificado</span>
