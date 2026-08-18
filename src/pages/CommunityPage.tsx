@@ -36,7 +36,7 @@ export function CommunityPage() {
           <>
             <div className="card" style={{ margin: 14 }}>
               <div style={{ display: 'flex', gap: 10 }}>
-                <div className="avatar" style={{ width: 36, height: 36, background: 'linear-gradient(135deg,var(--teal),#0F6E56)', fontSize: 12 }}>
+                <div className="avatar" style={{ width: 36, height: 36, background: 'linear-gradient(145deg,#1a6ad8,#20c8ff)', fontSize: 12 }}>
                   MG
                 </div>
                 <IonTextarea className="fld draft-tx" value={draft} placeholder="¿Qué quieres compartir hoy?" onIonInput={(e) => setDraft(e.detail.value ?? '')} autoGrow />

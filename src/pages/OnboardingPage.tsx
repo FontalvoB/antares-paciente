@@ -111,7 +111,7 @@ export function OnboardingPage() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 10, fontWeight: 700 }}>
               <span style={{ color: 'rgba(255,255,255,.45)' }}>PASO {step} DE 5</span>
-              <span style={{ color: 'var(--gold)' }}>{meta.name}</span>
+              <span style={{ color: 'var(--ice)' }}>{meta.name}</span>
             </div>
             <div style={{ display: 'flex', gap: 5, marginTop: 10 }}>
               {[1, 2, 3, 4, 5].map((n) => (
@@ -121,7 +121,7 @@ export function OnboardingPage() {
                     height: 4,
                     flex: 1,
                     borderRadius: 2,
-                    background: n < step ? 'var(--teal)' : n === step ? 'var(--gold)' : 'rgba(255,255,255,.15)',
+                    background: n < step ? 'var(--teal)' : n === step ? 'var(--ice)' : 'rgba(255,255,255,.15)',
                   }}
                 />
               ))}
@@ -155,7 +155,7 @@ export function OnboardingPage() {
             <p style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
               Bienvenida al programa <strong>COPP-ADRESD</strong>, {form.nombre.split(' ')[0]}. Semana 12/24 activa.
             </p>
-            <div style={{ background: 'linear-gradient(135deg,#06091A,#1A0A3C)', borderRadius: 16, padding: 16, textAlign: 'left', margin: '16px 0' }}>
+            <div style={{ background: 'linear-gradient(145deg,#102a50,#173c73)', borderRadius: 16, padding: 16, textAlign: 'left', margin: '16px 0' }}>
               {['Identidad confirmada', 'Verificación OTP', `Familiar: ${form.fam1Nombre}`, 'Consentimiento HIPAA firmado', 'Contraseña segura'].map((t) => (
                 <div key={t} style={{ color: 'rgba(255,255,255,.75)', fontSize: 12, marginBottom: 8 }}>
                   ✅ {t}

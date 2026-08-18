@@ -76,9 +76,9 @@ export function ProgramPage() {
           <div className="h1">🌟 Mi programa hoy</div>
           <div className="sub">Semana 12 · Completa los pasos y acumula puntos</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <div style={{ flex: 1, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(212,175,55,.25)', borderRadius: 12, padding: 10 }}>
-              <div style={{ fontSize: 10, opacity: 0.5 }}>Puntos hoy</div>
-              <div className="display" style={{ color: 'var(--gold)', fontSize: 22, fontWeight: 800 }}>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(32,200,255,.28)', borderRadius: 14, padding: 10 }}>
+              <div style={{ fontSize: 10, opacity: 0.55 }}>Puntos hoy</div>
+              <div className="display" style={{ color: 'var(--ice)', fontSize: 22, fontWeight: 800 }}>
                 {pointsToday} / 700
               </div>
             </div>
@@ -91,7 +91,7 @@ export function ProgramPage() {
           </div>
           <IonProgressBar
             className="pb"
-            style={{ marginTop: 12, '--background': 'rgba(255,255,255,.12)', '--progress-background': 'linear-gradient(90deg,#D4AF37,#1D9E75)' } as CSSProperties}
+            style={{ marginTop: 12, '--background': 'rgba(255,255,255,.12)', '--progress-background': 'linear-gradient(90deg,var(--cyan),var(--teal))' } as CSSProperties}
             value={doneCount / 5}
           />
         </div>
@@ -136,8 +136,8 @@ export function ProgramPage() {
         </Step>
 
         <Step id="ejercicio" n={3} title="Hacer ejercicio del día" sub="Semana 12 · 12 minutos" pts={150}>
-          <div style={{ background: 'linear-gradient(135deg,#0A0A1A,#1A1A3C)', borderRadius: 16, padding: 18, textAlign: 'center', marginBottom: 10, color: '#fff' }}>
-            <div style={{ color: '#818CF8', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>TEMPORIZADOR</div>
+          <div style={{ background: 'linear-gradient(145deg,#071428,#102a50)', borderRadius: 16, padding: 18, textAlign: 'center', marginBottom: 10, color: '#fff', border: '1px solid rgba(32,200,255,.2)' }}>
+            <div style={{ color: 'var(--ice)', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>TEMPORIZADOR</div>
             <div className="display" style={{ fontSize: 48, fontWeight: 800 }}>
               {mm}:{ss}
             </div>

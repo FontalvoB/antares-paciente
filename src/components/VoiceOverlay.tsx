@@ -12,7 +12,7 @@ export function VoiceOverlay() {
     <IonModal isOpen={voiceOpen} onDidDismiss={closeVoice} className="voice-modal">
       <div className="overlay overlay-voice">
         <div className="voice-orb">
-          <IonIcon icon={mic} style={{ fontSize: 56, color: 'var(--gold)' }} />
+          <IonIcon icon={mic} style={{ fontSize: 56, color: 'var(--ice)' }} />
         </div>
         <div className="display" style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
           Agente de voz ANTARES
@@ -20,7 +20,7 @@ export function VoiceOverlay() {
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', textAlign: 'center', maxWidth: 280, lineHeight: 1.6 }}>
           Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--gold)', fontSize: 13 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ice)', fontSize: 13 }}>
           <div className="waves">
             <span className="wave" />
             <span className="wave" />

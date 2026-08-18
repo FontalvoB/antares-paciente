@@ -11,137 +11,118 @@ import {
   people,
   person,
   school,
+  sparklesOutline,
+  mic,
 } from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import type { Screen as ScreenId } from '../types'
 
-const modules: { id: ScreenId | 'panic'; title: string; sub: string; icon: string; tone: string; bg: string; color: string }[] = [
-  { id: 'book', title: 'Mis citas', sub: 'Próximas citas del equipo médico', icon: calendar, tone: 'ac-teal', bg: 'var(--teal-l)', color: 'var(--teal)' },
-  { id: 'hc', title: 'Historia clínica', sub: 'Diagnósticos, lab, medicamentos', icon: clipboard, tone: 'ac-blue', bg: 'var(--blue-l)', color: 'var(--blue)' },
-  { id: 'nut', title: 'Plan nutricional', sub: 'USDA · ADA 2026 · Mediterránea', icon: leaf, tone: 'ac-teal', bg: 'var(--teal-l)', color: 'var(--teal)' },
-  { id: 'edu', title: 'Academia BIO', sub: 'Formación ABOM · CDR · NBHWC', icon: school, tone: 'ac-gold', bg: 'var(--gold-l)', color: 'var(--gold-d)' },
-  { id: 'infinito', title: 'INFINITO B2C', sub: 'Consciencia · Bienestar', icon: infinite, tone: 'ac-pur', bg: 'var(--pur-l)', color: 'var(--pur)' },
-  { id: 'panic', title: 'Pánico / SOS', sub: 'Ambulancia + familia + médico', icon: medkit, tone: 'ac-panic', bg: 'var(--red-l)', color: 'var(--panic)' },
-  { id: 'bt', title: 'Reloj inteligente', sub: 'Sueño · FC · TA · ECG · SpO2', icon: bluetooth, tone: 'ac-ind', bg: '#EEF2FF', color: '#6366F1' },
-  { id: 'chat', title: 'Chat IA', sub: 'Asistente de salud 24/7', icon: chatbubbleEllipses, tone: 'ac-org', bg: 'var(--org-l)', color: 'var(--org)' },
-  { id: 'prof', title: 'Mi perfil', sub: 'Configuración · Seguros · Equipo', icon: person, tone: 'ac-blue', bg: 'var(--blue-l)', color: 'var(--blue)' },
-  { id: 'com', title: 'Comunidad', sub: 'Feed · Amigos · Redes', icon: people, tone: 'ac-pur', bg: 'var(--pur-l)', color: 'var(--pur)' },
+const moreModules: { id: ScreenId; title: string; sub: string; icon: string }[] = [
+  { id: 'hc', title: 'Historia clínica', sub: 'Diagnósticos, lab y medicamentos', icon: clipboard },
+  { id: 'edu', title: 'Academia BIO', sub: 'Módulo 5 · 68% completado', icon: school },
+  { id: 'infinito', title: 'INFINITO', sub: 'Consciencia y bienestar', icon: infinite },
+  { id: 'com', title: 'Comunidad', sub: '10,847 miembros activos', icon: people },
+  { id: 'prof', title: 'Mi perfil', sub: 'Seguros, equipo y ajustes', icon: person },
 ]
 
 export function HomePage() {
-  const { user, navigate, openPanic, openVoice, pointsTotal } = useApp()
+  const { user, navigate, openPanic, openVoice, pointsTotal, watchConnected } = useApp()
   const first = user.nombre.split(' ')[0]
+  const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
-    <Screen darkNav>
+    <Screen>
       <Scroll>
-        <div className="hero hero-cosmos">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, position: 'relative', zIndex: 1 }}>
-            <div className="logo-mark">⭐</div>
+        <header className="home-head">
+          <div className="home-head-top">
             <div>
-              <div className="display" style={{ fontSize: 15, fontWeight: 700, color: 'var(--gold)' }}>
-                ANTARES BIOHACKING
-              </div>
-              <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: 'rgba(255,255,255,.45)' }}>
-                COPP-ADRESD · B2B Institucional
-              </div>
+              <div className="home-head-date">{today}</div>
+              <h1 className="home-head-name">Hola, {first}</h1>
             </div>
+            <button type="button" className="home-avatar" onClick={() => navigate('prof')} aria-label="Abrir perfil">
+              MG
+            </button>
           </div>
-          <div className="sub" style={{ position: 'relative' }}>
-            Buenos días,
-          </div>
-          <div className="h1" style={{ position: 'relative' }}>
-            {first} 👋
-          </div>
-          <div className="chips" style={{ position: 'relative' }}>
+          <div className="home-head-chips">
             <span className="chip chip-glass">
               <span className="dot" /> Riesgo bajo
             </span>
-            <span className="chip chip-glass">Semana 12/24</span>
-            <span className="chip chip-gold">⭐ Nivel BIO activo</span>
+            <span className="chip chip-glass">Semana 12 de 24</span>
           </div>
-        </div>
+        </header>
 
-        <div className="kpi-strip">
+        <div className="metric-scroll" aria-label="Indicadores de salud">
           {[
-            ['IMC', '26.4', '↓ 1.2'],
-            ['HbA1c', '5.9%', '↓ mejora'],
-            ['Adherencia', '88%', '↑ esta sem'],
-            ['Puntos', String(pointsTotal), '↑ hoy'],
-          ].map(([l, v, s]) => (
-            <div key={l} className="kpi">
-              <div className="kpi-lbl">{l}</div>
-              <div className="kpi-val">{v}</div>
-              <div className="kpi-sub">{s}</div>
-            </div>
+            ['IMC', '26.4', '−1.2 este mes', 'var(--teal)'],
+            ['HbA1c', '5.9%', 'Mejorando', 'var(--blue)'],
+            ['Adherencia', '88%', 'Esta semana', 'var(--cyan)'],
+            ['Puntos', String(pointsTotal), 'Hoy', 'var(--org)'],
+          ].map(([l, v, s, c]) => (
+            <article key={l} className="metric-card">
+              <div className="metric-card-lbl">{l}</div>
+              <div className="metric-card-val" style={{ color: String(c) }}>{v}</div>
+              <div className="metric-card-sub">{s}</div>
+            </article>
           ))}
         </div>
 
-        <button
-          onClick={openPanic}
-          style={{
-            margin: '10px 14px 0',
-            width: 'calc(100% - 28px)',
-            background: 'linear-gradient(135deg, var(--panic), #8B0000)',
-            border: 'none',
-            borderRadius: 16,
-            padding: 14,
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            textAlign: 'left',
-            boxShadow: '0 8px 24px rgba(255,45,85,.28)',
-          }}
-        >
-          <IonIcon icon={medkit} style={{ fontSize: 28 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 14 }}>BOTÓN DE PÁNICO</div>
-            <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>Presiona si te sientes mal · Ambulancia + familia</div>
+        <button type="button" className="today-card" onClick={() => navigate('prog')}>
+          <div className="today-card-top">
+            <span className="today-card-ico">
+              <IonIcon icon={sparklesOutline} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <div className="today-card-kicker">Programa de hoy</div>
+              <div className="today-card-title">2 de 5 pasos listos</div>
+            </div>
+            <span className="cta-banner-chevron">›</span>
           </div>
-          <span style={{ opacity: 0.6 }}>›</span>
+          <div className="today-dots" aria-hidden="true">
+            <span className="on" />
+            <span className="on" />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="today-card-sub">Vitales · Nutrición · Ejercicio · hasta 700 pts</div>
         </button>
 
-        <button
-          onClick={openVoice}
-          style={{
-            margin: '10px 14px 0',
-            width: 'calc(100% - 28px)',
-            background: 'linear-gradient(135deg,#1A0A3C,#0D1B4B)',
-            border: 'none',
-            borderRadius: 16,
-            padding: 14,
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            textAlign: 'left',
-          }}
-        >
-          <div className="waves">
-            <span className="wave" />
-            <span className="wave" />
-            <span className="wave" />
-            <span className="wave" />
-            <span className="wave" />
+        <button type="button" className="next-appt" onClick={() => navigate('book')}>
+          <div className="next-appt-time">
+            <strong>15:00</strong>
+            <span>Hoy</span>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 14 }}>Agente de voz ANTARES</div>
-            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>Habla sobre síntomas, citas o consejos</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="next-appt-name">Dr. Carlos Ramírez</div>
+            <div className="next-appt-meta">Telemedicina · Control semana 12</div>
           </div>
-          <span>🎙️</span>
+          <span className="chip chip-teal">Unirse</span>
         </button>
 
-        <div className="sec">Módulos COPP-ADRESD</div>
-        <div className="grid-2">
-          {modules.map((m) => (
-            <button
-              key={m.title}
-              className={`card card-accent ${m.tone}`}
-              onClick={() => (m.id === 'panic' ? openPanic() : navigate(m.id))}
-              style={{ textAlign: 'left' }}
-            >
+        <div className="quick-row">
+          {[
+            { id: 'chat' as const, label: 'Chat IA', icon: chatbubbleEllipses, fn: () => navigate('chat') },
+            { id: 'voice' as const, label: 'Voz', icon: mic, fn: openVoice },
+            { id: 'bt' as const, label: watchConnected ? 'Reloj' : 'Conectar', icon: bluetooth, fn: () => navigate('bt') },
+            { id: 'sos' as const, label: 'SOS', icon: medkit, fn: openPanic, panic: true },
+          ].map((a) => (
+            <button key={a.id} type="button" className={`quick-btn ${a.panic ? 'panic' : ''}`} onClick={a.fn}>
+              <span className="quick-btn-ico">
+                <IonIcon icon={a.icon} />
+              </span>
+              <span>{a.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="sec">Accesos</div>
+        <div className="grid-2" style={{ marginBottom: 8 }}>
+          {[
+            { id: 'book' as ScreenId, title: 'Citas', sub: 'Hoy 3:00 PM', icon: calendar, bg: 'var(--teal-l)', color: 'var(--teal)' },
+            { id: 'nut' as ScreenId, title: 'Nutrición', sub: '1,650 / 1,800 kcal', icon: leaf, bg: 'var(--ice-l)', color: 'var(--teal-d)' },
+          ].map((m) => (
+            <button key={m.id} type="button" className="card widget-card" onClick={() => navigate(m.id)}>
               <div className="ico" style={{ background: m.bg, color: m.color }}>
                 <IonIcon icon={m.icon} />
               </div>
@@ -151,64 +132,36 @@ export function HomePage() {
           ))}
         </div>
 
-        <button
-          onClick={() => navigate('prog')}
-          style={{
-            margin: '12px 14px 4px',
-            width: 'calc(100% - 28px)',
-            background: 'linear-gradient(135deg,#06091A,#1A0A3C)',
-            border: '1px solid rgba(212,175,55,.28)',
-            borderRadius: 16,
-            padding: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            textAlign: 'left',
-          }}
-        >
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(212,175,55,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-            🌟
-          </div>
-          <div style={{ flex: 1 }}>
-            <div className="display" style={{ color: 'var(--gold)', fontWeight: 700, fontSize: 14 }}>
-              Iniciar programa del día
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 2 }}>Vitales · Nutrición · Ejercicio · hasta 700 pts</div>
-          </div>
-          <span style={{ color: 'rgba(212,175,55,.6)' }}>›</span>
-        </button>
-
-        <div className="sec">Próximas citas</div>
-        <div className="card" style={{ margin: '0 14px', padding: 0 }}>
-          {[
-            ['🩺', 'Dr. Carlos Ramírez, MD', 'Hoy · 3:00 PM · Telemedicina', 'Hoy', 'chip-teal'],
-            ['🥗', 'Nut. Ana Torres, RDN', '08/08/2026 · 10:00 AM · MNT #4', 'Próx.', 'chip-blue'],
-            ['🧠', 'Coach Marco Reyes, NBHWC', '09/08/2026 · 11:00 AM · SMART', 'Próx.', 'chip-blue'],
-            ['∞', 'SUMMIT INFINITO Virtual', '10/08/2026 · 9:00 AM', 'Evento', 'chip-org'],
-          ].map(([e, n, t, b, c]) => (
-            <div key={n} style={{ display: 'flex', gap: 10, padding: '11px 12px', borderTop: '1px solid var(--g1)', alignItems: 'center' }}>
-              <div className="ico" style={{ marginBottom: 0, background: 'var(--blue-l)', fontSize: 16 }}>
-                {e}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{n}</div>
-                <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t}</div>
-              </div>
-              <span className={`chip ${c}`}>{b}</span>
-            </div>
+        <div className="group-list">
+          {moreModules.map((m) => (
+            <button
+              key={m.title}
+              type="button"
+              className="group-row"
+              onClick={() => navigate(m.id)}
+            >
+              <span className="group-row-ico">
+                <IonIcon icon={m.icon} />
+              </span>
+              <span className="group-row-body">
+                <strong>{m.title}</strong>
+                <small>{m.sub}</small>
+              </span>
+              <span className="group-row-chevron">›</span>
+            </button>
           ))}
         </div>
 
         <div className="sec">Progreso semanal</div>
-        <div className="card" style={{ margin: '0 14px 16px' }}>
+        <div className="card" style={{ margin: '0 16px 20px' }}>
           {[
-            ['Hidratación', '7/8 vasos · 87%', 87, 'var(--teal)'],
-            ['Pasos diarios', '6,240/8,000 · 78%', 78, 'var(--blue)'],
-            ['Calorías', '1,650/1,800 · 91%', 91, 'var(--org)'],
-            ['Academia', 'Módulo 5 · 68%', 68, 'var(--gold)'],
+            ['Hidratación', '7/8 vasos', 87, 'var(--teal)'],
+            ['Pasos', '6,240 / 8,000', 78, 'var(--blue)'],
+            ['Calorías', '1,650 / 1,800', 91, 'var(--org)'],
+            ['Academia', 'Módulo 5', 68, 'var(--cyan)'],
           ].map(([l, r, w, c]) => (
-            <div key={String(l)} style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--mu)', marginBottom: 4 }}>
+            <div key={String(l)} className="progress-row">
+              <div className="progress-row-top">
                 <span>{l}</span>
                 <span>{r}</span>
               </div>

@@ -104,7 +104,7 @@ export function TestsPage() {
         </div>
         <IonProgressBar
           className="pb"
-          style={{ marginTop: 6, '--background': 'rgba(255,255,255,.12)', '--progress-background': 'linear-gradient(90deg,#1D9E75,#D4AF37)' } as CSSProperties}
+          style={{ marginTop: 6, '--background': 'rgba(255,255,255,.12)', '--progress-background': 'linear-gradient(90deg,var(--teal),var(--cyan))' } as CSSProperties}
           value={pct / 100}
         />
       </div>
@@ -112,13 +112,13 @@ export function TestsPage() {
       {showResult ? (
         <div className="screen-scroll no-nav" style={{ padding: 14 }}>
           <>
-            <div style={{ background: 'linear-gradient(135deg,#06091A,#1A0A3C)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+            <div style={{ background: 'linear-gradient(145deg,#102a50,#173c73)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
               {[
                 ['Metabolismo', 62, '#E87B2B'],
                 ['Nutrición', 74, '#1D9E75'],
                 ['Movimiento', 58, '#1B6CA8'],
                 ['Sueño', 51, '#7C3AED'],
-                ['Adherencia', 81, '#D4AF37'],
+                ['Adherencia', 81, 'var(--cyan)'],
                 ['Estrés', 44, '#E24B4A'],
               ].map(([n, w, c]) => (
                 <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -259,8 +259,8 @@ export function TestsPage() {
                 answers={answers[9] ?? {}}
                 onAnswer={(i, v) => setAnswers((a) => ({ ...a, 9: { ...(a[9] ?? {}), [i]: v } }))}
               />
-              <div style={{ background: 'linear-gradient(135deg,#06091A,#1A0A3C)', borderRadius: 16, padding: 14, marginTop: 8 }}>
-                <div style={{ color: 'var(--gold)', fontWeight: 700, fontSize: 12, marginBottom: 10 }}>¿Qué priorizarías primero?</div>
+              <div style={{ background: 'linear-gradient(145deg,#102a50,#173c73)', borderRadius: 16, padding: 14, marginTop: 8 }}>
+                <div style={{ color: 'var(--ice)', fontWeight: 700, fontSize: 12, marginBottom: 10 }}>¿Qué priorizarías primero?</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {PRIORITIES.map((p) => (
                     <button

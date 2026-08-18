@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react'
-import { IonProgressBar } from '@ionic/react'
+import { IonProgressBar, IonSegment, IonSegmentButton } from '@ionic/react'
+import { PageHeader } from '../components/PageHeader'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
@@ -71,17 +72,9 @@ export function NutritionPage() {
 
   return (
     <Screen>
-      <div className="hero hero-teal">
-        <div className="h1">🥗 Plan nutricional</div>
-        <div className="sub">Nut. Ana Torres, RDN · CPT 97802</div>
-        <div className="chips">
-          <span className="chip chip-glass">Dieta mediterránea</span>
-          <span className="chip chip-glass">USDA 2025</span>
-          <span className="chip chip-glass">ADA 2026</span>
-        </div>
-      </div>
+      <PageHeader title="Nutrición" sub="Ana Torres, RDN · dieta mediterránea" />
 
-      <div style={{ background: '#fff', padding: 14, display: 'flex', gap: 14, borderBottom: '1px solid var(--g1)' }}>
+      <div className="kcal-strip">
         <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
           <svg width="92" height="92" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
             <circle cx="50" cy="50" r="38" fill="none" stroke="#E8EEF4" strokeWidth="10" />
@@ -112,13 +105,16 @@ export function NutritionPage() {
         </div>
       </div>
 
-      <div className="plan-tabs">
-        {(['hoy', 'semana', 'indicaciones', 'historial'] as const).map((t) => (
-          <button key={t} className={`ptab ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>
-            {t[0].toUpperCase() + t.slice(1)}
-          </button>
-        ))}
-      </div>
+      <IonSegment
+        className="plan-seg"
+        value={tab}
+        onIonChange={(e) => setTab((e.detail.value as typeof tab) ?? 'hoy')}
+      >
+        <IonSegmentButton value="hoy">Hoy</IonSegmentButton>
+        <IonSegmentButton value="semana">Semana</IonSegmentButton>
+        <IonSegmentButton value="indicaciones">Plan</IonSegmentButton>
+        <IonSegmentButton value="historial">Historial</IonSegmentButton>
+      </IonSegment>
 
       <Scroll>
         {tab === 'hoy' && (
@@ -164,8 +160,8 @@ export function NutritionPage() {
                     style={{
                       margin: 12,
                       width: 'calc(100% - 24px)',
-                      background: 'linear-gradient(135deg,#0D2B4B,#1A3D5C)',
-                      border: '2px dashed rgba(212,175,55,.35)',
+                      background: 'linear-gradient(145deg,#102a50,#173c73)',
+                      border: '1.5px dashed rgba(32,200,255,.4)',
                       borderRadius: 12,
                       padding: 12,
                       color: '#fff',
