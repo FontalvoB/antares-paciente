@@ -1,25 +1,47 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   IonButton,
   IonCheckbox,
   IonDatetime,
+  IonIcon,
   IonInput,
   IonModal,
   IonProgressBar,
   IonSelect,
   IonSelectOption,
 } from '@ionic/react'
+import {
+  calendarOutline,
+  callOutline,
+  chatbubbleEllipsesOutline,
+  checkmark,
+  checkmarkCircle,
+  createOutline,
+  documentTextOutline,
+  eye,
+  eyeOff,
+  lockClosedOutline,
+  mailOutline,
+  medkitOutline,
+  peopleOutline,
+  personOutline,
+  phonePortraitOutline,
+  shieldCheckmarkOutline,
+  walletOutline,
+} from 'ionicons/icons'
 import { useApp } from '../context/AppContext'
 import { formatDateForDisplay } from '../utils/dates'
 import type { UserProfile } from '../types'
 
 const STEPS = [
-  { title: 'Bienvenido al programa', sub: 'Completa el registro en 5 pasos · 3 minutos', name: 'Identidad' },
-  { title: 'Verifica tu identidad', sub: 'Código de 6 dígitos por SMS, email o WhatsApp', name: 'OTP' },
-  { title: 'Contacto de emergencia', sub: 'Tu familia será notificada si activas SOS', name: 'Familia' },
-  { title: 'Consentimiento HIPAA', sub: 'Lee, acepta y firma digitalmente', name: 'Consentimiento' },
+  { title: 'Tus datos', sub: 'Así te identifica el equipo médico', name: 'Identidad' },
+  { title: 'Verifica tu identidad', sub: 'Te enviamos un código de 6 dígitos', name: 'Código' },
+  { title: 'Contacto de emergencia', sub: 'A quién avisamos si activas SOS', name: 'Familia' },
+  { title: 'Consentimiento', sub: 'Lee, acepta y firma tu autorización', name: 'HIPAA' },
   { title: 'Crea tu contraseña', sub: 'Protege tu expediente médico', name: 'Seguridad' },
 ]
+
+const PARENTESCO = ['Esposo/a', 'Padre/Madre', 'Hijo/a', 'Hermano/a', 'Amigo/a'] as const
 
 export function OnboardingPage() {
   const { finishOnboarding, showToast, backToLogin } = useApp()
@@ -27,6 +49,7 @@ export function OnboardingPage() {
   const [done, setDone] = useState(false)
   const [otpCh, setOtpCh] = useState('SMS')
   const [otpSent, setOtpSent] = useState(false)
+  const [otpLeft, setOtpLeft] = useState(0)
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [checks, setChecks] = useState([false, false, false])
   const [signed, setSigned] = useState(false)
@@ -34,6 +57,8 @@ export function OnboardingPage() {
   const [dateOpen, setDateOpen] = useState(false)
   const [pwd, setPwd] = useState('')
   const [pwd2, setPwd2] = useState('')
+  const [showPwd, setShowPwd] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [form, setForm] = useState<UserProfile>({
     nombre: 'María González',
     cedula: '10247381',
@@ -51,6 +76,16 @@ export function OnboardingPage() {
 
   const set = (k: keyof UserProfile, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 })
+  }, [step, done, otpSent])
+
+  useEffect(() => {
+    if (otpLeft <= 0) return
+    const id = window.setTimeout(() => setOtpLeft((n) => n - 1), 1000)
+    return () => window.clearTimeout(id)
+  }, [otpLeft])
+
   const pwdOk = pwd.length >= 8 && /[A-Z]/.test(pwd) && /\d/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)
   const strength = useMemo(() => {
     let s = 0
@@ -60,6 +95,15 @@ export function OnboardingPage() {
     if (/[^A-Za-z0-9]/.test(pwd)) s += 25
     return s
   }, [pwd])
+  const strengthLbl = strength < 50 ? 'Débil' : strength < 100 ? 'Aceptable' : 'Fuerte'
+  const strengthColor = strength < 50 ? 'var(--red)' : strength < 100 ? 'var(--org)' : 'var(--teal)'
+
+  const sendOtp = () => {
+    setOtpSent(true)
+    setOtpLeft(30)
+    setOtp(['', '', '', '', '', ''])
+    showToast(`Código enviado por ${otpCh}`, 'ok')
+  }
 
   const next = () => {
     if (step === 1) {
@@ -67,6 +111,10 @@ export function OnboardingPage() {
       return
     }
     if (step === 2) {
+      if (!otpSent) {
+        sendOtp()
+        return
+      }
       if (otp.join('') !== '123456') {
         showToast('Código demo: 123456', 'warn')
         return
@@ -99,324 +147,500 @@ export function OnboardingPage() {
     }
   }
 
+  const back = () => {
+    if (step === 1) {
+      backToLogin()
+      return
+    }
+    setStep((s) => s - 1)
+  }
+
+  const fillOtp = (i: number, raw: string) => {
+    const digits = raw.replace(/\D/g, '')
+    if (!digits) {
+      const nextOtp = [...otp]
+      nextOtp[i] = ''
+      setOtp(nextOtp)
+      return
+    }
+    if (digits.length > 1) {
+      const nextOtp = [...otp]
+      digits.slice(0, 6).split('').forEach((d, idx) => {
+        nextOtp[idx] = d
+      })
+      setOtp(nextOtp)
+      return
+    }
+    const nextOtp = [...otp]
+    nextOtp[i] = digits.slice(-1)
+    setOtp(nextOtp)
+    const el = document.getElementById(`otp-${i + 1}`)
+    if (el instanceof HTMLInputElement) el.focus()
+  }
+
   const meta = STEPS[step - 1]
+  const otpTarget = otpCh === 'Email' ? form.email : form.celular
+  const cta = done
+    ? 'Entrar'
+    : step === 2 && !otpSent
+      ? 'Enviar código'
+      : step === 2
+        ? 'Verificar código'
+        : step === 5
+          ? 'Crear cuenta'
+          : 'Continuar'
 
   return (
-    <div className="screen onb-page" style={{ background: '#fff' }}>
-      <div className="hero hero-cosmos" style={{ paddingBottom: 16 }}>
-        <div className="kicker">ANTARES BIOHACKING · COPP-ADRESD</div>
-        <div className="h2">{done ? '¡Registro completado!' : meta.title}</div>
-        <div className="sub">{done ? 'Tu cuenta está lista. Bienvenida al programa.' : meta.sub}</div>
+    <div className="screen onb-page" style={{ background: 'var(--g0)' }}>
+      <header className="onb-head">
+        <div className="onb-head-top">
+          <div className="onb-head-brand">ANTARES</div>
+          {!done && <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--mu)' }}>{step} / 5</span>}
+        </div>
         {!done && (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 10, fontWeight: 700 }}>
-              <span style={{ color: 'rgba(255,255,255,.45)' }}>PASO {step} DE 5</span>
-              <span style={{ color: 'var(--ice)' }}>{meta.name}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 5, marginTop: 10 }}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <div
-                  key={n}
-                  style={{
-                    height: 4,
-                    flex: 1,
-                    borderRadius: 2,
-                    background: n < step ? 'var(--teal)' : n === step ? 'var(--ice)' : 'rgba(255,255,255,.15)',
-                  }}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="screen-scroll no-nav" style={{ padding: '16px 16px 110px' }}>
-        {done ? (
-          <div style={{ textAlign: 'center', paddingTop: 12 }}>
-            <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: '50%',
-                margin: '0 auto 14px',
-                background: 'linear-gradient(135deg,var(--teal),#0F6E56)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 32,
-                boxShadow: '0 8px 24px rgba(29,158,117,.35)',
-              }}
-            >
-              🎉
-            </div>
-            <div className="display" style={{ fontSize: 22, fontWeight: 700 }}>
-              ¡Registro completado!
-            </div>
-            <p style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
-              Bienvenida al programa <strong>COPP-ADRESD</strong>, {form.nombre.split(' ')[0]}. Semana 12/24 activa.
-            </p>
-            <div style={{ background: 'linear-gradient(145deg,#102a50,#173c73)', borderRadius: 16, padding: 16, textAlign: 'left', margin: '16px 0' }}>
-              {['Identidad confirmada', 'Verificación OTP', `Familiar: ${form.fam1Nombre}`, 'Consentimiento HIPAA firmado', 'Contraseña segura'].map((t) => (
-                <div key={t} style={{ color: 'rgba(255,255,255,.75)', fontSize: 12, marginBottom: 8 }}>
-                  ✅ {t}
-                </div>
-              ))}
-            </div>
-            <IonButton expand="block" className="bt bt-teal" onClick={() => finishOnboarding(form)}>
-              Entrar a mi programa ANTARES
-            </IonButton>
+          <div className="onb-stepper" aria-label={`Paso ${step} de 5`}>
+            {STEPS.map((s, i) => {
+              const n = i + 1
+              return (
+                <span key={s.name} style={{ display: 'contents' }}>
+                  {i > 0 && <span className={`onb-stepper-line ${n <= step ? 'done' : ''}`} />}
+                  <span className={`onb-stepper-dot ${n < step ? 'done' : n === step ? 'now' : ''}`}>
+                    {n < step ? <IonIcon icon={checkmark} /> : n}
+                  </span>
+                </span>
+              )
+            })}
           </div>
-        ) : (
-          <>
-            {step === 1 && (
-              <>
-                <div className="field">
-                  <label>Nombre completo</label>
-                  <IonInput className="fld" value={form.nombre} onIonInput={(e) => set('nombre', e.detail.value ?? '')} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div className="field">
-                    <label>Cédula / ID</label>
-                    <IonInput className="fld" value={form.cedula} inputmode="numeric" onIonInput={(e) => set('cedula', e.detail.value ?? '')} />
-                  </div>
-                  <div className="field">
-                    <label>Fecha de nacimiento</label>
-                    <IonInput className="fld" value={formatDateForDisplay(form.dob)} readonly onClick={() => setDateOpen(true)} />
-                  </div>
-                </div>
-                <div className="field">
-                  <label>Seguro médico</label>
-                  <IonSelect className="fld" interface="popover" value={form.seguro} onIonChange={(e) => set('seguro', e.detail.value as string)}>
-                    {['BlueCross BlueShield', 'Aetna', 'UnitedHealth', 'Cigna', 'Medicare Part B', 'Medicaid'].map((s) => (
-                      <IonSelectOption key={s} value={s}>{s}</IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div className="field">
-                    <label>No. de póliza</label>
-                    <IonInput className="fld" value={form.poliza} onIonInput={(e) => set('poliza', e.detail.value ?? '')} />
-                  </div>
-                  <div className="field">
-                    <label>Grupo</label>
-                    <IonInput className="fld" value={form.grupo} onIonInput={(e) => set('grupo', e.detail.value ?? '')} />
-                  </div>
-                </div>
-                <div className="field">
-                  <label>Correo</label>
-                  <IonInput className="fld" type="email" value={form.email} onIonInput={(e) => set('email', e.detail.value ?? '')} />
-                </div>
-                <div className="field">
-                  <label>Celular / WhatsApp</label>
-                  <IonInput className="fld" type="tel" value={form.celular} onIonInput={(e) => set('celular', e.detail.value ?? '')} />
-                </div>
-                <div style={{ background: 'var(--teal-l)', borderRadius: 12, padding: 12, fontSize: 12, color: '#0F6E56', lineHeight: 1.5 }}>
-                  🔒 Datos cifrados con TLS 1.3 y protegidos bajo HIPAA.
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', marginBottom: 8, textTransform: 'uppercase' }}>
-                  Enviar código por
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                  {['SMS', 'Email', 'WhatsApp'].map((c) => (
-                    <button key={c} className={`sig-ch ${otpCh === c ? 'on' : ''}`} onClick={() => setOtpCh(c)}>
-                      {c === 'SMS' ? '📱' : c === 'Email' ? '📧' : '💬'}
-                      <div>{c}</div>
-                    </button>
-                  ))}
-                </div>
-                {!otpSent ? (
-                  <IonButton expand="block" className="bt bt-primary" onClick={() => {
-                    setOtpSent(true)
-                    showToast(`Código enviado por ${otpCh}`, 'ok')
-                  }}>
-                    Enviar código de verificación
-                  </IonButton>
-                ) : (
-                  <>
-                    <div style={{ background: 'var(--blue-l)', borderRadius: 12, padding: 12, fontSize: 12, color: '#185FA5', marginBottom: 14 }}>
-                      Código enviado por <strong>{otpCh}</strong>. Demo: <strong>123456</strong>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 12 }}>
-                      {otp.map((d, i) => (
-                        <input
-                          key={i}
-                          className={`otp ${d ? 'filled' : ''}`}
-                          maxLength={1}
-                          inputMode="numeric"
-                          value={d}
-                          onChange={(e) => {
-                            const v = e.target.value.replace(/\D/g, '').slice(-1)
-                            const nextOtp = [...otp]
-                            nextOtp[i] = v
-                            setOtp(nextOtp)
-                            const el = e.target.nextElementSibling
-                            if (v && el instanceof HTMLInputElement) el.focus()
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            {step === 3 && (
-              <>
-                <div className="card" style={{ marginBottom: 12 }}>
-                  <div style={{ fontWeight: 700, marginBottom: 10 }}>1 · Familiar principal</div>
-                  <div className="field">
-                    <label>Nombre</label>
-                    <IonInput className="fld" value={form.fam1Nombre} onIonInput={(e) => set('fam1Nombre', e.detail.value ?? '')} />
-                  </div>
-                  <div className="field">
-                    <label>Parentesco</label>
-                    <IonSelect className="fld" interface="popover" value={form.fam1Parentesco} onIonChange={(e) => set('fam1Parentesco', e.detail.value as string)}>
-                      {['Esposo/a', 'Padre/Madre', 'Hijo/a', 'Hermano/a', 'Amigo/a'].map((p) => (
-                        <IonSelectOption key={p} value={p}>{p}</IonSelectOption>
-                      ))}
-                    </IonSelect>
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    <label>Celular</label>
-                    <IonInput className="fld" type="tel" value={form.fam1Cel} onIonInput={(e) => set('fam1Cel', e.detail.value ?? '')} />
-                  </div>
-                </div>
-                <div style={{ background: 'var(--org-l)', borderRadius: 12, padding: 12, fontSize: 12, color: '#854F0B', lineHeight: 1.5 }}>
-                  Solo se contactará en SOS o alerta crítica del equipo médico.
-                </div>
-              </>
-            )}
-
-            {step === 4 && (
-              <>
-                <div
-                  style={{
-                    background: '#FAFAFA',
-                    border: '1px solid var(--bd)',
-                    borderRadius: 12,
-                    padding: 14,
-                    maxHeight: 180,
-                    overflow: 'auto',
-                    fontSize: 12,
-                    color: 'var(--mu)',
-                    lineHeight: 1.7,
-                    marginBottom: 12,
-                  }}
-                >
-                  <strong style={{ color: 'var(--tx)' }}>CONSENTIMIENTO INFORMADO — COPP-ADRESD</strong>
-                  <p>Programa de medicina preventiva de 24 semanas. Tus datos son PHI según HIPAA. FYA TECH SAS actúa como Business Associate. Datos biométricos cifrados AES-256. Fotos de comida se eliminan en 24h. Autorizas contacto de emergencia en SOS.</p>
-                </div>
-                {['He leído y acepto el consentimiento informado.', 'Autorizo el manejo de mis datos de salud según HIPAA.', 'Autorizo notificar a mis contactos de emergencia.'].map((t, i) => (
-                  <button key={t} className={`check-row ${checks[i] ? 'on' : ''}`} onClick={() => setChecks((c) => c.map((x, j) => (j === i ? !x : x)))}>
-                    <IonCheckbox
-                      checked={checks[i]}
-                      onClick={(e) => e.stopPropagation()}
-                      onIonChange={(e) => setChecks((c) => c.map((x, j) => (j === i ? e.detail.checked : x)))}
-                    />
-                    <span style={{ fontSize: 12, lineHeight: 1.45 }}>{t}</span>
-                  </button>
-                ))}
-                <div style={{ display: 'flex', gap: 8, margin: '10px 0' }}>
-                  {['SMS', 'Email', 'WhatsApp'].map((c) => (
-                    <button key={c} className={`sig-ch ${sigCh === c ? 'on' : ''}`} onClick={() => setSigCh(c)}>
-                      {c}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => setSigned(true)}
-                  style={{
-                    width: '100%',
-                    height: 90,
-                    borderRadius: 12,
-                    border: `2px ${signed ? 'solid var(--teal)' : 'dashed var(--bd)'}`,
-                    background: signed ? 'var(--teal-l)' : '#fff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: signed ? 'var(--teal-d)' : 'var(--mu)',
-                    fontWeight: 700,
-                  }}
-                >
-                  {signed ? '✍️ Firma capturada · DocuSign' : 'Toca para firmar · DocuSign'}
-                </button>
-              </>
-            )}
-
-            {step === 5 && (
-              <>
-                <div className="field">
-                  <label>Nueva contraseña</label>
-                  <IonInput className="fld" type="password" value={pwd} placeholder="Mínimo 8 caracteres" onIonInput={(e) => setPwd(e.detail.value ?? '')} />
-                  <IonProgressBar
-                    className="pb"
-                    style={{ marginTop: 8, '--progress-background': strength < 50 ? 'var(--red)' : strength < 100 ? 'var(--org)' : 'var(--teal)' } as CSSProperties}
-                    value={strength / 100}
-                  />
-                </div>
-                <div className="field">
-                  <label>Confirmar</label>
-                  <IonInput className="fld" type="password" value={pwd2} onIonInput={(e) => setPwd2(e.detail.value ?? '')} />
-                </div>
-                <div style={{ background: 'var(--g1)', borderRadius: 12, padding: 12, fontSize: 12, lineHeight: 1.9 }}>
-                  <div style={{ color: pwd.length >= 8 ? 'var(--teal)' : 'var(--mu)' }}>{pwd.length >= 8 ? '✅' : '⬜'} Mínimo 8 caracteres</div>
-                  <div style={{ color: /[A-Z]/.test(pwd) ? 'var(--teal)' : 'var(--mu)' }}>{/[A-Z]/.test(pwd) ? '✅' : '⬜'} Una mayúscula</div>
-                  <div style={{ color: /\d/.test(pwd) ? 'var(--teal)' : 'var(--mu)' }}>{/\d/.test(pwd) ? '✅' : '⬜'} Un número</div>
-                  <div style={{ color: /[^A-Za-z0-9]/.test(pwd) ? 'var(--teal)' : 'var(--mu)' }}>{/[^A-Za-z0-9]/.test(pwd) ? '✅' : '⬜'} Un carácter especial</div>
-                </div>
-              </>
-            )}
-          </>
         )}
+        <h1 className="onb-head-title">{done ? 'Cuenta lista' : meta.title}</h1>
+        <p className="onb-head-sub">{done ? `Bienvenida al programa, ${form.nombre.split(' ')[0]}.` : meta.sub}</p>
+      </header>
+
+      <div className="screen-scroll no-nav onb-body" ref={scrollRef}>
+        <div className="onb-stack" key={done ? 'done' : `${step}-${otpSent}`}>
+          {done ? (
+            <div className="onb-done">
+              <div className="onb-done-badge" aria-hidden="true">
+                <IonIcon icon={checkmarkCircle} />
+              </div>
+              <div className="display" style={{ fontSize: 22, fontWeight: 700 }}>
+                Registro completado
+              </div>
+              <p style={{ fontSize: 14, color: 'var(--mu)', lineHeight: 1.55, margin: '8px 16px 0' }}>
+                Tu perfil COPP-ADRESD quedó activo. Semana 12 de 24.
+              </p>
+              <div className="onb-done-list">
+                {[
+                  'Identidad confirmada',
+                  'Código verificado',
+                  `Emergencia: ${form.fam1Nombre}`,
+                  'Consentimiento HIPAA firmado',
+                  'Contraseña segura',
+                ].map((t) => (
+                  <div key={t}>
+                    <IonIcon icon={checkmarkCircle} />
+                    {t}
+                  </div>
+                ))}
+              </div>
+              <IonButton expand="block" className="bt bt-primary" onClick={() => finishOnboarding(form)}>
+                Entrar a ANTARES
+              </IonButton>
+            </div>
+          ) : (
+            <>
+              {step === 1 && (
+                <>
+                  <section className="onb-card tone-teal">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-teal"><IonIcon icon={personOutline} /></span>
+                      <div>
+                        <strong>Datos personales</strong>
+                        <span>Como aparecen en tu documento</span>
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="onb-nombre">Nombre completo</label>
+                      <IonInput id="onb-nombre" className="fld" value={form.nombre} autocomplete="name" enterkeyhint="next" onIonInput={(e) => set('nombre', e.detail.value ?? '')} />
+                    </div>
+                    <div className="onb-grid-2">
+                      <div className="field">
+                        <label htmlFor="onb-cedula">Cédula / ID</label>
+                        <IonInput id="onb-cedula" className="fld" value={form.cedula} inputmode="numeric" enterkeyhint="next" onIonInput={(e) => set('cedula', e.detail.value ?? '')} />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="onb-dob">Fecha de nacimiento</label>
+                        <IonInput
+                          id="onb-dob"
+                          className="fld"
+                          value={formatDateForDisplay(form.dob)}
+                          readonly
+                          onClick={() => setDateOpen(true)}
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="onb-card tone-ice">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-ice"><IonIcon icon={walletOutline} /></span>
+                      <div>
+                        <strong>Seguro médico</strong>
+                        <span>Para copagos y autorizaciones</span>
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Aseguradora</label>
+                      <IonSelect className="fld" interface="popover" value={form.seguro} onIonChange={(e) => set('seguro', e.detail.value as string)}>
+                        {['BlueCross BlueShield', 'Aetna', 'UnitedHealth', 'Cigna', 'Medicare Part B', 'Medicaid'].map((s) => (
+                          <IonSelectOption key={s} value={s}>{s}</IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    </div>
+                    <div className="onb-grid-2">
+                      <div className="field" style={{ marginBottom: 0 }}>
+                        <label htmlFor="onb-poliza">N.º de póliza</label>
+                        <IonInput id="onb-poliza" className="fld" value={form.poliza} enterkeyhint="next" onIonInput={(e) => set('poliza', e.detail.value ?? '')} />
+                      </div>
+                      <div className="field" style={{ marginBottom: 0 }}>
+                        <label htmlFor="onb-grupo">Grupo</label>
+                        <IonInput id="onb-grupo" className="fld" value={form.grupo} enterkeyhint="next" onIonInput={(e) => set('grupo', e.detail.value ?? '')} />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="onb-card tone-teal">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-teal"><IonIcon icon={callOutline} /></span>
+                      <div>
+                        <strong>Cómo te contactamos</strong>
+                        <span>Correo y celular de la cuenta</span>
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="onb-email">Correo electrónico</label>
+                      <IonInput id="onb-email" className="fld" type="email" inputmode="email" autocomplete="email" enterkeyhint="next" value={form.email} onIonInput={(e) => set('email', e.detail.value ?? '')} />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label htmlFor="onb-cel">Celular / WhatsApp</label>
+                      <IonInput id="onb-cel" className="fld" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" value={form.celular} onIonInput={(e) => set('celular', e.detail.value ?? '')} />
+                    </div>
+                  </section>
+
+                  <div className="onb-trust onb-trust-safe">
+                    <IonIcon icon={shieldCheckmarkOutline} />
+                    <span>Tus datos viajan cifrados (TLS 1.3) y se tratan como PHI bajo HIPAA.</span>
+                  </div>
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  <section className="onb-card tone-pur">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-pur"><IonIcon icon={shieldCheckmarkOutline} /></span>
+                      <div>
+                        <strong>Canal de verificación</strong>
+                        <span>Elige dónde recibir el código</span>
+                      </div>
+                    </div>
+                    <div className="onb-channels">
+                      {[
+                        { id: 'SMS', label: 'SMS', icon: phonePortraitOutline },
+                        { id: 'Email', label: 'Email', icon: mailOutline },
+                        { id: 'WhatsApp', label: 'WhatsApp', icon: chatbubbleEllipsesOutline },
+                      ].map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className={`onb-channel ${otpCh === c.id ? 'on' : ''}`}
+                          onClick={() => { setOtpCh(c.id); setOtpSent(false) }}
+                        >
+                          <IonIcon icon={c.icon} />
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p style={{ margin: '12px 0 0', fontSize: 12, color: 'var(--mu)', textAlign: 'center' }}>
+                      Enviaremos el código a <strong style={{ color: 'var(--tx)' }}>{otpTarget}</strong>
+                    </p>
+                  </section>
+
+                  {otpSent && (
+                    <section className="onb-card tone-org">
+                      <div className="onb-card-head">
+                      <span className="onb-card-ico tone-org"><IonIcon icon={lockClosedOutline} /></span>
+                      <div>
+                        <strong>Introduce el código</strong>
+                          <span>6 dígitos · demo 123456</span>
+                        </div>
+                      </div>
+                      <div className="onb-otp-row">
+                        {otp.map((d, i) => (
+                          <input
+                            key={i}
+                            id={`otp-${i}`}
+                            className={`otp ${d ? 'filled' : ''}`}
+                            maxLength={i === 0 ? 6 : 1}
+                            inputMode="numeric"
+                            autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                            aria-label={`Dígito ${i + 1}`}
+                            value={d}
+                            onChange={(e) => fillOtp(i, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Backspace' && !otp[i] && i > 0) {
+                                const prev = document.getElementById(`otp-${i - 1}`)
+                                if (prev instanceof HTMLInputElement) prev.focus()
+                              }
+                            }}
+                            onPaste={(e) => {
+                              e.preventDefault()
+                              fillOtp(0, e.clipboardData.getData('text'))
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <div style={{ textAlign: 'center', marginTop: 14 }}>
+                        {otpLeft > 0 ? (
+                          <span style={{ fontSize: 12, color: 'var(--mu)' }}>Reenviar en 0:{String(otpLeft).padStart(2, '0')}</span>
+                        ) : (
+                          <IonButton fill="clear" className="onb-back-login" onClick={sendOtp}>
+                            Reenviar código
+                          </IonButton>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  <div className="onb-trust onb-trust-info">
+                    <IonIcon icon={mailOutline} />
+                    <span>El código caduca en 10 minutos. Si no llega, prueba otro canal.</span>
+                  </div>
+                </>
+              )}
+
+              {step === 3 && (
+                <>
+                  <div className="onb-trust onb-trust-warn">
+                    <IonIcon icon={medkitOutline} />
+                    <span>Si activas SOS, avisamos a esta persona, al médico y a emergencias. No se usa para marketing.</span>
+                  </div>
+
+                  <section className="onb-card tone-panic">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-panic"><IonIcon icon={peopleOutline} /></span>
+                      <div>
+                        <strong>Familiar principal</strong>
+                        <span>Obligatorio para activar el programa</span>
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="onb-fam-nom">Nombre</label>
+                      <IonInput id="onb-fam-nom" className="fld" value={form.fam1Nombre} autocomplete="name" enterkeyhint="next" onIonInput={(e) => set('fam1Nombre', e.detail.value ?? '')} />
+                    </div>
+                    <div className="field">
+                      <label>Parentesco</label>
+                      <div className="chips" style={{ marginTop: 0, marginBottom: 4 }}>
+                        {PARENTESCO.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            className={`chip ${form.fam1Parentesco === p ? 'chip-teal' : 'chip-glass'}`}
+                            style={form.fam1Parentesco === p ? undefined : { background: 'var(--g0)', border: '1px solid var(--bd)', color: 'var(--mu)' }}
+                            onClick={() => set('fam1Parentesco', p)}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="onb-fam-cel">Celular</label>
+                      <IonInput id="onb-fam-cel" className="fld" type="tel" inputmode="tel" enterkeyhint="next" value={form.fam1Cel} onIonInput={(e) => set('fam1Cel', e.detail.value ?? '')} />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label htmlFor="onb-fam-mail">Correo (opcional)</label>
+                      <IonInput id="onb-fam-mail" className="fld" type="email" inputmode="email" enterkeyhint="done" value={form.fam1Email} onIonInput={(e) => set('fam1Email', e.detail.value ?? '')} />
+                    </div>
+                  </section>
+
+                  <section className="onb-card" style={{ background: 'linear-gradient(145deg,#102a50,#173c73)', color: '#fff', border: 'none' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--ice)', marginBottom: 8 }}>
+                      Vista previa SOS
+                    </div>
+                    <div style={{ fontSize: 14, lineHeight: 1.5, opacity: 0.92 }}>
+                      “{form.fam1Nombre || 'Tu familiar'} ({form.fam1Parentesco}) recibirá una alerta en {form.fam1Cel || 'su celular'} si activas pánico.”
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {step === 4 && (
+                <>
+                  <section className="onb-card tone-teal">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-teal"><IonIcon icon={documentTextOutline} /></span>
+                      <div>
+                        <strong>Consentimiento informado</strong>
+                        <span>COPP-ADRESD · 24 semanas</span>
+                      </div>
+                    </div>
+                    <div className="onb-doc">
+                      <strong style={{ color: 'var(--tx)' }}>Programa de medicina preventiva</strong>
+                      <p style={{ margin: '8px 0 0' }}>
+                        Tus datos son PHI según HIPAA. FYA TECH SAS actúa como Business Associate. Los datos biométricos se cifran con AES-256. Las fotos de comida se eliminan en 24 h. Autorizas el contacto de emergencia si activas SOS.
+                      </p>
+                    </div>
+                    {[
+                      'He leído y acepto el consentimiento informado.',
+                      'Autorizo el manejo de mis datos de salud según HIPAA.',
+                      'Autorizo notificar a mis contactos de emergencia.',
+                    ].map((t, i) => (
+                      <button key={t} type="button" className={`check-row ${checks[i] ? 'on' : ''}`} onClick={() => setChecks((c) => c.map((x, j) => (j === i ? !x : x)))}>
+                        <IonCheckbox
+                          checked={checks[i]}
+                          onClick={(e) => e.stopPropagation()}
+                          onIonChange={(e) => setChecks((c) => c.map((x, j) => (j === i ? e.detail.checked : x)))}
+                        />
+                        <span style={{ fontSize: 13, lineHeight: 1.45, textAlign: 'left' }}>{t}</span>
+                      </button>
+                    ))}
+                  </section>
+
+                  <section className="onb-card tone-pur">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-pur"><IonIcon icon={createOutline} /></span>
+                      <div>
+                        <strong>Firma digital</strong>
+                        <span>Enviaremos el comprobante por {sigCh}</span>
+                      </div>
+                    </div>
+                    <div className="onb-channels compact" style={{ marginBottom: 12 }}>
+                      {['SMS', 'Email', 'WhatsApp'].map((c) => (
+                        <button key={c} type="button" className={`onb-channel ${sigCh === c ? 'on' : ''}`} onClick={() => setSigCh(c)}>
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                    <button type="button" className={`onb-sign ${signed ? 'on' : ''}`} onClick={() => setSigned(true)}>
+                      <IonIcon icon={signed ? checkmarkCircle : createOutline} />
+                      {signed ? 'Firma capturada · DocuSign' : 'Toca para firmar'}
+                    </button>
+                  </section>
+                </>
+              )}
+
+              {step === 5 && (
+                <>
+                  <section className="onb-card tone-org">
+                    <div className="onb-card-head">
+                      <span className="onb-card-ico tone-org"><IonIcon icon={lockClosedOutline} /></span>
+                      <div>
+                        <strong>Contraseña de la cuenta</strong>
+                        <span>Úsala para entrar desde cualquier dispositivo</span>
+                      </div>
+                    </div>
+                    <div className="field onb-pwd">
+                      <label htmlFor="onb-pwd">Nueva contraseña</label>
+                      <IonInput
+                        id="onb-pwd"
+                        className="fld"
+                        type={showPwd ? 'text' : 'password'}
+                        value={pwd}
+                        autocomplete="new-password"
+                        enterkeyhint="next"
+                        style={{ '--padding-end': '48px' } as CSSProperties}
+                        onIonInput={(e) => setPwd(e.detail.value ?? '')}
+                      />
+                      <IonButton
+                        type="button"
+                        fill="clear"
+                        className="fld-eye"
+                        aria-label={showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        onClick={() => setShowPwd((v) => !v)}
+                      >
+                        <IonIcon icon={showPwd ? eyeOff : eye} />
+                      </IonButton>
+                      <div className="onb-strength">
+                        <span>Seguridad</span>
+                        <span style={{ color: strengthColor }}>{pwd ? strengthLbl : '—'}</span>
+                      </div>
+                      <IonProgressBar
+                        className="pb"
+                        style={{ marginTop: 6, '--progress-background': strengthColor } as CSSProperties}
+                        value={strength / 100}
+                      />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label htmlFor="onb-pwd2">Confirmar contraseña</label>
+                      <IonInput
+                        id="onb-pwd2"
+                        className="fld"
+                        type={showPwd ? 'text' : 'password'}
+                        value={pwd2}
+                        autocomplete="new-password"
+                        enterkeyhint="done"
+                        onIonInput={(e) => setPwd2(e.detail.value ?? '')}
+                      />
+                      {pwd2.length > 0 && (
+                        <div style={{ fontSize: 12, marginTop: 6, color: pwd === pwd2 ? 'var(--teal-d)' : 'var(--red)', fontWeight: 600 }}>
+                          {pwd === pwd2 ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="onb-card tone-teal">
+                    <div className="onb-req">
+                      {[
+                        [pwd.length >= 8, 'Mínimo 8 caracteres'],
+                        [/[A-Z]/.test(pwd), 'Una letra mayúscula'],
+                        [/\d/.test(pwd), 'Un número'],
+                        [/[^A-Za-z0-9]/.test(pwd), 'Un carácter especial'],
+                      ].map(([ok, label]) => (
+                        <div key={String(label)} className={`onb-req-item ${ok ? 'on' : ''}`}>
+                          <span className="onb-req-dot">{ok ? '✓' : ''}</span>
+                          {label}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {!done && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: '12px 16px calc(18px + env(safe-area-inset-bottom, 0px))',
-            background: 'linear-gradient(transparent, #fff 28%)',
-          }}
-        >
-          <IonButton expand="block" className="bt bt-primary" onClick={next}>
-            {step === 5 ? 'Crear cuenta' : step === 2 ? 'Verificar identidad' : 'Continuar'}
-          </IonButton>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-            {step > 1 ? (
-              <button style={{ background: 'none', border: 'none', color: 'var(--mu)', fontSize: 12 }} onClick={() => setStep((s) => s - 1)}>
-                ← Volver
-              </button>
-            ) : (
-              <span />
-            )}
-            <span style={{ fontSize: 11, color: 'var(--mu)' }}>Paso {step} de 5</span>
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 6 }}>
-            <IonButton fill="clear" className="onb-back-login" onClick={backToLogin}>
-              ← Volver al inicio de sesión
+        <div className="onb-foot">
+          <div className="onb-foot-row">
+            <IonButton expand="block" className="bt bt-ghost" onClick={back}>
+              {step === 1 ? 'Cancelar' : 'Volver'}
+            </IonButton>
+            <IonButton expand="block" className="bt bt-primary" onClick={next}>
+              {cta}
             </IonButton>
           </div>
         </div>
       )}
 
       <IonModal isOpen={dateOpen} onDidDismiss={() => setDateOpen(false)} className="date-modal">
+        <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+          <IonIcon icon={calendarOutline} />
+          Fecha de nacimiento
+        </div>
         <IonDatetime
           presentation="date"
+          locale="es-ES"
           value={form.dob}
           onIonChange={(e) => set('dob', String(e.detail.value).split('T')[0])}
         />
-        <IonButton expand="block" className="bt bt-teal" onClick={() => setDateOpen(false)}>
-          Listo
-        </IonButton>
+        <div style={{ padding: '0 16px 16px' }}>
+          <IonButton expand="block" className="bt bt-primary" onClick={() => setDateOpen(false)}>
+            Listo
+          </IonButton>
+        </div>
       </IonModal>
     </div>
   )

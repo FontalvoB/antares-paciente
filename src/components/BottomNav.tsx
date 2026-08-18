@@ -6,8 +6,6 @@ import {
   chatbubbleEllipsesOutline,
   home,
   homeOutline,
-  leaf,
-  leafOutline,
   medkit,
   person,
   personOutline,
@@ -18,7 +16,7 @@ import type { Screen } from '../types'
 const items: { id: Screen; label: string; icon: string; iconOn: string; sos?: boolean }[] = [
   { id: 'home', label: 'Inicio', icon: homeOutline, iconOn: home },
   { id: 'book', label: 'Citas', icon: calendarOutline, iconOn: calendar },
-  { id: 'nut', label: 'Nutrición', icon: leafOutline, iconOn: leaf },
+  //{ id: 'nut', label: 'Nutrición', icon: leafOutline, iconOn: leaf },
   { id: 'home', label: 'SOS', icon: medkit, iconOn: medkit, sos: true },
   { id: 'chat', label: 'Chat', icon: chatbubbleEllipsesOutline, iconOn: chatbubbleEllipses },
   { id: 'prof', label: 'Perfil', icon: personOutline, iconOn: person },
