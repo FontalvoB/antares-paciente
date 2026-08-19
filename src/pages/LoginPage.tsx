@@ -2,8 +2,10 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { IonButton, IonCheckbox, IonIcon, IonInput, IonSpinner } from '@ionic/react'
 import {
   arrowBackOutline,
+  chevronForwardOutline,
   eye,
   eyeOff,
+  idCardOutline,
   infinite,
   keyOutline,
   lockClosedOutline,
@@ -14,23 +16,32 @@ import {
   timeOutline,
 } from 'ionicons/icons'
 import { useApp } from '../context/AppContext'
-import { loginUser } from '../utils/authApi'
+import { loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
+import type { UserProfile } from '../types'
 
 type LoginMode = 'login' | 'first'
+type FirstStep = 'id' | 'contacts' | 'otp'
 
 export function LoginPage() {
   const { finishLogin, showToast } = useApp()
   const [mode, setMode] = useState<LoginMode>('login')
-  const [email, setEmail] = useState('')
+  const [firstStep, setFirstStep] = useState<FirstStep>('id')
+
+  // Login por ID + contraseña
+  const [documentNumber, setDocumentNumber] = useState('')
   const [pwd, setPwd] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [remember, setRemember] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [channel, setChannel] = useState<'SMS' | 'Email'>('SMS')
-  const [target, setTarget] = useState('')
-  const [otpSent, setOtpSent] = useState(false)
+
+  // Primer inicio de sesión (ID → contactos → OTP)
+  const [idInput, setIdInput] = useState('')
+  const [lookup, setLookup] = useState<IdLookupResult | null>(null)
+  const [contact, setContact] = useState<ContactMethod | null>(null)
+  const [devCode, setDevCode] = useState<string | null>(null)
   const [otpLeft, setOtpLeft] = useState(0)
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
+
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (otpLeft <= 0) return
@@ -39,30 +50,86 @@ export function LoginPage() {
   }, [otpLeft])
 
   const submit = async () => {
-    if (!email.trim() || !pwd) {
-      showToast('Ingresa tu correo y contraseña', 'warn')
-      return
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      showToast('Ingresa un correo electrónico válido', 'err')
+    const doc = documentNumber.trim()
+    if (!doc || !pwd) {
+      showToast('Ingresa tu número de identificación y contraseña', 'warn')
       return
     }
     setBusy(true)
     try {
-      await loginUser(email.trim(), pwd, remember)
+      await loginUser(doc, pwd, remember)
       setBusy(false)
-      finishLogin()
+      finishLogin({ cedula: doc })
     } catch (e) {
       setBusy(false)
       showToast(e instanceof Error ? e.message : 'Error al iniciar sesión', 'err')
     }
   }
 
-  const sendOtp = () => {
-    setOtpSent(true)
-    setOtpLeft(30)
-    setOtp(['', '', '', '', '', ''])
-    showToast(`Código enviado por ${channel === 'SMS' ? 'SMS' : 'correo electrónico'}`, 'ok')
+  const confirmId = async () => {
+    const doc = idInput.trim()
+    if (!doc) {
+      showToast('Ingresa tu número de identificación', 'warn')
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await lookupId(doc)
+      setLookup(result)
+      setContact(null)
+      setDevCode(null)
+      setOtp(['', '', '', '', '', ''])
+      setFirstStep('contacts')
+      setBusy(false)
+    } catch (e) {
+      setBusy(false)
+      showToast(e instanceof Error ? e.message : 'No se pudo verificar la identidad', 'err')
+    }
+  }
+
+  const pickContact = async (c: ContactMethod) => {
+    setBusy(true)
+    try {
+      const result = await sendOtp(idInput.trim(), c.id)
+      setContact(c)
+      setDevCode(result.devCode ?? null)
+      setOtp(['', '', '', '', '', ''])
+      setOtpLeft(result.expiresInSeconds)
+      setFirstStep('otp')
+      setBusy(false)
+      showToast(`Código enviado por ${c.type === 'Email' ? 'correo electrónico' : 'SMS'}`, 'ok')
+    } catch (e) {
+      setBusy(false)
+      showToast(e instanceof Error ? e.message : 'No se pudo enviar el código', 'err')
+    }
+  }
+
+  const resendOtp = () => {
+    if (!contact) return
+    void pickContact(contact)
+  }
+
+  const submitOtp = async () => {
+    const code = otp.join('')
+    if (code.length !== 6) {
+      showToast('Ingresa el código de 6 dígitos', 'warn')
+      return
+    }
+    setBusy(true)
+    try {
+      await verifyOtp(idInput.trim(), code, remember)
+      setBusy(false)
+      const seed: Partial<UserProfile> = lookup
+        ? {
+            nombre: `${lookup.firstName} ${lookup.lastName}`.trim(),
+            cedula: lookup.documentNumber,
+          }
+        : { cedula: idInput.trim() }
+      finishLogin(seed)
+    } catch (e) {
+      setBusy(false)
+      showToast(e instanceof Error ? e.message : 'Código inválido o expirado', 'err')
+    }
   }
 
   const fillOtp = (i: number, raw: string) => {
@@ -88,37 +155,29 @@ export function LoginPage() {
     if (el instanceof HTMLInputElement) el.focus()
   }
 
-  const submitFirst = () => {
-    if (!otpSent) {
-      if (channel === 'Email') {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target.trim())) {
-          showToast('Ingresa un correo electrónico válido', 'err')
-          return
-        }
-      } else if (!target.trim()) {
-        showToast('Ingresa tu número de celular', 'warn')
-        return
-      }
-      sendOtp()
-      return
-    }
-    if (otp.join('') !== '123456') {
-      showToast('Código demo: 123456', 'warn')
-      return
-    }
-    setBusy(true)
-    window.setTimeout(() => {
-      setBusy(false)
-      showToast('Identidad verificada', 'ok')
-      finishLogin()
-    }, 900)
-  }
-
-  const pickChannel = (c: 'SMS' | 'Email') => {
-    setChannel(c)
-    setOtpSent(false)
+  const goFirst = () => {
+    setMode('first')
+    setFirstStep('id')
+    setIdInput('')
+    setLookup(null)
+    setContact(null)
+    setDevCode(null)
     setOtp(['', '', '', '', '', ''])
   }
+
+  const backFromFirst = () => {
+    if (firstStep === 'id') {
+      setMode('login')
+      return
+    }
+    if (firstStep === 'otp') {
+      setFirstStep('contacts')
+      return
+    }
+    setFirstStep('id')
+  }
+
+  const fullName = lookup ? `${lookup.firstName} ${lookup.lastName}`.trim() : ''
 
   return (
     <div className="screen login-screen">
@@ -169,55 +228,136 @@ export function LoginPage() {
               </div>
               <div>
                 <h1>{mode === 'first' ? 'Primer inicio de sesión' : 'Bienvenido de nuevo'}</h1>
-                {mode === 'first' && <p className="login-heading-sub">Verifica tu identidad para completar tu perfil</p>}
+                {mode === 'first' && (
+                  <p className="login-heading-sub">
+                    {firstStep === 'id' && 'Verifica tu identidad para completar tu perfil'}
+                    {firstStep === 'contacts' && 'Elige por dónde quieres recibir tu código'}
+                    {firstStep === 'otp' && 'Introduce el código que te enviamos'}
+                  </p>
+                )}
               </div>
             </header>
 
             {mode === 'first' ? (
-              <form className="login-form" onSubmit={(e) => { e.preventDefault(); submitFirst() }}>
-                <div className="login-channels" role="radiogroup" aria-label="Canal para recibir el código">
-                  {[
-                    { id: 'SMS', label: 'Número de celular', icon: phonePortraitOutline },
-                    { id: 'Email', label: 'Correo electrónico', icon: mailOutline },
-                  ].map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={channel === c.id}
-                      className={`login-channel ${channel === c.id ? 'on' : ''}`}
-                      onClick={() => pickChannel(c.id as 'SMS' | 'Email')}
-                    >
-                      <IonIcon icon={c.icon} />
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-
-                {!otpSent ? (
-                  <div className="login-field">
-                    <label htmlFor="login-target">
-                      <IonIcon icon={channel === 'SMS' ? phonePortraitOutline : mailOutline} />
-                      {channel === 'SMS' ? 'Número de celular' : 'Correo electrónico'}
-                    </label>
-                    <IonInput
-                      id="login-target"
-                      className="fld login-input"
-                      type={channel === 'SMS' ? 'tel' : 'email'}
-                      inputmode={channel === 'SMS' ? 'tel' : 'email'}
-                      enterkeyhint="done"
-                      value={target}
-                      placeholder={channel === 'SMS' ? '+57 300 123 4567' : 'correo@ejemplo.com'}
-                      style={{ '--placeholder-color': '#bdcbe0' } as CSSProperties}
-                      onIonInput={(e) => setTarget(e.detail.value ?? '')}
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className="login-otp-note">
-                      Enviamos un código de 6 dígitos a{' '}
-                      <strong>{target || (channel === 'SMS' ? 'tu celular' : 'tu correo')}</strong>
+              <div className="login-form">
+                {firstStep === 'id' && (
+                  <form className="login-step" onSubmit={(e) => { e.preventDefault(); confirmId() }}>
+                    <div className="login-id-note">
+                      <IonIcon icon={shieldCheckmarkOutline} />
+                      <span>
+                        Buscaremos los correos y teléfonos asociados a tu número de identificación para verificar
+                        que eres tú.
+                      </span>
                     </div>
+
+                    <div className="login-field">
+                      <label htmlFor="login-first-id">
+                        <IonIcon icon={idCardOutline} />
+                        Número de identificación
+                      </label>
+                      <IonInput
+                        id="login-first-id"
+                        className="fld login-input"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        enterkeyhint="done"
+                        value={idInput}
+                        placeholder="Ej. 32534534"
+                        style={{ '--placeholder-color': '#bdcbe0' } as CSSProperties}
+                        onIonInput={(e) => setIdInput((e.detail.value ?? '').replace(/\s/g, ''))}
+                      />
+                    </div>
+
+                    <IonButton expand="block" className="login-submit" type="submit" disabled={busy}>
+                      {busy ? (
+                        <>
+                          <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
+                          Buscando…
+                        </>
+                      ) : (
+                        <>
+                          <IonIcon icon={shieldCheckmarkOutline} />
+                          Confirmar identidad
+                        </>
+                      )}
+                    </IonButton>
+
+                    <IonButton
+                      fill="clear"
+                      expand="block"
+                      type="button"
+                      className="login-first-back"
+                      onClick={() => setMode('login')}
+                    >
+                      <IonIcon icon={arrowBackOutline} />
+                      Volver al inicio de sesión
+                    </IonButton>
+                  </form>
+                )}
+
+                {firstStep === 'contacts' && lookup && (
+                  <div className="login-step">
+                    {fullName && (
+                      <div className="login-person" aria-label={`Identidad encontrada: ${fullName}`}>
+                        <div className="login-person-avatar">{fullName.charAt(0).toUpperCase()}</div>
+                        <div>
+                          <div className="login-person-name">{fullName}</div>
+                          <div className="login-person-meta">ID {lookup.documentNumber}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="login-contacts-hint">
+                      Encontramos <strong>{lookup.contacts.length}</strong>{' '}
+                      {lookup.contacts.length === 1 ? 'método de contacto' : 'métodos de contacto'} asociado
+                      {lookup.contacts.length === 1 ? '' : 's'} a tu identificación.
+                    </p>
+
+                    <div className="login-contact-list" role="radiogroup" aria-label="Métodos de contacto">
+                      {lookup.contacts.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={false}
+                          className={`login-contact ${c.type === 'Email' ? 'mail' : 'phone'}`}
+                          onClick={() => pickContact(c)}
+                          disabled={busy}
+                        >
+                          <span className="login-contact-icon">
+                            <IonIcon icon={c.type === 'Email' ? mailOutline : phonePortraitOutline} />
+                          </span>
+                          <span className="login-contact-body">
+                            <span className="login-contact-label">{c.label}</span>
+                            <span className="login-contact-sub">
+                              Enviar código por {c.type === 'Email' ? 'correo electrónico' : 'SMS'}
+                            </span>
+                          </span>
+                          <IonIcon icon={chevronForwardOutline} className="login-contact-arrow" />
+                        </button>
+                      ))}
+                    </div>
+
+                    <IonButton
+                      fill="clear"
+                      expand="block"
+                      type="button"
+                      className="login-first-back"
+                      onClick={backFromFirst}
+                    >
+                      <IonIcon icon={arrowBackOutline} />
+                      Cambiar número de identificación
+                    </IonButton>
+                  </div>
+                )}
+
+                {firstStep === 'otp' && contact && (
+                  <div className="login-step">
+                    <div className="login-otp-note">
+                      Enviamos un código de 6 dígitos a <strong>{contact.label}</strong>
+                    </div>
+
                     <div className="login-otp-row">
                       {otp.map((d, i) => (
                         <input
@@ -243,61 +383,71 @@ export function LoginPage() {
                         />
                       ))}
                     </div>
+
+                    {devCode && <div className="login-dev-code">Código de prueba: {devCode}</div>}
+
                     <div className="login-otp-resend">
                       {otpLeft > 0 ? (
-                        <span>Reenviar en 0:{String(otpLeft).padStart(2, '0')}</span>
+                        <span>Reenviar en 0:{String(Math.min(otpLeft, 59)).padStart(2, '0')}</span>
                       ) : (
-                        <IonButton fill="clear" type="button" className="login-resend" onClick={sendOtp}>
+                        <IonButton fill="clear" type="button" className="login-resend" onClick={resendOtp}>
                           Reenviar código
                         </IonButton>
                       )}
                     </div>
-                  </>
+
+                    <IonButton
+                      expand="block"
+                      className="login-submit"
+                      type="button"
+                      disabled={busy || otp.join('').length !== 6}
+                      onClick={submitOtp}
+                    >
+                      {busy ? (
+                        <>
+                          <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
+                          Verificando…
+                        </>
+                      ) : (
+                        <>
+                          <IonIcon icon={shieldCheckmarkOutline} />
+                          Verificar y entrar
+                        </>
+                      )}
+                    </IonButton>
+
+                    <IonButton
+                      fill="clear"
+                      expand="block"
+                      type="button"
+                      className="login-first-back"
+                      onClick={backFromFirst}
+                    >
+                      <IonIcon icon={arrowBackOutline} />
+                      Elegir otro método
+                    </IonButton>
+                  </div>
                 )}
-
-                <IonButton expand="block" className="login-submit" type="submit" disabled={busy}>
-                  {busy ? (
-                    <>
-                      <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                      Verificando…
-                    </>
-                  ) : (
-                    <>
-                      <IonIcon icon={shieldCheckmarkOutline} />
-                      {otpSent ? 'Verificar código' : 'Enviar código'}
-                    </>
-                  )}
-                </IonButton>
-
-                <IonButton
-                  fill="clear"
-                  expand="block"
-                  type="button"
-                  className="login-first-back"
-                  onClick={() => setMode('login')}
-                >
-                  <IonIcon icon={arrowBackOutline} />
-                  Volver al inicio de sesión
-                </IonButton>
-              </form>
+              </div>
             ) : (
               <>
                 <form className="login-form" onSubmit={(e) => { e.preventDefault(); submit() }}>
                   <div className="login-field">
-                    <label htmlFor="login-email">
-                      <IonIcon icon={mailOutline} />
-                      Correo electrónico
+                    <label htmlFor="login-id">
+                      <IonIcon icon={idCardOutline} />
+                      Número de identificación
                     </label>
                     <IonInput
-                      id="login-email"
+                      id="login-id"
                       className="fld login-input"
-                      type="email"
-                      inputmode="email"
+                      type="text"
+                      inputmode="numeric"
+                      autocomplete="off"
                       enterkeyhint="next"
-                      value={email}
-                      placeholder="correo@ejemplo.com"
+                      value={documentNumber}
+                      placeholder="Ej. 32534534"
                       style={{ '--placeholder-color': '#bdcbe0' } as CSSProperties}
-                      onIonInput={(e) => setEmail((e.detail.value ?? '').toLowerCase())}
+                      onIonInput={(e) => setDocumentNumber((e.detail.value ?? '').replace(/\s/g, ''))}
                     />
                   </div>
 
@@ -347,12 +497,7 @@ export function LoginPage() {
                       >
                         ¿Olvidaste tu contraseña?
                       </IonButton>
-                      <IonButton
-                        type="button"
-                        fill="clear"
-                        className="login-first-link"
-                        onClick={() => setMode('first')}
-                      >
+                      <IonButton type="button" fill="clear" className="login-first-link" onClick={goFirst}>
                         ¿Primer inicio de sesión?
                       </IonButton>
                     </div>

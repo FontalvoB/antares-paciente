@@ -6,6 +6,25 @@ export interface LoginResult {
   expiresIn: number
 }
 
+export interface ContactMethod {
+  id: string
+  type: 'Email' | 'Phone'
+  label: string
+}
+
+export interface IdLookupResult {
+  patientId: string
+  firstName: string
+  lastName: string
+  documentNumber: string
+  contacts: ContactMethod[]
+}
+
+export interface SendOtpResult {
+  expiresInSeconds: number
+  devCode?: string | null
+}
+
 /**
  * Cliente del Auth service (COPP-ADRESD). En desarrollo se consume a través
  * del proxy de Vite (mismo origen → la cookie HttpOnly de refresh funciona
@@ -33,10 +52,42 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function loginUser(email: string, password: string, rememberMe: boolean): Promise<LoginResult> {
+/** Login con contraseña por número de identificación (usuarios ya registrados). */
+export async function loginUser(documentNumber: string, password: string, rememberMe: boolean): Promise<LoginResult> {
   const result = await postJson<LoginResult>('/api/auth/login', {
-    email,
+    documentNumber,
     password,
+    application: 'app',
+    rememberMe,
+  })
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+  return result
+}
+
+/**
+ * Primer inicio de sesión: consulta los correos y teléfonos asociados a un
+ * número de identificación para que el usuario elija por dónde recibe el OTP.
+ */
+export async function lookupId(documentNumber: string): Promise<IdLookupResult> {
+  return postJson<IdLookupResult>('/api/auth/id-lookup', {
+    documentNumber,
+    application: 'app',
+  })
+}
+
+/** Envía el código OTP al método de contacto elegido. */
+export async function sendOtp(documentNumber: string, contactId: string): Promise<SendOtpResult> {
+  return postJson<SendOtpResult>('/api/auth/send-otp', {
+    documentNumber,
+    contactId,
+  })
+}
+
+/** Verifica el OTP, aprovisiona la cuenta (si es la primera vez) y completa el login. */
+export async function verifyOtp(documentNumber: string, otp: string, rememberMe: boolean): Promise<LoginResult> {
+  const result = await postJson<LoginResult>('/api/auth/verify-otp', {
+    documentNumber,
+    otp,
     application: 'app',
     rememberMe,
   })
