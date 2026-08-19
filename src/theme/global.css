@@ -3606,6 +3606,152 @@ ion-button.login-forgot {
   white-space: nowrap;
 }
 
+.login-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+ion-button.login-first-link {
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --ripple-color: transparent;
+  --color: #13a878;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  --padding-start: 0;
+  --padding-end: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.login-heading-sub {
+  margin: 6px 0 0;
+  color: #6f84a0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.login-channels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.login-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 88px;
+  padding: 12px 8px;
+  border-radius: 18px;
+  border: 1.5px solid #dbe4ef;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(20, 53, 94, 0.06);
+  color: #405270;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.login-channel ion-icon {
+  font-size: 24px;
+  color: #2d76d7;
+}
+
+.login-channel:nth-child(2) ion-icon {
+  color: #13a878;
+}
+
+.login-channel.on {
+  border-color: #2d76d7;
+  background: #eef4ff;
+  color: #2d76d7;
+  box-shadow: 0 0 0 4px rgba(52, 123, 217, 0.12);
+}
+
+.login-otp-note {
+  margin: 0 0 18px;
+  color: #405270;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.login-otp-note strong {
+  color: #22324e;
+}
+
+.login-otp-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.login-otp-row .otp {
+  width: 46px;
+  height: 56px;
+  border-radius: 14px;
+  border-color: #dbe4ef;
+  background: #fff;
+  color: #14213b;
+}
+
+.login-otp-row .otp:focus,
+.login-otp-row .otp.filled {
+  border-color: #1d9e75;
+  background: #e1f5ee;
+}
+
+.login-otp-resend {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 6px;
+  color: #7e95b4;
+  font-size: 13px;
+}
+
+ion-button.login-resend {
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --ripple-color: transparent;
+  --color: #2d76d7;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+ion-button.login-first-back {
+  margin-top: 22px;
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --ripple-color: transparent;
+  --color: #7a8da7;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+ion-button.login-first-back ion-icon {
+  margin-right: 6px;
+  font-size: 18px;
+}
+
 ion-button.login-submit {
   --background: linear-gradient(110deg, #173b73, #2f78df);
   --border-radius: 18px;
@@ -3643,35 +3789,6 @@ ion-button.login-submit ion-icon {
   color: #9aabc0;
   font-size: 12px;
   text-align: center;
-}
-
-.login-create {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 44px;
-  color: #7a8da7;
-  font-size: 14px;
-  text-align: center;
-}
-
-ion-button.login-create-btn {
-  height: auto;
-  min-height: 0;
-  margin: 0 0 0 4px;
-  --background: transparent;
-  --background-hover: transparent;
-  --background-activated: transparent;
-  --background-focused: transparent;
-  --ripple-color: transparent;
-  --color: #2d76d7;
-  --padding-top: 4px;
-  --padding-bottom: 4px;
-  --padding-start: 4px;
-  --padding-end: 4px;
-  font-size: 14px;
-  font-weight: 800;
-  vertical-align: middle;
 }
 
 .login-footer {
@@ -3812,5 +3929,23 @@ ion-button.login-create-btn {
 
   ion-button.login-forgot {
     font-size: 13px;
+  }
+
+  ion-button.login-first-link {
+    font-size: 13px;
+  }
+
+  .login-channel {
+    min-height: 78px;
+    font-size: 12px;
+  }
+
+  .login-otp-row {
+    gap: 6px;
+  }
+
+  .login-otp-row .otp {
+    width: 42px;
+    height: 52px;
   }
 }
