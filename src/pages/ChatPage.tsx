@@ -1,26 +1,36 @@
-import { IonButton, IonIcon, IonInput } from '@ionic/react'
+import { IonButton, IonIcon, IonInput, IonSpinner } from '@ionic/react'
 import { medkit, mic, send as sendIcon } from 'ionicons/icons'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { MarkdownBubble } from '../components/MarkdownBubble'
 import { PageHeader } from '../components/PageHeader'
 import { Screen } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 
 const quick = [
-  ['¿Qué comer?', '¿Qué debo comer hoy según mi plan?'],
-  ['Síntomas', 'Tengo dolor en el pecho, ¿qué hago?'],
-  ['Agendar', 'Agenda una cita con el médico para hoy'],
-  ['Progreso', '¿Cómo va mi progreso esta semana?'],
-  ['Meditar', 'Quiero meditar y calmar mi ansiedad'],
+  ['🥗 ¿Qué comer?', '¿Qué debo comer hoy según mi plan?'],
+  ['🚨 Síntomas', 'Tengo dolor en el pecho, ¿qué hago?'],
+  ['📅 Agendar', 'Agenda una cita con el médico para hoy'],
+  ['📊 Progreso', '¿Cómo va mi progreso esta semana?'],
+  ['🧘 Meditar', 'Quiero meditar y calmar mi ansiedad'],
+  ['∞ INFINITO', '¿Cuáles son los SUMMIT de INFINITO?'],
 ]
 
+// Etiqueta legible por perfil de agente (coincide con las claves del ai-service).
+const AGENT_LABELS: Record<string, string> = {
+  base: 'CoppAI',
+  nutrition: 'Nutrición',
+  medical: 'Salud',
+  psychology: 'Salud Mental',
+}
+
 export function ChatPage() {
-  const { chat, sendChat, openPanic, openVoice } = useApp()
+  const { chat, chatLoading, sendChat, openPanic, openVoice } = useApp()
   const [text, setText] = useState('')
   const end = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [chat.length])
+  }, [chat.length, chatLoading])
 
   const send = (t = text) => {
     const v = t.trim()
@@ -69,13 +79,32 @@ export function ChatPage() {
               </div>
             )}
             <div>
-              <div className={`bub ${m.role === 'user' ? 'bub-usr' : m.role === 'alert' ? 'bub-alert' : 'bub-bot'}`} style={{ whiteSpace: 'pre-wrap' }}>
-                {m.text}
+              <div className={`bub ${m.role === 'user' ? 'bub-usr' : m.role === 'alert' ? 'bub-alert' : 'bub-bot'}`}
+                style={m.role === 'bot' ? undefined : { whiteSpace: 'pre-wrap' }}
+              >
+                {m.role === 'bot' ? <MarkdownBubble content={m.text} /> : m.text}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--mu)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>{m.time}</div>
+              <div style={{ fontSize: 10, color: 'var(--mu)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                {m.role === 'bot' && m.agent ? (
+                  <span style={{ fontWeight: 700, color: 'var(--pur)' }}>{AGENT_LABELS[m.agent] ?? m.agent}</span>
+                ) : null}
+                {m.role === 'bot' && m.agent ? ' · ' : null}
+                {m.time}
+              </div>
             </div>
           </div>
         ))}
+        {chatLoading && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div className="avatar" style={{ width: 28, height: 28, fontSize: 12, background: 'linear-gradient(135deg,var(--pur),#5B21B6)' }}>
+              AI
+            </div>
+            <div className="bub bub-bot" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <IonSpinner name="dots" style={{ width: 16, height: 16 }} />
+              Escribiendo…
+            </div>
+          </div>
+        )}
         <div ref={end} />
       </div>
       <div className="composer">
@@ -99,6 +128,7 @@ export function ChatPage() {
           style={{ '--background': 'var(--navy)', '--color': '#fff' } as CSSProperties}
           aria-label="Enviar"
           onClick={() => send()}
+          disabled={chatLoading}
         >
           <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
         </IonButton>

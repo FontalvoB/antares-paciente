@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import { logoutUser } from '../utils/authApi'
+import { sendChatMessage } from '../utils/chatApi'
 import type {
   ChatMessage,
   CommunityPost,
@@ -23,6 +24,7 @@ interface AppState {
   hydration: number
   mealsLogged: string[]
   chat: ChatMessage[]
+  chatLoading: boolean
   watchConnected: boolean
   watchName: string
   program: ProgramStepId
@@ -113,20 +115,8 @@ const seedChat: ChatMessage[] = [
   {
     id: 'c1',
     role: 'bot',
-    text: 'Hola María 👋 Soy tu agente de salud ANTARES. Tu glucosa de hoy fue 95 mg/dL (prediabetes según ADA 2026). También tienes cita con el Dr. Ramírez a las 3:00 PM. ¿En qué te puedo ayudar?',
+    text: 'Hola 👋 Soy tu asistente de salud ANTARES. ¿En qué te puedo ayudar?',
     time: '9:30 AM',
-  },
-  {
-    id: 'c2',
-    role: 'user',
-    text: 'Siento el pecho apretado y me duele el brazo izquierdo',
-    time: '9:31 AM',
-  },
-  {
-    id: 'c3',
-    role: 'alert',
-    text: '🚨 ALERTA MÉDICA DETECTADA\n\nLos síntomas que describes (dolor pecho + brazo izquierdo) pueden indicar un evento cardíaco. Presiona el botón SOS ahora.\n\nEstoy notificando a:\n• Emergencias 911\n• Dr. Carlos Ramírez\n• Pedro González (contacto emerg.)',
-    time: '9:31 AM',
   },
 ]
 
@@ -134,44 +124,6 @@ const AppContext = createContext<AppState | null>(null)
 
 function nowLabel() {
   return new Date().toLocaleTimeString('es-US', { hour: 'numeric', minute: '2-digit' })
-}
-
-function botReply(text: string): { role: ChatMessage['role']; text: string } {
-  const t = text.toLowerCase()
-  if (t.includes('pecho') || t.includes('brazo') || t.includes('urgencia') || t.includes('síntoma')) {
-    return {
-      role: 'alert',
-      text: 'Detecté un posible síntoma de alarma. Si el dolor es intenso, activa SOS. Mientras tanto: siéntate, no te acuestes plana y avisa a tu contacto de emergencia.',
-    }
-  }
-  if (t.includes('comer') || t.includes('plan') || t.includes('comida')) {
-    return {
-      role: 'bot',
-      text: 'Hoy tu plan es dieta mediterránea 1,800 kcal. Cena sugerida: sopa de lentejas + pan integral, antes de las 7:30 PM. Adherencia actual: 88%.',
-    }
-  }
-  if (t.includes('cita') || t.includes('agendar')) {
-    return {
-      role: 'bot',
-      text: 'Tu próxima cita es hoy 3:00 PM con Dr. Carlos Ramírez (telemedicina). Puedo recordártela 30 min antes. Para una nueva cita usa Solicitar cita en el módulo Citas.',
-    }
-  }
-  if (t.includes('progreso')) {
-    return {
-      role: 'bot',
-      text: 'Semana 12/24 · IMC 26.4 (↓1.2) · HbA1c 5.9% · adherencia 88% · 840 pts. Vas por buen camino hacia 65 kg e HbA1c < 5.7%.',
-    }
-  }
-  if (t.includes('medit') || t.includes('ansiedad') || t.includes('infinito')) {
-    return {
-      role: 'bot',
-      text: 'Prueba 4-7-8: inhala 4, retén 7, exhala 8. En INFINITO tienes frecuencias y mindfulness. El video PSICO de hoy dura 12 min.',
-    }
-  }
-  return {
-    role: 'bot',
-    text: 'Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?',
-  }
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -186,6 +138,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [hydration, setHydration] = useState(7)
   const [mealsLogged, setMealsLogged] = useState<string[]>([])
   const [chat, setChat] = useState<ChatMessage[]>(seedChat)
+  const [chatLoading, setChatLoading] = useState(false)
+  // threadId persistente de la conversación (multi-turno) mientras vive la app.
+  // Sin persistencia entre sesiones: se reinicia al recargar (no pedido).
+  const threadIdRef = useRef<string | undefined>(undefined)
   const [watchConnected, setWatchConnected] = useState(false)
   const [watchName, setWatchName] = useState('ANTARES Watch Pro')
   const [program, setProgram] = useState<ProgramStepId>({
@@ -212,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hydration,
       mealsLogged,
       chat,
+      chatLoading,
       watchConnected,
       watchName,
       program,
@@ -249,12 +206,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setHydration,
       logMeal: (id) => setMealsLogged((prev) => (prev.includes(id) ? prev : [...prev, id])),
       sendChat: (text) => {
-        const reply = botReply(text)
+        if (chatLoading) return
         setChat((prev) => [
           ...prev,
           { id: crypto.randomUUID(), role: 'user', text, time: nowLabel() },
-          { id: crypto.randomUUID(), role: reply.role, text: reply.text, time: nowLabel() },
         ])
+        setChatLoading(true)
+        void (async () => {
+          try {
+            const result = await sendChatMessage(text, threadIdRef.current)
+            threadIdRef.current = result.threadId
+            setChat((prev) => [
+              ...prev,
+              {
+                id: crypto.randomUUID(),
+                role: 'bot',
+                text: result.reply,
+                time: nowLabel(),
+                agent: result.agent,
+              },
+            ])
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Error al conectar con el servidor'
+            setChat((prev) => [
+              ...prev,
+              { id: crypto.randomUUID(), role: 'bot', text: msg, time: nowLabel() },
+            ])
+          } finally {
+            setChatLoading(false)
+          }
+        })()
       },
       connectWatch: (name) => {
         setWatchConnected(true)
@@ -308,6 +289,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hydration,
       mealsLogged,
       chat,
+      chatLoading,
       watchConnected,
       watchName,
       program,

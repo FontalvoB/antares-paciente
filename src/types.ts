@@ -43,6 +43,8 @@ export interface ChatMessage {
   role: 'bot' | 'user' | 'alert'
   text: string
   time: string
+  /** Perfil de agente que respondió este mensaje (si es del bot). */
+  agent?: string
 }
 
 export interface Appointment {
