@@ -3606,152 +3606,6 @@ ion-button.login-forgot {
   white-space: nowrap;
 }
 
-.login-links {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-ion-button.login-first-link {
-  height: auto;
-  min-height: 0;
-  margin: 0;
-  --background: transparent;
-  --background-hover: transparent;
-  --background-activated: transparent;
-  --background-focused: transparent;
-  --ripple-color: transparent;
-  --color: #13a878;
-  --padding-top: 4px;
-  --padding-bottom: 4px;
-  --padding-start: 0;
-  --padding-end: 0;
-  font-size: 14.5px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.login-heading-sub {
-  margin: 6px 0 0;
-  color: #6f84a0;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.login-channels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 26px;
-}
-
-.login-channel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 88px;
-  padding: 12px 8px;
-  border-radius: 18px;
-  border: 1.5px solid #dbe4ef;
-  background: #fff;
-  box-shadow: 0 3px 10px rgba(20, 53, 94, 0.06);
-  color: #405270;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.login-channel ion-icon {
-  font-size: 24px;
-  color: #2d76d7;
-}
-
-.login-channel:nth-child(2) ion-icon {
-  color: #13a878;
-}
-
-.login-channel.on {
-  border-color: #2d76d7;
-  background: #eef4ff;
-  color: #2d76d7;
-  box-shadow: 0 0 0 4px rgba(52, 123, 217, 0.12);
-}
-
-.login-otp-note {
-  margin: 0 0 18px;
-  color: #405270;
-  font-size: 14px;
-  line-height: 1.5;
-  text-align: center;
-}
-
-.login-otp-note strong {
-  color: #22324e;
-}
-
-.login-otp-row {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.login-otp-row .otp {
-  width: 46px;
-  height: 56px;
-  border-radius: 14px;
-  border-color: #dbe4ef;
-  background: #fff;
-  color: #14213b;
-}
-
-.login-otp-row .otp:focus,
-.login-otp-row .otp.filled {
-  border-color: #1d9e75;
-  background: #e1f5ee;
-}
-
-.login-otp-resend {
-  display: flex;
-  justify-content: center;
-  margin: 14px 0 6px;
-  color: #7e95b4;
-  font-size: 13px;
-}
-
-ion-button.login-resend {
-  height: auto;
-  min-height: 0;
-  margin: 0;
-  --background: transparent;
-  --background-hover: transparent;
-  --background-activated: transparent;
-  --background-focused: transparent;
-  --ripple-color: transparent;
-  --color: #2d76d7;
-  --padding-top: 4px;
-  --padding-bottom: 4px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-ion-button.login-first-back {
-  margin-top: 22px;
-  --background: transparent;
-  --background-hover: transparent;
-  --background-activated: transparent;
-  --background-focused: transparent;
-  --ripple-color: transparent;
-  --color: #7a8da7;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-ion-button.login-first-back ion-icon {
-  margin-right: 6px;
-  font-size: 18px;
-}
-
 ion-button.login-submit {
   --background: linear-gradient(110deg, #173b73, #2f78df);
   --border-radius: 18px;
@@ -3789,6 +3643,35 @@ ion-button.login-submit ion-icon {
   color: #9aabc0;
   font-size: 12px;
   text-align: center;
+}
+
+.login-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 44px;
+  color: #7a8da7;
+  font-size: 14px;
+  text-align: center;
+}
+
+ion-button.login-create-btn {
+  height: auto;
+  min-height: 0;
+  margin: 0 0 0 4px;
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --ripple-color: transparent;
+  --color: #2d76d7;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  --padding-start: 4px;
+  --padding-end: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  vertical-align: middle;
 }
 
 .login-footer {
@@ -3930,221 +3813,4 @@ ion-button.login-submit ion-icon {
   ion-button.login-forgot {
     font-size: 13px;
   }
-
-  ion-button.login-first-link {
-    font-size: 13px;
-  }
-
-  .login-channel {
-    min-height: 78px;
-    font-size: 12px;
-  }
-
-  .login-otp-row {
-    gap: 6px;
-  }
-
-  .login-otp-row .otp {
-    width: 42px;
-    height: 52px;
-  }
 }
-
-/* ===== Primer inicio de sesión: identificación → contactos → OTP ===== */
-
-.login-step {
-  animation: login-panel-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.login-id-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 24px;
-  padding: 13px 15px;
-  border-radius: 16px;
-  background: #eef4ff;
-  border: 1px solid #d7e4fb;
-  color: #34507a;
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-
-.login-id-note ion-icon {
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: #2d76d7;
-  font-size: 19px;
-}
-
-.login-person {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #f3f8ff, #eaf2ff);
-  border: 1px solid #d7e4fb;
-}
-
-.login-person-avatar {
-  flex: 0 0 46px;
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
-  border-radius: 15px;
-  color: #fff;
-  background: linear-gradient(145deg, #173b73, #2f78df);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.login-person-name {
-  color: #14213b;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.login-person-meta {
-  margin-top: 3px;
-  color: #6f84a0;
-  font-size: 12.5px;
-}
-
-.login-contacts-hint {
-  margin: 0 0 16px;
-  color: #405270;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.login-contacts-hint strong {
-  color: #22324e;
-}
-
-.login-contact-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.login-contact {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 18px;
-  border: 1.5px solid #dbe4ef;
-  background: #fff;
-  box-shadow: 0 3px 10px rgba(20, 53, 94, 0.06);
-  text-align: left;
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.login-contact:hover,
-.login-contact:focus-visible {
-  border-color: #2d76d7;
-  background: #f4f8ff;
-  box-shadow: 0 0 0 4px rgba(52, 123, 217, 0.12);
-}
-
-.login-contact:active {
-  transform: translateY(1px);
-}
-
-.login-contact:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.login-contact-icon {
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 13px;
-  font-size: 20px;
-}
-
-.login-contact.mail .login-contact-icon {
-  color: #2d76d7;
-  background: #eaf2ff;
-}
-
-.login-contact.phone .login-contact-icon {
-  color: #13a878;
-  background: #e2f5ee;
-}
-
-.login-contact-body {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.login-contact-label {
-  color: #1a2b3c;
-  font-size: 15px;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.login-contact-sub {
-  color: #7e95b4;
-  font-size: 12.5px;
-}
-
-.login-contact-arrow {
-  flex: 0 0 auto;
-  color: #b3c2d6;
-  font-size: 18px;
-}
-
-.login-dev-code {
-  margin: 14px 0 0;
-  padding: 9px 12px;
-  border-radius: 12px;
-  background: #fff8e6;
-  border: 1px dashed #e8c76b;
-  color: #8a6d1c;
-  font-size: 12.5px;
-  font-weight: 700;
-  text-align: center;
-}
-
-@media (max-width: 480px) {
-  .login-contact {
-    gap: 12px;
-    padding: 12px 14px;
-  }
-
-  .login-contact-icon {
-    flex-basis: 38px;
-    width: 38px;
-    height: 38px;
-    font-size: 18px;
-  }
-
-  .login-contact-label {
-    font-size: 14px;
-  }
-
-  .login-person {
-    padding: 12px 14px;
-  }
-}
-

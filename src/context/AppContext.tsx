@@ -30,7 +30,7 @@ interface AppState {
   pointsTotal: number
   posts: CommunityPost[]
   navigate: (s: Screen) => void
-  finishLogin: (seed?: Partial<UserProfile>) => void
+  finishLogin: () => void
   backToLogin: () => void
   finishOnboarding: (user: UserProfile) => void
   finishTests: () => void
@@ -219,12 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pointsTotal,
       posts,
       navigate: (s) => setScreen(s),
-      finishLogin: (seed) => {
-        // El primer inicio de sesión por ID devuelve los datos del paciente:
-        // se siembran en el perfil para que el onboarding los precargue.
-        if (seed) setUser((u) => ({ ...u, ...seed }))
-        setFlow('onboarding')
-      },
+      finishLogin: () => setFlow('onboarding'),
       backToLogin: () => {
         setFlow('login')
         setScreen('home')
