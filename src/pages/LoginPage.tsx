@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { IonButton, IonCheckbox, IonIcon, IonInput, IonSpinner } from '@ionic/react'
+import { IonButton, IonCheckbox, IonIcon, IonInput, IonProgressBar, IonSpinner } from '@ionic/react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   arrowBackOutline,
   chevronForwardOutline,
@@ -42,12 +43,22 @@ export function LoginPage() {
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
 
   const [busy, setBusy] = useState(false)
+  const [busyMessage, setBusyMessage] = useState('')
+
+  // Dispara la animación de despliegue del contenido en cada acción del
+  // primer inicio de sesión (buscar identidad, enviar código, verificar).
+  const [unfoldSeq, setUnfoldSeq] = useState(0)
 
   useEffect(() => {
     if (otpLeft <= 0) return
     const id = window.setTimeout(() => setOtpLeft((n) => n - 1), 1000)
     return () => window.clearTimeout(id)
   }, [otpLeft])
+
+  const startAction = () => {
+    setBusy(true)
+    setUnfoldSeq((s) => s + 1)
+  }
 
   const submit = async () => {
     const doc = documentNumber.trim()
@@ -72,7 +83,8 @@ export function LoginPage() {
       showToast('Ingresa tu número de identificación', 'warn')
       return
     }
-    setBusy(true)
+    startAction()
+    setBusyMessage('Buscando tu identificación…')
     try {
       const result = await lookupId(doc)
       setLookup(result)
@@ -88,7 +100,8 @@ export function LoginPage() {
   }
 
   const pickContact = async (c: ContactMethod) => {
-    setBusy(true)
+    startAction()
+    setBusyMessage('Enviando tu código…')
     try {
       const result = await sendOtp(idInput.trim(), c.id)
       setContact(c)
@@ -115,7 +128,8 @@ export function LoginPage() {
       showToast('Ingresa el código de 6 dígitos', 'warn')
       return
     }
-    setBusy(true)
+    startAction()
+    setBusyMessage('Verificando tu código…')
     try {
       await verifyOtp(idInput.trim(), code, remember)
       setBusy(false)
@@ -222,26 +236,41 @@ export function LoginPage() {
 
         <section className="login-form-panel" aria-label="Acceso a ANTARES">
           <div className="login-form-wrap">
-            <header className="login-form-heading">
-              <div className="login-heading-icon">
-                <IonIcon icon={mode === 'first' ? shieldCheckmarkOutline : personOutline} />
-              </div>
-              <div>
-                <h1>{mode === 'first' ? 'Primer inicio de sesión' : 'Bienvenido de nuevo'}</h1>
-                {mode === 'first' && (
-                  <p className="login-heading-sub">
-                    {firstStep === 'id' && 'Verifica tu identidad para completar tu perfil'}
-                    {firstStep === 'contacts' && 'Elige por dónde quieres recibir tu código'}
-                    {firstStep === 'otp' && 'Introduce el código que te enviamos'}
-                  </p>
-                )}
-              </div>
-            </header>
-
-            {mode === 'first' ? (
-              <div className="login-form">
-                {firstStep === 'id' && (
-                  <form className="login-step" onSubmit={(e) => { e.preventDefault(); confirmId() }}>
+            <AnimatePresence mode="wait" initial={false}>
+              {mode === 'first' ? (
+                <motion.div
+                  key="first"
+                  className="login-mode-panel"
+                  initial={{ opacity: 0, scaleY: 0.9, y: 26, transformOrigin: 'top center' }}
+                  animate={{ opacity: 1, scaleY: 1, y: 0 }}
+                  exit={{ opacity: 0, scaleY: 0.95, y: -18 }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <header className="login-form-heading">
+                    <div className="login-heading-icon">
+                      <IonIcon icon={shieldCheckmarkOutline} />
+                    </div>
+                    <div>
+                      <h1>Primer inicio de sesión</h1>
+                      <p className="login-heading-sub">
+                        {firstStep === 'id' && 'Verifica tu identidad para completar tu perfil'}
+                        {firstStep === 'contacts' && 'Elige por dónde quieres recibir tu código'}
+                        {firstStep === 'otp' && 'Introduce el código que te enviamos'}
+                      </p>
+                    </div>
+                  </header>
+                  <div className="login-form">
+                    <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={`${firstStep}-${unfoldSeq}`}
+                    className="login-step"
+                    initial={{ opacity: 0, scaleY: 0.9, y: 20, transformOrigin: 'top center' }}
+                    animate={{ opacity: 1, scaleY: 1, y: 0 }}
+                    exit={{ opacity: 0, scaleY: 0.94, y: -14 }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {firstStep === 'id' && (
+                      <form onSubmit={(e) => { e.preventDefault(); confirmId() }}>
                     <div className="login-id-note">
                       <IonIcon icon={shieldCheckmarkOutline} />
                       <span>
@@ -297,7 +326,7 @@ export function LoginPage() {
                 )}
 
                 {firstStep === 'contacts' && lookup && (
-                  <div className="login-step">
+                  <div>
                     {fullName && (
                       <div className="login-person" aria-label={`Identidad encontrada: ${fullName}`}>
                         <div className="login-person-avatar">{fullName.charAt(0).toUpperCase()}</div>
@@ -353,7 +382,7 @@ export function LoginPage() {
                 )}
 
                 {firstStep === 'otp' && contact && (
-                  <div className="login-step">
+                  <div>
                     <div className="login-otp-note">
                       Enviamos un código de 6 dígitos a <strong>{contact.label}</strong>
                     </div>
@@ -428,9 +457,44 @@ export function LoginPage() {
                     </IonButton>
                   </div>
                 )}
+
+                    <AnimatePresence>
+                      {busy && (
+                        <motion.div
+                          className="login-busy-bar"
+                          initial={{ opacity: 0, scaleY: 0.6, height: 0 }}
+                          animate={{ opacity: 1, scaleY: 1, height: 'auto' }}
+                          exit={{ opacity: 0, scaleY: 0.6, height: 0 }}
+                          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                          style={{ transformOrigin: 'top center' }}
+                        >
+                          <IonSpinner name="crescent" style={{ width: 18, height: 18 }} />
+                          <span>{busyMessage}</span>
+                          <IonProgressBar type="indeterminate" className="login-busy-progress" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                </AnimatePresence>
               </div>
+              </motion.div>
             ) : (
-              <>
+              <motion.div
+                key="login"
+                className="login-mode-panel"
+                initial={{ opacity: 0, scaleY: 0.9, y: 26, transformOrigin: 'top center' }}
+                animate={{ opacity: 1, scaleY: 1, y: 0 }}
+                exit={{ opacity: 0, scaleY: 0.95, y: -18 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <header className="login-form-heading">
+                  <div className="login-heading-icon">
+                    <IonIcon icon={personOutline} />
+                  </div>
+                  <div>
+                    <h1>Bienvenido de nuevo</h1>
+                  </div>
+                </header>
                 <form className="login-form" onSubmit={(e) => { e.preventDefault(); submit() }}>
                   <div className="login-field">
                     <label htmlFor="login-id">
@@ -477,45 +541,53 @@ export function LoginPage() {
                     </IonButton>
                   </div>
 
-                  <div className="login-options">
-                    <div className="login-remember">
-                      <IonCheckbox
-                        checked={remember}
-                        color="primary"
-                        aria-label="Recordarme"
-                        onIonChange={(e) => setRemember(e.detail.checked)}
-                      />
-                      <IonIcon icon={timeOutline} />
-                      <span>Recordarme</span>
+                    <div className="login-options">
+                      <div className="login-remember">
+                        <IonCheckbox
+                          checked={remember}
+                          color="primary"
+                          aria-label="Recordarme"
+                          onIonChange={(e) => setRemember(e.detail.checked)}
+                        />
+                        <IonIcon icon={timeOutline} />
+                        <span>Recordarme</span>
+                      </div>
+                      <div className="login-links">
+                        <IonButton
+                          type="button"
+                          fill="clear"
+                          className="login-forgot"
+                          onClick={() => showToast('Demo: recuperación de contraseña no disponible', 'info')}
+                        >
+                          ¿Olvidaste tu contraseña?
+                        </IonButton>
+                      </div>
                     </div>
-                    <div className="login-links">
-                      <IonButton
-                        type="button"
-                        fill="clear"
-                        className="login-forgot"
-                        onClick={() => showToast('Demo: recuperación de contraseña no disponible', 'info')}
-                      >
-                        ¿Olvidaste tu contraseña?
-                      </IonButton>
-                      <IonButton type="button" fill="clear" className="login-first-link" onClick={goFirst}>
-                        ¿Primer inicio de sesión?
-                      </IonButton>
-                    </div>
-                  </div>
 
-                  <IonButton expand="block" className="login-submit" type="submit" disabled={busy}>
-                    {busy ? (
-                      <>
-                        <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                        Verificando…
-                      </>
-                    ) : (
-                      <>
-                        <IonIcon icon={lockClosedOutline} />
-                        Iniciar sesión
-                      </>
-                    )}
-                  </IonButton>
+                    <IonButton expand="block" className="login-submit" type="submit" disabled={busy}>
+                      {busy ? (
+                        <>
+                          <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
+                          Verificando…
+                        </>
+                      ) : (
+                        <>
+                          <IonIcon icon={lockClosedOutline} />
+                          Iniciar sesión
+                        </>
+                      )}
+                    </IonButton>
+
+                    <div className="login-divider" role="separator" aria-label="O">
+                      <span>o</span>
+                    </div>
+
+                    <IonButton type="button" expand="block" className="login-first-method" onClick={goFirst}>
+                      <span className="login-first-method-icon">
+                        <IonIcon icon={idCardOutline} />
+                      </span>
+                      Primer inicio de sesión
+                    </IonButton>
 
                   <div className="login-security">
                     <IonIcon icon={shieldCheckmarkOutline} />
@@ -527,8 +599,9 @@ export function LoginPage() {
                 </form>
 
                 <footer className="login-footer">© 2026 ANTARES · Plataforma de salud preventiva</footer>
-              </>
+              </motion.div>
             )}
+            </AnimatePresence>
           </div>
         </section>
       </div>

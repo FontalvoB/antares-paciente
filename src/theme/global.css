@@ -3612,25 +3612,6 @@ ion-button.login-forgot {
   align-items: flex-end;
 }
 
-ion-button.login-first-link {
-  height: auto;
-  min-height: 0;
-  margin: 0;
-  --background: transparent;
-  --background-hover: transparent;
-  --background-activated: transparent;
-  --background-focused: transparent;
-  --ripple-color: transparent;
-  --color: #13a878;
-  --padding-top: 4px;
-  --padding-bottom: 4px;
-  --padding-start: 0;
-  --padding-end: 0;
-  font-size: 14.5px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .login-heading-sub {
   margin: 6px 0 0;
   color: #6f84a0;
@@ -3931,10 +3912,6 @@ ion-button.login-submit ion-icon {
     font-size: 13px;
   }
 
-  ion-button.login-first-link {
-    font-size: 13px;
-  }
-
   .login-channel {
     min-height: 78px;
     font-size: 12px;
@@ -3953,8 +3930,37 @@ ion-button.login-submit ion-icon {
 /* ===== Primer inicio de sesión: identificación → contactos → OTP ===== */
 
 .login-step {
-  animation: login-panel-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* La animación de despliegue la maneja Framer Motion (motion.div) */
+  animation: none;
 }
+
+.login-busy-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 12px 15px;
+  border-radius: 14px;
+  background: #f4f8ff;
+  border: 1px solid #d7e4fb;
+  color: #34507a;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.login-busy-bar ion-spinner {
+  flex: 0 0 auto;
+  --color: #2d76d7;
+}
+
+.login-busy-bar .login-busy-progress {
+  flex: 1 1 auto;
+  height: 4px;
+  --progress-background: #2d76d7;
+  --buffer-background: rgba(45, 118, 215, 0.16);
+}
+
 
 .login-id-note {
   display: flex;
@@ -4124,6 +4130,69 @@ ion-button.login-submit ion-icon {
   font-size: 12.5px;
   font-weight: 700;
   text-align: center;
+}
+
+/* Separador "o" entre el login por contraseña y el primer inicio de sesión */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px 0;
+  color: #9aabc0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e3eaf2;
+}
+
+/* Primer inicio de sesión como método secundario de autenticación */
+ion-button.login-first-method {
+  position: relative;
+  --background: #fff;
+  --background-hover: #f4f8ff;
+  --background-activated: #eaf2ff;
+  --background-focused: #f4f8ff;
+  --color: #14213b;
+  --border-color: #dbe4ef;
+  --border-style: solid;
+  --border-width: 1.5px;
+  --border-radius: 18px;
+  height: 61px;
+  min-height: 61px;
+  box-shadow: 0 3px 10px rgba(20, 53, 94, 0.06);
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+ion-button.login-first-method:focus-visible {
+  --border-color: #13a878;
+  box-shadow: 0 0 0 4px rgba(19, 168, 120, 0.14);
+}
+
+.login-first-method .login-first-method-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: #fff;
+  background: linear-gradient(145deg, #13a878, #19c39a);
+  box-shadow: 0 6px 14px rgba(19, 168, 120, 0.28);
+  font-size: 17px;
 }
 
 @media (max-width: 480px) {
