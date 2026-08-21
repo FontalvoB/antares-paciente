@@ -49,10 +49,9 @@ function timeAgo(iso: string): string {
   return `hace ${days} días`
 }
 
-function statusBadge(status: string, reason?: string | null) {
-  if (status === 'Approved') return <IonBadge color="success">Aprobado</IonBadge>
-  if (status === 'Rejected') return <IonBadge color="danger">Rechazado{reason ? `: ${reason}` : ''}</IonBadge>
-  return <IonBadge color="warning">Pendiente de revisión</IonBadge>
+function statusBadge(status: string) {
+  if (status === 'Banned') return <IonBadge color="danger">Baneado</IonBadge>
+  return <IonBadge color="success">Activo</IonBadge>
 }
 
 function PostCard({
@@ -344,15 +343,14 @@ export function CommunityPage() {
                 </div>
               )}
               <div style={{ fontSize: 11, opacity: 0.55 }}>{pointsTotal} pts</div>
-              <div style={{ marginTop: 8 }}>{me ? statusBadge(me.status, me.rejectionReason) : meLoading ? <IonSkeletonText style={{ width: 120, height: 18 }} animated /> : null}</div>
+              <div style={{ marginTop: 8 }}>{me ? statusBadge(me.status) : meLoading ? <IonSkeletonText style={{ width: 120, height: 18 }} animated /> : null}</div>
             </div>
 
-            {me && me.status !== 'Approved' && !editing && (
-              <div className="card" style={{ margin: 14, border: '1px solid var(--g1)' }}>
+            {me && me.status === 'Banned' && (
+              <div className="card" style={{ margin: 14, border: '1px solid var(--red)', background: 'rgba(220,38,38,.08)' }}>
+                <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 800, marginBottom: 4 }}>⚠️ Perfil suspendido</div>
                 <div style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
-                  {me.status === 'Pending'
-                    ? 'Tu perfil está pendiente de revisión por un moderador. Podrás publicar y comentar cuando sea aprobado.'
-                    : 'Tu perfil fue rechazado. Edita tus datos para volver a solicitarlo.'}
+                  Tu perfil está suspendido en la comunidad. Contacta a un administrador.
                 </div>
               </div>
             )}
@@ -369,19 +367,17 @@ export function CommunityPage() {
                   </IonButton>
                 </div>
               </div>
-            ) : (
+            ) : me && me.status === 'Active' ? (
               <div className="card" style={{ margin: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <div style={{ fontWeight: 800 }}>Sobre mí</div>
-                  {me && (
-                    <IonButton fill="clear" size="small" className="bt bt-mini" onClick={startEdit}>✏️ Editar</IonButton>
-                  )}
+                  <IonButton fill="clear" size="small" className="bt bt-mini" onClick={startEdit}>✏️ Editar</IonButton>
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
                   {me?.bio?.trim() ? me.bio : 'Cuéntanos sobre ti en la comunidad.'}
                 </div>
               </div>
-            )}
+            ) : null}
           </>
         )}
 
