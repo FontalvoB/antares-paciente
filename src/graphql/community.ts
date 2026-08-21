@@ -2,14 +2,15 @@
 
 // ---------- Tipos ----------
 
-export type ProfileStatus = 'Pending' | 'Approved' | 'Rejected'
+export type ProfileStatus = 'Active' | 'Banned'
 
 export interface Profile {
   id: string
   displayName: string
   bio: string | null
   status: ProfileStatus
-  rejectionReason: string | null
+  banReason: string | null
+  bannedAt: string | null
   createdAt: string
 }
 
@@ -83,7 +84,8 @@ const PROFILE_FRAGMENT = /* GraphQL */ `
     displayName
     bio
     status
-    rejectionReason
+    banReason
+    bannedAt
     createdAt
   }
 `
