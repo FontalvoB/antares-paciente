@@ -13,6 +13,7 @@ import { useApp } from '../context/AppContext'
 import { useCommunity, type FeedPostView } from '../hooks/useCommunity'
 import type { Comment, Person, Post, Profile } from '../graphql/community'
 import { ErrorBoundary } from '../components/error-boundary'
+import { ConversationModal } from '../components/conversation-modal'
 
 const AVATAR_GRADS = [
   'linear-gradient(135deg,#1B6CA8,#0A1F36)',
@@ -222,6 +223,7 @@ export function CommunityPage() {
     updateProfile,
     followUser,
     unfollowUser,
+    sendMessage,
   } = useCommunity()
 
   const [tab, setTab] = useState<'feed' | 'perfil' | 'amigos' | 'redes'>('feed')
@@ -880,7 +882,18 @@ export function CommunityPage() {
         )}
       </IonModal>
 
-      {activePeer && null}
+      {me && activePeer && (
+        <ConversationModal
+          peer={activePeer}
+          me={me}
+          open={!!activePeer}
+          onClose={() => setActivePeer(null)}
+          onToast={showToast}
+          onSend={async (body) => {
+            await sendMessage(activePeer.id, body)
+          }}
+        />
+      )}
     </Screen>
     </ErrorBoundary>
   )
