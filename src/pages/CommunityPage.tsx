@@ -13,6 +13,7 @@ import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useCommunity, type FeedPostView } from '../hooks/useCommunity'
 import type { Comment, Post } from '../graphql/community'
+import { ErrorBoundary } from '../components/error-boundary'
 
 const friends = [
   { i: 'CR', n: 'Carlos Rodríguez', m: 'Semana 14 · Miami FL · 1,240 pts', g: 'linear-gradient(135deg,#1B6CA8,#0A1F36)' },
@@ -252,6 +253,7 @@ export function CommunityPage() {
   }
 
   return (
+    <ErrorBoundary>
     <Screen>
       <div className="hero hero-pur" style={{ paddingBottom: 0 }}>
         <div className="h2">🌐 Comunidad ANTARES</div>
@@ -490,5 +492,6 @@ export function CommunityPage() {
         )}
       </IonModal>
     </Screen>
+    </ErrorBoundary>
   )
 }
