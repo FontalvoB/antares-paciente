@@ -12,6 +12,7 @@ import type {
   UserProfile,
 } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
+import { DAY_BONUS_PTS } from '../data/program'
 
 interface AppState {
   flow: Flow
@@ -202,10 +203,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     emocional: false,
   })
   const [programWeek] = useState(12)
-  const [streak, setStreak] = useState(12)
+  const [streak, setStreak] = useState(22)
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([true, true, true, true, false, false, false])
   const [pointsToday, setPointsToday] = useState(0)
-  const [pointsTotal, setPointsTotal] = useState(840)
+  const [pointsTotal, setPointsTotal] = useState(4820)
   const [posts, setPosts] = useState<CommunityPost[]>(seedPosts)
 
   const value = useMemo<AppState>(
@@ -283,13 +284,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (p[id]) return p
           const next = { ...p, [id]: true }
           const finished = (Object.keys(next) as ProgramTaskId[]).every((k) => next[k])
+          const gain = finished ? pts + DAY_BONUS_PTS : pts
           if (finished) {
             setStreak((s) => s + 1)
             const idx = weekdayMondayIndex()
             setWeekCheckins((days) => days.map((v, i) => (i === idx ? true : v)))
           }
-          setPointsToday((n) => n + pts)
-          setPointsTotal((n) => n + pts)
+          setPointsToday((n) => n + gain)
+          setPointsTotal((n) => n + gain)
           return next
         })
       },
