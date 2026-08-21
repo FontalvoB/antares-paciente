@@ -54,6 +54,14 @@ function statusBadge(status: string) {
   return <IonBadge color="success">Activo</IonBadge>
 }
 
+function byNewest(a: { createdAt: string }, b: { createdAt: string }) {
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+}
+
+function byOldest(a: { createdAt: string }, b: { createdAt: string }) {
+  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+}
+
 function PostCard({
   view,
   onOpen,
@@ -177,7 +185,7 @@ function CommentItem({
           </IonButton>
         </div>
       </div>
-      {(comment.replies ?? []).map((r) => (
+      {[...(comment.replies ?? [])].sort(byOldest).map((r) => (
         <CommentItem key={r.id} comment={r} depth={depth + 1} onReply={onReply} />
       ))}
     </div>
@@ -504,10 +512,10 @@ export function CommunityPage() {
             <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>{activePost.body}</div>
 
             <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--g1)', paddingTop: 10 }}>
-              {activePost.comments.filter((c) => !c.parentCommentId).length === 0 ? (
+              {activePost.comments.filter((c) => !c.parentCommentId).sort(byNewest).length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--mu)', textAlign: 'center', padding: 20 }}>Sin comentarios todavía. ¡Sé el primero!</div>
               ) : (
-                activePost.comments.filter((c) => !c.parentCommentId).map((c) => (
+                activePost.comments.filter((c) => !c.parentCommentId).sort(byNewest).map((c) => (
                   <CommentItem key={c.id} comment={c} depth={0} onReply={(rc) => { setReplyTarget(rc); setReplyDraft('') }} />
                 ))
               )}
