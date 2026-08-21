@@ -2,7 +2,6 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 import { logoutUser } from '../utils/authApi'
 import type {
   ChatMessage,
-  CommunityPost,
   Flow,
   ProgramDay,
   ProgramTaskId,
@@ -34,7 +33,6 @@ interface AppState {
   weekCheckins: boolean[]
   pointsToday: number
   pointsTotal: number
-  posts: CommunityPost[]
   navigate: (s: Screen) => void
   finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void
   backToLogin: () => void
@@ -53,9 +51,7 @@ interface AppState {
   sendChat: (text: string) => void
   connectWatch: (name: string) => void
   disconnectWatch: () => void
-  completeStep: (id: ProgramTaskId, pts: number) => void
-  likePost: (id: string) => void
-  addPost: (text: string) => void
+completeStep: (id: ProgramTaskId, pts: number) => void
   logout: () => void
 }
 
@@ -73,47 +69,6 @@ const defaultUser: UserProfile = {
   fam1Cel: '+1 (786) 555-0192',
   fam1Email: 'pedro.gonzalez@email.com',
 }
-
-const seedPosts: CommunityPost[] = [
-  {
-    id: '1',
-    initials: 'CR',
-    name: 'Carlos Rodríguez',
-    meta: 'Semana 14 · COPP-ADRESD · hace 2h',
-    badge: '⭐ BIO+',
-    badgeTone: 'teal',
-    text: '¡Hoy completé mis 14 minutos de ejercicio! Semana 14 del programa y me siento increíble. Mi glucosa bajó de 108 a 91 mg/dL 🎉',
-    likes: 24,
-    comments: 8,
-    liked: false,
-    progress: 'Glucosa 108→91 · ↓17 mg/dL ✅',
-  },
-  {
-    id: '2',
-    initials: 'LP',
-    name: 'Laura Pedraza',
-    meta: 'Semana 8 · COPP-ADRESD · hace 5h',
-    badge: 'BIO',
-    badgeTone: 'blue',
-    text: 'Mi almuerzo de hoy según el plan mediterráneo 🥗 La IA detectó 89% de adherencia. Poco a poco estamos aprendiendo a comer bien sin sufrir 😊',
-    likes: 41,
-    comments: 15,
-    liked: false,
-    photo: '🥗🍗🍚',
-  },
-  {
-    id: '3',
-    initials: 'JM',
-    name: 'Jorge Martínez',
-    meta: 'Semana 20 · COPP-ADRESD · ayer',
-    badge: '🌟 TOP',
-    badgeTone: 'gold',
-    text: 'Semana 20 y ya bajé 8.3 kg. Mi HbA1c pasó de 6.4% a 5.6% — salí del rango de prediabetes. Para quienes están empezando: ¡sí se puede!',
-    likes: 98,
-    comments: 34,
-    liked: true,
-  },
-]
 
 const seedChat: ChatMessage[] = [
   {
@@ -230,7 +185,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       weekCheckins,
       pointsToday,
       pointsTotal,
-      posts,
       navigate: (s) => setScreen(s),
       finishLogin: (seed, next = 'onboarding') => {
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
@@ -295,35 +249,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return next
         })
       },
-      likePost: (id) =>
-        setPosts((list) =>
-          list.map((p) =>
-            p.id === id
-              ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-              : p,
-          ),
-        ),
       logout: () => {
         void logoutUser()
         setFlow('login')
         setScreen('home')
       },
-      addPost: (text) =>
-        setPosts((list) => [
-          {
-            id: crypto.randomUUID(),
-            initials: 'MG',
-            name: user.nombre,
-            meta: 'Semana 12 · COPP-ADRESD · ahora',
-            badge: '⭐ BIO',
-            badgeTone: 'gold',
-            text,
-            likes: 0,
-            comments: 0,
-            liked: false,
-          },
-          ...list,
-        ]),
     }),
     [
       flow,
@@ -345,7 +275,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       weekCheckins,
       pointsToday,
       pointsTotal,
-      posts,
     ],
   )
 
