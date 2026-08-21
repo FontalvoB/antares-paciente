@@ -34,7 +34,7 @@ export interface FeedPostView {
  * primer acceso), feed paginado, creación de publicaciones y likes.
  */
 export function useCommunity() {
-  const [meResult] = useQuery<MeResult>({ query: ME_QUERY })
+  const [meResult, reexecuteMe] = useQuery<MeResult>({ query: ME_QUERY })
   const [feedResult, reexecuteFeed] = useQuery<FeedResult>({
     query: FEED_QUERY,
     variables: { take: PAGE_SIZE, skip: 0 },
@@ -112,9 +112,11 @@ export function useCommunity() {
     me,
     meLoading: meResult.fetching,
     meError: meResult.error,
+    retryMe: () => reexecuteMe({ requestPolicy: 'network-only' }),
     feed,
     feedLoading: feedResult.fetching,
     feedError: feedResult.error,
+    retryFeed: () => reexecuteFeed({ requestPolicy: 'network-only' }),
     createPost,
     toggleLike,
     addComment,

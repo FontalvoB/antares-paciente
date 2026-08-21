@@ -133,12 +133,15 @@ function CommentItem({
 }
 
 export function CommunityPage() {
-  const { showToast, user, pointsTotal } = useApp()
+  const { showToast, pointsTotal } = useApp()
   const {
     me,
     meLoading,
+    retryMe,
     feed,
     feedLoading,
+    feedError,
+    retryFeed,
     createPost,
     toggleLike,
     addComment,
@@ -288,7 +291,14 @@ export function CommunityPage() {
               </div>
             </div>
 
-            {feedLoading && feed.length === 0 ? (
+            {feedError ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                  No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.
+                </div>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => retryFeed()}>Reintentar</IonButton>
+              </div>
+            ) : feedLoading && feed.length === 0 ? (
               <div className="card" style={{ margin: '0 14px 10px' }}>
                 {[0, 1, 2].map((i) => (
                   <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
@@ -321,7 +331,18 @@ export function CommunityPage() {
               <div className="avatar" style={{ width: 64, height: 64, margin: '0 auto 8px', background: 'linear-gradient(135deg,var(--teal),#0F6E56)', fontSize: 22 }}>
                 {me ? initialsOf(me.displayName) : 'MG'}
               </div>
-              <div className="display" style={{ fontSize: 18, fontWeight: 800 }}>{me?.displayName ?? user.nombre}</div>
+              {me ? (
+                <div className="display" style={{ fontSize: 18, fontWeight: 800 }}>{me.displayName}</div>
+              ) : meLoading ? (
+                <IonSkeletonText style={{ width: 180, height: 18, margin: '0 auto' }} animated />
+              ) : (
+                <div className="card" style={{ margin: 0, textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                    No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.
+                  </div>
+                  <IonButton className="bt bt-pur bt-mini" onClick={() => retryMe()}>Reintentar</IonButton>
+                </div>
+              )}
               <div style={{ fontSize: 11, opacity: 0.55 }}>{pointsTotal} pts</div>
               <div style={{ marginTop: 8 }}>{me ? statusBadge(me.status, me.rejectionReason) : meLoading ? <IonSkeletonText style={{ width: 120, height: 18 }} animated /> : null}</div>
             </div>
