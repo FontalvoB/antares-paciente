@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  IonAlert,
   IonBadge,
   IonButton,
   IonInput,
@@ -99,8 +100,8 @@ function MemberProfile({
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: '0 14px 8px', flexWrap: 'wrap' }}>
         {isFriend ? (
-          <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => onToast('Ya son amigos', 'info')}>
-            Amigos ✓
+          <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={onUnfollow}>
+            Dejar de seguir
           </IonButton>
         ) : isFollowingBack ? (
           <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={onUnfollow}>
@@ -318,6 +319,7 @@ export function CommunityPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [activePeer, setActivePeer] = useState<Profile | null>(null)
   const [viewingId, setViewingId] = useState<string | null>(null)
+  const [unfollowTarget, setUnfollowTarget] = useState<Profile | null>(null)
 
   const [profileResult, reexecuteProfile] = useQuery<ProfileResult>({
     query: PROFILE_QUERY,
@@ -442,8 +444,7 @@ export function CommunityPage() {
         return
       }
       if (person.isFollowing) {
-        await unfollowUser(id)
-        showToast(`Dejaste de seguir a ${name}`, 'ok')
+        setUnfollowTarget(person.profile)
       } else {
         await followUser(id)
         showToast(`Siguiendo a ${name}`, 'ok')
@@ -774,7 +775,7 @@ export function CommunityPage() {
                 isFollowingBack={profileFollowingBack}
                 busy={busyId === profile.id}
                 onFollow={() => void handleFollow(profile.id, profile.displayName)}
-                onUnfollow={() => void handleUnfollow(profile.id, profile.displayName)}
+                onUnfollow={() => setUnfollowTarget(profile)}
                 onMessage={() => setActivePeer(profile)}
                 onOpenPost={setActivePost}
                 onToggleLike={handleToggleLike}
@@ -909,7 +910,7 @@ export function CommunityPage() {
                   ))
                 )}
 
-                <div style={{ padding: '14px 14px 4px', fontWeight: 800, fontSize: 13 }}>Seguidores</div>
+<div style={{ padding: '14px 14px 4px', fontWeight: 800, fontSize: 13 }}>Recomendados</div>
                 {followersError ? (
                   <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                     <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
@@ -1086,6 +1087,23 @@ export function CommunityPage() {
           }}
         />
       )}
+
+      <IonAlert
+        isOpen={!!unfollowTarget}
+        header="Dejar de seguir"
+        message={`¿Dejar de seguir a ${unfollowTarget?.displayName}?`}
+        buttons={[
+          'Cancelar',
+          {
+            text: 'Dejar de seguir',
+            role: 'destructive',
+            handler: () => {
+              if (unfollowTarget) void handleUnfollow(unfollowTarget.id, unfollowTarget.displayName)
+            },
+          },
+        ]}
+        onDidDismiss={() => setUnfollowTarget(null)}
+      />
     </Screen>
     </ErrorBoundary>
   )
