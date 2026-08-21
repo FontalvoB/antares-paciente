@@ -906,6 +906,7 @@ export function CommunityPage() {
                           </div>
                         </div>
                       </div>
+                      <IonButton fill="outline" className="bt bt-mini" onClick={() => setUnfollowTarget(f)}>Dejar de seguir</IonButton>
                       <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(f)}>💬</IonButton>
                     </div>
                   ))
