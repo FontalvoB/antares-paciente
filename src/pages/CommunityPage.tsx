@@ -441,6 +441,37 @@ export function CommunityPage() {
                 </div>
               </div>
             ) : null}
+
+            {me && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 14px 2px' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14 }}>Mis publicaciones</div>
+                  <div className="chip chip-pur" style={{ marginLeft: 'auto' }}>{me.posts.length}</div>
+                </div>
+                {me.posts.length === 0 ? (
+                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                      Aún no has publicado nada.
+                    </div>
+                    <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('feed')}>Ir al feed</IonButton>
+                  </div>
+                ) : (
+                  me.posts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      view={{
+                        post,
+                        likeCount: post.likes.length,
+                        likedByMe: post.likes.some((l) => l.profileId === me.id),
+                      }}
+                      onOpen={(p) => setActivePost(p)}
+                      onToggleLike={handleToggleLike}
+                      onToast={showToast}
+                    />
+                  ))
+                )}
+              </>
+            )}
           </>
         )}
 
