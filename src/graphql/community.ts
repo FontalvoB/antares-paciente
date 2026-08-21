@@ -57,6 +57,10 @@ export interface PostResult {
   post: Post | null
 }
 
+export interface ProfileResult {
+  profile: Profile | null
+}
+
 export interface CreatePostResult {
   createPost: Post
 }
@@ -238,6 +242,20 @@ export const POST_QUERY = /* GraphQL */ `
       ...PostFields
     }
   }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const PROFILE_QUERY = /* GraphQL */ `
+  query Profile($id: UUID!) {
+    profile(id: $id) {
+      ...ProfileFields
+      posts {
+        ...PostFields
+      }
+    }
+  }
+  ${PROFILE_FRAGMENT}
   ${POST_FRAGMENT}
   ${COMMENT_FRAGMENT}
 `
