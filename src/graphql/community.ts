@@ -127,6 +127,14 @@ export interface FollowersResult {
   followers: Profile[]
 }
 
+export interface ProfileFollowersResult {
+  profileFollowers: Profile[]
+}
+
+export interface ProfileFollowingResult {
+  profileFollowing: Profile[]
+}
+
 export interface ConversationsResult {
   conversations: Conversation[]
 }
@@ -372,6 +380,24 @@ export const FOLLOWING_QUERY = /* GraphQL */ `
 export const FOLLOWERS_QUERY = /* GraphQL */ `
   query Followers($take: Int!, $skip: Int!) {
     followers(take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const PROFILE_FOLLOWERS_QUERY = /* GraphQL */ `
+  query ProfileFollowers($profileId: UUID!, $take: Int!, $skip: Int!) {
+    profileFollowers(profileId: $profileId, take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const PROFILE_FOLLOWING_QUERY = /* GraphQL */ `
+  query ProfileFollowing($profileId: UUID!, $take: Int!, $skip: Int!) {
+    profileFollowing(profileId: $profileId, take: $take, skip: $skip) {
       ...ProfileFields
     }
   }

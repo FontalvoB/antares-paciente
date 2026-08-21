@@ -13,7 +13,14 @@ import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useCommunity, type FeedPostView } from '../hooks/useCommunity'
 import { useQuery } from 'urql'
-import { PROFILE_QUERY, type ProfileResult } from '../graphql/community'
+import {
+  PROFILE_FOLLOWERS_QUERY,
+  PROFILE_FOLLOWING_QUERY,
+  PROFILE_QUERY,
+  type ProfileFollowersResult,
+  type ProfileFollowingResult,
+  type ProfileResult,
+} from '../graphql/community'
 import type { Comment, Person, Post, Profile } from '../graphql/community'
 import { ErrorBoundary } from '../components/error-boundary'
 import { ConversationModal } from '../components/conversation-modal'
@@ -65,6 +72,9 @@ function MemberProfile({
   isFriend,
   isFollowingBack,
   busy,
+  followersCount,
+  followingCount,
+  onShowList,
   onFollow,
   onUnfollow,
   onMessage,
@@ -77,6 +87,9 @@ function MemberProfile({
   isFriend: boolean
   isFollowingBack: boolean
   busy: boolean
+  followersCount: number
+  followingCount: number
+  onShowList: (which: 'followers' | 'following') => void
   onFollow: () => void
   onUnfollow: () => void
   onMessage: () => void
@@ -91,6 +104,16 @@ function MemberProfile({
           {initialsOf(profile.displayName)}
         </div>
         <div className="display" style={{ fontSize: 18, fontWeight: 800 }}>{profile.displayName}</div>
+        <div style={{ display: 'flex', gap: 28, justifyContent: 'center', marginTop: 12 }}>
+          <button onClick={() => onShowList('followers')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>{followersCount}</div>
+            <div style={{ fontSize: 11, opacity: 0.65 }}>Seguidores</div>
+          </button>
+          <button onClick={() => onShowList('following')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>{followingCount}</div>
+            <div style={{ fontSize: 11, opacity: 0.65 }}>Siguiendo</div>
+          </button>
+        </div>
       </div>
       <div className="card" style={{ margin: 14 }}>
         <div style={{ fontWeight: 800, marginBottom: 6 }}>Sobre mí</div>
@@ -321,12 +344,35 @@ export function CommunityPage() {
   const [viewingId, setViewingId] = useState<string | null>(null)
   const [unfollowTarget, setUnfollowTarget] = useState<Profile | null>(null)
   const [perfilList, setPerfilList] = useState<'followers' | 'following' | null>(null)
+  const [memberList, setMemberList] = useState<'followers' | 'following' | null>(null)
 
   const [profileResult, reexecuteProfile] = useQuery<ProfileResult>({
     query: PROFILE_QUERY,
     variables: { id: viewingId ?? '' },
     pause: !viewingId,
   })
+  const [memberFollowersResult, reexecuteMemberFollowers] = useQuery<ProfileFollowersResult>({
+    query: PROFILE_FOLLOWERS_QUERY,
+    variables: { profileId: viewingId ?? '', take: 50, skip: 0 },
+    pause: !viewingId,
+  })
+  const [memberFollowingResult, reexecuteMemberFollowing] = useQuery<ProfileFollowingResult>({
+    query: PROFILE_FOLLOWING_QUERY,
+    variables: { profileId: viewingId ?? '', take: 50, skip: 0 },
+    pause: !viewingId,
+  })
+  const memberListItems =
+    memberList === 'followers'
+      ? (memberFollowersResult.data?.profileFollowers ?? [])
+      : (memberFollowingResult.data?.profileFollowing ?? [])
+  const memberListFetching =
+    memberList === 'followers' ? memberFollowersResult.fetching : memberFollowingResult.fetching
+  const memberListError =
+    memberList === 'followers' ? memberFollowersResult.error : memberFollowingResult.error
+  const retryMemberList = () => {
+    if (memberList === 'followers') void reexecuteMemberFollowers({ requestPolicy: 'network-only' })
+    else void reexecuteMemberFollowing({ requestPolicy: 'network-only' })
+  }
   const profile = profileResult.data?.profile ?? null
   const followedIds = new Set(peopleFollowing.map((p) => p.id))
   const recommended = followers.filter((f) => !friends.some((x) => x.id === f.id))
@@ -788,7 +834,67 @@ export function CommunityPage() {
           </>
         )}
 
-        {tab === 'amigos' && (viewingId ? (
+        {tab === 'amigos' && (viewingId ? (memberList ? (
+          <>
+            <div style={{ padding: 14 }}>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setMemberList(null)}>← Volver</IonButton>
+            </div>
+            <div style={{ padding: '0 14px 4px', fontWeight: 800, fontSize: 14 }}>
+              {memberList === 'followers' ? 'Seguidores' : 'Siguiendo'}
+            </div>
+            {memberListFetching ? (
+              <div className="card" style={{ margin: 14 }}>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                    <IonSkeletonText style={{ width: 40, height: 40, borderRadius: 10 }} animated />
+                    <div style={{ flex: 1 }}>
+                      <IonSkeletonText style={{ width: '45%', height: 12 }} animated />
+                      <IonSkeletonText style={{ width: '70%', height: 12 }} animated />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : memberListError ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                  No se pudo cargar la lista.
+                </div>
+                <IonButton className="bt bt-pur bt-mini" onClick={retryMemberList}>Reintentar</IonButton>
+              </div>
+            ) : memberListItems.length === 0 ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                  {memberList === 'followers' ? 'Aún no tiene seguidores.' : 'No sigue a nadie todavía.'}
+                </div>
+              </div>
+            ) : (
+              memberListItems.map((row) => (
+                <div key={row.id} className="row-card">
+                  <div
+                    style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0, cursor: 'pointer' }}
+                    onClick={() => {
+                      setViewingId(row.id)
+                      setMemberList(null)
+                    }}
+                  >
+                    <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[row.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                      {initialsOf(row.displayName)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 13 }}>{row.displayName}</div>
+                      <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {row.bio?.trim() || 'Sin bio'}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>
+                      {memberList === 'followers' ? 'Te sigue' : 'Siguiendo'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </>
+        ) : (
           <>
             <div style={{ padding: 14 }}>
               <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setViewingId(null)}>← Volver</IonButton>
@@ -819,6 +925,9 @@ export function CommunityPage() {
                 isFriend={profileIsFriend}
                 isFollowingBack={profileFollowingBack}
                 busy={busyId === profile.id}
+                followersCount={memberFollowersResult.data?.profileFollowers.length ?? 0}
+                followingCount={memberFollowingResult.data?.profileFollowing.length ?? 0}
+                onShowList={(w) => setMemberList(w)}
                 onFollow={() => void handleFollow(profile.id, profile.displayName)}
                 onUnfollow={() => setUnfollowTarget(profile)}
                 onMessage={() => setActivePeer(profile)}
@@ -828,7 +937,7 @@ export function CommunityPage() {
               />
             )}
           </>
-        ) : (
+        )) : (
           <>
             <div style={{ padding: 14 }}>
               <IonSearchbar
