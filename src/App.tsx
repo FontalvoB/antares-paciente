@@ -1,7 +1,9 @@
 import { setupIonicReact, IonApp } from '@ionic/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ReactNode } from 'react'
+import { Provider } from 'urql'
 import { AppProvider, useApp } from './context/AppContext'
+import { communityClient } from './graphql/client'
 import { PanicOverlay } from './components/PanicOverlay'
 import { VoiceOverlay } from './components/VoiceOverlay'
 import { ToastHost } from './components/ToastHost'
@@ -107,10 +109,12 @@ function Shell() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <IonApp>
-        <Shell />
-      </IonApp>
-    </AppProvider>
+    <Provider value={communityClient}>
+      <AppProvider>
+        <IonApp>
+          <Shell />
+        </IonApp>
+      </AppProvider>
+    </Provider>
   )
 }
