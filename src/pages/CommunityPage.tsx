@@ -11,15 +11,8 @@ import {
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useCommunity, type FeedPostView } from '../hooks/useCommunity'
-import type { Comment, Post } from '../graphql/community'
+import type { Comment, Person, Post, Profile } from '../graphql/community'
 import { ErrorBoundary } from '../components/error-boundary'
-
-const friends = [
-  { i: 'CR', n: 'Carlos Rodríguez', m: 'Semana 14 · Miami FL · 1,240 pts', g: 'linear-gradient(135deg,#1B6CA8,#0A1F36)' },
-  { i: 'LP', n: 'Laura Pedraza', m: 'Semana 8 · Houston TX · 620 pts', g: 'linear-gradient(135deg,#D4537E,#9B2D5A)' },
-  { i: 'JM', n: 'Jorge Martínez', m: 'Semana 20 · Orlando FL · 2,890 pts', g: 'linear-gradient(135deg,#E87B2B,#C05A0A)' },
-  { i: 'SM', n: 'Sandra Morales', m: 'Semana 6 · Tampa FL · 380 pts', g: 'linear-gradient(135deg,#059669,#047857)' },
-]
 
 const AVATAR_GRADS = [
   'linear-gradient(135deg,#1B6CA8,#0A1F36)',
@@ -202,17 +195,42 @@ export function CommunityPage() {
     feedLoading,
     feedError,
     retryFeed,
+    followingFeed,
+    followingFeedLoading,
+    followingFeedError,
+    retryFollowingFeed,
+    friends,
+    friendsLoading,
+    friendsError,
+    retryFriends,
+    peopleFollowing,
+    followingLoading,
+    followingError,
+    retryFollowing,
+    followers,
+    followersLoading,
+    followersError,
+    retryFollowers,
+    people,
+    peopleLoading,
+    peopleError,
+    setPeopleQuery,
     createPost,
     toggleLike,
     addComment,
     replyToComment,
     updateProfile,
+    followUser,
+    unfollowUser,
   } = useCommunity()
 
   const [tab, setTab] = useState<'feed' | 'perfil' | 'amigos' | 'redes'>('feed')
+  const [feedScope, setFeedScope] = useState<'forYou' | 'following'>('forYou')
   const [draft, setDraft] = useState('')
   const [q, setQ] = useState('')
   const [publishing, setPublishing] = useState(false)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [activePeer, setActivePeer] = useState<Profile | null>(null)
 
   const [activePost, setActivePost] = useState<Post | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
@@ -313,6 +331,41 @@ export function CommunityPage() {
     }
   }
 
+  async function handleFollowToggle(person: Person) {
+    const id = person.profile.id
+    const name = person.profile.displayName
+    setBusyId(id)
+    try {
+      if (person.isFriend) {
+        showToast('Ya son amigos', 'info')
+        return
+      }
+      if (person.isFollowing) {
+        await unfollowUser(id)
+        showToast(`Dejaste de seguir a ${name}`, 'ok')
+      } else {
+        await followUser(id)
+        showToast(`Siguiendo a ${name}`, 'ok')
+      }
+    } catch (e) {
+      showToast((e as Error).message, 'err')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleUnfollow(profileId: string, name: string) {
+    setBusyId(profileId)
+    try {
+      await unfollowUser(profileId)
+      showToast(`Dejaste de seguir a ${name}`, 'ok')
+    } catch (e) {
+      showToast((e as Error).message, 'err')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   return (
     <ErrorBoundary>
     <Screen>
@@ -353,14 +406,55 @@ export function CommunityPage() {
               </div>
             </div>
 
-            {feedError ? (
+            <div style={{ display: 'flex', padding: '0 14px 10px' }}>
+              <button className={`com-tab ${feedScope === 'forYou' ? 'on' : ''}`} onClick={() => setFeedScope('forYou')}>
+                Para ti
+              </button>
+              <button className={`com-tab ${feedScope === 'following' ? 'on' : ''}`} onClick={() => setFeedScope('following')}>
+                Siguiendo
+              </button>
+            </div>
+
+            {feedScope === 'forYou' ? (
+              feedError ? (
+                <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                    No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.
+                  </div>
+                  <IonButton className="bt bt-pur bt-mini" onClick={() => retryFeed()}>Reintentar</IonButton>
+                </div>
+              ) : feedLoading && feed.length === 0 ? (
+                <div className="card" style={{ margin: '0 14px 10px' }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                      <IonSkeletonText style={{ width: 38, height: 38, borderRadius: 10 }} animated />
+                      <div style={{ flex: 1 }}>
+                        <IonSkeletonText style={{ width: '45%', height: 12 }} animated />
+                        <IonSkeletonText style={{ width: '90%', height: 12 }} animated />
+                        <IonSkeletonText style={{ width: '70%', height: 12 }} animated />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                feed.map((view) => (
+                  <PostCard
+                    key={view.post.id}
+                    view={view}
+                    onOpen={(p) => setActivePost(p)}
+                    onToggleLike={handleToggleLike}
+                    onToast={showToast}
+                  />
+                ))
+              )
+            ) : followingFeedError ? (
               <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                  No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.
+                  No se pudo cargar el feed de seguidos. Verifica tu sesión e inténtalo de nuevo.
                 </div>
-                <IonButton className="bt bt-pur bt-mini" onClick={() => retryFeed()}>Reintentar</IonButton>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowingFeed()}>Reintentar</IonButton>
               </div>
-            ) : feedLoading && feed.length === 0 ? (
+            ) : followingFeedLoading && followingFeed.length === 0 ? (
               <div className="card" style={{ margin: '0 14px 10px' }}>
                 {[0, 1, 2].map((i) => (
                   <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
@@ -373,8 +467,15 @@ export function CommunityPage() {
                   </div>
                 ))}
               </div>
+            ) : followingFeed.length === 0 ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                  Aún no sigues a nadie. Descubre miembros en Amigos.
+                </div>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('amigos')}>Ir a Amigos</IonButton>
+              </div>
             ) : (
-              feed.map((view) => (
+              followingFeed.map((view) => (
                 <PostCard
                   key={view.post.id}
                   view={view}
@@ -478,20 +579,215 @@ export function CommunityPage() {
         {tab === 'amigos' && (
           <>
             <div style={{ padding: 14 }}>
-              <IonSearchbar className="sbar" value={q} placeholder="Buscar amigos en ANTARES…" onIonInput={(e) => setQ(e.detail.value ?? '')} />
+              <IonSearchbar
+                className="sbar"
+                value={q}
+                placeholder="Buscar amigos en ANTARES…"
+                onIonInput={(e) => {
+                  const v = e.detail.value ?? ''
+                  setQ(v)
+                  setPeopleQuery(v)
+                }}
+              />
             </div>
-            {friends
-              .filter((f) => f.n.toLowerCase().includes(q.toLowerCase()))
-              .map((f) => (
-                <div key={f.n} className="row-card">
-                  <div className="avatar" style={{ width: 40, height: 40, background: f.g, fontSize: 13 }}>{f.i}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 800, fontSize: 13 }}>{f.n}</div>
-                    <div style={{ fontSize: 11, color: 'var(--mu)' }}>{f.m}</div>
-                  </div>
-                  <IonButton className="bt bt-outline bt-mini" onClick={() => showToast(`Mensaje a ${f.n}`, 'ok')}>💬</IonButton>
+
+            {q.trim() !== '' ? (
+              peopleLoading ? (
+                <div className="card" style={{ margin: '0 14px 10px' }}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                      <IonSkeletonText style={{ width: 40, height: 40, borderRadius: 10 }} animated />
+                      <div style={{ flex: 1 }}>
+                        <IonSkeletonText style={{ width: '45%', height: 12 }} animated />
+                        <IonSkeletonText style={{ width: '80%', height: 12 }} animated />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : peopleError ? (
+                <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                    No se pudo buscar. Inténtalo de nuevo.
+                  </div>
+                  <IonButton className="bt bt-pur bt-mini" onClick={() => setPeopleQuery(q)}>Reintentar</IonButton>
+                </div>
+              ) : people.length === 0 ? (
+                <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                    Sin resultados para «{q}»
+                  </div>
+                </div>
+              ) : (
+                people.map((p) => {
+                  const grad = AVATAR_GRADS[p.profile.id.charCodeAt(0) % AVATAR_GRADS.length]
+                  const busy = busyId === p.profile.id
+                  return (
+                    <div key={p.profile.id} className="row-card">
+                      <div className="avatar" style={{ width: 40, height: 40, background: grad, fontSize: 13 }}>
+                        {initialsOf(p.profile.displayName)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: 13 }}>{p.profile.displayName}</div>
+                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.profile.bio?.trim() || 'Sin bio'}
+                        </div>
+                      </div>
+                      {p.isFriend ? (
+                        <>
+                          <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => showToast('Ya son amigos', 'info')}>
+                            Amigos ✓
+                          </IonButton>
+                          <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(p.profile)}>💬</IonButton>
+                        </>
+                      ) : p.isFollowing ? (
+                        <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => void handleFollowToggle(p)}>
+                          Siguiendo
+                        </IonButton>
+                      ) : (
+                        <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={() => void handleFollowToggle(p)}>
+                          Seguir
+                        </IonButton>
+                      )}
+                    </div>
+                  )
+                })
+              )
+            ) : (
+              <>
+                <div style={{ padding: '14px 14px 4px', fontWeight: 800, fontSize: 13 }}>
+                  Amigos <span className="chip chip-pur" style={{ marginLeft: 6 }}>{friends.length}</span>
+                </div>
+                {friendsError ? (
+                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                      No se pudo cargar tus amigos.
+                    </div>
+                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFriends()}>Reintentar</IonButton>
+                  </div>
+                ) : friendsLoading ? (
+                  <div className="card" style={{ margin: '0 14px 10px' }}>
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                        <IonSkeletonText style={{ width: 40, height: 40, borderRadius: 10 }} animated />
+                        <div style={{ flex: 1 }}>
+                          <IonSkeletonText style={{ width: '45%', height: 12 }} animated />
+                          <IonSkeletonText style={{ width: '80%', height: 12 }} animated />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : friends.length === 0 ? (
+                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                      Aún no tienes amigos. ¡Sigue a alguien y si te siguen, serán amigos!
+                    </div>
+                  </div>
+                ) : (
+                  friends.map((f) => (
+                    <div key={f.id} className="row-card">
+                      <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                        {initialsOf(f.displayName)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {f.bio?.trim() || 'Sin bio'}
+                        </div>
+                      </div>
+                      <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(f)}>💬</IonButton>
+                    </div>
+                  ))
+                )}
+
+                <div style={{ padding: '14px 14px 4px', fontWeight: 800, fontSize: 13 }}>Siguiendo</div>
+                {followingError ? (
+                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                      No se pudo cargar los seguidos.
+                    </div>
+                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowing()}>Reintentar</IonButton>
+                  </div>
+                ) : followingLoading ? (
+                  <div className="card" style={{ margin: '0 14px 10px' }}>
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                        <IonSkeletonText style={{ width: 40, height: 40, borderRadius: 10 }} animated />
+                        <div style={{ flex: 1 }}>
+                          <IonSkeletonText style={{ width: '45%', height: 12 }} animated />
+                          <IonSkeletonText style={{ width: '80%', height: 12 }} animated />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : peopleFollowing.length === 0 ? (
+                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                      No sigues a nadie todavía.
+                    </div>
+                  </div>
+                ) : (
+                  peopleFollowing.map((f) => (
+                    <div key={f.id} className="row-card">
+                      <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                        {initialsOf(f.displayName)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {f.bio?.trim() || 'Sin bio'}
+                        </div>
+                      </div>
+                      <IonButton fill="outline" className="bt bt-mini" disabled={busyId === f.id} onClick={() => void handleUnfollow(f.id, f.displayName)}>
+                        Siguiendo
+                      </IonButton>
+                    </div>
+                  ))
+                )}
+
+                <div style={{ padding: '14px 14px 4px', fontWeight: 800, fontSize: 13 }}>Seguidores</div>
+                {followersError ? (
+                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                      No se pudo cargar tus seguidores.
+                    </div>
+                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowers()}>Reintentar</IonButton>
+                  </div>
+                ) : followersLoading ? (
+                  <div className="card" style={{ margin: '0 14px 10px' }}>
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                        <IonSkeletonText style={{ width: 40, height: 40, borderRadius: 10 }} animated />
+                        <div style={{ flex: 1 }}>
+                          <IonSkeletonText style={{ width: '45%', height: 12 }} animated />
+                          <IonSkeletonText style={{ width: '80%', height: 12 }} animated />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : followers.length === 0 ? (
+                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                      Aún no tienes seguidores.
+                    </div>
+                  </div>
+                ) : (
+                  followers.map((f) => (
+                    <div key={f.id} className="row-card">
+                      <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                        {initialsOf(f.displayName)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {f.bio?.trim() || 'Sin bio'}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
+                    </div>
+                  ))
+                )}
+              </>
+            )}
           </>
         )}
 
@@ -583,6 +879,8 @@ export function CommunityPage() {
           </div>
         )}
       </IonModal>
+
+      {activePeer && null}
     </Screen>
     </ErrorBoundary>
   )
