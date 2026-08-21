@@ -320,6 +320,7 @@ export function CommunityPage() {
   const [activePeer, setActivePeer] = useState<Profile | null>(null)
   const [viewingId, setViewingId] = useState<string | null>(null)
   const [unfollowTarget, setUnfollowTarget] = useState<Profile | null>(null)
+  const [perfilList, setPerfilList] = useState<'followers' | 'following' | null>(null)
 
   const [profileResult, reexecuteProfile] = useQuery<ProfileResult>({
     query: PROFILE_QUERY,
@@ -603,7 +604,40 @@ export function CommunityPage() {
           </>
         )}
 
-        {tab === 'perfil' && (
+        {tab === 'perfil' && (perfilList ? (
+          <>
+            <div style={{ padding: 14 }}>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setPerfilList(null)}>← Volver</IonButton>
+            </div>
+            <div style={{ padding: '0 14px 4px', fontWeight: 800, fontSize: 14 }}>
+              {perfilList === 'followers' ? 'Seguidores' : 'Siguiendo'}
+            </div>
+            {(perfilList === 'followers' ? followers : peopleFollowing).length === 0 ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                  {perfilList === 'followers' ? 'Aún no tienes seguidores.' : 'No sigues a nadie todavía.'}
+                </div>
+              </div>
+            ) : (
+              (perfilList === 'followers' ? followers : peopleFollowing).map((f) => (
+                <div key={f.id} className="row-card">
+                  <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                    {initialsOf(f.displayName)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                    <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {f.bio?.trim() || 'Sin bio'}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>
+                    {perfilList === 'followers' ? 'Te sigue' : 'Siguiendo'}
+                  </span>
+                </div>
+              ))
+            )}
+          </>
+        ) : (
           <>
             <div style={{ background: 'linear-gradient(135deg,#2D1B69,#1A0A3C)', padding: 18, textAlign: 'center', color: '#fff' }}>
               <div className="avatar" style={{ width: 64, height: 64, margin: '0 auto 8px', background: 'linear-gradient(135deg,var(--teal),#0F6E56)', fontSize: 22 }}>
@@ -623,6 +657,16 @@ export function CommunityPage() {
               )}
               <div style={{ fontSize: 11, opacity: 0.55 }}>{pointsTotal} pts</div>
               <div style={{ marginTop: 8 }}>{me ? statusBadge(me.status) : meLoading ? <IonSkeletonText style={{ width: 120, height: 18 }} animated /> : null}</div>
+              <div style={{ display: 'flex', gap: 28, justifyContent: 'center', marginTop: 12 }}>
+                <button onClick={() => setPerfilList('followers')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{followers.length}</div>
+                  <div style={{ fontSize: 11, opacity: 0.65 }}>Seguidores</div>
+                </button>
+                <button onClick={() => setPerfilList('following')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{peopleFollowing.length}</div>
+                  <div style={{ fontSize: 11, opacity: 0.65 }}>Siguiendo</div>
+                </button>
+              </div>
             </div>
 
             {me && me.status === 'Banned' && (
@@ -689,7 +733,7 @@ export function CommunityPage() {
               </>
             )}
           </>
-        )}
+          ))}
 
         {tab === 'chat' && (
           <>
