@@ -109,10 +109,10 @@ function CommentItem({
     <div style={{ paddingLeft: depth ? 14 : 0 }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
         <IonAvatar style={{ width: 26, height: 26, fontSize: 10 }}>
-          {initialsOf(comment.profile.displayName)}
+          {initialsOf(comment.profile?.displayName ?? 'Miembro')}
         </IonAvatar>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 12 }}>{comment.profile.displayName}</div>
+          <div style={{ fontWeight: 800, fontSize: 12 }}>{comment.profile?.displayName ?? 'Miembro'}</div>
           <div style={{ fontSize: 12, lineHeight: 1.5 }}>{comment.body}</div>
           <IonButton
             fill="clear"
@@ -124,7 +124,7 @@ function CommentItem({
           </IonButton>
         </div>
       </div>
-      {comment.replies.map((r) => (
+      {(comment.replies ?? []).map((r) => (
         <CommentItem key={r.id} comment={r} depth={depth + 1} onReply={onReply} />
       ))}
     </div>
@@ -461,7 +461,7 @@ export function CommunityPage() {
             <div style={{ borderTop: '1px solid var(--g1)', paddingTop: 10 }}>
               {replyTarget && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: 'var(--mu)' }}>
-                  Respondiendo a <b>{replyTarget.profile.displayName}</b>
+                  Respondiendo a <b>{replyTarget.profile?.displayName ?? 'Miembro'}</b>
                   <IonButton fill="clear" size="small" style={{ height: 22 }} onClick={() => setReplyTarget(null)}>✕</IonButton>
                 </div>
               )}
