@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   IonBadge,
   IonButton,
@@ -296,6 +296,10 @@ export function CommunityPage() {
     peopleLoading,
     peopleError,
     setPeopleQuery,
+    conversations,
+    conversationsLoading,
+    conversationsError,
+    refetchConversations,
     createPost,
     toggleLike,
     addComment,
@@ -306,7 +310,7 @@ export function CommunityPage() {
     sendMessage,
   } = useCommunity()
 
-  const [tab, setTab] = useState<'feed' | 'perfil' | 'amigos' | 'redes'>('feed')
+  const [tab, setTab] = useState<'feed' | 'perfil' | 'chat' | 'amigos' | 'redes'>('feed')
   const [feedScope, setFeedScope] = useState<'forYou' | 'following'>('forYou')
   const [draft, setDraft] = useState('')
   const [q, setQ] = useState('')
@@ -324,6 +328,10 @@ export function CommunityPage() {
   const followedIds = new Set(peopleFollowing.map((p) => p.id))
   const profileIsFriend = profile != null && friends.some((x) => x.id === profile.id)
   const profileFollowingBack = profile != null && followedIds.has(profile.id)
+
+  useEffect(() => {
+    if (tab === 'chat') void refetchConversations()
+  }, [tab, refetchConversations])
 
   const [activePost, setActivePost] = useState<Post | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
@@ -480,7 +488,7 @@ export function CommunityPage() {
           COPP-ADRESD + INFINITO
         </div>
         <div style={{ display: 'flex' }}>
-          {(['feed', 'perfil', 'amigos', 'redes'] as const).map((t) => (
+          {(['feed', 'perfil', 'chat', 'amigos', 'redes'] as const).map((t) => (
             <button key={t} className={`com-tab ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>
               {t[0].toUpperCase() + t.slice(1)}
             </button>
@@ -677,6 +685,59 @@ export function CommunityPage() {
                   ))
                 )}
               </>
+            )}
+          </>
+        )}
+
+        {tab === 'chat' && (
+          <>
+            {conversationsLoading ? (
+              <div className="card" style={{ margin: 14 }}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--g1)' : 'none' }}>
+                    <IonSkeletonText style={{ width: 40, height: 40, borderRadius: 10 }} animated />
+                    <div style={{ flex: 1 }}>
+                      <IonSkeletonText style={{ width: '40%', height: 12, marginBottom: 6 }} animated />
+                      <IonSkeletonText style={{ width: '70%', height: 11 }} animated />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : conversationsError ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                  No se pudo cargar tus conversaciones.
+                </div>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => refetchConversations()}>
+                  Reintentar
+                </IonButton>
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                  Aún no tienes conversaciones. Escribe a un amigo desde Amigos.
+                </div>
+              </div>
+            ) : (
+              conversations.map((c) => (
+                <div key={c.peer.id} className="row-card">
+                  <div
+                    style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0, cursor: 'pointer' }}
+                    onClick={() => setActivePeer(c.peer)}
+                  >
+                    <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[c.peer.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                      {initialsOf(c.peer.displayName)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 13 }}>{c.peer.displayName}</div>
+                      <div style={{ fontSize: 11, color: 'var(--mu)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {c.lastMessage?.body ?? 'Sin mensajes todavía'}
+                      </div>
+                    </div>
+                    {c.lastMessage && <div style={{ fontSize: 10, color: 'var(--mu)', alignSelf: 'flex-start', paddingTop: 2 }}>{timeAgo(c.lastMessage.createdAt)}</div>}
+                  </div>
+                </div>
+              ))
             )}
           </>
         )}
