@@ -212,10 +212,11 @@ export function CommunityPage() {
       const r = await replyToComment(replyTarget.id, text)
       setActivePost((prev) => {
         if (!prev || !r) return prev
+        const rootId = replyTarget.parentCommentId ?? replyTarget.id
         return {
           ...prev,
           comments: prev.comments.map((c) =>
-            c.id === replyTarget.id ? { ...c, replies: [...c.replies, r] } : c,
+            c.id === rootId ? { ...c, replies: [...c.replies, r] } : c,
           ),
         }
       })
@@ -451,10 +452,10 @@ export function CommunityPage() {
             <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>{activePost.body}</div>
 
             <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--g1)', paddingTop: 10 }}>
-              {activePost.comments.length === 0 ? (
+              {activePost.comments.filter((c) => !c.parentCommentId).length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--mu)', textAlign: 'center', padding: 20 }}>Sin comentarios todavía. ¡Sé el primero!</div>
               ) : (
-                activePost.comments.map((c) => (
+                activePost.comments.filter((c) => !c.parentCommentId).map((c) => (
                   <CommentItem key={c.id} comment={c} depth={0} onReply={(rc) => { setReplyTarget(rc); setReplyDraft('') }} />
                 ))
               )}
