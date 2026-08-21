@@ -64,9 +64,10 @@ export function useCommunity() {
       const res = await createPostMutation({ body })
       if (res.error) throw new Error(res.error.message)
       reexecuteFeed({ requestPolicy: 'network-only' })
+      reexecuteMe({ requestPolicy: 'network-only' })
       return res.data?.createPost
     },
-    [createPostMutation, reexecuteFeed],
+    [createPostMutation, reexecuteFeed, reexecuteMe],
   )
 
   const toggleLike = useCallback(
