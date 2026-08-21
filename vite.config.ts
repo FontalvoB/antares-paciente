@@ -13,6 +13,10 @@ export default defineConfig({
         target: 'http://localhost:5080',
         changeOrigin: true,
       },
+      '/graphql': {
+        target: 'http://localhost:5200',
+        changeOrigin: true,
+      },
     },
   },
 })
