@@ -12,6 +12,7 @@ export interface Profile {
   banReason: string | null
   bannedAt: string | null
   createdAt: string
+  posts: Post[]
 }
 
 export interface PostAuthor {
@@ -141,9 +142,14 @@ export const ME_QUERY = /* GraphQL */ `
   query Me {
     me {
       ...ProfileFields
+      posts {
+        ...PostFields
+      }
     }
   }
   ${PROFILE_FRAGMENT}
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
 `
 
 export const FEED_QUERY = /* GraphQL */ `
