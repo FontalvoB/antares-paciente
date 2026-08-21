@@ -27,9 +27,11 @@ const moreModules: { id: ScreenId; title: string; sub: string; icon: string }[] 
 ]
 
 export function HomePage() {
-  const { user, navigate, openPanic, openVoice, pointsTotal, watchConnected } = useApp()
+  const { user, navigate, openPanic, openVoice, pointsTotal, watchConnected, program, streak, programWeek } = useApp()
   const first = user.nombre.split(' ')[0]
   const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+  const todayDone = Object.values(program).filter(Boolean).length
+  const todayTotal = Object.keys(program).length
 
   return (
     <Screen>
@@ -74,18 +76,20 @@ export function HomePage() {
             </span>
             <div style={{ flex: 1 }}>
               <div className="today-card-kicker">Programa de hoy</div>
-              <div className="today-card-title">2 de 5 pasos listos</div>
+              <div className="today-card-title">
+                {todayDone === todayTotal ? 'Día completado' : `${todayDone} de ${todayTotal} misiones`}
+              </div>
             </div>
             <span className="cta-banner-chevron">›</span>
           </div>
           <div className="today-dots" aria-hidden="true">
-            <span className="on" />
-            <span className="on" />
-            <span />
-            <span />
-            <span />
+            {Object.values(program).map((on, i) => (
+              <span key={i} className={on ? 'on' : undefined} />
+            ))}
           </div>
-          <div className="today-card-sub">Vitales · Nutrición · Ejercicio · hasta 700 pts</div>
+          <div className="today-card-sub">
+            Racha {streak} días · Semana {programWeek} · 6 actividades
+          </div>
         </button>
 
         <button type="button" className="next-appt" onClick={() => navigate('book')}>

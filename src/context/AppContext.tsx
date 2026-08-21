@@ -4,12 +4,14 @@ import type {
   ChatMessage,
   CommunityPost,
   Flow,
-  ProgramStepId,
+  ProgramDay,
+  ProgramTaskId,
   Screen,
   ToastKind,
   ToastState,
   UserProfile,
 } from '../types'
+import { weekdayMondayIndex } from '../utils/dates'
 
 interface AppState {
   flow: Flow
@@ -25,12 +27,15 @@ interface AppState {
   chat: ChatMessage[]
   watchConnected: boolean
   watchName: string
-  program: ProgramStepId
+  program: ProgramDay
+  programWeek: number
+  streak: number
+  weekCheckins: boolean[]
   pointsToday: number
   pointsTotal: number
   posts: CommunityPost[]
   navigate: (s: Screen) => void
-  finishLogin: (seed?: Partial<UserProfile>) => void
+  finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void
   backToLogin: () => void
   finishOnboarding: (user: UserProfile) => void
   finishTests: () => void
@@ -47,7 +52,7 @@ interface AppState {
   sendChat: (text: string) => void
   connectWatch: (name: string) => void
   disconnectWatch: () => void
-  completeStep: (id: keyof ProgramStepId, pts: number) => void
+  completeStep: (id: ProgramTaskId, pts: number) => void
   likePost: (id: string) => void
   addPost: (text: string) => void
   logout: () => void
@@ -188,13 +193,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chat, setChat] = useState<ChatMessage[]>(seedChat)
   const [watchConnected, setWatchConnected] = useState(false)
   const [watchName, setWatchName] = useState('ANTARES Watch Pro')
-  const [program, setProgram] = useState<ProgramStepId>({
+  const [program, setProgram] = useState<ProgramDay>({
+    podcast: false,
     vitals: false,
     nut: false,
     ejercicio: false,
-    psico: false,
-    comunidad: false,
+    nutribiotico: false,
+    emocional: false,
   })
+  const [programWeek] = useState(12)
+  const [streak, setStreak] = useState(12)
+  const [weekCheckins, setWeekCheckins] = useState<boolean[]>([true, true, true, true, false, false, false])
   const [pointsToday, setPointsToday] = useState(0)
   const [pointsTotal, setPointsTotal] = useState(840)
   const [posts, setPosts] = useState<CommunityPost[]>(seedPosts)
@@ -215,15 +224,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       watchConnected,
       watchName,
       program,
+      programWeek,
+      streak,
+      weekCheckins,
       pointsToday,
       pointsTotal,
       posts,
       navigate: (s) => setScreen(s),
-      finishLogin: (seed) => {
-        // El primer inicio de sesión por ID devuelve los datos del paciente:
-        // se siembran en el perfil para que el onboarding los precargue.
+      finishLogin: (seed, next = 'onboarding') => {
+        // El primer inicio de sesión por ID siembra el perfil para el onboarding.
+        // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         if (seed) setUser((u) => ({ ...u, ...seed }))
-        setFlow('onboarding')
+        setFlow(next)
       },
       backToLogin: () => {
         setFlow('login')
@@ -267,9 +279,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       disconnectWatch: () => setWatchConnected(false),
       completeStep: (id, pts) => {
-        setProgram((p) => ({ ...p, [id]: true }))
-        setPointsToday((n) => n + pts)
-        setPointsTotal((n) => n + pts)
+        setProgram((p) => {
+          if (p[id]) return p
+          const next = { ...p, [id]: true }
+          const finished = (Object.keys(next) as ProgramTaskId[]).every((k) => next[k])
+          if (finished) {
+            setStreak((s) => s + 1)
+            const idx = weekdayMondayIndex()
+            setWeekCheckins((days) => days.map((v, i) => (i === idx ? true : v)))
+          }
+          setPointsToday((n) => n + pts)
+          setPointsTotal((n) => n + pts)
+          return next
+        })
       },
       likePost: (id) =>
         setPosts((list) =>
@@ -316,6 +338,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       watchConnected,
       watchName,
       program,
+      programWeek,
+      streak,
+      weekCheckins,
       pointsToday,
       pointsTotal,
       posts,

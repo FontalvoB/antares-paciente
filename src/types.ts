@@ -101,10 +101,12 @@ export interface Friend {
   gradient: string
 }
 
-export interface ProgramStepId {
-  vitals: boolean
-  nut: boolean
-  ejercicio: boolean
-  psico: boolean
-  comunidad: boolean
-}
+export type ProgramTaskId =
+  | 'podcast'
+  | 'vitals'
+  | 'nut'
+  | 'ejercicio'
+  | 'nutribiotico'
+  | 'emocional'
+
+export type ProgramDay = Record<ProgramTaskId, boolean>

@@ -17,7 +17,7 @@ import {
   timeOutline,
 } from 'ionicons/icons'
 import { useApp } from '../context/AppContext'
-import { loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
+import { DEMO_LOGIN, loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
 import type { UserProfile } from '../types'
 
 type LoginMode = 'login' | 'first'
@@ -70,7 +70,7 @@ export function LoginPage() {
     try {
       await loginUser(doc, pwd, remember)
       setBusy(false)
-      finishLogin({ cedula: doc })
+      finishLogin({ cedula: doc }, 'app')
     } catch (e) {
       setBusy(false)
       showToast(e instanceof Error ? e.message : 'Error al iniciar sesión', 'err')
@@ -594,7 +594,8 @@ export function LoginPage() {
                     Conexión segura con cifrado de extremo a extremo
                   </div>
                   <p className="login-demo-note">
-                    ¿No tienes acceso? Contacta al equipo COPP-ADRESD para crear tu cuenta.
+                    Acceso demo: ID <strong>{DEMO_LOGIN.documentNumber}</strong> · contraseña{' '}
+                    <strong>{DEMO_LOGIN.password}</strong>
                   </p>
                 </form>
 
