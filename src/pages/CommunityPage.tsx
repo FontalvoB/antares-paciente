@@ -328,6 +328,7 @@ export function CommunityPage() {
   })
   const profile = profileResult.data?.profile ?? null
   const followedIds = new Set(peopleFollowing.map((p) => p.id))
+  const recommended = followers.filter((f) => !friends.some((x) => x.id === f.id))
   const profileIsFriend = profile != null && friends.some((x) => x.id === profile.id)
   const profileFollowingBack = profile != null && followedIds.has(profile.id)
 
@@ -930,15 +931,14 @@ export function CommunityPage() {
                       </div>
                     ))}
                   </div>
-                ) : followers.length === 0 ? (
+                ) : recommended.length === 0 ? (
                   <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                     <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
-                      Aún no tienes seguidores.
+                      No tienes seguidores nuevos por ahora.
                     </div>
                   </div>
                 ) : (
-                  followers.map((f) => {
-                    const isFriend = friends.some((x) => x.id === f.id)
+                  recommended.map((f) => {
                     const isFollowingBack = followedIds.has(f.id)
                     const busy = busyId === f.id
                     return (
@@ -954,18 +954,10 @@ export function CommunityPage() {
                             </div>
                           </div>
                         </div>
-                        {isFriend ? (
+                        {isFollowingBack ? (
                           <>
                             <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
-                            <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => showToast('Ya son amigos', 'info')}>
-                              Amigos ✓
-                            </IonButton>
-                            <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(f)}>💬</IonButton>
-                          </>
-                        ) : isFollowingBack ? (
-                          <>
-                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
-                            <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => void handleUnfollow(f.id, f.displayName)}>
+                            <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => setUnfollowTarget(f)}>
                               Siguiendo
                             </IonButton>
                           </>
@@ -977,9 +969,9 @@ export function CommunityPage() {
                             </IonButton>
                           </>
                         )}
-</div>
+                      </div>
                     )
-                  })
+})
                 )}
               </>
             )}
