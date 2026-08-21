@@ -2987,6 +2987,92 @@ button.hpill:active {
   font-family: 'Space Grotesk', sans-serif;
 }
 
+/* --- Comunidad: comentarios en dos capas --- */
+.cmt-root {
+  padding: 12px 0 4px;
+}
+.cmt-row {
+  display: flex;
+  gap: 9px;
+}
+.cmt-bubble {
+  flex: 1;
+  min-width: 0;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 9px 12px;
+  box-shadow: var(--shadow-sm);
+}
+.cmt-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 3px;
+}
+.cmt-name {
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
+}
+.cmt-time {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--mu);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cmt-tag {
+  padding: 2px 7px;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+}
+.cmt-body {
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cmt-reply {
+  position: relative;
+  padding: 6px 0 6px 18px;
+}
+.cmt-reply::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  bottom: 4px;
+  width: 2.5px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--pur-l), var(--pur));
+  opacity: 0.55;
+}
+.cmt-reply .cmt-row {
+  gap: 8px;
+}
+.cmt-reply .cmt-bubble {
+  background: var(--g1);
+  border-color: transparent;
+  box-shadow: none;
+  padding: 8px 10px;
+}
+.cmt-reply .cmt-name {
+  font-size: 11.5px;
+}
+.cmt-reply .cmt-body {
+  font-size: 12.5px;
+}
+.cmt-reply-btn {
+  --padding-start: 0;
+  --padding-end: 0;
+  height: 22px;
+  margin: 3px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+}
+
 .fade-up {
   animation: fadeUp 0.45s var(--ease) both;
 }

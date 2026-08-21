@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  IonAvatar,
   IonBadge,
   IonButton,
   IonInput,
@@ -69,27 +68,69 @@ function PostCard({
   const { post, likeCount, likedByMe } = view
   return (
     <div className="card" style={{ margin: '0 14px 10px' }}>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-        <div className="avatar" style={{ width: 38, height: 38, background: AVATAR_GRADS[post.profile.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'center' }}>
+        <div
+          className="avatar"
+          style={{
+            width: 40,
+            height: 40,
+            background: AVATAR_GRADS[post.profile.id.charCodeAt(0) % AVATAR_GRADS.length],
+            fontSize: 13,
+            boxShadow: '0 0 0 2px var(--wh), 0 2px 8px rgba(16,42,80,0.14)',
+          }}
+        >
           {initialsOf(post.profile.displayName)}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 13 }}>{post.profile.displayName}</div>
-          <div style={{ fontSize: 11, color: 'var(--mu)' }}>{timeAgo(post.createdAt)}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {post.profile.displayName}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{timeAgo(post.createdAt)}</div>
         </div>
-        {post.pinned && <span className="chip chip-gold">📌</span>}
+        {post.pinned && (
+          <span className="chip chip-gold" style={{ fontWeight: 700 }}>
+            📌 Fijado
+          </span>
+        )}
       </div>
-      <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>{post.body}</div>
+      <div style={{ fontSize: 13.5, lineHeight: 1.6, marginBottom: 10, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        {post.body}
+      </div>
       <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--g1)', paddingTop: 8 }}>
         <IonButton
-          fill="clear"
+          fill="solid"
           size="small"
-          style={{ color: likedByMe ? 'var(--red)' : 'var(--mu)', fontWeight: 700, fontSize: 12 }}
+          style={{
+            '--background': likedByMe ? 'var(--red-l)' : 'var(--g1)',
+            '--color': likedByMe ? 'var(--red)' : 'var(--mu)',
+            '--border-radius': '999px',
+            '--padding-start': '13px',
+            '--padding-end': '13px',
+            margin: 0,
+            fontWeight: 700,
+            fontSize: 12,
+            height: 30,
+          }}
           onClick={() => void onToggleLike(post).catch((e) => onToast((e as Error).message, 'err'))}
         >
           {likedByMe ? '♥' : '♡'} {likeCount}
         </IonButton>
-        <IonButton fill="clear" size="small" style={{ color: 'var(--mu)', fontWeight: 700, fontSize: 12 }} onClick={() => onOpen(post)}>
+        <IonButton
+          fill="solid"
+          size="small"
+          style={{
+            '--background': 'var(--blue-l)',
+            '--color': '#185fa5',
+            '--border-radius': '999px',
+            '--padding-start': '13px',
+            '--padding-end': '13px',
+            margin: 0,
+            fontWeight: 700,
+            fontSize: 12,
+            height: 30,
+          }}
+          onClick={() => onOpen(post)}
+        >
           💬 {post.comments.length}
         </IonButton>
       </div>
@@ -106,22 +147,33 @@ function CommentItem({
   depth: number
   onReply: (c: Comment) => void
 }) {
+  const isReply = depth > 0
+  const name = comment.profile?.displayName ?? 'Miembro'
+  const grad = AVATAR_GRADS[(comment.profile?.id ?? comment.id).charCodeAt(0) % AVATAR_GRADS.length]
   return (
-    <div style={{ paddingLeft: depth ? 14 : 0 }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-        <IonAvatar style={{ width: 26, height: 26, fontSize: 10 }}>
-          {initialsOf(comment.profile?.displayName ?? 'Miembro')}
-        </IonAvatar>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 12 }}>{comment.profile?.displayName ?? 'Miembro'}</div>
-          <div style={{ fontSize: 12, lineHeight: 1.5 }}>{comment.body}</div>
-          <IonButton
-            fill="clear"
-            size="small"
-            style={{ fontSize: 11, color: 'var(--mu)', height: 24 }}
-            onClick={() => onReply(comment)}
-          >
-            Responder
+    <div className={isReply ? 'cmt-reply' : 'cmt-root'}>
+      <div className="cmt-row">
+        <div
+          className="avatar"
+          style={{
+            width: isReply ? 24 : 30,
+            height: isReply ? 24 : 30,
+            fontSize: isReply ? 9 : 11,
+            background: grad,
+            boxShadow: isReply ? undefined : '0 0 0 2px var(--wh), 0 2px 6px rgba(16,42,80,0.12)',
+          }}
+        >
+          {initialsOf(name)}
+        </div>
+        <div className="cmt-bubble">
+          <div className="cmt-head">
+            <span className="cmt-name">{name}</span>
+            {isReply && <span className="chip chip-pur cmt-tag">↩ Respuesta</span>}
+            <span className="cmt-time">{timeAgo(comment.createdAt)}</span>
+          </div>
+          <div className="cmt-body">{comment.body}</div>
+          <IonButton fill="clear" size="small" className="cmt-reply-btn" onClick={() => onReply(comment)}>
+            ↩ Responder
           </IonButton>
         </div>
       </div>
