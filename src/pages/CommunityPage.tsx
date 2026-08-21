@@ -11,6 +11,8 @@ import {
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useCommunity, type FeedPostView } from '../hooks/useCommunity'
+import { useQuery } from 'urql'
+import { PROFILE_QUERY, type ProfileResult } from '../graphql/community'
 import type { Comment, Person, Post, Profile } from '../graphql/community'
 import { ErrorBoundary } from '../components/error-boundary'
 import { ConversationModal } from '../components/conversation-modal'
@@ -54,6 +56,87 @@ function byNewest(a: { createdAt: string }, b: { createdAt: string }) {
 
 function byOldest(a: { createdAt: string }, b: { createdAt: string }) {
   return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+}
+
+function MemberProfile({
+  profile,
+  myId,
+  isFriend,
+  isFollowingBack,
+  busy,
+  onFollow,
+  onUnfollow,
+  onMessage,
+  onOpenPost,
+  onToggleLike,
+  onToast,
+}: {
+  profile: Profile
+  myId: string | null
+  isFriend: boolean
+  isFollowingBack: boolean
+  busy: boolean
+  onFollow: () => void
+  onUnfollow: () => void
+  onMessage: () => void
+  onOpenPost: (p: Post) => void
+  onToggleLike: (p: Post) => Promise<void>
+  onToast: (msg: string, kind?: 'ok' | 'err' | 'info' | 'warn') => void
+}) {
+  return (
+    <>
+      <div style={{ background: 'linear-gradient(135deg,#2D1B69,#1A0A3C)', padding: 18, textAlign: 'center', color: '#fff' }}>
+        <div className="avatar" style={{ width: 64, height: 64, margin: '0 auto 8px', background: AVATAR_GRADS[profile.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 22 }}>
+          {initialsOf(profile.displayName)}
+        </div>
+        <div className="display" style={{ fontSize: 18, fontWeight: 800 }}>{profile.displayName}</div>
+      </div>
+      <div className="card" style={{ margin: 14 }}>
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>Sobre mí</div>
+        <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+          {profile.bio?.trim() ? profile.bio : 'Sin bio todavía.'}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: '0 14px 8px', flexWrap: 'wrap' }}>
+        {isFriend ? (
+          <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => onToast('Ya son amigos', 'info')}>
+            Amigos ✓
+          </IonButton>
+        ) : isFollowingBack ? (
+          <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={onUnfollow}>
+            Siguiendo
+          </IonButton>
+        ) : (
+          <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={onFollow}>
+            Seguir
+          </IonButton>
+        )}
+        {isFriend && (
+          <IonButton className="bt bt-outline bt-mini" onClick={onMessage}>💬 Enviar mensaje</IonButton>
+        )}
+      </div>
+      <div style={{ padding: '14px 14px 4px', fontWeight: 800, fontSize: 13 }}>Publicaciones</div>
+      {profile.posts.length === 0 ? (
+        <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+          <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>Sin publicaciones todavía.</div>
+        </div>
+      ) : (
+        profile.posts.map((post) => (
+          <PostCard
+            key={post.id}
+            view={{
+              post,
+              likeCount: post.likes.length,
+              likedByMe: post.likes.some((l) => l.profileId === myId),
+            }}
+            onOpen={onOpenPost}
+            onToggleLike={onToggleLike}
+            onToast={onToast}
+          />
+        ))
+      )}
+    </>
+  )
 }
 
 function PostCard({
@@ -205,9 +288,6 @@ export function CommunityPage() {
     friendsError,
     retryFriends,
     peopleFollowing,
-    followingLoading,
-    followingError,
-    retryFollowing,
     followers,
     followersLoading,
     followersError,
@@ -233,6 +313,17 @@ export function CommunityPage() {
   const [publishing, setPublishing] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [activePeer, setActivePeer] = useState<Profile | null>(null)
+  const [viewingId, setViewingId] = useState<string | null>(null)
+
+  const [profileResult, reexecuteProfile] = useQuery<ProfileResult>({
+    query: PROFILE_QUERY,
+    variables: { id: viewingId ?? '' },
+    pause: !viewingId,
+  })
+  const profile = profileResult.data?.profile ?? null
+  const followedIds = new Set(peopleFollowing.map((p) => p.id))
+  const profileIsFriend = profile != null && friends.some((x) => x.id === profile.id)
+  const profileFollowingBack = profile != null && followedIds.has(profile.id)
 
   const [activePost, setActivePost] = useState<Post | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
@@ -361,6 +452,18 @@ export function CommunityPage() {
     try {
       await unfollowUser(profileId)
       showToast(`Dejaste de seguir a ${name}`, 'ok')
+    } catch (e) {
+      showToast((e as Error).message, 'err')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleFollow(profileId: string, name: string) {
+    setBusyId(profileId)
+    try {
+      await followUser(profileId)
+      showToast(`Siguiendo a ${name}`, 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -578,7 +681,47 @@ export function CommunityPage() {
           </>
         )}
 
-        {tab === 'amigos' && (
+        {tab === 'amigos' && (viewingId ? (
+          <>
+            <div style={{ padding: 14 }}>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setViewingId(null)}>← Volver</IonButton>
+            </div>
+            {profileResult.fetching ? (
+              <div className="card" style={{ margin: 14 }}>
+                <IonSkeletonText style={{ width: 64, height: 64, borderRadius: 32, margin: '0 auto' }} animated />
+                <IonSkeletonText style={{ width: '50%', height: 16, margin: '10px auto 0' }} animated />
+                <IonSkeletonText style={{ width: '80%', height: 12, margin: '10px auto 0' }} animated />
+              </div>
+            ) : profileResult.error ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
+                  No se pudo cargar el perfil.
+                </div>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => reexecuteProfile({ requestPolicy: 'network-only' })}>Reintentar</IonButton>
+              </div>
+            ) : !profile ? (
+              <div className="card" style={{ margin: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                  No se encontró el perfil.
+                </div>
+              </div>
+            ) : (
+              <MemberProfile
+                profile={profile}
+                myId={me?.id ?? null}
+                isFriend={profileIsFriend}
+                isFollowingBack={profileFollowingBack}
+                busy={busyId === profile.id}
+                onFollow={() => void handleFollow(profile.id, profile.displayName)}
+                onUnfollow={() => void handleUnfollow(profile.id, profile.displayName)}
+                onMessage={() => setActivePeer(profile)}
+                onOpenPost={setActivePost}
+                onToggleLike={handleToggleLike}
+                onToast={showToast}
+              />
+            )}
+          </>
+        ) : (
           <>
             <div style={{ padding: 14 }}>
               <IonSearchbar
@@ -625,13 +768,15 @@ export function CommunityPage() {
                   const busy = busyId === p.profile.id
                   return (
                     <div key={p.profile.id} className="row-card">
-                      <div className="avatar" style={{ width: 40, height: 40, background: grad, fontSize: 13 }}>
-                        {initialsOf(p.profile.displayName)}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: 13 }}>{p.profile.displayName}</div>
-                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {p.profile.bio?.trim() || 'Sin bio'}
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0 }} onClick={() => setViewingId(p.profile.id)}>
+                        <div className="avatar" style={{ width: 40, height: 40, background: grad, fontSize: 13 }}>
+                          {initialsOf(p.profile.displayName)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: 13 }}>{p.profile.displayName}</div>
+                          <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {p.profile.bio?.trim() || 'Sin bio'}
+                          </div>
                         </div>
                       </div>
                       {p.isFriend ? (
@@ -687,61 +832,18 @@ export function CommunityPage() {
                 ) : (
                   friends.map((f) => (
                     <div key={f.id} className="row-card">
-                      <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                        {initialsOf(f.displayName)}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
-                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {f.bio?.trim() || 'Sin bio'}
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0 }} onClick={() => setViewingId(f.id)}>
+                        <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                          {initialsOf(f.displayName)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                          <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {f.bio?.trim() || 'Sin bio'}
+                          </div>
                         </div>
                       </div>
                       <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(f)}>💬</IonButton>
-                    </div>
-                  ))
-                )}
-
-                <div style={{ padding: '14px 14px 4px', fontWeight: 800, fontSize: 13 }}>Siguiendo</div>
-                {followingError ? (
-                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                      No se pudo cargar los seguidos.
-                    </div>
-                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowing()}>Reintentar</IonButton>
-                  </div>
-                ) : followingLoading ? (
-                  <div className="card" style={{ margin: '0 14px 10px' }}>
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-                        <IonSkeletonText style={{ width: 40, height: 40, borderRadius: 10 }} animated />
-                        <div style={{ flex: 1 }}>
-                          <IonSkeletonText style={{ width: '45%', height: 12 }} animated />
-                          <IonSkeletonText style={{ width: '80%', height: 12 }} animated />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : peopleFollowing.length === 0 ? (
-                  <div className="card" style={{ margin: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
-                      No sigues a nadie todavía.
-                    </div>
-                  </div>
-                ) : (
-                  peopleFollowing.map((f) => (
-                    <div key={f.id} className="row-card">
-                      <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                        {initialsOf(f.displayName)}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
-                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {f.bio?.trim() || 'Sin bio'}
-                        </div>
-                      </div>
-                      <IonButton fill="outline" className="bt bt-mini" disabled={busyId === f.id} onClick={() => void handleUnfollow(f.id, f.displayName)}>
-                        Siguiendo
-                      </IonButton>
                     </div>
                   ))
                 )}
@@ -773,25 +875,54 @@ export function CommunityPage() {
                     </div>
                   </div>
                 ) : (
-                  followers.map((f) => (
-                    <div key={f.id} className="row-card">
-                      <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                        {initialsOf(f.displayName)}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
-                        <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {f.bio?.trim() || 'Sin bio'}
+                  followers.map((f) => {
+                    const isFriend = friends.some((x) => x.id === f.id)
+                    const isFollowingBack = followedIds.has(f.id)
+                    const busy = busyId === f.id
+                    return (
+                      <div key={f.id} className="row-card">
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0 }} onClick={() => setViewingId(f.id)}>
+                          <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
+                            {initialsOf(f.displayName)}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                            <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {f.bio?.trim() || 'Sin bio'}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
-                    </div>
-                  ))
+                        {isFriend ? (
+                          <>
+                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
+                            <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => showToast('Ya son amigos', 'info')}>
+                              Amigos ✓
+                            </IonButton>
+                            <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(f)}>💬</IonButton>
+                          </>
+                        ) : isFollowingBack ? (
+                          <>
+                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
+                            <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => void handleUnfollow(f.id, f.displayName)}>
+                              Siguiendo
+                            </IonButton>
+                          </>
+                        ) : (
+                          <>
+                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
+                            <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={() => void handleFollow(f.id, f.displayName)}>
+                              Seguir de vuelta
+                            </IonButton>
+                          </>
+                        )}
+</div>
+                    )
+                  })
                 )}
               </>
             )}
           </>
-        )}
+        ))}
 
         {tab === 'redes' && (
           <div style={{ padding: 14 }}>
