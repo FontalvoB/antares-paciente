@@ -17,7 +17,7 @@ import {
   timeOutline,
 } from 'ionicons/icons'
 import { useApp } from '../context/AppContext'
-import { DEMO_LOGIN, loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
+import { loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
 import type { UserProfile } from '../types'
 
 type LoginMode = 'login' | 'first'
@@ -593,10 +593,6 @@ export function LoginPage() {
                     <IonIcon icon={shieldCheckmarkOutline} />
                     Conexión segura con cifrado de extremo a extremo
                   </div>
-                  <p className="login-demo-note">
-                    Acceso demo: ID <strong>{DEMO_LOGIN.documentNumber}</strong> · contraseña{' '}
-                    <strong>{DEMO_LOGIN.password}</strong>
-                  </p>
                 </form>
 
                 <footer className="login-footer">© 2026 ANTARES · Plataforma de salud preventiva</footer>
