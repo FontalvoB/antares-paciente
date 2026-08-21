@@ -77,6 +77,76 @@ export interface UpdateProfileResult {
   updateProfile: Profile
 }
 
+export interface Person {
+  profile: Profile
+  isFollowing: boolean
+  isFollower: boolean
+  isFriend: boolean
+}
+
+export interface Message {
+  id: string
+  senderProfileId: string
+  recipientProfileId: string
+  body: string
+  createdAt: string
+}
+
+export interface Conversation {
+  peer: Profile
+  lastMessage: Message | null
+}
+
+/** Clave de conversación: los dos ids de perfil ordenados ascendentemente y
+ *  unidos por ':'. Debe coincidir con el topic del servidor `message_{key}`. */
+export function conversationKey(a: string, b: string): string {
+  return [a, b].sort().join(':')
+}
+
+export interface FollowingFeedResult {
+  followingFeed: Post[]
+}
+
+export interface PeopleResult {
+  people: Person[]
+}
+
+export interface FriendsResult {
+  friends: Profile[]
+}
+
+export interface FollowingResult {
+  following: Profile[]
+}
+
+export interface FollowersResult {
+  followers: Profile[]
+}
+
+export interface ConversationsResult {
+  conversations: Conversation[]
+}
+
+export interface ConversationResult {
+  conversation: Message[]
+}
+
+export interface FollowUserResult {
+  followUser: Profile
+}
+
+export interface UnfollowUserResult {
+  unfollowUser: Profile
+}
+
+export interface SendMessageResult {
+  sendMessage: Message
+}
+
+export interface MessageAddedResult {
+  messageAdded: Message
+}
+
 // ---------- Fragmentos ----------
 
 const PROFILE_FRAGMENT = /* GraphQL */ `
@@ -233,4 +303,133 @@ export const UPDATE_PROFILE = /* GraphQL */ `
     }
   }
   ${PROFILE_FRAGMENT}
+`
+
+// ---------- Queries: follows + mensajes ----------
+
+export const FOLLOWING_FEED_QUERY = /* GraphQL */ `
+  query FollowingFeed($take: Int!, $skip: Int!) {
+    followingFeed(take: $take, skip: $skip) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const PEOPLE_SEARCH = /* GraphQL */ `
+  query People($search: String, $take: Int!, $skip: Int!) {
+    people(search: $search, take: $take, skip: $skip) {
+      profile {
+        id
+        displayName
+        bio
+        status
+      }
+      isFollowing
+      isFollower
+      isFriend
+    }
+  }
+`
+
+export const FRIENDS_QUERY = /* GraphQL */ `
+  query Friends($take: Int!, $skip: Int!) {
+    friends(take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const FOLLOWING_QUERY = /* GraphQL */ `
+  query Following($take: Int!, $skip: Int!) {
+    following(take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const FOLLOWERS_QUERY = /* GraphQL */ `
+  query Followers($take: Int!, $skip: Int!) {
+    followers(take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const CONVERSATIONS_QUERY = /* GraphQL */ `
+  query Conversations($take: Int!, $skip: Int!) {
+    conversations(take: $take, skip: $skip) {
+      peer {
+        id
+        displayName
+      }
+      lastMessage {
+        id
+        senderProfileId
+        recipientProfileId
+        body
+        createdAt
+      }
+    }
+  }
+`
+
+export const CONVERSATION_QUERY = /* GraphQL */ `
+  query Conversation($peerId: UUID!, $take: Int!, $skip: Int!) {
+    conversation(peerId: $peerId, take: $take, skip: $skip) {
+      id
+      senderProfileId
+      recipientProfileId
+      body
+      createdAt
+    }
+  }
+`
+
+// ---------- Mutaciones: follows + mensajes ----------
+
+export const FOLLOW_USER = /* GraphQL */ `
+  mutation FollowUser($profileId: UUID!) {
+    followUser(profileId: $profileId) {
+      id
+    }
+  }
+`
+
+export const UNFOLLOW_USER = /* GraphQL */ `
+  mutation UnfollowUser($profileId: UUID!) {
+    unfollowUser(profileId: $profileId) {
+      id
+    }
+  }
+`
+
+export const SEND_MESSAGE = /* GraphQL */ `
+  mutation SendMessage($recipientProfileId: UUID!, $body: String!) {
+    sendMessage(recipientProfileId: $recipientProfileId, body: $body) {
+      id
+      senderProfileId
+      recipientProfileId
+      body
+      createdAt
+    }
+  }
+`
+
+// ---------- Suscripción ----------
+
+export const MESSAGE_ADDED = /* GraphQL */ `
+  subscription MessageAdded($conversationKey: String!) {
+    messageAdded(conversationKey: $conversationKey) {
+      id
+      senderProfileId
+      recipientProfileId
+      body
+      createdAt
+    }
+  }
 `
