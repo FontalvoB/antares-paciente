@@ -522,10 +522,10 @@ export function CommunityPage() {
             </div>
 
             <div style={{ display: 'flex', padding: '0 14px 10px' }}>
-              <button className={`com-tab ${feedScope === 'forYou' ? 'on' : ''}`} onClick={() => setFeedScope('forYou')}>
+              <button className={`com-tab lt ${feedScope === 'forYou' ? 'on' : ''}`} onClick={() => setFeedScope('forYou')}>
                 Para ti
               </button>
-              <button className={`com-tab ${feedScope === 'following' ? 'on' : ''}`} onClick={() => setFeedScope('following')}>
+              <button className={`com-tab lt ${feedScope === 'following' ? 'on' : ''}`} onClick={() => setFeedScope('following')}>
                 Siguiendo
               </button>
             </div>

@@ -2975,6 +2975,13 @@ button.hpill:active {
   color: #fff;
   border-bottom-color: var(--ice);
 }
+.com-tab.lt {
+  color: var(--mu);
+}
+.com-tab.lt.on {
+  color: var(--pur);
+  border-bottom-color: var(--pur);
+}
 
 .avatar {
   border-radius: 50%;
