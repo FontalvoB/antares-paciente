@@ -3,12 +3,24 @@ import {
   IonAlert,
   IonBadge,
   IonButton,
+  IonIcon,
   IonInput,
   IonModal,
   IonSearchbar,
   IonSkeletonText,
   IonTextarea,
 } from '@ionic/react'
+import {
+  arrowBack,
+  arrowUndo,
+  chatbubbleEllipsesOutline,
+  close,
+  globeOutline,
+  heart,
+  heartOutline,
+  pin,
+  send,
+} from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useCommunity, type FeedPostView } from '../hooks/useCommunity'
@@ -197,8 +209,8 @@ function PostCard({
           <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{timeAgo(post.createdAt)}</div>
         </div>
         {post.pinned && (
-          <span className="chip chip-gold" style={{ fontWeight: 700 }}>
-            📌 Fijado
+          <span className="chip chip-gold" style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <IonIcon icon={pin} style={{ fontSize: 12 }} /> Fijado
           </span>
         )}
       </div>
@@ -222,7 +234,7 @@ function PostCard({
           }}
           onClick={() => void onToggleLike(post).catch((e) => onToast((e as Error).message, 'err'))}
         >
-          {likedByMe ? '♥' : '♡'} {likeCount}
+          {likedByMe ? <IonIcon icon={heart} style={{ verticalAlign: '-2px' }} /> : <IonIcon icon={heartOutline} style={{ verticalAlign: '-2px' }} />} {likeCount}
         </IonButton>
         <IonButton
           fill="solid"
@@ -240,7 +252,7 @@ function PostCard({
           }}
           onClick={() => onOpen(post)}
         >
-          💬 {post.comments.length}
+          <IonIcon icon={chatbubbleEllipsesOutline} style={{ verticalAlign: '-2px' }} /> {post.comments.length}
         </IonButton>
       </div>
     </div>
@@ -277,12 +289,12 @@ function CommentItem({
         <div className="cmt-bubble">
           <div className="cmt-head">
             <span className="cmt-name">{name}</span>
-            {isReply && <span className="chip chip-pur cmt-tag">↩ Respuesta</span>}
+            {isReply && <span className="chip chip-pur cmt-tag"><IonIcon icon={arrowUndo} style={{ fontSize: 10, marginRight: 3, verticalAlign: '-1px' }} />Respuesta</span>}
             <span className="cmt-time">{timeAgo(comment.createdAt)}</span>
           </div>
           <div className="cmt-body">{comment.body}</div>
           <IonButton fill="clear" size="small" className="cmt-reply-btn" onClick={() => onReply(comment)}>
-            ↩ Responder
+            <IonIcon icon={arrowUndo} style={{ fontSize: 12, marginRight: 3, verticalAlign: '-2px' }} /> Responder
           </IonButton>
         </div>
       </div>
@@ -532,7 +544,7 @@ export function CommunityPage() {
     <ErrorBoundary>
     <Screen>
       <div className="hero hero-pur" style={{ paddingBottom: 0 }}>
-        <div className="h2">🌐 Comunidad ANTARES</div>
+        <div className="h2"><IonIcon icon={globeOutline} style={{ marginRight: 6, verticalAlign: '-2px' }} /> Comunidad ANTARES</div>
         <div className="sub" style={{ marginBottom: 10 }}>
           COPP-ADRESD + INFINITO
         </div>
@@ -563,7 +575,11 @@ export function CommunityPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                 <IonButton className="bt bt-pur bt-mini" disabled={publishing || !draft.trim()} onClick={() => void handlePublish()}>
-                  {publishing ? 'Publicando…' : 'Publicar'}
+                  {publishing ? 'Publicando…' : (
+                    <>
+                      <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Publicar
+                    </>
+                  )}
                 </IonButton>
               </div>
             </div>
@@ -653,7 +669,7 @@ export function CommunityPage() {
         {tab === 'perfil' && (perfilList ? (
           <>
             <div style={{ padding: 14 }}>
-              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setPerfilList(null)}>← Volver</IonButton>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setPerfilList(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> Volver</IonButton>
             </div>
             <div style={{ padding: '0 14px 4px', fontWeight: 800, fontSize: 14 }}>
               {perfilList === 'followers' ? 'Seguidores' : 'Siguiendo'}
@@ -837,7 +853,7 @@ export function CommunityPage() {
         {tab === 'amigos' && (viewingId ? (memberList ? (
           <>
             <div style={{ padding: 14 }}>
-              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setMemberList(null)}>← Volver</IonButton>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setMemberList(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> Volver</IonButton>
             </div>
             <div style={{ padding: '0 14px 4px', fontWeight: 800, fontSize: 14 }}>
               {memberList === 'followers' ? 'Seguidores' : 'Siguiendo'}
@@ -897,7 +913,7 @@ export function CommunityPage() {
         ) : (
           <>
             <div style={{ padding: 14 }}>
-              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setViewingId(null)}>← Volver</IonButton>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setViewingId(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> Volver</IonButton>
             </div>
             {profileResult.fetching ? (
               <div className="card" style={{ margin: 14 }}>
@@ -1175,7 +1191,7 @@ export function CommunityPage() {
                 <div style={{ fontWeight: 800, fontSize: 13 }}>{activePost.profile.displayName}</div>
                 <div style={{ fontSize: 11, color: 'var(--mu)' }}>{timeAgo(activePost.createdAt)}</div>
               </div>
-              <IonButton fill="clear" size="small" onClick={() => { setActivePost(null); setReplyTarget(null); setReplyDraft('') }}>✕</IonButton>
+              <IonButton fill="clear" size="small" onClick={() => { setActivePost(null); setReplyTarget(null); setReplyDraft('') }}><IonIcon icon={close} /></IonButton>
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>{activePost.body}</div>
 
@@ -1193,7 +1209,7 @@ export function CommunityPage() {
               {replyTarget && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: 'var(--mu)' }}>
                   Respondiendo a <b>{replyTarget.profile?.displayName ?? 'Miembro'}</b>
-                  <IonButton fill="clear" size="small" style={{ height: 22 }} onClick={() => setReplyTarget(null)}>✕</IonButton>
+                  <IonButton fill="clear" size="small" style={{ height: 22 }} onClick={() => setReplyTarget(null)}><IonIcon icon={close} /></IonButton>
                 </div>
               )}
               <IonTextarea
