@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { IonButton, IonModal, IonSkeletonText, IonTextarea } from '@ionic/react'
+import { IonButton, IonIcon, IonModal, IonSkeletonText, IonTextarea } from '@ionic/react'
+import { close, send } from 'ionicons/icons'
 import { useQuery, useSubscription } from 'urql'
 import {
   CONVERSATION_QUERY,
@@ -109,7 +110,7 @@ export function ConversationModal({
             <div style={{ fontWeight: 800, fontSize: 14 }}>{peer.displayName}</div>
             <div style={{ fontSize: 11, color: 'var(--mu)' }}>Amigos en la comunidad</div>
           </div>
-          <IonButton fill="clear" size="small" onClick={onClose}>✕</IonButton>
+          <IonButton fill="clear" size="small" onClick={onClose}><IonIcon icon={close} /></IonButton>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--g1)', padding: 12 }}>
@@ -162,7 +163,11 @@ export function ConversationModal({
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
             <IonButton className="bt bt-pur bt-mini" disabled={!draft.trim() || sending} onClick={() => void handleSend()}>
-              {sending ? 'Enviando…' : 'Enviar'}
+              {sending ? 'Enviando…' : (
+                <>
+                  <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Enviar
+                </>
+              )}
             </IonButton>
           </div>
         </div>
