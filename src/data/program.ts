@@ -144,6 +144,16 @@ export const HEALTH_PILLARS = [
   { label: 'Actividad física', pct: 91, color: 'var(--ice-d)' },
 ]
 
+export const HEALTH_TREND = [
+  { w: 6, v: 72 },
+  { w: 7, v: 74 },
+  { w: 8, v: 77 },
+  { w: 9, v: 79 },
+  { w: 10, v: 81 },
+  { w: 11, v: 83 },
+  { w: 12, v: 86 },
+]
+
 export const TRANSFORM_ROWS = [
   { label: '⚖️ Peso', base: '92 kg', cur: '87.8', delta: '↓ 4.2 kg' },
   { label: '📊 IMC', base: '31.2', cur: '29.8', delta: '↓ 1.4' },

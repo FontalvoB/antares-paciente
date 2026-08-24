@@ -4,18 +4,24 @@ import {
   bluetooth,
   calendar,
   chatbubbleEllipses,
+  checkmark,
+  chevronForward,
   clipboard,
+  flame,
   infinite,
   leaf,
   medkit,
   people,
   person,
   school,
-  sparklesOutline,
+  sparkles,
   mic,
 } from 'ionicons/icons'
+import { RingProgress } from '../components/RingProgress'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { PROGRAM_TASKS } from '../data/program'
+import { TASK_ICONS } from './program/ui'
 import type { Screen as ScreenId } from '../types'
 
 const moreModules: { id: ScreenId; title: string; sub: string; icon: string }[] = [
@@ -30,8 +36,10 @@ export function HomePage() {
   const { user, navigate, openPanic, openVoice, pointsTotal, watchConnected, program, streak, programWeek } = useApp()
   const first = user.nombre.split(' ')[0]
   const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-  const todayDone = Object.values(program).filter(Boolean).length
-  const todayTotal = Object.keys(program).length
+  const todayDone = PROGRAM_TASKS.filter((t) => program[t.id]).length
+  const todayTotal = PROGRAM_TASKS.length
+  const nextTask = PROGRAM_TASKS.find((t) => !program[t.id])
+  const dayComplete = todayDone === todayTotal
 
   return (
     <Screen>
@@ -70,26 +78,67 @@ export function HomePage() {
           ))}
         </div>
 
-        <button type="button" className="today-card" onClick={() => navigate('prog')}>
-          <div className="today-card-top">
-            <span className="today-card-ico">
-              <IonIcon icon={sparklesOutline} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <div className="today-card-kicker">Programa de hoy</div>
-              <div className="today-card-title">
-                {todayDone === todayTotal ? 'Día completado' : `${todayDone} de ${todayTotal} misiones`}
+        <button
+          type="button"
+          className={`prog-launch${dayComplete ? ' done' : ''}`}
+          onClick={() => navigate('prog')}
+          aria-label={
+            dayComplete
+              ? 'Programa de hoy completado. Abrir protocolo.'
+              : `Programa de hoy. Siguiente: ${nextTask?.title ?? 'continuar'}. ${todayDone} de ${todayTotal} misiones.`
+          }
+        >
+          <span className="prog-launch-aurora" aria-hidden="true" />
+          <span className="prog-launch-kicker">
+            <IonIcon icon={sparkles} />
+            Protocolo diario
+          </span>
+          <div className="prog-launch-head">
+            <RingProgress
+              value={todayDone / todayTotal}
+              size={78}
+              stroke={7}
+              trackColor="rgba(255,255,255,0.14)"
+              gradient={['#62d8ff', '#1d9e75']}
+              glow
+            >
+              <b>{todayDone}</b>
+              <small>/{todayTotal}</small>
+            </RingProgress>
+            <div className="prog-launch-copy">
+              <div className="prog-launch-title">
+                {dayComplete ? 'Día completado' : nextTask?.title ?? 'Tu programa de hoy'}
+              </div>
+              <div className="prog-launch-sub">
+                {dayComplete
+                  ? `Racha de ${streak} días protegida`
+                  : `${todayDone} de ${todayTotal} misiones · ${nextTask?.short ?? 'Toca para continuar'}`}
               </div>
             </div>
-            <span className="cta-banner-chevron">›</span>
           </div>
-          <div className="today-dots" aria-hidden="true">
-            {Object.values(program).map((on, i) => (
-              <span key={i} className={on ? 'on' : undefined} />
-            ))}
+          <div className="prog-launch-orbs" aria-hidden="true">
+            {PROGRAM_TASKS.map((t) => {
+              const on = program[t.id]
+              const next = t.id === nextTask?.id
+              return (
+                <span
+                  key={t.id}
+                  className={`prog-orb tone-${t.tone}${on ? ' on' : ''}${next ? ' next' : ''}`}
+                >
+                  <IonIcon icon={on ? checkmark : TASK_ICONS[t.id]} />
+                </span>
+              )
+            })}
           </div>
-          <div className="today-card-sub">
-            Racha {streak} días · Semana {programWeek} · 6 actividades
+          <div className="prog-launch-foot">
+            <span>
+              <IonIcon icon={flame} /> {streak} días
+            </span>
+            <span>Semana {programWeek}</span>
+            <span className="prog-launch-cta">
+              {dayComplete ? 'Ver resumen' : 'Continuar'}
+              <IonIcon icon={chevronForward} />
+            </span>
           </div>
         </button>
 
