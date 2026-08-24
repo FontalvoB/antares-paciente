@@ -169,7 +169,6 @@ export function AppProvider({
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([true, true, true, true, false, false, false])
   const [pointsToday, setPointsToday] = useState(0)
   const [pointsTotal, setPointsTotal] = useState(4820)
-  const [posts, setPosts] = useState<CommunityPost[]>(seedPosts)
 
   const value = useMemo<AppState>(
     () => ({
