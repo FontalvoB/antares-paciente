@@ -3027,6 +3027,84 @@ ion-button.onb-back-login {
   color: var(--mu);
 }
 
+/* --- Comunidad: rediseño visual --- */
+.com-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.com-tab .ionicon {
+  font-size: 15px;
+}
+.com-sech {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 4px;
+  font-weight: 800;
+  font-size: 13px;
+}
+.com-sech-ico {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.com-sech-ico.pur {
+  background: var(--pur-l);
+  color: var(--pur);
+}
+.com-sech-ico.gold {
+  background: var(--org-l);
+  color: var(--org);
+}
+.com-sech-ico.teal {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+.empty-ico {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  font-size: 24px;
+}
+.empty-ico.tone-pur {
+  background: var(--pur-l);
+  color: var(--pur);
+}
+.empty-ico.tone-gold {
+  background: var(--org-l);
+  color: var(--org);
+}
+.empty-ico.tone-teal {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+.empty-ico.tone-blue {
+  background: var(--blue-l);
+  color: var(--blue);
+}
+.empty-ico.tone-red {
+  background: var(--red-l);
+  color: var(--red);
+}
+.cmt-tag {
+  display: inline-flex;
+  align-items: center;
+}
+.cmt-reply-btn {
+  display: inline-flex;
+  align-items: center;
+}
+
 .fade-up {
   animation: fadeUp 0.45s var(--ease) both;
 }
