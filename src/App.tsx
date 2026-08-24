@@ -5,6 +5,7 @@ import { AppProvider, useApp } from './context/AppContext'
 import { PanicOverlay } from './components/PanicOverlay'
 import { VoiceOverlay } from './components/VoiceOverlay'
 import { ToastHost } from './components/ToastHost'
+import { ChatFab } from './components/ChatFab'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { TestsPage } from './pages/TestsPage'
@@ -95,6 +96,7 @@ function Shell() {
     <div className="app-stage">
       <div className={`app-shell ${flow === 'login' ? 'app-shell-login' : ''}`}>
         <Router />
+        <ChatFab />
         <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />
