@@ -4767,3 +4767,26 @@ ion-button.login-first-method:focus-visible {
   }
 }
 
+/* -- Chat FAB: bot�n flotante de acceso r�pido al chat --------------------- */
+.chat-fab {
+  position: fixed;
+  right: 18px;
+  bottom: calc(var(--nav-h) + 16px);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  /* Gradiente primario de la app (bt-primary): azul oscuro → azul */
+  background: linear-gradient(110deg, #173b73, #2f78df);
+  border: none;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  z-index: 60;
+  transition: transform 0.18s var(--ease, ease), box-shadow 0.18s var(--ease, ease);
+}
+.chat-fab:active {
+  transform: scale(0.92);
+}
