@@ -654,7 +654,7 @@ export function CommunityPage() {
 
   useEffect(() => {
     const post = postAddedResult.data?.postAdded
-    if (!post) return
+    if (!post || !post.profile) return
     if (post.profile.id === me?.id) return
     if (feedScope === 'following' && !followedIds.has(post.profile.id)) return
     if (seenPostIdsRef.current.has(post.id)) return
