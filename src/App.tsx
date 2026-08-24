@@ -1,9 +1,9 @@
 import { setupIonicReact, IonApp } from '@ionic/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import type { ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 import { Provider } from 'urql'
 import { AppProvider, useApp } from './context/AppContext'
-import { communityClient } from './graphql/client'
+import { createCommunityClient } from './graphql/client'
 import { PanicOverlay } from './components/PanicOverlay'
 import { VoiceOverlay } from './components/VoiceOverlay'
 import { ToastHost } from './components/ToastHost'
@@ -108,9 +108,20 @@ function Shell() {
 }
 
 export default function App() {
+  // Cliente urql de la comunidad en estado de React: se recrea en cada
+  // transición de autenticación para limpiar la cache y la conexión WS.
+  const [communityClientState, setCommunityClientState] = useState(() => createCommunityClient())
+
+  // Callback estable que reemplaza el cliente por uno nuevo (cache limpia + WS
+  // nuevo con el token del usuario actual). Se crea dentro del updater para no
+  // recrearlo en cada render.
+  const resetCommunityClient = useCallback(() => {
+    setCommunityClientState(createCommunityClient())
+  }, [])
+
   return (
-    <Provider value={communityClient}>
-      <AppProvider>
+    <Provider value={communityClientState}>
+      <AppProvider onResetCommunityClient={resetCommunityClient}>
         <IonApp>
           <Shell />
         </IonApp>

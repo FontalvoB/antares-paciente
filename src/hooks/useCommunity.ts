@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
-import { useMutation, useQuery } from 'urql'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMutation, useQuery, useSubscription } from 'urql'
 import {
   ADD_COMMENT,
+  ADD_GROUP_MEMBER,
   CONVERSATIONS_QUERY,
+  CREATE_GROUP,
   CREATE_POST,
   FOLLOWERS_QUERY,
   FOLLOWING_FEED_QUERY,
@@ -10,17 +12,29 @@ import {
   FOLLOW_USER,
   FEED_QUERY,
   FRIENDS_QUERY,
+  GROUP_CHANGED,
+  GROUP_MESSAGE_ADDED,
+  GROUPS_QUERY,
+  LEAVE_GROUP,
   LIKE_POST,
   ME_QUERY,
+  MESSAGE_ADDED,
   PEOPLE_SEARCH,
+  REMOVE_GROUP_MEMBER,
+  RENAME_GROUP,
   REPLY_TO_COMMENT,
+  SEND_GROUP_MESSAGE,
   SEND_MESSAGE,
   UNFOLLOW_USER,
   UNLIKE_POST,
   UPDATE_PROFILE,
+  conversationKey,
   type AddCommentResult,
+  type AddGroupMemberResult,
+  type ChatGroup,
   type Conversation,
   type ConversationsResult,
+  type CreateGroupResult,
   type CreatePostResult,
   type FeedResult,
   type FollowersResult,
@@ -28,13 +42,21 @@ import {
   type FollowingResult,
   type FollowUserResult,
   type FriendsResult,
+  type GroupChangedResult,
+  type GroupMessageAddedResult,
+  type GroupResult,
+  type LeaveGroupResult,
   type LikePostResult,
   type MeResult,
+  type MessageAddedResult,
   type PeopleResult,
   type Person,
   type Post,
   type Profile,
+  type RemoveGroupMemberResult,
+  type RenameGroupResult,
   type ReplyResult,
+  type SendGroupMessageResult,
   type SendMessageResult,
   type UnfollowUserResult,
   type UpdateProfileResult,
@@ -48,6 +70,81 @@ export interface FeedPostView {
   post: Post
   likeCount: number
   likedByMe: boolean
+}
+
+/**
+ * Suscribe un conversationKey concreto y ejecuta `onMessage` cada vez que
+ * llega un mensaje. El backend exige que seas participante de la conversación,
+ * por eso se suscribe por clave real (no por un comodín). Se usa en el tab de
+ * chat para refrescar la lista de conversaciones en vivo.
+ */
+export function useConversationMessageListener(
+  meId: string | null,
+  peerId: string | null,
+  onMessage: () => void,
+) {
+  const key = meId && peerId ? conversationKey(meId, peerId) : null
+  const [sub] = useSubscription<MessageAddedResult>({
+    query: MESSAGE_ADDED,
+    variables: { conversationKey: key ?? '' },
+    pause: !key,
+  })
+
+  // Referencia estable para no re-disparar el efecto en cada render.
+  const onMessageRef = useRef(onMessage)
+  onMessageRef.current = onMessage
+
+  useEffect(() => {
+    if (sub.data?.messageAdded) onMessageRef.current()
+  }, [sub.data])
+}
+
+/**
+ * Suscribe un grupo concreto y ejecuta `onMessage` cada vez que llega un
+ * mensaje nuevo al grupo. El hook es genérico: solo dispara el callback; el
+ * page decide qué refetch (pausado cuando no hay groupId).
+ */
+export function useGroupMessageListener(
+  groupId: string | null,
+  onMessage: () => void,
+) {
+  const [sub] = useSubscription<GroupMessageAddedResult>({
+    query: GROUP_MESSAGE_ADDED,
+    variables: { groupId: groupId ?? '' },
+    pause: !groupId,
+  })
+
+  // Referencia estable para no re-disparar el efecto en cada render.
+  const onMessageRef = useRef(onMessage)
+  onMessageRef.current = onMessage
+
+  useEffect(() => {
+    if (sub.data?.groupMessageAdded) onMessageRef.current()
+  }, [sub.data])
+}
+
+/**
+ * Suscribe un grupo concreto y ejecuta `onChanged` cada vez que el grupo
+ * cambia (alta/baja de miembros, renombrado, etc.). Hook genérico: solo
+ * dispara el callback; el page decide qué refetch (pausado si no hay groupId).
+ */
+export function useGroupChangedListener(
+  groupId: string | null,
+  onChanged: () => void,
+) {
+  const [sub] = useSubscription<GroupChangedResult>({
+    query: GROUP_CHANGED,
+    variables: { groupId: groupId ?? '' },
+    pause: !groupId,
+  })
+
+  // Referencia estable para no re-disparar el efecto en cada render.
+  const onChangedRef = useRef(onChanged)
+  onChangedRef.current = onChanged
+
+  useEffect(() => {
+    if (sub.data?.groupChanged) onChangedRef.current()
+  }, [sub.data])
 }
 
 /**
@@ -87,6 +184,10 @@ export function useCommunity() {
     query: CONVERSATIONS_QUERY,
     variables: { take: LIST_SIZE, skip: 0 },
   })
+  const [groupsResult, reexecuteGroups] = useQuery<GroupResult>({
+    query: GROUPS_QUERY,
+    variables: { take: LIST_SIZE, skip: 0 },
+  })
 
   const me: Profile | null = meResult.data?.me ?? null
   const myProfileId = me?.id ?? null
@@ -100,6 +201,12 @@ export function useCommunity() {
   const [, followMutation] = useMutation<FollowUserResult>(FOLLOW_USER)
   const [, unfollowMutation] = useMutation<UnfollowUserResult>(UNFOLLOW_USER)
   const [, sendMessageMutation] = useMutation<SendMessageResult>(SEND_MESSAGE)
+  const [, createGroupMutation] = useMutation<CreateGroupResult>(CREATE_GROUP)
+  const [, renameGroupMutation] = useMutation<RenameGroupResult>(RENAME_GROUP)
+  const [, addGroupMemberMutation] = useMutation<AddGroupMemberResult>(ADD_GROUP_MEMBER)
+  const [, removeGroupMemberMutation] = useMutation<RemoveGroupMemberResult>(REMOVE_GROUP_MEMBER)
+  const [, leaveGroupMutation] = useMutation<LeaveGroupResult>(LEAVE_GROUP)
+  const [, sendGroupMessageMutation] = useMutation<SendGroupMessageResult>(SEND_GROUP_MESSAGE)
 
   const feed = useMemo<FeedPostView[]>(() => {
     const list = feedResult.data?.feed ?? []
@@ -211,6 +318,83 @@ export function useCommunity() {
     [sendMessageMutation, reexecuteConversations],
   )
 
+  // Referencia estable: evita que el useEffect del tab de chat re-dispare
+  // refetches en cada render (loop infinito de loading).
+  const refetchConversations = useCallback(
+    () => reexecuteConversations({ requestPolicy: 'network-only' }),
+    [reexecuteConversations],
+  )
+
+  const refetchGroups = useCallback(
+    () => reexecuteGroups({ requestPolicy: 'network-only' }),
+    [reexecuteGroups],
+  )
+
+  const createGroup = useCallback(
+    async (name: string, memberProfileIds: string[]) => {
+      const res = await createGroupMutation({ name, memberProfileIds })
+      if (res.error) throw new Error(res.error.message)
+      refetchGroups()
+      return res.data?.createGroup
+    },
+    [createGroupMutation, refetchGroups],
+  )
+
+  const renameGroup = useCallback(
+    async (groupId: string, name: string) => {
+      const res = await renameGroupMutation({ groupId, name })
+      if (res.error) throw new Error(res.error.message)
+      refetchGroups()
+      return res.data?.renameGroup
+    },
+    [renameGroupMutation, refetchGroups],
+  )
+
+  const addGroupMember = useCallback(
+    async (groupId: string, profileId: string) => {
+      const res = await addGroupMemberMutation({ groupId, profileId })
+      if (res.error) throw new Error(res.error.message)
+      refetchGroups()
+      return res.data?.addGroupMember
+    },
+    [addGroupMemberMutation, refetchGroups],
+  )
+
+  const removeGroupMember = useCallback(
+    async (groupId: string, profileId: string) => {
+      const res = await removeGroupMemberMutation({ groupId, profileId })
+      if (res.error) throw new Error(res.error.message)
+      refetchGroups()
+      return res.data?.removeGroupMember
+    },
+    [removeGroupMemberMutation, refetchGroups],
+  )
+
+  const leaveGroup = useCallback(
+    async (groupId: string) => {
+      const res = await leaveGroupMutation({ groupId })
+      if (res.error) throw new Error(res.error.message)
+      refetchGroups()
+      return res.data?.leaveGroup
+    },
+    [leaveGroupMutation, refetchGroups],
+  )
+
+  const sendGroupMessage = useCallback(
+    async (groupId: string, body: string) => {
+      const res = await sendGroupMessageMutation({ groupId, body })
+      if (res.error) throw new Error(res.error.message)
+      refetchGroups()
+      return res.data?.sendGroupMessage
+    },
+    [sendGroupMessageMutation, refetchGroups],
+  )
+
+  /** Lista de grupos de chat y estado de carga/error derivados. */
+  const groups: ChatGroup[] = groupsResult.data?.groups ?? []
+  const groupsLoading = groupsResult.fetching
+  const groupsError = groupsResult.error ? groupsResult.error.message : null
+
   return {
     me,
     meLoading: meResult.fetching,
@@ -243,7 +427,7 @@ export function useCommunity() {
     conversations,
     conversationsLoading: conversationsResult.fetching,
     conversationsError: conversationsResult.error,
-    refetchConversations: () => reexecuteConversations({ requestPolicy: 'network-only' }),
+    refetchConversations,
     createPost,
     toggleLike,
     addComment,
@@ -252,5 +436,16 @@ export function useCommunity() {
     followUser,
     unfollowUser,
     sendMessage,
+    // --- Grupos de chat ---
+    groups,
+    groupsLoading,
+    groupsError,
+    refetchGroups,
+    createGroup,
+    renameGroup,
+    addGroupMember,
+    removeGroupMember,
+    leaveGroup,
+    sendGroupMessage,
   }
 }

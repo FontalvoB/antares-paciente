@@ -135,7 +135,14 @@ function botReply(text: string): { role: ChatMessage['role']; text: string } {
   }
 }
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({
+  children,
+  onResetCommunityClient,
+}: {
+  children: ReactNode
+  /** Se invoca tras login/logout para recrear el cliente urql de la comunidad. */
+  onResetCommunityClient?: () => void
+}) {
   const [flow, setFlow] = useState<Flow>('login')
   const [screen, setScreen] = useState<Screen>('home')
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -191,6 +198,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         if (seed) setUser((u) => ({ ...u, ...seed }))
         setFlow(next)
+        // Recrea el cliente urql para usar la cache y el WS con el token nuevo.
+        onResetCommunityClient?.()
       },
       backToLogin: () => {
         setFlow('login')
@@ -250,9 +259,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         })
       },
       logout: () => {
-        void logoutUser()
         setFlow('login')
         setScreen('home')
+        // Cierra sesión en el servidor y luego recrea el cliente urql (cache
+        // limpia + WS nuevo) para no servir datos del usuario anterior.
+        void logoutUser().then(() => onResetCommunityClient?.())
       },
     }),
     [
@@ -275,6 +286,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       weekCheckins,
       pointsToday,
       pointsTotal,
+      onResetCommunityClient,
     ],
   )
 

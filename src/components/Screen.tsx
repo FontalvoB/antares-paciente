@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { BottomNav } from './BottomNav'
 
 export function Screen({
@@ -24,6 +24,18 @@ export function Screen({
   )
 }
 
-export function Scroll({ children, noNav = false }: { children: ReactNode; noNav?: boolean }) {
-  return <div className={`screen-scroll ${noNav ? 'no-nav' : ''}`}>{children}</div>
+export function Scroll({
+  children,
+  noNav = false,
+  ref,
+}: {
+  children: ReactNode
+  noNav?: boolean
+  ref?: Ref<HTMLDivElement>
+}) {
+  return (
+    <div ref={ref} className={`screen-scroll ${noNav ? 'no-nav' : ''}`}>
+      {children}
+    </div>
+  )
 }

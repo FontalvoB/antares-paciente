@@ -2,7 +2,7 @@
 
 // ---------- Tipos ----------
 
-export type ProfileStatus = 'Active' | 'Banned'
+export type ProfileStatus = 'ACTIVE' | 'BANNED'
 
 export interface Profile {
   id: string
@@ -157,6 +157,62 @@ export interface SendMessageResult {
 
 export interface MessageAddedResult {
   messageAdded: Message
+}
+
+// ---------- Tipos: grupos de chat ----------
+
+/** Grupo de chat (salón) con el último mensaje para la lista de grupos. */
+export interface ChatGroup {
+  id: string
+  name: string
+  createdByProfileId: string
+  createdAt: string
+  memberCount: number
+  lastMessage: Message | null
+}
+
+export interface GroupResult {
+  groups: ChatGroup[]
+}
+
+export interface GroupHistoryResult {
+  group: Message[]
+}
+
+export interface GroupMembersResult {
+  groupMembers: Profile[]
+}
+
+export interface CreateGroupResult {
+  createGroup: ChatGroup
+}
+
+export interface RenameGroupResult {
+  renameGroup: ChatGroup
+}
+
+export interface AddGroupMemberResult {
+  addGroupMember: ChatGroup
+}
+
+export interface RemoveGroupMemberResult {
+  removeGroupMember: ChatGroup
+}
+
+export interface LeaveGroupResult {
+  leaveGroup: ChatGroup
+}
+
+export interface SendGroupMessageResult {
+  sendGroupMessage: Message
+}
+
+export interface GroupMessageAddedResult {
+  groupMessageAdded: Message
+}
+
+export interface GroupChangedResult {
+  groupChanged: ChatGroup
 }
 
 // ---------- Fragmentos ----------
@@ -474,6 +530,151 @@ export const MESSAGE_ADDED = /* GraphQL */ `
       recipientProfileId
       body
       createdAt
+    }
+  }
+`
+
+/** Evento mínimo de post publicado (para el aviso "ver publicaciones nuevas"). */
+export interface PostAddedEvent {
+  id: string
+  profile: { id: string }
+}
+
+export interface PostAddedResult {
+  postAdded: PostAddedEvent
+}
+
+export const POST_ADDED = /* GraphQL */ `
+  subscription PostAdded {
+    postAdded {
+      id
+      profile {
+        id
+      }
+    }
+  }
+`
+
+// ---------- Queries: grupos de chat ----------
+
+export const GROUPS_QUERY = /* GraphQL */ `
+  query Groups($take: Int!, $skip: Int!) {
+    groups(take: $take, skip: $skip) {
+      id
+      name
+      createdByProfileId
+      createdAt
+      memberCount
+      lastMessage {
+        id
+        body
+        senderProfileId
+        createdAt
+      }
+    }
+  }
+`
+
+export const GROUP_QUERY = /* GraphQL */ `
+  query Group($groupId: UUID!, $take: Int!, $skip: Int!) {
+    group(groupId: $groupId, take: $take, skip: $skip) {
+      id
+      body
+      senderProfileId
+      createdAt
+    }
+  }
+`
+
+export const GROUP_MEMBERS_QUERY = /* GraphQL */ `
+  query GroupMembers($groupId: UUID!) {
+    groupMembers(groupId: $groupId) {
+      id
+      displayName
+    }
+  }
+`
+
+// ---------- Mutaciones: grupos de chat ----------
+
+export const CREATE_GROUP = /* GraphQL */ `
+  mutation CreateGroup($name: String!, $memberProfileIds: [UUID!]!) {
+    createGroup(name: $name, memberProfileIds: $memberProfileIds) {
+      id
+      name
+      createdAt
+    }
+  }
+`
+
+export const RENAME_GROUP = /* GraphQL */ `
+  mutation RenameGroup($groupId: UUID!, $name: String!) {
+    renameGroup(groupId: $groupId, name: $name) {
+      id
+      name
+    }
+  }
+`
+
+export const ADD_GROUP_MEMBER = /* GraphQL */ `
+  mutation AddGroupMember($groupId: UUID!, $profileId: UUID!) {
+    addGroupMember(groupId: $groupId, profileId: $profileId) {
+      id
+      name
+      memberCount
+    }
+  }
+`
+
+export const REMOVE_GROUP_MEMBER = /* GraphQL */ `
+  mutation RemoveGroupMember($groupId: UUID!, $profileId: UUID!) {
+    removeGroupMember(groupId: $groupId, profileId: $profileId) {
+      id
+      name
+      memberCount
+    }
+  }
+`
+
+export const LEAVE_GROUP = /* GraphQL */ `
+  mutation LeaveGroup($groupId: UUID!) {
+    leaveGroup(groupId: $groupId) {
+      id
+      name
+    }
+  }
+`
+
+export const SEND_GROUP_MESSAGE = /* GraphQL */ `
+  mutation SendGroupMessage($groupId: UUID!, $body: String!) {
+    sendGroupMessage(groupId: $groupId, body: $body) {
+      id
+      body
+      senderProfileId
+      createdAt
+    }
+  }
+`
+
+// ---------- Suscripciones: grupos de chat ----------
+
+export const GROUP_MESSAGE_ADDED = /* GraphQL */ `
+  subscription GroupMessageAdded($groupId: UUID!) {
+    groupMessageAdded(groupId: $groupId) {
+      id
+      body
+      senderProfileId
+      createdAt
+    }
+  }
+`
+
+export const GROUP_CHANGED = /* GraphQL */ `
+  subscription GroupChanged($groupId: UUID!) {
+    groupChanged(groupId: $groupId) {
+      id
+      name
+      memberCount
     }
   }
 `
