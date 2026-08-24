@@ -58,6 +58,7 @@ export function HomePage() {
           {[
             ['IMC', '26.4', '−1.2 este mes', 'var(--teal)'],
             ['HbA1c', '5.9%', 'Mejorando', 'var(--blue)'],
+            ['% de grasa', '26.4', '−1.2 este mes', 'var(--teal)'],
             ['Adherencia', '88%', 'Esta semana', 'var(--cyan)'],
             ['Puntos', String(pointsTotal), 'Hoy', 'var(--org)'],
           ].map(([l, v, s, c]) => (
