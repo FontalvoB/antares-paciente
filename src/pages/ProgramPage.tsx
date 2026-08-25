@@ -9,40 +9,23 @@ import {
   IonSegmentButton,
 } from '@ionic/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  barbell,
-  checkmark,
-  close,
-  flame,
-  flask,
-  headset,
-  happy,
-  nutrition,
-  pulse,
-  star,
-  trophy,
-} from 'ionicons/icons'
+import { close, flame, star } from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import {
-  CAL_DAY_LABELS,
   CIRCUIT_STEPS,
   DAY_BONUS_PTS,
-  HEALTH_PILLARS,
   HEALTH_SCORE,
-  LONGEST_STREAK,
   NEXT_CHEST_DAYS,
   PODCAST_EPISODE,
-  PROGRAM_POINTS_MAX,
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
   TRANSFORM_ROWS,
-  TRANSFORM_SCORE,
-  WEEK_LABELS,
   levelForXp,
 } from '../data/program'
 import type { ProgramTaskId } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
+import { EvolutionView } from './program/EvolutionView'
 import {
   EmotionalLesson,
   ExerciseLesson,
@@ -52,15 +35,9 @@ import {
   VitalsLesson,
   type ProgramTab,
 } from './program/Lessons'
-
-const TASK_ICONS: Record<ProgramTaskId, string> = {
-  podcast: headset,
-  vitals: pulse,
-  nut: nutrition,
-  ejercicio: barbell,
-  nutribiotico: flask,
-  emocional: happy,
-}
+import { StreakView } from './program/StreakView'
+import { TodayView } from './program/TodayView'
+import { paneMotion } from './program/ui'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
 
@@ -233,13 +210,18 @@ export function ProgramPage() {
           </div>
 
           <div className="hero-pills">
-            <div className={`hpill hpill-streak ${allDone ? 'hot' : ''}`}>
+            <button
+              type="button"
+              className={`hpill hpill-streak ${allDone ? 'hot' : ''}`}
+              onClick={() => setTab('racha')}
+              aria-label={`Ver racha de ${streak} días`}
+            >
               <div className="hpill-ico">
                 <IonIcon icon={flame} />
               </div>
               <div className="hpill-val">{streak}</div>
               <div className="hpill-lbl">Racha</div>
-            </div>
+            </button>
             <div className="hpill hpill-xp">
               <div className="hpill-ico">
                 <IonIcon icon={star} />
@@ -247,14 +229,14 @@ export function ProgramPage() {
               <div className="hpill-val">{pointsTotal.toLocaleString('es-ES')}</div>
               <div className="hpill-lbl">XP</div>
             </div>
-            <div className="hpill hpill-hs">
+            <button type="button" className="hpill hpill-hs" onClick={() => setTab('evo')} aria-label="Ver Health Score">
               <div className="hpill-val">{HEALTH_SCORE}</div>
               <div className="hpill-lbl">Health</div>
-            </div>
-            <div className="hpill hpill-ts">
+            </button>
+            <button type="button" className="hpill hpill-ts" onClick={() => setTab('evo')} aria-label="Ver evolución">
               <div className="hpill-val">+27%</div>
               <div className="hpill-lbl">Evolución</div>
-            </div>
+            </button>
           </div>
 
           <div className="lvl-bar-wrap">
@@ -287,267 +269,41 @@ export function ProgramPage() {
           </IonSegment>
         </div>
 
-        {tab === 'hoy' && (
-          <>
-            <div className="today-hdr">
-              <div>
-                <div className="today-hdr-txt">Mi programa hoy</div>
-                <div className="today-hdr-sub">
-                  {allDone ? 'Día perfecto · racha protegida' : `Completa las 6 misiones · ${doneCount}/6`}
-                </div>
-              </div>
-              <div className="today-pts">
-                {pointsToday} / {PROGRAM_POINTS_MAX}
-              </div>
-            </div>
-
-            <div className="duo-track">
-              <div className="duo-rail" aria-hidden="true" />
-              {PROGRAM_TASKS.map((t, i) => {
-                const done = program[t.id]
-                const current = t.id === currentId
-                return (
-                  <motion.div
-                    key={t.id}
-                    className={`duo-row ${i % 2 === 0 ? 'left' : 'right'}`}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 + i * 0.06, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <button
-                      type="button"
-                      className={`duo-node tone-${t.tone} ${done ? 'done' : ''} ${current ? 'current' : ''}`}
-                      aria-label={`${t.title}${done ? ', completada' : current ? ', siguiente' : ''}`}
-                      onClick={() => setActive(t.id)}
-                    >
-                      <IonIcon icon={done ? checkmark : TASK_ICONS[t.id]} />
-                      {current && !done && <span className="duo-pulse" />}
-                    </button>
-                    <div className="duo-meta">
-                      <div className="duo-meta-title">{t.title}</div>
-                      <div className="duo-meta-sub">{done ? 'Completada' : t.short}</div>
-                      <span className={`chip ${done ? 'chip-teal' : 'chip-gold'}`}>+{t.pts}</span>
-                    </div>
-                  </motion.div>
-                )
-              })}
-              <div className={`duo-chest ${allDone ? 'open' : ''}`}>
-                <div className="duo-chest-ico">
-                  <IonIcon icon={trophy} />
-                </div>
-                <span>
-                  {allDone
-                    ? `Bonus del día +${DAY_BONUS_PTS} pts desbloqueado`
-                    : 'Completa las 6 y sube la racha'}
-                </span>
-              </div>
-            </div>
-
-            <div className="stitle">Nutribiótico</div>
-            <div className="nb-card">
-              <div className="nb-title">{program.nutribiotico ? 'Dosis de hoy lista' : '¿Ya tomaste tu Nutribiótico?'}</div>
-              <div className="nb-sub">
-                {program.nutribiotico ? `Registrado a las ${takenAt || 'ahora'}` : 'Producto ADRED · dosis matutina'}
-              </div>
-              <div className="nb-streak">
-                {WEEK_LABELS.map((d, i) => {
-                  const ok = i === todayIdx ? program.nutribiotico : i < todayIdx
-                  return (
-                    <div key={d} className={`nb-day ${ok ? 'ok' : 'no'} ${i === todayIdx ? 'today' : ''}`}>
-                      {d}
-                    </div>
-                  )
-                })}
-              </div>
-              {!program.nutribiotico && (
-                <IonButton expand="block" className="bt bt-teal" onClick={() => setActive('nutribiotico')}>
-                  Registrar dosis
-                </IonButton>
-              )}
-            </div>
-
-            <div className="stitle">AI Health Coach</div>
-            <div className="ai-wrap">
-              <div className="ai-chip">ANÁLISIS SEMANAL · SEMANA {programWeek}</div>
-              <div className="ai-bubble">
-                {first}, tu <strong>adherencia nutricional subió de 67% a 84%</strong>. El índice de grasa varió +0.4% — hay una cosa que quiero revisar contigo.
-              </div>
-              <div className="ai-actions">
-                <IonButton className="bt bt-ghost" onClick={() => setTab('evo')}>
-                  Ver evolución
-                </IonButton>
-                <IonButton className="bt bt-primary" onClick={() => navigate('chat')}>
-                  Hablar con IA
-                </IonButton>
-              </div>
-            </div>
-          </>
-        )}
-
-        {tab === 'racha' && (
-          <div className="cpad">
-            <div className="card">
-              <div className="cal-head">
-                <div>
-                  <div className="cal-streak">
-                    <IonIcon icon={flame} /> {streak} días
-                  </div>
-                  <div className="cs">Racha actual · Máxima: {LONGEST_STREAK} días</div>
-                </div>
-                <div className="cal-rescue">
-                  <div className="cs">Protección</div>
-                  <strong>1 rescate</strong>
-                </div>
-              </div>
-              <div className="duo-week cal-week">
-                {WEEK_LABELS.map((label, i) => (
-                  <div key={label} className={`duo-day ${weekCheckins[i] ? 'done' : ''} ${i === todayIdx ? 'today' : ''}`}>
-                    <span>{label}</span>
-                    <b>{weekCheckins[i] ? '✓' : i === todayIdx ? '·' : ''}</b>
-                  </div>
-                ))}
-              </div>
-              <div className="cal-grid-lbls">
-                {CAL_DAY_LABELS.map((d) => (
-                  <div key={d}>{d}</div>
-                ))}
-              </div>
-              <div className="cal-grid">
-                {cells.map((c, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className={`cal-cell ${c.kind}`}
-                    disabled={!c.d}
-                    onClick={() => c.d && showToast(c.d < new Date().getDate() ? `Día ${c.d} completado` : 'Hoy · sigue la racha', 'info')}
-                  >
-                    {c.d ?? ''}
-                  </button>
-                ))}
-              </div>
-              <div className="cal-legend">
-                <span>
-                  <i className="cal-dot ok" /> Completo
-                </span>
-                <span>
-                  <i className="cal-dot partial" /> Parcial
-                </span>
-                <span>
-                  <i className="cal-dot miss" /> Futuro
-                </span>
-                <span>🏆 Hito</span>
-              </div>
-            </div>
-
-            <div className="card chest-next">
-              <div className="chest-next-row">
-                <div className="chest-float">🎁</div>
-                <div>
-                  <div className="ct">Cofre de Permanencia</div>
-                  <div className="cs">
-                    {NEXT_CHEST_DAYS} días de racha · faltan {Math.max(0, NEXT_CHEST_DAYS - streak)}
-                  </div>
-                </div>
-              </div>
-              <IonProgressBar value={chestPct} className="pb" />
-              <div className="chest-next-meta">
-                {streak} de {NEXT_CHEST_DAYS} · +1,500 XP al abrir
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="cs" style={{ marginBottom: 8 }}>
-                Recorrido del protocolo · {programWeek}/{PROGRAM_WEEKS} semanas
-              </div>
-              <IonProgressBar value={weekPct} className="pb" />
-            </div>
-          </div>
-        )}
-
-        {tab === 'evo' && (
-          <div className="cpad">
-            <div className="card">
-              <div className="hs-wrap">
-                <div className="hs-ring">
-                  <svg width="90" height="90" viewBox="0 0 90 90">
-                    <circle cx="45" cy="45" r="35" fill="none" stroke="var(--g1)" strokeWidth="9" />
-                    <circle
-                      cx="45"
-                      cy="45"
-                      r="35"
-                      fill="none"
-                      stroke="var(--teal)"
-                      strokeWidth="9"
-                      strokeLinecap="round"
-                      strokeDasharray="219.9"
-                      strokeDashoffset={219.9 * (1 - HEALTH_SCORE / 100)}
-                      transform="rotate(-90 45 45)"
-                    />
-                  </svg>
-                  <div className="hs-center">
-                    <div className="hs-val">{HEALTH_SCORE}</div>
-                    <div className="hs-lbl">Health</div>
-                  </div>
-                </div>
-                <div className="hs-bars">
-                  {HEALTH_PILLARS.map((p) => (
-                    <div key={p.label} className="hs-bar-row">
-                      <div className="hs-bar-top">
-                        <span>{p.label}</span>
-                        <span>{p.pct}%</span>
-                      </div>
-                      <div className="hs-bar-track">
-                        <div className="hs-bar-fill" style={{ width: `${p.pct}%`, background: p.color }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="hs-kpis">
-                <div>
-                  <span>Anterior</span>
-                  <b>81</b>
-                </div>
-                <div>
-                  <span>Cambio</span>
-                  <b className="up">+5</b>
-                </div>
-                <div>
-                  <span>Meta</span>
-                  <b>90</b>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="tf-head">
-                <div>
-                  <div className="ct">Transformation Score</div>
-                  <div className="cs">Desde tu línea base · día 0</div>
-                </div>
-                <div className="tf-score">{TRANSFORM_SCORE}</div>
-              </div>
-              {TRANSFORM_ROWS.map((r) => (
-                <div key={r.label} className="tf-row">
-                  <div className="tf-lbl">{r.label}</div>
-                  <div className="tf-base">{r.base}</div>
-                  <div className="tf-cur">{r.cur}</div>
-                  <div className="tf-delta">{r.delta}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="wk-card wk-amber">
-              <div>
-                <div className="wk-title">Índice de grasa: tendencia a vigilar</div>
-                <div className="wk-sub">+0.4% esta semana. La IA sugiere revisar proteínas con tu nutricionista.</div>
-                <IonButton className="bt bt-gold" onClick={() => navigate('book')}>
-                  Ver cita
-                </IonButton>
-              </div>
-            </div>
-          </div>
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={tab} {...paneMotion}>
+            {tab === 'hoy' && (
+              <TodayView
+                program={program}
+                doneCount={doneCount}
+                allDone={allDone}
+                currentId={currentId}
+                pointsToday={pointsToday}
+                first={first}
+                programWeek={programWeek}
+                todayIdx={todayIdx}
+                takenAt={takenAt}
+                onOpenTask={setActive}
+                onGoEvo={() => setTab('evo')}
+                onGoChat={() => navigate('chat')}
+              />
+            )}
+            {tab === 'racha' && (
+              <StreakView
+                streak={streak}
+                weekCheckins={weekCheckins}
+                todayIdx={todayIdx}
+                cells={cells}
+                chestPct={chestPct}
+                weekPct={weekPct}
+                programWeek={programWeek}
+                onCell={(day, past) =>
+                  showToast(past ? `Día ${day} completado` : 'Hoy · sigue la racha', 'info')
+                }
+              />
+            )}
+            {tab === 'evo' && <EvolutionView onGoBook={() => navigate('book')} />}
+          </motion.div>
+        </AnimatePresence>
       </Scroll>
 
       <IonModal
