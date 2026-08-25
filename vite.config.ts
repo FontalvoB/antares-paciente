@@ -7,10 +7,14 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
-      // Proxy genérico hacia el gateway (YARP) en :5080 — única entrada pública.
-      // El gateway enruta por prefijo: /api/auth → Auth, /api/v1/telemedicine → Telemedicine, /api/v1 → Api.
-      '/api': {
-        target: 'http://localhost:5080',
+      // Sin gateway por ahora: enrutado directo a los servicios.
+      // /api/auth → Auth Service, /api/v1 → API principal, /graphql → community.
+      '/api/auth': {
+        target: 'http://localhost:5123',
+        changeOrigin: true,
+      },
+      '/api/v1': {
+        target: 'http://localhost:5122',
         changeOrigin: true,
       },
       '/graphql': {
