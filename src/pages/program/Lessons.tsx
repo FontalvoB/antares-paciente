@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   IonButton,
   IonChip,
@@ -8,11 +8,14 @@ import {
   IonRange,
   IonSegment,
   IonSegmentButton,
+  IonSpinner,
   IonTextarea,
 } from '@ionic/react'
 import {
   bluetooth,
   checkmark,
+  checkmarkCircle,
+  heart,
   pause,
   play,
   playBack,
@@ -36,12 +39,29 @@ function mmss(sec: number) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
+function vitalNumber(raw: string) {
+  if (!raw.trim()) return NaN
+  if (raw.includes('/')) return parseFloat(raw.split('/')[0])
+  return parseFloat(raw.replace(',', '.'))
+}
+
 function vitalStatus(raw: string, lo: number, hi: number) {
-  const n = parseFloat(raw.replace('/', '.'))
-  if (!raw.trim() || Number.isNaN(n)) return { label: '—', cls: '' }
+  const n = vitalNumber(raw)
+  if (Number.isNaN(n)) return { label: 'Pendiente', cls: '' }
   if (n < lo) return { label: 'Bajo', cls: 'warn' }
   if (n > hi) return { label: 'Alto', cls: 'warn' }
   return { label: 'En rango', cls: 'ok' }
+}
+
+function EcgLive() {
+  const d =
+    'M0 36 H28 L36 36 L42 18 L50 58 L58 36 H96 L104 36 L110 12 L118 60 L126 36 H168 L176 36 L182 20 L190 54 L198 36 H240 L248 36 L254 14 L262 58 L270 36 H312 L320 36 L326 22 L334 52 L342 36 H360'
+  return (
+    <svg className="vt-ecg" viewBox="0 0 360 72" aria-hidden="true">
+      <path className="vt-ecg-base" d={d} />
+      <path className="vt-ecg-line" d={d} />
+    </svg>
+  )
 }
 
 export function PodcastLesson({
@@ -146,56 +166,113 @@ export function VitalsLesson({
   onComplete: () => void
 }) {
   const [vals, setVals] = useState<Record<string, string>>({})
+  const [syncing, setSyncing] = useState(false)
+  const syncRef = useRef<number | null>(null)
   const filled = VITAL_FIELDS.filter((f) => (vals[f.id] ?? '').trim()).length
 
+  useEffect(
+    () => () => {
+      if (syncRef.current) window.clearInterval(syncRef.current)
+    },
+    [],
+  )
+
   const sync = () => {
-    const next: Record<string, string> = {}
-    VITAL_FIELDS.forEach((f) => {
-      next[f.id] = f.watch
-    })
-    setVals(next)
+    if (done || syncing) return
+    setSyncing(true)
+    let i = 0
+    syncRef.current = window.setInterval(() => {
+      const f = VITAL_FIELDS[i]
+      setVals((prev) => ({ ...prev, [f.id]: f.watch }))
+      i += 1
+      if (i >= VITAL_FIELDS.length) {
+        if (syncRef.current) window.clearInterval(syncRef.current)
+        syncRef.current = null
+        setSyncing(false)
+      }
+    }, 170)
   }
 
   return (
-    <div className="lsn-stack">
-      <div className="lsn-banner">
-        Ayer: FC 74 · Glucosa 99 · Peso 88.0 kg. Compara la tendencia, no un solo número.
-      </div>
+    <div className="lsn-stack vt-lesson">
+      <section className="vt-hero">
+        <div className="vt-hero-top">
+          <span className="vt-heart">
+            <IonIcon icon={heart} />
+          </span>
+          <div>
+            <div className="vt-kicker">Check-in clínico</div>
+            <strong>Signos de ahora</strong>
+          </div>
+          <div className="vt-count">
+            <b>{filled}</b>
+            <small>/6</small>
+          </div>
+        </div>
+        <EcgLive />
+        <p>Compara con ayer. La tendencia importa más que un solo número.</p>
+      </section>
+
       {watchConnected ? (
-        <IonButton expand="block" className="bt bt-ghost" onClick={sync} disabled={done}>
-          <IonIcon icon={bluetooth} slot="start" />
-          Sincronizar {filled ? 'de nuevo' : 'desde el reloj'}
-        </IonButton>
+        <button type="button" className="vt-sync" onClick={sync} disabled={done || syncing}>
+          <span className={`vt-sync-orb ${syncing ? 'on' : ''}`}>
+            {syncing ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}
+          </span>
+          <span className="vt-sync-copy">
+            <strong>{syncing ? 'Leyendo el reloj…' : 'Sincronizar ANTARES Watch'}</strong>
+            <small>{syncing ? 'FC, SpO2, presión y más' : 'Autollenar con la última medición'}</small>
+          </span>
+        </button>
       ) : (
-        <IonButton expand="block" className="bt bt-ghost" onClick={onConnectWatch}>
-          <IonIcon icon={bluetooth} slot="start" />
-          Conectar reloj para autollenar
-        </IonButton>
+        <button type="button" className="vt-sync" onClick={onConnectWatch}>
+          <span className="vt-sync-orb">
+            <IonIcon icon={bluetooth} />
+          </span>
+          <span className="vt-sync-copy">
+            <strong>Conectar reloj</strong>
+            <small>Autollenar FC, SpO2, presión y peso</small>
+          </span>
+        </button>
       )}
-      <div className="vital-grid">
+
+      <div className="vt-grid">
         {VITAL_FIELDS.map((f) => {
           const v = vals[f.id] ?? ''
+          const n = vitalNumber(v)
           const st = vitalStatus(v, f.lo, f.hi)
+          const span = f.hi - f.lo || 1
+          const pct = Number.isNaN(n) ? null : Math.min(100, Math.max(0, ((n - f.lo) / span) * 100))
           return (
-            <div key={f.id} className={`vital-inp ${st.cls}`}>
-              <label>
-                {f.emoji} {f.label}
-              </label>
-              <IonInput
-                className="vital-i"
-                placeholder={f.unit}
-                inputmode="decimal"
-                value={v}
-                disabled={done}
-                onIonInput={(e) => setVals((prev) => ({ ...prev, [f.id]: e.detail.value ?? '' }))}
-              />
-              <small>
-                {st.label} · {f.hint}
-              </small>
-            </div>
+            <article key={f.id} className={`vt-tile ${st.cls} ${v ? 'has' : ''}`}>
+              <header>
+                <span className="vt-emoji">{f.emoji}</span>
+                <span className="vt-label">{f.label}</span>
+                {st.cls === 'ok' && <IonIcon icon={checkmarkCircle} className="vt-ok-ico" />}
+              </header>
+              <div className="vt-value">
+                <IonInput
+                  className="vt-input"
+                  placeholder="—"
+                  inputmode="decimal"
+                  value={v}
+                  disabled={done}
+                  aria-label={f.label}
+                  onIonInput={(e) => setVals((prev) => ({ ...prev, [f.id]: e.detail.value ?? '' }))}
+                />
+                <em>{f.unit}</em>
+              </div>
+              <div className="vt-range" aria-hidden="true">
+                <i style={{ left: pct === null ? '-8px' : `${pct}%`, opacity: pct === null ? 0 : 1 }} />
+              </div>
+              <footer>
+                <span className={st.cls || undefined}>{st.label}</span>
+                <span>Ayer {f.demo}</span>
+              </footer>
+            </article>
           )
         })}
       </div>
+
       {!done && (
         <IonButton expand="block" className="bt bt-primary" disabled={filled < 4} onClick={onComplete}>
           {filled < 4 ? `Registra al menos 4 signos (${filled}/6)` : `Guardar signos · +${pts} pts`}
