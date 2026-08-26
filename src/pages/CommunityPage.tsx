@@ -61,6 +61,7 @@ import {
 import type { ChatGroup, Comment, Person, Post, Profile } from '../graphql/community'
 import { ErrorBoundary } from '../components/error-boundary'
 import { ConversationModal } from '../components/conversation-modal'
+import { useT } from '../i18n/I18nContext'
 
 /** Suscriptor "invisible" para una conversación: avisa para refrescar la lista
  *  de conversaciones cuando llega un mensaje (tab de chat, modal cerrado). */
@@ -131,6 +132,7 @@ function CreateGroupModal({
   const [name, setName] = useState('')
   const [selected, setSelected] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
+  const t = useT()
 
   const toggle = (id: string) => {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
@@ -141,7 +143,7 @@ function CreateGroupModal({
     setCreating(true)
     try {
       await onCreate(name.trim(), selected)
-      onToast('Grupo creado', 'ok')
+      onToast(t('Grupo creado'), 'ok')
       setName('')
       setSelected([])
       onClose()
@@ -156,13 +158,13 @@ function CreateGroupModal({
     <IonModal isOpen={isOpen} onDidDismiss={onClose}>
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--wh)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 12px 10px', borderBottom: '1px solid var(--g1)' }}>
-          <div style={{ fontWeight: 800, fontSize: 15, flex: 1 }}>Nuevo grupo</div>
+          <div style={{ fontWeight: 800, fontSize: 15, flex: 1 }}>{t('Nuevo grupo')}</div>
           <IonButton fill="clear" size="small" onClick={onClose}><IonIcon icon={close} /></IonButton>
         </div>
         <div style={{ padding: '12px 14px 4px' }}>
           <IonInput
             className="fld"
-            label="Nombre del grupo"
+            label={t('Nombre del grupo')}
             labelPlacement="stacked"
             value={name}
             onIonInput={(e) => setName(e.detail.value ?? '')}
@@ -171,7 +173,7 @@ function CreateGroupModal({
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           {friends.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--mu)', fontSize: 13, marginTop: 20, padding: '0 20px' }}>
-              No tienes amigos para añadir todavía.
+              {t('No tienes amigos para añadir todavía.')}
             </div>
           ) : (
             friends.map((f) => (
@@ -201,7 +203,7 @@ function CreateGroupModal({
             disabled={name.trim().length < 3 || selected.length === 0 || creating}
             onClick={() => void handleCreate()}
           >
-            {creating ? 'Creando…' : 'Crear grupo'}
+            {creating ? t('Creando…') : t('Crear grupo')}
           </IonButton>
         </div>
       </div>
@@ -225,21 +227,21 @@ function initialsOf(name: string): string {
     .join('')
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: (s: string, p?: Record<string, string>) => string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'ahora'
-  if (mins < 60) return `hace ${mins} min`
+  if (mins < 1) return t('ahora')
+  if (mins < 60) return t('hace {n} min', { n: String(mins) })
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `hace ${hrs} h`
+  if (hrs < 24) return t('hace {n} h', { n: String(hrs) })
   const days = Math.floor(hrs / 24)
-  if (days === 1) return 'ayer'
-  return `hace ${days} días`
+  if (days === 1) return t('ayer')
+  return t('hace {n} días', { n: String(days) })
 }
 
-function statusBadge(status: string) {
-  if (status === 'BANNED') return <IonBadge color="danger">Baneado</IonBadge>
-  return <IonBadge color="success">Activo</IonBadge>
+function statusBadge(status: string, t: (s: string, p?: Record<string, string>) => string) {
+  if (status === 'BANNED') return <IonBadge color="danger">{t('Baneado')}</IonBadge>
+  return <IonBadge color="success">{t('Activo')}</IonBadge>
 }
 
 function byNewest(a: { createdAt: string }, b: { createdAt: string }) {
@@ -283,6 +285,7 @@ function EmptyState({
  *  No es dismissable: reemplaza toda la UI de la comunidad. */
 function BannedScreen({ reason }: { reason?: string | null }) {
   const { navigate } = useApp()
+  const t = useT()
   return (
     <div style={{
       minHeight: '100dvh',
@@ -295,9 +298,9 @@ function BannedScreen({ reason }: { reason?: string | null }) {
       textAlign: 'center',
     }}>
       <IonIcon icon={ban} style={{ fontSize: 64, color: 'var(--panic)', marginBottom: 18 }} />
-      <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Perfil suspendido</div>
+      <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>{t('Perfil suspendido')}</div>
       <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, maxWidth: 280 }}>
-        Tu perfil fue suspendido en la comunidad.
+        {t('Tu perfil fue suspendido en la comunidad.')}
       </div>
       {reason && (
         <p style={{ fontSize: 12, color: 'var(--mu)', marginTop: 14, padding: '10px 14px', background: 'var(--wh)', borderRadius: 10, maxWidth: 300, lineHeight: 1.5, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
@@ -309,7 +312,7 @@ function BannedScreen({ reason }: { reason?: string | null }) {
         style={{ marginTop: 16, '--background': 'var(--teal)', '--color': '#fff', '--border-radius': '12px', fontWeight: 700 }}
         onClick={() => navigate('home')}
       >
-        Volver a la app
+        {t('Volver a la app')}
       </IonButton>
     </div>
   )
@@ -344,11 +347,12 @@ function MemberProfile({
   onMessage: () => void
   onOpenPost: (p: Post) => void
   onToggleLike: (p: Post) => Promise<void>
-  onToast: (msg: string, kind?: 'ok' | 'err' | 'info' | 'warn') => void
-}) {
-  return (
-    <>
-      <div style={{ background: 'linear-gradient(135deg,#2D1B69,#1A0A3C)', padding: 18, textAlign: 'center', color: '#fff' }}>
+   onToast: (msg: string, kind?: 'ok' | 'err' | 'info' | 'warn') => void
+ }) {
+   const t = useT()
+   return (
+     <>
+       <div style={{ background: 'linear-gradient(135deg,#2D1B69,#1A0A3C)', padding: 18, textAlign: 'center', color: '#fff' }}>
         <div className="avatar" style={{ width: 64, height: 64, margin: '0 auto 8px', background: AVATAR_GRADS[profile.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 22 }}>
           {initialsOf(profile.displayName)}
         </div>
@@ -356,41 +360,41 @@ function MemberProfile({
         <div style={{ display: 'flex', gap: 28, justifyContent: 'center', marginTop: 12 }}>
           <button onClick={() => onShowList('followers')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{followersCount}</div>
-            <div style={{ fontSize: 11, opacity: 0.65, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}><IonIcon icon={peopleOutline} style={{ fontSize: 12 }} /> Seguidores</div>
+            <div style={{ fontSize: 11, opacity: 0.65, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}><IonIcon icon={peopleOutline} style={{ fontSize: 12 }} /> {t('Seguidores')}</div>
           </button>
           <button onClick={() => onShowList('following')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{followingCount}</div>
-            <div style={{ fontSize: 11, opacity: 0.65, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}><IonIcon icon={personAddOutline} style={{ fontSize: 12 }} /> Siguiendo</div>
+            <div style={{ fontSize: 11, opacity: 0.65, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}><IonIcon icon={personAddOutline} style={{ fontSize: 12 }} /> {t('Siguiendo')}</div>
           </button>
         </div>
       </div>
       <div className="card" style={{ margin: 14 }}>
-        <div style={{ fontWeight: 800, marginBottom: 6 }}>Sobre mí</div>
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>{t('Sobre mí')}</div>
         <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
-          {profile.bio?.trim() ? profile.bio : 'Sin bio todavía.'}
+          {profile.bio?.trim() ? profile.bio : t('Sin bio todavía.')}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: '0 14px 8px', flexWrap: 'wrap' }}>
         {isFriend ? (
           <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={onUnfollow}>
-            <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Dejar de seguir
+                        <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Dejar de seguir')}
           </IonButton>
         ) : isFollowingBack ? (
           <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={onUnfollow}>
-            <IonIcon icon={checkmark} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Siguiendo
+            <IonIcon icon={checkmark} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Siguiendo')}
           </IonButton>
         ) : (
           <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={onFollow}>
-            <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Seguir
+            <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Seguir')}
           </IonButton>
         )}
         {isFriend && (
-          <IonButton className="bt bt-outline bt-mini" onClick={onMessage}><IonIcon icon={chatbubbleEllipsesOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Enviar mensaje</IonButton>
+          <IonButton className="bt bt-outline bt-mini" onClick={onMessage}><IonIcon icon={chatbubbleEllipsesOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Enviar mensaje')}</IonButton>
         )}
       </div>
-      <div className="com-sech"><span className="com-sech-ico pur"><IonIcon icon={documentTextOutline} /></span> Publicaciones</div>
+      <div className="com-sech"><span className="com-sech-ico pur"><IonIcon icon={documentTextOutline} /></span> {t('Publicaciones')}</div>
       {profile.posts.length === 0 ? (
-        <EmptyState icon={documentTextOutline} tone="pur" title="Sin publicaciones todavía" />
+        <EmptyState icon={documentTextOutline} tone="pur" title={t('Sin publicaciones todavía')} />
       ) : (
         profile.posts.map((post) => (
           <PostCard
@@ -422,6 +426,7 @@ function PostCard({
   onToast: (msg: string, kind?: 'ok' | 'err' | 'info' | 'warn') => void
 }) {
   const { post, likeCount, likedByMe } = view
+  const t = useT()
   return (
     <div className="card" style={{ margin: '0 14px 10px' }}>
       <div style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'center' }}>
@@ -441,11 +446,11 @@ function PostCard({
           <div style={{ fontWeight: 800, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {post.profile.displayName}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{timeAgo(post.createdAt)}</div>
+          <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{timeAgo(post.createdAt, t)}</div>
         </div>
         {post.pinned && (
           <span className="chip chip-gold" style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <IonIcon icon={pin} style={{ fontSize: 12 }} /> Fijado
+            <IonIcon icon={pin} style={{ fontSize: 12 }} /> {t('Fijado')}
           </span>
         )}
       </div>
@@ -504,7 +509,8 @@ function CommentItem({
   onReply: (c: Comment) => void
 }) {
   const isReply = depth > 0
-  const name = comment.profile?.displayName ?? 'Miembro'
+  const t = useT()
+  const name = comment.profile?.displayName ?? t('Miembro')
   const grad = AVATAR_GRADS[(comment.profile?.id ?? comment.id).charCodeAt(0) % AVATAR_GRADS.length]
   return (
     <div className={isReply ? 'cmt-reply' : 'cmt-root'}>
@@ -524,12 +530,12 @@ function CommentItem({
         <div className="cmt-bubble">
           <div className="cmt-head">
             <span className="cmt-name">{name}</span>
-            {isReply && <span className="chip chip-pur cmt-tag"><IonIcon icon={arrowUndo} style={{ fontSize: 10, marginRight: 3, verticalAlign: '-1px' }} />Respuesta</span>}
-            <span className="cmt-time">{timeAgo(comment.createdAt)}</span>
+            {isReply && <span className="chip chip-pur cmt-tag"><IonIcon icon={arrowUndo} style={{ fontSize: 10, marginRight: 3, verticalAlign: '-1px' }} />{t('Respuesta')}</span>}
+            <span className="cmt-time">{timeAgo(comment.createdAt, t)}</span>
           </div>
           <div className="cmt-body">{comment.body}</div>
           <IonButton fill="clear" size="small" className="cmt-reply-btn" onClick={() => onReply(comment)}>
-            <IonIcon icon={arrowUndo} style={{ fontSize: 12, marginRight: 3, verticalAlign: '-2px' }} /> Responder
+            <IonIcon icon={arrowUndo} style={{ fontSize: 12, marginRight: 3, verticalAlign: '-2px' }} /> {t('Responder')}
           </IonButton>
         </div>
       </div>
@@ -542,6 +548,7 @@ function CommentItem({
 
 export function CommunityPage() {
   const { showToast, pointsTotal } = useApp()
+  const t = useT()
   const {
     me,
     meLoading,
@@ -685,7 +692,7 @@ export function CommunityPage() {
     try {
       await createPost(text)
       setDraft('')
-      showToast('Publicado en la comunidad', 'ok')
+      showToast(t('Publicado en la comunidad'), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -708,7 +715,7 @@ export function CommunityPage() {
         prev && c ? { ...prev, comments: [...prev.comments, c] } : prev,
       )
       setCommentDraft('')
-      showToast('Comentario publicado', 'ok')
+      showToast(t('Comentario publicado'), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -735,7 +742,7 @@ export function CommunityPage() {
       })
       setReplyDraft('')
       setReplyTarget(null)
-      showToast('Respuesta publicada', 'ok')
+      showToast(t('Respuesta publicada'), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -751,14 +758,14 @@ export function CommunityPage() {
 
   async function handleSaveProfile() {
     if (!dn.trim()) {
-      showToast('El nombre no puede estar vacío', 'warn')
+      showToast(t('El nombre no puede estar vacío'), 'warn')
       return
     }
     setSavingProfile(true)
     try {
       await updateProfile(dn.trim(), bio.trim() || null)
       setEditing(false)
-      showToast('Perfil actualizado', 'ok')
+      showToast(t('Perfil actualizado'), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -772,14 +779,14 @@ export function CommunityPage() {
     setBusyId(id)
     try {
       if (person.isFriend) {
-        showToast('Ya son amigos', 'info')
+        showToast(t('Ya son amigos'), 'info')
         return
       }
       if (person.isFollowing) {
         setUnfollowTarget(person.profile)
       } else {
         await followUser(id)
-        showToast(`Siguiendo a ${name}`, 'ok')
+        showToast(t('Siguiendo a {name}', { name }), 'ok')
       }
     } catch (e) {
       showToast((e as Error).message, 'err')
@@ -792,7 +799,7 @@ export function CommunityPage() {
     setBusyId(profileId)
     try {
       await unfollowUser(profileId)
-      showToast(`Dejaste de seguir a ${name}`, 'ok')
+      showToast(t('Dejaste de seguir a {name}', { name }), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -804,7 +811,7 @@ export function CommunityPage() {
     setBusyId(profileId)
     try {
       await followUser(profileId)
-      showToast(`Siguiendo a ${name}`, 'ok')
+      showToast(t('Siguiendo a {name}', { name }), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -830,17 +837,17 @@ export function CommunityPage() {
     ) : (
     <Screen>
       <div className="hero hero-pur" style={{ paddingBottom: 0 }}>
-        <div className="h2"><IonIcon icon={globeOutline} style={{ marginRight: 6, verticalAlign: '-2px' }} /> Comunidad ANTARES</div>
+        <div className="h2"><IonIcon icon={globeOutline} style={{ marginRight: 6, verticalAlign: '-2px' }} /> {t('Comunidad ANTARES')}</div>
         <div className="sub" style={{ marginBottom: 10 }}>
           COPP-ADRESD + INFINITO
         </div>
         <div style={{ display: 'flex' }}>
           {([
-            ['feed', 'Feed', compassOutline, compass],
-            ['perfil', 'Perfil', personOutline, person],
-            ['chat', 'Chat', chatbubblesOutline, chatbubbles],
-            ['amigos', 'Amigos', peopleOutline, peopleIcon],
-            ['redes', 'Redes', shareSocialOutline, shareSocial],
+            ['feed', t('Feed'), compassOutline, compass],
+            ['perfil', t('Perfil'), personOutline, person],
+            ['chat', t('Chat'), chatbubblesOutline, chatbubbles],
+            ['amigos', t('Amigos'), peopleOutline, peopleIcon],
+            ['redes', t('Redes'), shareSocialOutline, shareSocial],
           ] as const).map(([id, label, iconOff, iconOn]) => (
             <button key={id} className={`com-tab ${tab === id ? 'on' : ''}`} onClick={() => handleTab(id)}>
               <IonIcon icon={tab === id ? iconOn : iconOff} style={{ marginRight: 5, verticalAlign: '-2px' }} />
@@ -854,10 +861,10 @@ export function CommunityPage() {
         {viewingId ? (memberList ? (
           <>
             <div style={{ padding: 14 }}>
-              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setMemberList(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> Volver</IonButton>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setMemberList(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> {t('Volver')}</IonButton>
             </div>
             <div style={{ padding: '0 14px 4px', fontWeight: 800, fontSize: 14 }}>
-              {memberList === 'followers' ? 'Seguidores' : 'Siguiendo'}
+              {memberList === 'followers' ? t('Seguidores') : t('Siguiendo')}
             </div>
             {memberListFetching ? (
               <div className="card" style={{ margin: 14 }}>
@@ -874,15 +881,15 @@ export function CommunityPage() {
             ) : memberListError ? (
               <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                  No se pudo cargar la lista.
+                  {t('No se pudo cargar la lista.')}
                 </div>
-                <IonButton className="bt bt-pur bt-mini" onClick={retryMemberList}>Reintentar</IonButton>
+                <IonButton className="bt bt-pur bt-mini" onClick={retryMemberList}>{t('Reintentar')}</IonButton>
               </div>
             ) : memberListItems.length === 0 ? (
               <EmptyState
                 icon={memberList === 'followers' ? peopleOutline : personAddOutline}
                 tone={memberList === 'followers' ? 'teal' : 'blue'}
-                title={memberList === 'followers' ? 'Aún no tiene seguidores' : 'No sigue a nadie todavía'}
+                title={memberList === 'followers' ? t('Aún no tiene seguidores') : t('No sigue a nadie todavía')}
               />
             ) : (
               memberListItems.map((row) => (
@@ -900,11 +907,11 @@ export function CommunityPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: 13 }}>{row.displayName}</div>
                       <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {row.bio?.trim() || 'Sin bio'}
+                        {row.bio?.trim() || t('Sin bio')}
                       </div>
                     </div>
                     <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>
-                      {memberList === 'followers' ? 'Te sigue' : 'Siguiendo'}
+                      {memberList === 'followers' ? t('Te sigue') : t('Siguiendo')}
                     </span>
                   </div>
                 </div>
@@ -914,7 +921,7 @@ export function CommunityPage() {
         ) : (
           <>
             <div style={{ padding: 14 }}>
-              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setViewingId(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> Volver</IonButton>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setViewingId(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> {t('Volver')}</IonButton>
             </div>
             {profileResult.fetching ? (
               <div className="card" style={{ margin: 14 }}>
@@ -925,14 +932,14 @@ export function CommunityPage() {
             ) : profileResult.error ? (
               <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                  No se pudo cargar el perfil.
+                  {t('No se pudo cargar el perfil.')}
                 </div>
-                <IonButton className="bt bt-pur bt-mini" onClick={() => reexecuteProfile({ requestPolicy: 'network-only' })}>Reintentar</IonButton>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => reexecuteProfile({ requestPolicy: 'network-only' })}>{t('Reintentar')}</IonButton>
               </div>
             ) : !profile ? (
               <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
-                  No se encontró el perfil.
+                  {t('No se encontró el perfil.')}
                 </div>
               </div>
             ) : (
@@ -966,16 +973,16 @@ export function CommunityPage() {
                 <IonTextarea
                   className="fld draft-tx"
                   value={draft}
-                  placeholder="¿Qué quieres compartir hoy?"
+                  placeholder={t('¿Qué quieres compartir hoy?')}
                   onIonInput={(e) => setDraft(e.detail.value ?? '')}
                   autoGrow
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                 <IonButton className="bt bt-pur bt-mini" disabled={publishing || !draft.trim()} onClick={() => void handlePublish()}>
-                  {publishing ? 'Publicando…' : (
+                  {publishing ? t('Publicando…') : (
                     <>
-                      <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Publicar
+                      <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Publicar')}
                     </>
                   )}
                 </IonButton>
@@ -984,10 +991,10 @@ export function CommunityPage() {
 
             <div style={{ display: 'flex', padding: '0 14px 10px' }}>
               <button className={`com-tab lt ${feedScope === 'forYou' ? 'on' : ''}`} onClick={() => setFeedScope('forYou')}>
-                <IonIcon icon={sparklesOutline} style={{ marginRight: 5, verticalAlign: '-2px' }} /> Para ti
+                <IonIcon icon={sparklesOutline} style={{ marginRight: 5, verticalAlign: '-2px' }} /> {t('Para ti')}
               </button>
               <button className={`com-tab lt ${feedScope === 'following' ? 'on' : ''}`} onClick={() => setFeedScope('following')}>
-                <IonIcon icon={peopleOutline} style={{ marginRight: 5, verticalAlign: '-2px' }} /> Siguiendo
+                <IonIcon icon={peopleOutline} style={{ marginRight: 5, verticalAlign: '-2px' }} /> {t('Siguiendo')}
               </button>
             </div>
 
@@ -1016,7 +1023,7 @@ export function CommunityPage() {
                 >
                   <IonIcon icon={arrowUp} />
                   <span>
-                    Ver {newPostsCount} {newPostsCount === 1 ? 'publicación nueva' : 'publicaciones nuevas'}
+                    {t('Ver')} {newPostsCount} {newPostsCount === 1 ? t('publicación nueva') : t('publicaciones nuevas')}
                   </span>
                 </IonButton>
               </div>
@@ -1026,9 +1033,9 @@ export function CommunityPage() {
               feedError ? (
                 <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                   <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                    No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.
-                  </div>
-                  <IonButton className="bt bt-pur bt-mini" onClick={() => retryFeed()}>Reintentar</IonButton>
+                  {t('No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.')}
+                </div>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => retryFeed()}>{t('Reintentar')}</IonButton>
                 </div>
               ) : feedLoading && feed.length === 0 ? (
                 <div className="card" style={{ margin: '0 14px 10px' }}>
@@ -1057,9 +1064,9 @@ export function CommunityPage() {
             ) : followingFeedError ? (
               <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                  No se pudo cargar el feed de seguidos. Verifica tu sesión e inténtalo de nuevo.
+                  {t('No se pudo cargar el feed de seguidos. Verifica tu sesión e inténtalo de nuevo.')}
                 </div>
-                <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowingFeed()}>Reintentar</IonButton>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowingFeed()}>{t('Reintentar')}</IonButton>
               </div>
             ) : followingFeedLoading && followingFeed.length === 0 ? (
               <div className="card" style={{ margin: '0 14px 10px' }}>
@@ -1078,10 +1085,10 @@ export function CommunityPage() {
               <EmptyState
                 icon={peopleOutline}
                 tone="teal"
-                title="Aún no sigues a nadie"
-                hint="Descubre miembros en Amigos y sigue a quien te interese."
+                title={t('Aún no sigues a nadie')}
+                hint={t('Descubre miembros en Amigos y sigue a quien te interese.')}
               >
-                <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('amigos')}>Ir a Amigos</IonButton>
+                <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('amigos')}>{t('Ir a Amigos')}</IonButton>
               </EmptyState>
             ) : (
               followingFeed.map((view) => (
@@ -1100,16 +1107,16 @@ export function CommunityPage() {
         {tab === 'perfil' && (perfilList ? (
           <>
             <div style={{ padding: 14 }}>
-              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setPerfilList(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> Volver</IonButton>
+              <IonButton fill="clear" size="small" className="bt bt-mini" onClick={() => setPerfilList(null)}><IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> {t('Volver')}</IonButton>
             </div>
             <div style={{ padding: '0 14px 4px', fontWeight: 800, fontSize: 14 }}>
-              {perfilList === 'followers' ? 'Seguidores' : 'Siguiendo'}
+              {perfilList === 'followers' ? t('Seguidores') : t('Siguiendo')}
             </div>
             {(perfilList === 'followers' ? followers : peopleFollowing).length === 0 ? (
               <EmptyState
                 icon={perfilList === 'followers' ? peopleOutline : personAddOutline}
                 tone={perfilList === 'followers' ? 'teal' : 'blue'}
-                title={perfilList === 'followers' ? 'Aún no tienes seguidores' : 'No sigues a nadie todavía'}
+                title={perfilList === 'followers' ? t('Aún no tienes seguidores') : t('No sigues a nadie todavía')}
               />
             ) : (
               (perfilList === 'followers' ? followers : peopleFollowing).map((f) => (
@@ -1125,11 +1132,11 @@ export function CommunityPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
                     <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {f.bio?.trim() || 'Sin bio'}
+                      {f.bio?.trim() || t('Sin bio')}
                     </div>
                   </div>
                   <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>
-                    {perfilList === 'followers' ? 'Te sigue' : 'Siguiendo'}
+                    {perfilList === 'followers' ? t('Te sigue') : t('Siguiendo')}
                   </span>
                 </div>
               ))
@@ -1148,24 +1155,24 @@ export function CommunityPage() {
               ) : (
                 <div className="card" style={{ margin: 0, textAlign: 'center' }}>
                   <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                    No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.
+                    {t('No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.')}
                   </div>
-                  <IonButton className="bt bt-pur bt-mini" onClick={() => retryMe()}>Reintentar</IonButton>
+                  <IonButton className="bt bt-pur bt-mini" onClick={() => retryMe()}>{t('Reintentar')}</IonButton>
                 </div>
               )}
               <div style={{ fontSize: 11, opacity: 0.55 }}>{pointsTotal} pts</div>
-              <div style={{ marginTop: 8 }}>{me ? statusBadge(me.status) : meLoading ? <IonSkeletonText style={{ width: 120, height: 18 }} animated /> : null}</div>
+              <div style={{ marginTop: 8 }}>{me ? statusBadge(me.status, t) : meLoading ? <IonSkeletonText style={{ width: 120, height: 18 }} animated /> : null}</div>
               <div style={{ display: 'flex', gap: 28, justifyContent: 'center', marginTop: 12 }}>
                 <button onClick={() => setPerfilList('followers')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{followers.length}</div>
                   <div style={{ fontSize: 11, opacity: 0.65, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}>
-                    <IonIcon icon={peopleOutline} style={{ fontSize: 12 }} /> Seguidores
+                    <IonIcon icon={peopleOutline} style={{ fontSize: 12 }} /> {t('Seguidores')}
                   </div>
                 </button>
                 <button onClick={() => setPerfilList('following')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{peopleFollowing.length}</div>
                   <div style={{ fontSize: 11, opacity: 0.65, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}>
-                    <IonIcon icon={personAddOutline} style={{ fontSize: 12 }} /> Siguiendo
+                    <IonIcon icon={personAddOutline} style={{ fontSize: 12 }} /> {t('Siguiendo')}
                   </div>
                 </button>
               </div>
@@ -1174,36 +1181,36 @@ export function CommunityPage() {
             {me && me.status === 'BANNED' && (
               <div className="card" style={{ margin: 14, border: '1px solid var(--red)', background: 'rgba(220,38,38,.08)' }}>
                 <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <IonIcon icon={alertCircle} /> Perfil suspendido
+                  <IonIcon icon={alertCircle} /> {t('Perfil suspendido')}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
-                  Tu perfil está suspendido en la comunidad. Contacta a un administrador.
+                  {t('Tu perfil está suspendido en la comunidad. Contacta a un administrador.')}
                 </div>
               </div>
             )}
 
             {editing ? (
               <div className="card" style={{ margin: 14 }}>
-                <div style={{ fontWeight: 800, marginBottom: 10 }}>Editar perfil</div>
-                <IonInput className="fld" label="Nombre visible" labelPlacement="stacked" value={dn} onIonInput={(e) => setDn(e.detail.value ?? '')} />
-                <IonTextarea className="fld" label="Sobre mí" labelPlacement="stacked" value={bio} onIonInput={(e) => setBio(e.detail.value ?? '')} autoGrow />
+                <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('Editar perfil')}</div>
+                <IonInput className="fld" label={t('Nombre visible')} labelPlacement="stacked" value={dn} onIonInput={(e) => setDn(e.detail.value ?? '')} />
+                <IonTextarea className="fld" label={t('Sobre mí')} labelPlacement="stacked" value={bio} onIonInput={(e) => setBio(e.detail.value ?? '')} autoGrow />
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
-                  <IonButton fill="outline" className="bt bt-mini" onClick={() => setEditing(false)}>Cancelar</IonButton>
+                  <IonButton fill="outline" className="bt bt-mini" onClick={() => setEditing(false)}>{t('Cancelar')}</IonButton>
                   <IonButton className="bt bt-pur bt-mini" disabled={savingProfile} onClick={() => void handleSaveProfile()}>
-                    {savingProfile ? 'Guardando…' : 'Guardar'}
+                    {savingProfile ? t('Guardando…') : t('Guardar')}
                   </IonButton>
                 </div>
               </div>
             ) : me && me.status === 'ACTIVE' ? (
               <div className="card" style={{ margin: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <div style={{ fontWeight: 800 }}>Sobre mí</div>
+                  <div style={{ fontWeight: 800 }}>{t('Sobre mí')}</div>
                   <IonButton fill="clear" size="small" className="bt bt-mini" onClick={startEdit}>
-                    <IonIcon icon={createOutline} style={{ marginRight: 4 }} /> Editar
+                    <IonIcon icon={createOutline} style={{ marginRight: 4 }} /> {t('Editar')}
                   </IonButton>
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
-                  {me?.bio?.trim() ? me.bio : 'Cuéntanos sobre ti en la comunidad.'}
+                  {me?.bio?.trim() ? me.bio : t('Cuéntanos sobre ti en la comunidad.')}
                 </div>
               </div>
             ) : null}
@@ -1212,12 +1219,12 @@ export function CommunityPage() {
               <>
                 <div className="com-sech">
                   <span className="com-sech-ico pur"><IonIcon icon={documentTextOutline} /></span>
-                  Mis publicaciones
+                  {t('Mis publicaciones')}
                   <span className="chip chip-pur" style={{ marginLeft: 'auto' }}>{me.posts.length}</span>
                 </div>
                 {me.posts.length === 0 ? (
-                  <EmptyState icon={documentTextOutline} tone="pur" title="Aún no has publicado nada" hint="Comparte algo con la comunidad desde el feed.">
-                    <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('feed')}>Ir al feed</IonButton>
+                  <EmptyState icon={documentTextOutline} tone="pur" title={t('Aún no has publicado nada')} hint={t('Comparte algo con la comunidad desde el feed.')}>
+                    <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('feed')}>{t('Ir al feed')}</IonButton>
                   </EmptyState>
                 ) : (
                   me.posts.map((post) => (
@@ -1259,9 +1266,9 @@ export function CommunityPage() {
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 14px 6px' }}>
-              <div style={{ fontWeight: 800, fontSize: 15 }}>Chat</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{t('Chat')}</div>
               <IonButton className="bt bt-pur bt-mini" onClick={() => setCreateOpen(true)}>
-                <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Nuevo grupo
+                <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Nuevo grupo')}
               </IonButton>
             </div>
 
@@ -1280,18 +1287,18 @@ export function CommunityPage() {
             ) : conversationsError || groupsError ? (
               <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                  No se pudo cargar tus conversaciones.
+                  {t('No se pudo cargar tus conversaciones.')}
                 </div>
                 <IonButton className="bt bt-pur bt-mini" onClick={() => { refetchConversations(); refetchGroups() }}>
-                  Reintentar
+                  {t('Reintentar')}
                 </IonButton>
               </div>
             ) : conversations.length === 0 && groups.length === 0 ? (
               <EmptyState
                 icon={chatbubblesOutline}
                 tone="blue"
-                title="Aún no tienes conversaciones"
-                hint="Escribe a un amigo desde Amigos o crea un grupo."
+                title={t('Aún no tienes conversaciones')}
+                hint={t('Escribe a un amigo desde Amigos o crea un grupo.')}
               />
             ) : (
               <>
@@ -1311,12 +1318,12 @@ export function CommunityPage() {
                           </div>
                           {g.lastMessage && (
                             <div style={{ fontSize: 10, color: 'var(--mu)', flexShrink: 0 }}>
-                              {timeAgo(g.lastMessage.createdAt)}
+                              {timeAgo(g.lastMessage.createdAt, t)}
                             </div>
                           )}
                         </div>
                         <div style={{ fontSize: 11.5, color: 'var(--mu)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
-                          {g.lastMessage?.body ?? 'Sin mensajes todavía'}
+                          {g.lastMessage?.body ?? t('Sin mensajes todavía')}
                         </div>
                       </div>
                     </div>
@@ -1338,12 +1345,12 @@ export function CommunityPage() {
                           </div>
                           {c.lastMessage && (
                             <div style={{ fontSize: 10, color: 'var(--mu)', flexShrink: 0 }}>
-                              {timeAgo(c.lastMessage.createdAt)}
+                              {timeAgo(c.lastMessage.createdAt, t)}
                             </div>
                           )}
                         </div>
                         <div style={{ fontSize: 11.5, color: 'var(--mu)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
-                          {c.lastMessage?.body ?? 'Sin mensajes todavía'}
+                          {c.lastMessage?.body ?? t('Sin mensajes todavía')}
                         </div>
                       </div>
                     </div>
@@ -1360,7 +1367,7 @@ export function CommunityPage() {
               <IonSearchbar
                 className="sbar"
                 value={q}
-                placeholder="Buscar amigos en ANTARES…"
+                placeholder={t('Buscar amigos en ANTARES…')}
                 onIonInput={(e) => {
                   const v = e.detail.value ?? ''
                   setQ(v)
@@ -1385,12 +1392,12 @@ export function CommunityPage() {
               ) : peopleError ? (
                 <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                   <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                    No se pudo buscar. Inténtalo de nuevo.
+                    {t('No se pudo buscar. Inténtalo de nuevo.')}
                   </div>
-                  <IonButton className="bt bt-pur bt-mini" onClick={() => setPeopleQuery(q)}>Reintentar</IonButton>
+                  <IonButton className="bt bt-pur bt-mini" onClick={() => setPeopleQuery(q)}>{t('Reintentar')}</IonButton>
                 </div>
               ) : people.length === 0 ? (
-                <EmptyState icon={searchOutline} tone="pur" title="Sin resultados" hint={`No encontramos a nadie para «${q}».`} />
+                <EmptyState icon={searchOutline} tone="pur" title={t('Sin resultados')} hint={t('No encontramos a nadie para «{q}».', { q })} />
               ) : (
                 people.map((p) => {
                   const grad = AVATAR_GRADS[p.profile.id.charCodeAt(0) % AVATAR_GRADS.length]
@@ -1404,24 +1411,24 @@ export function CommunityPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 800, fontSize: 13 }}>{p.profile.displayName}</div>
                           <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {p.profile.bio?.trim() || 'Sin bio'}
+                            {p.profile.bio?.trim() || t('Sin bio')}
                           </div>
                         </div>
                       </div>
                       {p.isFriend ? (
                         <>
-                          <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => showToast('Ya son amigos', 'info')}>
-                            <IonIcon icon={checkmark} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Amigos
+                          <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => showToast(t('Ya son amigos'), 'info')}>
+                            <IonIcon icon={checkmark} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Amigos')}
                           </IonButton>
                           <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(p.profile)}><IonIcon icon={chatbubbleEllipsesOutline} /></IonButton>
                         </>
                       ) : p.isFollowing ? (
                         <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => void handleFollowToggle(p)}>
-                          <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Siguiendo
+                          <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Siguiendo')}
                         </IonButton>
                       ) : (
                         <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={() => void handleFollowToggle(p)}>
-                          <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Seguir
+            <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Seguir')}
                         </IonButton>
                       )}
                     </div>
@@ -1432,15 +1439,15 @@ export function CommunityPage() {
               <>
                 <div className="com-sech">
                   <span className="com-sech-ico pur"><IonIcon icon={peopleIcon} /></span>
-                  Amigos
+                  {t('Amigos')}
                   <span className="chip chip-pur" style={{ marginLeft: 'auto' }}>{friends.length}</span>
                 </div>
                 {friendsError ? (
                   <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                     <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                      No se pudo cargar tus amigos.
+                      {t('No se pudo cargar tus amigos.')}
                     </div>
-                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFriends()}>Reintentar</IonButton>
+                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFriends()}>{t('Reintentar')}</IonButton>
                   </div>
                 ) : friendsLoading ? (
                   <div className="card" style={{ margin: '0 14px 10px' }}>
@@ -1458,8 +1465,8 @@ export function CommunityPage() {
                   <EmptyState
                     icon={peopleOutline}
                     tone="pur"
-                    title="Aún no tienes amigos"
-                    hint="Sigue a alguien y si te siguen, serán amigos."
+                    title={t('Aún no tienes amigos')}
+                    hint={t('Sigue a alguien y si te siguen, serán amigos.')}
                   />
                 ) : (
                   friends.map((f) => (
@@ -1471,25 +1478,25 @@ export function CommunityPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
                           <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {f.bio?.trim() || 'Sin bio'}
+                            {f.bio?.trim() || t('Sin bio')}
                           </div>
                         </div>
                       </div>
                       <IonButton fill="outline" className="bt bt-mini" onClick={() => setUnfollowTarget(f)}>
-                        <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Dejar de seguir
+            <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Dejar de seguir')}
                       </IonButton>
                       <IonButton className="bt bt-outline bt-mini" onClick={() => setActivePeer(f)}><IonIcon icon={chatbubbleEllipsesOutline} /></IonButton>
                     </div>
                   ))
                 )}
 
-<div className="com-sech"><span className="com-sech-ico gold"><IonIcon icon={star} /></span> Recomendados</div>
+<div className="com-sech"><span className="com-sech-ico gold"><IonIcon icon={star} /></span> {t('Recomendados')}</div>
                 {followersError ? (
                   <div className="card" style={{ margin: 14, textAlign: 'center' }}>
                     <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, marginBottom: 10 }}>
-                      No se pudo cargar tus seguidores.
+                      {t('No se pudo cargar tus seguidores.')}
                     </div>
-                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowers()}>Reintentar</IonButton>
+                    <IonButton className="bt bt-pur bt-mini" onClick={() => retryFollowers()}>{t('Reintentar')}</IonButton>
                   </div>
                 ) : followersLoading ? (
                   <div className="card" style={{ margin: '0 14px 10px' }}>
@@ -1504,7 +1511,7 @@ export function CommunityPage() {
                     ))}
                   </div>
                 ) : recommended.length === 0 ? (
-                  <EmptyState icon={starOutline} tone="gold" title="No tienes seguidores nuevos por ahora" />
+                  <EmptyState icon={starOutline} tone="gold" title={t('No tienes seguidores nuevos por ahora')} />
                 ) : (
                   recommended.map((f) => {
                     const isFollowingBack = followedIds.has(f.id)
@@ -1518,22 +1525,22 @@ export function CommunityPage() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
                             <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {f.bio?.trim() || 'Sin bio'}
+                              {f.bio?.trim() || t('Sin bio')}
                             </div>
                           </div>
                         </div>
                         {isFollowingBack ? (
                           <>
-                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
+                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>{t('Te sigue')}</span>
                             <IonButton fill="outline" className="bt bt-mini" disabled={busy} onClick={() => setUnfollowTarget(f)}>
-                              <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Siguiendo
+                          <IonIcon icon={personRemoveOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Siguiendo')}
                             </IonButton>
                           </>
                         ) : (
                           <>
-                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>Te sigue</span>
+                            <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>{t('Te sigue')}</span>
                             <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={() => void handleFollow(f.id, f.displayName)}>
-                              <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Seguir de vuelta
+                              <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Seguir de vuelta')}
                             </IonButton>
                           </>
                         )}
@@ -1554,15 +1561,15 @@ export function CommunityPage() {
               ['f', 'Facebook Community', '15.4K miembros', 'linear-gradient(90deg,#0A1F5C,#1A3A8A)'],
               ['▶', 'YouTube ANTARES', 'SUMMITs · Clases · 8.1K', 'linear-gradient(90deg,#1A0000,#4A0000)'],
               ['💬', 'WhatsApp Miami', 'Grupo COPP-ADRESD · 284', 'linear-gradient(90deg,#003A1A,#004D23)'],
-            ].map(([e, t, s, bg]) => (
+            ].map(([e, socialName, s, bg]) => (
               <button
-                key={t as string}
-                onClick={() => showToast(`Abriendo ${t}…`, 'info')}
+                key={socialName as string}
+                onClick={() => showToast(t('Abriendo {name}…', { name: socialName as string }), 'info')}
                 style={{ width: '100%', background: String(bg), border: 'none', borderRadius: 14, padding: 12, display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8, color: '#fff', textAlign: 'left' }}
               >
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{e}</div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: 13 }}>{t}</div>
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{socialName}</div>
                   <div style={{ fontSize: 11, opacity: 0.6 }}>{s}</div>
                 </div>
               </button>
@@ -1589,7 +1596,7 @@ export function CommunityPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 13 }}>{activePost.profile.displayName}</div>
-                <div style={{ fontSize: 11, color: 'var(--mu)' }}>{timeAgo(activePost.createdAt)}</div>
+                <div style={{ fontSize: 11, color: 'var(--mu)' }}>{timeAgo(activePost.createdAt, t)}</div>
               </div>
               <IonButton fill="clear" size="small" onClick={() => { setActivePost(null); setReplyTarget(null); setReplyDraft('') }}><IonIcon icon={close} /></IonButton>
             </div>
@@ -1597,7 +1604,7 @@ export function CommunityPage() {
 
             <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--g1)', paddingTop: 10 }}>
               {activePost.comments.filter((c) => !c.parentCommentId).sort(byNewest).length === 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, color: 'var(--mu)', padding: 20 }}><IonIcon icon={chatbubbleEllipsesOutline} style={{ fontSize: 16 }} /> Sin comentarios todavía. ¡Sé el primero!</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, color: 'var(--mu)', padding: 20 }}><IonIcon icon={chatbubbleEllipsesOutline} style={{ fontSize: 16 }} /> {t('Sin comentarios todavía. ¡Sé el primero!')}</div>
               ) : (
                 activePost.comments.filter((c) => !c.parentCommentId).sort(byNewest).map((c) => (
                   <CommentItem key={c.id} comment={c} depth={0} onReply={(rc) => { setReplyTarget(rc); setReplyDraft('') }} />
@@ -1608,14 +1615,14 @@ export function CommunityPage() {
             <div style={{ borderTop: '1px solid var(--g1)', paddingTop: 10 }}>
               {replyTarget && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: 'var(--mu)' }}>
-                  Respondiendo a <b>{replyTarget.profile?.displayName ?? 'Miembro'}</b>
+                  {t('Respondiendo a ')} <b>{replyTarget.profile?.displayName ?? t('Miembro')}</b>
                   <IonButton fill="clear" size="small" style={{ height: 22 }} onClick={() => setReplyTarget(null)}><IonIcon icon={close} /></IonButton>
                 </div>
               )}
               <IonTextarea
                 className="fld draft-tx"
                 value={replyTarget ? replyDraft : commentDraft}
-                placeholder={replyTarget ? 'Escribe tu respuesta…' : 'Añade un comentario…'}
+                placeholder={replyTarget ? t('Escribe tu respuesta…') : t('Añade un comentario…')}
                 onIonInput={(e) => {
                   const v = e.detail.value ?? ''
                   if (replyTarget) setReplyDraft(v)
@@ -1629,7 +1636,7 @@ export function CommunityPage() {
                   disabled={sendingComment || (!replyTarget && !commentDraft.trim()) || (!!replyTarget && !replyDraft.trim())}
                   onClick={() => void (replyTarget ? handleReply() : handleAddComment())}
                 >
-                  {sendingComment ? 'Enviando…' : replyTarget ? 'Responder' : 'Comentar'}
+                  {sendingComment ? t('Enviando…') : replyTarget ? t('Responder') : t('Comentar')}
                 </IonButton>
               </div>
             </div>
@@ -1688,12 +1695,12 @@ export function CommunityPage() {
 
       <IonAlert
         isOpen={!!unfollowTarget}
-        header="Dejar de seguir"
-        message={`¿Dejar de seguir a ${unfollowTarget?.displayName}?`}
+        header={t('Dejar de seguir')}
+        message={t('¿Dejar de seguir a {name}?', { name: unfollowTarget?.displayName ?? '' })}
         buttons={[
-          'Cancelar',
+          t('Cancelar'),
           {
-            text: 'Dejar de seguir',
+            text: t('Dejar de seguir'),
             role: 'destructive',
             handler: () => {
               if (unfollowTarget) void handleUnfollow(unfollowTarget.id, unfollowTarget.displayName)

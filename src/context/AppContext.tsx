@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import { logoutUser } from '../utils/authApi'
+import { useT } from '../i18n/I18nContext'
 import type {
   ChatMessage,
   Flow,
@@ -97,41 +98,41 @@ function nowLabel() {
   return new Date().toLocaleTimeString('es-US', { hour: 'numeric', minute: '2-digit' })
 }
 
-function botReply(text: string): { role: ChatMessage['role']; text: string } {
-  const t = text.toLowerCase()
-  if (t.includes('pecho') || t.includes('brazo') || t.includes('urgencia') || t.includes('síntoma')) {
+function botReply(text: string, t: (s: string, p?: Record<string, string>) => string): { role: ChatMessage['role']; text: string } {
+  const lower = text.toLowerCase()
+  if (lower.includes('pecho') || lower.includes('brazo') || lower.includes('urgencia') || lower.includes('síntoma')) {
     return {
       role: 'alert',
-      text: 'Detecté un posible síntoma de alarma. Si el dolor es intenso, activa SOS. Mientras tanto: siéntate, no te acuestes plana y avisa a tu contacto de emergencia.',
+      text: t('Detecté un posible síntoma de alarma. Si el dolor es intenso, activa SOS. Mientras tanto: siéntate, no te acuestes plana y avisa a tu contacto de emergencia.'),
     }
   }
-  if (t.includes('comer') || t.includes('plan') || t.includes('comida')) {
+  if (lower.includes('comer') || lower.includes('plan') || lower.includes('comida')) {
     return {
       role: 'bot',
-      text: 'Hoy tu plan es dieta mediterránea 1,800 kcal. Cena sugerida: sopa de lentejas + pan integral, antes de las 7:30 PM. Adherencia actual: 88%.',
+      text: t('Hoy tu plan es dieta mediterránea 1,800 kcal. Cena sugerida: sopa de lentejas + pan integral, antes de las 7:30 PM. Adherencia actual: 88%.'),
     }
   }
-  if (t.includes('cita') || t.includes('agendar')) {
+  if (lower.includes('cita') || lower.includes('agendar')) {
     return {
       role: 'bot',
-      text: 'Tu próxima cita es hoy 3:00 PM con Dr. Carlos Ramírez (telemedicina). Puedo recordártela 30 min antes. Para una nueva cita usa Solicitar cita en el módulo Citas.',
+      text: t('Tu próxima cita es hoy 3:00 PM con Dr. Carlos Ramírez (telemedicina). Puedo recordártela 30 min antes. Para una nueva cita usa Solicitar cita en el módulo Citas.'),
     }
   }
-  if (t.includes('progreso')) {
+  if (lower.includes('progreso')) {
     return {
       role: 'bot',
-      text: 'Semana 12/24 · IMC 26.4 (↓1.2) · HbA1c 5.9% · adherencia 88% · 840 pts. Vas por buen camino hacia 65 kg e HbA1c < 5.7%.',
+      text: t('Semana 12/24 · IMC 26.4 (↓1.2) · HbA1c 5.9% · adherencia 88% · 840 pts. Vas por buen camino hacia 65 kg e HbA1c < 5.7%.'),
     }
   }
-  if (t.includes('medit') || t.includes('ansiedad') || t.includes('infinito')) {
+  if (lower.includes('medit') || lower.includes('ansiedad') || lower.includes('infinito')) {
     return {
       role: 'bot',
-      text: 'Prueba 4-7-8: inhala 4, retén 7, exhala 8. En INFINITO tienes frecuencias y mindfulness. El video PSICO de hoy dura 12 min.',
+      text: t('Prueba 4-7-8: inhala 4, retén 7, exhala 8. En INFINITO tienes frecuencias y mindfulness. El video PSICO de hoy dura 12 min.'),
     }
   }
   return {
     role: 'bot',
-    text: 'Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?',
+    text: t('Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?'),
   }
 }
 
@@ -169,6 +170,8 @@ export function AppProvider({
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([true, true, true, true, false, false, false])
   const [pointsToday, setPointsToday] = useState(0)
   const [pointsTotal, setPointsTotal] = useState(4820)
+
+  const t = useT()
 
   const value = useMemo<AppState>(
     () => ({
@@ -229,7 +232,7 @@ export function AppProvider({
       setHydration,
       logMeal: (id) => setMealsLogged((prev) => (prev.includes(id) ? prev : [...prev, id])),
       sendChat: (text) => {
-        const reply = botReply(text)
+        const reply = botReply(text, t)
         setChat((prev) => [
           ...prev,
           { id: crypto.randomUUID(), role: 'user', text, time: nowLabel() },
@@ -286,6 +289,7 @@ export function AppProvider({
       pointsToday,
       pointsTotal,
       onResetCommunityClient,
+      t,
     ],
   )
 

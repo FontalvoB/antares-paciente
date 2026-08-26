@@ -8,6 +8,7 @@ import { PanicOverlay } from './components/PanicOverlay'
 import { VoiceOverlay } from './components/VoiceOverlay'
 import { ToastHost } from './components/ToastHost'
 import { ChatFab } from './components/ChatFab'
+import { I18nProvider } from './i18n/I18nContext'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { TestsPage } from './pages/TestsPage'
@@ -121,11 +122,13 @@ export default function App() {
 
   return (
     <Provider value={communityClientState}>
-      <AppProvider onResetCommunityClient={resetCommunityClient}>
-        <IonApp>
-          <Shell />
-        </IonApp>
-      </AppProvider>
+      <I18nProvider>
+        <AppProvider onResetCommunityClient={resetCommunityClient}>
+          <IonApp>
+            <Shell />
+          </IonApp>
+        </AppProvider>
+      </I18nProvider>
     </Provider>
   )
 }

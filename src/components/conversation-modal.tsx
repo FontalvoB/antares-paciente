@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { IonAlert, IonButton, IonIcon, IonModal, IonSkeletonText, IonTextarea } from '@ionic/react'
 import { arrowDown, close, people, personAddOutline, send } from 'ionicons/icons'
 import { useQuery, useSubscription } from 'urql'
+import { useT } from '../i18n/I18nContext'
 import {
   CONVERSATION_QUERY,
   GROUP_MEMBERS_QUERY,
@@ -87,6 +88,8 @@ export function ConversationModal({
 }) {
   const isGroup = !!group
   const key = peer ? conversationKey(me.id, peer.id) : (group?.id ?? '')
+
+  const t = useT()
 
   const [query] = useQuery<ConversationResult>({
     query: CONVERSATION_QUERY,
@@ -335,13 +338,13 @@ export function ConversationModal({
                   onClick={() => setMembersOpen(true)}
                 >
                   <IonIcon icon={people} style={{ fontSize: 12 }} />
-                  {`${group!.memberCount} ${group!.memberCount === 1 ? 'miembro' : 'miembros'}`}
+                  {`${group!.memberCount} ${group!.memberCount === 1 ? t('miembro') : t('miembros')}`}
                 </div>
               </>
             ) : (
               <>
                 <div style={{ fontWeight: 800, fontSize: 14 }}>{peer!.displayName}</div>
-                <div style={{ fontSize: 11, color: 'var(--mu)' }}>Amigos en la comunidad</div>
+                <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Amigos en la comunidad')}</div>
               </>
             )}
           </div>
@@ -360,7 +363,7 @@ export function ConversationModal({
             </>
           ) : messages.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--mu)', fontSize: 13, marginTop: 30 }}>
-              Sin mensajes todavía. ¡Saluda!
+              {t('Sin mensajes todavía. ¡Saluda!')}
             </div>
           ) : (
             messages.map((m, i) => {
@@ -434,7 +437,7 @@ export function ConversationModal({
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
             <IonButton className="bt bt-pur bt-mini" disabled={!draft.trim() || sending} onClick={() => void handleSend()}>
-              {sending ? 'Enviando…' : (
+              {sending ? t('Enviando…') : (
                 <>
                   <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Enviar
                 </>
@@ -481,10 +484,10 @@ export function ConversationModal({
                     <div style={{ fontWeight: 800, fontSize: 13 }}>{m.displayName}</div>
                   </div>
                   {isCreator && (
-                    <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--teal)', border: '1px solid var(--teal-l)', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center' }}>Creador</span>
+                    <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--teal)', border: '1px solid var(--teal-l)', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center' }}>{t('Creador')}</span>
                   )}
                   {isMe && (
-                    <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--mu)', background: 'var(--g1)', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center' }}>Tú</span>
+                    <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--mu)', background: 'var(--g1)', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center' }}>{t('Tú')}</span>
                   )}
                 </div>
               )
@@ -493,16 +496,16 @@ export function ConversationModal({
         </div>
         <div style={{ borderTop: '1px solid var(--g1)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <IonButton className="bt bt-outline bt-mini" onClick={() => setAddOpen(true)}>
-            <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Añadir miembro
+            <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Añadir miembro')}
           </IonButton>
-          <IonButton className="bt bt-outline bt-mini" onClick={() => setRenameOpen(true)}>Renombrar grupo</IonButton>
+          <IonButton className="bt bt-outline bt-mini" onClick={() => setRenameOpen(true)}>{t('Renombrar grupo')}</IonButton>
           <IonButton
             fill="outline"
             className="bt bt-mini"
             style={{ '--color': 'var(--red)', borderColor: 'var(--red)' } as CSSProperties}
             onClick={() => setLeaveOpen(true)}
           >
-            Salir del grupo
+            {t('Salir del grupo')}
           </IonButton>
         </div>
       </div>
@@ -518,7 +521,7 @@ export function ConversationModal({
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           {friendsToAdd.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--mu)', fontSize: 13, marginTop: 20, padding: '0 20px' }}>
-              Todos tus amigos ya están en el grupo.
+              {t('Todos tus amigos ya están en el grupo.')}
             </div>
           ) : (
             friendsToAdd.map((f) => (
@@ -538,7 +541,7 @@ export function ConversationModal({
                   <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <IonIcon icon={personAddOutline} style={{ fontSize: 14 }} /> Añadir
+                  <IonIcon icon={personAddOutline} style={{ fontSize: 14 }} /> {t('Añadir')}
                 </span>
               </div>
             ))
@@ -550,12 +553,12 @@ export function ConversationModal({
     {/* Confirmar quitar miembro */}
     <IonAlert
       isOpen={!!removeTarget}
-      header="Quitar miembro"
-      message={removeTarget ? `¿Quitar a ${removeTarget.displayName} del grupo?` : ''}
+      header={t('Quitar miembro')}
+      message={removeTarget ? t('¿Quitar a {name} del grupo?', { name: removeTarget.displayName }) : ''}
       buttons={[
-        'Cancelar',
+        t('Cancelar'),
         {
-          text: 'Quitar',
+          text: t('Quitar'),
           role: 'destructive',
           handler: () => {
             if (removeTarget) void handleRemoveMember(removeTarget)
@@ -568,12 +571,12 @@ export function ConversationModal({
     {/* Renombrar grupo */}
     <IonAlert
       isOpen={renameOpen}
-      header="Renombrar grupo"
-      inputs={[{ name: 'name', type: 'text', placeholder: 'Nombre del grupo', value: group?.name ?? '' }]}
+      header={t('Renombrar grupo')}
+      inputs={[{ name: 'name', type: 'text', placeholder: t('Nombre del grupo'), value: group?.name ?? '' }]}
       buttons={[
-        'Cancelar',
+        t('Cancelar'),
         {
-          text: 'Guardar',
+          text: t('Guardar'),
           handler: (values: { name?: string }) => {
             void handleRename(values.name ?? '')
           },
@@ -585,12 +588,12 @@ export function ConversationModal({
     {/* Salir del grupo */}
     <IonAlert
       isOpen={leaveOpen}
-      header="Salir del grupo"
-      message="¿Seguro que quieres salir de este grupo?"
+      header={t('Salir del grupo')}
+      message={t('¿Seguro que quieres salir de este grupo?')}
       buttons={[
-        'Cancelar',
+        t('Cancelar'),
         {
-          text: 'Salir',
+          text: t('Salir'),
           role: 'destructive',
           handler: () => {
             void handleLeave()

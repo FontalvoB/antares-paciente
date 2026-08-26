@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { Screen } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 
 const quick = [
   ['¿Qué comer?', '¿Qué debo comer hoy según mi plan?'],
@@ -22,8 +23,10 @@ export function ChatPage() {
     end.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chat.length])
 
-  const send = (t = text) => {
-    const v = t.trim()
+  const t = useT()
+
+  const send = (msg = text) => {
+    const v = msg.trim()
     if (!v) return
     sendChat(v)
     setText('')
@@ -32,13 +35,13 @@ export function ChatPage() {
   return (
     <Screen>
       <PageHeader
-        title="Chat"
-        sub="ANTARES AI · en línea 24/7"
+        title={t('Chat')}
+        sub={t('ANTARES AI · en línea 24/7')}
         trailing={
           <IonButton
             className="bt bt-round"
             style={{ '--background': 'var(--red-l)', '--color': 'var(--panic)' } as CSSProperties}
-            aria-label="Botón de pánico"
+            aria-label={t('Botón de pánico')}
             onClick={openPanic}
           >
             <IonIcon icon={medkit} />
@@ -47,8 +50,8 @@ export function ChatPage() {
       />
       <div className="chip-scroll">
         {quick.map(([l, q]) => (
-          <button key={l} type="button" className="qrchip" onClick={() => send(q)}>
-            {l}
+          <button key={l} type="button" className="qrchip" onClick={() => send(t(q))}>
+            {t(l)}
           </button>
         ))}
       </div>
@@ -70,7 +73,7 @@ export function ChatPage() {
             )}
             <div>
               <div className={`bub ${m.role === 'user' ? 'bub-usr' : m.role === 'alert' ? 'bub-alert' : 'bub-bot'}`} style={{ whiteSpace: 'pre-wrap' }}>
-                {m.text}
+                {t(m.text)}
               </div>
               <div style={{ fontSize: 10, color: 'var(--mu)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>{m.time}</div>
             </div>
@@ -82,7 +85,7 @@ export function ChatPage() {
         <IonButton
           className="bt bt-round"
           style={{ '--background': 'var(--blue-l)', '--color': 'var(--blue)' } as CSSProperties}
-          aria-label="Agente de voz"
+          aria-label={t('Agente de voz')}
           onClick={openVoice}
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
@@ -92,12 +95,12 @@ export function ChatPage() {
           value={text}
           onIonInput={(e) => setText(e.detail.value ?? '')}
           onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder="Escribe un mensaje…"
+          placeholder={t('Escribe un mensaje…')}
         />
         <IonButton
           className="bt bt-round"
           style={{ '--background': 'var(--navy)', '--color': '#fff' } as CSSProperties}
-          aria-label="Enviar"
+          aria-label={t('Enviar')}
           onClick={() => send()}
         >
           <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
