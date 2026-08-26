@@ -4486,6 +4486,604 @@ ion-modal.celebrate-modal {
   --background: transparent;
   --box-shadow: none;
 }
+ion-modal.request-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 430px;
+  --border-radius: 0;
+  --background: var(--g0);
+}
+ion-modal.request-modal::part(content) {
+  display: flex;
+  flex-direction: column;
+}
+
+.req-page {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--g0);
+  overflow: hidden;
+  position: relative;
+}
+
+.req-hero {
+  position: relative;
+  flex-shrink: 0;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 16px;
+  background: linear-gradient(145deg, #102a50 0%, #173c73 55%, #1d55a0 100%);
+  color: #fff;
+  overflow: hidden;
+}
+
+.req-hero-aurora {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 88% -20%, rgba(32, 200, 255, 0.28), transparent 58%),
+    radial-gradient(ellipse at 8% 120%, rgba(29, 158, 117, 0.22), transparent 50%);
+  pointer-events: none;
+}
+
+.req-hero-top,
+.req-hero .kicker,
+.req-hero-title,
+.req-hero .sub,
+.req-hero .chips {
+  position: relative;
+  z-index: 1;
+}
+
+.req-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+ion-button.req-hero-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  margin: 0;
+  --background: rgba(255, 255, 255, 0.12);
+  --color: #fff;
+  --border-radius: 50%;
+  --padding-start: 0;
+  --padding-end: 0;
+  --box-shadow: none;
+}
+
+.req-hero-dots {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.req-dot {
+  width: 28px;
+  height: 22px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  position: relative;
+}
+
+.req-dot::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8px;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.req-dot.now::after {
+  background: var(--ice);
+  box-shadow: 0 0 0 3px rgba(98, 216, 255, 0.22);
+}
+
+.req-dot.done::after {
+  background: var(--teal);
+}
+
+.req-hero-title {
+  margin: 4px 0 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  line-height: 1.12;
+}
+
+.req-hero .chips {
+  margin-top: 12px;
+}
+
+.req-hero button.chip {
+  font-family: inherit;
+}
+
+.req-hero .chip ion-icon {
+  font-size: 13px;
+}
+
+.req-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 120px;
+}
+
+.req-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, transparent, #fff 28%);
+}
+
+.req-foot-row {
+  display: flex;
+  gap: 8px;
+}
+
+.req-foot-row ion-button.bt {
+  flex: 1;
+}
+
+ion-radio-group.req-types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+ion-radio-group.req-modes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+
+ion-radio.req-type-card,
+ion-radio.req-mode-card {
+  margin: 0;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  --color: transparent;
+  --color-checked: transparent;
+  --border-width: 0;
+  --inner-border-width: 0;
+}
+
+ion-radio.req-type-card::part(container),
+ion-radio.req-mode-card::part(container) {
+  display: none;
+}
+
+ion-radio.req-type-card::part(label),
+ion-radio.req-mode-card::part(label) {
+  margin: 0;
+  width: 100%;
+}
+
+ion-radio.req-type-card {
+  padding: 14px 13px;
+  position: relative;
+}
+
+ion-radio.req-type-card.sel,
+ion-radio.req-mode-card.sel {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(29, 158, 117, 0.18), var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+ion-radio.req-type-card.ac-pur.sel {
+  border-color: var(--pur);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.16), var(--shadow-md);
+}
+
+ion-radio.req-type-card.ac-blue.sel {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(47, 120, 223, 0.16), var(--shadow-md);
+}
+
+ion-radio.req-type-card.ac-org.sel {
+  border-color: var(--org);
+  box-shadow: 0 0 0 2px rgba(232, 123, 43, 0.18), var(--shadow-md);
+}
+
+.req-type-inner,
+.req-mode-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+ion-radio.req-type-card .req-type-inner {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.req-type-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.req-type-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 16px;
+  color: var(--teal);
+}
+
+ion-radio.req-type-card.ac-pur .req-type-check { color: var(--pur); }
+ion-radio.req-type-card.ac-blue .req-type-check { color: var(--blue); }
+ion-radio.req-type-card.ac-org .req-type-check { color: var(--org); }
+
+.req-cal {
+  padding: 12px 10px 10px;
+  margin-bottom: 10px;
+}
+
+.req-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px 8px;
+}
+
+.req-cal-month {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--tx);
+  text-transform: capitalize;
+}
+
+ion-button.req-cal-nav-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  margin: 0;
+  --background: var(--g1);
+  --color: var(--tx);
+  --border-radius: 50%;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+ion-button.req-cal-nav-btn[disabled] {
+  opacity: 0.35;
+}
+
+.req-cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.req-cal-week span {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--mu);
+  padding: 4px 0;
+}
+
+.req-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px 0;
+}
+
+.req-cal-cell {
+  height: 44px;
+}
+
+ion-button.req-cal-day {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 1px auto;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  --border-radius: 50%;
+  --background: transparent;
+  --color: var(--tx);
+  --padding-start: 0;
+  --padding-end: 0;
+  --box-shadow: none;
+  position: relative;
+}
+
+ion-button.req-cal-day.today {
+  --color: var(--teal-d);
+  box-shadow: inset 0 0 0 1.5px var(--teal);
+}
+
+ion-button.req-cal-day.sel {
+  --background: linear-gradient(145deg, #0c3d2c, var(--teal));
+  --color: #fff;
+  box-shadow: 0 6px 14px rgba(29, 158, 117, 0.28);
+}
+
+ion-button.req-cal-day.off {
+  --color: #c5d0dc;
+}
+
+ion-button.req-cal-day.open::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+ion-button.req-cal-day.sel.open::after {
+  background: #fff;
+}
+
+.req-cal-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 6px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.req-cal-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.req-cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+  display: inline-block;
+}
+
+ion-button.req-next-open {
+  margin: 0 0 12px;
+  height: 44px;
+  min-height: 44px;
+  font-size: 13px;
+  --border-radius: 14px;
+}
+
+.req-times-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+
+.req-times-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--tx);
+  line-height: 1.2;
+}
+
+.req-times-sub {
+  font-size: 12px;
+  color: var(--mu);
+  margin-top: 2px;
+}
+
+ion-segment.req-seg {
+  min-height: 40px;
+  margin: 0 0 12px;
+  --background: var(--g1);
+  border-radius: 12px;
+}
+
+.req-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+ion-button.req-slot {
+  margin: 0;
+  height: 56px;
+  min-height: 56px;
+  --border-radius: 16px;
+  --border-width: 1.5px;
+  --border-style: solid;
+  --border-color: var(--bd);
+  --background: #fff;
+  --color: var(--tx);
+  --box-shadow: var(--shadow-sm);
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+ion-button.req-slot::part(native) {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.req-slot-time {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: 1;
+}
+
+.req-slot-dur {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+ion-button.req-slot.sel {
+  --background: linear-gradient(135deg, #0c3d2c, var(--teal));
+  --color: #fff;
+  --border-color: transparent;
+}
+
+ion-button.req-slot.sel .req-slot-dur {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.req-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  color: var(--tx);
+}
+
+.req-pick ion-icon {
+  color: var(--teal);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.req-pick span {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.req-pick strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+}
+
+.req-pick em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--teal-d);
+  background: var(--teal-l);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.req-empty {
+  text-align: center;
+  padding: 28px 16px;
+  background: #fff;
+  border: 1px solid var(--bd);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.req-empty-ico {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.req-empty strong {
+  display: block;
+  font-size: 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--tx);
+  margin-bottom: 6px;
+}
+
+.req-empty p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--mu);
+}
+
+.req-field-lbl {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--mu);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 4px 0 8px;
+}
+
+.req-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--mu);
+}
+
+.req-ticket-motivo {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--tx);
+  background: var(--g0);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.req-done {
+  text-align: center;
+  padding: 8px 0 0;
+}
+
+.req-done-badge {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  margin: 8px auto 16px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 44px;
+  background: linear-gradient(145deg, var(--teal), #0f6e56);
+  box-shadow: 0 12px 28px rgba(29, 158, 117, 0.32);
+}
+
+.req-done p {
+  margin: 8px 16px 0;
+  font-size: 14px;
+  color: var(--mu);
+  line-height: 1.55;
+}
 
 /* --- IonCheckbox dentro de .check-row (consentimientos) --- */
 .check-row ion-checkbox {
