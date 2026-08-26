@@ -74,6 +74,19 @@ from both files to avoid drift.
 
 ## 3. Definition of Done — verification
 
+**Scan for missing keys.** The scan script catches all `t()` calls (single, double, and backtick
+quotes) and compares them against `en.json`:
+
+```bash
+# antares-paciente
+npm run i18n:check
+
+# coppaddresd-front
+yarn i18n:check
+```
+
+Exit code 1 = missing keys. Fix them before committing.
+
 **Key parity (both apps).** PowerShell 5.1 `ConvertFrom-Json` CRASHES on duplicate-case keys
 (e.g. `miembro` vs `Miembro`), so verify with **Node.js**, not PowerShell:
 
@@ -88,6 +101,11 @@ Both arrays must be empty (`[]`).
 **Build/typecheck per repo:**
 - antares-paciente: `npm run build` (tsc -b && vite build) and `npm run lint`.
 - coppaddresd-front: `yarn lint` and `yarn build`.
+
+**coppaddresd-front review flow** (auto-translated keys in dev):
+- Keys collected at runtime are sent to `/api/i18n/missing` (dev-only, 404 in production) and
+  auto-translated via MyMemory. Results land in `providers/translations/pending-review.json`.
+- Review the translations, then run: `yarn i18n:apply`
 
 **Dev smoke test:** run the app in English (`lang === 'en'`) and watch the browser console for
 `[i18n] Missing key for "en":` warnings — each means a key is missing from `en.json`.
