@@ -1,8 +1,8 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import { logoutUser } from '../utils/authApi'
+import { useT } from '../i18n/I18nContext'
 import type {
   ChatMessage,
-  CommunityPost,
   Flow,
   ProgramDay,
   ProgramTaskId,
@@ -34,7 +34,6 @@ interface AppState {
   weekCheckins: boolean[]
   pointsToday: number
   pointsTotal: number
-  posts: CommunityPost[]
   navigate: (s: Screen) => void
   finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void
   backToLogin: () => void
@@ -53,9 +52,7 @@ interface AppState {
   sendChat: (text: string) => void
   connectWatch: (name: string) => void
   disconnectWatch: () => void
-  completeStep: (id: ProgramTaskId, pts: number) => void
-  likePost: (id: string) => void
-  addPost: (text: string) => void
+completeStep: (id: ProgramTaskId, pts: number) => void
   logout: () => void
 }
 
@@ -73,47 +70,6 @@ const defaultUser: UserProfile = {
   fam1Cel: '+1 (786) 555-0192',
   fam1Email: 'pedro.gonzalez@email.com',
 }
-
-const seedPosts: CommunityPost[] = [
-  {
-    id: '1',
-    initials: 'CR',
-    name: 'Carlos Rodríguez',
-    meta: 'Semana 14 · COPP-ADRESD · hace 2h',
-    badge: '⭐ BIO+',
-    badgeTone: 'teal',
-    text: '¡Hoy completé mis 14 minutos de ejercicio! Semana 14 del programa y me siento increíble. Mi glucosa bajó de 108 a 91 mg/dL 🎉',
-    likes: 24,
-    comments: 8,
-    liked: false,
-    progress: 'Glucosa 108→91 · ↓17 mg/dL ✅',
-  },
-  {
-    id: '2',
-    initials: 'LP',
-    name: 'Laura Pedraza',
-    meta: 'Semana 8 · COPP-ADRESD · hace 5h',
-    badge: 'BIO',
-    badgeTone: 'blue',
-    text: 'Mi almuerzo de hoy según el plan mediterráneo 🥗 La IA detectó 89% de adherencia. Poco a poco estamos aprendiendo a comer bien sin sufrir 😊',
-    likes: 41,
-    comments: 15,
-    liked: false,
-    photo: '🥗🍗🍚',
-  },
-  {
-    id: '3',
-    initials: 'JM',
-    name: 'Jorge Martínez',
-    meta: 'Semana 20 · COPP-ADRESD · ayer',
-    badge: '🌟 TOP',
-    badgeTone: 'gold',
-    text: 'Semana 20 y ya bajé 8.3 kg. Mi HbA1c pasó de 6.4% a 5.6% — salí del rango de prediabetes. Para quienes están empezando: ¡sí se puede!',
-    likes: 98,
-    comments: 34,
-    liked: true,
-  },
-]
 
 const seedChat: ChatMessage[] = [
   {
@@ -142,45 +98,52 @@ function nowLabel() {
   return new Date().toLocaleTimeString('es-US', { hour: 'numeric', minute: '2-digit' })
 }
 
-function botReply(text: string): { role: ChatMessage['role']; text: string } {
-  const t = text.toLowerCase()
-  if (t.includes('pecho') || t.includes('brazo') || t.includes('urgencia') || t.includes('síntoma')) {
+function botReply(text: string, t: (s: string, p?: Record<string, string>) => string): { role: ChatMessage['role']; text: string } {
+  const lower = text.toLowerCase()
+  if (lower.includes('pecho') || lower.includes('brazo') || lower.includes('urgencia') || lower.includes('síntoma')) {
     return {
       role: 'alert',
-      text: 'Detecté un posible síntoma de alarma. Si el dolor es intenso, activa SOS. Mientras tanto: siéntate, no te acuestes plana y avisa a tu contacto de emergencia.',
+      text: t('Detecté un posible síntoma de alarma. Si el dolor es intenso, activa SOS. Mientras tanto: siéntate, no te acuestes plana y avisa a tu contacto de emergencia.'),
     }
   }
-  if (t.includes('comer') || t.includes('plan') || t.includes('comida')) {
+  if (lower.includes('comer') || lower.includes('plan') || lower.includes('comida')) {
     return {
       role: 'bot',
-      text: 'Hoy tu plan es dieta mediterránea 1,800 kcal. Cena sugerida: sopa de lentejas + pan integral, antes de las 7:30 PM. Adherencia actual: 88%.',
+      text: t('Hoy tu plan es dieta mediterránea 1,800 kcal. Cena sugerida: sopa de lentejas + pan integral, antes de las 7:30 PM. Adherencia actual: 88%.'),
     }
   }
-  if (t.includes('cita') || t.includes('agendar')) {
+  if (lower.includes('cita') || lower.includes('agendar')) {
     return {
       role: 'bot',
-      text: 'Tu próxima cita es hoy 3:00 PM con Dr. Carlos Ramírez (telemedicina). Puedo recordártela 30 min antes. Para una nueva cita usa Solicitar cita en el módulo Citas.',
+      text: t('Tu próxima cita es hoy 3:00 PM con Dr. Carlos Ramírez (telemedicina). Puedo recordártela 30 min antes. Para una nueva cita usa Solicitar cita en el módulo Citas.'),
     }
   }
-  if (t.includes('progreso')) {
+  if (lower.includes('progreso')) {
     return {
       role: 'bot',
-      text: 'Semana 12/24 · IMC 26.4 (↓1.2) · HbA1c 5.9% · adherencia 88% · 840 pts. Vas por buen camino hacia 65 kg e HbA1c < 5.7%.',
+      text: t('Semana 12/24 · IMC 26.4 (↓1.2) · HbA1c 5.9% · adherencia 88% · 840 pts. Vas por buen camino hacia 65 kg e HbA1c < 5.7%.'),
     }
   }
-  if (t.includes('medit') || t.includes('ansiedad') || t.includes('infinito')) {
+  if (lower.includes('medit') || lower.includes('ansiedad') || lower.includes('infinito')) {
     return {
       role: 'bot',
-      text: 'Prueba 4-7-8: inhala 4, retén 7, exhala 8. En INFINITO tienes frecuencias y mindfulness. El video PSICO de hoy dura 12 min.',
+      text: t('Prueba 4-7-8: inhala 4, retén 7, exhala 8. En INFINITO tienes frecuencias y mindfulness. El video PSICO de hoy dura 12 min.'),
     }
   }
   return {
     role: 'bot',
-    text: 'Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?',
+    text: t('Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?'),
   }
 }
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({
+  children,
+  onResetCommunityClient,
+}: {
+  children: ReactNode
+  /** Se invoca tras login/logout para recrear el cliente urql de la comunidad. */
+  onResetCommunityClient?: () => void
+}) {
   const [flow, setFlow] = useState<Flow>('login')
   const [screen, setScreen] = useState<Screen>('home')
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -207,7 +170,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([true, true, true, true, false, false, false])
   const [pointsToday, setPointsToday] = useState(0)
   const [pointsTotal, setPointsTotal] = useState(4820)
-  const [posts, setPosts] = useState<CommunityPost[]>(seedPosts)
+
+  const t = useT()
 
   const value = useMemo<AppState>(
     () => ({
@@ -230,13 +194,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       weekCheckins,
       pointsToday,
       pointsTotal,
-      posts,
       navigate: (s) => setScreen(s),
       finishLogin: (seed, next = 'onboarding') => {
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         if (seed) setUser((u) => ({ ...u, ...seed }))
         setFlow(next)
+        // Recrea el cliente urql para usar la cache y el WS con el token nuevo.
+        onResetCommunityClient?.()
       },
       backToLogin: () => {
         setFlow('login')
@@ -267,7 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setHydration,
       logMeal: (id) => setMealsLogged((prev) => (prev.includes(id) ? prev : [...prev, id])),
       sendChat: (text) => {
-        const reply = botReply(text)
+        const reply = botReply(text, t)
         setChat((prev) => [
           ...prev,
           { id: crypto.randomUUID(), role: 'user', text, time: nowLabel() },
@@ -295,35 +260,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return next
         })
       },
-      likePost: (id) =>
-        setPosts((list) =>
-          list.map((p) =>
-            p.id === id
-              ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-              : p,
-          ),
-        ),
       logout: () => {
-        void logoutUser()
         setFlow('login')
         setScreen('home')
+        // Cierra sesión en el servidor y luego recrea el cliente urql (cache
+        // limpia + WS nuevo) para no servir datos del usuario anterior.
+        void logoutUser().then(() => onResetCommunityClient?.())
       },
-      addPost: (text) =>
-        setPosts((list) => [
-          {
-            id: crypto.randomUUID(),
-            initials: 'MG',
-            name: user.nombre,
-            meta: 'Semana 12 · COPP-ADRESD · ahora',
-            badge: '⭐ BIO',
-            badgeTone: 'gold',
-            text,
-            likes: 0,
-            comments: 0,
-            liked: false,
-          },
-          ...list,
-        ]),
     }),
     [
       flow,
@@ -345,7 +288,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       weekCheckins,
       pointsToday,
       pointsTotal,
-      posts,
+      onResetCommunityClient,
+      t,
     ],
   )
 

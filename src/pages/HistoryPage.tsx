@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Screen, Scroll } from '../components/Screen'
+import { useT } from '../i18n/I18nContext'
 
 const sections = [
   {
@@ -57,38 +58,39 @@ const sections = [
 
 export function HistoryPage() {
   const [open, setOpen] = useState(0)
+  const t = useT()
 
   return (
     <Screen>
       <Scroll>
         <div className="hero hero-navy">
-          <div className="h1">📋 Historia clínica</div>
-          <div className="sub">HIPAA protegida · Actualizada 05/08/2026</div>
+          <div className="h1">{t('📋 Historia clínica')}</div>
+          <div className="sub">{t('HIPAA protegida · Actualizada 05/08/2026')}</div>
           <div className="chips">
-            <span className="chip chip-glass">ID: COPP-2024-00142</span>
-            <span className="chip chip-gold">NPI verificado</span>
+            <span className="chip chip-glass">{t('ID: COPP-2024-00142')}</span>
+            <span className="chip chip-gold">{t('NPI verificado')}</span>
           </div>
         </div>
-        {sections.map((s, i) => (
-          <div key={s.title} className="hc-sec">
-            <button className="hc-hdr" onClick={() => setOpen(open === i ? -1 : i)}>
-              <span>{s.title}</span>
-              <span>{open === i ? '▲' : '▼'}</span>
-            </button>
-            {open === i && (
-              <div className="hc-body">
-                {s.rows.map(([l, v]) => (
-                  <div key={l} className="hc-row">
-                    <div className="hc-lbl">{l}</div>
-                    <div className="hc-val">
-                      <strong>{v}</strong>
+{sections.map((s, i) => (
+            <div key={s.title} className="hc-sec">
+              <button className="hc-hdr" onClick={() => setOpen(open === i ? -1 : i)}>
+                <span>{t(s.title)}</span>
+                <span>{open === i ? '▲' : '▼'}</span>
+              </button>
+              {open === i && (
+                <div className="hc-body">
+                  {s.rows.map(([l, v]) => (
+                    <div key={l} className="hc-row">
+                      <div className="hc-lbl">{t(l)}</div>
+                      <div className="hc-val">
+                        <strong>{t(v)}</strong>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
       </Scroll>
     </Screen>
   )

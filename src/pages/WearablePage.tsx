@@ -17,6 +17,7 @@ import {
 import { PageHeader } from '../components/PageHeader'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 
 const devices = [
   { name: 'ANTARES Watch Pro', kind: 'ANTARES', signal: 4, rssi: 'Señal alta' },
@@ -35,6 +36,7 @@ function Signal({ n }: { n: number }) {
 }
 
 export function WearablePage() {
+  const t = useT()
   const { watchConnected, watchName, connectWatch, disconnectWatch, showToast } = useApp()
   const [scanning, setScanning] = useState(false)
   const [found, setFound] = useState<typeof devices>([])
@@ -65,7 +67,7 @@ export function WearablePage() {
     scanTimer.current = window.setTimeout(() => {
       setFound(devices)
       setScanning(false)
-      showToast('3 dispositivos encontrados', 'ok')
+      showToast(t('3 dispositivos encontrados'), 'ok')
     }, 1400)
   }
 
@@ -76,20 +78,20 @@ export function WearablePage() {
     pairTimer.current = window.setTimeout(() => {
       connectWatch(name)
       setPairing(null)
-      showToast(`${name} conectado`, 'ok')
+      showToast(t('{name} conectado', { name }), 'ok')
     }, 700)
   }
 
   return (
     <Screen>
       <PageHeader
-        kicker="Biometría en vivo"
-        title="Reloj"
-        sub={watchConnected ? `${watchName} · datos en tiempo real` : 'Empareja un dispositivo para ver FC, sueño y SpO2'}
+        kicker={t('Biometría en vivo')}
+        title={t('Reloj')}
+        sub={watchConnected ? `${watchName} · ${t('datos en tiempo real')}` : t('Empareja un dispositivo para ver FC, sueño y SpO2')}
         trailing={
           <span className={`status-pill ${watchConnected ? 'on' : ''}`}>
             <span className="dot" style={{ background: watchConnected ? 'var(--safe)' : 'var(--mu)' }} />
-            {watchConnected ? 'Conectado' : 'Sin reloj'}
+            {watchConnected ? t('Conectado') : t('Sin reloj')}
           </span>
         }
       />
@@ -106,36 +108,36 @@ export function WearablePage() {
               </div>
             </div>
 
-            <h2 className="watch-pair-title">{scanning ? 'Buscando cerca de ti…' : 'Conecta tu reloj'}</h2>
+            <h2 className="watch-pair-title">{scanning ? t('Buscando cerca de ti…') : t('Conecta tu reloj')}</h2>
             <p className="watch-pair-copy">
               {scanning
-                ? 'Mantén el reloj desbloqueado y cerca del teléfono.'
-                : 'Recibiremos frecuencia cardíaca, sueño, presión, SpO2 y ECG.'}
+                ? t('Mantén el reloj desbloqueado y cerca del teléfono.')
+                : t('Recibiremos frecuencia cardíaca, sueño, presión, SpO2 y ECG.')}
             </p>
 
             <div className="watch-caps">
-              {['FC · ECG', 'SpO2', 'Presión', 'Sueño', 'Pasos', 'Movilidad'].map((t) => (
-                <span key={t} className="chip chip-teal">{t}</span>
+              {['FC · ECG', 'SpO2', 'Presión', 'Sueño', 'Pasos', 'Movilidad'].map((item) => (
+                <span key={item} className="chip chip-teal">{t(item)}</span>
               ))}
             </div>
 
             <IonButton expand="block" className="bt bt-primary" onClick={scan} disabled={scanning}>
               {scanning ? (
-                <>
+              <>
                   <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                  Buscando dispositivos…
+                  {t('Buscando dispositivos…')}
                 </>
               ) : (
-                <>
+              <>
                   <IonIcon icon={bluetooth} slot="start" />
-                  Buscar dispositivo
+                  {t('Buscar dispositivo')}
                 </>
               )}
             </IonButton>
 
             {found.length > 0 && !scanning && (
               <>
-                <div className="group-label">Disponibles</div>
+                <div className="group-label">{t('Disponibles')}</div>
                 <IonList className="group-list" lines="full">
                   {found.map((d) => (
                     <IonItem
@@ -152,7 +154,7 @@ export function WearablePage() {
                       <IonLabel>
                         <h3>{d.name}</h3>
                         <p>
-                          {d.kind} · {d.rssi}
+                          {d.kind} · {t(d.rssi)}
                         </p>
                       </IonLabel>
                       <div slot="end" className="bt-dev-end">
@@ -160,7 +162,7 @@ export function WearablePage() {
                         {pairing === d.name ? (
                           <IonSpinner name="crescent" style={{ width: 18, height: 18 }} />
                         ) : (
-                          <span className="bt-connect">Conectar</span>
+                          <span className="bt-connect">{t('Conectar')}</span>
                         )}
                       </div>
                     </IonItem>
@@ -177,7 +179,7 @@ export function WearablePage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="watch-live-name">{watchName}</div>
-                <div className="watch-live-meta">Bluetooth · sincronizando</div>
+                <div className="watch-live-meta">{t('Bluetooth · sincronizando')}</div>
               </div>
               <div className="watch-batt">
                 <IonIcon icon={batteryHalfOutline} />
@@ -186,7 +188,7 @@ export function WearablePage() {
             </div>
 
             <div className="vital-hero">
-              <div className="vital-hero-kicker">Frecuencia cardíaca</div>
+              <div className="vital-hero-kicker">{t('Frecuencia cardíaca')}</div>
               <div className="vital-hero-row">
                 <div className="vital-hero-val">
                   {fc}
@@ -200,10 +202,10 @@ export function WearablePage() {
                   <span className="wave" />
                 </div>
               </div>
-              <div className="vital-hero-hint">Ritmo en reposo · zona normal</div>
+              <div className="vital-hero-hint">{t('Ritmo en reposo · zona normal')}</div>
             </div>
 
-            <div className="sec">Métricas de hoy</div>
+            <div className="sec">{t('Métricas de hoy')}</div>
             <div className="grid-2">
               {[
                 ['98%', 'SpO2', 'Normal', 'ac-blue'],
@@ -215,14 +217,14 @@ export function WearablePage() {
                   <div className="display" style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.6px' }}>
                     {v}
                   </div>
-                  <div className="ct" style={{ marginTop: 4 }}>{l}</div>
-                  <div className="cs">{s}</div>
+                  <div className="ct" style={{ marginTop: 4 }}>{t(String(l))}</div>
+                  <div className="cs">{t(String(s))}</div>
                 </div>
               ))}
             </div>
 
             <div className="card ecg-card">
-              <div className="ecg-label">Electrocardiograma · ritmo sinusal</div>
+              <div className="ecg-label">{t('Electrocardiograma · ritmo sinusal')}</div>
               <div className="ecg-trace">
                 {Array.from({ length: 42 }).map((_, i) => (
                   <div
@@ -242,7 +244,7 @@ export function WearablePage() {
                 style={{ '--background': 'var(--red-l)', '--color': 'var(--red)' } as CSSProperties}
                 onClick={() => setConfirmOff(true)}
               >
-                Desconectar reloj
+                {t('Desconectar reloj')}
               </IonButton>
             </div>
           </>
@@ -251,17 +253,17 @@ export function WearablePage() {
 
       <IonAlert
         isOpen={confirmOff}
-        header="¿Desconectar el reloj?"
-        message="Dejarán de llegar datos en vivo hasta que lo vuelvas a emparejar."
+        header={t('¿Desconectar el reloj?')}
+        message={t('Dejarán de llegar datos en vivo hasta que lo vuelvas a emparejar.')}
         buttons={[
-          { text: 'Seguir conectado', role: 'cancel' },
+          { text: t('Seguir conectado'), role: 'cancel' },
           {
-            text: 'Desconectar',
+            text: t('Desconectar'),
             role: 'destructive',
             handler: () => {
               disconnectWatch()
               setFound([])
-              showToast('Reloj desconectado', 'warn')
+              showToast(t('Reloj desconectado'), 'warn')
             },
           },
         ]}
