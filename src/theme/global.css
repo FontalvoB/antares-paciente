@@ -6089,9 +6089,14 @@ ion-button.login-submit ion-icon {
     border-radius: 28px;
   }
 
+  .login-screen {
+    overflow-y: auto;
+  }
+
   .login-layout {
     grid-template-columns: 1fr;
-    overflow-y: auto;
+    overflow: visible;
+    flex: none;
   }
 
   .login-brand {
