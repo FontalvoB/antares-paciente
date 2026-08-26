@@ -209,6 +209,8 @@
   "Programa de hoy": "Today's program",
   "Día completado": "Day completed",
   "{done} de {total} misiones": "{done} of {total} missions",
+  "Programa de hoy. Siguiente: {next}. {done} de {total} misiones.": "Today's program. Next: {next}. {done} of {total} missions.",
+  "{done} de {total} misiones · {next}": "{done} of {total} missions · {next}",
   "Racha": "Streak",
   "días": "days",
   "Semana": "Week",

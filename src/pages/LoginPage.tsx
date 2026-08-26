@@ -198,7 +198,7 @@ export function LoginPage() {
 
   return (
     <div className="screen login-screen" style={{ position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+    <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
         <LanguageToggle />
       </div>
       <div className="login-layout">
