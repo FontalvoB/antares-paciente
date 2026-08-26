@@ -19,6 +19,7 @@ import {
 } from '../data/tests'
 import { ChipGrid, ScaleList } from '../components/Forms'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 
 const SCALE: Record<number, string[]> = {
   2: ['1', '2', '3', '4', '5'],
@@ -44,6 +45,7 @@ const QMAP: Record<number, typeof TEMP_QS> = {
 
 export function TestsPage() {
   const { testsDone, markTest, skipTests, finishTests, showToast } = useApp()
+  const t = useT()
   const [openId, setOpenId] = useState<number | null>(null)
   const [answers, setAnswers] = useState<Record<number, Record<number, number>>>({})
   const [chips, setChips] = useState<number[]>([])
@@ -65,7 +67,7 @@ export function TestsPage() {
   const saveTest = () => {
     if (!openId) return
     markTest(openId)
-    showToast('Evaluación guardada', 'ok')
+    showToast(t('Evaluación guardada'), 'ok')
     setOpenId(null)
   }
 
@@ -88,18 +90,18 @@ export function TestsPage() {
             </button>
           )}
           <div style={{ flex: 1 }}>
-            <div className="kicker">ANTARES · PERFIL DE SALUD</div>
-            <div className="h2">{meta?.title ?? 'Batería de evaluación inicial'}</div>
+            <div className="kicker">{t('ANTARES · PERFIL DE SALUD')}</div>
+            <div className="h2">{meta?.title ?? t('Batería de evaluación inicial')}</div>
           </div>
           <button
             onClick={skipTests}
             style={{ background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)', color: 'rgba(255,255,255,.7)', borderRadius: 10, padding: '6px 10px', fontSize: 11, fontWeight: 700 }}
           >
-            Después
+            {t('Después')}
           </button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,.5)', marginTop: 12 }}>
-          <span>{completed} de 9 evaluaciones</span>
+          <span>{t('{completed} de 9 evaluaciones')}</span>
           <span>{pct}%</span>
         </div>
         <IonProgressBar
@@ -122,7 +124,7 @@ export function TestsPage() {
                 ['Estrés', 44, '#E24B4A'],
               ].map(([n, w, c]) => (
                 <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <span style={{ width: 92, fontSize: 11, color: 'rgba(255,255,255,.6)' }}>{n}</span>
+                  <span style={{ width: 92, fontSize: 11, color: 'rgba(255,255,255,.6)' }}>{t(String(n))}</span>
                   <IonProgressBar
                     className="pb"
                     style={{ flex: 1, '--background': 'rgba(255,255,255,.1)', '--progress-background': String(c) } as CSSProperties}
@@ -133,30 +135,30 @@ export function TestsPage() {
               ))}
             </div>
               <div className="card" style={{ marginBottom: 10, borderColor: 'var(--pur)' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pur)', marginBottom: 8 }}>🤖 ANTARES AI</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pur)', marginBottom: 8 }}>{t('🤖 ANTARES AI')}</div>
                 <p style={{ fontSize: 13, lineHeight: 1.65, margin: 0 }}>
-                  Perfil de riesgo bajo-moderado. Prediabetes (HbA1c 5.9%) con buena adherencia (81%) y temperamento mixto sanguíneo-flemático. Prioriza sueño, control glucémico y movimiento progresivo de 12 min/día.
+                  {t('Perfil de riesgo bajo-moderado. Prediabetes (HbA1c 5.9%) con buena adherencia (81%) y temperamento mixto sanguíneo-flemático. Prioriza sueño, control glucémico y movimiento progresivo de 12 min/día.')}
                 </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div style={{ background: '#E1F5EE', borderRadius: 12, padding: 12 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#0F6E56' }}>FORTALEZAS</div>
-                  <div style={{ fontSize: 11, marginTop: 6 }}>Adherencia alta · Apoyo familiar · Motivación clara</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#0F6E56' }}>{t('FORTALEZAS')}</div>
+                  <div style={{ fontSize: 11, marginTop: 6 }}>{t('Adherencia alta · Apoyo familiar · Motivación clara')}</div>
                 </div>
                 <div style={{ background: '#FCEBEB', borderRadius: 12, padding: 12 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#A32D2D' }}>RIESGOS</div>
-                  <div style={{ fontSize: 11, marginTop: 6 }}>Prediabetes · Sueño 6.8h · Antecedente familiar DM2</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#A32D2D' }}>{t('RIESGOS')}</div>
+                  <div style={{ fontSize: 11, marginTop: 6 }}>{t('Prediabetes · Sueño 6.8h · Antecedente familiar DM2')}</div>
                 </div>
               </div>
               <div style={{ background: 'linear-gradient(135deg,#0C3D2C,var(--teal))', borderRadius: 16, padding: 16, textAlign: 'center' }}>
-                <div style={{ color: '#fff', fontWeight: 700, marginBottom: 8 }}>Tu programa está personalizado</div>
+                <div style={{ color: '#fff', fontWeight: 700, marginBottom: 8 }}>{t('Tu programa está personalizado')}</div>
                 <IonButton
                   expand="block"
                   className="bt"
                   style={{ '--background': 'rgba(255,255,255,.2)', '--color': '#fff', '--border-color': 'rgba(255,255,255,.3)', '--border-width': '1px', '--border-style': 'solid' } as CSSProperties}
                   onClick={finishTests}
                 >
-                  Entrar a mi programa ANTARES
+                  {t('Entrar a mi programa ANTARES')}
                 </IonButton>
               </div>
             </>
@@ -164,29 +166,29 @@ export function TestsPage() {
       ) : !openId ? (
         <div className="screen-scroll no-nav" style={{ padding: 14 }}>
           <p style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
-            Completa las evaluaciones para personalizar tu programa. Puedes guardar y continuar cuando quieras.
+            {t('Completa las evaluaciones para personalizar tu programa. Puedes guardar y continuar cuando quieras.')}
           </p>
-          {TESTS_META.map((t) => {
-            const done = testsDone.includes(t.id)
-            const active = !done && (testsDone.length === 0 ? t.id === 1 : t.id === Math.min(...[1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => !testsDone.includes(n))))
+          {TESTS_META.map((test) => {
+            const done = testsDone.includes(test.id)
+            const active = !done && (testsDone.length === 0 ? test.id === 1 : test.id === Math.min(...[1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => !testsDone.includes(n))))
             return (
-              <button key={t.id} className={`ts-card ${done ? 'done' : ''} ${active ? 'active-now' : ''}`} onClick={() => setOpenId(t.id)}>
-                <div className="ico" style={{ background: t.bg, marginBottom: 0 }}>
-                  {t.emoji}
+              <button key={test.id} className={`ts-card ${done ? 'done' : ''} ${active ? 'active-now' : ''}`} onClick={() => setOpenId(test.id)}>
+                <div className="ico" style={{ background: test.bg, marginBottom: 0 }}>
+                  {test.emoji}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{t.id}. {t.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>{t.sub}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{test.id}. {test.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>{test.sub}</div>
                 </div>
                 <span className={`chip ${done ? 'chip-teal' : active ? 'chip-org' : 'chip-blue'}`} style={{ fontSize: 10 }}>
-                  {done ? 'Hecho' : active ? 'Ahora' : 'Pendiente'}
+                  {done ? t('Hecho') : active ? t('Ahora') : t('Pendiente')}
                 </span>
               </button>
             )
           })}
           {completed >= 3 && (
             <IonButton expand="block" className="bt bt-gold" style={{ marginTop: 8 }} onClick={openIA}>
-              Ver mi perfil de salud ANTARES · IA
+              {t('Ver mi perfil de salud ANTARES · IA')}
             </IonButton>
           )}
         </div>
@@ -194,9 +196,9 @@ export function TestsPage() {
         <div className="screen-scroll no-nav" style={{ padding: '14px 14px 110px' }}>
           {openId === 1 && (
             <>
-              <div style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 8px' }}>Antecedentes patológicos</div>
+              <div style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 8px' }}>{t('Antecedentes patológicos')}</div>
               <ChipGrid items={ANTECS} selected={chips} toggle={(i) => toggle(chips, setChips, i)} />
-              <div style={{ fontSize: 12, fontWeight: 700, margin: '14px 0 8px' }}>Revisión por sistemas</div>
+              <div style={{ fontSize: 12, fontWeight: 700, margin: '14px 0 8px' }}>{t('Revisión por sistemas')}</div>
               {SISTEMAS.map((s, i) => (
                 <div key={s.s} style={{ border: `1.5px solid ${s.bg}`, borderRadius: 12, marginBottom: 8, overflow: 'hidden' }}>
                   <button
@@ -224,7 +226,7 @@ export function TestsPage() {
                   )}
                 </div>
               ))}
-              <div style={{ fontSize: 12, fontWeight: 700, margin: '8px 0' }}>Antecedentes familiares</div>
+              <div style={{ fontSize: 12, fontWeight: 700, margin: '8px 0' }}>{t('Antecedentes familiares')}</div>
               <ChipGrid items={FAM_HX} selected={fam} toggle={(i) => toggle(fam, setFam, i)} />
             </>
           )}
@@ -240,7 +242,7 @@ export function TestsPage() {
 
           {openId === 5 && (
             <>
-              <div style={{ fontSize: 12, fontWeight: 700, margin: '8px 0' }}>Señales de alerta</div>
+              <div style={{ fontSize: 12, fontWeight: 700, margin: '8px 0' }}>{t('Señales de alerta')}</div>
               <ChipGrid items={SLEEP_FLAGS} selected={flags} toggle={(i) => toggle(flags, setFlags, i)} />
             </>
           )}
@@ -260,7 +262,7 @@ export function TestsPage() {
                 onAnswer={(i, v) => setAnswers((a) => ({ ...a, 9: { ...(a[9] ?? {}), [i]: v } }))}
               />
               <div style={{ background: 'linear-gradient(145deg,#102a50,#173c73)', borderRadius: 16, padding: 14, marginTop: 8 }}>
-                <div style={{ color: 'var(--ice)', fontWeight: 700, fontSize: 12, marginBottom: 10 }}>¿Qué priorizarías primero?</div>
+                <div style={{ color: 'var(--ice)', fontWeight: 700, fontSize: 12, marginBottom: 10 }}>{t('¿Qué priorizarías primero?')}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {PRIORITIES.map((p) => (
                     <button
@@ -288,7 +290,7 @@ export function TestsPage() {
       {openId && !showResult && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 14px calc(16px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(transparent,#fff 30%)' }}>
           <IonButton expand="block" className="bt bt-teal" onClick={saveTest}>
-            Guardar evaluación
+            {t('Guardar evaluación')}
           </IonButton>
         </div>
       )}

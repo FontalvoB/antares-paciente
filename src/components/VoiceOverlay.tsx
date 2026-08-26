@@ -3,9 +3,11 @@ import { IonButton, IonIcon, IonModal } from '@ionic/react'
 import { call, mic, micOff } from 'ionicons/icons'
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 
 export function VoiceOverlay() {
   const { voiceOpen, closeVoice, showToast } = useApp()
+  const t = useT()
   const [muted, setMuted] = useState(false)
 
   return (
@@ -15,10 +17,10 @@ export function VoiceOverlay() {
           <IonIcon icon={mic} style={{ fontSize: 56, color: 'var(--ice)' }} />
         </div>
         <div className="display" style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
-          Agente de voz ANTARES
+          {t('Agente de voz ANTARES')}
         </div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', textAlign: 'center', maxWidth: 280, lineHeight: 1.6 }}>
-          Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.
+          {t('Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ice)', fontSize: 13 }}>
           <div className="waves">
@@ -28,7 +30,7 @@ export function VoiceOverlay() {
             <span className="wave" />
             <span className="wave" />
           </div>
-          {muted ? 'Micrófono silenciado' : 'Escuchando…'}
+          {muted ? t('Micrófono silenciado') : t('Escuchando…')}
         </div>
         <div
           style={{
@@ -42,7 +44,7 @@ export function VoiceOverlay() {
             lineHeight: 1.65,
           }}
         >
-          Hola María, soy tu agente de salud ANTARES. ¿Cómo te sientes hoy? Puedes preguntarme sobre síntomas, tu plan nutricional o agendar una cita.
+          {t('Hola María, soy tu agente de salud ANTARES. ¿Cómo te sientes hoy? Puedes preguntarme sobre síntomas, tu plan nutricional o agendar una cita.')}
         </div>
         <div style={{ display: 'flex', gap: 14 }}>
           <IonButton
@@ -57,7 +59,7 @@ export function VoiceOverlay() {
             style={{ '--background': 'var(--panic)', '--color': '#fff' } as CSSProperties}
             onClick={() => {
               closeVoice()
-              showToast('Llamada de voz finalizada', 'ok')
+              showToast(t('Llamada de voz finalizada'), 'ok')
             }}
           >
             <IonIcon icon={call} style={{ fontSize: 24 }} />

@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { close, flame, star } from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 import {
   CIRCUIT_STEPS,
   DAY_BONUS_PTS,
@@ -41,11 +42,11 @@ import { paneMotion } from './program/ui'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
 
-function greeting() {
+function greeting(t: (s: string) => string) {
   const h = new Date().getHours()
-  if (h < 12) return 'Buenos días'
-  if (h < 19) return 'Buenas tardes'
-  return 'Buenas noches'
+  if (h < 12) return t('Buenos días')
+  if (h < 19) return t('Buenas tardes')
+  return t('Buenas noches')
 }
 
 function buildMonthCells() {
@@ -85,6 +86,7 @@ export function ProgramPage() {
     connectWatch,
   } = useApp()
 
+  const t = useT()
   const [tab, setTab] = useState<ProgramTab>('hoy')
   const [active, setActive] = useState<ProgramTaskId | null>(null)
   const [celebrate, setCelebrate] = useState(false)
@@ -99,12 +101,12 @@ export function ProgramPage() {
   const [takenAt, setTakenAt] = useState('')
   const prevAll = useRef(false)
 
-  const doneCount = PROGRAM_TASKS.filter((t) => program[t.id]).length
+  const doneCount = PROGRAM_TASKS.filter((pt) => program[pt.id]).length
   const allDone = doneCount === PROGRAM_TASKS.length
-  const currentId = PROGRAM_TASKS.find((t) => !program[t.id])?.id
+  const currentId = PROGRAM_TASKS.find((pt) => !program[pt.id])?.id
   const todayIdx = weekdayMondayIndex()
   const weekPct = programWeek / PROGRAM_WEEKS
-  const task = useMemo(() => PROGRAM_TASKS.find((t) => t.id === active) ?? null, [active])
+  const task = useMemo(() => PROGRAM_TASKS.find((pt) => pt.id === active) ?? null, [active])
   const lvl = levelForXp(pointsTotal)
   const first = user.nombre.split(' ')[0]
   const cells = useMemo(buildMonthCells, [])
@@ -130,7 +132,7 @@ export function ProgramPage() {
     if (program[id]) return
     completeStep(id, pts)
     const willComplete = doneCount + 1 === PROGRAM_TASKS.length
-    showToast(willComplete ? `${msg} · Bonus +${DAY_BONUS_PTS}` : msg, 'ok')
+    showToast(willComplete ? `${msg} · ${t('Bonus +{pts}', { pts: String(DAY_BONUS_PTS) })}` : msg, 'ok')
     burst(willComplete ? pts + DAY_BONUS_PTS : pts, willComplete)
     if (id === 'nutribiotico') {
       const n = new Date()
@@ -178,7 +180,7 @@ export function ProgramPage() {
     setExRunning(false)
     if (!program.ejercicio) {
       completeStep('ejercicio', 150)
-      showToast('Circuito completado · +150 pts', 'ok')
+      showToast(t('Circuito completado · +150 pts'), 'ok')
       setXpPop(150)
       window.setTimeout(() => setXpPop(null), 900)
       setActive(null)
@@ -189,7 +191,7 @@ export function ProgramPage() {
     if (program.ejercicio) return
     if (exStep >= CIRCUIT_STEPS.length - 1) {
       setExRunning(false)
-      finish('ejercicio', 150, 'Circuito completado · +150 pts')
+      finish('ejercicio', 150, t('Circuito completado · +150 pts'))
       return
     }
     const next = exStep + 1
@@ -201,12 +203,12 @@ export function ProgramPage() {
     <Screen>
       <Scroll>
         <div className="hero hero-cosmos dash-hero">
-          <div className="kicker">MI TRANSFORMACIÓN · COPP-ADRESD</div>
+          <div className="kicker">{t('MI TRANSFORMACIÓN · COPP-ADRESD')}</div>
           <div className="h1">
-            {greeting()}, {first}
+            {greeting(t)}, {first}
           </div>
           <div className="sub">
-            Semana {programWeek} de {PROGRAM_WEEKS} · Cada día cuenta
+            {t('Semana {programWeek} de {programWeeks} · Cada día cuenta', { programWeek: String(programWeek), programWeeks: String(PROGRAM_WEEKS) })}
           </div>
 
           <div className="hero-pills">
@@ -220,7 +222,7 @@ export function ProgramPage() {
                 <IonIcon icon={flame} />
               </div>
               <div className="hpill-val">{streak}</div>
-              <div className="hpill-lbl">Racha</div>
+              <div className="hpill-lbl">{t('Racha')}</div>
             </button>
             <div className="hpill hpill-xp">
               <div className="hpill-ico">
@@ -235,14 +237,14 @@ export function ProgramPage() {
             </button>
             <button type="button" className="hpill hpill-ts" onClick={() => setTab('evo')} aria-label="Ver evolución">
               <div className="hpill-val">+27%</div>
-              <div className="hpill-lbl">Evolución</div>
+              <div className="hpill-lbl">{t('Evolución')}</div>
             </button>
           </div>
 
           <div className="lvl-bar-wrap">
             <div className="lvl-row">
               <div className="lvl-name">
-                Nivel {lvl.level} — {lvl.name}
+                {t('Nivel {level} — {name}', { level: String(lvl.level), name: lvl.name })}
               </div>
               <div className="lvl-xp">
                 {pointsTotal.toLocaleString('es-ES')} / {lvl.max.toLocaleString('es-ES')} XP
@@ -263,9 +265,9 @@ export function ProgramPage() {
 
         <div className="duo-seg-wrap">
           <IonSegment value={tab} onIonChange={(e) => setTab((e.detail.value as ProgramTab) || 'hoy')}>
-            <IonSegmentButton value="hoy">Hoy</IonSegmentButton>
-            <IonSegmentButton value="racha">Racha</IonSegmentButton>
-            <IonSegmentButton value="evo">Evolución</IonSegmentButton>
+            <IonSegmentButton value="hoy">{t('Hoy')}</IonSegmentButton>
+            <IonSegmentButton value="racha">{t('Racha')}</IonSegmentButton>
+            <IonSegmentButton value="evo">{t('Evolución')}</IonSegmentButton>
           </IonSegment>
         </div>
 
@@ -320,16 +322,16 @@ export function ProgramPage() {
               <div className="lesson-sheet-head">
                 <div>
                   <div className="kicker" style={{ color: 'var(--mu)' }}>
-                    {task.emoji} Misión · +{task.pts} pts
+                    {task.emoji} {t('Misión · +{pts} pts', { pts: String(task.pts) })}
                   </div>
-                  <h2>{task.title}</h2>
-                  <p>{task.hint}</p>
+                  <h2>{t(task.title)}</h2>
+                  <p>{t(task.hint)}</p>
                 </div>
-                <IonButton fill="clear" aria-label="Cerrar" onClick={() => setActive(null)}>
+                <IonButton fill="clear" aria-label={t('Cerrar')} onClick={() => setActive(null)}>
                   <IonIcon slot="icon-only" icon={close} />
                 </IonButton>
               </div>
-              {program[task.id] && <div className="lesson-done-banner">Completada hoy · +{task.pts} pts</div>}
+              {program[task.id] && <div className="lesson-done-banner">{t('Completada hoy · +{pts} pts', { pts: String(task.pts) })}</div>}
 
               {task.id === 'podcast' && (
                 <PodcastLesson
@@ -339,7 +341,7 @@ export function ProgramPage() {
                   progress={podProgress}
                   onToggle={() => setPodPlaying((v) => !v)}
                   onSkip={(d) => setPodProgress((p) => Math.min(1, Math.max(0, p + d / PODCAST_EPISODE.durationSec)))}
-                  onComplete={() => finish('podcast', task.pts, 'Podcast escuchado · +80 pts')}
+                  onComplete={() => finish('podcast', task.pts, t('Podcast escuchado · +80 pts'))}
                 />
               )}
               {task.id === 'vitals' && (
@@ -349,9 +351,9 @@ export function ProgramPage() {
                   watchConnected={watchConnected}
                   onConnectWatch={() => {
                     connectWatch('ANTARES Watch Pro')
-                    showToast('Reloj listo para sincronizar', 'ok')
+                    showToast(t('Reloj listo para sincronizar'), 'ok')
                   }}
-                  onComplete={() => finish('vitals', task.pts, '+120 pts por signos vitales')}
+                  onComplete={() => finish('vitals', task.pts, t('+120 pts por signos vitales'))}
                 />
               )}
               {task.id === 'nut' && (
@@ -363,7 +365,7 @@ export function ProgramPage() {
                     setActive(null)
                     navigate('nut')
                   }}
-                  onComplete={() => finish('nut', task.pts, '+150 pts nutrición')}
+                  onComplete={() => finish('nut', task.pts, t('+150 pts nutrición'))}
                 />
               )}
               {task.id === 'ejercicio' && (
@@ -375,7 +377,7 @@ export function ProgramPage() {
                   running={exRunning}
                   onToggle={() => setExRunning((r) => !r)}
                   onSkip={skipStation}
-                  onComplete={() => finish('ejercicio', task.pts, 'Ejercicio del día · +150 pts')}
+                  onComplete={() => finish('ejercicio', task.pts, t('Ejercicio del día · +150 pts'))}
                 />
               )}
               {task.id === 'nutribiotico' && (
@@ -385,7 +387,7 @@ export function ProgramPage() {
                   takenAt={takenAt}
                   slot={nutriSlot}
                   onSlot={setNutriSlot}
-                  onComplete={() => finish('nutribiotico', task.pts, 'Nutribiótico registrado · +80 pts')}
+                  onComplete={() => finish('nutribiotico', task.pts, t('Nutribiótico registrado · +80 pts'))}
                 />
               )}
               {task.id === 'emocional' && (
@@ -393,8 +395,8 @@ export function ProgramPage() {
                   done={program.emocional}
                   pts={task.pts}
                   onComplete={({ barrier }) => {
-                    finish('emocional', task.pts, 'Check-in emocional · +120 pts')
-                    if (barrier) showToast('IA: registro enviado a tu equipo', 'info')
+                    finish('emocional', task.pts, t('Check-in emocional · +120 pts'))
+                    if (barrier) showToast(t('IA: registro enviado a tu equipo'), 'info')
                   }}
                 />
               )}
@@ -417,29 +419,29 @@ export function ProgramPage() {
                   <IonIcon icon={flame} />
                 </div>
                 <div className="display" style={{ fontSize: 24, fontWeight: 800 }}>
-                  ¡{streak} DÍAS!
+                  {t('¡{streak} DÍAS!', { streak: String(streak) })}
                 </div>
-                <p>Cofre del día abierto. Mañana sigue el protocolo para no romper la racha.</p>
+                <p>{t('Cofre del día abierto. Mañana sigue el protocolo para no romper la racha.')}</p>
                 <div className="ms-mini">
                   <div>
                     <b>+{pointsToday}</b>
-                    <span>pts hoy</span>
+                    <span>{t('pts hoy')}</span>
                   </div>
                   <div>
                     <b>x2 · 24h</b>
-                    <span>próximo hito</span>
+                    <span>{t('próximo hito')}</span>
                   </div>
                 </div>
                 <div className="ms-evo-mini">
                   {TRANSFORM_ROWS.slice(0, 4).map((r) => (
                     <div key={r.label}>
-                      <span>{r.label}</span>
+                      <span>{t(r.label)}</span>
                       <strong>{r.delta}</strong>
                     </div>
                   ))}
                 </div>
                 <IonButton expand="block" className="bt bt-primary" onClick={() => setCelebrate(false)}>
-                  Seguir transformándome
+                  {t('Seguir transformándome')}
                 </IonButton>
               </motion.div>
             )}

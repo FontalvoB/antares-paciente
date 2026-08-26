@@ -2975,6 +2975,13 @@ button.hpill:active {
   color: #fff;
   border-bottom-color: var(--ice);
 }
+.com-tab.lt {
+  color: var(--mu);
+}
+.com-tab.lt.on {
+  color: var(--pur);
+  border-bottom-color: var(--pur);
+}
 
 .avatar {
   border-radius: 50%;
@@ -2985,6 +2992,170 @@ button.hpill:active {
   font-weight: 700;
   flex-shrink: 0;
   font-family: 'Space Grotesk', sans-serif;
+}
+
+/* --- Comunidad: comentarios en dos capas --- */
+.cmt-root {
+  padding: 12px 0 4px;
+}
+.cmt-row {
+  display: flex;
+  gap: 9px;
+}
+.cmt-bubble {
+  flex: 1;
+  min-width: 0;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 5px 9px;
+  box-shadow: var(--shadow-sm);
+}
+.cmt-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 3px;
+}
+.cmt-name {
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
+}
+.cmt-time {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--mu);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cmt-tag {
+  padding: 2px 7px;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+}
+.cmt-body {
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cmt-reply {
+  position: relative;
+  padding: 6px 0 6px 18px;
+}
+.cmt-reply::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  bottom: 4px;
+  width: 2.5px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--pur-l), var(--pur));
+  opacity: 0.55;
+}
+.cmt-reply .cmt-row {
+  gap: 8px;
+}
+.cmt-reply .cmt-bubble {
+  background: var(--g1);
+  border-color: transparent;
+  box-shadow: none;
+  padding: 4px 7px;
+}
+.cmt-reply .cmt-name {
+  font-size: 11.5px;
+}
+.cmt-reply .cmt-body {
+  font-size: 12.5px;
+}
+.cmt-reply-btn {
+  --padding-start: 0;
+  --padding-end: 0;
+  height: 22px;
+  margin: 3px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+}
+
+/* --- Comunidad: rediseño visual --- */
+.com-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.com-tab .ionicon {
+  font-size: 15px;
+}
+.com-sech {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 4px;
+  font-weight: 800;
+  font-size: 13px;
+}
+.com-sech-ico {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.com-sech-ico.pur {
+  background: var(--pur-l);
+  color: var(--pur);
+}
+.com-sech-ico.gold {
+  background: var(--org-l);
+  color: var(--org);
+}
+.com-sech-ico.teal {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+.empty-ico {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  font-size: 24px;
+}
+.empty-ico.tone-pur {
+  background: var(--pur-l);
+  color: var(--pur);
+}
+.empty-ico.tone-gold {
+  background: var(--org-l);
+  color: var(--org);
+}
+.empty-ico.tone-teal {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+.empty-ico.tone-blue {
+  background: var(--blue-l);
+  color: var(--blue);
+}
+.empty-ico.tone-red {
+  background: var(--red-l);
+  color: var(--red);
+}
+.cmt-tag {
+  display: inline-flex;
+  align-items: center;
+}
+.cmt-reply-btn {
+  display: inline-flex;
+  align-items: center;
 }
 
 .fade-up {
@@ -5319,10 +5490,19 @@ ion-button.login-signup-btn {
 }
 
 .login-screen {
-  display: block;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: #fff;
   animation: none;
+}
+
+.login-lang-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 14px 0;
+  flex-shrink: 0;
+  z-index: 2;
 }
 
 .login-screen::after {
@@ -5331,7 +5511,9 @@ ion-button.login-signup-btn {
 
 .login-layout {
   width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  height: auto;
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(400px, 0.96fr);
   overflow: hidden;
@@ -5907,9 +6089,14 @@ ion-button.login-submit ion-icon {
     border-radius: 28px;
   }
 
+  .login-screen {
+    overflow-y: auto;
+  }
+
   .login-layout {
     grid-template-columns: 1fr;
-    overflow-y: auto;
+    overflow: visible;
+    flex: none;
   }
 
   .login-brand {
@@ -8303,3 +8490,26 @@ ion-input.vt-input.has-focus {
   }
 }
 
+/* -- Chat FAB: bot�n flotante de acceso r�pido al chat --------------------- */
+.chat-fab {
+  position: fixed;
+  right: 18px;
+  bottom: calc(var(--nav-h) + 16px);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  /* Gradiente primario de la app (bt-primary): azul oscuro → azul */
+  background: linear-gradient(110deg, #173b73, #2f78df);
+  border: none;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  z-index: 60;
+  transition: transform 0.18s var(--ease, ease), box-shadow 0.18s var(--ease, ease);
+}
+.chat-fab:active {
+  transform: scale(0.92);
+}
