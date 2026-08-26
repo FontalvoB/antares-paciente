@@ -862,5 +862,20 @@
   "08/07/2026 · Telemedicina": "08/07/2026 · Telemedicine",
   "01/07/2026 · Presencial": "01/07/2026 · In person",
   "25/06/2026 · Telemedicina": "25/06/2026 · Telemedicine",
-  "PENDIENTE": "PENDING"
+  "PENDIENTE": "PENDING",
+  "Dr. Ramírez": "Dr. Ramírez",
+  "Activar SOS ahora. Quedan {count} segundos": "Activate SOS now. {count} seconds remaining",
+  "continuar": "continue",
+  "Tu programa de hoy": "Your program today",
+  "Racha de {streak} días protegida": "{streak}-day streak protected",
+  "Check-in clínico": "Clinical check-in",
+  "Signos de ahora": "Current signs",
+  "Compara con ayer. La tendencia importa más que un solo número.": "Compare with yesterday. The trend matters more than a single number.",
+  "Leyendo el reloj…": "Reading the watch...",
+  "Sincronizar ANTARES Watch": "Sync ANTARES Watch",
+  "FC, SpO2, presión y más": "HR, SpO2, pressure and more",
+  "Autollenar con la última medición": "Auto-fill with last measurement",
+  "Conectar reloj": "Connect watch",
+  "Autollenar FC, SpO2, presión y peso": "Auto-fill HR, SpO2, pressure and weight",
+  "Ayer": "Yesterday"
 }
