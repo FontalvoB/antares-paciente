@@ -197,8 +197,8 @@ export function LoginPage() {
   const fullName = lookup ? `${lookup.firstName} ${lookup.lastName}`.trim() : ''
 
   return (
-    <div className="screen login-screen" style={{ position: 'relative' }}>
-    <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+    <div className="screen login-screen">
+    <div className="login-lang-bar">
         <LanguageToggle />
       </div>
       <div className="login-layout">
