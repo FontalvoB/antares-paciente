@@ -223,7 +223,7 @@ export function PanicOverlay() {
                     type="button"
                     className={`sos-orb ${sosActive ? 'hot' : ''}`}
                     onClick={activateSos}
-                    aria-label={sosActive ? t('SOS activado') : t(`Activar SOS ahora. Quedan ${count} segundos`)}
+                    aria-label={sosActive ? t('SOS activado') : t('Activar SOS ahora. Quedan {count} segundos', { count: String(count) })}
                   >
                     {sosActive ? (
                       <IonIcon icon={medkit} />
