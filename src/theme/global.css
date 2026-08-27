@@ -16,8 +16,16 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 18% 8%, rgba(32, 200, 255, 0.22) 0%, transparent 52%),
-    radial-gradient(ellipse at 88% 92%, rgba(47, 120, 223, 0.28) 0%, transparent 48%),
+    radial-gradient(
+      ellipse at 18% 8%,
+      rgba(32, 200, 255, 0.22) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse at 88% 92%,
+      rgba(47, 120, 223, 0.28) 0%,
+      transparent 48%
+    ),
     var(--cosmos);
   padding: 12px;
 }
@@ -78,13 +86,27 @@ body {
   opacity: 0;
   animation: onb-unfold 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-.onb-page .onb-stack > *:nth-child(1) { animation-delay: 0.04s; }
-.onb-page .onb-stack > *:nth-child(2) { animation-delay: 0.1s; }
-.onb-page .onb-stack > *:nth-child(3) { animation-delay: 0.16s; }
-.onb-page .onb-stack > *:nth-child(4) { animation-delay: 0.22s; }
-.onb-page .onb-stack > *:nth-child(5) { animation-delay: 0.28s; }
-.onb-page .onb-stack > *:nth-child(6) { animation-delay: 0.34s; }
-.onb-page .onb-stack > *:nth-child(n + 7) { animation-delay: 0.4s; }
+.onb-page .onb-stack > *:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.onb-page .onb-stack > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.onb-page .onb-stack > *:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.onb-page .onb-stack > *:nth-child(4) {
+  animation-delay: 0.22s;
+}
+.onb-page .onb-stack > *:nth-child(5) {
+  animation-delay: 0.28s;
+}
+.onb-page .onb-stack > *:nth-child(6) {
+  animation-delay: 0.34s;
+}
+.onb-page .onb-stack > *:nth-child(n + 7) {
+  animation-delay: 0.4s;
+}
 
 @keyframes onb-unfold {
   from {
@@ -141,7 +163,7 @@ ion-button.onb-back-login {
 }
 
 .onb-head-brand {
-  font-family: 'Sora', 'Space Grotesk', sans-serif;
+  font-family: "Sora", "Space Grotesk", sans-serif;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 2px;
@@ -150,7 +172,7 @@ ion-button.onb-back-login {
 
 .onb-head-title {
   margin: 10px 0 4px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.6px;
@@ -179,7 +201,7 @@ ion-button.onb-back-login {
   place-items: center;
   font-size: 11px;
   font-weight: 800;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   background: var(--g1);
   color: var(--mu);
   flex-shrink: 0;
@@ -236,11 +258,21 @@ ion-button.onb-back-login {
   border-top: 3px solid var(--blue);
 }
 
-.onb-card.tone-teal { border-top-color: var(--teal); }
-.onb-card.tone-ice { border-top-color: var(--cyan); }
-.onb-card.tone-pur { border-top-color: var(--pur); }
-.onb-card.tone-org { border-top-color: var(--org); }
-.onb-card.tone-panic { border-top-color: var(--panic); }
+.onb-card.tone-teal {
+  border-top-color: var(--teal);
+}
+.onb-card.tone-ice {
+  border-top-color: var(--cyan);
+}
+.onb-card.tone-pur {
+  border-top-color: var(--pur);
+}
+.onb-card.tone-org {
+  border-top-color: var(--org);
+}
+.onb-card.tone-panic {
+  border-top-color: var(--panic);
+}
 
 .onb-card-head {
   display: flex;
@@ -261,11 +293,26 @@ ion-button.onb-back-login {
   flex-shrink: 0;
 }
 
-.onb-card-ico.tone-teal { background: var(--teal-l); color: var(--teal); }
-.onb-card-ico.tone-ice { background: var(--ice-l); color: var(--ice-d); }
-.onb-card-ico.tone-pur { background: var(--pur-l); color: var(--pur); }
-.onb-card-ico.tone-org { background: var(--org-l); color: var(--org); }
-.onb-card-ico.tone-panic { background: var(--red-l); color: var(--panic); }
+.onb-card-ico.tone-teal {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+.onb-card-ico.tone-ice {
+  background: var(--ice-l);
+  color: var(--ice-d);
+}
+.onb-card-ico.tone-pur {
+  background: var(--pur-l);
+  color: var(--pur);
+}
+.onb-card-ico.tone-org {
+  background: var(--org-l);
+  color: var(--org);
+}
+.onb-card-ico.tone-panic {
+  background: var(--red-l);
+  color: var(--panic);
+}
 
 .onb-card-head strong {
   display: block;
@@ -587,7 +634,7 @@ ion-button.onb-back-login {
 }
 
 .hero::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -595,18 +642,30 @@ ion-button.onb-back-login {
   opacity: 0.72;
   background-image:
     radial-gradient(1px 1px at 16% 28%, rgba(255, 255, 255, 0.55), transparent),
-    radial-gradient(1.5px 1.5px at 78% 16%, rgba(98, 216, 255, 0.5), transparent),
+    radial-gradient(
+      1.5px 1.5px at 78% 16%,
+      rgba(98, 216, 255, 0.5),
+      transparent
+    ),
     radial-gradient(1px 1px at 42% 72%, rgba(255, 255, 255, 0.4), transparent),
     radial-gradient(1px 1px at 88% 58%, rgba(255, 255, 255, 0.35), transparent),
-    radial-gradient(1.5px 1.5px at 12% 86%, rgba(32, 200, 255, 0.4), transparent);
+    radial-gradient(
+      1.5px 1.5px at 12% 86%,
+      rgba(32, 200, 255, 0.4),
+      transparent
+    );
 }
 
 .hero::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 78% -18%, rgba(32, 200, 255, 0.28), transparent 58%),
+    radial-gradient(
+      ellipse at 78% -18%,
+      rgba(32, 200, 255, 0.28),
+      transparent 58%
+    ),
     linear-gradient(180deg, transparent 62%, rgba(7, 20, 40, 0.18));
   pointer-events: none;
   z-index: 0;
@@ -638,7 +697,7 @@ ion-button.onb-back-login {
 }
 
 .h1 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 700;
   line-height: 1.12;
@@ -647,7 +706,7 @@ ion-button.onb-back-login {
 }
 
 .h2 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   margin: 0 0 4px;
@@ -744,7 +803,7 @@ ion-button.onb-back-login {
   letter-spacing: 0.3px;
 }
 .kpi-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--tx);
@@ -768,7 +827,7 @@ ion-button.onb-back-login {
   letter-spacing: 0.4px;
 }
 .sec::after {
-  content: '';
+  content: "";
   flex: 1;
   height: 1px;
   background: var(--g1);
@@ -789,17 +848,24 @@ ion-button.onb-back-login {
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
 }
 
 .card::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    transparent
+  );
   pointer-events: none;
 }
 
@@ -808,7 +874,7 @@ ion-button.onb-back-login {
 }
 
 .card-accent::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -893,7 +959,9 @@ ion-button.onb-back-login {
   gap: 8px;
   width: 100%;
   min-height: 48px;
-  transition: transform 0.15s var(--ease), opacity 0.15s;
+  transition:
+    transform 0.15s var(--ease),
+    opacity 0.15s;
   letter-spacing: 0.2px;
 }
 
@@ -957,7 +1025,9 @@ ion-button.onb-back-login {
   color: var(--tx);
   outline: none;
   background: #fff;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 .field > input:focus,
 .field > select:focus,
@@ -1014,7 +1084,9 @@ ion-button.onb-back-login {
   display: grid;
   place-items: center;
   font-size: 22px;
-  transition: background 0.18s var(--ease), color 0.18s var(--ease);
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease);
 }
 
 .ni.on:not(.ni-sos) .ni-ico {
@@ -1059,7 +1131,7 @@ ion-button.onb-back-login {
   z-index: 1;
 }
 .ni-sos .ni-ico::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -8px;
   border-radius: 50%;
@@ -1069,7 +1141,9 @@ ion-button.onb-back-login {
 }
 .ni-sos:active .ni-ico {
   transform: translateY(6px);
-  box-shadow: 0 4px 0 #8b1238, 0 8px 16px rgba(255, 45, 85, 0.35);
+  box-shadow:
+    0 4px 0 #8b1238,
+    0 8px 16px rgba(255, 45, 85, 0.35);
 }
 .ni-sos span:last-child {
   font-weight: 800;
@@ -1116,23 +1190,36 @@ ion-button.onb-back-login {
 
 .overlay-panic {
   background:
-    radial-gradient(ellipse at 50% 18%, rgba(255, 45, 85, 0.28), transparent 48%),
+    radial-gradient(
+      ellipse at 50% 18%,
+      rgba(255, 45, 85, 0.28),
+      transparent 48%
+    ),
     radial-gradient(ellipse at 80% 90%, rgba(139, 0, 0, 0.35), transparent 46%),
     #090105;
   justify-content: flex-start;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px
+    calc(18px + env(safe-area-inset-bottom, 0px));
   gap: 0;
 }
 .overlay-panic.is-hot {
   background:
-    radial-gradient(ellipse at 50% 12%, rgba(255, 45, 85, 0.42), transparent 50%),
+    radial-gradient(
+      ellipse at 50% 12%,
+      rgba(255, 45, 85, 0.42),
+      transparent 50%
+    ),
     #120208;
 }
 .overlay-panic.is-call-fam {
   background:
-    radial-gradient(ellipse at 50% 16%, rgba(98, 216, 255, 0.22), transparent 50%),
+    radial-gradient(
+      ellipse at 50% 16%,
+      rgba(98, 216, 255, 0.22),
+      transparent 50%
+    ),
     #061018;
 }
 
@@ -1157,7 +1244,9 @@ ion-button.onb-back-login {
     box-shadow: 0 0 40px rgba(32, 200, 255, 0.35);
   }
   50% {
-    box-shadow: 0 0 70px rgba(32, 200, 255, 0.55), 0 0 0 22px rgba(32, 200, 255, 0);
+    box-shadow:
+      0 0 70px rgba(32, 200, 255, 0.55),
+      0 0 0 22px rgba(32, 200, 255, 0);
   }
 }
 
@@ -1380,6 +1469,19 @@ ion-button.onb-back-login {
   box-shadow: var(--shadow-sm);
 }
 
+/* Icono circular de las cards de tests (batería de evaluación inicial):
+   el emoji del test sobre un círculo pastel, como el diseño original. */
+.ts-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
 .prow:active {
   transform: scale(0.99);
 }
@@ -1392,7 +1494,7 @@ ion-button.onb-back-login {
   text-align: center;
   font-size: 22px;
   font-weight: 700;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   outline: none;
 }
 .otp:focus,
@@ -1499,7 +1601,7 @@ ion-button.onb-back-login {
   font-weight: 700;
   color: var(--mu);
   background: #fff;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
 }
 .tq-opt.sel {
   border-color: var(--teal);
@@ -1545,7 +1647,7 @@ ion-button.onb-back-login {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
 }
 .prog-step.done .ps-num {
   background: var(--teal);
@@ -1587,7 +1689,7 @@ ion-button.onb-back-login {
 
 .duo-stat strong {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 16px;
   font-weight: 800;
   line-height: 1.1;
@@ -1707,7 +1809,9 @@ ion-button.onb-back-login {
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+  transition:
+    transform 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
 }
 
 .duo-node ion-icon {
@@ -1720,7 +1824,11 @@ ion-button.onb-back-login {
 }
 
 .duo-node.tone-red {
-  background: linear-gradient(180deg, var(--red), color-mix(in srgb, var(--red) 70%, var(--navy)));
+  background: linear-gradient(
+    180deg,
+    var(--red),
+    color-mix(in srgb, var(--red) 70%, var(--navy))
+  );
   box-shadow: 0 8px 0 color-mix(in srgb, var(--red) 72%, var(--navy));
 }
 
@@ -1735,7 +1843,11 @@ ion-button.onb-back-login {
 }
 
 .duo-node.tone-org {
-  background: linear-gradient(180deg, var(--org), color-mix(in srgb, var(--org) 70%, var(--navy)));
+  background: linear-gradient(
+    180deg,
+    var(--org),
+    color-mix(in srgb, var(--org) 70%, var(--navy))
+  );
   box-shadow: 0 8px 0 color-mix(in srgb, var(--org) 72%, var(--navy));
 }
 
@@ -2031,7 +2143,7 @@ ion-button.onb-back-login {
 
 .lesson-sheet-head h2 {
   margin: 4px 0 2px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 20px;
   font-weight: 800;
   color: var(--tx);
@@ -2098,7 +2210,9 @@ ion-button.onb-back-login {
   font: inherit;
   color: inherit;
   cursor: pointer;
-  transition: transform 0.12s var(--ease), background 0.12s var(--ease);
+  transition:
+    transform 0.12s var(--ease),
+    background 0.12s var(--ease);
 }
 button.hpill:active {
   transform: scale(0.96);
@@ -2112,7 +2226,7 @@ button.hpill:active {
   font-size: 16px;
 }
 .hpill-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 15px;
   font-weight: 800;
   color: #fff;
@@ -2234,7 +2348,7 @@ button.hpill:active {
   margin: 16px 16px 8px;
 }
 .stitle::after {
-  content: '';
+  content: "";
   flex: 1;
   height: 1px;
   background: var(--bd);
@@ -2253,7 +2367,7 @@ button.hpill:active {
   color: #fff;
 }
 .nb-card::after {
-  content: '💊';
+  content: "💊";
   position: absolute;
   right: -6px;
   bottom: -10px;
@@ -2341,7 +2455,7 @@ button.hpill:active {
   margin-bottom: 12px;
 }
 .cal-streak {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--org);
@@ -2405,12 +2519,14 @@ button.hpill:active {
   animation: calGlow 2s ease-in-out infinite;
 }
 .cal-cell.mile::after {
-  content: '🏆';
+  content: "🏆";
   font-size: 8px;
 }
 @keyframes calGlow {
   50% {
-    box-shadow: 0 0 0 2px var(--ice), 0 0 8px rgba(32, 200, 255, 0.45);
+    box-shadow:
+      0 0 0 2px var(--ice),
+      0 0 8px rgba(32, 200, 255, 0.45);
   }
 }
 .cal-legend {
@@ -2497,7 +2613,7 @@ button.hpill:active {
   justify-content: center;
 }
 .hs-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 800;
   line-height: 1;
@@ -2563,7 +2679,7 @@ button.hpill:active {
   margin-bottom: 8px;
 }
 .tf-score {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 28px;
   font-weight: 800;
   color: var(--pur);
@@ -2898,7 +3014,7 @@ button.hpill:active {
 }
 .ms-mini b {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
 }
 .ms-mini span {
@@ -2927,7 +3043,7 @@ button.hpill:active {
   top: 42%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 32px;
   font-weight: 800;
   color: var(--ice);
@@ -2991,7 +3107,7 @@ button.hpill:active {
   color: #fff;
   font-weight: 700;
   flex-shrink: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
 }
 
 /* --- Comunidad: comentarios en dos capas --- */
@@ -3045,7 +3161,7 @@ button.hpill:active {
   padding: 6px 0 6px 18px;
 }
 .cmt-reply::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 8px;
   top: 4px;
@@ -3220,7 +3336,7 @@ button.hpill:active {
 }
 
 .brand-lockup-word {
-  font-family: 'Sora', 'Space Grotesk', sans-serif;
+  font-family: "Sora", "Space Grotesk", sans-serif;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 2.4px;
@@ -3253,13 +3369,18 @@ button.hpill:active {
 }
 
 .cta-banner::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 14px;
   right: 14px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
   pointer-events: none;
 }
 
@@ -3314,7 +3435,7 @@ button.hpill:active {
 }
 
 .cta-banner-program .cta-banner-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   color: var(--ice);
 }
 
@@ -3346,7 +3467,7 @@ button.hpill:active {
 }
 
 .hero-metric-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 800;
 }
@@ -3394,7 +3515,7 @@ button.hpill:active {
 
 .page-head-title {
   margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 32px;
   font-weight: 700;
   letter-spacing: -1.2px;
@@ -3451,7 +3572,7 @@ button.hpill:active {
 
 .home-head-name {
   margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.8px;
@@ -3465,7 +3586,7 @@ button.hpill:active {
   border: 2px solid rgba(255, 255, 255, 0.35);
   background: linear-gradient(145deg, #1a6ad8, #20c8ff);
   color: #fff;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;
@@ -3509,7 +3630,7 @@ button.hpill:active {
 }
 
 .metric-card-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.8px;
@@ -3561,7 +3682,7 @@ button.hpill:active {
 }
 
 .today-card-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   margin-top: 2px;
@@ -3613,7 +3734,7 @@ button.hpill:active {
 
 .next-appt-time strong {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--tx);
@@ -3680,10 +3801,12 @@ button.hpill:active {
   height: 36px;
   border-radius: 50%;
   background: linear-gradient(180deg, #ff5b78, var(--panic));
-  box-shadow: 0 6px 0 #8b1238, 0 10px 18px rgba(255, 45, 85, 0.35);
+  box-shadow:
+    0 6px 0 #8b1238,
+    0 10px 18px rgba(255, 45, 85, 0.35);
 }
 .quick-btn.panic .quick-btn-ico::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: -5px;
   border-radius: 50%;
@@ -3844,14 +3967,16 @@ button.hpill:active {
   color: #eaf9ff;
   font-size: 28px;
   background: linear-gradient(145deg, #1a6ad8, #20c8ff);
-  box-shadow: 0 12px 28px rgba(32, 120, 223, 0.35), inset 0 1px rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 12px 28px rgba(32, 120, 223, 0.35),
+    inset 0 1px rgba(255, 255, 255, 0.4);
   z-index: 1;
 }
 
 .watch-pair-title {
   margin: 0 0 6px;
   text-align: center;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 700;
 }
@@ -3911,10 +4036,18 @@ button.hpill:active {
   background: var(--bd);
 }
 
-.bt-signal i:nth-child(1) { height: 5px; }
-.bt-signal i:nth-child(2) { height: 8px; }
-.bt-signal i:nth-child(3) { height: 11px; }
-.bt-signal i:nth-child(4) { height: 14px; }
+.bt-signal i:nth-child(1) {
+  height: 5px;
+}
+.bt-signal i:nth-child(2) {
+  height: 8px;
+}
+.bt-signal i:nth-child(3) {
+  height: 11px;
+}
+.bt-signal i:nth-child(4) {
+  height: 14px;
+}
 
 .bt-signal i.on {
   background: var(--teal);
@@ -3989,7 +4122,7 @@ button.hpill:active {
 }
 
 .vital-hero-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 48px;
   font-weight: 700;
   letter-spacing: -1.6px;
@@ -4099,7 +4232,7 @@ ion-item.group-item p {
 }
 
 .appt-featured-when {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.8px;
@@ -4522,8 +4655,16 @@ ion-modal.request-modal::part(content) {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 88% -20%, rgba(32, 200, 255, 0.28), transparent 58%),
-    radial-gradient(ellipse at 8% 120%, rgba(29, 158, 117, 0.22), transparent 50%);
+    radial-gradient(
+      ellipse at 88% -20%,
+      rgba(32, 200, 255, 0.28),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse at 8% 120%,
+      rgba(29, 158, 117, 0.22),
+      transparent 50%
+    );
   pointer-events: none;
 }
 
@@ -4575,7 +4716,7 @@ ion-button.req-hero-btn {
 }
 
 .req-dot::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   right: 0;
@@ -4596,7 +4737,7 @@ ion-button.req-hero-btn {
 
 .req-hero-title {
   margin: 4px 0 6px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.8px;
@@ -4686,23 +4827,31 @@ ion-radio.req-type-card {
 ion-radio.req-type-card.sel,
 ion-radio.req-mode-card.sel {
   border-color: var(--teal);
-  box-shadow: 0 0 0 2px rgba(29, 158, 117, 0.18), var(--shadow-md);
+  box-shadow:
+    0 0 0 2px rgba(29, 158, 117, 0.18),
+    var(--shadow-md);
   transform: translateY(-1px);
 }
 
 ion-radio.req-type-card.ac-pur.sel {
   border-color: var(--pur);
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.16), var(--shadow-md);
+  box-shadow:
+    0 0 0 2px rgba(124, 58, 237, 0.16),
+    var(--shadow-md);
 }
 
 ion-radio.req-type-card.ac-blue.sel {
   border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(47, 120, 223, 0.16), var(--shadow-md);
+  box-shadow:
+    0 0 0 2px rgba(47, 120, 223, 0.16),
+    var(--shadow-md);
 }
 
 ion-radio.req-type-card.ac-org.sel {
   border-color: var(--org);
-  box-shadow: 0 0 0 2px rgba(232, 123, 43, 0.18), var(--shadow-md);
+  box-shadow:
+    0 0 0 2px rgba(232, 123, 43, 0.18),
+    var(--shadow-md);
 }
 
 .req-type-inner,
@@ -4733,9 +4882,15 @@ ion-radio.req-type-card .req-type-inner {
   color: var(--teal);
 }
 
-ion-radio.req-type-card.ac-pur .req-type-check { color: var(--pur); }
-ion-radio.req-type-card.ac-blue .req-type-check { color: var(--blue); }
-ion-radio.req-type-card.ac-org .req-type-check { color: var(--org); }
+ion-radio.req-type-card.ac-pur .req-type-check {
+  color: var(--pur);
+}
+ion-radio.req-type-card.ac-blue .req-type-check {
+  color: var(--blue);
+}
+ion-radio.req-type-card.ac-org .req-type-check {
+  color: var(--org);
+}
 
 .req-cal {
   padding: 12px 10px 10px;
@@ -4751,7 +4906,7 @@ ion-radio.req-type-card.ac-org .req-type-check { color: var(--org); }
 }
 
 .req-cal-month {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.3px;
@@ -4807,7 +4962,7 @@ ion-button.req-cal-day {
   min-width: 44px;
   min-height: 44px;
   margin: 1px auto;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 14px;
   font-weight: 700;
   --border-radius: 50%;
@@ -4835,7 +4990,7 @@ ion-button.req-cal-day.off {
 }
 
 ion-button.req-cal-day.open::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 50%;
   bottom: 5px;
@@ -4891,7 +5046,7 @@ ion-button.req-next-open {
 }
 
 .req-times-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -4940,7 +5095,7 @@ ion-button.req-slot::part(native) {
 }
 
 .req-slot-time {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -4990,7 +5145,7 @@ ion-button.req-slot.sel .req-slot-dur {
 }
 
 .req-pick strong {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 16px;
 }
 
@@ -5021,7 +5176,7 @@ ion-button.req-slot.sel .req-slot-dur {
 .req-empty strong {
   display: block;
   font-size: 16px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   color: var(--tx);
   margin-bottom: 6px;
 }
@@ -5116,10 +5271,14 @@ ion-button.req-slot.sel .req-slot-dur {
 }
 
 .login-screen::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% -12%, rgba(167, 139, 250, 0.14), transparent 55%);
+  background: radial-gradient(
+    ellipse at 50% -12%,
+    rgba(167, 139, 250, 0.14),
+    transparent 55%
+  );
   pointer-events: none;
 }
 
@@ -5131,10 +5290,18 @@ ion-button.req-slot.sel .req-slot-dur {
   background-image:
     radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.6), transparent),
     radial-gradient(1px 1px at 80% 18%, rgba(255, 255, 255, 0.4), transparent),
-    radial-gradient(1.5px 1.5px at 40% 72%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(
+      1.5px 1.5px at 40% 72%,
+      rgba(255, 255, 255, 0.5),
+      transparent
+    ),
     radial-gradient(1px 1px at 68% 55%, rgba(255, 255, 255, 0.35), transparent),
     radial-gradient(1px 1px at 14% 86%, rgba(255, 255, 255, 0.35), transparent),
-    radial-gradient(1.5px 1.5px at 90% 76%, rgba(255, 255, 255, 0.4), transparent);
+    radial-gradient(
+      1.5px 1.5px at 90% 76%,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
   animation: login-twinkle 3.5s ease-in-out infinite alternate;
 }
 
@@ -5146,10 +5313,18 @@ ion-button.req-slot.sel .req-slot-dur {
   opacity: 0.8;
   background-image:
     radial-gradient(1px 1px at 12% 48%, rgba(196, 181, 253, 0.7), transparent),
-    radial-gradient(1.5px 1.5px at 56% 12%, rgba(103, 232, 249, 0.6), transparent),
+    radial-gradient(
+      1.5px 1.5px at 56% 12%,
+      rgba(103, 232, 249, 0.6),
+      transparent
+    ),
     radial-gradient(1px 1px at 92% 42%, rgba(196, 181, 253, 0.5), transparent),
     radial-gradient(1px 1px at 34% 20%, rgba(255, 255, 255, 0.45), transparent),
-    radial-gradient(1.5px 1.5px at 76% 88%, rgba(103, 232, 249, 0.5), transparent),
+    radial-gradient(
+      1.5px 1.5px at 76% 88%,
+      rgba(103, 232, 249, 0.5),
+      transparent
+    ),
     radial-gradient(1px 1px at 48% 94%, rgba(255, 255, 255, 0.35), transparent);
   animation: login-twinkle 4.6s ease-in-out infinite alternate-reverse;
 }
@@ -5200,7 +5375,8 @@ ion-button.req-slot.sel .req-slot-dur {
   align-items: center;
   justify-content: safe center;
   scroll-behavior: auto;
-  padding: calc(24px + env(safe-area-inset-top, 0px)) 22px calc(28px + env(safe-area-inset-bottom, 0px));
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 22px
+    calc(28px + env(safe-area-inset-bottom, 0px));
 }
 
 .login-inner {
@@ -5246,7 +5422,13 @@ ion-button.req-slot.sel .req-slot-dur {
 }
 
 .login-title {
-  background: linear-gradient(90deg, #ffffff 0%, #c4b5fd 30%, #67e8f9 55%, #ffffff 100%);
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #c4b5fd 30%,
+    #67e8f9 55%,
+    #ffffff 100%
+  );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -5273,13 +5455,18 @@ ion-button.req-slot.sel .req-slot-dur {
 }
 
 .login-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 18px;
   right: 18px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
 }
 
 .login-card .field {
@@ -5395,13 +5582,18 @@ ion-button.login-submit::part(native) {
 }
 
 ion-button.login-submit::part(native)::after {
-  content: '';
+  content: "";
   position: absolute;
   top: -45%;
   bottom: -45%;
   left: -70%;
   width: 45%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.32),
+    transparent
+  );
   transform: skewX(-20deg);
   animation: login-sheen 3.4s ease-in-out infinite;
 }
@@ -5555,7 +5747,7 @@ ion-button.login-signup-btn {
 }
 
 .login-brand::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: auto 0 0;
   height: 38%;
@@ -5618,7 +5810,9 @@ ion-button.login-signup-btn {
   border-radius: 24px;
   color: #eaf9ff;
   background: linear-gradient(145deg, #1a6ad8, #20c8ff);
-  box-shadow: 0 14px 34px rgba(6, 28, 68, 0.35), inset 0 1px rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 14px 34px rgba(6, 28, 68, 0.35),
+    inset 0 1px rgba(255, 255, 255, 0.35);
   animation:
     login-logo-float 4s ease-in-out infinite,
     login-logo-pulse 2.8s ease-out infinite;
@@ -5657,7 +5851,7 @@ ion-button.login-signup-btn {
 }
 
 .login-brand-word {
-  font-family: 'Sora', 'Space Grotesk', sans-serif;
+  font-family: "Sora", "Space Grotesk", sans-serif;
   font-size: clamp(40px, 4.4vw, 68px);
   font-weight: 800;
   letter-spacing: 6px;
@@ -5676,7 +5870,7 @@ ion-button.login-signup-btn {
 .login-brand-title {
   max-width: 540px;
   margin: 0 auto;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: clamp(34px, 4.2vw, 58px);
   line-height: 1.08;
   letter-spacing: -1.4px;
@@ -5699,7 +5893,7 @@ ion-button.login-signup-btn {
 }
 
 .login-stats > div + div::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 20px;
   bottom: 20px;
@@ -5709,7 +5903,7 @@ ion-button.login-signup-btn {
 }
 
 .login-stats strong {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: clamp(24px, 2.8vw, 38px);
   line-height: 1;
 }
@@ -5782,7 +5976,7 @@ ion-button.login-signup-btn {
 .login-form-heading h1 {
   margin: 0;
   color: #14213b;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: clamp(30px, 3vw, 40px);
   line-height: 1.05;
   letter-spacing: -1px;
@@ -5836,7 +6030,9 @@ ion-input.login-input .input-bottom {
 
 ion-input.login-input.has-focus {
   border-color: #347bd9;
-  box-shadow: 0 0 0 4px rgba(52, 123, 217, 0.13), 0 3px 10px rgba(20, 53, 94, 0.07);
+  box-shadow:
+    0 0 0 4px rgba(52, 123, 217, 0.13),
+    0 3px 10px rgba(20, 53, 94, 0.07);
 }
 
 .login-password-field ion-button.fld-eye {
@@ -6268,7 +6464,6 @@ ion-button.login-submit ion-icon {
   --buffer-background: rgba(45, 118, 215, 0.16);
 }
 
-
 .login-id-note {
   display: flex;
   align-items: flex-start;
@@ -6310,7 +6505,7 @@ ion-button.login-submit ion-icon {
   border-radius: 15px;
   color: #fff;
   background: linear-gradient(145deg, #173b73, #2f78df);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 20px;
   font-weight: 800;
 }
@@ -6454,7 +6649,7 @@ ion-button.login-submit ion-icon {
 
 .login-divider::before,
 .login-divider::after {
-  content: '';
+  content: "";
   flex: 1;
   height: 1px;
   background: #e3eaf2;
@@ -6542,7 +6737,9 @@ ion-button.login-first-method:focus-visible {
   box-shadow: var(--shadow-md);
   cursor: pointer;
   z-index: 60;
-  transition: transform 0.18s var(--ease, ease), box-shadow 0.18s var(--ease, ease);
+  transition:
+    transform 0.18s var(--ease, ease),
+    box-shadow 0.18s var(--ease, ease);
 }
 .chat-fab:active {
   transform: scale(0.92);
@@ -6569,7 +6766,7 @@ ion-button.login-first-method:focus-visible {
   pointer-events: none;
 }
 .pg-ring-center b {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.6px;
@@ -6581,11 +6778,15 @@ ion-button.login-first-method:focus-visible {
   margin-top: 1px;
 }
 .pg-ring.glow::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 8px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(32, 200, 255, 0.22), transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(32, 200, 255, 0.22),
+    transparent 70%
+  );
   pointer-events: none;
   z-index: -1;
 }
@@ -6596,11 +6797,21 @@ ion-button.login-first-method:focus-visible {
   isolation: isolate;
   padding: 16px 16px 14px;
   background:
-    radial-gradient(ellipse at 92% -10%, rgba(32, 200, 255, 0.38), transparent 52%),
-    radial-gradient(ellipse at 8% 120%, rgba(29, 158, 117, 0.28), transparent 46%),
+    radial-gradient(
+      ellipse at 92% -10%,
+      rgba(32, 200, 255, 0.38),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse at 8% 120%,
+      rgba(29, 158, 117, 0.28),
+      transparent 46%
+    ),
     linear-gradient(145deg, #0c2144 0%, #173c73 48%, #1d55a0 100%);
   box-shadow: 0 18px 40px rgba(16, 42, 80, 0.28);
-  transition: transform 0.16s var(--ease), box-shadow 0.16s var(--ease);
+  transition:
+    transform 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
 }
 .prog-launch:active {
   transform: scale(0.985);
@@ -6608,7 +6819,11 @@ ion-button.login-first-method:focus-visible {
 }
 .prog-launch.done {
   background:
-    radial-gradient(ellipse at 90% 0%, rgba(48, 209, 88, 0.28), transparent 50%),
+    radial-gradient(
+      ellipse at 90% 0%,
+      rgba(48, 209, 88, 0.28),
+      transparent 50%
+    ),
     linear-gradient(145deg, #0c3d2c, #1d9e75);
 }
 .prog-launch-aurora {
@@ -6617,7 +6832,11 @@ ion-button.login-first-method:focus-visible {
   width: 220px;
   height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(98, 216, 255, 0.35), transparent 68%);
+  background: radial-gradient(
+    circle,
+    rgba(98, 216, 255, 0.35),
+    transparent 68%
+  );
   animation: pg-orb 7s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
@@ -6650,7 +6869,7 @@ ion-button.login-first-method:focus-visible {
   min-width: 0;
 }
 .prog-launch-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.3px;
@@ -6690,12 +6909,24 @@ ion-button.login-first-method:focus-visible {
 .prog-orb ion-icon {
   font-size: 16px;
 }
-.prog-orb.tone-pur { background: linear-gradient(180deg, var(--pur), var(--pur-d)); }
-.prog-orb.tone-red { background: linear-gradient(180deg, var(--red), #8a2424); }
-.prog-orb.tone-teal { background: linear-gradient(180deg, var(--teal), var(--teal-d)); }
-.prog-orb.tone-blue { background: linear-gradient(180deg, var(--blue), var(--navy-2)); }
-.prog-orb.tone-org { background: linear-gradient(180deg, var(--org), #a35416); }
-.prog-orb.tone-indigo { background: linear-gradient(180deg, var(--indigo), var(--navy-2)); }
+.prog-orb.tone-pur {
+  background: linear-gradient(180deg, var(--pur), var(--pur-d));
+}
+.prog-orb.tone-red {
+  background: linear-gradient(180deg, var(--red), #8a2424);
+}
+.prog-orb.tone-teal {
+  background: linear-gradient(180deg, var(--teal), var(--teal-d));
+}
+.prog-orb.tone-blue {
+  background: linear-gradient(180deg, var(--blue), var(--navy-2));
+}
+.prog-orb.tone-org {
+  background: linear-gradient(180deg, var(--org), #a35416);
+}
+.prog-orb.tone-indigo {
+  background: linear-gradient(180deg, var(--indigo), var(--navy-2));
+}
 .prog-orb.on {
   background: linear-gradient(180deg, var(--teal), var(--teal-d));
   border-color: rgba(255, 255, 255, 0.45);
@@ -6759,7 +6990,11 @@ ion-button.login-first-method:focus-visible {
   gap: 14px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 100% 0%, rgba(32, 200, 255, 0.28), transparent 50%),
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(32, 200, 255, 0.28),
+      transparent 50%
+    ),
     linear-gradient(145deg, #0c2144, #173c73 55%, #1487b8);
   box-shadow: 0 14px 32px rgba(16, 42, 80, 0.16);
 }
@@ -6768,7 +7003,7 @@ ion-button.login-first-method:focus-visible {
   min-width: 0;
 }
 .pg-today-copy h2 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   margin: 0 0 4px;
@@ -6831,11 +7066,15 @@ ion-button.login-first-method:focus-visible {
   border-radius: 18px;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: box-shadow 0.2s var(--ease), transform 0.16s var(--ease);
+  transition:
+    box-shadow 0.2s var(--ease),
+    transform 0.16s var(--ease);
 }
 .pg-mission.is-current,
 .pg-mission-row.is-current .pg-mission {
-  box-shadow: 0 14px 36px rgba(32, 200, 255, 0.2), 0 0 0 2px rgba(32, 200, 255, 0.4);
+  box-shadow:
+    0 14px 36px rgba(32, 200, 255, 0.2),
+    0 0 0 2px rgba(32, 200, 255, 0.4);
 }
 .pg-mission.is-done,
 .pg-mission-row.is-done .pg-mission {
@@ -6902,12 +7141,24 @@ ion-button.login-first-method:focus-visible {
 .pg-node ion-icon {
   font-size: 20px;
 }
-.pg-node.tone-pur { background: linear-gradient(180deg, var(--pur), var(--pur-d)); }
-.pg-node.tone-red { background: linear-gradient(180deg, var(--red), #8a2424); }
-.pg-node.tone-teal { background: linear-gradient(180deg, var(--teal), var(--teal-d)); }
-.pg-node.tone-blue { background: linear-gradient(180deg, var(--blue), var(--navy-2)); }
-.pg-node.tone-org { background: linear-gradient(180deg, var(--org), #a35416); }
-.pg-node.tone-indigo { background: linear-gradient(180deg, var(--indigo), var(--navy-2)); }
+.pg-node.tone-pur {
+  background: linear-gradient(180deg, var(--pur), var(--pur-d));
+}
+.pg-node.tone-red {
+  background: linear-gradient(180deg, var(--red), #8a2424);
+}
+.pg-node.tone-teal {
+  background: linear-gradient(180deg, var(--teal), var(--teal-d));
+}
+.pg-node.tone-blue {
+  background: linear-gradient(180deg, var(--blue), var(--navy-2));
+}
+.pg-node.tone-org {
+  background: linear-gradient(180deg, var(--org), #a35416);
+}
+.pg-node.tone-indigo {
+  background: linear-gradient(180deg, var(--indigo), var(--navy-2));
+}
 .pg-node.done {
   background: linear-gradient(180deg, var(--teal), var(--teal-d));
   animation: duo-pop 0.45s var(--ease);
@@ -6993,7 +7244,11 @@ ion-button.login-first-method:focus-visible {
   margin-bottom: 12px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(232, 123, 43, 0.38), transparent 58%),
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(232, 123, 43, 0.38),
+      transparent 58%
+    ),
     linear-gradient(165deg, #1a0e08, #3a1a0c 40%, #102a50);
   overflow: hidden;
   position: relative;
@@ -7017,17 +7272,25 @@ ion-button.login-first-method:focus-visible {
   position: absolute;
   inset: 4px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(232, 123, 43, 0.55), transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(232, 123, 43, 0.55),
+    transparent 70%
+  );
   animation: pg-orb 3.2s ease-in-out infinite;
 }
 .pg-flame-glow.g2 {
   inset: -10px;
   animation-duration: 4.6s;
   animation-delay: -1s;
-  background: radial-gradient(circle, rgba(255, 180, 80, 0.28), transparent 72%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 180, 80, 0.28),
+    transparent 72%
+  );
 }
 .pg-streak-num {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 56px;
   font-weight: 800;
   letter-spacing: -2px;
@@ -7128,7 +7391,9 @@ ion-button.login-first-method:focus-visible {
   margin-bottom: 10px;
 }
 .cal-cell {
-  transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+  transition:
+    transform 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
 }
 .cal-cell:not(:disabled):active {
   transform: scale(0.92);
@@ -7201,7 +7466,7 @@ ion-button.login-first-method:focus-visible {
   font-weight: 700;
 }
 .pg-evo-kpis b {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 16px;
 }
 .pg-evo-kpis .up {
@@ -7319,7 +7584,11 @@ ion-button.login-first-method:focus-visible {
   gap: 12px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 100% 0%, rgba(32, 200, 255, 0.28), transparent 52%),
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(32, 200, 255, 0.28),
+      transparent 52%
+    ),
     linear-gradient(135deg, #0c2144, #173c73);
   box-shadow: 0 10px 24px rgba(16, 42, 80, 0.14);
 }
@@ -7336,7 +7605,7 @@ ion-button.login-first-method:focus-visible {
 }
 .duo-unit-copy strong {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.3px;
@@ -7353,7 +7622,10 @@ ion-button.login-first-method:focus-visible {
   padding: 10px 6px 18px;
   margin: 0 6px 8px;
   border-radius: 24px;
-  background-image: radial-gradient(rgba(16, 42, 80, 0.08) 1.1px, transparent 1.2px);
+  background-image: radial-gradient(
+    rgba(16, 42, 80, 0.08) 1.1px,
+    transparent 1.2px
+  );
   background-size: 16px 16px;
   overflow: hidden;
 }
@@ -7365,7 +7637,11 @@ ion-button.login-first-method:focus-visible {
   width: 6px;
   margin-left: -3px;
   border-radius: 99px;
-  background: repeating-linear-gradient(180deg, var(--bd) 0 9px, transparent 9px 16px);
+  background: repeating-linear-gradient(
+    180deg,
+    var(--bd) 0 9px,
+    transparent 9px 16px
+  );
   overflow: hidden;
 }
 .duo-trail-fill {
@@ -7420,7 +7696,7 @@ ion-button.login-first-method:focus-visible {
   box-shadow: 0 5px 0 var(--navy);
 }
 .duo-bubble::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 50%;
   bottom: -7px;
@@ -7440,22 +7716,40 @@ ion-button.login-first-method:focus-visible {
   border-color: rgba(255, 255, 255, 0.82);
 }
 .duo-map .duo-node.tone-pur {
-  box-shadow: 0 10px 0 var(--pur-d), inset 0 4px 0 rgba(255, 255, 255, 0.28), 0 14px 20px rgba(45, 27, 105, 0.28);
+  box-shadow:
+    0 10px 0 var(--pur-d),
+    inset 0 4px 0 rgba(255, 255, 255, 0.28),
+    0 14px 20px rgba(45, 27, 105, 0.28);
 }
 .duo-map .duo-node.tone-red {
-  box-shadow: 0 10px 0 color-mix(in srgb, var(--red) 72%, var(--navy)), inset 0 4px 0 rgba(255, 255, 255, 0.28), 0 14px 20px rgba(226, 75, 74, 0.28);
+  box-shadow:
+    0 10px 0 color-mix(in srgb, var(--red) 72%, var(--navy)),
+    inset 0 4px 0 rgba(255, 255, 255, 0.28),
+    0 14px 20px rgba(226, 75, 74, 0.28);
 }
 .duo-map .duo-node.tone-teal {
-  box-shadow: 0 10px 0 var(--teal-d), inset 0 4px 0 rgba(255, 255, 255, 0.28), 0 14px 20px rgba(29, 158, 117, 0.28);
+  box-shadow:
+    0 10px 0 var(--teal-d),
+    inset 0 4px 0 rgba(255, 255, 255, 0.28),
+    0 14px 20px rgba(29, 158, 117, 0.28);
 }
 .duo-map .duo-node.tone-blue {
-  box-shadow: 0 10px 0 var(--navy), inset 0 4px 0 rgba(255, 255, 255, 0.28), 0 14px 20px rgba(47, 120, 223, 0.28);
+  box-shadow:
+    0 10px 0 var(--navy),
+    inset 0 4px 0 rgba(255, 255, 255, 0.28),
+    0 14px 20px rgba(47, 120, 223, 0.28);
 }
 .duo-map .duo-node.tone-org {
-  box-shadow: 0 10px 0 color-mix(in srgb, var(--org) 72%, var(--navy)), inset 0 4px 0 rgba(255, 255, 255, 0.28), 0 14px 20px rgba(232, 123, 43, 0.28);
+  box-shadow:
+    0 10px 0 color-mix(in srgb, var(--org) 72%, var(--navy)),
+    inset 0 4px 0 rgba(255, 255, 255, 0.28),
+    0 14px 20px rgba(232, 123, 43, 0.28);
 }
 .duo-map .duo-node.tone-indigo {
-  box-shadow: 0 10px 0 var(--navy), inset 0 4px 0 rgba(255, 255, 255, 0.28), 0 14px 20px rgba(79, 124, 255, 0.28);
+  box-shadow:
+    0 10px 0 var(--navy),
+    inset 0 4px 0 rgba(255, 255, 255, 0.28),
+    0 14px 20px rgba(79, 124, 255, 0.28);
 }
 .duo-map .duo-node:active {
   transform: translateY(8px);
@@ -7465,7 +7759,10 @@ ion-button.login-first-method:focus-visible {
   opacity: 0.78;
 }
 .duo-map .duo-node.done {
-  box-shadow: 0 10px 0 var(--teal-d), inset 0 4px 0 rgba(255, 255, 255, 0.28), 0 14px 20px rgba(29, 158, 117, 0.28);
+  box-shadow:
+    0 10px 0 var(--teal-d),
+    inset 0 4px 0 rgba(255, 255, 255, 0.28),
+    0 14px 20px rgba(29, 158, 117, 0.28);
 }
 .duo-map .duo-node.tone-gold {
   background: linear-gradient(180deg, #f3c85a, #d4a017);
@@ -7525,7 +7822,11 @@ ion-button.login-first-method:focus-visible {
   padding: 14px 14px 12px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 80% 0%, rgba(226, 75, 74, 0.28), transparent 55%),
+    radial-gradient(
+      ellipse at 80% 0%,
+      rgba(226, 75, 74, 0.28),
+      transparent 55%
+    ),
     linear-gradient(160deg, #140814, #1a0e22 40%, #102a50);
   overflow: hidden;
 }
@@ -7555,7 +7856,7 @@ ion-button.login-first-method:focus-visible {
 }
 .vt-hero-top strong {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 16px;
 }
 .vt-count {
@@ -7564,7 +7865,7 @@ ion-button.login-first-method:focus-visible {
   line-height: 1;
 }
 .vt-count b {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
 }
 .vt-count small {
@@ -7670,12 +7971,24 @@ ion-button.login-first-method:focus-visible {
   gap: 4px;
   border-top-width: 3px;
 }
-.vt-tile:nth-child(1) { border-top-color: var(--red); }
-.vt-tile:nth-child(2) { border-top-color: var(--org); }
-.vt-tile:nth-child(3) { border-top-color: var(--ice-d); }
-.vt-tile:nth-child(4) { border-top-color: var(--red); }
-.vt-tile:nth-child(5) { border-top-color: var(--teal); }
-.vt-tile:nth-child(6) { border-top-color: var(--pur); }
+.vt-tile:nth-child(1) {
+  border-top-color: var(--red);
+}
+.vt-tile:nth-child(2) {
+  border-top-color: var(--org);
+}
+.vt-tile:nth-child(3) {
+  border-top-color: var(--ice-d);
+}
+.vt-tile:nth-child(4) {
+  border-top-color: var(--red);
+}
+.vt-tile:nth-child(5) {
+  border-top-color: var(--teal);
+}
+.vt-tile:nth-child(6) {
+  border-top-color: var(--pur);
+}
 .vt-tile.has {
   box-shadow: var(--shadow-sm);
 }
@@ -7731,7 +8044,7 @@ ion-input.vt-input {
   min-height: 0;
   height: 34px;
   border: none;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.8px;
@@ -7793,7 +8106,7 @@ ion-input.vt-input.has-focus {
 }
 .pg-cal-v2-head h3 {
   margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -7813,7 +8126,7 @@ ion-input.vt-input.has-focus {
 }
 .pg-cal-v2-stat b {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 20px;
   color: var(--org);
   line-height: 1;
@@ -7866,7 +8179,9 @@ ion-input.vt-input.has-focus {
 .pg-cal-orb.today {
   background: #fff;
   color: var(--org);
-  box-shadow: 0 0 0 3px var(--org), 0 6px 14px rgba(232, 123, 43, 0.28);
+  box-shadow:
+    0 0 0 3px var(--org),
+    0 6px 14px rgba(232, 123, 43, 0.28);
   animation: pg-cal-today 1.8s ease-in-out infinite;
 }
 .pg-cal-orb.ok.today {
@@ -7874,7 +8189,7 @@ ion-input.vt-input.has-focus {
   color: #fff;
 }
 .pg-cal-orb.mile::after {
-  content: '';
+  content: "";
   position: absolute;
   top: -2px;
   right: -2px;
@@ -7890,7 +8205,9 @@ ion-input.vt-input.has-focus {
 }
 @keyframes pg-cal-today {
   50% {
-    box-shadow: 0 0 0 3px var(--org), 0 0 16px rgba(232, 123, 43, 0.45);
+    box-shadow:
+      0 0 0 3px var(--org),
+      0 0 16px rgba(232, 123, 43, 0.45);
   }
 }
 .pg-cal-v2-legend {
@@ -7949,7 +8266,11 @@ ion-input.vt-input.has-focus {
   background:
     radial-gradient(circle at 50% 8%, rgba(255, 45, 85, 0.55), transparent 36%),
     radial-gradient(circle at 18% 78%, rgba(139, 0, 40, 0.35), transparent 42%),
-    radial-gradient(circle at 88% 70%, rgba(20, 135, 184, 0.18), transparent 38%);
+    radial-gradient(
+      circle at 88% 70%,
+      rgba(20, 135, 184, 0.18),
+      transparent 38%
+    );
   animation: sosAurora 7s ease-in-out infinite alternate;
   filter: blur(8px);
 }
@@ -7960,8 +8281,16 @@ ion-input.vt-input.has-focus {
 }
 .sos-screen.is-call-fam .sos-aurora {
   background:
-    radial-gradient(circle at 50% 10%, rgba(98, 216, 255, 0.28), transparent 42%),
-    radial-gradient(circle at 80% 80%, rgba(20, 135, 184, 0.28), transparent 40%);
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(98, 216, 255, 0.28),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(20, 135, 184, 0.28),
+      transparent 40%
+    );
 }
 .sos-protocol,
 .sos-call {
@@ -7992,7 +8321,7 @@ ion-input.vt-input.has-focus {
   color: #ffb3c1;
 }
 .sos-live::before {
-  content: '';
+  content: "";
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -8061,8 +8390,7 @@ ion-input.vt-input.has-focus {
   inset: 24px;
   border: none;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 34% 28%, #ff8aa0, #ff2d55 46%, #7a0024);
+  background: radial-gradient(circle at 34% 28%, #ff8aa0, #ff2d55 46%, #7a0024);
   color: #fff;
   display: grid;
   place-items: center;
@@ -8074,7 +8402,7 @@ ion-input.vt-input.has-focus {
     inset 0 3px 0 rgba(255, 255, 255, 0.32);
 }
 .sos-orb b {
-  font-family: 'Space Grotesk', 'Sora', sans-serif;
+  font-family: "Space Grotesk", "Sora", sans-serif;
   font-size: 62px;
   font-weight: 800;
   line-height: 1;
@@ -8101,7 +8429,7 @@ ion-input.vt-input.has-focus {
 }
 .sos-copy h1 {
   margin: 0 0 6px;
-  font-family: 'Space Grotesk', 'Sora', sans-serif;
+  font-family: "Space Grotesk", "Sora", sans-serif;
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.4px;
@@ -8132,7 +8460,9 @@ ion-input.vt-input.has-focus {
   padding: 7px 8px;
   border-radius: 12px;
   opacity: 0.42;
-  transition: opacity 0.35s var(--ease), background 0.35s var(--ease);
+  transition:
+    opacity 0.35s var(--ease),
+    background 0.35s var(--ease);
 }
 .sos-feed-row.on {
   opacity: 1;
@@ -8261,13 +8591,12 @@ ion-input.vt-input.has-focus {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-family: 'Space Grotesk', 'Sora', sans-serif;
+  font-family: "Space Grotesk", "Sora", sans-serif;
   font-size: 42px;
   font-weight: 800;
   letter-spacing: -1px;
   color: #fff;
-  background:
-    radial-gradient(circle at 34% 28%, #ff8aa0, #ff2d55 48%, #7a0024);
+  background: radial-gradient(circle at 34% 28%, #ff8aa0, #ff2d55 48%, #7a0024);
   box-shadow:
     0 14px 0 #5c001c,
     0 22px 40px rgba(255, 45, 85, 0.45),
@@ -8275,8 +8604,7 @@ ion-input.vt-input.has-focus {
   z-index: 1;
 }
 .sos-call.tone-fam .sos-call-face {
-  background:
-    radial-gradient(circle at 34% 28%, #b8f0ff, #1487b8 52%, #07324a);
+  background: radial-gradient(circle at 34% 28%, #b8f0ff, #1487b8 52%, #07324a);
   box-shadow:
     0 14px 0 #052536,
     0 22px 40px rgba(20, 135, 184, 0.4),
@@ -8288,7 +8616,7 @@ ion-input.vt-input.has-focus {
 }
 .sos-call h2 {
   margin: 0;
-  font-family: 'Space Grotesk', 'Sora', sans-serif;
+  font-family: "Space Grotesk", "Sora", sans-serif;
   font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.6px;
@@ -8319,7 +8647,7 @@ ion-input.vt-input.has-focus {
   gap: 8px;
   padding: 8px 14px;
   border-radius: 999px;
-  font-family: 'Space Grotesk', 'Sora', sans-serif;
+  font-family: "Space Grotesk", "Sora", sans-serif;
   font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.4px;
@@ -8508,7 +8836,9 @@ ion-input.vt-input.has-focus {
   box-shadow: var(--shadow-md);
   cursor: pointer;
   z-index: 60;
-  transition: transform 0.18s var(--ease, ease), box-shadow 0.18s var(--ease, ease);
+  transition:
+    transform 0.18s var(--ease, ease),
+    box-shadow 0.18s var(--ease, ease);
 }
 .chat-fab:active {
   transform: scale(0.92);

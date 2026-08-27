@@ -53,6 +53,7 @@ interface AppState {
   finishOnboarding: (user: UserProfile) => void;
   finishTests: () => void;
   skipTests: () => void;
+  openTests: () => void;
   markTest: (id: number) => void;
   showToast: (message: string, kind?: ToastKind) => void;
   openPanic: () => void;
@@ -348,6 +349,9 @@ export function AppProvider({
       },
       finishTests: () => setFlow("app"),
       skipTests: () => setFlow("app"),
+      // Reabre la batería de evaluación desde la app (un paciente que ya pasó
+      // el onboarding puede retomar sus tests pendientes).
+      openTests: () => setFlow("tests"),
       markTest: (id) =>
         setTestsDone((prev) => (prev.includes(id) ? prev : [...prev, id])),
       showToast: (message, kind = "ok") => {

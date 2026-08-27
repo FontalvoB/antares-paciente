@@ -14,6 +14,8 @@ export interface MeAssignment {
   patientName: string | null;
   versionId: string;
   testName: string | null;
+  testCode: string | null;
+  testCategory: string | null;
   batteryAssignmentId: string | null;
   status: "pending" | "in_progress" | "completed" | "expired" | "cancelled";
   priority: number | null;
