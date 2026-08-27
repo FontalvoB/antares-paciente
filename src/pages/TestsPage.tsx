@@ -69,6 +69,74 @@ const DEMO_SCORES: { label: string; value: number; color: string }[] = [
   { label: "Estrés", value: 44, color: "#E24B4A" },
 ];
 
+/**
+ * Identidad visual de cada test de la batería ANTARES por su código del
+ * catálogo (mismos emojis/colores que TESTS_META). El backend expone
+ * `testCode` (código del instrumento) en cada asignación.
+ */
+const TEST_VISUALS: Record<string, { emoji: string; bg: string; sub: string }> =
+  {
+    "historia-clinica": {
+      emoji: "🩺",
+      bg: "#E8F5FF",
+      sub: "Antecedentes · Examen físico · Sistemas",
+    },
+    temperamento: {
+      emoji: "🧠",
+      bg: "#F3EFFE",
+      sub: "Sanguíneo · Colérico · Melancólico · Flemático",
+    },
+    nutricional: {
+      emoji: "🥗",
+      bg: "#E1F5EE",
+      sub: "Alimentación · Conducta · Motivación",
+    },
+    movimiento: {
+      emoji: "🏃",
+      bg: "#FFF0E8",
+      sub: "AMAF · Nivel funcional · Capacidad",
+    },
+    sueno: {
+      emoji: "🌙",
+      bg: "#EDE9FE",
+      sub: "Duración · Calidad · Hábitos · Riesgos",
+    },
+    "iac-adresd": {
+      emoji: "🤝",
+      bg: "#E6F1FB",
+      sub: "Motivación · Autoeficacia · Compromiso",
+    },
+    orp: {
+      emoji: "❤️",
+      bg: "#FCEBEB",
+      sub: "OMS · Obesidad · Complicaciones · Riesgo",
+    },
+    ers: {
+      emoji: "⚡",
+      bg: "#FAEEDA",
+      sub: "Familia · Pareja · Trabajo · Entorno social",
+    },
+    "bateria-antares": {
+      emoji: "🧬",
+      bg: "#FDF6DC",
+      sub: "PHS · Propósito · Mentalidad · Perfil final",
+    },
+  };
+
+function testVisual(code: string): { emoji: string; bg: string; sub: string } {
+  const visual = TEST_VISUALS[code];
+  return visual
+    ? { emoji: visual.emoji, bg: visual.bg, sub: visual.sub }
+    : { emoji: "📋", bg: "#E8F5FF", sub: "" };
+}
+
+/** Etiqueta de estado para tests sin descripción conocida (fallback). */
+function stateLabel(status: MeAssignment["status"]): string {
+  if (status === "completed") return "Completado";
+  if (status === "in_progress") return "En curso";
+  return "Pendiente";
+}
+
 export function TestsPage() {
   const { testsDone, markTest, skipTests, finishTests, showToast } = useApp();
   const t = useT();
@@ -81,7 +149,7 @@ export function TestsPage() {
   const [openId, setOpenId] = useState<number | null>(null);
   const [openAssignmentId, setOpenAssignmentId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<
-    Record<number, Record<number, number>>
+    Record<number, Record<number, number | number[] | string>>
   >({});
   const [chips, setChips] = useState<number[]>([]);
   const [fam, setFam] = useState<number[]>([]);
@@ -120,6 +188,8 @@ export function TestsPage() {
   }, []);
 
   // Card de la lista: backend (title de la asignación) o demo (TESTS_META).
+  // Cuando el backend cargó (assignments !== null), se respeta su resultado
+  // aunque sea vacío (batería completada) — no se mezcla con el demo.
   const listItems = useMemo(() => {
     const nextDemo = (): number => {
       const remaining = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(
@@ -127,23 +197,21 @@ export function TestsPage() {
       );
       return remaining.length === 0 ? -1 : remaining[0];
     };
-    if (assignments && assignments.length > 0) {
-      return assignments.map((a, idx) => ({
-        key: a.id,
-        id: idx,
-        assignmentId: a.id,
-        title: a.testName ?? `Evaluación ${idx + 1}`,
-        sub:
-          a.status === "completed"
-            ? t("Completado")
-            : a.status === "in_progress"
-              ? t("En curso")
-              : t("Pendiente"),
-        emoji: "📋",
-        bg: "#E8F5FF",
-        done: a.status === "completed",
-        activeNow: a.status === "in_progress",
-      }));
+    if (assignments) {
+      return assignments.map((a, idx) => {
+        const visual = testVisual(a.testCode ?? "");
+        return {
+          key: a.id,
+          id: idx,
+          assignmentId: a.id,
+          title: a.testName ?? `Evaluación ${idx + 1}`,
+          sub: visual.sub || stateLabel(a.status),
+          emoji: visual.emoji,
+          bg: visual.bg,
+          done: a.status === "completed",
+          activeNow: a.status === "in_progress",
+        };
+      });
     }
     return TESTS_META.map((test) => ({
       key: String(test.id),
@@ -156,7 +224,7 @@ export function TestsPage() {
       done: testsDone.includes(test.id),
       activeNow: !testsDone.includes(test.id) && test.id === nextDemo(),
     }));
-  }, [assignments, testsDone, t]);
+  }, [assignments, testsDone]);
 
   const meta = assignments ? null : TESTS_META.find((t) => t.id === openId);
 
@@ -185,14 +253,34 @@ export function TestsPage() {
       setLoading(true);
       try {
         const questions = openQuestions ?? [];
-        const answersPayload = questions.map((q, qi) => {
-          const optionIndex = answers[openId]?.[qi];
+        // Para multi: una respuesta por opción seleccionada; para el resto,
+        // una respuesta con la opción elegida (o texto libre).
+        const answersPayload = questions.flatMap((q, qi) => {
+          const value = answers[openId]?.[qi];
+          if (q.type === "multi") {
+            const selected: number[] = Array.isArray(value) ? value : [];
+            return selected.map((vi) => ({
+              questionId: q.id,
+              answerOptionId: q.options[vi]?.id ?? null,
+            }));
+          }
+          if (q.type === "open") {
+            return [
+              {
+                questionId: q.id,
+                answerOptionId: null,
+                valueText: String(value ?? ""),
+              },
+            ];
+          }
           const option =
-            optionIndex !== undefined ? q.options[optionIndex] : null;
-          return {
-            questionId: q.id,
-            answerOptionId: option?.id ?? null,
-          };
+            value !== undefined ? q.options[value as number] : null;
+          return [
+            {
+              questionId: q.id,
+              answerOptionId: option?.id ?? null,
+            },
+          ];
         });
         await startMyTest(openAssignmentId).catch(() => null);
         await submitMyTest(openAssignmentId, answersPayload);
@@ -230,10 +318,10 @@ export function TestsPage() {
         text: q.text,
         section: q.section ?? undefined,
       }))
-    : openId
+    : openId !== null
       ? (QMAP[openId] ?? [])
       : [];
-  const activeScale = openId ? SCALE[openId] : [];
+  const activeScale = openId !== null ? SCALE[openId] : [];
 
   // Scores del resultado: backend real (subescalas/indicadores) o demo.
   const resultScores = useMemo(() => {
@@ -254,7 +342,7 @@ export function TestsPage() {
     <div className="screen" style={{ background: "#fff" }}>
       <div className="hero hero-cosmos">
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-          {openId && (
+          {openId !== null && (
             <button
               onClick={() => setOpenId(null)}
               style={{
@@ -451,7 +539,7 @@ export function TestsPage() {
             </IonButton>
           </>
         </div>
-      ) : !openId ? (
+      ) : openId === null ? (
         <div className="screen-scroll no-nav" style={{ padding: 14 }}>
           <p style={{ fontSize: 13, color: "var(--mu)", lineHeight: 1.6 }}>
             {t(
@@ -464,10 +552,7 @@ export function TestsPage() {
               className={`ts-card ${test.done ? "done" : ""} ${test.activeNow ? "active-now" : ""}`}
               onClick={() => void openTest(test)}
             >
-              <div
-                className="ico"
-                style={{ background: test.bg, marginBottom: 0 }}
-              >
+              <div className="ts-ico" style={{ background: test.bg }}>
                 {test.emoji}
               </div>
               <div style={{ flex: 1 }}>
@@ -506,6 +591,98 @@ export function TestsPage() {
           className="screen-scroll no-nav"
           style={{ padding: "14px 14px 110px" }}
         >
+          {/* Modo backend: render genérico por tipo de pregunta (las preguntas
+              vienen de /me/tests/{id}, no de los mocks demo). */}
+          {openAssignmentId && openQuestions && (
+            <>
+              {openQuestions.map((q, qi) => {
+                if (q.type === "scale" || q.type === "single") {
+                  return (
+                    <ScaleList
+                      key={q.id}
+                      questions={[
+                        { text: q.text, section: q.section ?? undefined },
+                      ]}
+                      scale={q.options.map((o) => o.text)}
+                      answers={
+                        answers[openId]?.[qi] !== undefined
+                          ? { 0: answers[openId]![qi] as number }
+                          : {}
+                      }
+                      onAnswer={(_i, v) =>
+                        setAnswers((a) => ({
+                          ...a,
+                          [openId]: { ...(a[openId] ?? {}), [qi]: v },
+                        }))
+                      }
+                    />
+                  );
+                }
+                if (q.type === "multi") {
+                  const selected =
+                    (answers[openId]?.[qi] as number[] | undefined) ?? [];
+                  return (
+                    <div key={q.id} className="tq-card">
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          marginBottom: 8,
+                        }}
+                      >
+                        {q.section || q.text}
+                      </div>
+                      <ChipGrid
+                        items={q.options.map((o) => ({
+                          ico: "•",
+                          label: o.text,
+                        }))}
+                        selected={selected}
+                        toggle={(vi) =>
+                          setAnswers((a) => {
+                            const cur =
+                              (a[openId]?.[qi] as number[] | undefined) ?? [];
+                            const next = cur.includes(vi)
+                              ? cur.filter((x) => x !== vi)
+                              : [...cur, vi];
+                            return {
+                              ...a,
+                              [openId]: { ...(a[openId] ?? {}), [qi]: next },
+                            };
+                          })
+                        }
+                      />
+                    </div>
+                  );
+                }
+                // open: texto libre
+                return (
+                  <div key={q.id} className="tq-card">
+                    <div
+                      style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}
+                    >
+                      {q.section || q.text}
+                    </div>
+                    <IonTextarea
+                      className="fld"
+                      placeholder={q.text}
+                      value={String(answers[openId]?.[qi] ?? "")}
+                      onIonInput={(e) =>
+                        setAnswers((a) => ({
+                          ...a,
+                          [openId]: {
+                            ...(a[openId] ?? {}),
+                            [qi]: String(e.detail.value ?? ""),
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </>
+          )}
+
           {openId === 1 && (
             <>
               <div
@@ -610,7 +787,7 @@ export function TestsPage() {
             <ScaleList
               questions={activeQuestions}
               scale={activeScale}
-              answers={answers[openId] ?? {}}
+              answers={(answers[openId] ?? {}) as Record<number, number>}
               onAnswer={(i, v) =>
                 setAnswers((a) => ({
                   ...a,
@@ -648,7 +825,7 @@ export function TestsPage() {
               <ScaleList
                 questions={PURPOSE_SCALE}
                 scale={["1", "2", "3", "4", "5"]}
-                answers={answers[9] ?? {}}
+                answers={(answers[9] ?? {}) as Record<number, number>}
                 onAnswer={(i, v) =>
                   setAnswers((a) => ({ ...a, 9: { ...(a[9] ?? {}), [i]: v } }))
                 }
@@ -706,7 +883,7 @@ export function TestsPage() {
         </div>
       )}
 
-      {openId && !showResult && (
+      {openId !== null && !showResult && (
         <div
           style={{
             position: "absolute",
