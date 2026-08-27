@@ -10,6 +10,7 @@ import {
   GROUP_QUERY,
   MESSAGE_ADDED,
   conversationKey,
+  profileName,
   type ChatGroup,
   type ConversationResult,
   type GroupHistoryResult,
@@ -327,7 +328,7 @@ export function ConversationModal({
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--wh)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 12px 10px', borderBottom: '1px solid var(--g1)' }}>
           <div className="avatar" style={{ width: 38, height: 38, background: grad, fontSize: 13 }}>
-            {isGroup ? initialsOf(group!.name) : initialsOf(peer!.displayName)}
+            {isGroup ? initialsOf(group!.name) : initialsOf(profileName(peer!, t))}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             {isGroup ? (
@@ -343,7 +344,7 @@ export function ConversationModal({
               </>
             ) : (
               <>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>{peer!.displayName}</div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>{profileName(peer!, t)}</div>
                 <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Amigos en la comunidad')}</div>
               </>
             )}
@@ -371,7 +372,7 @@ export function ConversationModal({
               if (isGroup) {
                 const prev = messages[i - 1]
                 const showName = !mine && (i === 0 || prev?.senderProfileId !== m.senderProfileId)
-                const senderName = showName ? (memberMap.get(m.senderProfileId)?.displayName ?? '') : ''
+                const senderName = showName && memberMap.has(m.senderProfileId) ? profileName(memberMap.get(m.senderProfileId)!, t) : ''
                 return (
                   <div
                     key={m.id}
@@ -478,10 +479,10 @@ export function ConversationModal({
                     className="avatar"
                     style={{ width: 38, height: 38, fontSize: 13, background: AVATAR_GRADS[m.id.charCodeAt(0) % AVATAR_GRADS.length] }}
                   >
-                    {initialsOf(m.displayName)}
+                    {initialsOf(profileName(m, t))}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 13 }}>{m.displayName}</div>
+                    <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(m, t)}</div>
                   </div>
                   {isCreator && (
                     <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--teal)', border: '1px solid var(--teal-l)', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center' }}>{t('Creador')}</span>
@@ -535,10 +536,10 @@ export function ConversationModal({
                   className="avatar"
                   style={{ width: 38, height: 38, fontSize: 13, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length] }}
                 >
-                  {initialsOf(f.displayName)}
+                  {initialsOf(profileName(f, t))}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(f, t)}</div>
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <IonIcon icon={personAddOutline} style={{ fontSize: 14 }} /> {t('Añadir')}
@@ -554,7 +555,7 @@ export function ConversationModal({
     <IonAlert
       isOpen={!!removeTarget}
       header={t('Quitar miembro')}
-      message={removeTarget ? t('¿Quitar a {name} del grupo?', { name: removeTarget.displayName }) : ''}
+      message={removeTarget ? t('¿Quitar a {name} del grupo?', { name: profileName(removeTarget, t) }) : ''}
       buttons={[
         t('Cancelar'),
         {
