@@ -1,9 +1,11 @@
-import { setupIonicReact, IonApp } from '@ionic/react'
+import { setupIonicReact, IonApp, IonIcon, IonSpinner } from '@ionic/react'
+import { infinite } from 'ionicons/icons'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Provider } from 'urql'
-import { AppProvider, useApp } from './context/AppContext'
 import { createCommunityClient } from './graphql/client'
+import { registerForPush } from './utils/pushNotifications'
+import { AppProvider, useApp } from './context/AppContext'
 import { PanicOverlay } from './components/PanicOverlay'
 import { VoiceOverlay } from './components/VoiceOverlay'
 import { ToastHost } from './components/ToastHost'
@@ -28,7 +30,18 @@ setupIonicReact({ mode: 'ios' })
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const
 
 function Router() {
-  const { flow, screen } = useApp()
+  const { flow, screen, authLoading } = useApp()
+
+  if (authLoading) {
+    return (
+      <div className="login-screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column', gap: 14 }}>
+        <div className="login-logo" style={{ margin: 0 }}>
+          <IonIcon icon={infinite} />
+        </div>
+        <IonSpinner name="crescent" color="light" style={{ width: 26, height: 26 }} />
+      </div>
+    )
+  }
 
   let content: ReactNode
 
@@ -92,7 +105,23 @@ function Router() {
 }
 
 function Shell() {
-  const { flow } = useApp()
+  const { flow, navigate, setActiveThreadId } = useApp()
+  const pushStarted = useRef(false)
+
+  // Al entrar a la app (flow === 'app') se registra el dispositivo para push.
+  // Al tocar una notificación se navega al chat para ver el mensaje inyectado.
+  useEffect(() => {
+    if (flow !== 'app' || pushStarted.current) return
+    pushStarted.current = true
+    void registerForPush({
+      onOpenChat: (targetThreadId) => {
+        if (targetThreadId) {
+          setActiveThreadId(targetThreadId)
+        }
+        navigate('chat')
+      },
+    })
+  }, [flow, navigate, setActiveThreadId])
 
   return (
     <div className="app-stage">

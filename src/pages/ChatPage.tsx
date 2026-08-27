@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { Screen } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { fetchThreadState } from '../utils/threadApi'
 
 const quick = [
   ['¿Qué comer?', '¿Qué debo comer hoy según mi plan?'],
@@ -14,9 +15,27 @@ const quick = [
 ]
 
 export function ChatPage() {
-  const { chat, sendChat, openPanic, openVoice } = useApp()
+  const { chat, sendChat, openPanic, openVoice, threadId, user, hydrateChat } = useApp()
   const [text, setText] = useState('')
   const end = useRef<HTMLDivElement>(null)
+
+  // Al abrir el chat se intenta cargar el historial del thread estable: si el
+  // backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
+  const historyLoaded = useRef<string | null>(null)
+  useEffect(() => {
+    if (historyLoaded.current === threadId) return
+    historyLoaded.current = threadId
+    const userId = (user.id || user.cedula || user.email || '').trim()
+    if (!userId) return
+    let cancelled = false
+    void fetchThreadState(threadId, userId).then((state) => {
+      if (cancelled || !state?.lastMessage) return
+      hydrateChat([{ text: state.lastMessage }])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [threadId, user.id, user.cedula, user.email, hydrateChat])
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: 'smooth' })
