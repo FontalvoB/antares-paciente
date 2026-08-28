@@ -59,6 +59,7 @@ import {
   type ProfileResult,
 } from '../graphql/community'
 import type { ChatGroup, Comment, Person, Post, Profile } from '../graphql/community'
+import { profileName } from '../graphql/community'
 import { ErrorBoundary } from '../components/error-boundary'
 import { ConversationModal } from '../components/conversation-modal'
 import { useT } from '../i18n/I18nContext'
@@ -187,10 +188,10 @@ function CreateGroupModal({
                   className="avatar"
                   style={{ width: 38, height: 38, fontSize: 13, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length] }}
                 >
-                  {initialsOf(f.displayName)}
+                  {initialsOf(profileName(f, t))}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(f, t)}</div>
                 </div>
                 <IonCheckbox checked={selected.includes(f.id)} />
               </div>
@@ -354,9 +355,9 @@ function MemberProfile({
      <>
        <div style={{ background: 'linear-gradient(135deg,#2D1B69,#1A0A3C)', padding: 18, textAlign: 'center', color: '#fff' }}>
         <div className="avatar" style={{ width: 64, height: 64, margin: '0 auto 8px', background: AVATAR_GRADS[profile.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 22 }}>
-          {initialsOf(profile.displayName)}
+          {initialsOf(profileName(profile, t))}
         </div>
-        <div className="display" style={{ fontSize: 18, fontWeight: 800 }}>{profile.displayName}</div>
+        <div className="display" style={{ fontSize: 18, fontWeight: 800 }}>{profileName(profile, t)}</div>
         <div style={{ display: 'flex', gap: 28, justifyContent: 'center', marginTop: 12 }}>
           <button onClick={() => onShowList('followers')} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{followersCount}</div>
@@ -440,11 +441,11 @@ function PostCard({
             boxShadow: '0 0 0 2px var(--wh), 0 2px 8px rgba(16,42,80,0.14)',
           }}
         >
-          {initialsOf(post.profile.displayName)}
+          {initialsOf(profileName(post.profile, t))}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {post.profile.displayName}
+            {profileName(post.profile, t)}
           </div>
           <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{timeAgo(post.createdAt, t)}</div>
         </div>
@@ -510,7 +511,7 @@ function CommentItem({
 }) {
   const isReply = depth > 0
   const t = useT()
-  const name = comment.profile?.displayName ?? t('Miembro')
+  const name = comment.profile ? profileName(comment.profile, t) : t('Miembro')
   const grad = AVATAR_GRADS[(comment.profile?.id ?? comment.id).charCodeAt(0) % AVATAR_GRADS.length]
   return (
     <div className={isReply ? 'cmt-reply' : 'cmt-root'}>
@@ -775,7 +776,7 @@ export function CommunityPage() {
 
   async function handleFollowToggle(person: Person) {
     const id = person.profile.id
-    const name = person.profile.displayName
+    const name = profileName(person.profile, t)
     setBusyId(id)
     try {
       if (person.isFriend) {
@@ -902,10 +903,10 @@ export function CommunityPage() {
                     }}
                   >
                     <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[row.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                      {initialsOf(row.displayName)}
+                      {initialsOf(profileName(row, t))}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: 13 }}>{row.displayName}</div>
+                      <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(row, t)}</div>
                       <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {row.bio?.trim() || t('Sin bio')}
                       </div>
@@ -952,7 +953,7 @@ export function CommunityPage() {
                 followersCount={memberFollowersResult.data?.profileFollowers.length ?? 0}
                 followingCount={memberFollowingResult.data?.profileFollowing.length ?? 0}
                 onShowList={(w) => setMemberList(w)}
-                onFollow={() => void handleFollow(profile.id, profile.displayName)}
+                onFollow={() => void handleFollow(profile.id, profileName(profile, t))}
                 onUnfollow={() => setUnfollowTarget(profile)}
                 onMessage={() => setActivePeer(profile)}
                 onOpenPost={setActivePost}
@@ -1127,10 +1128,10 @@ export function CommunityPage() {
                   onClick={() => setViewingId(f.id)}
                 >
                   <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                    {initialsOf(f.displayName)}
+                    {initialsOf(profileName(f, t))}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                    <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(f, t)}</div>
                     <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {f.bio?.trim() || t('Sin bio')}
                     </div>
@@ -1336,12 +1337,12 @@ export function CommunityPage() {
                       onClick={() => setActivePeer(c.peer)}
                     >
                       <div className="avatar" style={{ width: 46, height: 46, flexShrink: 0, background: AVATAR_GRADS[c.peer.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 14 }}>
-                        {initialsOf(c.peer.displayName)}
+                        {initialsOf(profileName(c.peer, t))}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                           <div style={{ fontWeight: 800, fontSize: 13.5, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {c.peer.displayName}
+                            {profileName(c.peer, t)}
                           </div>
                           {c.lastMessage && (
                             <div style={{ fontSize: 10, color: 'var(--mu)', flexShrink: 0 }}>
@@ -1406,10 +1407,10 @@ export function CommunityPage() {
                     <div key={p.profile.id} className="row-card">
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0 }} onClick={() => setViewingId(p.profile.id)}>
                         <div className="avatar" style={{ width: 40, height: 40, background: grad, fontSize: 13 }}>
-                          {initialsOf(p.profile.displayName)}
+                          {initialsOf(profileName(p.profile, t))}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, fontSize: 13 }}>{p.profile.displayName}</div>
+                          <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(p.profile, t)}</div>
                           <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {p.profile.bio?.trim() || t('Sin bio')}
                           </div>
@@ -1473,10 +1474,10 @@ export function CommunityPage() {
                     <div key={f.id} className="row-card">
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0 }} onClick={() => setViewingId(f.id)}>
                         <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                          {initialsOf(f.displayName)}
+                          {initialsOf(profileName(f, t))}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                          <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(f, t)}</div>
                           <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {f.bio?.trim() || t('Sin bio')}
                           </div>
@@ -1520,10 +1521,10 @@ export function CommunityPage() {
                       <div key={f.id} className="row-card">
                         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0 }} onClick={() => setViewingId(f.id)}>
                           <div className="avatar" style={{ width: 40, height: 40, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                            {initialsOf(f.displayName)}
+                            {initialsOf(profileName(f, t))}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
+                            <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(f, t)}</div>
                             <div style={{ fontSize: 11, color: 'var(--mu)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {f.bio?.trim() || t('Sin bio')}
                             </div>
@@ -1539,7 +1540,7 @@ export function CommunityPage() {
                         ) : (
                           <>
                             <span style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 700 }}>{t('Te sigue')}</span>
-                            <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={() => void handleFollow(f.id, f.displayName)}>
+                            <IonButton className="bt bt-pur bt-mini" disabled={busy} onClick={() => void handleFollow(f.id, profileName(f, t))}>
                               <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Seguir de vuelta')}
                             </IonButton>
                           </>
@@ -1592,10 +1593,10 @@ export function CommunityPage() {
           <div style={{ padding: 16, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
               <div className="avatar" style={{ width: 38, height: 38, background: AVATAR_GRADS[activePost.profile.id.charCodeAt(0) % AVATAR_GRADS.length], fontSize: 13 }}>
-                {initialsOf(activePost.profile.displayName)}
+                {initialsOf(profileName(activePost.profile, t))}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: 13 }}>{activePost.profile.displayName}</div>
+                <div style={{ fontWeight: 800, fontSize: 13 }}>{profileName(activePost.profile, t)}</div>
                 <div style={{ fontSize: 11, color: 'var(--mu)' }}>{timeAgo(activePost.createdAt, t)}</div>
               </div>
               <IonButton fill="clear" size="small" onClick={() => { setActivePost(null); setReplyTarget(null); setReplyDraft('') }}><IonIcon icon={close} /></IonButton>
@@ -1615,7 +1616,7 @@ export function CommunityPage() {
             <div style={{ borderTop: '1px solid var(--g1)', paddingTop: 10 }}>
               {replyTarget && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: 'var(--mu)' }}>
-                  {t('Respondiendo a ')} <b>{replyTarget.profile?.displayName ?? t('Miembro')}</b>
+                  {t('Respondiendo a ')} <b>{replyTarget.profile ? profileName(replyTarget.profile, t) : t('Miembro')}</b>
                   <IonButton fill="clear" size="small" style={{ height: 22 }} onClick={() => setReplyTarget(null)}><IonIcon icon={close} /></IonButton>
                 </div>
               )}
@@ -1696,14 +1697,14 @@ export function CommunityPage() {
       <IonAlert
         isOpen={!!unfollowTarget}
         header={t('Dejar de seguir')}
-        message={t('¿Dejar de seguir a {name}?', { name: unfollowTarget?.displayName ?? '' })}
+        message={t('¿Dejar de seguir a {name}?', { name: unfollowTarget ? profileName(unfollowTarget, t) : '' })}
         buttons={[
           t('Cancelar'),
           {
             text: t('Dejar de seguir'),
             role: 'destructive',
             handler: () => {
-              if (unfollowTarget) void handleUnfollow(unfollowTarget.id, unfollowTarget.displayName)
+              if (unfollowTarget) void handleUnfollow(unfollowTarget.id, profileName(unfollowTarget, t))
             },
           },
         ]}

@@ -1,3 +1,5 @@
+import { getAuthBaseUrl } from './apiBaseUrl'
+
 const ACCESS_TOKEN_KEY = 'copp_access_token'
 
 /** Acceso local para saltar registro y el Auth service. No sustituye un login real. */
@@ -62,6 +64,25 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+export interface CurrentUser {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  roles: string[]
+  permissions: string[]
+}
+
+function persistAccessToken(token: string): void {
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, token)
+  localStorage.setItem(ACCESS_TOKEN_KEY, token)
+}
+
+function clearAccessToken(): void {
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
+}
+
 /** Login con contraseña por número de identificación (usuarios ya registrados). */
 export async function loginUser(documentNumber: string, password: string, rememberMe: boolean): Promise<LoginResult> {
   if (isDemoCredentials(documentNumber, password)) {
@@ -74,13 +95,13 @@ export async function loginUser(documentNumber: string, password: string, rememb
     return result
   }
 
-  const result = await postJson<LoginResult>('/api/auth/login', {
+  const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/login`, {
     documentNumber,
     password,
     application: 'app',
     rememberMe,
   })
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+  persistAccessToken(result.accessToken)
   return result
 }
 
@@ -89,7 +110,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
  * número de identificación para que el usuario elija por dónde recibe el OTP.
  */
 export async function lookupId(documentNumber: string): Promise<IdLookupResult> {
-  return postJson<IdLookupResult>('/api/auth/id-lookup', {
+  return postJson<IdLookupResult>(`${getAuthBaseUrl()}/api/auth/id-lookup`, {
     documentNumber,
     application: 'app',
   })
@@ -97,7 +118,7 @@ export async function lookupId(documentNumber: string): Promise<IdLookupResult> 
 
 /** Envía el código OTP al método de contacto elegido. */
 export async function sendOtp(documentNumber: string, contactId: string): Promise<SendOtpResult> {
-  return postJson<SendOtpResult>('/api/auth/send-otp', {
+  return postJson<SendOtpResult>(`${getAuthBaseUrl()}/api/auth/send-otp`, {
     documentNumber,
     contactId,
   })
@@ -105,25 +126,61 @@ export async function sendOtp(documentNumber: string, contactId: string): Promis
 
 /** Verifica el OTP, aprovisiona la cuenta (si es la primera vez) y completa el login. */
 export async function verifyOtp(documentNumber: string, otp: string, rememberMe: boolean): Promise<LoginResult> {
-  const result = await postJson<LoginResult>('/api/auth/verify-otp', {
+  const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/verify-otp`, {
     documentNumber,
     otp,
     application: 'app',
     rememberMe,
   })
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+  persistAccessToken(result.accessToken)
   return result
 }
 
-export async function logoutUser(): Promise<void> {
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+/**
+ * Intenta restaurar la sesión del usuario al cargar la app mediante el refresh
+ * token (cookie HttpOnly copp_refresh_token).
+ */
+export async function restoreSession(): Promise<LoginResult | null> {
   try {
-    await postJson<{ message: string }>('/api/auth/logout')
+    const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/refresh`)
+    persistAccessToken(result.accessToken)
+    return result
+  } catch {
+    clearAccessToken()
+    return null
+  }
+}
+
+/**
+ * Obtiene la información del usuario autenticado actualmente si existe token activo.
+ */
+export async function getMe(): Promise<CurrentUser | null> {
+  const token = getAccessToken()
+  if (!token) return null
+  try {
+    const res = await fetch(`${getAuthBaseUrl()}/api/auth/me`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    })
+    if (!res.ok) return null
+    return (await res.json()) as CurrentUser
+  } catch {
+    return null
+  }
+}
+
+export async function logoutUser(): Promise<void> {
+  clearAccessToken()
+  try {
+    await postJson<{ message: string }>(`${getAuthBaseUrl()}/api/auth/logout`)
   } catch {
     /* el logout es idempotente: sin cookie también responde 200 */
   }
 }
 
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY)
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY)
 }

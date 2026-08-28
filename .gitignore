@@ -21,4 +21,11 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+# Capacitor native platforms
+android/
+/android
+
+# Environment & local notes
+PROMPT-CONTEXT.md
+*.local
+
