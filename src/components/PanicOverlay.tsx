@@ -13,6 +13,7 @@ import {
 } from 'ionicons/icons'
 import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 
 type SosView = 'protocol' | 'call911' | 'callFamily'
 type CallPhase = 'dialing' | 'ringing' | 'connected'
@@ -36,6 +37,7 @@ function Waveform({ live }: { live: boolean }) {
 
 export function PanicOverlay() {
   const { panicOpen, sosActive, closePanic, activateSos, user, showToast } = useApp()
+  const t = useT()
   const [count, setCount] = useState(5)
   const [view, setView] = useState<SosView>('protocol')
   const [phase, setPhase] = useState<CallPhase>('dialing')
@@ -123,7 +125,7 @@ export function PanicOverlay() {
 
   const imOk = () => {
     closePanic()
-    showToast('Alerta cancelada. Quédate en observación.', 'ok')
+    showToast(t('Alerta cancelada. Quédate en observación.'), 'ok')
   }
 
   const ringPct = sosActive ? 1 : count / 5
@@ -131,42 +133,42 @@ export function PanicOverlay() {
   const callingFam = view === 'callFamily'
   const inCall = calling911 || callingFam
   const phaseLabel =
-    phase === 'dialing' ? 'Marcando…' : phase === 'ringing' ? 'Sonando…' : 'En llamada'
+    phase === 'dialing' ? t('Marcando…') : phase === 'ringing' ? t('Sonando…') : t('En llamada')
 
   const rows: { key: string; ico: string; title: string; sub: string; tone: string }[] = [
     {
       key: 'amb',
       ico: medkit,
-      title: 'Emergencias 911',
-      sub: sosActive ? (lit >= 1 ? 'Alerta enviada · despacho en curso' : 'Notificando…') : 'En espera del conteo',
+      title: t('Emergencias 911'),
+      sub: sosActive ? (lit >= 1 ? t('Alerta enviada · despacho en curso') : t('Notificando…')) : t('En espera del conteo'),
       tone: 'red',
     },
     {
       key: 'fam',
       ico: people,
       title: family,
-      sub: sosActive && lit >= 2 ? `Alerta enviada · ${familyCel}` : `${familyRole} · ${familyCel}`,
+      sub: sosActive && lit >= 2 ? t('Alerta enviada · {phone}', { phone: familyCel }) : `${familyRole} · ${familyCel}`,
       tone: 'ice',
     },
     {
       key: 'doc',
       ico: pulse,
-      title: 'Dr. Ramírez',
-      sub: sosActive && lit >= 3 ? 'Equipo COPP-ADRESD notificado' : 'Médico de cabecera',
+      title: t('Dr. Ramírez'),
+      sub: sosActive && lit >= 3 ? t('Equipo COPP-ADRESD notificado') : t('Médico de cabecera'),
       tone: 'blue',
     },
     {
       key: 'gps',
       ico: location,
-      title: 'Ubicación GPS',
-      sub: sosActive && lit >= 4 ? 'Enviando 25.7617° N, 80.1918° W' : 'Se comparte al activar',
+      title: t('Ubicación GPS'),
+      sub: sosActive && lit >= 4 ? t('Enviando 25.7617° N, 80.1918° W') : t('Se comparte al activar'),
       tone: 'teal',
     },
     {
       key: 'vit',
       ico: heart,
-      title: 'Signos vitales',
-      sub: sosActive && lit >= 5 ? 'FC 140 · SpO2 94% · TA 160/110' : 'Se adjuntan al activar',
+      title: t('Signos vitales'),
+      sub: sosActive && lit >= 5 ? t('FC 140 · SpO2 94% · TA 160/110') : t('Se adjuntan al activar'),
       tone: 'org',
     },
   ]
@@ -195,9 +197,9 @@ export function PanicOverlay() {
               >
                 <header className="sos-head">
                   <span className={`sos-live ${sosActive ? 'on' : ''}`}>
-                    {sosActive ? 'SOS ACTIVO' : 'PROTOCOLO ARMADO'}
+                    {sosActive ? t('SOS ACTIVO') : t('PROTOCOLO ARMADO')}
                   </span>
-                  <p>{sosActive ? 'Ayuda en camino' : 'Se activa sola en'}</p>
+                  <p>{sosActive ? t('Ayuda en camino') : t('Se activa sola en')}</p>
                 </header>
 
                 <div className="sos-orb-wrap">
@@ -221,7 +223,7 @@ export function PanicOverlay() {
                     type="button"
                     className={`sos-orb ${sosActive ? 'hot' : ''}`}
                     onClick={activateSos}
-                    aria-label={sosActive ? 'SOS activado' : `Activar SOS ahora. Quedan ${count} segundos`}
+                    aria-label={sosActive ? t('SOS activado') : t('Activar SOS ahora. Quedan {count} segundos', { count: String(count) })}
                   >
                     {sosActive ? (
                       <IonIcon icon={medkit} />
@@ -232,11 +234,11 @@ export function PanicOverlay() {
                 </div>
 
                 <div className="sos-copy">
-                  <h1>{sosActive ? 'Protocolo lanzado' : 'Botón de pánico'}</h1>
+                  <h1>{sosActive ? t('Protocolo lanzado') : t('Botón de pánico')}</h1>
                   <p>
                     {sosActive
-                      ? 'Ambulancia, familia y tu equipo médico están recibiendo GPS y signos vitales.'
-                      : 'Toca el círculo o espera el conteo. 911, tu familiar y el médico se notifican juntos.'}
+                      ? t('Ambulancia, familia y tu equipo médico están recibiendo GPS y signos vitales.')
+                      : t('Toca el círculo o espera el conteo. 911, tu familiar y el médico se notifican juntos.')}
                   </p>
                 </div>
 
@@ -260,16 +262,16 @@ export function PanicOverlay() {
                 <div className="sos-actions">
                   <IonButton className="bt sos-act-911" onClick={() => startCall('call911')}>
                     <IonIcon icon={call} slot="start" />
-                    Llamar 911
+                    {t('Llamar 911')}
                   </IonButton>
                   <IonButton className="bt sos-act-fam" onClick={() => startCall('callFamily')}>
                     <IonIcon icon={people} slot="start" />
-                    Llamar familiar
+                    {t('Llamar familiar')}
                   </IonButton>
                 </div>
                 <IonButton expand="block" className="bt sos-act-ok" onClick={imOk}>
                   <IonIcon icon={sosActive ? checkmarkCircle : close} slot="start" />
-                  Estoy bien
+                  {t('Estoy bien')}
                 </IonButton>
               </motion.div>
             ) : (
@@ -282,7 +284,7 @@ export function PanicOverlay() {
                 transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
               >
                 <div className="sos-call-kicker">
-                  {calling911 ? 'EMERGENCIAS 911' : 'CONTACTO DE EMERGENCIA'}
+                  {calling911 ? t('EMERGENCIAS 911') : t('CONTACTO DE EMERGENCIA')}
                 </div>
 
                 <div className="sos-call-orb">
@@ -299,8 +301,8 @@ export function PanicOverlay() {
                 <p className="sos-call-sub">
                   {calling911
                     ? phase === 'connected'
-                      ? 'Operador de emergencias · Miami-Dade'
-                      : 'Central de emergencias'
+                      ? t('Operador de emergencias · Miami-Dade')
+                      : t('Central de emergencias')
                     : familyCel}
                 </p>
                 <div className={`sos-call-phase ${phase}`}>
@@ -311,37 +313,37 @@ export function PanicOverlay() {
 
                 <div className="sos-call-chips">
                   <span>
-                    <IonIcon icon={location} /> GPS en vivo
+                    <IonIcon icon={location} /> {t('GPS en vivo')}
                   </span>
                   <span>
-                    <IonIcon icon={heart} /> FC 140 · SpO2 94%
+                    <IonIcon icon={heart} /> {t('FC 140 · SpO2 94%')}
                   </span>
                 </div>
 
                 {phase === 'connected' && (
                   <p className="sos-call-note">
                     {calling911
-                      ? 'Unidad en despacho. Quédate en el teléfono y no cuelgues.'
-                      : `${family.split(' ')[0]} ya recibió tu alerta, ubicación y signos.`}
+                      ? t('Unidad en despacho. Quédate en el teléfono y no cuelgues.')
+                      : t('{name} ya recibió tu alerta, ubicación y signos.', { name: family.split(' ')[0] })}
                   </p>
                 )}
 
                 <div className="sos-call-bar">
                   <IonButton
                     className={`bt bt-round-lg sos-side ${speakerOn ? 'on' : ''}`}
-                    aria-label={speakerOn ? 'Altavoz encendido' : 'Altavoz apagado'}
+                    aria-label={speakerOn ? t('Altavoz encendido') : t('Altavoz apagado')}
                     onClick={() => setSpeakerOn((v) => !v)}
                   >
                     <IonIcon icon={volumeHigh} slot="icon-only" />
                   </IonButton>
-                  <IonButton className="bt sos-hang" aria-label="Colgar" onClick={hangUp}>
+                  <IonButton className="bt sos-hang" aria-label={t('Colgar')} onClick={hangUp}>
                     <IonIcon icon={call} slot="icon-only" />
                   </IonButton>
-                  <IonButton className="bt bt-round-lg sos-side" aria-label="Volver al protocolo" onClick={hangUp}>
+                  <IonButton className="bt bt-round-lg sos-side" aria-label={t('Volver al protocolo')} onClick={hangUp}>
                     <IonIcon icon={close} slot="icon-only" />
                   </IonButton>
                 </div>
-                <span className="sos-hang-lbl">Colgar y volver al protocolo</span>
+                <span className="sos-hang-lbl">{t('Colgar y volver al protocolo')}</span>
               </motion.div>
             )}
           </AnimatePresence>

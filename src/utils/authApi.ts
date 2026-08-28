@@ -1,6 +1,16 @@
+import { getAuthBaseUrl } from './apiBaseUrl'
+
 const ACCESS_TOKEN_KEY = 'copp_access_token'
-const TOKEN_EXPIRES_KEY = 'copp_token_expires_at'
-const REFRESH_MARGIN_MS = 60_000
+
+/** Acceso local para saltar registro y el Auth service. No sustituye un login real. */
+export const DEMO_LOGIN = {
+  documentNumber: '12345678',
+  password: 'demo1234',
+} as const
+
+function isDemoCredentials(documentNumber: string, password: string): boolean {
+  return documentNumber === DEMO_LOGIN.documentNumber && password === DEMO_LOGIN.password
+}
 
 export interface LoginResult {
   accessToken: string
@@ -54,21 +64,44 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
-/** Guarda el access token y su instante de expiración (ms epoch). */
-function storeToken(result: LoginResult): void {
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
-  sessionStorage.setItem(TOKEN_EXPIRES_KEY, String(Date.now() + result.expiresIn * 1000))
+export interface CurrentUser {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  roles: string[]
+  permissions: string[]
+}
+
+function persistAccessToken(token: string): void {
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, token)
+  localStorage.setItem(ACCESS_TOKEN_KEY, token)
+}
+
+function clearAccessToken(): void {
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
 }
 
 /** Login con contraseña por número de identificación (usuarios ya registrados). */
 export async function loginUser(documentNumber: string, password: string, rememberMe: boolean): Promise<LoginResult> {
-  const result = await postJson<LoginResult>('/api/auth/login', {
+  if (isDemoCredentials(documentNumber, password)) {
+    const result: LoginResult = {
+      accessToken: 'demo-access-token',
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+    }
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+    return result
+  }
+
+  const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/login`, {
     documentNumber,
     password,
     application: 'app',
     rememberMe,
   })
-  storeToken(result)
+  persistAccessToken(result.accessToken)
   return result
 }
 
@@ -77,7 +110,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
  * número de identificación para que el usuario elija por dónde recibe el OTP.
  */
 export async function lookupId(documentNumber: string): Promise<IdLookupResult> {
-  return postJson<IdLookupResult>('/api/auth/id-lookup', {
+  return postJson<IdLookupResult>(`${getAuthBaseUrl()}/api/auth/id-lookup`, {
     documentNumber,
     application: 'app',
   })
@@ -85,7 +118,7 @@ export async function lookupId(documentNumber: string): Promise<IdLookupResult> 
 
 /** Envía el código OTP al método de contacto elegido. */
 export async function sendOtp(documentNumber: string, contactId: string): Promise<SendOtpResult> {
-  return postJson<SendOtpResult>('/api/auth/send-otp', {
+  return postJson<SendOtpResult>(`${getAuthBaseUrl()}/api/auth/send-otp`, {
     documentNumber,
     contactId,
   })
@@ -93,54 +126,61 @@ export async function sendOtp(documentNumber: string, contactId: string): Promis
 
 /** Verifica el OTP, aprovisiona la cuenta (si es la primera vez) y completa el login. */
 export async function verifyOtp(documentNumber: string, otp: string, rememberMe: boolean): Promise<LoginResult> {
-  const result = await postJson<LoginResult>('/api/auth/verify-otp', {
+  const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/verify-otp`, {
     documentNumber,
     otp,
     application: 'app',
     rememberMe,
   })
-  storeToken(result)
+  persistAccessToken(result.accessToken)
   return result
 }
 
-export async function logoutUser(): Promise<void> {
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY)
-  sessionStorage.removeItem(TOKEN_EXPIRES_KEY)
+/**
+ * Intenta restaurar la sesión del usuario al cargar la app mediante el refresh
+ * token (cookie HttpOnly copp_refresh_token).
+ */
+export async function restoreSession(): Promise<LoginResult | null> {
   try {
-    await postJson<{ message: string }>('/api/auth/logout')
+    const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/refresh`)
+    persistAccessToken(result.accessToken)
+    return result
+  } catch {
+    clearAccessToken()
+    return null
+  }
+}
+
+/**
+ * Obtiene la información del usuario autenticado actualmente si existe token activo.
+ */
+export async function getMe(): Promise<CurrentUser | null> {
+  const token = getAccessToken()
+  if (!token) return null
+  try {
+    const res = await fetch(`${getAuthBaseUrl()}/api/auth/me`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    })
+    if (!res.ok) return null
+    return (await res.json()) as CurrentUser
+  } catch {
+    return null
+  }
+}
+
+export async function logoutUser(): Promise<void> {
+  clearAccessToken()
+  try {
+    await postJson<{ message: string }>(`${getAuthBaseUrl()}/api/auth/logout`)
   } catch {
     /* el logout es idempotente: sin cookie también responde 200 */
   }
 }
 
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY)
-}
-
-/** Renueva el access token con la cookie HttpOnly de refresh del Auth service. */
-export async function refreshAccessToken(): Promise<LoginResult | null> {
-  try {
-    const result = await postJson<LoginResult>('/api/auth/refresh')
-    storeToken(result)
-    return result
-  } catch {
-    return null
-  }
-}
-
-/**
- * Devuelve un access token vigente, renovándolo si está a punto de expirar
- * (margen de 60 s). Si el refresh falla, devuelve el token que haya en sesión
- * para que las llamadas muestren el error real (usuario sin sesión válida).
- */
-export async function ensureFreshAccessToken(): Promise<string | null> {
-  const token = getAccessToken()
-  if (!token) return null
-
-  const expiresAt = Number(sessionStorage.getItem(TOKEN_EXPIRES_KEY) ?? 0)
-  if (expiresAt > 0 && expiresAt - Date.now() <= REFRESH_MARGIN_MS) {
-    const refreshed = await refreshAccessToken()
-    return refreshed?.accessToken ?? token
-  }
-  return token
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY)
 }
