@@ -11,6 +11,8 @@ export interface Profile {
   status: ProfileStatus
   banReason: string | null
   bannedAt: string | null
+  avatarUrl: string | null
+  coverUrl: string | null
   createdAt: string
   posts: Post[]
 }
@@ -18,6 +20,7 @@ export interface Profile {
 export interface PostAuthor {
   id: string
   displayName: string
+  avatarUrl?: string | null
 }
 
 export interface LikeRef {
@@ -35,10 +38,29 @@ export interface Comment {
   replies: Comment[]
 }
 
+export interface PollVote {
+  id: string
+  profileId: string
+}
+
+export interface PollOption {
+  id: string
+  text: string
+  votes: PollVote[]
+}
+
+export interface Poll {
+  id: string
+  options: PollOption[]
+}
+
 export interface Post {
   id: string
   body: string
   pinned: boolean
+  imageUrl: string | null
+  mediaType: 'IMAGE' | 'VIDEO' | null
+  poll: Poll | null
   createdAt: string
   profile: PostAuthor
   likes: LikeRef[]
@@ -225,6 +247,8 @@ const PROFILE_FRAGMENT = /* GraphQL */ `
     status
     banReason
     bannedAt
+    avatarUrl
+    coverUrl
     createdAt
   }
 `
@@ -239,6 +263,7 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
     profile {
       id
       displayName
+      avatarUrl
     }
     replies {
       id
@@ -249,6 +274,21 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
       profile {
         id
         displayName
+        avatarUrl
+      }
+    }
+  }
+`
+
+const POLL_FRAGMENT = /* GraphQL */ `
+  fragment PollFields on Poll {
+    id
+    options {
+      id
+      text
+      votes {
+        id
+        profileId
       }
     }
   }
@@ -259,10 +299,16 @@ const POST_FRAGMENT = /* GraphQL */ `
     id
     body
     pinned
+    imageUrl
+    mediaType
+    poll {
+      ...PollFields
+    }
     createdAt
     profile {
       id
       displayName
+      avatarUrl
     }
     likes {
       id
@@ -272,6 +318,7 @@ const POST_FRAGMENT = /* GraphQL */ `
       ...CommentFields
     }
   }
+  ${POLL_FRAGMENT}
 `
 
 // ---------- Queries ----------
@@ -327,13 +374,65 @@ export const PROFILE_QUERY = /* GraphQL */ `
 // ---------- Mutaciones ----------
 
 export const CREATE_POST = /* GraphQL */ `
-  mutation CreatePost($body: String!) {
-    createPost(body: $body) {
+  mutation CreatePost($body: String!, $imageKey: String) {
+    createPost(body: $body, imageKey: $imageKey) {
       ...PostFields
     }
   }
   ${POST_FRAGMENT}
   ${COMMENT_FRAGMENT}
+`
+
+export const CREATE_POLL_POST = /* GraphQL */ `
+  mutation CreatePollPost($question: String!, $options: [String!]!) {
+    createPollPost(question: $question, options: $options) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const VOTE_POLL = /* GraphQL */ `
+  mutation VotePoll($optionId: UUID!) {
+    votePoll(optionId: $optionId) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export interface CreatePollPostResult {
+  createPollPost: Post
+}
+
+export interface VotePollResult {
+  votePoll: Post
+}
+
+export interface PostImageUploadInfo {
+  key: string
+  uploadUrl: string
+  readUrl: string
+}
+
+export interface PostImageUploadInfoResult {
+  createPostImageUploadInfo: PostImageUploadInfo
+}
+
+export interface ProfileImageUploadInfoResult {
+  createProfileImageUploadInfo: PostImageUploadInfo
+}
+
+export const POST_IMAGE_UPLOAD_INFO = /* GraphQL */ `
+  mutation PostImageUploadInfo($fileName: String!, $contentType: String!) {
+    createPostImageUploadInfo(fileName: $fileName, contentType: $contentType) {
+      key
+      uploadUrl
+      readUrl
+    }
+  }
 `
 
 export const LIKE_POST = /* GraphQL */ `
@@ -379,12 +478,31 @@ export const REPLY_TO_COMMENT = /* GraphQL */ `
 `
 
 export const UPDATE_PROFILE = /* GraphQL */ `
-  mutation UpdateProfile($displayName: String!, $bio: String) {
-    updateProfile(displayName: $displayName, bio: $bio) {
+  mutation UpdateProfile(
+    $displayName: String!
+    $bio: String
+    $avatarKey: String
+    $coverKey: String
+  ) {
+    updateProfile(displayName: $displayName, bio: $bio, avatarKey: $avatarKey, coverKey: $coverKey) {
       ...ProfileFields
     }
   }
   ${PROFILE_FRAGMENT}
+`
+
+export const PROFILE_IMAGE_UPLOAD_INFO = /* GraphQL */ `
+  mutation ProfileImageUploadInfo(
+    $kind: String!
+    $fileName: String!
+    $contentType: String!
+  ) {
+    createProfileImageUploadInfo(kind: $kind, fileName: $fileName, contentType: $contentType) {
+      key
+      uploadUrl
+      readUrl
+    }
+  }
 `
 
 // ---------- Queries: follows + mensajes ----------

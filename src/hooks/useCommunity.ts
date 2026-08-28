@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useSubscription } from 'urql'
+import { ensureFreshAccessToken } from '../utils/authApi'
 import {
   ADD_COMMENT,
   ADD_GROUP_MEMBER,
   CONVERSATIONS_QUERY,
   CREATE_GROUP,
+  CREATE_POLL_POST,
   CREATE_POST,
   FOLLOWERS_QUERY,
   FOLLOWING_FEED_QUERY,
@@ -20,6 +22,8 @@ import {
   ME_QUERY,
   MESSAGE_ADDED,
   PEOPLE_SEARCH,
+  POST_IMAGE_UPLOAD_INFO,
+  PROFILE_IMAGE_UPLOAD_INFO,
   REMOVE_GROUP_MEMBER,
   RENAME_GROUP,
   REPLY_TO_COMMENT,
@@ -28,6 +32,7 @@ import {
   UNFOLLOW_USER,
   UNLIKE_POST,
   UPDATE_PROFILE,
+  VOTE_POLL,
   conversationKey,
   type AddCommentResult,
   type AddGroupMemberResult,
@@ -35,6 +40,7 @@ import {
   type Conversation,
   type ConversationsResult,
   type CreateGroupResult,
+  type CreatePollPostResult,
   type CreatePostResult,
   type FeedResult,
   type FollowersResult,
@@ -52,7 +58,9 @@ import {
   type PeopleResult,
   type Person,
   type Post,
+  type PostImageUploadInfoResult,
   type Profile,
+  type ProfileImageUploadInfoResult,
   type RemoveGroupMemberResult,
   type RenameGroupResult,
   type ReplyResult,
@@ -60,6 +68,7 @@ import {
   type SendMessageResult,
   type UnfollowUserResult,
   type UpdateProfileResult,
+  type VotePollResult,
 } from '../graphql/community'
 
 const PAGE_SIZE = 20
@@ -193,6 +202,12 @@ export function useCommunity() {
   const myProfileId = me?.id ?? null
 
   const [, createPostMutation] = useMutation<CreatePostResult>(CREATE_POST)
+  const [, createPollPostMutation] = useMutation<CreatePollPostResult>(CREATE_POLL_POST)
+  const [, votePollMutation] = useMutation<VotePollResult>(VOTE_POLL)
+  const [, imageUploadInfoMutation] =
+    useMutation<PostImageUploadInfoResult>(POST_IMAGE_UPLOAD_INFO)
+  const [, profileImageUploadInfoMutation] =
+    useMutation<ProfileImageUploadInfoResult>(PROFILE_IMAGE_UPLOAD_INFO)
   const [, likeMutation] = useMutation<LikePostResult>(LIKE_POST)
   const [, unlikeMutation] = useMutation<LikePostResult>(UNLIKE_POST)
   const [, addCommentMutation] = useMutation<AddCommentResult>(ADD_COMMENT)
@@ -233,14 +248,99 @@ export function useCommunity() {
   const conversations: Conversation[] = conversationsResult.data?.conversations ?? []
 
   const createPost = useCallback(
-    async (body: string) => {
-      const res = await createPostMutation({ body })
+    async (body: string, imageKey?: string | null) => {
+      const res = await createPostMutation({ body, imageKey: imageKey || undefined })
       if (res.error) throw new Error(res.error.message)
       reexecuteFeed({ requestPolicy: 'network-only' })
       reexecuteMe({ requestPolicy: 'network-only' })
       return res.data?.createPost
     },
     [createPostMutation, reexecuteFeed, reexecuteMe],
+  )
+
+  const createPollPost = useCallback(
+    async (question: string, options: string[]) => {
+      const res = await createPollPostMutation({ question, options })
+      if (res.error) throw new Error(res.error.message)
+      reexecuteFeed({ requestPolicy: 'network-only' })
+      reexecuteMe({ requestPolicy: 'network-only' })
+      return res.data?.createPollPost
+    },
+    [createPollPostMutation, reexecuteFeed, reexecuteMe],
+  )
+
+  /** Registra el voto en la encuesta y devuelve el post con resultados. */
+  const votePoll = useCallback(
+    async (optionId: string) => {
+      const res = await votePollMutation({ optionId })
+      if (res.error) throw new Error(res.error.message)
+      reexecuteFeed({ requestPolicy: 'network-only' })
+      return res.data?.votePoll
+    },
+    [votePollMutation, reexecuteFeed],
+  )
+
+  /** Pide la info de subida (clave + URLs) para la imagen de una publicación. */
+  const createPostImageUpload = useCallback(
+    async (fileName: string, contentType: string) => {
+      const res = await imageUploadInfoMutation({ fileName, contentType })
+      if (res.error) throw new Error(res.error.message)
+      const info = res.data?.createPostImageUploadInfo
+      if (!info) throw new Error('No se obtuvo la URL de subida.')
+      return info
+    },
+    [imageUploadInfoMutation],
+  )
+
+  /** Pide la info de subida para foto de perfil o portada ("AVATAR" | "COVER"). */
+  const createProfileImageUpload = useCallback(
+    async (kind: 'AVATAR' | 'COVER', fileName: string, contentType: string) => {
+      const res = await profileImageUploadInfoMutation({ kind, fileName, contentType })
+      if (res.error) throw new Error(res.error.message)
+      const info = res.data?.createProfileImageUploadInfo
+      if (!info) throw new Error('No se obtuvo la URL de subida.')
+      return info
+    },
+    [profileImageUploadInfoMutation],
+  )
+
+  /** Sube la imagen y devuelve la clave de storage (foto de perfil o portada). */
+  const uploadProfileImage = useCallback(
+    async (kind: 'AVATAR' | 'COVER', file: File) => {
+      const info = await createProfileImageUpload(kind, file.name, file.type)
+      const token = await ensureFreshAccessToken()
+      const res = await fetch(info.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: await file.arrayBuffer(),
+      })
+      if (!res.ok) throw new Error('No se pudo subir la imagen. Inténtalo de nuevo.')
+      return info
+    },
+    [createProfileImageUpload],
+  )
+
+  /** Sube el binario de la imagen a la URL provista (proxy local con Bearer o
+   *  presigned URL de S3). Devuelve la clave de almacenamiento. */
+  const uploadPostImage = useCallback(
+    async (file: File, contentType: string) => {
+      const info = await createPostImageUpload(file.name, contentType)
+      const token = await ensureFreshAccessToken()
+      const res = await fetch(info.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: await file.arrayBuffer(),
+      })
+      if (!res.ok) throw new Error('No se pudo subir la imagen. Inténtalo de nuevo.')
+      return info.key
+    },
+    [createPostImageUpload],
   )
 
   const toggleLike = useCallback(
@@ -274,12 +374,18 @@ export function useCommunity() {
   )
 
   const updateProfile = useCallback(
-    async (displayName: string, bio?: string | null) => {
-      const res = await updateProfileMutation({ displayName, bio: bio ?? null })
+    async (displayName: string, bio?: string | null, avatarKey?: string | null, coverKey?: string | null) => {
+      const res = await updateProfileMutation({
+        displayName,
+        bio: bio ?? null,
+        avatarKey: avatarKey || undefined,
+        coverKey: coverKey || undefined,
+      })
       if (res.error) throw new Error(res.error.message)
+      reexecuteMe({ requestPolicy: 'network-only' })
       return res.data?.updateProfile
     },
-    [updateProfileMutation],
+    [updateProfileMutation, reexecuteMe],
   )
 
   const followUser = useCallback(
@@ -429,10 +535,15 @@ export function useCommunity() {
     conversationsError: conversationsResult.error,
     refetchConversations,
     createPost,
+    createPollPost,
+    votePoll,
+    createPostImageUpload,
+    uploadPostImage,
     toggleLike,
     addComment,
     replyToComment,
     updateProfile,
+  uploadProfileImage,
     followUser,
     unfollowUser,
     sendMessage,

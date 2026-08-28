@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { IonAlert, IonButton, IonIcon, IonModal, IonSkeletonText, IonTextarea } from '@ionic/react'
-import { arrowDown, close, people, personAddOutline, send } from 'ionicons/icons'
+import { arrowDown, close, people, personAddOutline, personRemoveOutline, send } from 'ionicons/icons'
 import { useQuery, useSubscription } from 'urql'
 import {
   CONVERSATION_QUERY,
@@ -18,40 +18,66 @@ import {
   type MessageAddedResult,
   type Profile,
 } from '../graphql/community'
-
-const AVATAR_GRADS = [
-  'linear-gradient(135deg,#1B6CA8,#0A1F36)',
-  'linear-gradient(135deg,#D4537E,#9B2D5A)',
-  'linear-gradient(135deg,#E87B2B,#C05A0A)',
-  'linear-gradient(135deg,#059669,#047857)',
-]
-
-function initialsOf(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('')
-}
+import { Avatar, initialsOf } from './community/community'
 
 function byCreatedAsc(a: Message, b: Message): number {
   return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
 }
 
-function bubbleStyle(mine: boolean): CSSProperties {
-  return {
-    background: mine ? 'var(--teal)' : 'var(--wh)',
-    color: mine ? '#fff' : 'var(--tx)',
-    border: mine ? 'none' : '1px solid var(--bd)',
-    borderRadius: 14,
-    maxWidth: '78%',
-    padding: '7px 11px',
-    fontSize: 13,
-    lineHeight: 1.45,
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-  }
+/** Color del autor en grupos (paleta de marca, determinista por id). */
+const SENDER_COLORS = ['var(--teal)', 'var(--blue)', 'var(--org)', 'var(--pur)', '#b45309']
+
+function senderColor(id: string): string {
+  return SENDER_COLORS[id.charCodeAt(0) % SENDER_COLORS.length]
+}
+
+function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  )
+}
+
+/** Etiqueta de separador de fecha estilo Telegram. */
+function dayLabel(d: Date): string {
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(today.getDate() - 1)
+  if (sameDay(d, today)) return 'Hoy'
+  if (sameDay(d, yesterday)) return 'Ayer'
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function timeShort(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+}
+
+interface MessageMeta {
+  mine: boolean
+  /** Continúa el remitente anterior (mismo día): la burbuja se pega arriba. */
+  groupedAbove: boolean
+  /** El siguiente es del mismo remitente (mismo día): la burbuja se pega abajo. */
+  groupedBelow: boolean
+  dayChanged: boolean
+  senderName: string
+}
+
+function buildMeta(messages: Message[], meId: string, isGroup: boolean, memberMap: Map<string, Profile>): MessageMeta[] {
+  return messages.map((m, i) => {
+    const mine = m.senderProfileId === meId
+    const prev = messages[i - 1]
+    const next = messages[i + 1]
+    const curDate = new Date(m.createdAt)
+    const prevDate = prev ? new Date(prev.createdAt) : null
+    const nextDate = next ? new Date(next.createdAt) : null
+    const groupedAbove =
+      !!prev && prev.senderProfileId === m.senderProfileId && prevDate !== null && sameDay(prevDate, curDate)
+    const groupedBelow =
+      !!next && next.senderProfileId === m.senderProfileId && nextDate !== null && sameDay(nextDate, curDate)
+    const dayChanged = !prevDate || !sameDay(prevDate, curDate)
+    const senderName = !mine && isGroup ? (memberMap.get(m.senderProfileId)?.displayName ?? '') : ''
+    return { mine, groupedAbove, groupedBelow, dayChanged, senderName }
+  })
 }
 
 // Distancia al fondo (px) bajo la cual se considera que el usuario está
@@ -71,6 +97,8 @@ export function ConversationModal({
   onRenameGroup,
   onAddMember,
   onLeaveGroup,
+  onOpenProfile,
+  dark = false,
 }: {
   peer?: Profile
   group?: ChatGroup
@@ -84,9 +112,43 @@ export function ConversationModal({
   onRenameGroup?: (groupId: string, name: string) => Promise<unknown>
   onAddMember?: (groupId: string, profileId: string) => Promise<unknown>
   onLeaveGroup?: (groupId: string) => Promise<unknown>
+  /** Abre el perfil de un miembro (avatares clicables). */
+  onOpenProfile?: (profileId: string) => void
+  dark?: boolean
 }) {
-  const isGroup = !!group
-  const key = peer ? conversationKey(me.id, peer.id) : (group?.id ?? '')
+  // El modal conserva el último peer/grupo abierto mientras se anima el
+  // cierre (mismo patrón que PostDetailModal): el componente queda montado y
+  // solo cambia modalOpen, así Ionic reproduce la animación de dismiss en vez
+  // de desmontarse de golpe.
+  const [view, setView] = useState<{ peer: Profile | null; group: ChatGroup | null }>({
+    peer: peer ?? null,
+    group: group ?? null,
+  })
+  const [modalOpen, setModalOpen] = useState(!!(peer || group))
+
+  useEffect(() => {
+    if (!open) return
+    setView((v) => ({ peer: peer ?? v.peer, group: group ?? v.group }))
+    setModalOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, peer?.id, group?.id])
+
+  // Al quitar el peer/grupo (✕ o backdrop) cierra con animación nativa.
+  useEffect(() => {
+    if (!open && (view.peer || view.group)) setModalOpen(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const activePeer = view.peer ?? peer ?? null
+  const activeGroup = view.group ?? group ?? null
+  const isGroup = !!activeGroup
+  const key = activePeer ? conversationKey(me.id, activePeer.id) : (activeGroup?.id ?? '')
+
+  const handleDidDismiss = () => {
+    setModalOpen(false)
+    setView({ peer: null, group: null })
+    onClose()
+  }
 
   const [query] = useQuery<ConversationResult>({
     query: CONVERSATION_QUERY,
@@ -313,43 +375,57 @@ export function ConversationModal({
     }
   }
 
-  const grad = isGroup
-    ? AVATAR_GRADS[group!.name.charCodeAt(0) % AVATAR_GRADS.length]
-    : AVATAR_GRADS[peer!.id.charCodeAt(0) % AVATAR_GRADS.length]
   const loading = (isGroup ? groupQuery.fetching : query.fetching) && messages.length === 0
+
+  // Sin datos no hay modal que renderizar (todos los hooks ya corrieron
+  // arriba, incondicionales — no romper el orden de hooks).
+  if (activePeer == null && activeGroup == null) return <></>
 
   return (
     <>
-    <IonModal isOpen={open} onDidDismiss={onClose}>
+    <IonModal
+      isOpen={modalOpen}
+      onDidDismiss={handleDidDismiss}
+      className={dark ? 'com-dark-surface' : undefined}
+    >
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--wh)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 12px 10px', borderBottom: '1px solid var(--g1)' }}>
-          <div className="avatar" style={{ width: 38, height: 38, background: grad, fontSize: 13 }}>
-            {isGroup ? initialsOf(group!.name) : initialsOf(peer!.displayName)}
-          </div>
+          {isGroup ? (
+            <Avatar name={activeGroup!.name} seedId={activeGroup!.id} size={38} />
+          ) : (
+            <Avatar
+              name={activePeer!.displayName}
+              seedId={activePeer!.id}
+              size={38}
+              src={activePeer!.avatarUrl}
+              style={{ cursor: 'pointer' }}
+              onClick={() => onOpenProfile?.(activePeer!.id)}
+            />
+          )}
           <div style={{ flex: 1, minWidth: 0 }}>
             {isGroup ? (
               <>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>{group!.name}</div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>{activeGroup!.name}</div>
                 <div
                   style={{ fontSize: 11, color: 'var(--mu)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                   onClick={() => setMembersOpen(true)}
                 >
                   <IonIcon icon={people} style={{ fontSize: 12 }} />
-                  {`${group!.memberCount} ${group!.memberCount === 1 ? 'miembro' : 'miembros'}`}
+                  {`${activeGroup!.memberCount} ${activeGroup!.memberCount === 1 ? 'miembro' : 'miembros'}`}
                 </div>
               </>
             ) : (
               <>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>{peer!.displayName}</div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>{activePeer!.displayName}</div>
                 <div style={{ fontSize: 11, color: 'var(--mu)' }}>Amigos en la comunidad</div>
               </>
             )}
           </div>
-          <IonButton fill="clear" size="small" onClick={onClose}><IonIcon icon={close} /></IonButton>
+          <IonButton fill="clear" size="small" onClick={handleDidDismiss}><IonIcon icon={close} /></IonButton>
         </div>
 
         <div style={{ flex: 1, position: 'relative', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <div ref={scrollRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--g1)', padding: 12 }}>
+          <div ref={scrollRef} onScroll={handleScroll} className="tg-bg" style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
           {loading ? (
             <>
               {[0, 1, 2, 3].map((i) => (
@@ -363,34 +439,42 @@ export function ConversationModal({
               Sin mensajes todavía. ¡Saluda!
             </div>
           ) : (
-            messages.map((m, i) => {
-              const mine = m.senderProfileId === me.id
-              if (isGroup) {
-                const prev = messages[i - 1]
-                const showName = !mine && (i === 0 || prev?.senderProfileId !== m.senderProfileId)
-                const senderName = showName ? (memberMap.get(m.senderProfileId)?.displayName ?? '') : ''
+            (() => {
+              const metas = buildMeta(messages, me.id, isGroup, memberMap)
+              return metas.map((meta, i) => {
+                const m = messages[i]
                 return (
-                  <div
-                    key={m.id}
-                    style={{ display: 'flex', flexWrap: 'wrap', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 6 }}
-                  >
-                    {showName && senderName && (
-                      <div style={{ width: '100%', fontSize: 11, color: 'var(--mu)', marginBottom: 2, paddingLeft: 2 }}>
-                        {senderName}
+                  <div key={m.id} className="tg-day">
+                    {meta.dayChanged && (
+                      <div className="tg-sep">
+                        <span>{dayLabel(new Date(m.createdAt))}</span>
                       </div>
                     )}
-                    <div style={bubbleStyle(mine)}>{m.body}</div>
+                    <div
+                      className={`tg-row ${meta.mine ? 'mine' : ''}`}
+                      style={{
+                        marginTop: meta.groupedAbove ? 1 : 8,
+                        marginBottom: meta.groupedBelow ? 0 : 8,
+                      }}
+                    >
+                      <div
+                        className={`tg-bubble ${meta.mine ? 'mine' : ''} ${meta.groupedAbove ? 'g-up' : ''} ${
+                          meta.groupedBelow ? 'g-down' : ''
+                        }`}
+                      >
+                        {!meta.mine && meta.senderName && (
+                          <div className="tg-author" style={{ color: senderColor(m.senderProfileId) }}>
+                            {meta.senderName}
+                          </div>
+                        )}
+                        <div className="tg-text">{m.body}</div>
+                        <div className="tg-time">{timeShort(m.createdAt)}</div>
+                      </div>
+                    </div>
                   </div>
                 )
-              }
-              return (
-                <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
-                  <div style={bubbleStyle(mine)}>
-                    {m.body}
-                  </div>
-                </div>
-              )
-            })
+              })
+            })()
           )}
           </div>
           {unreadCount > 0 && (
@@ -420,24 +504,30 @@ export function ConversationModal({
           )}
         </div>
 
-        <div style={{ borderTop: '1px solid var(--g1)', padding: '10px 12px' }}>
-          <IonTextarea
-            className="fld draft-tx"
-            value={draft}
-            placeholder="Escribe un mensaje…"
-            onIonInput={(e) => {
-              setDraft(e.detail.value ?? '')
-              rePinAfterLayout()
-            }}
-            onIonFocus={() => rePinAfterLayout()}
-            autoGrow
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-            <IonButton className="bt bt-pur bt-mini" disabled={!draft.trim() || sending} onClick={() => void handleSend()}>
-              {sending ? 'Enviando…' : (
-                <>
-                  <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Enviar
-                </>
+        <div style={{ borderTop: '1px solid var(--g1)', padding: '8px 12px 10px' }}>
+          <div className="tg-input-row">
+            <IonTextarea
+              className="fld draft-tx tg-input"
+              value={draft}
+              placeholder="Escribe un mensaje…"
+              onIonInput={(e) => {
+                setDraft(e.detail.value ?? '')
+                rePinAfterLayout()
+              }}
+              onIonFocus={() => rePinAfterLayout()}
+              autoGrow
+              rows={1}
+            />
+            <IonButton
+              className={`tg-input-send ${draft.trim() ? 'bt-pur' : ''}`}
+              disabled={!draft.trim() || sending}
+              onClick={() => void handleSend()}
+              aria-label="Enviar mensaje"
+            >
+              {sending ? (
+                '…'
+              ) : (
+                <IonIcon icon={send} />
               )}
             </IonButton>
           </div>
@@ -446,60 +536,91 @@ export function ConversationModal({
     </IonModal>
 
     {/* Panel de miembros (solo modo grupo) */}
-    <IonModal isOpen={membersOpen} onDidDismiss={() => setMembersOpen(false)}>
+    <IonModal
+      isOpen={membersOpen}
+      onDidDismiss={() => setMembersOpen(false)}
+      className={dark ? 'com-dark-surface' : undefined}
+    >
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--wh)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 12px 10px', borderBottom: '1px solid var(--g1)' }}>
-          <div style={{ fontWeight: 800, fontSize: 15, flex: 1 }}>Miembros</div>
-          <IonButton fill="clear" size="small" onClick={() => setMembersOpen(false)}><IonIcon icon={close} /></IonButton>
+        <div className="gm-hero">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="gm-hero-main">
+              <IonIcon icon={people} className="gm-hero-ico" /> Miembros
+            </div>
+            <div className="gm-hero-sub">
+              {members.length} {members.length === 1 ? 'miembro' : 'miembros'} · {activeGroup?.name}
+            </div>
+          </div>
+          <IonButton className="gm-close" onClick={() => setMembersOpen(false)} aria-label="Cerrar miembros">
+            <IonIcon icon={close} />
+          </IonButton>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {members.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--mu)', fontSize: 13, marginTop: 20 }}>
               Cargando miembros…
             </div>
           ) : (
             members.map((m) => {
-              const isCreator = m.id === group?.createdByProfileId
+              const isCreator = m.id === activeGroup?.createdByProfileId
               const isMe = m.id === me.id
               const canRemove = !isCreator && !isMe
               return (
-                <div
+                <button
                   key={m.id}
-                  className="row-card"
-                  style={canRemove ? { cursor: 'pointer' } : {}}
+                  type="button"
+                  className="gm-row"
                   onClick={() => {
                     if (canRemove) setRemoveTarget(m)
+                    else onOpenProfile?.(m.id)
                   }}
                 >
-                  <div
-                    className="avatar"
-                    style={{ width: 38, height: 38, fontSize: 13, background: AVATAR_GRADS[m.id.charCodeAt(0) % AVATAR_GRADS.length] }}
+                  <span
+                    className="gm-av"
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation()
+                      onOpenProfile?.(m.id)
+                    }}
+                    role="button"
+                    aria-label={`Ver perfil de ${m.displayName}`}
                   >
-                    {initialsOf(m.displayName)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 13 }}>{m.displayName}</div>
-                  </div>
-                  {isCreator && (
-                    <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--teal)', border: '1px solid var(--teal-l)', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center' }}>Creador</span>
+                    {m.avatarUrl ? (
+                      <img src={m.avatarUrl} alt={m.displayName} />
+                    ) : (
+                      initialsOf(m.displayName)
+                    )}
+                  </span>
+                  <span className="gm-main">
+                    <span className="gm-name">{m.displayName}</span>
+                    <span className="gm-sub">
+                      {isCreator
+                        ? 'Creador del grupo'
+                        : isMe
+                          ? 'Eres tú'
+                          : canRemove
+                            ? 'Toques para quitar del grupo'
+                            : 'Miembro del grupo'}
+                    </span>
+                  </span>
+                  {isCreator && <span className="gm-badge creator">Creador</span>}
+                  {isMe && <span className="gm-badge">Tú</span>}
+                  {canRemove && (
+                    <span className="gm-remove" aria-hidden>
+                      <IonIcon icon={personRemoveOutline} />
+                    </span>
                   )}
-                  {isMe && (
-                    <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--mu)', background: 'var(--g1)', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center' }}>Tú</span>
-                  )}
-                </div>
+                </button>
               )
             })
           )}
         </div>
-        <div style={{ borderTop: '1px solid var(--g1)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <IonButton className="bt bt-outline bt-mini" onClick={() => setAddOpen(true)}>
-            <IonIcon icon={personAddOutline} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Añadir miembro
+        <div className="gm-foot">
+          <IonButton className="gm-btn primary" onClick={() => setAddOpen(true)}>
+            <IonIcon icon={personAddOutline} style={{ marginRight: 5 }} /> Añadir miembro
           </IonButton>
-          <IonButton className="bt bt-outline bt-mini" onClick={() => setRenameOpen(true)}>Renombrar grupo</IonButton>
+          <IonButton className="gm-btn" onClick={() => setRenameOpen(true)}>Renombrar grupo</IonButton>
           <IonButton
-            fill="outline"
-            className="bt bt-mini"
-            style={{ '--color': 'var(--red)', borderColor: 'var(--red)' } as CSSProperties}
+            className="gm-btn danger"
             onClick={() => setLeaveOpen(true)}
           >
             Salir del grupo
@@ -509,7 +630,11 @@ export function ConversationModal({
     </IonModal>
 
     {/* Selector para añadir miembro */}
-    <IonModal isOpen={addOpen} onDidDismiss={() => setAddOpen(false)}>
+    <IonModal
+      isOpen={addOpen}
+      onDidDismiss={() => setAddOpen(false)}
+      className={dark ? 'com-dark-surface' : undefined}
+    >
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--wh)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 12px 10px', borderBottom: '1px solid var(--g1)' }}>
           <div style={{ fontWeight: 800, fontSize: 15, flex: 1 }}>Añadir miembro</div>
@@ -524,16 +649,21 @@ export function ConversationModal({
             friendsToAdd.map((f) => (
               <div
                 key={f.id}
-                className="row-card"
+                className="com-row"
                 style={{ cursor: 'pointer' }}
                 onClick={() => void handleAddMember(f.id)}
               >
-                <div
-                  className="avatar"
-                  style={{ width: 38, height: 38, fontSize: 13, background: AVATAR_GRADS[f.id.charCodeAt(0) % AVATAR_GRADS.length] }}
-                >
-                  {initialsOf(f.displayName)}
-                </div>
+                <Avatar
+                  name={f.displayName}
+                  seedId={f.id}
+                  size={38}
+                  src={f.avatarUrl}
+                  style={{ cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onOpenProfile?.(f.id)
+                  }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 13 }}>{f.displayName}</div>
                 </div>

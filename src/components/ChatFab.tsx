@@ -10,8 +10,9 @@ import { useApp } from '../context/AppContext'
 export function ChatFab() {
   const { flow, screen, navigate } = useApp()
 
-  // Solo en la app y cuando no estás ya en el chat.
-  if (flow !== 'app' || screen === 'chat') return null
+  // Solo en la app, cuando no estás ya en el chat y fuera de Comunidad
+  // (la comunidad tiene su propio acceso al chat: sidebar y menú del FAB).
+  if (flow !== 'app' || screen === 'chat' || screen === 'com') return null
 
   return (
     <button

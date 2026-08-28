@@ -1,4 +1,6 @@
 const ACCESS_TOKEN_KEY = 'copp_access_token'
+const TOKEN_EXPIRES_KEY = 'copp_token_expires_at'
+const REFRESH_MARGIN_MS = 60_000
 
 export interface LoginResult {
   accessToken: string
@@ -52,6 +54,12 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+/** Guarda el access token y su instante de expiración (ms epoch). */
+function storeToken(result: LoginResult): void {
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+  sessionStorage.setItem(TOKEN_EXPIRES_KEY, String(Date.now() + result.expiresIn * 1000))
+}
+
 /** Login con contraseña por número de identificación (usuarios ya registrados). */
 export async function loginUser(documentNumber: string, password: string, rememberMe: boolean): Promise<LoginResult> {
   const result = await postJson<LoginResult>('/api/auth/login', {
@@ -60,7 +68,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
     application: 'app',
     rememberMe,
   })
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+  storeToken(result)
   return result
 }
 
@@ -91,12 +99,13 @@ export async function verifyOtp(documentNumber: string, otp: string, rememberMe:
     application: 'app',
     rememberMe,
   })
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+  storeToken(result)
   return result
 }
 
 export async function logoutUser(): Promise<void> {
   sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+  sessionStorage.removeItem(TOKEN_EXPIRES_KEY)
   try {
     await postJson<{ message: string }>('/api/auth/logout')
   } catch {
@@ -106,4 +115,32 @@ export async function logoutUser(): Promise<void> {
 
 export function getAccessToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY)
+}
+
+/** Renueva el access token con la cookie HttpOnly de refresh del Auth service. */
+export async function refreshAccessToken(): Promise<LoginResult | null> {
+  try {
+    const result = await postJson<LoginResult>('/api/auth/refresh')
+    storeToken(result)
+    return result
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Devuelve un access token vigente, renovándolo si está a punto de expirar
+ * (margen de 60 s). Si el refresh falla, devuelve el token que haya en sesión
+ * para que las llamadas muestren el error real (usuario sin sesión válida).
+ */
+export async function ensureFreshAccessToken(): Promise<string | null> {
+  const token = getAccessToken()
+  if (!token) return null
+
+  const expiresAt = Number(sessionStorage.getItem(TOKEN_EXPIRES_KEY) ?? 0)
+  if (expiresAt > 0 && expiresAt - Date.now() <= REFRESH_MARGIN_MS) {
+    const refreshed = await refreshAccessToken()
+    return refreshed?.accessToken ?? token
+  }
+  return token
 }

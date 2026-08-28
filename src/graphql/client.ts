@@ -5,7 +5,7 @@ import {
   subscriptionExchange,
 } from 'urql'
 import { createClient as createWsClient, type Client as WsClient } from 'graphql-ws'
-import { getAccessToken } from '../utils/authApi'
+import { ensureFreshAccessToken } from '../utils/authApi'
 
 /** URL del WebSocket de GraphQL. Se toma de la env VITE_COMMUNITY_WS_URL y,
  *  si no está definida, cae a ws://localhost:5200/graphql para desarrollo. */
@@ -41,11 +41,12 @@ export function createCommunityClient() {
   // Cerramos la conexión WS previa antes de reemplazarla.
   disposeActiveWsClient()
 
-  // WebSocket client para GraphQL subscriptions (lee el token actual al conectar).
+  // WebSocket client para GraphQL subscriptions (lee el token vigente al conectar
+  // y lo renueva antes de expirar si el refresh está disponible).
   const wsClient = createWsClient({
     url: WS_URL,
-    connectionParams: () => ({
-      Authorization: `Bearer ${getAccessToken() ?? ''}`,
+    connectionParams: async () => ({
+      Authorization: `Bearer ${(await ensureFreshAccessToken()) ?? ''}`,
     }),
   })
   activeWsClient = wsClient
@@ -70,11 +71,11 @@ export function createCommunityClient() {
       }),
       fetchExchange,
     ],
-    fetchOptions: (): RequestInit => {
-      const token = getAccessToken()
-      const headers: Record<string, string> = {}
-      if (token) headers.Authorization = `Bearer ${token}`
-      return { headers }
+    fetch: async (input, init) => {
+      const token = await ensureFreshAccessToken()
+      const headers = new Headers(init?.headers)
+      if (token) headers.set('Authorization', `Bearer ${token}`)
+      return fetch(input, { ...init, headers })
     },
   })
 }
