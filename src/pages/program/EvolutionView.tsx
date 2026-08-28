@@ -9,9 +9,11 @@ import {
   TRANSFORM_ROWS,
   TRANSFORM_SCORE,
 } from '../../data/program'
+import { useT } from '../../i18n/I18nContext'
 import { CountUp, Sparkline } from './visuals'
 
 export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
+  const t = useT()
   const trend = HEALTH_TREND.map((p) => p.v)
 
   return (
@@ -38,15 +40,15 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
           </RingProgress>
           <div className="pg-evo-kpis">
             <div>
-              <span>Anterior</span>
+              <span>{t('Anterior')}</span>
               <b>81</b>
             </div>
             <div>
-              <span>Cambio</span>
+              <span>{t('Cambio')}</span>
               <b className="up">+5</b>
             </div>
             <div>
-              <span>Meta</span>
+              <span>{t('Meta')}</span>
               <b>90</b>
             </div>
           </div>
@@ -55,7 +57,7 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
           {HEALTH_PILLARS.map((p, i) => (
             <div key={p.label} className="hs-bar-row">
               <div className="hs-bar-top">
-                <span>{p.label}</span>
+                <span>{t(p.label)}</span>
                 <span>{p.pct}%</span>
               </div>
               <div className="hs-bar-track">
@@ -81,7 +83,7 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
         <div className="pg-trend-head">
           <div>
             <div className="ct">Health Score</div>
-            <div className="cs">Semanas 6 a 12 del protocolo</div>
+            <div className="cs">{t('Semanas 6 a 12 del protocolo')}</div>
           </div>
           <span className="pg-trend-chip">
             <IonIcon icon={trendingUp} /> +14 pts
@@ -104,7 +106,7 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
         <div className="tf-head">
           <div>
             <div className="ct">Transformation Score</div>
-            <div className="cs">Desde tu línea base · día 0</div>
+            <div className="cs">{t('Desde tu línea base · día 0')}</div>
           </div>
           <div className="tf-score">
             <CountUp to={TRANSFORM_SCORE} duration={1} />
@@ -118,7 +120,7 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.22 + i * 0.05, duration: 0.3 }}
           >
-            <div className="tf-lbl">{r.label}</div>
+            <div className="tf-lbl">{t(r.label)}</div>
             <div className="tf-base">{r.base}</div>
             <span className="pg-tf-arrow" aria-hidden="true">
               →
@@ -139,12 +141,12 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
           <IonIcon icon={warning} />
         </div>
         <div>
-          <div className="wk-title">Índice de grasa: tendencia a vigilar</div>
+          <div className="wk-title">{t('Índice de grasa: tendencia a vigilar')}</div>
           <div className="wk-sub">
-            +0.4% esta semana. La IA sugiere revisar proteínas con tu nutricionista.
+            {t('+0.4% esta semana. La IA sugiere revisar proteínas con tu nutricionista.')}
           </div>
           <IonButton className="bt bt-gold" onClick={onGoBook}>
-            Ver cita
+            {t('Ver cita')}
           </IonButton>
         </div>
       </motion.div>

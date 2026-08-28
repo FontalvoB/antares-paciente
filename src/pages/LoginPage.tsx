@@ -17,7 +17,9 @@ import {
   timeOutline,
 } from 'ionicons/icons'
 import { useApp } from '../context/AppContext'
-import { loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
+import { useT } from '../i18n/I18nContext'
+import { LanguageToggle } from '../components/LanguageToggle'
+import { DEMO_LOGIN, loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
 import type { UserProfile } from '../types'
 
 type LoginMode = 'login' | 'first'
@@ -25,6 +27,7 @@ type FirstStep = 'id' | 'contacts' | 'otp'
 
 export function LoginPage() {
   const { finishLogin, showToast } = useApp()
+  const t = useT()
   const [mode, setMode] = useState<LoginMode>('login')
   const [firstStep, setFirstStep] = useState<FirstStep>('id')
 
@@ -63,7 +66,7 @@ export function LoginPage() {
   const submit = async () => {
     const doc = documentNumber.trim()
     if (!doc || !pwd) {
-      showToast('Ingresa tu número de identificación y contraseña', 'warn')
+      showToast(t('Ingresa tu número de identificación y contraseña'), 'warn')
       return
     }
     setBusy(true)
@@ -73,18 +76,18 @@ export function LoginPage() {
       finishLogin({ cedula: doc }, 'app')
     } catch (e) {
       setBusy(false)
-      showToast(e instanceof Error ? e.message : 'Error al iniciar sesión', 'err')
+      showToast(e instanceof Error ? e.message : t('Error al iniciar sesión'), 'err')
     }
   }
 
   const confirmId = async () => {
     const doc = idInput.trim()
     if (!doc) {
-      showToast('Ingresa tu número de identificación', 'warn')
+      showToast(t('Ingresa tu número de identificación'), 'warn')
       return
     }
     startAction()
-    setBusyMessage('Buscando tu identificación…')
+    setBusyMessage(t('Buscando tu identificación…'))
     try {
       const result = await lookupId(doc)
       setLookup(result)
@@ -95,13 +98,13 @@ export function LoginPage() {
       setBusy(false)
     } catch (e) {
       setBusy(false)
-      showToast(e instanceof Error ? e.message : 'No se pudo verificar la identidad', 'err')
+      showToast(e instanceof Error ? e.message : t('No se pudo verificar la identidad'), 'err')
     }
   }
 
   const pickContact = async (c: ContactMethod) => {
     startAction()
-    setBusyMessage('Enviando tu código…')
+    setBusyMessage(t('Enviando tu código…'))
     try {
       const result = await sendOtp(idInput.trim(), c.id)
       setContact(c)
@@ -110,10 +113,10 @@ export function LoginPage() {
       setOtpLeft(result.expiresInSeconds)
       setFirstStep('otp')
       setBusy(false)
-      showToast(`Código enviado por ${c.type === 'Email' ? 'correo electrónico' : 'SMS'}`, 'ok')
+      showToast(t('Código enviado por {channel}', { channel: c.type === 'Email' ? 'correo electrónico' : 'SMS' }), 'ok')
     } catch (e) {
       setBusy(false)
-      showToast(e instanceof Error ? e.message : 'No se pudo enviar el código', 'err')
+      showToast(e instanceof Error ? e.message : t('No se pudo enviar el código'), 'err')
     }
   }
 
@@ -125,11 +128,11 @@ export function LoginPage() {
   const submitOtp = async () => {
     const code = otp.join('')
     if (code.length !== 6) {
-      showToast('Ingresa el código de 6 dígitos', 'warn')
+      showToast(t('Ingresa el código de 6 dígitos'), 'warn')
       return
     }
     startAction()
-    setBusyMessage('Verificando tu código…')
+    setBusyMessage(t('Verificando tu código…'))
     try {
       await verifyOtp(idInput.trim(), code, remember)
       setBusy(false)
@@ -142,7 +145,7 @@ export function LoginPage() {
       finishLogin(seed)
     } catch (e) {
       setBusy(false)
-      showToast(e instanceof Error ? e.message : 'Código inválido o expirado', 'err')
+      showToast(e instanceof Error ? e.message : t('Código inválido o expirado'), 'err')
     }
   }
 
@@ -194,9 +197,12 @@ export function LoginPage() {
   const fullName = lookup ? `${lookup.firstName} ${lookup.lastName}`.trim() : ''
 
   return (
-    <div className="screen login-screen">
+    <div className="screen login-screen" style={{ position: 'relative' }}>
+    <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+        <LanguageToggle />
+      </div>
       <div className="login-layout">
-        <section className="login-brand" aria-label="Identidad de ANTARES">
+        <section className="login-brand" aria-label={t('Identidad de ANTARES')}>
           <div className="login-brand-art" aria-hidden="true">
             <div className="login-stars" />
             <div className="login-stars-2" />
@@ -211,30 +217,30 @@ export function LoginPage() {
               <span className="login-brand-word">ANTARES</span>
             </div>
             <div className="login-brand-kicker">ANTARES BIOHACKING</div>
-            <h2 className="login-brand-title">Tu salud, conectada</h2>
+            <h2 className="login-brand-title">{t('Tu salud, conectada')}</h2>
 
-            <div className="login-stats" aria-label="Beneficios de la plataforma">
+            <div className="login-stats" aria-label={t('Beneficios de la plataforma')}>
               <div>
                 <strong>24/7</strong>
-                <span>Disponibilidad</span>
+                <span>{t('Disponibilidad')}</span>
               </div>
               <div>
                 <strong>100%</strong>
-                <span>Seguro</span>
+                <span>{t('Seguro')}</span>
               </div>
               <div>
                 <strong>HIPAA</strong>
-                <span>Compatible</span>
+                <span>{t('Compatible')}</span>
               </div>
             </div>
 
-            <div className="login-system-status">Todos los sistemas operativos</div>
+            <div className="login-system-status">{t('Todos los sistemas operativos')}</div>
           </div>
 
-          <div className="login-brand-footer">COPP-ADRESD · Salud preventiva conectada</div>
+          <div className="login-brand-footer">{t('COPP-ADRESD · Salud preventiva conectada')}</div>
         </section>
 
-        <section className="login-form-panel" aria-label="Acceso a ANTARES">
+        <section className="login-form-panel" aria-label={t('Acceso a ANTARES')}>
           <div className="login-form-wrap">
             <AnimatePresence mode="wait" initial={false}>
               {mode === 'first' ? (
@@ -251,11 +257,11 @@ export function LoginPage() {
                       <IonIcon icon={shieldCheckmarkOutline} />
                     </div>
                     <div>
-                      <h1>Primer inicio de sesión</h1>
+                      <h1>{t('Primer inicio de sesión')}</h1>
                       <p className="login-heading-sub">
-                        {firstStep === 'id' && 'Verifica tu identidad para completar tu perfil'}
-                        {firstStep === 'contacts' && 'Elige por dónde quieres recibir tu código'}
-                        {firstStep === 'otp' && 'Introduce el código que te enviamos'}
+{firstStep === 'id' && t('Verifica tu identidad para completar tu perfil')}
+{firstStep === 'contacts' && t('Elige por dónde quieres recibir tu código')}
+{firstStep === 'otp' && t('Introduce el código que te enviamos')}
                       </p>
                     </div>
                   </header>
@@ -273,16 +279,15 @@ export function LoginPage() {
                       <form onSubmit={(e) => { e.preventDefault(); confirmId() }}>
                     <div className="login-id-note">
                       <IonIcon icon={shieldCheckmarkOutline} />
-                      <span>
-                        Buscaremos los correos y teléfonos asociados a tu número de identificación para verificar
-                        que eres tú.
-                      </span>
+<span>
+                {t('Buscaremos los correos y teléfonos asociados a tu número de identificación para verificar que eres tú.')}
+              </span>
                     </div>
 
                     <div className="login-field">
                       <label htmlFor="login-first-id">
                         <IonIcon icon={idCardOutline} />
-                        Número de identificación
+                        {t('Número de identificación')}
                       </label>
                       <IonInput
                         id="login-first-id"
@@ -292,7 +297,7 @@ export function LoginPage() {
                         autocomplete="off"
                         enterkeyhint="done"
                         value={idInput}
-                        placeholder="Ej. 32534534"
+placeholder={t('Ej. 32534534')}
                         style={{ '--placeholder-color': '#bdcbe0' } as CSSProperties}
                         onIonInput={(e) => setIdInput((e.detail.value ?? '').replace(/\s/g, ''))}
                       />
@@ -302,12 +307,12 @@ export function LoginPage() {
                       {busy ? (
                         <>
                           <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                          Buscando…
+                          {t('Buscando…')}
                         </>
                       ) : (
                         <>
                           <IonIcon icon={shieldCheckmarkOutline} />
-                          Confirmar identidad
+                          {t('Confirmar identidad')}
                         </>
                       )}
                     </IonButton>
@@ -320,7 +325,7 @@ export function LoginPage() {
                       onClick={() => setMode('login')}
                     >
                       <IonIcon icon={arrowBackOutline} />
-                      Volver al inicio de sesión
+                      {t('Volver al inicio de sesión')}
                     </IonButton>
                   </form>
                 )}
@@ -338,12 +343,12 @@ export function LoginPage() {
                     )}
 
                     <p className="login-contacts-hint">
-                      Encontramos <strong>{lookup.contacts.length}</strong>{' '}
-                      {lookup.contacts.length === 1 ? 'método de contacto' : 'métodos de contacto'} asociado
-                      {lookup.contacts.length === 1 ? '' : 's'} a tu identificación.
+                      {t('Encontramos')} <strong>{lookup.contacts.length}</strong>{' '}
+                      {lookup.contacts.length === 1 ? t('método de contacto') : t('métodos de contacto')} {t('asociado')}
+                      {lookup.contacts.length === 1 ? '' : 's'} {t('a tu identificación.')}
                     </p>
 
-                    <div className="login-contact-list" role="radiogroup" aria-label="Métodos de contacto">
+                    <div className="login-contact-list" role="radiogroup" aria-label={t('Métodos de contacto')}>
                       {lookup.contacts.map((c) => (
                         <button
                           key={c.id}
@@ -360,7 +365,7 @@ export function LoginPage() {
                           <span className="login-contact-body">
                             <span className="login-contact-label">{c.label}</span>
                             <span className="login-contact-sub">
-                              Enviar código por {c.type === 'Email' ? 'correo electrónico' : 'SMS'}
+                              {t('Enviar código por {channel}', { channel: c.type === 'Email' ? 'correo electrónico' : 'SMS' })}
                             </span>
                           </span>
                           <IonIcon icon={chevronForwardOutline} className="login-contact-arrow" />
@@ -376,7 +381,7 @@ export function LoginPage() {
                       onClick={backFromFirst}
                     >
                       <IonIcon icon={arrowBackOutline} />
-                      Cambiar número de identificación
+                      {t('Cambiar número de identificación')}
                     </IonButton>
                   </div>
                 )}
@@ -384,7 +389,7 @@ export function LoginPage() {
                 {firstStep === 'otp' && contact && (
                   <div>
                     <div className="login-otp-note">
-                      Enviamos un código de 6 dígitos a <strong>{contact.label}</strong>
+                      {t('Enviamos un código de 6 dígitos a')} <strong>{contact.label}</strong>
                     </div>
 
                     <div className="login-otp-row">
@@ -396,7 +401,7 @@ export function LoginPage() {
                           maxLength={i === 0 ? 6 : 1}
                           inputMode="numeric"
                           autoComplete={i === 0 ? 'one-time-code' : 'off'}
-                          aria-label={`Dígito ${i + 1}`}
+                          aria-label={t('Dígito {n}', { n: String(i + 1) })}
                           value={d}
                           onChange={(e) => fillOtp(i, e.target.value)}
                           onKeyDown={(e) => {
@@ -413,14 +418,14 @@ export function LoginPage() {
                       ))}
                     </div>
 
-                    {devCode && <div className="login-dev-code">Código de prueba: {devCode}</div>}
+                    {devCode && <div className="login-dev-code">{t('Código de prueba:')} {devCode}</div>}
 
                     <div className="login-otp-resend">
                       {otpLeft > 0 ? (
-                        <span>Reenviar en 0:{String(Math.min(otpLeft, 59)).padStart(2, '0')}</span>
+                        <span>{t('Reenviar en')} 0:{String(Math.min(otpLeft, 59)).padStart(2, '0')}</span>
                       ) : (
                         <IonButton fill="clear" type="button" className="login-resend" onClick={resendOtp}>
-                          Reenviar código
+                          {t('Reenviar código')}
                         </IonButton>
                       )}
                     </div>
@@ -435,12 +440,12 @@ export function LoginPage() {
                       {busy ? (
                         <>
                           <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                          Verificando…
+                          {t('Verificando…')}
                         </>
                       ) : (
                         <>
                           <IonIcon icon={shieldCheckmarkOutline} />
-                          Verificar y entrar
+                          {t('Verificar y entrar')}
                         </>
                       )}
                     </IonButton>
@@ -453,7 +458,7 @@ export function LoginPage() {
                       onClick={backFromFirst}
                     >
                       <IonIcon icon={arrowBackOutline} />
-                      Elegir otro método
+                      {t('Elegir otro método')}
                     </IonButton>
                   </div>
                 )}
@@ -492,14 +497,14 @@ export function LoginPage() {
                     <IonIcon icon={personOutline} />
                   </div>
                   <div>
-                    <h1>Bienvenido de nuevo</h1>
+                    <h1>{t('Bienvenido de nuevo')}</h1>
                   </div>
                 </header>
                 <form className="login-form" onSubmit={(e) => { e.preventDefault(); submit() }}>
                   <div className="login-field">
                     <label htmlFor="login-id">
                       <IonIcon icon={idCardOutline} />
-                      Número de identificación
+                      {t('Número de identificación')}
                     </label>
                     <IonInput
                       id="login-id"
@@ -509,7 +514,7 @@ export function LoginPage() {
                       autocomplete="off"
                       enterkeyhint="next"
                       value={documentNumber}
-                      placeholder="Ej. 32534534"
+                      placeholder={t('Ej. 32534534')}
                       style={{ '--placeholder-color': '#bdcbe0' } as CSSProperties}
                       onIonInput={(e) => setDocumentNumber((e.detail.value ?? '').replace(/\s/g, ''))}
                     />
@@ -518,7 +523,7 @@ export function LoginPage() {
                   <div className="login-field login-password-field">
                     <label htmlFor="login-password">
                       <IonIcon icon={keyOutline} />
-                      Contraseña
+                      {t('Contraseña')}
                     </label>
                     <IonInput
                       id="login-password"
@@ -526,7 +531,7 @@ export function LoginPage() {
                       type={showPwd ? 'text' : 'password'}
                       enterkeyhint="done"
                       value={pwd}
-                      placeholder="••••••••"
+                      placeholder={t('••••••••')}
                       style={{ '--padding-end': '48px', '--placeholder-color': '#bdcbe0' } as CSSProperties}
                       onIonInput={(e) => setPwd(e.detail.value ?? '')}
                     />
@@ -534,7 +539,7 @@ export function LoginPage() {
                       type="button"
                       fill="clear"
                       className="fld-eye"
-                      aria-label={showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      aria-label={showPwd ? t('Ocultar contraseña') : t('Mostrar contraseña')}
                       onClick={() => setShowPwd((v) => !v)}
                     >
                       <IonIcon icon={showPwd ? eyeOff : eye} />
@@ -546,11 +551,11 @@ export function LoginPage() {
                         <IonCheckbox
                           checked={remember}
                           color="primary"
-                          aria-label="Recordarme"
+                          aria-label={t('Recordarme')}
                           onIonChange={(e) => setRemember(e.detail.checked)}
                         />
                         <IonIcon icon={timeOutline} />
-                        <span>Recordarme</span>
+                        <span>{t('Recordarme')}</span>
                       </div>
                       <div className="login-links">
                         <IonButton
@@ -559,7 +564,7 @@ export function LoginPage() {
                           className="login-forgot"
                           onClick={() => showToast('Demo: recuperación de contraseña no disponible', 'info')}
                         >
-                          ¿Olvidaste tu contraseña?
+                          {t('¿Olvidaste tu contraseña?')}
                         </IonButton>
                       </div>
                     </div>
@@ -568,34 +573,40 @@ export function LoginPage() {
                       {busy ? (
                         <>
                           <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                          Verificando…
+                          {t('Verificando…')}
                         </>
                       ) : (
                         <>
                           <IonIcon icon={lockClosedOutline} />
-                          Iniciar sesión
+                          {t('Iniciar sesión')}
                         </>
                       )}
                     </IonButton>
 
-                    <div className="login-divider" role="separator" aria-label="O">
-                      <span>o</span>
+                    <p className="login-demo-note">
+                      {t('Acceso demo: ID')} <strong>{DEMO_LOGIN.documentNumber}</strong>
+                      {' · '}
+                      {t('Contraseña')} <strong>{DEMO_LOGIN.password}</strong>
+                    </p>
+
+                    <div className="login-divider" role="separator" aria-label={t('O')}>
+                      <span>{t('o')}</span>
                     </div>
 
                     <IonButton type="button" expand="block" className="login-first-method" onClick={goFirst}>
                       <span className="login-first-method-icon">
                         <IonIcon icon={idCardOutline} />
                       </span>
-                      Primer inicio de sesión
+                      {t('Primer inicio de sesión')}
                     </IonButton>
 
-                  <div className="login-security">
-                    <IonIcon icon={shieldCheckmarkOutline} />
-                    Conexión segura con cifrado de extremo a extremo
-                  </div>
+<div className="login-security">
+                      <IonIcon icon={shieldCheckmarkOutline} />
+                      {t('Conexión segura con cifrado de extremo a extremo')}
+                    </div>
                 </form>
 
-                <footer className="login-footer">© 2026 ANTARES · Plataforma de salud preventiva</footer>
+                <footer className="login-footer">{t('© 2026 ANTARES · Plataforma de salud preventiva')}</footer>
               </motion.div>
             )}
             </AnimatePresence>

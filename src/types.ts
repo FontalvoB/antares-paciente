@@ -24,6 +24,7 @@ export interface ToastState {
 }
 
 export interface UserProfile {
+  id?: string
   nombre: string
   cedula: string
   dob: string
@@ -43,6 +44,8 @@ export interface ChatMessage {
   role: 'bot' | 'user' | 'alert'
   text: string
   time: string
+  /** Thread estable al que pertenece el mensaje (proactive-<id>). */
+  threadId?: string
 }
 
 export interface Appointment {

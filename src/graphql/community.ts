@@ -7,6 +7,7 @@ export type ProfileStatus = 'ACTIVE' | 'BANNED'
 export interface Profile {
   id: string
   displayName: string
+  isSystem?: boolean
   bio: string | null
   status: ProfileStatus
   banReason: string | null
@@ -21,6 +22,7 @@ export interface PostAuthor {
   id: string
   displayName: string
   avatarUrl?: string | null
+  isSystem?: boolean
 }
 
 export interface LikeRef {
@@ -237,12 +239,25 @@ export interface GroupChangedResult {
   groupChanged: ChatGroup
 }
 
+// ---------- Helper: nombre localizado ----------
+
+/** Devuelve el nombre localizado de un perfil. Si el perfil es de sistema
+ *  (isSystem), usa la clave de traducción; de lo contrario, muestra el
+ *  displayName. */
+export function profileName(
+  profile: { displayName: string; isSystem?: boolean },
+  t: (key: string) => string,
+): string {
+  return profile.isSystem ? t('Equipo ANTARES') : profile.displayName
+}
+
 // ---------- Fragmentos ----------
 
 const PROFILE_FRAGMENT = /* GraphQL */ `
   fragment ProfileFields on Profile {
     id
     displayName
+    isSystem
     bio
     status
     banReason
@@ -264,6 +279,7 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
       id
       displayName
       avatarUrl
+      isSystem
     }
     replies {
       id
@@ -275,6 +291,7 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
         id
         displayName
         avatarUrl
+        isSystem
       }
     }
   }
@@ -309,6 +326,7 @@ const POST_FRAGMENT = /* GraphQL */ `
       id
       displayName
       avatarUrl
+      isSystem
     }
     likes {
       id
@@ -523,6 +541,7 @@ export const PEOPLE_SEARCH = /* GraphQL */ `
       profile {
         id
         displayName
+        isSystem
         bio
         status
       }
@@ -584,6 +603,7 @@ export const CONVERSATIONS_QUERY = /* GraphQL */ `
       peer {
         id
         displayName
+        isSystem
       }
       lastMessage {
         id
@@ -709,6 +729,7 @@ export const GROUP_MEMBERS_QUERY = /* GraphQL */ `
     groupMembers(groupId: $groupId) {
       id
       displayName
+      isSystem
     }
   }
 `

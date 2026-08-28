@@ -21,6 +21,7 @@ App móvil **React 19 + Ionic 8.8 + Capacitor 8 + Vite + TS** del programa COPP-
 | `ionic-overlays` | modales, toasts, alerts, loading, popover, action sheet |
 | `ionic-responsive` | cualquier pantalla nueva (mobile-first, tablet, safe areas, gestos) |
 | `ionic-theme` | colores, design system + convivencia con Ionic/Framer Motion, dark mode |
+| `i18n-translations` | agregar cualquier texto visible — t() + es.json + en.json; correr `npm run i18n:check` antes de commitear |
 
 ## Estado real vs estado recomendado (no confundir)
 
