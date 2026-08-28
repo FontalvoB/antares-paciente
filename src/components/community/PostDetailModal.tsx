@@ -2,6 +2,7 @@ import { IonButton, IonIcon, IonModal, IonTextarea } from '@ionic/react'
 import { arrowUndo, chatbubbleEllipsesOutline, chevronDownOutline, close, send } from 'ionicons/icons'
 import { useEffect, useRef, useState } from 'react'
 import type { Comment, Post, Profile } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, timeAgo } from './community'
 import { PollBlock } from './PollBlock'
 
@@ -32,7 +33,8 @@ function CommentItem({
   onOpenProfile?: (profileId: string) => void
 }) {
   const isReply = depth > 0
-  const name = comment.profile?.displayName ?? 'Miembro'
+  const { t } = useI18n()
+  const name = comment.profile?.displayName ?? t('Miembro')
   const mine = myId != null && comment.profile?.id === myId
   const replyCount = comment.replies?.length ?? 0
   const [repliesOpen, setRepliesOpen] = useState(true)
@@ -61,22 +63,22 @@ function CommentItem({
             </span>
             {mine && (
               <span className="com-c-tag mine">
-                <IonIcon icon={chatbubbleEllipsesOutline} style={{ fontSize: 10 }} /> Tú
+                <IonIcon icon={chatbubbleEllipsesOutline} style={{ fontSize: 10 }} /> {t('Tú')}
               </span>
             )}
             {isReply && !mine && (
               <span className="com-c-tag">
                 <IonIcon icon={arrowUndo} style={{ fontSize: 10 }} />
-                Respuesta
+                {t('Respuesta')}
               </span>
             )}
             <span className="com-c-dot">·</span>
-            <span className="com-c-time">{timeAgo(comment.createdAt)}</span>
+            <span className="com-c-time">{timeAgo(comment.createdAt, t)}</span>
           </div>
           <div className="com-c-body">{comment.body}</div>
           <div className="com-c-actions">
             <IonButton fill="clear" className="com-c-replybtn" onClick={() => onReply(comment)}>
-              <IonIcon icon={arrowUndo} style={{ fontSize: 12, marginRight: 4 }} /> Responder
+              <IonIcon icon={arrowUndo} style={{ fontSize: 12, marginRight: 4 }} /> {t('Responder')}
             </IonButton>
             {replyCount > 0 && (
               <button
@@ -87,8 +89,10 @@ function CommentItem({
               >
                 <IonIcon icon={chevronDownOutline} />
                 {repliesOpen
-                  ? `Ocultar respuestas (${replyCount})`
-                  : `Ver ${replyCount} ${replyCount === 1 ? 'respuesta' : 'respuestas'}`}
+                  ? t('Ocultar respuestas ({count})', { count: String(replyCount) })
+                  : replyCount === 1
+                    ? t('Ver {count} respuesta', { count: String(replyCount) })
+                    : t('Ver {count} respuestas', { count: String(replyCount) })}
               </button>
             )}
           </div>
@@ -148,6 +152,7 @@ export function PostDetailModal({
   const [sending, setSending] = useState(false)
   const [freshId, setFreshId] = useState<string | null>(null)
   const taRef = useRef<HTMLIonTextareaElement | null>(null)
+  const { t } = useI18n()
 
   // El modal conserva el último post abierto mientras se anima el cierre
   // (animación nativa de dismiss de Ionic), en vez de desmontarse de golpe.
@@ -220,14 +225,14 @@ export function PostDetailModal({
           setFreshId(r.id)
         }
         setReplyTarget(null)
-        onToast('Respuesta publicada', 'ok')
+        onToast(t('Respuesta publicada'), 'ok')
       } else {
         const c = await onAddComment(postId, text)
         if (c) {
           setComments((prev) => [c, ...prev])
           setFreshId(c.id)
         }
-        onToast('Comentario publicado', 'ok')
+        onToast(t('Comentario publicado'), 'ok')
       }
       setDraft('')
     } catch (e) {
@@ -260,14 +265,14 @@ export function PostDetailModal({
             >
               {view.profile.displayName}
             </div>
-            <div className="com-post-time">{timeAgo(view.createdAt)}</div>
+            <div className="com-post-time">{timeAgo(view.createdAt, t)}</div>
           </div>
           <IonButton
             fill="clear"
             size="small"
             className="com-detail-close"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t('Cerrar')}
           >
             <IonIcon icon={close} />
           </IonButton>
@@ -301,13 +306,12 @@ export function PostDetailModal({
 
         <div className="com-detail-comments">
           <div className="com-cmt-head">
-            <span className="com-cmt-title">Comentarios</span>
+            <span className="com-cmt-title">{t('Comentarios')}</span>
             <span className="com-cmt-count">{comments.length}</span>
           </div>
           {roots.length === 0 ? (
             <div className="com-detail-msg">
-              <IonIcon icon={chatbubbleEllipsesOutline} style={{ fontSize: 16 }} /> Sin comentarios
-              todavía. ¡Sé el primero!
+              <IonIcon icon={chatbubbleEllipsesOutline} style={{ fontSize: 16 }} /> {t('Sin comentarios todavía. ¡Sé el primero!')}
             </div>
           ) : (
             <div className="com-thread">
@@ -330,7 +334,7 @@ export function PostDetailModal({
           {replyTarget && (
             <div className="com-reply-chip">
               <span>
-                Respondiendo a <b>{replyTarget.profile?.displayName ?? 'Miembro'}</b>
+                {t('Respondiendo a ')} <b>{replyTarget.profile?.displayName ?? t('Miembro')}</b>
               </span>
               <IonButton
                 fill="clear"
@@ -347,7 +351,7 @@ export function PostDetailModal({
               ref={taRef}
               className="fld composer-input com-input"
               value={draft}
-              placeholder={replyTarget ? `Responder a ${replyTarget.profile?.displayName ?? 'Miembro'}…` : 'Escribe un comentario…'}
+              placeholder={replyTarget ? `${t('Responder a ')}${replyTarget.profile?.displayName ?? t('Miembro')}…` : t('Escribe un comentario…')}
               onIonInput={(e) => setDraft(e.detail.value ?? '')}
               autoGrow
               rows={1}
@@ -356,12 +360,12 @@ export function PostDetailModal({
               className={`com-input-send ${draft.trim() ? 'bt-pur' : ''}`}
               disabled={sending || !draft.trim()}
               onClick={() => void submit()}
-              aria-label={replyTarget ? 'Responder' : 'Comentar'}
+              aria-label={replyTarget ? t('Responder') : t('Comentar')}
             >
               <IonIcon icon={send} />
             </IonButton>
           </div>
-          {sending && <div className="com-sending">Enviando…</div>}
+          {sending && <div className="com-sending">{t('Enviando…')}</div>}
         </div>
       </div>
     </IonModal>

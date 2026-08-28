@@ -2,6 +2,7 @@ import { IonIcon } from '@ionic/react'
 import { checkmark, statsChartOutline } from 'ionicons/icons'
 import { useState } from 'react'
 import type { Poll } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 
 /** Bloque de encuesta dentro de una publicación: opciones tappables antes de
  *  votar; después del voto muestra resultados con progreso y porcentajes. */
@@ -15,6 +16,7 @@ export function PollBlock({
   onVote: (optionId: string) => Promise<void>
 }) {
   const [voting, setVoting] = useState(false)
+  const { t } = useI18n()
   const myVote = poll.options.find((o) => o.votes.some((v) => v.profileId === myId))
   const total = poll.options.reduce((acc, o) => acc + o.votes.length, 0)
 
@@ -31,7 +33,7 @@ export function PollBlock({
   return (
     <div className="poll-block">
       <div className="poll-head">
-        <IonIcon icon={statsChartOutline} /> Encuesta
+        <IonIcon icon={statsChartOutline} /> {t('Encuesta')}
       </div>
       {poll.options.map((option) => {
         const votes = option.votes.length
@@ -44,7 +46,7 @@ export function PollBlock({
               type="button"
               className={`poll-opt${voting ? ' busy' : ''}`}
               onClick={() => void vote(option.id)}
-              aria-label={`Votar por: ${option.text}`}
+              aria-label={t('Votar por: {text}', { text: option.text })}
             >
               <span className="poll-opt-choice" aria-hidden />
               <span className="poll-opt-text">{option.text}</span>
@@ -66,9 +68,9 @@ export function PollBlock({
       })}
       <div className="poll-total">
         {total === 0
-          ? 'Sin votos todavía'
-          : `${total} ${total === 1 ? 'voto' : 'votos'}`}
-        {myVote && ' · Ya votaste'}
+          ? t('Sin votos todavía')
+          : `${total} ${total === 1 ? t('voto') : t('votos')}`}
+        {myVote && ` · ${t('Ya votaste')}`}
       </div>
     </div>
   )

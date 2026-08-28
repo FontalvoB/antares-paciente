@@ -2,6 +2,7 @@ import { IonButton, IonCheckbox, IonIcon, IonInput, IonModal } from '@ionic/reac
 import { close, people, personAddOutline } from 'ionicons/icons'
 import { useState } from 'react'
 import type { Profile } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 import { Avatar } from './community'
 
 /** Modal de creación de grupo: nombre + selección de amigos (mutual-friends). */
@@ -26,6 +27,7 @@ export function CreateGroupModal({
   const [name, setName] = useState('')
   const [selected, setSelected] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
+  const { t } = useI18n()
 
   const toggle = (id: string) => {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
@@ -36,7 +38,7 @@ export function CreateGroupModal({
     setCreating(true)
     try {
       await onCreate(name.trim(), selected)
-      onToast('Grupo creado', 'ok')
+      onToast(t('Grupo creado'), 'ok')
       setName('')
       setSelected([])
       onClose()
@@ -57,20 +59,20 @@ export function CreateGroupModal({
         <div className="com-banner" style={{ margin: '16px 16px 8px' }}>
           <div className="com-banner-main">
             <div className="com-banner-title">
-              <IonIcon icon={people} /> Nuevo grupo
+              <IonIcon icon={people} /> {t('Nuevo grupo')}
             </div>
             <div className="com-banner-sub">
-              <IonIcon icon={personAddOutline} /> Elige a tus amigos para conversar
+              <IonIcon icon={personAddOutline} /> {t('Elige a tus amigos para conversar')}
             </div>
           </div>
-          <IonButton className="com-banner-close" onClick={onClose} aria-label="Cerrar">
+          <IonButton className="com-banner-close" onClick={onClose} aria-label={t('Cerrar')}>
             <IonIcon icon={close} />
           </IonButton>
         </div>
         <div style={{ padding: '12px 14px 4px' }}>
           <IonInput
             className="fld"
-            label="Nombre del grupo"
+            label={t('Nombre del grupo')}
             labelPlacement="stacked"
             value={name}
             onIonInput={(e) => setName(e.detail.value ?? '')}
@@ -79,7 +81,7 @@ export function CreateGroupModal({
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
           {friends.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--mu)', fontSize: 13, marginTop: 20, padding: '0 20px' }}>
-              No tienes amigos para añadir todavía.
+              {t('No tienes amigos para añadir todavía.')}
             </div>
           ) : (
             friends.map((f) => (
@@ -114,14 +116,14 @@ export function CreateGroupModal({
           }}
         >
           <IonButton fill="outline" className="bt bt-mini" onClick={onClose}>
-            Cancelar
+            {t('Cancelar')}
           </IonButton>
           <IonButton
             className="bt bt-pur bt-mini"
             disabled={name.trim().length < 3 || selected.length === 0 || creating}
             onClick={() => void handleCreate()}
           >
-            {creating ? 'Creando…' : 'Crear grupo'}
+            {creating ? t('Creando…') : t('Crear grupo')}
           </IonButton>
         </div>
       </div>

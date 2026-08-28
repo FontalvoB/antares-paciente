@@ -12,6 +12,7 @@ import {
 } from 'ionicons/icons'
 import { useMemo, useState } from 'react'
 import type { Post, Profile } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, EmptyState, statusBadge } from './community'
 import { formatCount, VIEW_TABS, type ProfileView } from './CommunityProfile'
 
@@ -44,6 +45,7 @@ export function MemberProfile({
   onOpenPost: (p: Post) => void
 }) {
   const [view, setView] = useState<ProfileView>('all')
+  const { t } = useI18n()
 
   const filtered = useMemo(
     () =>
@@ -65,7 +67,7 @@ export function MemberProfile({
         }
       >
         <span className="compf-cover-kicker">
-          <IonIcon icon={peopleOutline} style={{ fontSize: 14 }} /> Su espacio
+          <IonIcon icon={peopleOutline} style={{ fontSize: 14 }} /> {t('Su espacio')}
         </span>
       </div>
       <div className="compf-avatar-slot">
@@ -83,39 +85,39 @@ export function MemberProfile({
       {/* Identidad */}
       <div className="compf-name-row center">
         <span className="compf-name-big">{profile.displayName}</span>
-        {statusBadge(profile.status)}
+        {statusBadge(profile.status, t)}
       </div>
 
       <div className="compf-stats-line">
-        <b>{formatCount(profile.posts.length)}</b> publicaciones
+        <b>{formatCount(profile.posts.length)}</b> {t('publicaciones')}
         <span className="compf-sep">·</span>
-        <b>{formatCount(followersCount)}</b> seguidores
+        <b>{formatCount(followersCount)}</b> {t('seguidores')}
         <span className="compf-sep">·</span>
-        <b>{formatCount(followingCount)}</b> siguiendo
+        <b>{formatCount(followingCount)}</b> {t('siguiendo')}
       </div>
 
       <p className="compf-bio">
-        {profile.bio?.trim() ? profile.bio : 'Comparte lo que hace con la comunidad.'}
+        {profile.bio?.trim() ? profile.bio : t('Comparte lo que hace con la comunidad.')}
       </p>
 
       {/* Acciones */}
       <div className="compf-actions">
         {isFriend ? (
           <IonButton fill="solid" className="compf-action-btn" disabled={busy} onClick={onUnfollow}>
-            <IonIcon icon={personRemoveOutline} style={{ marginRight: 5 }} /> Dejar de seguir
+            <IonIcon icon={personRemoveOutline} style={{ marginRight: 5 }} /> {t('Dejar de seguir')}
           </IonButton>
         ) : isFollowingBack ? (
           <IonButton fill="solid" className="compf-action-btn" disabled={busy} onClick={onUnfollow}>
-            <IonIcon icon={checkmark} style={{ marginRight: 5 }} /> Siguiendo
+            <IonIcon icon={checkmark} style={{ marginRight: 5 }} /> {t('Siguiendo')}
           </IonButton>
         ) : (
           <IonButton fill="solid" className="compf-action-btn" disabled={busy} onClick={onFollow}>
-            <IonIcon icon={personAddOutline} style={{ marginRight: 5 }} /> Seguir
+            <IonIcon icon={personAddOutline} style={{ marginRight: 5 }} /> {t('Seguir')}
           </IonButton>
         )}
         {isFriend && (
           <IonButton fill="solid" className="compf-action-btn" onClick={onMessage}>
-            <IonIcon icon={chatbubbleEllipsesOutline} style={{ marginRight: 5 }} /> Enviar mensaje
+            <IonIcon icon={chatbubbleEllipsesOutline} style={{ marginRight: 5 }} /> {t('Enviar mensaje')}
           </IonButton>
         )}
       </div>
@@ -126,13 +128,13 @@ export function MemberProfile({
           <span className="compf-circle-ico">
             <IonIcon icon={personAddOutline} />
           </span>
-          Siguiendo
+          {t('Siguiendo')}
         </button>
         <button type="button" className="compf-circle" onClick={() => onShowList('followers')}>
           <span className="compf-circle-ico">
             <IonIcon icon={peopleOutline} />
           </span>
-          Seguidores
+          {t('Seguidores')}
         </button>
       </div>
 
@@ -155,8 +157,8 @@ export function MemberProfile({
           <EmptyState
             icon={view === 'video' ? filmOutline : view === 'image' ? imagesOutline : documentTextOutline}
             tone="pur"
-            title={view === 'all' ? 'Sin publicaciones todavía' : view === 'image' ? 'Sin fotos' : 'Sin videos'}
-            hint={view === 'all' ? 'Este miembro no ha compartido publicaciones todavía.' : undefined}
+            title={view === 'all' ? t('Sin publicaciones todavía') : view === 'image' ? t('Sin fotos') : t('Sin videos')}
+            hint={view === 'all' ? t('Este miembro no ha compartido publicaciones todavía.') : undefined}
           />
         </div>
       ) : (
@@ -167,7 +169,7 @@ export function MemberProfile({
               type="button"
               className="compf-tile"
               onClick={() => onOpenPost(post)}
-              aria-label="Ver publicación"
+              aria-label={t('Ver publicación')}
             >
               {post.imageUrl ? (
                 <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
