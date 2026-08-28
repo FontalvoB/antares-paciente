@@ -800,7 +800,6 @@ export function CommunityPage() {
                             view={view}
                             onOpen={setActivePost}
                             onOpenImage={openImage}
-                            onOpenProfile={openProfile}
                             onToggleLike={handleToggleLike}
                             onVotePoll={votePoll}
                             myId={me?.id ?? null}
@@ -838,7 +837,6 @@ export function CommunityPage() {
                           view={view}
                           onOpen={setActivePost}
                           onOpenImage={openImage}
-                          onOpenProfile={openProfile}
                           onToggleLike={handleToggleLike}
                           onVotePoll={votePoll}
                           myId={me?.id ?? null}
@@ -1365,10 +1363,8 @@ export function CommunityPage() {
               return await replyToComment(commentId, body)
             }}
             onOpenImage={openImage}
-            onOpenProfile={openProfile}
             onToast={showToast}
             onVotePoll={votePoll}
-            dark={comDark}
           />
 
           {me && (
@@ -1381,8 +1377,6 @@ export function CommunityPage() {
               onSend={async (body) => {
                 return await sendMessage(activePeer?.id ?? '', body)
               }}
-              onOpenProfile={openProfile}
-              dark={comDark}
             />
           )}
 
@@ -1409,8 +1403,6 @@ export function CommunityPage() {
               onLeaveGroup={async (gid) => {
                 return await leaveGroup(gid)
               }}
-              onOpenProfile={openProfile}
-              dark={comDark}
             />
           )}
 
@@ -1422,8 +1414,6 @@ export function CommunityPage() {
               return await createGroup(n, ids)
             }}
             onToast={showToast}
-            onOpenProfile={openProfile}
-            dark={comDark}
           />
 
           <NewChatModal
@@ -1434,8 +1424,6 @@ export function CommunityPage() {
               setNewChatOpen(false)
               setActivePeer(friend)
             }}
-            onOpenProfile={openProfile}
-            dark={comDark}
           />
 
           <IonAlert
@@ -1479,7 +1467,6 @@ export function CommunityPage() {
               return await uploadPostImage(file, contentType)
             }}
             onToast={showToast}
-            dark={comDark}
           />
         </Screen>
       )}
