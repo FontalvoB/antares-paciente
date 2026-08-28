@@ -9,6 +9,7 @@ import {
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { Post } from '../../graphql/community'
 import type { FeedPostView } from '../../hooks/useCommunity'
+import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, timeAgo } from './community'
 import { PollBlock } from './PollBlock'
 
@@ -50,6 +51,7 @@ export function PostCard({
 }) {
   const { likeCount, likedByMe } = view
   const { post } = view
+  const { t } = useI18n()
   // Copia local del post: el voto actualiza los resultados al instante.
   const [viewPost, setViewPost] = useState(view.post)
   useEffect(() => setViewPost(view.post), [view.post])
@@ -105,9 +107,9 @@ export function PostCard({
   async function sharePost() {
     try {
       await navigator.clipboard.writeText(`https://antares.bio/com/${post.id}`)
-      onToast('Enlace de la publicación copiado', 'ok')
+      onToast(t('Enlace de la publicación copiado'), 'ok')
     } catch {
-      onToast('Comparte la publicación con tu comunidad', 'info')
+      onToast(t('Comparte la publicación con tu comunidad'), 'info')
     }
   }
 
@@ -129,14 +131,14 @@ export function PostCard({
         />
         <div className="com-post-id">
           <div className="com-post-name">{post.profile.displayName}</div>
-          <div className="com-post-time">{timeAgo(post.createdAt)}</div>
+          <div className="com-post-time">{timeAgo(post.createdAt, t)}</div>
         </div>
         {post.pinned && (
           <span
             className="chip chip-gold"
             style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}
           >
-            <IonIcon icon={pin} style={{ fontSize: 12 }} /> Fijado
+            <IonIcon icon={pin} style={{ fontSize: 12 }} /> {t('Fijado')}
           </span>
         )}
       </div>
@@ -205,11 +207,11 @@ export function PostCard({
           />
           <span className="com-react-count">{likeCount}</span>
         </button>
-        <button type="button" className="com-act-btn" onClick={() => onOpen(post)} aria-label="Ver comentarios">
+        <button type="button" className="com-act-btn" onClick={() => onOpen(post)} aria-label={t('Ver comentarios')}>
           <IonIcon className="com-react-ico" icon={chatbubbleEllipsesOutline} />
           <span className="com-react-count">{post.comments.length}</span>
         </button>
-        <button type="button" className="com-act-btn" onClick={() => void sharePost()} aria-label="Compartir">
+        <button type="button" className="com-act-btn" onClick={() => void sharePost()} aria-label={t('Compartir')}>
           <IonIcon className="com-react-ico" icon={shareSocialOutline} />
         </button>
       </div>
@@ -224,7 +226,7 @@ export function PostCard({
           ))}
           {post.comments.length > 2 && (
             <button type="button" className="com-thread-more" onClick={() => onOpen(post)}>
-              Ver los {post.comments.length} comentarios
+              {t('Ver los {count} comentarios', { count: String(post.comments.length) })}
             </button>
           )}
         </div>

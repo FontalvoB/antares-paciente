@@ -10,6 +10,7 @@ import {
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import type { Profile } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 import type { Screen } from '../../types'
 import { Avatar } from './community'
 
@@ -31,6 +32,7 @@ export function ComSidebar({
   hidden?: boolean
 }) {
   const { screen, navigate } = useApp()
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
   const visible = open || closing
@@ -55,7 +57,7 @@ export function ComSidebar({
         type="button"
         className={`com-hamb ${hidden ? 'com-hamb-hidden' : ''}`}
         onClick={openDrawer}
-        aria-label="Abrir menú"
+        aria-label={t('Abrir menú')}
         aria-expanded={open}
         aria-haspopup="dialog"
       >
@@ -72,7 +74,7 @@ export function ComSidebar({
           <aside
             className={`com-side ${closing ? 'is-closing' : ''}`}
             role="dialog"
-            aria-label="Navegación de la app"
+            aria-label={t('Navegación de la app')}
           >
             <div className="com-side-head">
               <Avatar name={me?.displayName ?? 'MG'} seedId={me?.id ?? 'me'} size={44} src={me?.avatarUrl} />
@@ -84,7 +86,7 @@ export function ComSidebar({
                 type="button"
                 className="com-side-close"
                 onClick={closeDrawer}
-                aria-label="Cerrar menú"
+                aria-label={t('Cerrar menú')}
               >
                 <IonIcon icon={close} />
               </button>

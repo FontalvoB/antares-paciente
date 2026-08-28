@@ -11,6 +11,7 @@ import {
   sunnyOutline,
 } from 'ionicons/icons'
 import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useI18n } from '../../i18n/I18nContext'
 
 export type FabAction = 'publish' | 'feed' | 'perfil' | 'chat' | 'amigos' | 'redes' | 'darkmode'
 
@@ -39,6 +40,7 @@ export function CommunityFab({
   onPick: (a: FabAction) => void
   dark?: boolean
 }) {
+  const { t } = useI18n()
   const items = [
     ...ITEMS,
     {
@@ -118,7 +120,7 @@ export function CommunityFab({
               style={{ animationDelay: `${(closing ? items.length - 1 - i : i) * 40}ms` }}
               onClick={() => pick(it.id)}
             >
-              <span className="comfab-item-lbl">{it.label}</span>
+              <span className="comfab-item-lbl">{t(it.label)}</span>
               <span className={`comfab-item-ico tone-${it.tone}`}>
                 <IonIcon icon={it.icon} />
               </span>
@@ -131,7 +133,7 @@ export function CommunityFab({
         className={`comfab ${open ? 'is-open' : ''}`}
         onClick={toggle}
         aria-expanded={open}
-        aria-label={open ? 'Cerrar acciones de la comunidad' : 'Abrir acciones de la comunidad'}
+        aria-label={open ? t('Cerrar acciones de la comunidad') : t('Abrir acciones de la comunidad')}
       >
         <IonIcon icon={add} className="comfab-ico" />
       </button>

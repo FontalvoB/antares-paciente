@@ -27,6 +27,7 @@ import {
 } from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { useI18n } from '../i18n/I18nContext'
 import {
   useCommunity,
   useConversationMessageListener,
@@ -125,18 +126,20 @@ function GroupChatListeners({
  *  Con `overlay` flota sobre la portada del perfil (estilo glass de marca). */
 function BackButton({
   onClick,
-  label = 'Volver',
+  label,
   overlay = false,
 }: {
   onClick: () => void
   label?: string
   overlay?: boolean
 }) {
+  const { t } = useI18n()
+  const resolvedLabel = label ?? t('Volver')
   if (overlay) {
     return (
       <div className="mem-back">
-        <IonButton fill="clear" className="mem-back-btn" onClick={onClick} aria-label={label}>
-          <IonIcon icon={arrowBack} style={{ marginRight: 6 }} /> {label}
+        <IonButton fill="clear" className="mem-back-btn" onClick={onClick} aria-label={resolvedLabel}>
+          <IonIcon icon={arrowBack} style={{ marginRight: 6 }} /> {resolvedLabel}
         </IonButton>
       </div>
     )
@@ -144,7 +147,7 @@ function BackButton({
   return (
     <div style={{ padding: 14 }}>
       <IonButton fill="outline" className="bt bt-mini" onClick={onClick}>
-        <IonIcon icon={arrowBack} style={{ marginRight: 6 }} /> {label}
+        <IonIcon icon={arrowBack} style={{ marginRight: 6 }} /> {resolvedLabel}
       </IonButton>
     </div>
   )
@@ -214,6 +217,7 @@ function BrandIcon({ path, size = 20 }: { path: string; size?: number }) {
 
 export function CommunityPage() {
   const { showToast, pointsTotal } = useApp()
+  const { t } = useI18n()
   const {
     me,
     meLoading,
@@ -493,14 +497,14 @@ export function CommunityPage() {
     setBusyId(id)
     try {
       if (person.isFriend) {
-        showToast('Ya son amigos', 'info')
+        showToast(t('Ya son amigos'), 'info')
         return
       }
       if (person.isFollowing) {
         setUnfollowTarget(person.profile)
       } else {
         await followUser(id)
-        showToast(`Siguiendo a ${name}`, 'ok')
+        showToast(t('Siguiendo a {name}', { name }), 'ok')
       }
     } catch (e) {
       showToast((e as Error).message, 'err')
@@ -513,7 +517,7 @@ export function CommunityPage() {
     setBusyId(profileId)
     try {
       await unfollowUser(profileId)
-      showToast(`Dejaste de seguir a ${name}`, 'ok')
+      showToast(t('Dejaste de seguir a {name}', { name }), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -525,7 +529,7 @@ export function CommunityPage() {
     setBusyId(profileId)
     try {
       await followUser(profileId)
-      showToast(`Siguiendo a ${name}`, 'ok')
+      showToast(t('Siguiendo a {name}', { name }), 'ok')
     } catch (e) {
       showToast((e as Error).message, 'err')
     } finally {
@@ -602,17 +606,17 @@ export function CommunityPage() {
                 <>
                   <BackButton onClick={() => setMemberList(null)} />
                   <div style={{ padding: '0 14px 6px', fontWeight: 800, fontSize: 14 }}>
-                    {memberList === 'followers' ? 'Seguidores' : 'Siguiendo'}
+                    {memberList === 'followers' ? t('Seguidores') : t('Siguiendo')}
                   </div>
                   {memberListFetching ? (
                     <RowSkeleton rows={3} />
                   ) : memberListError ? (
-                    <ErrorCard message="No se pudo cargar la lista." onRetry={retryMemberList} />
+                    <ErrorCard message={t('No se pudo cargar la lista.')} onRetry={retryMemberList} />
                   ) : memberListItems.length === 0 ? (
                     <EmptyState
                       icon={memberList === 'followers' ? peopleOutline : personAddOutline}
                       tone={memberList === 'followers' ? 'teal' : 'blue'}
-                      title={memberList === 'followers' ? 'Aún no tiene seguidores' : 'No sigue a nadie todavía'}
+                      title={memberList === 'followers' ? t('Aún no tiene seguidores') : t('No sigue a nadie todavía')}
                     />
                   ) : (
                     memberListItems.map((row) => (
@@ -621,14 +625,14 @@ export function CommunityPage() {
                         name={row.displayName}
                         seedId={row.id}
                         src={row.avatarUrl}
-                        sub={row.bio?.trim() || 'Sin bio'}
+                          sub={row.bio?.trim() || t('Sin bio')}
                         onClick={() => {
                           openProfile(row.id)
                           setMemberList(null)
                         }}
                       >
                         <span className="com-row-lbl">
-                          {memberList === 'followers' ? 'Te sigue' : 'Siguiendo'}
+                          {memberList === 'followers' ? t('Te sigue') : t('Siguiendo')}
                         </span>
                       </ComRow>
                     ))
@@ -649,14 +653,14 @@ export function CommunityPage() {
                     <>
                       <BackButton onClick={() => setViewingId(null)} />
                       <ErrorCard
-                        message="No se pudo cargar el perfil."
+                        message={t('No se pudo cargar el perfil.')}
                         onRetry={() => reexecuteProfile({ requestPolicy: 'network-only' })}
                       />
                     </>
                   ) : !profile ? (
                     <>
                       <BackButton onClick={() => setViewingId(null)} />
-                      <EmptyState icon={searchOutline} tone="pur" title="No se encontró el perfil" />
+                      <EmptyState icon={searchOutline} tone="pur" title={t('No se encontró el perfil.')} />
                     </>
                   ) : (
                     <>
@@ -700,7 +704,7 @@ export function CommunityPage() {
                         }
                       >
                         <span className="compf-cover-kicker">
-                          <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} /> Mi espacio
+                          <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} /> {t('Mi espacio')}
                         </span>
                       </div>
                       <div className="com-me-avatar-slot">
@@ -722,11 +726,11 @@ export function CommunityPage() {
                           animated
                         />
                       ) : (
-                        <div className="com-me-name">Bienvenido</div>
+                        <div className="com-me-name">{t('Bienvenido')}</div>
                       )}
                       <div className="com-me-kicker">COPP-ADRESD + INFINITO</div>
                       <p className="com-me-bio">
-                        {me?.bio?.trim() ? me.bio : 'Comparte lo que haces con la comunidad.'}
+                        {me?.bio?.trim() ? me.bio : t('Comparte lo que haces con la comunidad.')}
                       </p>
                       <div className="com-me-scope-row">
                         <div className="com-scope">
@@ -736,7 +740,7 @@ export function CommunityPage() {
                             onClick={() => setFeedScope('forYou')}
                             aria-pressed={feedScope === 'forYou'}
                           >
-                            <IonIcon icon={sparklesOutline} /> Para ti
+                            <IonIcon icon={sparklesOutline} /> {t('Para ti')}
                           </button>
                           <button
                             type="button"
@@ -744,7 +748,7 @@ export function CommunityPage() {
                             onClick={() => setFeedScope('following')}
                             aria-pressed={feedScope === 'following'}
                           >
-                            <IonIcon icon={peopleOutline} /> Siguiendo
+                            <IonIcon icon={peopleOutline} /> {t('Siguiendo')}
                           </button>
                         </div>
                       </div>
@@ -767,7 +771,7 @@ export function CommunityPage() {
                         >
                           <IonIcon icon={arrowUp} />
                           <span>
-                            Ver {newPostsCount} {newPostsCount === 1 ? 'publicación nueva' : 'publicaciones nuevas'}
+                            {t('Ver')} {newPostsCount} {newPostsCount === 1 ? t('publicación nueva') : t('publicaciones nuevas')}
                           </span>
                         </IonButton>
                       </div>
@@ -776,7 +780,7 @@ export function CommunityPage() {
                     {feedScope === 'forYou' ? (
                       feedError ? (
                         <ErrorCard
-                          message="No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo."
+                          message={t('No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.')}
                           onRetry={retryFeed}
                         />
                       ) : feedLoading && feed.length === 0 ? (
@@ -789,8 +793,8 @@ export function CommunityPage() {
                         <EmptyState
                           icon={sparklesOutline}
                           tone="pur"
-                          title="La comunidad está en silencio por ahora"
-                          hint="Sé la primera persona en compartir algo con ANTARES."
+                          title={t('La comunidad está en silencio por ahora')}
+                          hint={t('Sé la primera persona en compartir algo con ANTARES.')}
                         />
                       ) : (
                         feed.map((view, i) => (
@@ -809,7 +813,7 @@ export function CommunityPage() {
                       )
                     ) : followingFeedError ? (
                       <ErrorCard
-                        message="No se pudo cargar el feed de seguidos. Verifica tu sesión e inténtalo de nuevo."
+                        message={t('No se pudo cargar el feed de seguidos. Verifica tu sesión e inténtalo de nuevo.')}
                         onRetry={retryFollowingFeed}
                       />
                     ) : followingFeedLoading && followingFeed.length === 0 ? (
@@ -822,11 +826,11 @@ export function CommunityPage() {
                       <EmptyState
                         icon={peopleOutline}
                         tone="teal"
-                        title="Aún no sigues a nadie"
-                        hint="Descubre miembros en Amigos y sigue a quien te interese."
+                        title={t('Aún no sigues a nadie')}
+                        hint={t('Descubre miembros en Amigos y sigue a quien te interese.')}
                       >
                         <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('amigos')}>
-                          Ir a Amigos
+                          {t('Ir a Amigos')}
                         </IonButton>
                       </EmptyState>
                     ) : (
@@ -856,13 +860,13 @@ export function CommunityPage() {
                     <>
                       <BackButton onClick={() => profGo('main')} />
                       <div style={{ padding: '0 14px 6px', fontWeight: 800, fontSize: 14 }}>
-                        {perfilList === 'followers' ? 'Seguidores' : 'Siguiendo'}
+                        {perfilList === 'followers' ? t('Seguidores') : t('Siguiendo')}
                       </div>
                       {(perfilList === 'followers' ? followers : peopleFollowing).length === 0 ? (
                         <EmptyState
                           icon={perfilList === 'followers' ? peopleOutline : personAddOutline}
                           tone={perfilList === 'followers' ? 'teal' : 'blue'}
-                          title={perfilList === 'followers' ? 'Aún no tienes seguidores' : 'No sigues a nadie todavía'}
+                          title={perfilList === 'followers' ? t('Aún no tienes seguidores') : t('No sigues a nadie todavía')}
                         />
                       ) : (
                         (perfilList === 'followers' ? followers : peopleFollowing).map((f) => (
@@ -871,11 +875,11 @@ export function CommunityPage() {
                             name={f.displayName}
                             seedId={f.id}
                             src={f.avatarUrl}
-                            sub={f.bio?.trim() || 'Sin bio'}
+                            sub={f.bio?.trim() || t('Sin bio')}
                             onClick={() => openProfile(f.id)}
                           >
                             <span className="com-row-lbl">
-                              {perfilList === 'followers' ? 'Te sigue' : 'Siguiendo'}
+                              {perfilList === 'followers' ? t('Te sigue') : t('Siguiendo')}
                             </span>
                           </ComRow>
                         ))
@@ -923,17 +927,17 @@ export function CommunityPage() {
                     <div className="chat-hero anim-in">
                       <div className="chat-hero-main">
                         <div className="chat-title">
-                          <IonIcon icon={globeOutline} className="chat-globe" /> Chat ANTARES
+                          <IonIcon icon={globeOutline} className="chat-globe" /> {t('Chat ANTARES')}
                         </div>
                         <div className="chat-sub">
-                          <IonIcon icon={peopleOutline} /> Tus amigos y grupos
+                          <IonIcon icon={peopleOutline} /> {t('Tus amigos y grupos')}
                         </div>
                       </div>
                       <div className="chat-hero-actions">
-                        <IonButton className="chat-icon-btn" onClick={() => setCreateOpen(true)} aria-label="Nuevo grupo">
+                        <IonButton className="chat-icon-btn" onClick={() => setCreateOpen(true)} aria-label={t('Nuevo grupo')}>
                           <IonIcon icon={personAddOutline} />
                         </IonButton>
-                        <IonButton className="chat-icon-btn" onClick={() => setNewChatOpen(true)} aria-label="Nuevo chat">
+                        <IonButton className="chat-icon-btn" onClick={() => setNewChatOpen(true)} aria-label={t('Nuevo chat')}>
                           <IonIcon icon={createOutline} />
                         </IonButton>
                       </div>
@@ -943,7 +947,7 @@ export function CommunityPage() {
                       <IonSearchbar
                         className="sbar chat-sbar"
                         value={chatQ}
-                        placeholder="Buscar o preguntar…"
+                        placeholder={t('Buscar o preguntar…')}
                         onIonInput={(e) => setChatQ(e.detail.value ?? '')}
                       />
                     </div>
@@ -1001,7 +1005,7 @@ export function CommunityPage() {
                     )}
 
                     <div className="chat-list-head anim-in" style={{ animationDelay: '120ms' }}>
-                      <span>Mensajes</span>
+                      <span>{t('Mensajes')}</span>
                       <span className="chat-list-count">
                         {conversations.length + groups.length}
                       </span>
@@ -1010,9 +1014,9 @@ export function CommunityPage() {
                     {conversationsLoading || groupsLoading ? (
                       <RowSkeleton rows={3} />
                     ) : conversationsError || groupsError ? (
-                      <ErrorCard
-                        message="No se pudo cargar tus conversaciones."
-                        onRetry={() => {
+                        <ErrorCard
+                          message={t('No se pudo cargar tus conversaciones.')}
+                          onRetry={() => {
                           refetchConversations()
                           refetchGroups()
                         }}
@@ -1021,8 +1025,8 @@ export function CommunityPage() {
                       <EmptyState
                         icon={chatbubblesOutline}
                         tone="blue"
-                        title="Aún no tienes conversaciones"
-                        hint="Escribe a un amigo desde Amigos o crea un grupo."
+                        title={t('Aún no tienes conversaciones')}
+                        hint={t('Escribe a un amigo desde Amigos o crea un grupo.')}
                       />
                     ) : (
                       <>
@@ -1041,11 +1045,11 @@ export function CommunityPage() {
                               <span className="chat-msg-top">
                                 <span className="chat-msg-name">{g.name}</span>
                                 {g.lastMessage && (
-                                  <span className="chat-msg-time">{timeAgo(g.lastMessage.createdAt)}</span>
+                                  <span className="chat-msg-time">{timeAgo(g.lastMessage.createdAt, t)}</span>
                                 )}
                               </span>
                               <span className="chat-msg-sub">
-                                {g.lastMessage?.body ?? 'Sin mensajes todavía'}
+                                {g.lastMessage?.body ?? t('Sin mensajes todavía')}
                               </span>
                             </span>
                           </button>
@@ -1075,11 +1079,11 @@ export function CommunityPage() {
                               <span className="chat-msg-top">
                                 <span className="chat-msg-name">{c.peer.displayName}</span>
                                 {c.lastMessage && (
-                                  <span className="chat-msg-time">{timeAgo(c.lastMessage.createdAt)}</span>
+                                  <span className="chat-msg-time">{timeAgo(c.lastMessage.createdAt, t)}</span>
                                 )}
                               </span>
                               <span className="chat-msg-sub">
-                                {c.lastMessage?.body ?? 'Sin mensajes todavía'}
+                                {c.lastMessage?.body ?? t('Sin mensajes todavía')}
                               </span>
                             </span>
                           </button>
@@ -1088,8 +1092,8 @@ export function CommunityPage() {
                           <EmptyState
                             icon={searchOutline}
                             tone="pur"
-                            title="Sin resultados"
-                            hint={`No hay conversaciones para «${chatQ}».`}
+                            title={t('Sin resultados')}
+                            hint={t('No hay conversaciones para «{q}».', { q: chatQ })}
                           />
                         )}
                       </>
@@ -1102,10 +1106,10 @@ export function CommunityPage() {
                     <div className="com-banner anim-in">
                       <div className="com-banner-main">
                         <div className="com-banner-title">
-                          <IonIcon icon={peopleOutline} /> Amigos ANTARES
+                          <IonIcon icon={peopleOutline} /> {t('Amigos ANTARES')}
                         </div>
                         <div className="com-banner-sub">
-                          <IonIcon icon={sparklesOutline} /> Encuentra, conecta y sigue
+                          <IonIcon icon={sparklesOutline} /> {t('Encuentra, conecta y sigue')}
                         </div>
                       </div>
                     </div>
@@ -1113,7 +1117,7 @@ export function CommunityPage() {
                       <IonSearchbar
                         className="sbar"
                         value={q}
-                        placeholder="Buscar amigos en ANTARES…"
+                        placeholder={t('Buscar amigos en ANTARES…')}
                         onIonInput={(e) => {
                           const v = e.detail.value ?? ''
                           setQ(v)
@@ -1130,7 +1134,7 @@ export function CommunityPage() {
                           onClick={() => setAmigosTab('amigos')}
                           aria-pressed={amigosTab === 'amigos'}
                         >
-                          <IonIcon icon={peopleIcon} /> Amigos
+                          <IonIcon icon={peopleIcon} /> {t('Amigos')}
                           <span className="amg-count">{friends.length}</span>
                         </button>
                         <button
@@ -1139,7 +1143,7 @@ export function CommunityPage() {
                           onClick={() => setAmigosTab('sugerencias')}
                           aria-pressed={amigosTab === 'sugerencias'}
                         >
-                          <IonIcon icon={starOutline} /> Sugerencias
+                          <IonIcon icon={starOutline} /> {t('Sugerencias')}
                           <span className="amg-count">{recommended.length}</span>
                         </button>
                       </div>
@@ -1149,13 +1153,13 @@ export function CommunityPage() {
                       peopleLoading ? (
                         <RowSkeleton rows={4} />
                       ) : peopleError ? (
-                        <ErrorCard message="No se pudo buscar. Inténtalo de nuevo." onRetry={() => setPeopleQuery(q)} />
+                        <ErrorCard message={t('No se pudo buscar. Inténtalo de nuevo.')} onRetry={() => setPeopleQuery(q)} />
                       ) : people.length === 0 ? (
                         <EmptyState
                           icon={searchOutline}
                           tone="pur"
-                          title="Sin resultados"
-                          hint={`No encontramos a nadie para «${q}».`}
+                          title={t('Sin resultados')}
+                          hint={t('No encontramos a nadie para «{q}».', { q })}
                         />
                       ) : (
                         people.map((p) => {
@@ -1166,7 +1170,7 @@ export function CommunityPage() {
                               name={p.profile.displayName}
                               seedId={p.profile.id}
                               src={p.profile.avatarUrl}
-                              sub={p.profile.bio?.trim() || 'Sin bio'}
+                              sub={p.profile.bio?.trim() || t('Sin bio')}
                               onClick={() => openProfile(p.profile.id)}
                               actions={
                                 p.isFriend ? (
@@ -1175,14 +1179,14 @@ export function CommunityPage() {
                                       fill="outline"
                                       className="bt bt-mini"
                                       disabled={busy}
-                                      onClick={() => showToast('Ya son amigos', 'info')}
+                                      onClick={() => showToast(t('Ya son amigos'), 'info')}
                                     >
-                                      <IonIcon icon={checkmark} style={{ marginRight: 4 }} /> Amigos
+                                      <IonIcon icon={checkmark} style={{ marginRight: 4 }} /> {t('Amigos')}
                                     </IonButton>
                                     <IonButton
                                       className="bt bt-outline bt-mini"
                                       onClick={() => setActivePeer(p.profile)}
-                                      aria-label={`Escribir a ${p.profile.displayName}`}
+                                      aria-label={t('Escribir a {name}', { name: p.profile.displayName })}
                                     >
                                       <IonIcon icon={chatbubbleEllipsesOutline} />
                                     </IonButton>
@@ -1194,7 +1198,7 @@ export function CommunityPage() {
                                     disabled={busy}
                                     onClick={() => void handleFollowToggle(p)}
                                   >
-                                    <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> Siguiendo
+                                    <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> {t('Siguiendo')}
                                   </IonButton>
                                 ) : (
                                   <IonButton
@@ -1202,7 +1206,7 @@ export function CommunityPage() {
                                     disabled={busy}
                                     onClick={() => void handleFollowToggle(p)}
                                   >
-                                    <IonIcon icon={personAddOutline} style={{ marginRight: 4 }} /> Seguir
+                                    <IonIcon icon={personAddOutline} style={{ marginRight: 4 }} /> {t('Seguir')}
                                   </IonButton>
                                 )
                               }
@@ -1212,15 +1216,15 @@ export function CommunityPage() {
                       )
                     ) : amigosTab === 'amigos' ? (
                       friendsError ? (
-                        <ErrorCard message="No se pudo cargar tus amigos." onRetry={retryFriends} />
+                        <ErrorCard message={t('No se pudo cargar tus amigos.')} onRetry={retryFriends} />
                       ) : friendsLoading ? (
                         <RowSkeleton rows={3} />
                       ) : friends.length === 0 ? (
                         <EmptyState
                           icon={peopleOutline}
                           tone="pur"
-                          title="Aún no tienes amigos"
-                          hint="Sigue a alguien y si te siguen, serán amigos."
+                          title={t('Aún no tienes amigos')}
+                          hint={t('Sigue a alguien y si te siguen, serán amigos.')}
                         />
                       ) : (
                         friends.map((f) => (
@@ -1229,7 +1233,7 @@ export function CommunityPage() {
                             name={f.displayName}
                             seedId={f.id}
                             src={f.avatarUrl}
-                            sub={f.bio?.trim() || 'Sin bio'}
+                            sub={f.bio?.trim() || t('Sin bio')}
                             onClick={() => openProfile(f.id)}
                             actions={
                               <>
@@ -1238,12 +1242,12 @@ export function CommunityPage() {
                                   className="bt bt-mini"
                                   onClick={() => setUnfollowTarget(f)}
                                 >
-                                  <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> Dejar de seguir
+                                  <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> {t('Dejar de seguir')}
                                 </IonButton>
                                 <IonButton
                                   className="bt bt-outline bt-mini"
                                   onClick={() => setActivePeer(f)}
-                                  aria-label={`Escribir a ${f.displayName}`}
+                                  aria-label={t('Escribir a {name}', { name: f.displayName })}
                                 >
                                   <IonIcon icon={chatbubbleEllipsesOutline} />
                                 </IonButton>
@@ -1253,15 +1257,15 @@ export function CommunityPage() {
                         ))
                       )
                     ) : followersError ? (
-                      <ErrorCard message="No se pudo cargar tus seguidores." onRetry={retryFollowers} />
+                      <ErrorCard message={t('No se pudo cargar tus seguidores.')} onRetry={retryFollowers} />
                     ) : followersLoading ? (
                       <RowSkeleton rows={3} />
                     ) : recommended.length === 0 ? (
                       <EmptyState
                         icon={starOutline}
                         tone="gold"
-                        title="No tienes seguidores nuevos por ahora"
-                        hint="Cuando nuevos miembros te sigan, aparecerán aquí para conectar."
+                        title={t('No tienes seguidores nuevos por ahora')}
+                        hint={t('Cuando nuevos miembros te sigan, aparecerán aquí para conectar.')}
                       />
                     ) : (
                       recommended.map((f) => {
@@ -1273,11 +1277,11 @@ export function CommunityPage() {
                             name={f.displayName}
                             seedId={f.id}
                             src={f.avatarUrl}
-                            sub={f.bio?.trim() || 'Sin bio'}
+                            sub={f.bio?.trim() || t('Sin bio')}
                             onClick={() => openProfile(f.id)}
                             actions={
                               <>
-                                <span className="com-row-lbl">Te sigue</span>
+                                <span className="com-row-lbl">{t('Te sigue')}</span>
                                 {isFollowingBack ? (
                                   <IonButton
                                     fill="outline"
@@ -1285,7 +1289,7 @@ export function CommunityPage() {
                                     disabled={busy}
                                     onClick={() => setUnfollowTarget(f)}
                                   >
-                                    <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> Siguiendo
+                                    <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> {t('Siguiendo')}
                                   </IonButton>
                                 ) : (
                                   <IonButton
@@ -1293,7 +1297,7 @@ export function CommunityPage() {
                                     disabled={busy}
                                     onClick={() => void handleFollow(f.id, f.displayName)}
                                   >
-                                    <IonIcon icon={personAddOutline} style={{ marginRight: 4 }} /> Seguir de vuelta
+                                    <IonIcon icon={personAddOutline} style={{ marginRight: 4 }} /> {t('Seguir de vuelta')}
                                   </IonButton>
                                 )}
                               </>
@@ -1310,10 +1314,10 @@ export function CommunityPage() {
                     <div className="com-banner anim-in">
                       <div className="com-banner-main">
                         <div className="com-banner-title">
-                          <IonIcon icon={shareSocialOutline} /> Redes ANTARES
+                          <IonIcon icon={shareSocialOutline} /> {t('Redes ANTARES')}
                         </div>
                         <div className="com-banner-sub">
-                          <IonIcon icon={globeOutline} /> Nuestros canales y comunidades
+                          <IonIcon icon={globeOutline} /> {t('Nuestros canales y comunidades')}
                         </div>
                       </div>
                     </div>
@@ -1348,7 +1352,7 @@ export function CommunityPage() {
           <div className={`com-topbar ${topbarOn ? 'on' : ''}`} aria-hidden>
             <div className="com-topbar-title">
               <IonIcon icon={globeOutline} style={{ fontSize: 16 }} />
-              Comunidad ANTARES
+              {t('Comunidad ANTARES')}
             </div>
           </div>
 
@@ -1428,12 +1432,12 @@ export function CommunityPage() {
 
           <IonAlert
             isOpen={!!unfollowTarget}
-            header="Dejar de seguir"
-            message={`¿Dejar de seguir a ${unfollowTarget?.displayName}?`}
+            header={t('Dejar de seguir')}
+            message={t('¿Dejar de seguir a {name}?', { name: unfollowTarget?.displayName ?? '' })}
             buttons={[
-              'Cancelar',
+              t('Cancelar'),
               {
-                text: 'Dejar de seguir',
+                text: t('Dejar de seguir'),
                 role: 'destructive',
                 handler: () => {
                   if (unfollowTarget) void handleUnfollow(unfollowTarget.id, unfollowTarget.displayName)

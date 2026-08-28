@@ -18,6 +18,7 @@ import {
 } from 'ionicons/icons'
 import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Profile } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 import { Avatar } from './community'
 
 const MAX_IMAGE_MB = 8
@@ -28,19 +29,19 @@ const ALLOWED_TYPES = [...IMAGE_TYPES, ...VIDEO_TYPES]
 
 type PostType = 'text' | 'image' | 'video' | 'poll'
 
-const TYPE_OPTIONS: { id: PostType; label: string; icon: string }[] = [
-  { id: 'text', label: 'Texto', icon: documentTextOutline },
-  { id: 'image', label: 'Imagen', icon: imageOutline },
-  { id: 'video', label: 'Video', icon: filmOutline },
-  { id: 'poll', label: 'Encuesta', icon: statsChartOutline },
+const TYPE_OPTIONS: { id: PostType; labelKey: string; icon: string }[] = [
+  { id: 'text', labelKey: 'Texto', icon: documentTextOutline },
+  { id: 'image', labelKey: 'Imagen', icon: imageOutline },
+  { id: 'video', labelKey: 'Video', icon: filmOutline },
+  { id: 'poll', labelKey: 'Encuesta', icon: statsChartOutline },
 ]
 
 /** Ideas rápidas para inspirar (modo texto vacío). */
-const IDEAS: { icon: string; text: string }[] = [
-  { icon: fitnessOutline, text: 'Mi rutina de hoy: qué hice y cómo me sentí' },
-  { icon: trophyOutline, text: 'Un logro que quiero compartir esta semana' },
-  { icon: helpCircleOutline, text: 'Una duda para la comunidad' },
-  { icon: leafOutline, text: 'Un hábito saludable que estoy construyendo' },
+const IDEAS: { icon: string; textKey: string }[] = [
+  { icon: fitnessOutline, textKey: 'Mi rutina de hoy: qué hice y cómo me sentí' },
+  { icon: trophyOutline, textKey: 'Un logro que quiero compartir esta semana' },
+  { icon: helpCircleOutline, textKey: 'Una duda para la comunidad' },
+  { icon: leafOutline, textKey: 'Un hábito saludable que estoy construyendo' },
 ]
 
 /** Modal de nueva publicación: selector intuitivo del tipo (texto, imagen o
@@ -82,6 +83,7 @@ export function ComposePostModal({
   const ideasRef = useRef<HTMLDivElement | null>(null)
   const dragRef = useRef<{ x: number; left: number; moved: boolean } | null>(null)
   const suppressClickRef = useRef(false)
+  const { t } = useI18n()
   const filledOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0)
   const pollReady =
     type === 'poll' &&
@@ -175,13 +177,13 @@ export function ComposePostModal({
     e.target.value = ''
     if (!file) return
     if (!ALLOWED_TYPES.includes(file.type)) {
-      onToast('Debe ser una imagen (JPG, PNG, WEBP, GIF, HEIC) o un video (MP4, WEBM).', 'warn')
+      onToast(t('Debe ser una imagen (JPG, PNG, WEBP, GIF, HEIC) o un video (MP4, WEBM).'), 'warn')
       return
     }
     const isVideo = VIDEO_TYPES.includes(file.type)
     const max = isVideo ? MAX_VIDEO_MB : MAX_IMAGE_MB
     if (file.size > max * 1024 * 1024) {
-      onToast(`El adjunto supera los ${max} MB.`, 'warn')
+      onToast(t('El adjunto supera los {max} MB.', { max: String(max) }), 'warn')
       return
     }
     if (!isVideo) setType('image')
@@ -216,7 +218,7 @@ export function ComposePostModal({
       setPollOptions(['', ''])
       setCelebrate(true)
       window.setTimeout(() => setCelebrate(false), 900)
-      onToast('Publicado en la comunidad', 'ok')
+      onToast(t('Publicado en la comunidad'), 'ok')
       onClose()
     } catch (e) {
       onToast((e as Error).message, 'err')
@@ -242,16 +244,16 @@ export function ComposePostModal({
             style={{ boxShadow: '0 0 0 2px var(--wh), 0 2px 8px rgba(16,42,80,0.14)' }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="com-post-name">{me?.displayName ?? 'Tu perfil'}</div>
-            <div className="com-post-time">Publicando en la comunidad</div>
+            <div className="com-post-name">{me?.displayName ?? t('Tu perfil')}</div>
+            <div className="com-post-time">{t('Publicando en la comunidad')}</div>
           </div>
-          <IonButton fill="clear" size="small" className="com-detail-close" onClick={onClose} aria-label="Cerrar">
+          <IonButton fill="clear" size="small" className="com-detail-close" onClick={onClose} aria-label={t('Cerrar')}>
             <IonIcon icon={close} />
           </IonButton>
         </div>
 
         {/* Selector del tipo de publicación */}
-        <div className="cpm-types" role="tablist" aria-label="Tipo de publicación">
+        <div className="cpm-types" role="tablist" aria-label={t('Tipo de publicación')}>
           {TYPE_OPTIONS.map((opt) => (
             <button
               key={opt.id}
@@ -262,7 +264,7 @@ export function ComposePostModal({
               onClick={() => pickType(opt.id)}
             >
               <IonIcon icon={opt.icon} />
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>
@@ -272,7 +274,7 @@ export function ComposePostModal({
             ref={taRef}
             className="fld composer-input comp-input"
             value={draft}
-            placeholder={type === 'text' ? '¿En qué piensas?' : '¿Qué cuenta la publicación?'}
+            placeholder={type === 'text' ? t('¿En qué piensas?') : t('¿Qué cuenta la publicación?')}
             onIonInput={(e) => setDraft(e.detail.value ?? '')}
             autoGrow
             rows={type === 'text' ? 3 : 2}
@@ -285,21 +287,21 @@ export function ComposePostModal({
             <IonInput
               ref={qRef}
               className="fld"
-              label="Pregunta"
+              label={t('Pregunta')}
               labelPlacement="stacked"
-              placeholder="¿Qué quieres preguntar a la comunidad?"
+              placeholder={t('¿Qué quieres preguntar a la comunidad?')}
               value={pollQuestion}
               maxlength={300}
               onIonInput={(e) => setPollQuestion(e.detail.value ?? '')}
             />
             <div className="cpm-poll-label">
-              Opciones <span>({pollOptions.length}/4 · mínimo 2)</span>
+              {t('Opciones')} <span>({pollOptions.length}/4 · mínimo 2)</span>
             </div>
             {pollOptions.map((opt, i) => (
               <div className="cpm-poll-row" key={i}>
                 <IonInput
                   className="fld cpm-poll-opt"
-                  placeholder={`Opción ${i + 1}`}
+                  placeholder={t('Opción {n}', { n: String(i + 1) })}
                   value={opt}
                   maxlength={100}
                   onIonInput={(e) => {
@@ -311,7 +313,7 @@ export function ComposePostModal({
                   <button
                     type="button"
                     className="cpm-poll-remove"
-                    aria-label={`Quitar opción ${i + 1}`}
+                    aria-label={t('Quitar opción {n}', { n: String(i + 1) })}
                     onClick={() => setPollOptions((prev) => prev.filter((_, j) => j !== i))}
                   >
                     <IonIcon icon={trashOutline} />
@@ -325,7 +327,7 @@ export function ComposePostModal({
                 className="cpm-poll-add"
                 onClick={() => setPollOptions((prev) => [...prev, ''])}
               >
-                <IonIcon icon={add} /> Agregar opción
+                <IonIcon icon={add} /> {t('Agregar opción')}
               </button>
             )}
           </div>
@@ -335,7 +337,7 @@ export function ComposePostModal({
         {type === 'text' && !draft.trim() && (
           <div className="cpm-ideas">
             <div className="cpm-ideas-label">
-              <IonIcon icon={sparklesOutline} style={{ fontSize: 12 }} /> Inspírate con un toque
+              <IonIcon icon={sparklesOutline} style={{ fontSize: 12 }} /> {t('Inspirírate con un toque')}
             </div>
             <div
               className="cpm-ideas-row"
@@ -347,19 +349,19 @@ export function ComposePostModal({
             >
               {IDEAS.map((idea, i) => (
                 <button
-                  key={idea.text}
+                  key={idea.textKey}
                   type="button"
                   className="cpm-idea"
                   style={{ animationDelay: `${i * 50}ms` }}
                   onClick={() => {
                     if (suppressClickRef.current) return
-                    setDraft(idea.text)
+                    setDraft(idea.textKey)
                     navigator.vibrate?.(8)
                     window.setTimeout(() => taRef.current?.setFocus(), 60)
                   }}
                 >
                   <IonIcon icon={idea.icon} className="cpm-idea-ico" />
-                  <span>{idea.text}</span>
+                  <span>{t(idea.textKey)}</span>
                 </button>
               ))}
             </div>
@@ -368,8 +370,7 @@ export function ComposePostModal({
         {type === 'text' && draft.trim() && (
           <div className="cpm-tipbar">
             <span className="cpm-tipbar-tip">
-              <IonIcon icon={sparklesOutline} style={{ fontSize: 12 }} /> Sé específico y amable: tu
-              comunidad aprecia los detalles.
+              <IonIcon icon={sparklesOutline} style={{ fontSize: 12 }} /> {t('Sé específico y amable: tu comunidad aprecia los detalles.')}
             </span>
             <span className="cpm-tipbar-count">
               {draft.length}
@@ -389,12 +390,12 @@ export function ComposePostModal({
               <IonIcon icon={type === 'video' ? videocamOutline : imageOutline} />
             </span>
             <span className="cpm-drop-title">
-              {type === 'video' ? 'Agrega un video' : 'Agrega una imagen'}
+              {type === 'video' ? t('Agrega un video') : t('Agrega una imagen')}
             </span>
             <span className="cpm-drop-sub">
               {type === 'video'
-                ? `MP4, WEBM · hasta ${MAX_VIDEO_MB} MB`
-                : `JPG, PNG, WEBP · hasta ${MAX_IMAGE_MB} MB`}
+                ? t('MP4, WEBM · hasta {max} MB', { max: String(MAX_VIDEO_MB) })
+                : t('JPG, PNG, WEBP · hasta {max} MB', { max: String(MAX_IMAGE_MB) })}
             </span>
           </button>
         )}
@@ -404,14 +405,14 @@ export function ComposePostModal({
             {isVideoPreview ? (
               <video className="cpm-media" src={preview} controls muted playsInline />
             ) : (
-              <img className="cpm-media" src={preview} alt="Adjunto" />
+              <img className="cpm-media" src={preview} alt={t('Adjunto')} />
             )}
-            <button type="button" className="cpm-media-remove" onClick={clearMedia} aria-label="Quitar adjunto">
+            <button type="button" className="cpm-media-remove" onClick={clearMedia} aria-label={t('Quitar adjunto')}>
               <IonIcon icon={trashOutline} />
             </button>
             {uploading && (
               <div className="cpm-media-uploading">
-                <IonIcon icon={sparklesOutline} /> Subiendo adjunto…
+                <IonIcon icon={sparklesOutline} /> {t('Subiendo adjunto…')}
               </div>
             )}
           </div>
@@ -428,10 +429,10 @@ export function ComposePostModal({
         <div className="cpm-foot">
           <span className="composer-hint">
             <IonIcon icon={sparklesOutline} style={{ fontSize: 13 }} />
-            {type === 'poll' ? 'Encuesta para la comunidad'
-              : hasContent && media ? (mediaType === 'video' ? 'Publicación con video' : 'Publicación con imagen')
-              : draft.trim() ? `Publicarás como ${me?.displayName ?? 'miembro'}`
-              : 'Comparte con la comunidad'}
+            {type === 'poll' ? t('Encuesta para la comunidad')
+              : hasContent && media ? (mediaType === 'video' ? t('Publicación con video') : t('Publicación con imagen'))
+              : draft.trim() ? t('Publicarás como {name}', { name: me?.displayName ?? t('miembro') })
+              : t('Comparte con la comunidad')}
           </span>
           <IonButton
             className={`bt bt-mini composer-send ${hasContent ? 'bt-pur' : ''}`}
@@ -439,12 +440,12 @@ export function ComposePostModal({
             onClick={() => void handlePublish()}
           >
             {uploading ? (
-              'Subiendo…'
+              t('Subiendo…')
             ) : publishing ? (
-              'Publicando…'
+              t('Publicando…')
             ) : (
               <>
-                <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> Publicar
+                <IonIcon icon={send} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('Publicar')}
               </>
             )}
           </IonButton>

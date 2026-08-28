@@ -16,6 +16,7 @@ import {
 } from 'ionicons/icons'
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 import type { Post, Profile } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, EmptyState, statusBadge } from './community'
 
 const PROFILE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif']
@@ -80,17 +81,18 @@ export function CommunityProfile({
   const [coverPick, setCoverPick] = useState<{ file: File; url: string } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
   const coverInputRef = useRef<HTMLInputElement | null>(null)
+  const { t } = useI18n()
 
   function pickProfileImage(kind: 'AVATAR' | 'COVER', e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
     if (!PROFILE_IMAGE_TYPES.includes(file.type)) {
-      onToast('Debe ser una imagen (JPG, PNG, WEBP).', 'warn')
+      onToast(t('Debe ser una imagen (JPG, PNG, WEBP).'), 'warn')
       return
     }
     if (file.size > PROFILE_IMAGE_MAX_MB * 1024 * 1024) {
-      onToast(`La imagen supera los ${PROFILE_IMAGE_MAX_MB} MB.`, 'warn')
+      onToast(t('La imagen supera los {max} MB.', { max: String(PROFILE_IMAGE_MAX_MB) }), 'warn')
       return
     }
     const url = URL.createObjectURL(file)
@@ -155,9 +157,9 @@ export function CommunityProfile({
   async function shareProfile() {
     try {
       await navigator.clipboard.writeText(`https://antares.bio/${handle}`)
-      onToast('Enlace de tu perfil copiado', 'ok')
+      onToast(t('Enlace de tu perfil copiado'), 'ok')
     } catch {
-      onToast('Perfil: @' + handle, 'info')
+      onToast(t('Perfil: @') + handle, 'info')
     }
   }
 
@@ -168,8 +170,8 @@ export function CommunityProfile({
       <div className="prof-view" key="edit" style={{ paddingTop: 12 }}>
         <div className="compf-edit">
           <div className="compf-edit-head">
-            <div className="compf-edit-title">Editar perfil</div>
-            <div className="compf-edit-sub">Tu identidad en la comunidad</div>
+            <div className="compf-edit-title">{t('Editar perfil')}</div>
+            <div className="compf-edit-sub">{t('Tu identidad en la comunidad')}</div>
           </div>
 
           <div className="compf-edit-preview">
@@ -177,14 +179,14 @@ export function CommunityProfile({
               className="compf-edit-cover"
               style={coverSrc ? { backgroundImage: `url(${coverSrc})` } : undefined}
             >
-              <span className="compf-edit-cover-ph">Foto de portada</span>
+              <span className="compf-edit-cover-ph">{t('Foto de portada')}</span>
               <button
                 type="button"
                 className="compf-edit-change cover"
                 onClick={() => coverInputRef.current?.click()}
               >
                 <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} />
-                {coverPick || me?.coverUrl ? 'Cambiar' : 'Añadir'}
+                {coverPick || me?.coverUrl ? t('Cambiar') : t('Añadir')}
               </button>
             </div>
             <div className="compf-edit-circle">
@@ -199,7 +201,7 @@ export function CommunityProfile({
                 type="button"
                 className="compf-edit-change avatar"
                 onClick={() => avatarInputRef.current?.click()}
-                aria-label="Cambiar foto de perfil"
+                aria-label={t('Cambiar foto de perfil')}
               >
                 <IonIcon icon={cameraOutline} />
               </button>
@@ -211,14 +213,14 @@ export function CommunityProfile({
 
           <IonInput
             className="fld"
-            label="Nombre visible"
+            label={t('Nombre visible')}
             labelPlacement="stacked"
             value={dn}
             onIonInput={(e) => setDn(e.detail.value ?? '')}
           />
           <IonTextarea
             className="fld"
-            label="Sobre mí"
+            label={t('Sobre mí')}
             labelPlacement="stacked"
             value={bio}
             onIonInput={(e) => setBio(e.detail.value ?? '')}
@@ -227,14 +229,14 @@ export function CommunityProfile({
 
           <div className="compf-edit-foot">
             <IonButton fill="outline" className="bt bt-mini" onClick={() => goEdit(false)}>
-              Cancelar
+              {t('Cancelar')}
             </IonButton>
             <IonButton className="bt bt-pur bt-mini" disabled={saving} onClick={() => void save()}>
               {saving ? (
-                'Guardando…'
+                t('Guardando…')
               ) : (
                 <>
-                  <IonIcon icon={checkmark} style={{ marginRight: 4 }} /> Guardar
+                  <IonIcon icon={checkmark} style={{ marginRight: 4 }} /> {t('Guardar')}
                 </>
               )}
             </IonButton>
@@ -248,7 +250,7 @@ export function CommunityProfile({
     <div className={`prof-view ${editingOut ? 'out' : ''}`} key="main">
       {me?.status === 'BANNED' && (
         <div className="compf-banned" style={{ margin: '6px 16px 10px' }}>
-          Tu perfil está suspendido en la comunidad.
+          {t('Tu perfil está suspendido en la comunidad.')}
         </div>
       )}
 
@@ -258,7 +260,7 @@ export function CommunityProfile({
         style={me?.coverUrl ? { backgroundImage: `url(${me.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
       >
         <span className="compf-cover-kicker">
-          <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} /> Mi espacio
+          <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} /> {t('Mi espacio')}
         </span>
       </div>
       <div className="compf-avatar-slot">
@@ -275,19 +277,19 @@ export function CommunityProfile({
 
       {/* Identidad */}
       <div className="compf-name-row center">
-        <span className="compf-name-big">{me?.displayName ?? 'Mi perfil'}</span>
-        {me ? statusBadge(me.status) : null}
+        <span className="compf-name-big">{me?.displayName ?? t('Mi perfil')}</span>
+        {me ? statusBadge(me.status, t) : null}
       </div>
 
       {meLoading && !me ? (
         <div className="compf-skel" />
       ) : (
         <div className="compf-stats-line">
-          <b>{formatCount(posts.length)}</b> publicaciones
+          <b>{formatCount(posts.length)}</b> {t('publicaciones')}
           <span className="compf-sep">·</span>
-          <b>{formatCount(followersCount)}</b> seguidores
+          <b>{formatCount(followersCount)}</b> {t('seguidores')}
           <span className="compf-sep">·</span>
-          <b>{formatCount(followingCount)}</b> siguiendo
+          <b>{formatCount(followingCount)}</b> {t('siguiendo')}
         </div>
       )}
 
@@ -304,18 +306,18 @@ export function CommunityProfile({
       </div>
 
       <p className="compf-bio">
-        {me?.bio?.trim() ? me.bio : 'Comparte lo que haces con la comunidad.'}
+        {me?.bio?.trim() ? me.bio : t('Comparte lo que haces con la comunidad.')}
       </p>
 
       {/* Acciones (estilo Panel + Crear) */}
       <div className="compf-actions">
         <IonButton fill="solid" className="compf-action-btn" onClick={() => void shareProfile()}>
-          <IonIcon icon={shareSocialOutline} style={{ marginRight: 5 }} /> Compartir
+          <IonIcon icon={shareSocialOutline} style={{ marginRight: 5 }} /> {t('Compartir')}
         </IonButton>
         <IonButton fill="solid" className="compf-action-btn" onClick={composeWrapper}>
-          <IonIcon icon={add} style={{ marginRight: 5 }} /> Crear
+          <IonIcon icon={add} style={{ marginRight: 5 }} /> {t('Crear')}
         </IonButton>
-        <IonButton fill="clear" className="compf-action-edit" onClick={() => goEdit(true)} aria-label="Editar perfil">
+        <IonButton fill="clear" className="compf-action-edit" onClick={() => goEdit(true)} aria-label={t('Editar perfil')}>
           <IonIcon icon={createOutline} />
         </IonButton>
       </div>
@@ -326,19 +328,19 @@ export function CommunityProfile({
           <span className="compf-circle-ico">
             <IonIcon icon={personAddOutline} />
           </span>
-          Siguiendo
+          {t('Siguiendo')}
         </button>
         <button type="button" className="compf-circle" onClick={() => onShowList('followers')}>
           <span className="compf-circle-ico">
             <IonIcon icon={peopleOutline} />
           </span>
-          Seguidores
+          {t('Seguidores')}
         </button>
         <button type="button" className="compf-circle" onClick={onCompose}>
           <span className="compf-circle-ico">
             <IonIcon icon={gridOutline} />
           </span>
-          Publicar
+          {t('Publicar')}
         </button>
       </div>
 
@@ -361,11 +363,11 @@ export function CommunityProfile({
           <EmptyState
             icon={view === 'video' ? filmOutline : view === 'image' ? imagesOutline : documentTextOutline}
             tone="pur"
-            title={view === 'all' ? 'Crea tu primera publicación' : `Sin ${{ image: 'fotos', video: 'videos' }[view]}`}
-            hint="Comparte tu rutina saludable, un logro o una duda: la comunidad te escucha."
+            title={view === 'all' ? t('Crea tu primera publicación') : view === 'image' ? t('Sin fotos') : t('Sin videos')}
+            hint={view === 'all' ? t('Comparte tu rutina saludable, un logro o una duda: la comunidad te escucha.') : undefined}
           >
             <IonButton className="bt bt-pur bt-mini" onClick={onCompose}>
-              <IonIcon icon={add} style={{ marginRight: 4 }} /> Nueva publicación
+              <IonIcon icon={add} style={{ marginRight: 4 }} /> {t('Nueva publicación')}
             </IonButton>
           </EmptyState>
         </div>
@@ -377,7 +379,7 @@ export function CommunityProfile({
               type="button"
               className="compf-tile"
               onClick={() => onOpenPost(post)}
-              aria-label="Ver publicación"
+              aria-label={t('Ver publicación')}
             >
               {post.imageUrl ? (
                 <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />

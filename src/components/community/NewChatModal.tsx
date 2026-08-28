@@ -2,6 +2,7 @@ import { IonButton, IonIcon, IonModal, IonSearchbar } from '@ionic/react'
 import { arrowBack, chatbubbleEllipsesOutline, close, personAddOutline } from 'ionicons/icons'
 import { useEffect, useMemo, useState } from 'react'
 import type { Profile } from '../../graphql/community'
+import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, EmptyState } from './community'
 
 /** Modal "Nuevo chat": elige un amigo para iniciar una conversación directa.
@@ -23,6 +24,7 @@ export function NewChatModal({
   dark?: boolean
 }) {
   const [q, setQ] = useState('')
+  const { t } = useI18n()
 
   useEffect(() => {
     if (!open) setQ('')
@@ -44,13 +46,13 @@ export function NewChatModal({
         <div className="com-banner">
           <div className="com-banner-main">
             <div className="com-banner-title">
-              <IonIcon icon={personAddOutline} /> Nuevo chat
+              <IonIcon icon={personAddOutline} /> {t('Nuevo chat')}
             </div>
             <div className="com-banner-sub">
-              <IonIcon icon={chatbubbleEllipsesOutline} /> Elige un amigo para escribirle
+              <IonIcon icon={chatbubbleEllipsesOutline} /> {t('Elige un amigo para escribirle')}
             </div>
           </div>
-          <IonButton className="com-banner-close" onClick={onClose} aria-label="Cerrar">
+          <IonButton className="com-banner-close" onClick={onClose} aria-label={t('Cerrar')}>
             <IonIcon icon={close} />
           </IonButton>
         </div>
@@ -59,7 +61,7 @@ export function NewChatModal({
           <IonSearchbar
             className="sbar"
             value={q}
-            placeholder="Buscar amigo…"
+            placeholder={t('Buscar amigo…')}
             onIonInput={(e) => setQ(e.detail.value ?? '')}
           />
         </div>
@@ -70,12 +72,12 @@ export function NewChatModal({
               <EmptyState
                 icon={personAddOutline}
                 tone="pur"
-                title="No tienes amigos todavía"
-                hint="Sigue a personas en Amigos para poder escribirles."
+                title={t('No tienes amigos todavía')}
+                hint={t('Sigue a personas en Amigos para poder escribirles.')}
               />
             </div>
           ) : filtered.length === 0 ? (
-            <EmptyState icon={personAddOutline} tone="pur" title="Sin resultados" hint={`No encontramos a nadie para «${q}».`} />
+            <EmptyState icon={personAddOutline} tone="pur" title={t('Sin resultados')} hint={t('No encontramos a nadie para «{q}».', { q })} />
           ) : (
             filtered.map((f) => (
               <div
@@ -95,7 +97,7 @@ export function NewChatModal({
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="com-row-name">{f.displayName}</div>
-                    <div className="com-row-sub">{f.bio?.trim() || 'Miembro ANTARES'}</div>
+                    <div className="com-row-sub">{f.bio?.trim() || t('Miembro ANTARES')}</div>
                   </div>
                 </div>
               </div>
@@ -105,7 +107,7 @@ export function NewChatModal({
 
         <div className="com-picker-foot">
           <IonButton fill="outline" className="bt bt-mini" onClick={onClose}>
-            <IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> Volver a Chats
+            <IonIcon icon={arrowBack} style={{ marginRight: 4 }} /> {t('Volver a Chats')}
           </IonButton>
         </div>
       </div>

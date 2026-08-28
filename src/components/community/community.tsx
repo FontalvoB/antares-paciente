@@ -2,6 +2,7 @@ import { IonBadge, IonButton, IonIcon, IonSkeletonText } from '@ionic/react'
 import { alertCircle, ban } from 'ionicons/icons'
 import type { CSSProperties, MouseEventHandler, ReactNode } from 'react'
 import { useApp } from '../../context/AppContext'
+import { useI18n } from '../../i18n/I18nContext'
 
 /** Gradientes de identidad para avatares sin foto (tokens de marca). */
 export const AVATAR_GRADS = [
@@ -20,21 +21,21 @@ export function initialsOf(name: string): string {
     .join('')
 }
 
-export function timeAgo(iso: string): string {
+export function timeAgo(iso: string, t: (s: string, p?: Record<string, string>) => string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'ahora'
-  if (mins < 60) return `hace ${mins} min`
+  if (mins < 1) return t('ahora')
+  if (mins < 60) return t('hace {n} min', { n: String(mins) })
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `hace ${hrs} h`
+  if (hrs < 24) return t('hace {n} h', { n: String(hrs) })
   const days = Math.floor(hrs / 24)
-  if (days === 1) return 'ayer'
-  return `hace ${days} días`
+  if (days === 1) return t('ayer')
+  return t('hace {n} días', { n: String(days) })
 }
 
-export function statusBadge(status: string) {
-  if (status === 'BANNED') return <IonBadge color="danger">Baneado</IonBadge>
-  return <IonBadge color="success">Activo</IonBadge>
+export function statusBadge(status: string, t: (s: string) => string) {
+  if (status === 'BANNED') return <IonBadge color="danger">{t('Baneado')}</IonBadge>
+  return <IonBadge color="success">{t('Activo')}</IonBadge>
 }
 
 /** Avatar de la comunidad: imagen (foto de perfil) o iniciales sobre
@@ -151,15 +152,16 @@ export function ErrorCard({
   message: string
   onRetry: () => void
 }) {
+  const { t } = useI18n()
   return (
     <div className="com-empty">
       <div className="com-empty-ico tone-red">
         <IonIcon icon={alertCircle} />
       </div>
-      <div className="com-empty-title">Ups, algo salió mal</div>
+      <div className="com-empty-title">{t('Ups, algo salió mal')}</div>
       <div className="com-empty-hint">{message}</div>
       <IonButton className="bt bt-pur bt-mini" onClick={onRetry}>
-        Reintentar
+        {t('Reintentar')}
       </IonButton>
     </div>
   )
@@ -246,6 +248,7 @@ export function ComRow({
 /** Pantalla de bloqueo completo para perfiles suspendidos. */
 export function BannedScreen({ reason }: { reason?: string | null }) {
   const { navigate } = useApp()
+  const { t } = useI18n()
   return (
     <div
       style={{
@@ -262,9 +265,9 @@ export function BannedScreen({ reason }: { reason?: string | null }) {
       <div className="com-empty-ico tone-red" style={{ width: 84, height: 84, fontSize: 40, animation: 'none' }}>
         <IonIcon icon={ban} />
       </div>
-      <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Perfil suspendido</div>
+      <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>{t('Perfil suspendido')}</div>
       <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6, maxWidth: 280 }}>
-        Tu perfil fue suspendido en la comunidad.
+        {t('Tu perfil fue suspendido en la comunidad.')}
       </div>
       {reason && (
         <p
@@ -293,7 +296,7 @@ export function BannedScreen({ reason }: { reason?: string | null }) {
         }}
         onClick={() => navigate('home')}
       >
-        Volver a la app
+        {t('Volver a la app')}
       </IonButton>
     </div>
   )
