@@ -19,7 +19,7 @@ import {
 import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 import { LanguageToggle } from '../components/LanguageToggle'
-import { loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
+import { DEMO_LOGIN, loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
 import type { UserProfile } from '../types'
 
 type LoginMode = 'login' | 'first'
@@ -582,6 +582,12 @@ placeholder={t('Ej. 32534534')}
                         </>
                       )}
                     </IonButton>
+
+                    <p className="login-demo-note">
+                      {t('Acceso demo: ID')} <strong>{DEMO_LOGIN.documentNumber}</strong>
+                      {' · '}
+                      {t('Contraseña')} <strong>{DEMO_LOGIN.password}</strong>
+                    </p>
 
                     <div className="login-divider" role="separator" aria-label={t('O')}>
                       <span>{t('o')}</span>

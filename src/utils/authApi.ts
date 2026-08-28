@@ -1,5 +1,15 @@
 const ACCESS_TOKEN_KEY = 'copp_access_token'
 
+/** Acceso local para saltar registro y el Auth service. No sustituye un login real. */
+export const DEMO_LOGIN = {
+  documentNumber: '12345678',
+  password: 'demo1234',
+} as const
+
+function isDemoCredentials(documentNumber: string, password: string): boolean {
+  return documentNumber === DEMO_LOGIN.documentNumber && password === DEMO_LOGIN.password
+}
+
 export interface LoginResult {
   accessToken: string
   tokenType: string
@@ -54,6 +64,16 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
 
 /** Login con contraseña por número de identificación (usuarios ya registrados). */
 export async function loginUser(documentNumber: string, password: string, rememberMe: boolean): Promise<LoginResult> {
+  if (isDemoCredentials(documentNumber, password)) {
+    const result: LoginResult = {
+      accessToken: 'demo-access-token',
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+    }
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+    return result
+  }
+
   const result = await postJson<LoginResult>('/api/auth/login', {
     documentNumber,
     password,
