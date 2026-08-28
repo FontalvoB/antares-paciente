@@ -7,6 +7,11 @@
   resolved "https://registry.npmjs.org/@0no-co/graphql.web/-/graphql.web-1.3.3.tgz"
   integrity sha512-4gFGBdyaFmQ6n9euhp5JtIGS4ZeivwDr1tCPENUxTvy5wyv532yOtFCr9zzYAJh1s6uibgC+TRXUcay+mxzCoQ==
 
+"@capacitor/android@^8.5.0":
+  version "8.5.0"
+  resolved "https://registry.npmjs.org/@capacitor/android/-/android-8.5.0.tgz"
+  integrity sha512-Rb3prJeQiTp0pQhSSOReJuG9VgibOGMG4ECs+UhMwr6TCCHZ3NCZO811bDA0HxD0xrT/gCrJAsY5yfEATu84JQ==
+
 "@capacitor/app@^8.1.1":
   version "8.1.1"
   resolved "https://registry.npmjs.org/@capacitor/app/-/app-8.1.1.tgz"

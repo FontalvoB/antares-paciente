@@ -18,51 +18,60 @@ import type {
   ToastKind,
   ToastState,
   UserProfile,
-} from '../types'
-import { weekdayMondayIndex } from '../utils/dates'
-import { DAY_BONUS_PTS } from '../data/program'
-import { chestStatus, findChest, SEED_CLAIMED_CHESTS } from '../data/chests'
+} from "../types";
+import { weekdayMondayIndex } from "../utils/dates";
+import { DAY_BONUS_PTS } from "../data/program";
+import { chestStatus, findChest, SEED_CLAIMED_CHESTS } from "../data/chests";
+
+const USER_STORAGE_KEY = "antares_user_profile";
 
 interface AppState {
-  flow: Flow
-  screen: Screen
-  toast: ToastState | null
-  panicOpen: boolean
-  voiceOpen: boolean
-  sosActive: boolean
-  user: UserProfile
-  testsDone: number[]
-  hydration: number
-  mealsLogged: string[]
-  chat: ChatMessage[]
-  watchConnected: boolean
-  watchName: string
-  program: ProgramDay
-  programWeek: number
-  streak: number
-  weekCheckins: boolean[]
-  pointsToday: number
-  pointsTotal: number
-  navigate: (s: Screen) => void
-  finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void
-  backToLogin: () => void
-  finishOnboarding: (user: UserProfile) => void
-  finishTests: () => void
-  skipTests: () => void
-  markTest: (id: number) => void
-  showToast: (message: string, kind?: ToastKind) => void
-  openPanic: () => void
-  closePanic: () => void
-  activateSos: () => void
-  openVoice: () => void
-  closeVoice: () => void
-  setHydration: (n: number) => void
-  logMeal: (id: string) => void
-  sendChat: (text: string) => void
-  connectWatch: (name: string) => void
-  disconnectWatch: () => void
-completeStep: (id: ProgramTaskId, pts: number) => void
-  logout: () => void
+  authLoading: boolean;
+  flow: Flow;
+  screen: Screen;
+  toast: ToastState | null;
+  panicOpen: boolean;
+  voiceOpen: boolean;
+  sosActive: boolean;
+  user: UserProfile;
+  testsDone: number[];
+  hydration: number;
+  mealsLogged: string[];
+  chat: ChatMessage[];
+  threadId: string;
+  setActiveThreadId: (id: string | null) => void;
+  watchConnected: boolean;
+  watchName: string;
+  program: ProgramDay;
+  programWeek: number;
+  streak: number;
+  weekCheckins: boolean[];
+  pointsToday: number;
+  pointsTotal: number;
+  claimedChests: string[];
+  navigate: (s: Screen) => void;
+  finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void;
+  backToLogin: () => void;
+  finishOnboarding: (user: UserProfile) => void;
+  finishTests: () => void;
+  skipTests: () => void;
+  openTests: () => void;
+  markTest: (id: number) => void;
+  showToast: (message: string, kind?: ToastKind) => void;
+  openPanic: () => void;
+  closePanic: () => void;
+  activateSos: () => void;
+  openVoice: () => void;
+  closeVoice: () => void;
+  setHydration: (n: number) => void;
+  logMeal: (id: string) => void;
+  sendChat: (text: string) => void;
+  hydrateChat: (messages: { text: string }[]) => void;
+  connectWatch: (name: string) => void;
+  disconnectWatch: () => void;
+  completeStep: (id: ProgramTaskId, pts: number) => void;
+  claimChest: (id: string) => { xp: number; title: string } | null;
+  logout: () => void;
 }
 
 const defaultUser: UserProfile = {
@@ -211,12 +220,23 @@ export function AppProvider({
     ejercicio: false,
     nutribiotico: false,
     emocional: false,
-  })
-  const [programWeek] = useState(12)
-  const [streak, setStreak] = useState(22)
-  const [weekCheckins, setWeekCheckins] = useState<boolean[]>([true, true, true, true, false, false, false])
-  const [pointsToday, setPointsToday] = useState(0)
-  const [pointsTotal, setPointsTotal] = useState(4820)
+  });
+  const [programWeek] = useState(12);
+  const [streak, setStreak] = useState(22);
+  const [weekCheckins, setWeekCheckins] = useState<boolean[]>([
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+  ]);
+  const [pointsToday, setPointsToday] = useState(0);
+  const [pointsTotal, setPointsTotal] = useState(4820);
+  const [claimedChests, setClaimedChests] = useState<string[]>([
+    ...SEED_CLAIMED_CHESTS,
+  ]);
 
   // Restauración automática de sesión al inicio
   useEffect(() => {
@@ -457,12 +477,13 @@ export function AppProvider({
         });
       },
       claimChest: (id) => {
-        const chest = findChest(id)
-        if (!chest || chestStatus(chest, streak, claimedChests) !== 'ready') return null
-        setClaimedChests((prev) => (prev.includes(id) ? prev : [...prev, id]))
-        setPointsToday((n) => n + chest.xp)
-        setPointsTotal((n) => n + chest.xp)
-        return { xp: chest.xp, title: chest.title }
+        const chest = findChest(id);
+        if (!chest || chestStatus(chest, streak, claimedChests) !== "ready")
+          return null;
+        setClaimedChests((prev) => (prev.includes(id) ? prev : [...prev, id]));
+        setPointsToday((n) => n + chest.xp);
+        setPointsTotal((n) => n + chest.xp);
+        return { xp: chest.xp, title: chest.title };
       },
       logout: () => {
         setFlow("login");
@@ -497,7 +518,10 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      claimedChests,
+      threadId,
       onResetCommunityClient,
+      t,
     ],
   );
 
