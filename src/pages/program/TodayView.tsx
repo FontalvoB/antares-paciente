@@ -1,6 +1,6 @@
 import { IonButton, IonIcon } from '@ionic/react'
 import { motion } from 'framer-motion'
-import { checkmark, gift, sparkles, trophy } from 'ionicons/icons'
+import { checkmark, chevronForward, gift, sparkles, trophy } from 'ionicons/icons'
 import { RingProgress } from '../../components/RingProgress'
 import {
   DAY_BONUS_PTS,
@@ -26,6 +26,9 @@ export function TodayView({
   onOpenTask,
   onGoEvo,
   onGoChat,
+  onGoChests,
+  readyChests,
+  readyXp,
 }: {
   program: ProgramDay
   doneCount: number
@@ -39,6 +42,9 @@ export function TodayView({
   onOpenTask: (id: ProgramTaskId) => void
   onGoEvo: () => void
   onGoChat: () => void
+  onGoChests: () => void
+  readyChests: number
+  readyXp: number
 }) {
   const t = useT()
   const fillPct = (doneCount / PROGRAM_TASKS.length) * 100
@@ -130,6 +136,19 @@ export function TodayView({
           </div>
         </motion.div>
       </div>
+
+      {readyChests > 0 && (
+        <button type="button" className="cx-today-banner" onClick={onGoChests}>
+          <span className="cx-today-ico">
+            <IonIcon icon={gift} />
+          </span>
+          <span className="cx-today-copy">
+            <strong>{t('{n} cofres listos para reclamar', { n: String(readyChests) })}</strong>
+            <small>+{readyXp.toLocaleString('es-ES')} XP</small>
+          </span>
+          <IonIcon icon={chevronForward} />
+        </button>
+      )}
 
       <div className="stitle">{t('Nutribiótico')}</div>
       <div className="nb-card pg-nb">

@@ -4,12 +4,11 @@ import {
   IonContent,
   IonIcon,
   IonModal,
-  IonProgressBar,
   IonSegment,
   IonSegmentButton,
 } from '@ionic/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { close, flame, star } from 'ionicons/icons'
+import { close, flame, gift } from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
@@ -17,13 +16,15 @@ import {
   CIRCUIT_STEPS,
   DAY_BONUS_PTS,
   HEALTH_SCORE,
-  NEXT_CHEST_DAYS,
   PODCAST_EPISODE,
+  PROGRAM_LEVELS,
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
   TRANSFORM_ROWS,
   levelForXp,
 } from '../data/program'
+import { readyChests, readyXp } from '../data/chests'
+import { USER_STATE, userRank } from '../data/rankings'
 import type { ProgramTaskId } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
 import { EvolutionView } from './program/EvolutionView'
@@ -36,8 +37,10 @@ import {
   VitalsLesson,
   type ProgramTab,
 } from './program/Lessons'
+import { RankingView } from './program/RankingView'
 import { StreakView } from './program/StreakView'
 import { TodayView } from './program/TodayView'
+import { TransformHero } from './program/TransformHero'
 import { paneMotion } from './program/ui'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
@@ -84,6 +87,8 @@ export function ProgramPage() {
     user,
     watchConnected,
     connectWatch,
+    claimedChests,
+    claimChest,
   } = useApp()
 
   const t = useT()
@@ -99,6 +104,7 @@ export function ProgramPage() {
   const [exLeft, setExLeft] = useState(CIRCUIT_STEPS[0].sec)
   const [nutriSlot, setNutriSlot] = useState('manana')
   const [takenAt, setTakenAt] = useState('')
+  const [openedChest, setOpenedChest] = useState<{ title: string; xp: number } | null>(null)
   const prevAll = useRef(false)
 
   const doneCount = PROGRAM_TASKS.filter((pt) => program[pt.id]).length
@@ -108,9 +114,13 @@ export function ProgramPage() {
   const weekPct = programWeek / PROGRAM_WEEKS
   const task = useMemo(() => PROGRAM_TASKS.find((pt) => pt.id === active) ?? null, [active])
   const lvl = levelForXp(pointsTotal)
+  const nextLv = PROGRAM_LEVELS[lvl.idx + 1]
+  const xpToNext = nextLv ? Math.max(0, nextLv.min - pointsTotal) : 0
   const first = user.nombre.split(' ')[0]
   const cells = useMemo(buildMonthCells, [])
-  const chestPct = Math.min(1, streak / NEXT_CHEST_DAYS)
+  const claimable = readyChests(streak, claimedChests)
+  const claimableXp = readyXp(streak, claimedChests)
+  const liga = userRank('racha')
 
   const burst = (pts: number, withConfetti = false) => {
     setXpPop(pts)
@@ -141,6 +151,14 @@ export function ProgramPage() {
       )
     }
     setActive(null)
+  }
+
+  const openChest = (id: string) => {
+    const result = claimChest(id)
+    if (!result) return
+    showToast(t('¡{title} abierto! +{xp} XP', { title: t(result.title), xp: String(result.xp) }), 'ok')
+    burst(result.xp, true)
+    setOpenedChest(result)
   }
 
   useEffect(() => {
@@ -202,72 +220,35 @@ export function ProgramPage() {
   return (
     <Screen>
       <Scroll>
-        <div className="hero hero-cosmos dash-hero">
-          <div className="kicker">{t('MI TRANSFORMACIÓN · COPP-ADRESD')}</div>
-          <div className="h1">
-            {greeting(t)}, {first}
-          </div>
-          <div className="sub">
-            {t('Semana {programWeek} de {programWeeks} · Cada día cuenta', { programWeek: String(programWeek), programWeeks: String(PROGRAM_WEEKS) })}
-          </div>
+        <TransformHero
+          greeting={greeting(t)}
+          first={first}
+          programWeek={programWeek}
+          programWeeks={PROGRAM_WEEKS}
+          level={lvl.level}
+          levelName={lvl.name}
+          levelPct={lvl.pct}
+          pointsTotal={pointsTotal}
+          xpToNext={xpToNext}
+          nextLevelName={nextLv?.name ?? lvl.name}
+          streak={streak}
+          healthScore={HEALTH_SCORE}
+          stateRank={liga.rank}
+          stateName={USER_STATE}
+          readyChests={claimable.length}
+          allDone={allDone}
+          onOpenStreak={() => setTab('racha')}
+          onOpenEvo={() => setTab('evo')}
+          onOpenLiga={() => setTab('liga')}
+          onOpenChests={() => setTab('racha')}
+        />
 
-          <div className="hero-pills">
-            <button
-              type="button"
-              className={`hpill hpill-streak ${allDone ? 'hot' : ''}`}
-              onClick={() => setTab('racha')}
-              aria-label={`Ver racha de ${streak} días`}
-            >
-              <div className="hpill-ico">
-                <IonIcon icon={flame} />
-              </div>
-              <div className="hpill-val">{streak}</div>
-              <div className="hpill-lbl">{t('Racha')}</div>
-            </button>
-            <div className="hpill hpill-xp">
-              <div className="hpill-ico">
-                <IonIcon icon={star} />
-              </div>
-              <div className="hpill-val">{pointsTotal.toLocaleString('es-ES')}</div>
-              <div className="hpill-lbl">XP</div>
-            </div>
-            <button type="button" className="hpill hpill-hs" onClick={() => setTab('evo')} aria-label="Ver Health Score">
-              <div className="hpill-val">{HEALTH_SCORE}</div>
-              <div className="hpill-lbl">Health</div>
-            </button>
-            <button type="button" className="hpill hpill-ts" onClick={() => setTab('evo')} aria-label="Ver evolución">
-              <div className="hpill-val">+27%</div>
-              <div className="hpill-lbl">{t('Evolución')}</div>
-            </button>
-          </div>
-
-          <div className="lvl-bar-wrap">
-            <div className="lvl-row">
-              <div className="lvl-name">
-                {t('Nivel {level} — {name}', { level: String(lvl.level), name: lvl.name })}
-              </div>
-              <div className="lvl-xp">
-                {pointsTotal.toLocaleString('es-ES')} / {lvl.max.toLocaleString('es-ES')} XP
-              </div>
-            </div>
-            <IonProgressBar
-              className="pb"
-              value={lvl.pct}
-              style={
-                {
-                  '--background': 'rgba(255,255,255,.12)',
-                  '--progress-background': 'linear-gradient(90deg,var(--cyan),var(--ice))',
-                } as CSSProperties
-              }
-            />
-          </div>
-        </div>
-
-        <div className="duo-seg-wrap">
+        <div className="duo-seg-wrap tabs-4">
           <IonSegment value={tab} onIonChange={(e) => setTab((e.detail.value as ProgramTab) || 'hoy')}>
             <IonSegmentButton value="hoy">{t('Hoy')}</IonSegmentButton>
             <IonSegmentButton value="racha">{t('Racha')}</IonSegmentButton>
-            <IonSegmentButton value="evo">{t('Evolución')}</IonSegmentButton>
+            <IonSegmentButton value="liga">{t('Liga')}</IonSegmentButton>
+            <IonSegmentButton value="evo">{t('Evo')}</IonSegmentButton>
           </IonSegment>
         </div>
 
@@ -287,6 +268,9 @@ export function ProgramPage() {
                 onOpenTask={setActive}
                 onGoEvo={() => setTab('evo')}
                 onGoChat={() => navigate('chat')}
+                onGoChests={() => setTab('racha')}
+                readyChests={claimable.length}
+                readyXp={claimableXp}
               />
             )}
             {tab === 'racha' && (
@@ -295,14 +279,16 @@ export function ProgramPage() {
                 weekCheckins={weekCheckins}
                 todayIdx={todayIdx}
                 cells={cells}
-                chestPct={chestPct}
                 weekPct={weekPct}
                 programWeek={programWeek}
+                claimedChests={claimedChests}
+                onClaim={openChest}
                 onCell={(day, past) =>
                   showToast(past ? `Día ${day} completado` : 'Hoy · sigue la racha', 'info')
                 }
               />
             )}
+            {tab === 'liga' && <RankingView />}
             {tab === 'evo' && <EvolutionView onGoBook={() => navigate('book')} />}
           </motion.div>
         </AnimatePresence>
@@ -449,6 +435,32 @@ export function ProgramPage() {
         </div>
       </IonModal>
 
+      <IonModal isOpen={!!openedChest} onDidDismiss={() => setOpenedChest(null)} className="celebrate-modal">
+        <div className="celebrate-card ms-card-wrap">
+          <AnimatePresence>
+            {openedChest && (
+              <motion.div
+                className="celebrate-burst cx-open"
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 240, damping: 16 }}
+              >
+                <div className="cx-open-ico">
+                  <IonIcon icon={gift} />
+                </div>
+                <div className="display" style={{ fontSize: 22, fontWeight: 800 }}>
+                  {t(openedChest.title)}
+                </div>
+                <p>{t('El cofre se abrió. La experiencia ya está en tu nivel.')}</p>
+                <div className="cx-open-xp">+{openedChest.xp.toLocaleString('es-ES')} XP</div>
+                <IonButton expand="block" className="bt bt-primary" onClick={() => setOpenedChest(null)}>
+                  {t('Seguir transformándome')}
+                </IonButton>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </IonModal>
       {xpPop !== null && <div className="xp-pop">+{xpPop} pts</div>}
       {confetti.map((c) => (
         <span

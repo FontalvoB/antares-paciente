@@ -13,6 +13,7 @@ import type {
 } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
 import { DAY_BONUS_PTS } from '../data/program'
+import { chestStatus, findChest, SEED_CLAIMED_CHESTS } from '../data/chests'
 
 interface AppState {
   flow: Flow
@@ -34,6 +35,7 @@ interface AppState {
   weekCheckins: boolean[]
   pointsToday: number
   pointsTotal: number
+  claimedChests: string[]
   navigate: (s: Screen) => void
   finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void
   backToLogin: () => void
@@ -52,7 +54,8 @@ interface AppState {
   sendChat: (text: string) => void
   connectWatch: (name: string) => void
   disconnectWatch: () => void
-completeStep: (id: ProgramTaskId, pts: number) => void
+  completeStep: (id: ProgramTaskId, pts: number) => void
+  claimChest: (id: string) => { xp: number; title: string } | null
   logout: () => void
 }
 
@@ -170,6 +173,7 @@ export function AppProvider({
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([true, true, true, true, false, false, false])
   const [pointsToday, setPointsToday] = useState(0)
   const [pointsTotal, setPointsTotal] = useState(4820)
+  const [claimedChests, setClaimedChests] = useState<string[]>([...SEED_CLAIMED_CHESTS])
 
   const t = useT()
 
@@ -194,6 +198,7 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      claimedChests,
       navigate: (s) => setScreen(s),
       finishLogin: (seed, next = 'onboarding') => {
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
@@ -260,6 +265,14 @@ export function AppProvider({
           return next
         })
       },
+      claimChest: (id) => {
+        const chest = findChest(id)
+        if (!chest || chestStatus(chest, streak, claimedChests) !== 'ready') return null
+        setClaimedChests((prev) => (prev.includes(id) ? prev : [...prev, id]))
+        setPointsToday((n) => n + chest.xp)
+        setPointsTotal((n) => n + chest.xp)
+        return { xp: chest.xp, title: chest.title }
+      },
       logout: () => {
         setFlow('login')
         setScreen('home')
@@ -288,6 +301,7 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      claimedChests,
       onResetCommunityClient,
       t,
     ],

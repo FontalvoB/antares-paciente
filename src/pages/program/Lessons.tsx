@@ -567,4 +567,4 @@ export function EmotionalLesson({
   )
 }
 
-export type ProgramTab = 'hoy' | 'racha' | 'evo'
+export type ProgramTab = 'hoy' | 'racha' | 'liga' | 'evo'

@@ -1,16 +1,16 @@
 import { IonIcon, IonProgressBar } from '@ionic/react'
 import { motion } from 'framer-motion'
 import type { CSSProperties } from 'react'
-import { flame, gift, shieldCheckmark, trophy } from 'ionicons/icons'
-import { RingProgress } from '../../components/RingProgress'
+import { flame, shieldCheckmark, trophy } from 'ionicons/icons'
+import { CLINICAL_CHESTS, chestStatus, nextStreakChest, STREAK_CHESTS } from '../../data/chests'
 import { useI18n } from '../../i18n/I18nContext'
 import {
   CAL_DAY_LABELS,
   LONGEST_STREAK,
-  NEXT_CHEST_DAYS,
   PROGRAM_WEEKS,
   WEEK_LABELS,
 } from '../../data/program'
+import { ChestCard, NextChestGoal, StreakChestsTrail } from './ChestsPanel'
 import { CountUp } from './visuals'
 
 export function StreakView({
@@ -18,25 +18,28 @@ export function StreakView({
   weekCheckins,
   todayIdx,
   cells,
-  chestPct,
   weekPct,
   programWeek,
+  claimedChests,
   onCell,
+  onClaim,
 }: {
   streak: number
   weekCheckins: boolean[]
   todayIdx: number
   cells: { d: number | null; kind: string }[]
-  chestPct: number
   weekPct: number
   programWeek: number
+  claimedChests: string[]
   onCell: (day: number, past: boolean) => void
+  onClaim: (id: string) => void
 }) {
   const { lang, t } = useI18n()
   const monthRaw = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' })
   const monthTitle = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1)
   const today = new Date().getDate()
-  const remain = Math.max(0, NEXT_CHEST_DAYS - streak)
+  const upcoming = nextStreakChest(streak, claimedChests)
+  const claimableStreak = STREAK_CHESTS.filter((c) => chestStatus(c, streak, claimedChests) === 'ready')
 
   return (
     <div className="pg-pane cpad">
@@ -134,42 +137,33 @@ export function StreakView({
         </div>
       </div>
 
-      <div className="card chest-next pg-chest-goal">
-        <div className="chest-next-row">
-          <RingProgress
-            value={chestPct}
-            size={72}
-            stroke={6}
-            trackColor="rgba(255,255,255,0.14)"
-            gradient={['#c4b5fd', '#7c3aed']}
-          >
-            <span className="pg-gift">
-              <IonIcon icon={gift} />
-            </span>
-          </RingProgress>
-          <div>
-            <div className="ct">{t('Cofre de Permanencia')}</div>
-            <div className="cs">
-              {remain === 0
-                ? t('Listo para abrir')
-                : `${remain} ${remain === 1 ? t('día para el premio') : t('días para el premio')}`}
-            </div>
-          </div>
-        </div>
-        <IonProgressBar
-          value={chestPct}
-          className="pb"
-          style={
-            {
-              '--background': 'rgba(255,255,255,.12)',
-              '--progress-background': 'linear-gradient(90deg,#c4b5fd,#7c3aed)',
-            } as CSSProperties
-          }
+      <div className="stitle">{t('Cofres de racha')}</div>
+      <p className="cx-lead">{t('Cada hito de días seguidos desbloquea un cofre de experiencia.')}</p>
+      <StreakChestsTrail chests={STREAK_CHESTS} streak={streak} claimed={claimedChests} onClaim={onClaim} />
+      {claimableStreak.map((chest, i) => (
+        <ChestCard
+          key={chest.id}
+          chest={chest}
+          streak={streak}
+          claimed={claimedChests}
+          onClaim={onClaim}
+          index={i}
         />
-        <div className="chest-next-meta">
-          {streak} {t('de')} {NEXT_CHEST_DAYS} · +1,500 XP {t('al abrir')}
-        </div>
-      </div>
+      ))}
+      {upcoming && <NextChestGoal chest={upcoming} streak={streak} />}
+
+      <div className="stitle">{t('Cofres clínicos')}</div>
+      <p className="cx-lead">{t('Cumple objetivos de salud y reclama XP extra.')}</p>
+      {CLINICAL_CHESTS.map((chest, i) => (
+        <ChestCard
+          key={chest.id}
+          chest={chest}
+          streak={streak}
+          claimed={claimedChests}
+          onClaim={onClaim}
+          index={i}
+        />
+      ))}
 
       <div className="card pg-protocol">
         <div className="pg-protocol-top">

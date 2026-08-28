@@ -1,4 +1,4 @@
-import { type CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { IonIcon, IonProgressBar } from '@ionic/react'
 import { useI18n } from '../i18n/I18nContext'
 import {
@@ -9,12 +9,10 @@ import {
   chevronForward,
   clipboard,
   flame,
-  infinite,
   leaf,
   medkit,
   people,
   person,
-  school,
   sparkles,
   mic,
 } from 'ionicons/icons'
@@ -24,16 +22,17 @@ import { useApp } from '../context/AppContext'
 import { PROGRAM_TASKS } from '../data/program'
 import { TASK_ICONS } from './program/ui'
 import { LanguageToggle } from '../components/LanguageToggle'
+import { MetricHistoryModal } from '../components/MetricHistoryModal'
+import { HEALTH_METRICS, type MetricId } from '../data/metrics'
 import type { Screen as ScreenId } from '../types'
 
 export function HomePage() {
   const { user, navigate, openPanic, openVoice, pointsTotal, watchConnected, program, streak, programWeek } = useApp()
   const { lang, t } = useI18n()
+  const [metricId, setMetricId] = useState<MetricId | null>(null)
 
   const moreModules: { id: ScreenId; title: string; sub: string; icon: string }[] = [
     { id: 'hc', title: t('Historia clínica'), sub: t('Diagnósticos, lab y medicamentos'), icon: clipboard },
-    { id: 'edu', title: t('Academia BIO'), sub: t('Módulo 5 · 68% completado'), icon: school },
-    { id: 'infinito', title: t('INFINITO'), sub: t('Consciencia y bienestar'), icon: infinite },
     { id: 'com', title: t('Comunidad'), sub: t('10,847 miembros activos'), icon: people },
     { id: 'prof', title: t('Mi perfil'), sub: t('Seguros, equipo y ajustes'), icon: person },
   ]
@@ -69,18 +68,20 @@ export function HomePage() {
         </header>
 
         <div className="metric-scroll" aria-label={t('Indicadores de salud')}>
-          {[
-            ['IMC', '26.4', t('−1.2 este mes'), 'var(--teal)'],
-            ['HbA1c', '5.9%', t('Mejorando'), 'var(--blue)'],
-            ['% de grasa', '26.4', t('−1.2 este mes'), 'var(--teal)'],
-            ['Adherencia', '88%', t('Esta semana'), 'var(--cyan)'],
-            ['Puntos', String(pointsTotal), t('Hoy'), 'var(--org)'],
-          ].map(([l, v, s, c]) => (
-            <article key={l} className="metric-card">
-              <div className="metric-card-lbl">{t(String(l))}</div>
-              <div className="metric-card-val" style={{ color: String(c) }}>{v}</div>
-              <div className="metric-card-sub">{s}</div>
-            </article>
+          {HEALTH_METRICS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className="metric-card"
+              onClick={() => setMetricId(m.id)}
+              aria-label={t('Ver historial de {label}', { label: t(m.label) })}
+            >
+              <div className="metric-card-lbl">{t(m.label)}</div>
+              <div className="metric-card-val" style={{ color: m.color }}>
+                {m.id === 'pts' ? String(pointsTotal) : m.current}
+              </div>
+              <div className="metric-card-sub">{t(m.sub)}</div>
+            </button>
           ))}
         </div>
 
@@ -234,6 +235,7 @@ export function HomePage() {
           ))}
         </div>
       </Scroll>
+      <MetricHistoryModal metricId={metricId} pointsTotal={pointsTotal} onClose={() => setMetricId(null)} />
     </Screen>
   )
 }
