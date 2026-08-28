@@ -8,9 +8,13 @@ export default defineConfig({
     port: 5173,
     proxy: {
       // Sin gateway por ahora: enrutado directo a los servicios.
-      // /api/auth → Auth Service, /api/v1 → API principal, /graphql → community.
+      // /api/auth → Auth Service, /api/v1/community → community, /api/v1 → API principal
       '/api/auth': {
         target: 'http://localhost:5123',
+        changeOrigin: true,
+      },
+      '/api/v1/community': {
+        target: 'http://localhost:5200',
         changeOrigin: true,
       },
       '/api/v1': {
