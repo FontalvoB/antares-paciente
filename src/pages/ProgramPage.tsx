@@ -4,25 +4,27 @@ import {
   IonContent,
   IonIcon,
   IonModal,
-  IonProgressBar,
   IonSegment,
   IonSegmentButton,
 } from '@ionic/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { close, flame, star } from 'ionicons/icons'
+import { close, flame, gift } from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 import {
   CIRCUIT_STEPS,
   DAY_BONUS_PTS,
   HEALTH_SCORE,
-  NEXT_CHEST_DAYS,
   PODCAST_EPISODE,
+  PROGRAM_LEVELS,
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
   TRANSFORM_ROWS,
   levelForXp,
 } from '../data/program'
+import { readyChests, readyXp } from '../data/chests'
+import { USER_STATE, userRank } from '../data/rankings'
 import type { ProgramTaskId } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
 import { EvolutionView } from './program/EvolutionView'
@@ -35,17 +37,19 @@ import {
   VitalsLesson,
   type ProgramTab,
 } from './program/Lessons'
+import { RankingView } from './program/RankingView'
 import { StreakView } from './program/StreakView'
 import { TodayView } from './program/TodayView'
+import { TransformHero } from './program/TransformHero'
 import { paneMotion } from './program/ui'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
 
-function greeting() {
+function greeting(t: (s: string) => string) {
   const h = new Date().getHours()
-  if (h < 12) return 'Buenos días'
-  if (h < 19) return 'Buenas tardes'
-  return 'Buenas noches'
+  if (h < 12) return t('Buenos días')
+  if (h < 19) return t('Buenas tardes')
+  return t('Buenas noches')
 }
 
 function buildMonthCells() {
@@ -83,8 +87,11 @@ export function ProgramPage() {
     user,
     watchConnected,
     connectWatch,
+    claimedChests,
+    claimChest,
   } = useApp()
 
+  const t = useT()
   const [tab, setTab] = useState<ProgramTab>('hoy')
   const [active, setActive] = useState<ProgramTaskId | null>(null)
   const [celebrate, setCelebrate] = useState(false)
@@ -97,18 +104,23 @@ export function ProgramPage() {
   const [exLeft, setExLeft] = useState(CIRCUIT_STEPS[0].sec)
   const [nutriSlot, setNutriSlot] = useState('manana')
   const [takenAt, setTakenAt] = useState('')
+  const [openedChest, setOpenedChest] = useState<{ title: string; xp: number } | null>(null)
   const prevAll = useRef(false)
 
-  const doneCount = PROGRAM_TASKS.filter((t) => program[t.id]).length
+  const doneCount = PROGRAM_TASKS.filter((pt) => program[pt.id]).length
   const allDone = doneCount === PROGRAM_TASKS.length
-  const currentId = PROGRAM_TASKS.find((t) => !program[t.id])?.id
+  const currentId = PROGRAM_TASKS.find((pt) => !program[pt.id])?.id
   const todayIdx = weekdayMondayIndex()
   const weekPct = programWeek / PROGRAM_WEEKS
-  const task = useMemo(() => PROGRAM_TASKS.find((t) => t.id === active) ?? null, [active])
+  const task = useMemo(() => PROGRAM_TASKS.find((pt) => pt.id === active) ?? null, [active])
   const lvl = levelForXp(pointsTotal)
+  const nextLv = PROGRAM_LEVELS[lvl.idx + 1]
+  const xpToNext = nextLv ? Math.max(0, nextLv.min - pointsTotal) : 0
   const first = user.nombre.split(' ')[0]
   const cells = useMemo(buildMonthCells, [])
-  const chestPct = Math.min(1, streak / NEXT_CHEST_DAYS)
+  const claimable = readyChests(streak, claimedChests)
+  const claimableXp = readyXp(streak, claimedChests)
+  const liga = userRank('racha')
 
   const burst = (pts: number, withConfetti = false) => {
     setXpPop(pts)
@@ -130,7 +142,7 @@ export function ProgramPage() {
     if (program[id]) return
     completeStep(id, pts)
     const willComplete = doneCount + 1 === PROGRAM_TASKS.length
-    showToast(willComplete ? `${msg} · Bonus +${DAY_BONUS_PTS}` : msg, 'ok')
+    showToast(willComplete ? `${msg} · ${t('Bonus +{pts}', { pts: String(DAY_BONUS_PTS) })}` : msg, 'ok')
     burst(willComplete ? pts + DAY_BONUS_PTS : pts, willComplete)
     if (id === 'nutribiotico') {
       const n = new Date()
@@ -139,6 +151,14 @@ export function ProgramPage() {
       )
     }
     setActive(null)
+  }
+
+  const openChest = (id: string) => {
+    const result = claimChest(id)
+    if (!result) return
+    showToast(t('¡{title} abierto! +{xp} XP', { title: t(result.title), xp: String(result.xp) }), 'ok')
+    burst(result.xp, true)
+    setOpenedChest(result)
   }
 
   useEffect(() => {
@@ -178,7 +198,7 @@ export function ProgramPage() {
     setExRunning(false)
     if (!program.ejercicio) {
       completeStep('ejercicio', 150)
-      showToast('Circuito completado · +150 pts', 'ok')
+      showToast(t('Circuito completado · +150 pts'), 'ok')
       setXpPop(150)
       window.setTimeout(() => setXpPop(null), 900)
       setActive(null)
@@ -189,7 +209,7 @@ export function ProgramPage() {
     if (program.ejercicio) return
     if (exStep >= CIRCUIT_STEPS.length - 1) {
       setExRunning(false)
-      finish('ejercicio', 150, 'Circuito completado · +150 pts')
+      finish('ejercicio', 150, t('Circuito completado · +150 pts'))
       return
     }
     const next = exStep + 1
@@ -200,72 +220,35 @@ export function ProgramPage() {
   return (
     <Screen>
       <Scroll>
-        <div className="hero hero-cosmos dash-hero">
-          <div className="kicker">MI TRANSFORMACIÓN · COPP-ADRESD</div>
-          <div className="h1">
-            {greeting()}, {first}
-          </div>
-          <div className="sub">
-            Semana {programWeek} de {PROGRAM_WEEKS} · Cada día cuenta
-          </div>
+        <TransformHero
+          greeting={greeting(t)}
+          first={first}
+          programWeek={programWeek}
+          programWeeks={PROGRAM_WEEKS}
+          level={lvl.level}
+          levelName={lvl.name}
+          levelPct={lvl.pct}
+          pointsTotal={pointsTotal}
+          xpToNext={xpToNext}
+          nextLevelName={nextLv?.name ?? lvl.name}
+          streak={streak}
+          healthScore={HEALTH_SCORE}
+          stateRank={liga.rank}
+          stateName={USER_STATE}
+          readyChests={claimable.length}
+          allDone={allDone}
+          onOpenStreak={() => setTab('racha')}
+          onOpenEvo={() => setTab('evo')}
+          onOpenLiga={() => setTab('liga')}
+          onOpenChests={() => setTab('racha')}
+        />
 
-          <div className="hero-pills">
-            <button
-              type="button"
-              className={`hpill hpill-streak ${allDone ? 'hot' : ''}`}
-              onClick={() => setTab('racha')}
-              aria-label={`Ver racha de ${streak} días`}
-            >
-              <div className="hpill-ico">
-                <IonIcon icon={flame} />
-              </div>
-              <div className="hpill-val">{streak}</div>
-              <div className="hpill-lbl">Racha</div>
-            </button>
-            <div className="hpill hpill-xp">
-              <div className="hpill-ico">
-                <IonIcon icon={star} />
-              </div>
-              <div className="hpill-val">{pointsTotal.toLocaleString('es-ES')}</div>
-              <div className="hpill-lbl">XP</div>
-            </div>
-            <button type="button" className="hpill hpill-hs" onClick={() => setTab('evo')} aria-label="Ver Health Score">
-              <div className="hpill-val">{HEALTH_SCORE}</div>
-              <div className="hpill-lbl">Health</div>
-            </button>
-            <button type="button" className="hpill hpill-ts" onClick={() => setTab('evo')} aria-label="Ver evolución">
-              <div className="hpill-val">+27%</div>
-              <div className="hpill-lbl">Evolución</div>
-            </button>
-          </div>
-
-          <div className="lvl-bar-wrap">
-            <div className="lvl-row">
-              <div className="lvl-name">
-                Nivel {lvl.level} — {lvl.name}
-              </div>
-              <div className="lvl-xp">
-                {pointsTotal.toLocaleString('es-ES')} / {lvl.max.toLocaleString('es-ES')} XP
-              </div>
-            </div>
-            <IonProgressBar
-              className="pb"
-              value={lvl.pct}
-              style={
-                {
-                  '--background': 'rgba(255,255,255,.12)',
-                  '--progress-background': 'linear-gradient(90deg,var(--cyan),var(--ice))',
-                } as CSSProperties
-              }
-            />
-          </div>
-        </div>
-
-        <div className="duo-seg-wrap">
+        <div className="duo-seg-wrap tabs-4">
           <IonSegment value={tab} onIonChange={(e) => setTab((e.detail.value as ProgramTab) || 'hoy')}>
-            <IonSegmentButton value="hoy">Hoy</IonSegmentButton>
-            <IonSegmentButton value="racha">Racha</IonSegmentButton>
-            <IonSegmentButton value="evo">Evolución</IonSegmentButton>
+            <IonSegmentButton value="hoy">{t('Hoy')}</IonSegmentButton>
+            <IonSegmentButton value="racha">{t('Racha')}</IonSegmentButton>
+            <IonSegmentButton value="liga">{t('Liga')}</IonSegmentButton>
+            <IonSegmentButton value="evo">{t('Evo')}</IonSegmentButton>
           </IonSegment>
         </div>
 
@@ -285,6 +268,9 @@ export function ProgramPage() {
                 onOpenTask={setActive}
                 onGoEvo={() => setTab('evo')}
                 onGoChat={() => navigate('chat')}
+                onGoChests={() => setTab('racha')}
+                readyChests={claimable.length}
+                readyXp={claimableXp}
               />
             )}
             {tab === 'racha' && (
@@ -293,14 +279,16 @@ export function ProgramPage() {
                 weekCheckins={weekCheckins}
                 todayIdx={todayIdx}
                 cells={cells}
-                chestPct={chestPct}
                 weekPct={weekPct}
                 programWeek={programWeek}
+                claimedChests={claimedChests}
+                onClaim={openChest}
                 onCell={(day, past) =>
                   showToast(past ? `Día ${day} completado` : 'Hoy · sigue la racha', 'info')
                 }
               />
             )}
+            {tab === 'liga' && <RankingView />}
             {tab === 'evo' && <EvolutionView onGoBook={() => navigate('book')} />}
           </motion.div>
         </AnimatePresence>
@@ -320,16 +308,16 @@ export function ProgramPage() {
               <div className="lesson-sheet-head">
                 <div>
                   <div className="kicker" style={{ color: 'var(--mu)' }}>
-                    {task.emoji} Misión · +{task.pts} pts
+                    {task.emoji} {t('Misión · +{pts} pts', { pts: String(task.pts) })}
                   </div>
-                  <h2>{task.title}</h2>
-                  <p>{task.hint}</p>
+                  <h2>{t(task.title)}</h2>
+                  <p>{t(task.hint)}</p>
                 </div>
-                <IonButton fill="clear" aria-label="Cerrar" onClick={() => setActive(null)}>
+                <IonButton fill="clear" aria-label={t('Cerrar')} onClick={() => setActive(null)}>
                   <IonIcon slot="icon-only" icon={close} />
                 </IonButton>
               </div>
-              {program[task.id] && <div className="lesson-done-banner">Completada hoy · +{task.pts} pts</div>}
+              {program[task.id] && <div className="lesson-done-banner">{t('Completada hoy · +{pts} pts', { pts: String(task.pts) })}</div>}
 
               {task.id === 'podcast' && (
                 <PodcastLesson
@@ -339,7 +327,7 @@ export function ProgramPage() {
                   progress={podProgress}
                   onToggle={() => setPodPlaying((v) => !v)}
                   onSkip={(d) => setPodProgress((p) => Math.min(1, Math.max(0, p + d / PODCAST_EPISODE.durationSec)))}
-                  onComplete={() => finish('podcast', task.pts, 'Podcast escuchado · +80 pts')}
+                  onComplete={() => finish('podcast', task.pts, t('Podcast escuchado · +80 pts'))}
                 />
               )}
               {task.id === 'vitals' && (
@@ -349,9 +337,9 @@ export function ProgramPage() {
                   watchConnected={watchConnected}
                   onConnectWatch={() => {
                     connectWatch('ANTARES Watch Pro')
-                    showToast('Reloj listo para sincronizar', 'ok')
+                    showToast(t('Reloj listo para sincronizar'), 'ok')
                   }}
-                  onComplete={() => finish('vitals', task.pts, '+120 pts por signos vitales')}
+                  onComplete={() => finish('vitals', task.pts, t('+120 pts por signos vitales'))}
                 />
               )}
               {task.id === 'nut' && (
@@ -363,7 +351,7 @@ export function ProgramPage() {
                     setActive(null)
                     navigate('nut')
                   }}
-                  onComplete={() => finish('nut', task.pts, '+150 pts nutrición')}
+                  onComplete={() => finish('nut', task.pts, t('+150 pts nutrición'))}
                 />
               )}
               {task.id === 'ejercicio' && (
@@ -375,7 +363,7 @@ export function ProgramPage() {
                   running={exRunning}
                   onToggle={() => setExRunning((r) => !r)}
                   onSkip={skipStation}
-                  onComplete={() => finish('ejercicio', task.pts, 'Ejercicio del día · +150 pts')}
+                  onComplete={() => finish('ejercicio', task.pts, t('Ejercicio del día · +150 pts'))}
                 />
               )}
               {task.id === 'nutribiotico' && (
@@ -385,7 +373,7 @@ export function ProgramPage() {
                   takenAt={takenAt}
                   slot={nutriSlot}
                   onSlot={setNutriSlot}
-                  onComplete={() => finish('nutribiotico', task.pts, 'Nutribiótico registrado · +80 pts')}
+                  onComplete={() => finish('nutribiotico', task.pts, t('Nutribiótico registrado · +80 pts'))}
                 />
               )}
               {task.id === 'emocional' && (
@@ -393,8 +381,8 @@ export function ProgramPage() {
                   done={program.emocional}
                   pts={task.pts}
                   onComplete={({ barrier }) => {
-                    finish('emocional', task.pts, 'Check-in emocional · +120 pts')
-                    if (barrier) showToast('IA: registro enviado a tu equipo', 'info')
+                    finish('emocional', task.pts, t('Check-in emocional · +120 pts'))
+                    if (barrier) showToast(t('IA: registro enviado a tu equipo'), 'info')
                   }}
                 />
               )}
@@ -417,29 +405,29 @@ export function ProgramPage() {
                   <IonIcon icon={flame} />
                 </div>
                 <div className="display" style={{ fontSize: 24, fontWeight: 800 }}>
-                  ¡{streak} DÍAS!
+                  {t('¡{streak} DÍAS!', { streak: String(streak) })}
                 </div>
-                <p>Cofre del día abierto. Mañana sigue el protocolo para no romper la racha.</p>
+                <p>{t('Cofre del día abierto. Mañana sigue el protocolo para no romper la racha.')}</p>
                 <div className="ms-mini">
                   <div>
                     <b>+{pointsToday}</b>
-                    <span>pts hoy</span>
+                    <span>{t('pts hoy')}</span>
                   </div>
                   <div>
                     <b>x2 · 24h</b>
-                    <span>próximo hito</span>
+                    <span>{t('próximo hito')}</span>
                   </div>
                 </div>
                 <div className="ms-evo-mini">
                   {TRANSFORM_ROWS.slice(0, 4).map((r) => (
                     <div key={r.label}>
-                      <span>{r.label}</span>
+                      <span>{t(r.label)}</span>
                       <strong>{r.delta}</strong>
                     </div>
                   ))}
                 </div>
                 <IonButton expand="block" className="bt bt-primary" onClick={() => setCelebrate(false)}>
-                  Seguir transformándome
+                  {t('Seguir transformándome')}
                 </IonButton>
               </motion.div>
             )}
@@ -447,6 +435,32 @@ export function ProgramPage() {
         </div>
       </IonModal>
 
+      <IonModal isOpen={!!openedChest} onDidDismiss={() => setOpenedChest(null)} className="celebrate-modal">
+        <div className="celebrate-card ms-card-wrap">
+          <AnimatePresence>
+            {openedChest && (
+              <motion.div
+                className="celebrate-burst cx-open"
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 240, damping: 16 }}
+              >
+                <div className="cx-open-ico">
+                  <IonIcon icon={gift} />
+                </div>
+                <div className="display" style={{ fontSize: 22, fontWeight: 800 }}>
+                  {t(openedChest.title)}
+                </div>
+                <p>{t('El cofre se abrió. La experiencia ya está en tu nivel.')}</p>
+                <div className="cx-open-xp">+{openedChest.xp.toLocaleString('es-ES')} XP</div>
+                <IonButton expand="block" className="bt bt-primary" onClick={() => setOpenedChest(null)}>
+                  {t('Seguir transformándome')}
+                </IonButton>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </IonModal>
       {xpPop !== null && <div className="xp-pop">+{xpPop} pts</div>}
       {confetti.map((c) => (
         <span

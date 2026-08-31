@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from 'framer-motion'
 
 export function CountUp({
@@ -39,6 +39,7 @@ export function Sparkline({
   height?: number
 }) {
   const reduce = useReducedMotion()
+  const gid = useId().replace(/:/g, '')
   const w = 320
   const min = Math.min(...points)
   const max = Math.max(...points)
@@ -55,14 +56,14 @@ export function Sparkline({
   return (
     <svg className="pg-spark" viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" aria-hidden="true">
       <defs>
-        <linearGradient id="pgSparkFill" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.28" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
       <motion.path
         d={area}
-        fill="url(#pgSparkFill)"
+        fill={`url(#${gid})`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: reduce ? 0 : 0.6 }}

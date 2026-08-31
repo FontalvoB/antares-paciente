@@ -23,14 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 
-
-# Ignore Android build artifacts
+# Capacitor native platforms & Android build artifacts
+android/
+/android
 **/android/app/build/
 **/android/.gradle/
 **/android/app/outputs/
 **/android/gradlew.bat
 **/android/gradlew
-
-# Ignore IDE settings for Android Studio
-**/android/
 **/.cxx/
+
+# Environment & local notes
+PROMPT-CONTEXT.md
+*.local

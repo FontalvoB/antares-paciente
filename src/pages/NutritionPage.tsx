@@ -3,6 +3,7 @@ import { IonProgressBar, IonSegment, IonSegmentButton } from '@ionic/react'
 import { PageHeader } from '../components/PageHeader'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 
 const meals = [
   {
@@ -62,17 +63,18 @@ const week = [
 
 export function NutritionPage() {
   const { hydration, setHydration, mealsLogged, logMeal, showToast } = useApp()
+  const t = useT()
   const [tab, setTab] = useState<'hoy' | 'semana' | 'indicaciones' | 'historial'>('hoy')
   const [openDay, setOpenDay] = useState(1)
 
   const log = (id: string, name: string) => {
     logMeal(id)
-    showToast(`Foto de ${name} analizada · adherencia alta`, 'ok')
+    showToast(t('Foto de {name} analizada · adherencia alta', { name }), 'ok')
   }
 
   return (
     <Screen>
-      <PageHeader title="Nutrición" sub="Ana Torres, RDN · dieta mediterránea" />
+      <PageHeader title={t('Nutrición')} sub={t('Ana Torres, RDN · dieta mediterránea')} />
 
       <div className="kcal-strip">
         <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
@@ -93,7 +95,7 @@ export function NutritionPage() {
             ['Fibra', '28g', 80, '#7C3AED'],
           ].map(([n, v, w, c]) => (
             <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: 10, color: 'var(--mu)', width: 78 }}>{n}</span>
+              <span style={{ fontSize: 10, color: 'var(--mu)', width: 78 }}>{t(String(n))}</span>
               <IonProgressBar
                 className="pb"
                 style={{ flex: 1, '--progress-background': String(c) } as CSSProperties}
@@ -110,17 +112,17 @@ export function NutritionPage() {
         value={tab}
         onIonChange={(e) => setTab((e.detail.value as typeof tab) ?? 'hoy')}
       >
-        <IonSegmentButton value="hoy">Hoy</IonSegmentButton>
-        <IonSegmentButton value="semana">Semana</IonSegmentButton>
-        <IonSegmentButton value="indicaciones">Plan</IonSegmentButton>
-        <IonSegmentButton value="historial">Historial</IonSegmentButton>
+        <IonSegmentButton value="hoy">{t('Hoy')}</IonSegmentButton>
+        <IonSegmentButton value="semana">{t('Semana')}</IonSegmentButton>
+        <IonSegmentButton value="indicaciones">{t('Plan')}</IonSegmentButton>
+        <IonSegmentButton value="historial">{t('Historial')}</IonSegmentButton>
       </IonSegment>
 
       <Scroll>
         {tab === 'hoy' && (
           <>
             <div className="card" style={{ margin: '10px 14px', background: 'var(--blue-l)', borderColor: '#B5D4F4' }}>
-              <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 10, fontSize: 13 }}>💧 Hidratación · 8 vasos (2L)</div>
+              <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 10, fontSize: 13 }}>{t('💧 Hidratación · 8 vasos (2L)')}</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <button key={i} className={`hyd-glass ${i < hydration ? 'full' : ''}`} onClick={() => setHydration(i + 1)}>
@@ -133,15 +135,15 @@ export function NutritionPage() {
               <div key={m.id} className="meal-card">
                 <div className="meal-hdr">
                   <span>{m.emoji}</span>
-                  <span style={{ flex: 1, fontWeight: 700 }}>{m.title}</span>
+                  <span style={{ flex: 1, fontWeight: 700 }}>{t(m.title)}</span>
                   <span style={{ opacity: 0.75, fontSize: 12 }}>{m.kcal} kcal</span>
                 </div>
                 {m.items.map((it) => (
                   <div key={it[1]} className="food-item">
                     <span>{it[0]}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{it[1]}</div>
-                      <div style={{ fontSize: 11, color: 'var(--mu)' }}>{it[2]}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{t(it[1])}</div>
+                      <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t(it[2])}</div>
                     </div>
                     <div>
                       {it[3] && <span className="fm fm-c">{it[3]}</span>}
@@ -152,7 +154,7 @@ export function NutritionPage() {
                 ))}
                 {mealsLogged.includes(m.id) ? (
                   <div style={{ margin: 12, background: 'var(--teal-l)', borderRadius: 12, padding: 12, color: '#0F6E56', fontWeight: 700, fontSize: 13 }}>
-                    ✓ Registrado con foto · IA 92% adherencia
+                    {t('✓ Registrado con foto · IA 92% adherencia')}
                   </div>
                 ) : (
                   <button
@@ -173,8 +175,8 @@ export function NutritionPage() {
                   >
                     <span style={{ fontSize: 20 }}>📸</span>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>Registrar lo que comí</div>
-                      <div style={{ fontSize: 11, opacity: 0.6 }}>IA analiza gramos · kcal · adherencia</div>
+                      <div style={{ fontWeight: 700, fontSize: 13 }}>{t('Registrar lo que comí')}</div>
+                      <div style={{ fontSize: 11, opacity: 0.6 }}>{t('IA analiza gramos · kcal · adherencia')}</div>
                     </div>
                   </button>
                 )}
@@ -186,13 +188,13 @@ export function NutritionPage() {
         {tab === 'semana' && (
           <div style={{ padding: '12px 0' }}>
             <div className="card" style={{ margin: '0 14px 12px' }}>
-              <div style={{ fontWeight: 700, marginBottom: 12 }}>📊 Adherencia semanal</div>
+              <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('📊 Adherencia semanal')}</div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90 }}>
                 {week.map(([d, h, c]) => (
                   <div key={String(d)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 10, fontWeight: 700 }}>{h}%</span>
                     <div style={{ width: '100%', height: Number(h) * 0.7, background: String(c), borderRadius: '4px 4px 0 0' }} />
-                    <span style={{ fontSize: 10, color: 'var(--mu)' }}>{d}</span>
+                    <span style={{ fontSize: 10, color: 'var(--mu)' }}>{t(String(d))}</span>
                   </div>
                 ))}
               </div>
@@ -214,7 +216,7 @@ export function NutritionPage() {
                 </div>
                 {openDay === i && (
                   <div style={{ marginTop: 10, fontSize: 12, color: 'var(--mu)', lineHeight: 1.7 }}>
-                    Desayuno · Almuerzo · Merienda · Cena según plan mediterráneo.
+                    {t('Desayuno · Almuerzo · Merienda · Cena según plan mediterráneo.')}
                   </div>
                 )}
               </button>
@@ -234,8 +236,8 @@ export function NutritionPage() {
             ].map(([e, n, v]) => (
               <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--g1)' }}>
                 <span>{e}</span>
-                <span style={{ flex: 1, fontWeight: 600 }}>{n}</span>
-                <span style={{ fontWeight: 800, color: 'var(--teal)' }}>{v}</span>
+                <span style={{ flex: 1, fontWeight: 600 }}>{t(String(n))}</span>
+                <span style={{ fontWeight: 800, color: 'var(--teal)' }}>{t(String(v))}</span>
               </div>
             ))}
           </div>
@@ -243,7 +245,7 @@ export function NutritionPage() {
 
         {tab === 'historial' && (
           <div className="card" style={{ margin: 14, padding: 0 }}>
-            <div style={{ background: 'var(--navy)', color: '#fff', padding: 12, fontWeight: 700 }}>📉 Evolución de peso</div>
+            <div style={{ background: 'var(--navy)', color: '#fff', padding: 12, fontWeight: 700 }}>{t('📉 Evolución de peso')}</div>
             {[
               ['1 may', '71.7 kg', 'IMC 27.6 · Inicio', ''],
               ['01/06/2026', '70.2 kg', 'IMC 27.0', '↓ 1.5 kg'],
@@ -253,14 +255,14 @@ export function NutritionPage() {
                 <div style={{ width: 48, fontSize: 11, color: 'var(--mu)' }}>{d}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 800 }}>{k}</div>
-                  <div style={{ fontSize: 11, color: 'var(--mu)' }}>{s}</div>
+                  <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t(String(s))}</div>
                 </div>
                 <span style={{ color: 'var(--teal)', fontWeight: 700, fontSize: 12 }}>{ch}</span>
               </div>
             ))}
             <div style={{ padding: 12, background: '#F8FBF8' }}>
-              <div style={{ fontSize: 11, color: 'var(--mu)' }}>Meta semana 24</div>
-              <div style={{ fontWeight: 800 }}>65 kg · IMC≤25 · HbA1c&lt;5.7%</div>
+              <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Meta semana 24')}</div>
+              <div style={{ fontWeight: 800 }}>{t('65 kg · IMC≤25 · HbA1c<5.7%')}</div>
               <IonProgressBar className="pb" style={{ marginTop: 8, '--progress-background': 'var(--teal)' } as CSSProperties} value={0.5} />
             </div>
           </div>
