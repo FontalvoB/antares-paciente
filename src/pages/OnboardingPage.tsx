@@ -13,19 +13,15 @@ import {
 import {
   calendarOutline,
   callOutline,
-  chatbubbleEllipsesOutline,
   checkmark,
   checkmarkCircle,
-  createOutline,
   documentTextOutline,
   eye,
   eyeOff,
   lockClosedOutline,
-  mailOutline,
   medkitOutline,
   peopleOutline,
   personOutline,
-  phonePortraitOutline,
   shieldCheckmarkOutline,
   walletOutline,
 } from 'ionicons/icons'
@@ -43,9 +39,8 @@ export function OnboardingPage() {
 
   const STEPS = [
     { title: t('Tus datos'), sub: t('Así te identifica el equipo médico'), name: t('Identidad') },
-    { title: t('Verifica tu identidad'), sub: t('Te enviamos un código de 6 dígitos'), name: t('Código') },
     { title: t('Contacto de emergencia'), sub: t('A quién avisamos si activas SOS'), name: t('Familia') },
-    { title: t('Consentimiento'), sub: t('Lee, acepta y firma tu autorización'), name: t('HIPAA') },
+    { title: t('Consentimiento'), sub: t('Lee y acepta tu autorización'), name: t('HIPAA') },
     { title: t('Crea tu contraseña'), sub: t('Protege tu expediente médico'), name: t('Seguridad') },
   ]
   const [done, setDone] = useState(false)
@@ -69,42 +64,15 @@ export function OnboardingPage() {
     fam1Cel: '+1 (786) 555-0192',
     fam1Email: 'pedro.gonzalez@email.com',
   })
-  const [otpSent, setOtpSent] = useState(false)
-  const [otpLeft, setOtpLeft] = useState(30)
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
-  const [otpCh, setOtpCh] = useState('SMS')
-  const [signed, setSigned] = useState(false)
-  const [sigCh, setSigCh] = useState('SMS')
   const TOTAL_STEPS = STEPS.length
 
 
 
   const set = (k: keyof UserProfile, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
-  const otpTarget = otpCh === 'SMS' ? form.celular : otpCh === 'Email' ? form.email : form.celular
-
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 })
   }, [step, done])
-
-  useEffect(() => {
-    if (otpLeft <= 0) return
-    const id = setTimeout(() => setOtpLeft((l) => l - 1), 1000)
-    return () => clearTimeout(id)
-  }, [otpLeft])
-
-  const fillOtp = (idx: number, val: string) => {
-    const digits = val.replace(/\D/g, '').slice(0, 6).split('')
-    if (idx === 0 && digits.length > 1) {
-      setOtp(digits.concat(Array(6 - digits.length).fill('')))
-    } else {
-      setOtp((prev) => prev.map((d, i) => (i === idx ? (digits[0] ?? '') : d)))
-      if (digits[0] && idx < 5) {
-        const next = document.getElementById(`otp-${idx + 1}`)
-        if (next instanceof HTMLInputElement) next.focus()
-      }
-    }
-  }
 
 
 
@@ -120,47 +88,28 @@ export function OnboardingPage() {
   const strengthLbl = strength < 50 ? 'Débil' : strength < 100 ? 'Aceptable' : 'Fuerte'
   const strengthColor = strength < 50 ? 'var(--red)' : strength < 100 ? 'var(--org)' : 'var(--teal)'
 
-  const sendOtp = () => {
-    setOtpSent(true)
-    setOtpLeft(30)
-    setOtp(['', '', '', '', '', ''])
-    showToast(t('Código enviado por {channel}', { channel: otpCh }), 'ok')
-  }
-
   const next = () => {
     if (step === 1) {
       setStep(2)
       return
     }
     if (step === 2) {
-      if (!otpSent) {
-        sendOtp()
-        return
-      }
-      if (otp.join('') !== '123456') {
-        showToast(t('Código demo: 123456'), 'warn')
+      if (!form.fam1Nombre || !form.fam1Cel) {
+        showToast(t('El familiar principal es obligatorio'), 'err')
         return
       }
       setStep(3)
       return
     }
     if (step === 3) {
-      if (!form.fam1Nombre || !form.fam1Cel) {
-        showToast(t('El familiar principal es obligatorio'), 'err')
+      if (!checks.every(Boolean)) {
+        showToast(t('Acepta los términos para continuar'), 'warn')
         return
       }
       setStep(4)
       return
     }
     if (step === 4) {
-      if (!checks.every(Boolean) || !signed) {
-        showToast(t('Acepta los términos y firma para continuar'), 'warn')
-        return
-      }
-      setStep(5)
-      return
-    }
-    if (step === 5) {
       if (!pwdOk || pwd !== pwd2) {
         showToast(t('La contraseña no cumple los requisitos'), 'err')
         return
@@ -184,13 +133,9 @@ export function OnboardingPage() {
   const meta = STEPS[step - 1]
   const cta = done
     ? t('Entrar')
-    : step === 2 && !otpSent
-      ? t('Enviar código')
-      : step === 2
-        ? t('Verificar código')
-        : step === 5
-          ? t('Crear cuenta')
-          : t('Continuar')
+    : step === 4
+      ? t('Crear cuenta')
+      : t('Continuar')
 
   return (
     <div className="screen onb-page" style={{ background: 'var(--g0)' }}>
@@ -236,14 +181,13 @@ export function OnboardingPage() {
               <div className="onb-done-list">
                 {[
                   t('Identidad confirmada'),
-                  t('Código verificado'),
                   t('Emergencia: {name}', { name: form.fam1Nombre }),
-                  t('Consentimiento HIPAA firmado'),
+                  t('Consentimiento HIPAA aceptado'),
                   t('Contraseña segura'),
-                ].map((t) => (
-                  <div key={t}>
+                ].map((item) => (
+                  <div key={item}>
                     <IonIcon icon={checkmarkCircle} />
-                    {t}
+                    {item}
                   </div>
                 ))}
               </div>
@@ -344,91 +288,6 @@ export function OnboardingPage() {
 
               {step === 2 && (
                 <>
-                  <section className="onb-card tone-pur">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-pur"><IonIcon icon={shieldCheckmarkOutline} /></span>
-                      <div>
-                        <strong>{t('Canal de verificación')}</strong>
-                        <span>{t('Elige dónde recibir el código')}</span>
-                      </div>
-                    </div>
-                    <div className="onb-channels">
-                      {[
-                        { id: 'SMS', label: 'SMS', icon: phonePortraitOutline },
-                        { id: 'Email', label: 'Email', icon: mailOutline },
-                        { id: 'WhatsApp', label: 'WhatsApp', icon: chatbubbleEllipsesOutline },
-                      ].map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          className={`onb-channel ${otpCh === c.id ? 'on' : ''}`}
-                          onClick={() => { setOtpCh(c.id); setOtpSent(false) }}
-                        >
-                          <IonIcon icon={c.icon} />
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p style={{ margin: '12px 0 0', fontSize: 12, color: 'var(--mu)', textAlign: 'center' }}>
-                      {t('Enviaremos el código a')} <strong style={{ color: 'var(--tx)' }}>{otpTarget}</strong>
-                    </p>
-                  </section>
-
-                  {otpSent && (
-                    <section className="onb-card tone-org">
-                      <div className="onb-card-head">
-                      <span className="onb-card-ico tone-org"><IonIcon icon={lockClosedOutline} /></span>
-                      <div>
-                        <strong>{t('Introduce el código')}</strong>
-                          <span>{t('6 dígitos · demo 123456')}</span>
-                        </div>
-                      </div>
-                      <div className="onb-otp-row">
-                        {otp.map((d, i) => (
-                          <input
-                            key={i}
-                            id={`otp-${i}`}
-                            className={`otp ${d ? 'filled' : ''}`}
-                            maxLength={i === 0 ? 6 : 1}
-                            inputMode="numeric"
-                            autoComplete={i === 0 ? 'one-time-code' : 'off'}
-                            aria-label={t('Dígito {n}', { n: String(i + 1) })}
-                            value={d}
-                            onChange={(e) => fillOtp(i, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Backspace' && !otp[i] && i > 0) {
-                                const prev = document.getElementById(`otp-${i - 1}`)
-                                if (prev instanceof HTMLInputElement) prev.focus()
-                              }
-                            }}
-                            onPaste={(e) => {
-                              e.preventDefault()
-                              fillOtp(0, e.clipboardData.getData('text'))
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <div style={{ textAlign: 'center', marginTop: 14 }}>
-                        {otpLeft > 0 ? (
-                          <span style={{ fontSize: 12, color: 'var(--mu)' }}>{t('Reenviar en')} 0:{String(otpLeft).padStart(2, '0')}</span>
-                        ) : (
-                          <IonButton fill="clear" className="onb-back-login" onClick={sendOtp}>
-                            {t('Reenviar código')}
-                          </IonButton>
-                        )}
-                      </div>
-                    </section>
-                  )}
-
-                  <div className="onb-trust onb-trust-info">
-                    <IonIcon icon={mailOutline} />
-                    <span>{t('El código caduca en 10 minutos. Si no llega, prueba otro canal.')}</span>
-                  </div>
-                </>
-              )}
-
-              {step === 3 && (
-                <>
                   <div className="onb-trust onb-trust-warn">
                     <IonIcon icon={medkitOutline} />
                     <span>{t('Si activas SOS, avisamos a esta persona, al médico y a emergencias. No se usa para marketing.')}</span>
@@ -440,7 +299,7 @@ export function OnboardingPage() {
                     <div className="onb-card-head">
                       <span className="onb-card-ico tone-panic"><IonIcon icon={peopleOutline} /></span>
                       <div>
-                        <strong>{t('Familiar principal')}</strong>
+                        <strong>{t('Cuidador principal')}</strong>
                         <span>{t('Obligatorio para activar el programa')}</span>
                       </div>
                     </div>
@@ -489,13 +348,13 @@ export function OnboardingPage() {
 
 
 
-              {step === 4 && (
+              {step === 3 && (
                 <>
                   <section className="onb-card tone-teal">
                     <div className="onb-card-head">
                       <span className="onb-card-ico tone-teal"><IonIcon icon={documentTextOutline} /></span>
                       <div>
-                        <strong>Consentimiento informado</strong>
+                        <strong>{t('Consentimiento informado')}</strong>
                         <span>{t('COPP-ADRESD · 24 semanas')}</span>
                       </div>
                     </div>
@@ -520,33 +379,10 @@ export function OnboardingPage() {
                       </button>
                     ))}
                   </section>
-
-                  <section className="onb-card tone-pur">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-pur"><IonIcon icon={createOutline} /></span>
-                      <div>
-                        <strong>{t('Firma digital')}</strong>
-                        <span>{t('Enviaremos el comprobante por {channel}', { channel: sigCh })}</span>
-                      </div>
-                    </div>
-                    <div className="onb-channels compact" style={{ marginBottom: 12 }}>
-                      {['SMS', 'Email', 'WhatsApp'].map((c) => (
-                        <button key={c} type="button" className={`onb-channel ${sigCh === c ? 'on' : ''}`} onClick={() => setSigCh(c)}>
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                    <button type="button" className={`onb-sign ${signed ? 'on' : ''}`} onClick={() => setSigned(true)}>
-                      <IonIcon icon={signed ? checkmarkCircle : createOutline} />
-                      {signed ? t('Firma capturada · DocuSign') : t('Toca para firmar')}
-                    </button>
-                  </section>
                 </>
               )}
 
-
-
-              {step === 5 && (
+              {step === 4 && (
                 <>
                   <section className="onb-card tone-org">
                     <div className="onb-card-head">
