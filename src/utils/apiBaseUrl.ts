@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core'
+import { Capacitor } from "@capacitor/core";
 
 /**
  * Base URL para las llamadas al backend.
@@ -14,15 +14,28 @@ import { Capacitor } from '@capacitor/core'
 
 export function getApiBaseUrl(): string {
   if (Capacitor.isNativePlatform()) {
-    return 'http://10.0.2.2:5122' // API .NET
+    return "http://10.0.2.2:5122"; // API .NET
   }
-  return '' // proxy de Vite en dev web
+  return ""; // proxy de Vite en dev web
 }
 
 /** Base URL del Auth Service (puerto 5123). */
 export function getAuthBaseUrl(): string {
   if (Capacitor.isNativePlatform()) {
-    return 'http://10.0.2.2:5123'
+    return "http://10.0.2.2:5123";
   }
-  return '' // proxy de Vite
+  return ""; // proxy de Vite
+}
+
+/**
+ * Base URL del API Gateway (YARP, puerto 5080) — única entrada pública para
+ * citas/telemedicina: enruta /api/v1/appointments → Telemedicine y
+ * /api/v1/telemedicine → Telemedicine. En web dev el proxy de Vite enruta
+ * /api → 5080; en la app nativa se apunta directo al gateway del host.
+ */
+export function getGatewayBaseUrl(): string {
+  if (Capacitor.isNativePlatform()) {
+    return "http://10.0.2.2:5080";
+  }
+  return ""; // proxy de Vite
 }

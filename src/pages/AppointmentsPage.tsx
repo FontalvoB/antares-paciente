@@ -1,59 +1,140 @@
-import { useState, type CSSProperties } from 'react'
-import { IonAlert, IonButton, IonModal } from '@ionic/react'
-import { PageHeader } from '../components/PageHeader'
-import { RequestAppointmentWizard } from '../components/RequestAppointmentWizard'
-import { Screen, Scroll } from '../components/Screen'
-import { useApp } from '../context/AppContext'
-import { INITIAL_UPCOMING } from '../data/appointments'
-import { useT } from '../i18n/I18nContext'
+import { useState, type CSSProperties } from "react";
+import { IonAlert, IonButton, IonModal } from "@ionic/react";
+import { PageHeader } from "../components/PageHeader";
+import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard";
+import { Screen, Scroll } from "../components/Screen";
+import { useApp } from "../context/AppContext";
+import { INITIAL_UPCOMING } from "../data/appointments";
+import { useT } from "../i18n/I18nContext";
 
 export function AppointmentsPage() {
-  const { showToast } = useApp()
-  const t = useT()
-  const [upcoming, setUpcoming] = useState(INITIAL_UPCOMING)
-  const [requestOpen, setRequestOpen] = useState(false)
-  const [cancelId, setCancelId] = useState<string | null>(null)
-  const featured = upcoming.find((a) => a.featured)
-  const rest = upcoming.filter((a) => a.id !== featured?.id)
+  const {
+    showToast,
+    realMode,
+    upcomingAppointments,
+    pastAppointments,
+    appointmentsLoading,
+    appointmentsError,
+    cancelAppointmentById,
+    openRoom,
+  } = useApp();
+  const t = useT();
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [cancelId, setCancelId] = useState<string | null>(null);
+
+  // Modo real (sesión JWT): datos del backend. Demo: mock actual intacto.
+  const upcoming = realMode ? (upcomingAppointments ?? []) : INITIAL_UPCOMING;
+  const past = realMode ? (pastAppointments ?? []) : [];
+  const featured = upcoming.find((a) => a.featured);
+  const rest = upcoming.filter((a) => a.id !== featured?.id);
+
+  const handleCancel = async (id: string) => {
+    if (realMode) {
+      const ok = await cancelAppointmentById(id, "Solicitud del paciente");
+      if (ok) {
+        showToast(t("Cita cancelada"), "warn");
+      } else {
+        showToast(t("No se pudo cancelar la cita. Intenta de nuevo."), "err");
+      }
+    } else {
+      showToast(t("Solicitud de cancelación enviada"), "warn");
+    }
+    setCancelId(null);
+  };
 
   return (
     <Screen>
       <PageHeader
-        title={t('Citas')}
-        sub={t('Agenda con el equipo COPP-ADRESD')}
+        title={t("Citas")}
+        sub={t("Agenda con el equipo COPP-ADRESD")}
         trailing={
-          <IonButton className="bt bt-mini bt-primary" onClick={() => setRequestOpen(true)}>
-            {t('Nueva')}
+          <IonButton
+            className="bt bt-mini bt-primary"
+            onClick={() => setRequestOpen(true)}
+          >
+            {t("Nueva")}
           </IonButton>
         }
       />
       <Scroll>
-        {featured && (
+        {appointmentsLoading ? (
+          <div className="req-empty" style={{ margin: "16px" }}>
+            <strong>{t("Cargando tus citas…")}</strong>
+          </div>
+        ) : appointmentsError ? (
+          <div className="req-empty" style={{ margin: "16px" }}>
+            <strong>{t("No se pudieron cargar las citas")}</strong>
+            <p>{appointmentsError}</p>
+          </div>
+        ) : featured ? (
           <article className="appt-featured">
-            <div className="appt-featured-band" style={{ background: featured.accent }}>
+            <div
+              className="appt-featured-band"
+              style={{ background: featured.accent }}
+            >
               <span>{t(featured.when)}</span>
-              <span style={{ background: 'rgba(255,255,255,.2)', borderRadius: 8, padding: '3px 8px' }}>{t(featured.mode)}</span>
+              <span
+                style={{
+                  background: "rgba(255,255,255,.2)",
+                  borderRadius: 8,
+                  padding: "3px 8px",
+                }}
+              >
+                {t(featured.mode)}
+              </span>
             </div>
             <div className="appt-featured-body">
               <div className="appt-featured-when">{featured.time}</div>
-              <div className="appt-featured-mode">{t(featured.day)} · {t(featured.motivo)}</div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
-                <div className="avatar" style={{ width: 44, height: 44, background: 'var(--teal-l)', fontSize: 20 }}>
+              <div className="appt-featured-mode">
+                {t(featured.day)} · {t(featured.motivo)}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  marginBottom: 14,
+                }}
+              >
+                <div
+                  className="avatar"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background: "var(--teal-l)",
+                    fontSize: 20,
+                  }}
+                >
                   {featured.emoji}
                 </div>
                 <div>
                   <div style={{ fontWeight: 700 }}>{featured.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--mu)' }}>{t(featured.role)}</div>
+                  <div style={{ fontSize: 12, color: "var(--mu)" }}>
+                    {t(featured.role)}
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <IonButton expand="block" className="bt bt-sm bt-teal" style={{ flex: 1 }} onClick={() => showToast(t('Entrando a la sala de espera…'), 'ok')}>
-                  {t('Unirse a telemedicina')}
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <IonButton
+                  expand="block"
+                  className="bt bt-sm bt-teal"
+                  style={{ flex: 1 }}
+                  onClick={() => {
+                    if (realMode) openRoom(featured);
+                    else showToast(t("Entrando a la sala de espera…"), "ok");
+                  }}
+                >
+                  {t("Unirse a telemedicina")}
                 </IonButton>
                 <IonButton
                   className="bt bt-round"
-                  style={{ '--background': 'var(--red-l)', '--color': 'var(--red)' } as CSSProperties}
-                  aria-label={t('Cancelar cita')}
+                  style={
+                    {
+                      "--background": "var(--red-l)",
+                      "--color": "var(--red)",
+                    } as CSSProperties
+                  }
+                  aria-label={t("Cancelar cita")}
                   onClick={() => setCancelId(featured.id)}
                 >
                   ✕
@@ -61,30 +142,42 @@ export function AppointmentsPage() {
               </div>
             </div>
           </article>
-        )}
+        ) : null}
 
-        <div className="sec">{t('Siguientes')}</div>
+        <div className="sec">{t("Siguientes")}</div>
         {rest.length === 0 ? (
-          <div className="req-empty" style={{ margin: '0 16px 8px' }}>
-            <strong>{t('No hay más citas')}</strong>
-            <p>{t('Cuando solicites una nueva, aparecerá aquí mientras se confirma.')}</p>
+          <div className="req-empty" style={{ margin: "0 16px 8px" }}>
+            <strong>{t("No hay más citas")}</strong>
+            <p>
+              {t(
+                "Cuando solicites una nueva, aparecerá aquí mientras se confirma.",
+              )}
+            </p>
           </div>
         ) : (
           <div className="group-list">
             {rest.map((a) => (
-              <div key={a.id} className="group-row" style={{ alignItems: 'flex-start' }}>
+              <div
+                key={a.id}
+                className="group-row"
+                style={{ alignItems: "flex-start" }}
+              >
                 <div className="next-appt-time">
                   <strong>{a.time}</strong>
                   <span>{t(a.day)}</span>
                 </div>
                 <div className="group-row-body">
                   <strong>{a.name}</strong>
-                  <small>{t(a.mode)} · {t(a.motivo)}</small>
+                  <small>
+                    {t(a.mode)} · {t(a.motivo)}
+                  </small>
                 </div>
-                {a.pending ? <span className="chip chip-org">{t('PENDIENTE')}</span> : null}
+                {a.pending ? (
+                  <span className="chip chip-org">{t("PENDIENTE")}</span>
+                ) : null}
                 <IonButton
                   className="bt bt-mini bt-ghost"
-                  aria-label={t('Cancelar cita')}
+                  aria-label={t("Cancelar cita")}
                   onClick={() => setCancelId(a.id)}
                 >
                   ✕
@@ -94,22 +187,26 @@ export function AppointmentsPage() {
           </div>
         )}
 
-        <div className="sec">{t('Anteriores')}</div>
+        <div className="sec">{t("Anteriores")}</div>
         <div className="group-list" style={{ marginBottom: 20 }}>
-          {[
-            ['🩺', 'Dr. Ramírez · Control sem. 8', '08/07/2026 · Telemedicina'],
-            ['🥗', 'Nut. Ana Torres · MNT #3', '01/07/2026 · Presencial'],
-            ['🧠', 'Psic. Luis Mora · CBT #2', '25/06/2026 · Telemedicina'],
-          ].map(([e, n, meta]) => (
-            <div key={n} className="group-row">
-              <span className="group-row-ico">{e}</span>
-              <span className="group-row-body">
-                <strong>{t(n)}</strong>
-                <small>{t(meta)}</small>
-              </span>
-              <span className="chip chip-teal">{t('Hecha')}</span>
+          {past.length === 0 ? (
+            <div className="req-empty" style={{ margin: "0 16px" }}>
+              <p>{t("Aún no hay citas anteriores.")}</p>
             </div>
-          ))}
+          ) : (
+            past.map((a) => (
+              <div key={a.id} className="group-row">
+                <span className="group-row-ico">{a.emoji}</span>
+                <span className="group-row-body">
+                  <strong>{a.name}</strong>
+                  <small>
+                    {a.time} · {t(a.when)}
+                  </small>
+                </span>
+                <span className="chip chip-teal">{t("Hecha")}</span>
+              </div>
+            ))
+          )}
         </div>
       </Scroll>
 
@@ -121,14 +218,12 @@ export function AppointmentsPage() {
         {requestOpen ? (
           <RequestAppointmentWizard
             onCancel={() => setRequestOpen(false)}
-            onSubmitted={(appt) => {
-              setUpcoming((list) => {
-                const featured = list.filter((a) => a.featured)
-                const others = list.filter((a) => !a.featured)
-                return [...featured, appt, ...others]
-              })
-              setRequestOpen(false)
-              showToast(t('Solicitud enviada. Pendiente de confirmación'), 'ok')
+            onSubmitted={() => {
+              setRequestOpen(false);
+              showToast(
+                t("Solicitud enviada. Pendiente de confirmación"),
+                "ok",
+              );
             }}
           />
         ) : null}
@@ -136,22 +231,20 @@ export function AppointmentsPage() {
 
       <IonAlert
         isOpen={!!cancelId}
-        header={t('¿Cancelar la cita?')}
-        message={t('Se notificará al equipo médico.')}
+        header={t("¿Cancelar la cita?")}
+        message={t("Se notificará al equipo médico.")}
         buttons={[
-          { text: t('Volver'), role: 'cancel' },
+          { text: t("Volver"), role: "cancel" },
           {
-            text: t('Cancelar cita'),
-            role: 'destructive',
+            text: t("Cancelar cita"),
+            role: "destructive",
             handler: () => {
-              setUpcoming((list) => list.filter((a) => a.id !== cancelId))
-              setCancelId(null)
-              showToast(t('Solicitud de cancelación enviada'), 'warn')
+              if (cancelId) void handleCancel(cancelId);
             },
           },
         ]}
         onDidDismiss={() => setCancelId(null)}
       />
     </Screen>
-  )
+  );
 }
