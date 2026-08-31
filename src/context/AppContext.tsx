@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getMe, logoutUser, restoreSession } from "../utils/authApi";
+import { getMe, logoutUser, onSessionInvalid, restoreSession } from "../utils/authApi";
 import { sendChatMessage } from "../utils/threadApi";
 import { useT } from "../i18n/I18nContext";
 import type {
@@ -213,6 +213,7 @@ export function AppProvider({
   ]);
   const [watchConnected, setWatchConnected] = useState(false);
   const [watchName, setWatchName] = useState("ANTARES Watch Pro");
+  // TODO: Remove after full migration — legacy in-memory program state
   const [program, setProgram] = useState<ProgramDay>({
     podcast: false,
     vitals: false,
@@ -221,8 +222,11 @@ export function AppProvider({
     nutribiotico: false,
     emocional: false,
   });
+  // TODO: Remove after full migration
   const [programWeek] = useState(12);
+  // TODO: Remove after full migration
   const [streak, setStreak] = useState(22);
+  // TODO: Remove after full migration
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([
     true,
     true,
@@ -232,11 +236,22 @@ export function AppProvider({
     false,
     false,
   ]);
+  // TODO: Remove after full migration
   const [pointsToday, setPointsToday] = useState(0);
+  // TODO: Remove after full migration
   const [pointsTotal, setPointsTotal] = useState(4820);
   const [claimedChests, setClaimedChests] = useState<string[]>([
     ...SEED_CLAIMED_CHESTS,
   ]);
+
+  // Listener para sesión invalidada por refresh 401
+  useEffect(() => {
+    return onSessionInvalid(() => {
+      setFlow("login");
+      setScreen("home");
+      localStorage.removeItem(USER_STORAGE_KEY);
+    });
+  }, []);
 
   // Restauración automática de sesión al inicio
   useEffect(() => {

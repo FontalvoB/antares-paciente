@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ExerciseItemDto, NutritionMealDto, PodcastChapterDto, RecentVitalsDto } from '../../services/program/types'
 import {
   IonButton,
   IonChip,
@@ -68,6 +69,12 @@ function EcgLive() {
 export function PodcastLesson({
   done,
   pts,
+  title,
+  author,
+  description,
+  durationSecs,
+  chapters,
+  takeaways,
   playing,
   progress,
   onToggle,
@@ -76,6 +83,12 @@ export function PodcastLesson({
 }: {
   done: boolean
   pts: number
+  title?: string | null
+  author?: string | null
+  description?: string | null
+  durationSecs?: number | null
+  chapters?: PodcastChapterDto[] | null
+  takeaways?: string[] | null
   playing: boolean
   progress: number
   onToggle: () => void
@@ -83,8 +96,19 @@ export function PodcastLesson({
   onComplete: () => void
 }) {
   const t = useT()
-  const elapsed = progress * PODCAST_EPISODE.durationSec
-  const chapter = [...PODCAST_EPISODE.chapters].reverse().find((c) => elapsed >= c.at) ?? PODCAST_EPISODE.chapters[0]
+  const duration = durationSecs || PODCAST_EPISODE.durationSec
+  const podTitle = title || PODCAST_EPISODE.title
+  const podHost = author || PODCAST_EPISODE.host
+  const podBlurb = description || PODCAST_EPISODE.blurb
+  const podChapters = chapters && chapters.length > 0
+    ? chapters.map((c) => ({ at: c.atSeconds, label: c.label }))
+    : PODCAST_EPISODE.chapters
+  const podTakeaways = takeaways && takeaways.length > 0
+    ? takeaways
+    : PODCAST_EPISODE.takeaways
+
+  const elapsed = progress * duration
+  const chapter = [...podChapters].reverse().find((c) => elapsed >= c.at) ?? podChapters[0]
 
   return (
     <div className="lsn-stack">
@@ -101,15 +125,15 @@ export function PodcastLesson({
         <div className="pod-now">{t(chapter.label)}</div>
         <div className="pod-times">
           <span>{mmss(elapsed)}</span>
-          <span>{mmss(PODCAST_EPISODE.durationSec)}</span>
+          <span>{mmss(duration)}</span>
         </div>
         <IonProgressBar value={progress} className="pb" />
       </div>
 
       <div className="pod-copy">
-        <strong>{t(PODCAST_EPISODE.title)}</strong>
+        <strong>{t(podTitle)}</strong>
         <span>
-          {PODCAST_EPISODE.host} · {t(PODCAST_EPISODE.blurb)}
+          {podHost} · {t(podBlurb)}
         </span>
       </div>
 
@@ -127,7 +151,7 @@ export function PodcastLesson({
       </div>
 
       <div className="lsn-chapters">
-        {PODCAST_EPISODE.chapters.map((c) => (
+        {podChapters.map((c) => (
           <button
             key={c.at}
             type="button"
@@ -140,7 +164,7 @@ export function PodcastLesson({
       </div>
 
       <div className="lsn-tips">
-        {PODCAST_EPISODE.takeaways.map((tip) => (
+        {podTakeaways.map((tip) => (
           <div key={tip}>✓ {t(tip)}</div>
         ))}
       </div>
@@ -157,12 +181,14 @@ export function PodcastLesson({
 export function VitalsLesson({
   done,
   pts,
+  recentVitals,
   watchConnected,
   onConnectWatch,
   onComplete,
 }: {
   done: boolean
   pts: number
+  recentVitals?: RecentVitalsDto | null
   watchConnected: boolean
   onConnectWatch: () => void
   onComplete: () => void
@@ -172,6 +198,18 @@ export function VitalsLesson({
   const [syncing, setSyncing] = useState(false)
   const syncRef = useRef<number | null>(null)
   const filled = VITAL_FIELDS.filter((f) => (vals[f.id] ?? '').trim()).length
+
+  const lastRecorded = useMemo<Record<string, string>>(() => {
+    if (!recentVitals) return {}
+    const res: Record<string, string> = {}
+    if (recentVitals.heartRate) res.fc = String(recentVitals.heartRate)
+    if (recentVitals.systolic && recentVitals.diastolic) res.pa = `${recentVitals.systolic}/${recentVitals.diastolic}`
+    if (recentVitals.o2Saturation) res.spo2 = String(recentVitals.o2Saturation)
+    if (recentVitals.glucose) res.glu = String(recentVitals.glucose)
+    if (recentVitals.weightKg) res.peso = String(recentVitals.weightKg)
+    if (recentVitals.temperatureC) res.temp = String(recentVitals.temperatureC)
+    return res
+  }, [recentVitals])
 
   useEffect(
     () => () => {
@@ -186,7 +224,8 @@ export function VitalsLesson({
     let i = 0
     syncRef.current = window.setInterval(() => {
       const f = VITAL_FIELDS[i]
-      setVals((prev) => ({ ...prev, [f.id]: f.watch }))
+      const val = lastRecorded[f.id] ?? f.watch
+      setVals((prev) => ({ ...prev, [f.id]: val }))
       i += 1
       if (i >= VITAL_FIELDS.length) {
         if (syncRef.current) window.clearInterval(syncRef.current)
@@ -213,7 +252,7 @@ export function VitalsLesson({
           </div>
         </div>
         <EcgLive />
-        <p>{t('Compara con ayer. La tendencia importa más que un solo número.')}</p>
+        <p>{t('Compara con mediciones anteriores. La tendencia importa más que un solo número.')}</p>
       </section>
 
       {watchConnected ? (
@@ -245,6 +284,7 @@ export function VitalsLesson({
           const st = vitalStatus(v, f.lo, f.hi, t)
           const span = f.hi - f.lo || 1
           const pct = Number.isNaN(n) ? null : Math.min(100, Math.max(0, ((n - f.lo) / span) * 100))
+          const priorVal = lastRecorded[f.id] ?? f.demo
           return (
             <article key={f.id} className={`vt-tile ${st.cls} ${v ? 'has' : ''}`}>
               <header>
@@ -269,7 +309,7 @@ export function VitalsLesson({
               </div>
               <footer>
                 <span className={st.cls || undefined}>{st.label}</span>
-                <span>{t('Ayer')} {f.demo}</span>
+                <span>{lastRecorded[f.id] ? `${t('Último')} ${priorVal}` : `${t('Ayer')} ${priorVal}`}</span>
               </footer>
             </article>
           )
@@ -288,28 +328,83 @@ export function VitalsLesson({
 export function NutritionLesson({
   done,
   pts,
+  title,
+  dailyCalorieTarget,
+  dailyProteinTarget,
+  dailyCarbsTarget,
+  dailyFatTarget,
+  dailyFiberTarget,
+  nutritionMeals,
   mealsLogged,
   onGoPlan,
   onComplete,
 }: {
   done: boolean
   pts: number
+  title?: string
+  dailyCalorieTarget?: number | null
+  dailyProteinTarget?: number | null
+  dailyCarbsTarget?: number | null
+  dailyFatTarget?: number | null
+  dailyFiberTarget?: number | null
+  nutritionMeals?: NutritionMealDto[] | null
   mealsLogged: string[]
   onGoPlan: () => void
   onComplete: () => void
 }) {
   const t = useT()
-  const kcal = TODAY_PLAN.filter((m) => mealsLogged.includes(m.id)).reduce((s, m) => s + m.kcal, 0)
-  const pct = mealsLogged.length / TODAY_PLAN.length
+
+  const meals = useMemo(() => {
+    if (nutritionMeals && nutritionMeals.length > 0) {
+      return nutritionMeals.map((m, idx) => {
+        const mealTypeLower = m.mealType.toLowerCase()
+        let emoji = '🥗'
+        if (mealTypeLower.includes('desayuno')) emoji = '🌅'
+        else if (mealTypeLower.includes('almuerzo')) emoji = '☀️'
+        else if (mealTypeLower.includes('cena')) emoji = '🌙'
+        else if (mealTypeLower.includes('snack') || mealTypeLower.includes('merienda')) emoji = '🍎'
+
+        const details: string[] = []
+        if (m.description) details.push(m.description)
+        if (m.foods) details.push(`(${m.foods})`)
+        const macros: string[] = []
+        if (m.proteinG) macros.push(`P: ${m.proteinG}g`)
+        if (m.carbsG) macros.push(`C: ${m.carbsG}g`)
+        if (m.fatG) macros.push(`G: ${m.fatG}g`)
+        if (m.fiberG) macros.push(`Fib: ${m.fiberG}g`)
+        if (macros.length > 0) details.push(`[${macros.join(' · ')}]`)
+
+        return {
+          id: mealTypeLower || `meal-${idx}`,
+          emoji,
+          title: m.mealType,
+          items: details.join(' ') || 'Comida planificada',
+          kcal: m.calories || 0,
+        }
+      })
+    }
+    return TODAY_PLAN
+  }, [nutritionMeals])
+
+  const targetKcal = dailyCalorieTarget || 1800
+  const targetProtein = dailyProteinTarget ? `${dailyProteinTarget} g proteína` : null
+  const targetFat = dailyFatTarget ? `${dailyFatTarget} g grasa` : null
+  const targetCarbs = dailyCarbsTarget ? `${dailyCarbsTarget} g carbs` : null
+  const targetFiber = dailyFiberTarget ? `${dailyFiberTarget} g fibra` : null
+
+  const macroSubtext = [targetProtein, targetFat, targetCarbs, targetFiber].filter(Boolean).join(' · ')
+
+  const kcal = meals.filter((m) => mealsLogged.includes(m.id)).reduce((s, m) => s + m.kcal, 0)
+  const pct = meals.length > 0 ? mealsLogged.length / meals.length : 0
 
   return (
     <div className="lsn-stack">
       <div className="nut-hero">
         <div>
           <div className="kicker" style={{ color: 'var(--teal-d)' }}>
-            {t('Plan mediterráneo')}
+            {t(title || 'Plan de Alimentación')}
           </div>
-          <strong>1,800 kcal · 90 g proteína</strong>
+          <strong>{targetKcal} kcal {macroSubtext ? `· ${macroSubtext}` : ''}</strong>
           <span>{t('Hoy llevas {kcal} kcal registradas · {pct}% de comidas', { kcal: String(kcal), pct: String(Math.round(pct * 100)) })}</span>
         </div>
         <div className="nut-ring" aria-hidden="true">
@@ -330,14 +425,13 @@ export function NutritionLesson({
           <b>{Math.round(pct * 100)}%</b>
         </div>
       </div>
-      <div className="lsn-warn">{t('Proteínas 68 g vs meta 90 g · suma una fuente magra en almuerzo o cena.')}</div>
-      {TODAY_PLAN.map((m) => (
+      {meals.map((m) => (
         <div key={m.id} className={`lsn-meal ${mealsLogged.includes(m.id) ? 'on' : ''}`}>
           <span className="lsn-meal-ico">{m.emoji}</span>
           <div>
             <strong>{t(m.title)}</strong>
             <span>
-              {t(m.items)} · {m.kcal} kcal
+              {t(m.items)} {m.kcal > 0 ? `· ${m.kcal} kcal` : ''}
             </span>
           </div>
           <em>{mealsLogged.includes(m.id) ? '✓' : ''}</em>
@@ -346,13 +440,10 @@ export function NutritionLesson({
       <IonButton expand="block" className="bt bt-teal" onClick={onGoPlan}>
         {t('Ir a registrar comidas')}
       </IonButton>
-      {!done && mealsLogged.length >= 2 && (
+      {!done && (
         <IonButton expand="block" className="bt bt-gold" onClick={onComplete}>
-          {t('Validar adherencia · +{pts} pts', { pts: String(pts) })}
+          {t('Cumplí el plan hoy · +{pts} pts', { pts: String(pts) })}
         </IonButton>
-      )}
-      {!done && mealsLogged.length < 2 && (
-        <p className="lesson-hint">{t('Registra al menos 2 comidas del plan para validar el día.')}</p>
       )}
     </div>
   )
@@ -361,6 +452,8 @@ export function NutritionLesson({
 export function ExerciseLesson({
   done,
   pts,
+  title,
+  exercises,
   step,
   left,
   running,
@@ -370,6 +463,8 @@ export function ExerciseLesson({
 }: {
   done: boolean
   pts: number
+  title?: string
+  exercises?: ExerciseItemDto[] | null
   step: number
   left: number
   running: boolean
@@ -378,10 +473,32 @@ export function ExerciseLesson({
   onComplete: () => void
 }) {
   const t = useT()
-  const cur = CIRCUIT_STEPS[step]
-  const total = CIRCUIT_STEPS.reduce((s, x) => s + x.sec, 0)
+
+  const steps = useMemo(() => {
+    if (exercises && exercises.length > 0) {
+      return exercises.map((ex) => {
+        const sec = ex.durationSecs || (ex.restSeconds ? ex.restSeconds * (ex.sets || 1) : 45)
+        const cueParts: string[] = []
+        if (ex.sets && ex.repetitions) cueParts.push(`${ex.sets} series x ${ex.repetitions} reps`)
+        else if (ex.sets) cueParts.push(`${ex.sets} series`)
+        if (ex.description) cueParts.push(ex.description)
+        if (ex.tips) cueParts.push(ex.tips)
+
+        return {
+          name: ex.name,
+          sec: sec > 0 ? sec : 60,
+          cue: cueParts.join(' · ') || 'Ejecuta con buena postura',
+        }
+      })
+    }
+    return CIRCUIT_STEPS
+  }, [exercises])
+
+  const safeStep = Math.min(step, steps.length - 1)
+  const cur = steps[safeStep] || steps[0]
+  const total = steps.reduce((s, x) => s + x.sec, 0)
   const doneSec =
-    CIRCUIT_STEPS.slice(0, step).reduce((s, x) => s + x.sec, 0) + (cur.sec - left)
+    steps.slice(0, safeStep).reduce((s, x) => s + x.sec, 0) + (cur.sec - left)
   const ring = cur ? 1 - left / cur.sec : 1
 
   return (
@@ -404,7 +521,7 @@ export function ExerciseLesson({
           </svg>
           <div className="ex-ring-center">
             <div className="kicker" style={{ color: 'var(--ice)' }}>
-              {step + 1} / {CIRCUIT_STEPS.length}
+              {title ? `${t(title)} · ` : ''}{safeStep + 1} / {steps.length}
             </div>
             <div className="display ex-clock">{mmss(left)}</div>
           </div>
@@ -415,9 +532,9 @@ export function ExerciseLesson({
       </div>
 
       <div className="ex-list">
-        {CIRCUIT_STEPS.map((s, i) => (
-          <div key={s.name} className={`ex-li ${i < step ? 'done' : ''} ${i === step ? 'now' : ''}`}>
-            <b>{i < step ? '✓' : i + 1}</b>
+        {steps.map((s, i) => (
+          <div key={s.name} className={`ex-li ${i < safeStep ? 'done' : ''} ${i === safeStep ? 'now' : ''}`}>
+            <b>{i < safeStep ? '✓' : i + 1}</b>
             <div>
               <strong>{t(s.name)}</strong>
               <span>{mmss(s.sec)}</span>
@@ -429,7 +546,7 @@ export function ExerciseLesson({
       {!done && (
         <>
           <IonButton expand="block" className="bt bt-pur" onClick={onToggle}>
-            {running ? t('Pausar') : step === 0 && left === CIRCUIT_STEPS[0].sec ? t('Iniciar circuito') : t('Continuar')}
+            {running ? t('Pausar') : step === 0 && left === (steps[0]?.sec ?? 60) ? t('Iniciar circuito') : t('Continuar')}
           </IonButton>
           <IonButton expand="block" className="bt bt-ghost" onClick={onSkip}>
             {t('Saltar estación')}
@@ -448,6 +565,7 @@ export function NutribioticLesson({
   pts,
   takenAt,
   slot,
+  nbWeekDays,
   onSlot,
   onComplete,
 }: {
@@ -455,6 +573,7 @@ export function NutribioticLesson({
   pts: number
   takenAt: string
   slot: string
+  nbWeekDays?: boolean[] | null
   onSlot: (v: string) => void
   onComplete: () => void
 }) {
@@ -472,9 +591,12 @@ export function NutribioticLesson({
         </IonSegment>
         <div className="nb-streak">
           {WEEK_LABELS.map((d, i) => {
-            const ok = i === todayIdx ? done : NB_WEEK_SEED[i]
+            const isToday = i === todayIdx
+            const ok = nbWeekDays && nbWeekDays.length === 7
+              ? (isToday ? done || nbWeekDays[i] : nbWeekDays[i])
+              : (isToday ? done : NB_WEEK_SEED[i])
             return (
-              <div key={d} className={`nb-day ${ok ? 'ok' : 'no'} ${i === todayIdx ? 'today' : ''}`}>
+              <div key={d} className={`nb-day ${ok ? 'ok' : 'no'} ${isToday ? 'today' : ''}`}>
                 {d}
               </div>
             )

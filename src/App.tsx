@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "urql";
 import { createCommunityClient } from "./graphql/client";
 import { registerForPush } from "./utils/pushNotifications";
@@ -33,6 +34,17 @@ import { ProgramPage } from "./pages/ProgramPage";
 import { CommunityPage } from "./pages/CommunityPage";
 
 setupIonicReact({ mode: "ios" });
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: true,
+      networkMode: "online",
+    },
+  },
+});
 
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
@@ -173,13 +185,15 @@ export default function App() {
 
   return (
     <Provider value={communityClientState}>
-      <I18nProvider>
-        <AppProvider onResetCommunityClient={resetCommunityClient}>
-          <IonApp>
-            <Shell />
-          </IonApp>
-        </AppProvider>
-      </I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <AppProvider onResetCommunityClient={resetCommunityClient}>
+            <IonApp>
+              <Shell />
+            </IonApp>
+          </AppProvider>
+        </I18nProvider>
+      </QueryClientProvider>
     </Provider>
   );
 }

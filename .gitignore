@@ -36,3 +36,9 @@ android/
 # Environment & local notes
 PROMPT-CONTEXT.md
 *.local
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+

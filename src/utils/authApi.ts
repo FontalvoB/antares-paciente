@@ -184,3 +184,22 @@ export async function logoutUser(): Promise<void> {
 export function getAccessToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY)
 }
+
+type SessionInvalidListener = () => void
+const sessionInvalidListeners = new Set<SessionInvalidListener>()
+
+export function onSessionInvalid(listener: SessionInvalidListener): () => void {
+  sessionInvalidListeners.add(listener)
+  return () => sessionInvalidListeners.delete(listener)
+}
+
+export function clearSessionAndNotify(): void {
+  clearAccessToken()
+  sessionInvalidListeners.forEach((fn) => {
+    try {
+      fn()
+    } catch {
+      /* ignore subscriber error */
+    }
+  })
+}
