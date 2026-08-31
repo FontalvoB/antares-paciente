@@ -254,6 +254,11 @@ export function CommunityPage() {
     toggleLike,
     addComment,
     replyToComment,
+    reportPost,
+    reportComment,
+    toggleCommentLike,
+    toggleRepost,
+    fetchPostReposts,
     updateProfile,
     followUser,
     unfollowUser,
@@ -805,6 +810,11 @@ export function CommunityPage() {
                             onOpen={setActivePost}
                             onOpenImage={openImage}
                             onToggleLike={handleToggleLike}
+                            onToggleRepost={toggleRepost}
+                            onReportPost={reportPost}
+                            onReportComment={reportComment}
+                            onToggleCommentLike={toggleCommentLike}
+                            onFetchPostReposts={fetchPostReposts}
                             onVotePoll={votePoll}
                             myId={me?.id ?? null}
                             onToast={showToast}
@@ -842,6 +852,11 @@ export function CommunityPage() {
                           onOpen={setActivePost}
                           onOpenImage={openImage}
                           onToggleLike={handleToggleLike}
+                          onToggleRepost={toggleRepost}
+                          onReportPost={reportPost}
+                          onReportComment={reportComment}
+                          onToggleCommentLike={toggleCommentLike}
+                          onFetchPostReposts={fetchPostReposts}
                           onVotePoll={votePoll}
                           myId={me?.id ?? null}
                           onToast={showToast}
@@ -1369,6 +1384,11 @@ export function CommunityPage() {
             onOpenImage={openImage}
             onToast={showToast}
             onVotePoll={votePoll}
+            onToggleRepost={toggleRepost}
+            onReportPost={reportPost}
+            onReportComment={reportComment}
+            onToggleCommentLike={toggleCommentLike}
+            onFetchPostReposts={fetchPostReposts}
           />
 
           {me && (
