@@ -214,8 +214,8 @@ export async function apiFetch<T>(
 
     // 401 → attempt single-flight refresh + retry once
     if (res.status === 401) {
-      // Never retry /refresh itself
-      if (path.includes('/api/auth/refresh')) {
+      // Demo mode bypass: do not clear session on API 401 errors when using demo token
+      if (token === 'demo-access-token' || path.includes('/api/auth/refresh')) {
         throw parseApiError(401, parsed)
       }
 
