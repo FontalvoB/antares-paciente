@@ -13,7 +13,7 @@ export function ChatFab() {
   const t = useT();
 
   // Solo en la app y cuando no estás ya en el chat.
-  if (flow !== "app" || screen === "chat") return null;
+  if (flow !== "app" || screen === "chat" || screen === "com") return null;
 
   return (
     <button

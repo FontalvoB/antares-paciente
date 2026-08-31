@@ -4,6 +4,14 @@
 
 export type ProfileStatus = 'ACTIVE' | 'BANNED'
 
+export interface RepostWithPost {
+  id: string
+  postId: string
+  profileId: string
+  createdAt: string
+  post: Post
+}
+
 export interface Profile {
   id: string
   displayName: string
@@ -12,17 +20,26 @@ export interface Profile {
   status: ProfileStatus
   banReason: string | null
   bannedAt: string | null
+  avatarUrl: string | null
+  coverUrl: string | null
   createdAt: string
   posts: Post[]
+  reposts: RepostWithPost[]
 }
 
 export interface PostAuthor {
   id: string
   displayName: string
+  avatarUrl?: string | null
   isSystem?: boolean
 }
 
 export interface LikeRef {
+  id: string
+  profileId: string
+}
+
+export interface RepostRef {
   id: string
   profileId: string
 }
@@ -34,16 +51,37 @@ export interface Comment {
   body: string
   createdAt: string
   profile: PostAuthor
+  likes: LikeRef[]
   replies: Comment[]
+}
+
+export interface PollVote {
+  id: string
+  profileId: string
+}
+
+export interface PollOption {
+  id: string
+  text: string
+  votes: PollVote[]
+}
+
+export interface Poll {
+  id: string
+  options: PollOption[]
 }
 
 export interface Post {
   id: string
   body: string
   pinned: boolean
+  imageUrl: string | null
+  mediaType: 'IMAGE' | 'VIDEO' | null
+  poll: Poll | null
   createdAt: string
   profile: PostAuthor
   likes: LikeRef[]
+  reposts: RepostRef[]
   comments: Comment[]
 }
 
@@ -240,6 +278,8 @@ const PROFILE_FRAGMENT = /* GraphQL */ `
     status
     banReason
     bannedAt
+    avatarUrl
+    coverUrl
     createdAt
   }
 `
@@ -254,7 +294,12 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
     profile {
       id
       displayName
+      avatarUrl
       isSystem
+    }
+    likes {
+      id
+      profileId
     }
     replies {
       id
@@ -265,7 +310,26 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
       profile {
         id
         displayName
+        avatarUrl
         isSystem
+      }
+      likes {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+const POLL_FRAGMENT = /* GraphQL */ `
+  fragment PollFields on Poll {
+    id
+    options {
+      id
+      text
+      votes {
+        id
+        profileId
       }
     }
   }
@@ -276,13 +340,23 @@ const POST_FRAGMENT = /* GraphQL */ `
     id
     body
     pinned
+    imageUrl
+    mediaType
+    poll {
+      ...PollFields
+    }
     createdAt
     profile {
       id
       displayName
+      avatarUrl
       isSystem
     }
     likes {
+      id
+      profileId
+    }
+    reposts {
       id
       profileId
     }
@@ -290,6 +364,7 @@ const POST_FRAGMENT = /* GraphQL */ `
       ...CommentFields
     }
   }
+  ${POLL_FRAGMENT}
 `
 
 // ---------- Queries ----------
@@ -300,6 +375,15 @@ export const ME_QUERY = /* GraphQL */ `
       ...ProfileFields
       posts {
         ...PostFields
+      }
+      reposts {
+        id
+        postId
+        profileId
+        createdAt
+        post {
+          ...PostFields
+        }
       }
     }
   }
@@ -335,6 +419,15 @@ export const PROFILE_QUERY = /* GraphQL */ `
       posts {
         ...PostFields
       }
+      reposts {
+        id
+        postId
+        profileId
+        createdAt
+        post {
+          ...PostFields
+        }
+      }
     }
   }
   ${PROFILE_FRAGMENT}
@@ -345,13 +438,173 @@ export const PROFILE_QUERY = /* GraphQL */ `
 // ---------- Mutaciones ----------
 
 export const CREATE_POST = /* GraphQL */ `
-  mutation CreatePost($body: String!) {
-    createPost(body: $body) {
+  mutation CreatePost($body: String!, $imageKey: String) {
+    createPost(body: $body, imageKey: $imageKey) {
       ...PostFields
     }
   }
   ${POST_FRAGMENT}
   ${COMMENT_FRAGMENT}
+`
+
+export const CREATE_POLL_POST = /* GraphQL */ `
+  mutation CreatePollPost($question: String!, $options: [String!]!) {
+    createPollPost(question: $question, options: $options) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const VOTE_POLL = /* GraphQL */ `
+  mutation VotePoll($optionId: UUID!) {
+    votePoll(optionId: $optionId) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export interface CreatePollPostResult {
+  createPollPost: Post
+}
+
+export interface VotePollResult {
+  votePoll: Post
+}
+
+// ---------- Reportes ----------
+
+export const REPORT_POST = /* GraphQL */ `
+  mutation ReportPost($postId: UUID!, $reason: String!, $details: String) {
+    reportPost(postId: $postId, reason: $reason, details: $details) {
+      id
+    }
+  }
+`
+
+export interface ReportPostResult {
+  reportPost: { id: string } | null
+}
+
+export const REPORT_COMMENT = /* GraphQL */ `
+  mutation ReportComment($commentId: UUID!, $reason: String!, $details: String) {
+    reportComment(commentId: $commentId, reason: $reason, details: $details) {
+      id
+    }
+  }
+`
+
+export interface ReportCommentResult {
+  reportComment: { id: string } | null
+}
+
+// ---------- Likes de comentarios ----------
+
+export const LIKE_COMMENT = /* GraphQL */ `
+  mutation LikeComment($commentId: UUID!) {
+    likeComment(commentId: $commentId) {
+      id
+      likes {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface LikeCommentResult {
+  likeComment: { id: string; likes: LikeRef[] } | null
+}
+
+export const UNLIKE_COMMENT = /* GraphQL */ `
+  mutation UnlikeComment($commentId: UUID!) {
+    unlikeComment(commentId: $commentId) {
+      id
+      likes {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface UnlikeCommentResult {
+  unlikeComment: { id: string; likes: LikeRef[] } | null
+}
+
+// ---------- Reposts ----------
+
+export const REPOST_POST = /* GraphQL */ `
+  mutation RepostPost($postId: UUID!) {
+    repostPost(postId: $postId) {
+      id
+      reposts {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface RepostPostResult {
+  repostPost: { id: string; reposts: RepostRef[] } | null
+}
+
+export const UNREPOST_POST = /* GraphQL */ `
+  mutation UnrepostPost($postId: UUID!) {
+    unrepostPost(postId: $postId) {
+      id
+      reposts {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface UnrepostPostResult {
+  unrepostPost: { id: string; reposts: RepostRef[] } | null
+}
+
+export const POST_REPOSTS = /* GraphQL */ `
+  query PostReposts($postId: UUID!, $take: Int!, $skip: Int!) {
+    postReposts(postId: $postId, take: $take, skip: $skip) {
+      id
+      displayName
+      avatarUrl
+    }
+  }
+`
+
+export interface PostRepostsResult {
+  postReposts: Pick<Profile, 'id' | 'displayName' | 'avatarUrl'>[]
+}
+
+export interface PostImageUploadInfo {
+  key: string
+  uploadUrl: string
+  readUrl: string
+}
+
+export interface PostImageUploadInfoResult {
+  createPostImageUploadInfo: PostImageUploadInfo
+}
+
+export interface ProfileImageUploadInfoResult {
+  createProfileImageUploadInfo: PostImageUploadInfo
+}
+
+export const POST_IMAGE_UPLOAD_INFO = /* GraphQL */ `
+  mutation PostImageUploadInfo($fileName: String!, $contentType: String!) {
+    createPostImageUploadInfo(fileName: $fileName, contentType: $contentType) {
+      key
+      uploadUrl
+      readUrl
+    }
+  }
 `
 
 export const LIKE_POST = /* GraphQL */ `
@@ -397,12 +650,31 @@ export const REPLY_TO_COMMENT = /* GraphQL */ `
 `
 
 export const UPDATE_PROFILE = /* GraphQL */ `
-  mutation UpdateProfile($displayName: String!, $bio: String) {
-    updateProfile(displayName: $displayName, bio: $bio) {
+  mutation UpdateProfile(
+    $displayName: String!
+    $bio: String
+    $avatarKey: String
+    $coverKey: String
+  ) {
+    updateProfile(displayName: $displayName, bio: $bio, avatarKey: $avatarKey, coverKey: $coverKey) {
       ...ProfileFields
     }
   }
   ${PROFILE_FRAGMENT}
+`
+
+export const PROFILE_IMAGE_UPLOAD_INFO = /* GraphQL */ `
+  mutation ProfileImageUploadInfo(
+    $kind: String!
+    $fileName: String!
+    $contentType: String!
+  ) {
+    createProfileImageUploadInfo(kind: $kind, fileName: $fileName, contentType: $contentType) {
+      key
+      uploadUrl
+      readUrl
+    }
+  }
 `
 
 // ---------- Queries: follows + mensajes ----------
