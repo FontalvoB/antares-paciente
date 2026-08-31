@@ -30,6 +30,11 @@ export interface LikeRef {
   profileId: string
 }
 
+export interface RepostRef {
+  id: string
+  profileId: string
+}
+
 export interface Comment {
   id: string
   postId: string
@@ -37,6 +42,7 @@ export interface Comment {
   body: string
   createdAt: string
   profile: PostAuthor
+  likes: LikeRef[]
   replies: Comment[]
 }
 
@@ -66,6 +72,7 @@ export interface Post {
   createdAt: string
   profile: PostAuthor
   likes: LikeRef[]
+  reposts: RepostRef[]
   comments: Comment[]
 }
 
@@ -281,6 +288,10 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
       avatarUrl
       isSystem
     }
+    likes {
+      id
+      profileId
+    }
     replies {
       id
       postId
@@ -292,6 +303,10 @@ const COMMENT_FRAGMENT = /* GraphQL */ `
         displayName
         avatarUrl
         isSystem
+      }
+      likes {
+        id
+        profileId
       }
     }
   }
@@ -329,6 +344,10 @@ const POST_FRAGMENT = /* GraphQL */ `
       isSystem
     }
     likes {
+      id
+      profileId
+    }
+    reposts {
       id
       profileId
     }
@@ -427,6 +446,114 @@ export interface CreatePollPostResult {
 
 export interface VotePollResult {
   votePoll: Post
+}
+
+// ---------- Reportes ----------
+
+export const REPORT_POST = /* GraphQL */ `
+  mutation ReportPost($postId: UUID!, $reason: String!, $details: String) {
+    reportPost(postId: $postId, reason: $reason, details: $details) {
+      id
+    }
+  }
+`
+
+export interface ReportPostResult {
+  reportPost: { id: string } | null
+}
+
+export const REPORT_COMMENT = /* GraphQL */ `
+  mutation ReportComment($commentId: UUID!, $reason: String!, $details: String) {
+    reportComment(commentId: $commentId, reason: $reason, details: $details) {
+      id
+    }
+  }
+`
+
+export interface ReportCommentResult {
+  reportComment: { id: string } | null
+}
+
+// ---------- Likes de comentarios ----------
+
+export const LIKE_COMMENT = /* GraphQL */ `
+  mutation LikeComment($commentId: UUID!) {
+    likeComment(commentId: $commentId) {
+      id
+      likes {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface LikeCommentResult {
+  likeComment: { id: string; likes: LikeRef[] } | null
+}
+
+export const UNLIKE_COMMENT = /* GraphQL */ `
+  mutation UnlikeComment($commentId: UUID!) {
+    unlikeComment(commentId: $commentId) {
+      id
+      likes {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface UnlikeCommentResult {
+  unlikeComment: { id: string; likes: LikeRef[] } | null
+}
+
+// ---------- Reposts ----------
+
+export const REPOST_POST = /* GraphQL */ `
+  mutation RepostPost($postId: UUID!) {
+    repostPost(postId: $postId) {
+      id
+      reposts {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface RepostPostResult {
+  repostPost: { id: string; reposts: RepostRef[] } | null
+}
+
+export const UNREPOST_POST = /* GraphQL */ `
+  mutation UnrepostPost($postId: UUID!) {
+    unrepostPost(postId: $postId) {
+      id
+      reposts {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export interface UnrepostPostResult {
+  unrepostPost: { id: string; reposts: RepostRef[] } | null
+}
+
+export const POST_REPOSTS = /* GraphQL */ `
+  query PostReposts($postId: UUID!, $take: Int!, $skip: Int!) {
+    postReposts(postId: $postId, take: $take, skip: $skip) {
+      id
+      displayName
+      avatarUrl
+    }
+  }
+`
+
+export interface PostRepostsResult {
+  postReposts: Pick<Profile, 'id' | 'displayName' | 'avatarUrl'>[]
 }
 
 export interface PostImageUploadInfo {
