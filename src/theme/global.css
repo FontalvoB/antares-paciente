@@ -11049,6 +11049,10 @@ button.poll-opt:active {
   gap: 6px;
 }
 
+.poll-opt-result {
+  cursor: default;
+}
+
 .poll-opt-fill {
   position: absolute;
   inset: 0;
@@ -12589,6 +12593,21 @@ ion-button.com-banner-close {
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--g1);
+}
+
+.compf-skel {
+  width: 56%;
+  height: 14px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  background: var(--g1);
+  animation: compfPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes compfPulse {
+  50% {
+    opacity: 0.45;
+  }
 }
 
 .com-detail {
