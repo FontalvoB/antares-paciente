@@ -33,6 +33,7 @@ import {
   WEEK_LABELS,
 } from '../../data/program'
 import { weekdayMondayIndex } from '../../utils/dates'
+import { useT } from '../../i18n/I18nContext'
 
 function mmss(sec: number) {
   const s = Math.max(0, Math.floor(sec))
@@ -45,12 +46,12 @@ function vitalNumber(raw: string) {
   return parseFloat(raw.replace(',', '.'))
 }
 
-function vitalStatus(raw: string, lo: number, hi: number) {
-  const n = vitalNumber(raw)
-  if (Number.isNaN(n)) return { label: 'Pendiente', cls: '' }
-  if (n < lo) return { label: 'Bajo', cls: 'warn' }
-  if (n > hi) return { label: 'Alto', cls: 'warn' }
-  return { label: 'En rango', cls: 'ok' }
+function vitalStatus(raw: string, lo: number, hi: number, t: (s: string) => string) {
+  const n = parseFloat(raw.replace('/', '.'))
+  if (!raw.trim() || Number.isNaN(n)) return { label: '—', cls: '' }
+  if (n < lo) return { label: t('Bajo'), cls: 'warn' }
+  if (n > hi) return { label: t('Alto'), cls: 'warn' }
+  return { label: t('En rango'), cls: 'ok' }
 }
 
 function EcgLive() {
@@ -81,6 +82,7 @@ export function PodcastLesson({
   onSkip: (delta: number) => void
   onComplete: () => void
 }) {
+  const t = useT()
   const elapsed = progress * PODCAST_EPISODE.durationSec
   const chapter = [...PODCAST_EPISODE.chapters].reverse().find((c) => elapsed >= c.at) ?? PODCAST_EPISODE.chapters[0]
 
@@ -96,7 +98,7 @@ export function PodcastLesson({
             />
           ))}
         </div>
-        <div className="pod-now">{chapter.label}</div>
+        <div className="pod-now">{t(chapter.label)}</div>
         <div className="pod-times">
           <span>{mmss(elapsed)}</span>
           <span>{mmss(PODCAST_EPISODE.durationSec)}</span>
@@ -105,21 +107,21 @@ export function PodcastLesson({
       </div>
 
       <div className="pod-copy">
-        <strong>{PODCAST_EPISODE.title}</strong>
+        <strong>{t(PODCAST_EPISODE.title)}</strong>
         <span>
-          {PODCAST_EPISODE.host} · {PODCAST_EPISODE.blurb}
+          {PODCAST_EPISODE.host} · {t(PODCAST_EPISODE.blurb)}
         </span>
       </div>
 
       <div className="pod-transport">
-        <IonButton fill="clear" aria-label="Retroceder 15 segundos" onClick={() => onSkip(-15)} disabled={done}>
+        <IonButton fill="clear" aria-label={t('Retroceder 15 segundos')} onClick={() => onSkip(-15)} disabled={done}>
           <IonIcon slot="icon-only" icon={playBack} />
         </IonButton>
         <IonButton className="bt bt-pur pod-play" onClick={onToggle} disabled={done}>
           <IonIcon icon={playing ? pause : play} slot="start" />
-          {playing ? 'Pausar' : progress >= 1 ? 'Repetir' : 'Reproducir'}
+          {playing ? t('Pausar') : progress >= 1 ? t('Repetir') : t('Reproducir')}
         </IonButton>
-        <IonButton fill="clear" aria-label="Adelantar 15 segundos" onClick={() => onSkip(15)} disabled={done}>
+        <IonButton fill="clear" aria-label={t('Adelantar 15 segundos')} onClick={() => onSkip(15)} disabled={done}>
           <IonIcon slot="icon-only" icon={playForward} />
         </IonButton>
       </div>
@@ -132,20 +134,20 @@ export function PodcastLesson({
             className={`lsn-chip ${elapsed >= c.at ? 'on' : ''}`}
             onClick={() => onSkip(c.at - elapsed)}
           >
-            {mmss(c.at)} · {c.label}
+            {mmss(c.at)} · {t(c.label)}
           </button>
         ))}
       </div>
 
       <div className="lsn-tips">
-        {PODCAST_EPISODE.takeaways.map((t) => (
-          <div key={t}>✓ {t}</div>
+        {PODCAST_EPISODE.takeaways.map((tip) => (
+          <div key={tip}>✓ {t(tip)}</div>
         ))}
       </div>
 
       {!done && (
         <IonButton expand="block" className="bt bt-primary" disabled={progress < 0.7} onClick={onComplete}>
-          {progress < 0.7 ? `Escucha el 70% · vas ${Math.round(progress * 100)}%` : `Marcar escuchado · +${pts} pts`}
+          {progress < 0.7 ? t('Escucha el 70% · vas {pct}%', { pct: String(Math.round(progress * 100)) }) : t('Marcar escuchado · +{pts} pts', { pts: String(pts) })}
         </IonButton>
       )}
     </div>
@@ -165,6 +167,7 @@ export function VitalsLesson({
   onConnectWatch: () => void
   onComplete: () => void
 }) {
+  const t = useT()
   const [vals, setVals] = useState<Record<string, string>>({})
   const [syncing, setSyncing] = useState(false)
   const syncRef = useRef<number | null>(null)
@@ -201,8 +204,8 @@ export function VitalsLesson({
             <IonIcon icon={heart} />
           </span>
           <div>
-            <div className="vt-kicker">Check-in clínico</div>
-            <strong>Signos de ahora</strong>
+            <div className="vt-kicker">{t('Check-in clínico')}</div>
+            <strong>{t('Signos de ahora')}</strong>
           </div>
           <div className="vt-count">
             <b>{filled}</b>
@@ -210,7 +213,7 @@ export function VitalsLesson({
           </div>
         </div>
         <EcgLive />
-        <p>Compara con ayer. La tendencia importa más que un solo número.</p>
+        <p>{t('Compara con ayer. La tendencia importa más que un solo número.')}</p>
       </section>
 
       {watchConnected ? (
@@ -219,8 +222,8 @@ export function VitalsLesson({
             {syncing ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}
           </span>
           <span className="vt-sync-copy">
-            <strong>{syncing ? 'Leyendo el reloj…' : 'Sincronizar ANTARES Watch'}</strong>
-            <small>{syncing ? 'FC, SpO2, presión y más' : 'Autollenar con la última medición'}</small>
+            <strong>{syncing ? t('Leyendo el reloj…') : t('Sincronizar ANTARES Watch')}</strong>
+            <small>{syncing ? t('FC, SpO2, presión y más') : t('Autollenar con la última medición')}</small>
           </span>
         </button>
       ) : (
@@ -229,8 +232,8 @@ export function VitalsLesson({
             <IonIcon icon={bluetooth} />
           </span>
           <span className="vt-sync-copy">
-            <strong>Conectar reloj</strong>
-            <small>Autollenar FC, SpO2, presión y peso</small>
+            <strong>{t('Conectar reloj')}</strong>
+            <small>{t('Autollenar FC, SpO2, presión y peso')}</small>
           </span>
         </button>
       )}
@@ -239,14 +242,14 @@ export function VitalsLesson({
         {VITAL_FIELDS.map((f) => {
           const v = vals[f.id] ?? ''
           const n = vitalNumber(v)
-          const st = vitalStatus(v, f.lo, f.hi)
+          const st = vitalStatus(v, f.lo, f.hi, t)
           const span = f.hi - f.lo || 1
           const pct = Number.isNaN(n) ? null : Math.min(100, Math.max(0, ((n - f.lo) / span) * 100))
           return (
             <article key={f.id} className={`vt-tile ${st.cls} ${v ? 'has' : ''}`}>
               <header>
                 <span className="vt-emoji">{f.emoji}</span>
-                <span className="vt-label">{f.label}</span>
+                <span className="vt-label">{t(f.label)}</span>
                 {st.cls === 'ok' && <IonIcon icon={checkmarkCircle} className="vt-ok-ico" />}
               </header>
               <div className="vt-value">
@@ -256,7 +259,7 @@ export function VitalsLesson({
                   inputmode="decimal"
                   value={v}
                   disabled={done}
-                  aria-label={f.label}
+                  aria-label={t(f.label)}
                   onIonInput={(e) => setVals((prev) => ({ ...prev, [f.id]: e.detail.value ?? '' }))}
                 />
                 <em>{f.unit}</em>
@@ -266,7 +269,7 @@ export function VitalsLesson({
               </div>
               <footer>
                 <span className={st.cls || undefined}>{st.label}</span>
-                <span>Ayer {f.demo}</span>
+                <span>{t('Ayer')} {f.demo}</span>
               </footer>
             </article>
           )
@@ -275,7 +278,7 @@ export function VitalsLesson({
 
       {!done && (
         <IonButton expand="block" className="bt bt-primary" disabled={filled < 4} onClick={onComplete}>
-          {filled < 4 ? `Registra al menos 4 signos (${filled}/6)` : `Guardar signos · +${pts} pts`}
+          {filled < 4 ? t('Registra al menos 4 signos ({filled}/6)', { filled: String(filled) }) : t('Guardar signos · +{pts} pts', { pts: String(pts) })}
         </IonButton>
       )}
     </div>
@@ -295,6 +298,7 @@ export function NutritionLesson({
   onGoPlan: () => void
   onComplete: () => void
 }) {
+  const t = useT()
   const kcal = TODAY_PLAN.filter((m) => mealsLogged.includes(m.id)).reduce((s, m) => s + m.kcal, 0)
   const pct = mealsLogged.length / TODAY_PLAN.length
 
@@ -303,10 +307,10 @@ export function NutritionLesson({
       <div className="nut-hero">
         <div>
           <div className="kicker" style={{ color: 'var(--teal-d)' }}>
-            Plan mediterráneo
+            {t('Plan mediterráneo')}
           </div>
           <strong>1,800 kcal · 90 g proteína</strong>
-          <span>Hoy llevas {kcal} kcal registradas · {Math.round(pct * 100)}% de comidas</span>
+          <span>{t('Hoy llevas {kcal} kcal registradas · {pct}% de comidas', { kcal: String(kcal), pct: String(Math.round(pct * 100)) })}</span>
         </div>
         <div className="nut-ring" aria-hidden="true">
           <svg width="64" height="64" viewBox="0 0 64 64">
@@ -326,29 +330,29 @@ export function NutritionLesson({
           <b>{Math.round(pct * 100)}%</b>
         </div>
       </div>
-      <div className="lsn-warn">Proteínas 68 g vs meta 90 g · suma una fuente magra en almuerzo o cena.</div>
+      <div className="lsn-warn">{t('Proteínas 68 g vs meta 90 g · suma una fuente magra en almuerzo o cena.')}</div>
       {TODAY_PLAN.map((m) => (
         <div key={m.id} className={`lsn-meal ${mealsLogged.includes(m.id) ? 'on' : ''}`}>
           <span className="lsn-meal-ico">{m.emoji}</span>
           <div>
-            <strong>{m.title}</strong>
+            <strong>{t(m.title)}</strong>
             <span>
-              {m.items} · {m.kcal} kcal
+              {t(m.items)} · {m.kcal} kcal
             </span>
           </div>
           <em>{mealsLogged.includes(m.id) ? '✓' : ''}</em>
         </div>
       ))}
       <IonButton expand="block" className="bt bt-teal" onClick={onGoPlan}>
-        Ir a registrar comidas
+        {t('Ir a registrar comidas')}
       </IonButton>
       {!done && mealsLogged.length >= 2 && (
         <IonButton expand="block" className="bt bt-gold" onClick={onComplete}>
-          Validar adherencia · +{pts} pts
+          {t('Validar adherencia · +{pts} pts', { pts: String(pts) })}
         </IonButton>
       )}
       {!done && mealsLogged.length < 2 && (
-        <p className="lesson-hint">Registra al menos 2 comidas del plan para validar el día.</p>
+        <p className="lesson-hint">{t('Registra al menos 2 comidas del plan para validar el día.')}</p>
       )}
     </div>
   )
@@ -373,6 +377,7 @@ export function ExerciseLesson({
   onSkip: () => void
   onComplete: () => void
 }) {
+  const t = useT()
   const cur = CIRCUIT_STEPS[step]
   const total = CIRCUIT_STEPS.reduce((s, x) => s + x.sec, 0)
   const doneSec =
@@ -404,9 +409,9 @@ export function ExerciseLesson({
             <div className="display ex-clock">{mmss(left)}</div>
           </div>
         </div>
-        <div className="ex-step-name">{cur.name}</div>
-        <div className="ex-step-cue">{cur.cue}</div>
-        <div className="ex-total">Sesión {mmss(doneSec)} / {mmss(total)}</div>
+        <div className="ex-step-name">{t(cur.name)}</div>
+        <div className="ex-step-cue">{t(cur.cue)}</div>
+        <div className="ex-total">{t('Sesión')} {mmss(doneSec)} / {mmss(total)}</div>
       </div>
 
       <div className="ex-list">
@@ -414,7 +419,7 @@ export function ExerciseLesson({
           <div key={s.name} className={`ex-li ${i < step ? 'done' : ''} ${i === step ? 'now' : ''}`}>
             <b>{i < step ? '✓' : i + 1}</b>
             <div>
-              <strong>{s.name}</strong>
+              <strong>{t(s.name)}</strong>
               <span>{mmss(s.sec)}</span>
             </div>
           </div>
@@ -424,13 +429,13 @@ export function ExerciseLesson({
       {!done && (
         <>
           <IonButton expand="block" className="bt bt-pur" onClick={onToggle}>
-            {running ? 'Pausar' : step === 0 && left === CIRCUIT_STEPS[0].sec ? 'Iniciar circuito' : 'Continuar'}
+            {running ? t('Pausar') : step === 0 && left === CIRCUIT_STEPS[0].sec ? t('Iniciar circuito') : t('Continuar')}
           </IonButton>
           <IonButton expand="block" className="bt bt-ghost" onClick={onSkip}>
-            Saltar estación
+            {t('Saltar estación')}
           </IonButton>
           <IonButton expand="block" className="bt bt-gold" onClick={onComplete}>
-            Ya lo hice · +{pts} pts
+            {t('Ya lo hice · +{pts} pts', { pts: String(pts) })}
           </IonButton>
         </>
       )}
@@ -453,16 +458,17 @@ export function NutribioticLesson({
   onSlot: (v: string) => void
   onComplete: () => void
 }) {
+  const t = useT()
   const todayIdx = weekdayMondayIndex()
   return (
     <div className="lsn-stack">
       <div className="nb-card">
-        <div className="nb-title">¿Ya tomaste tu Nutribiótico?</div>
-        <div className="nb-sub">{done ? `Registrado · ${takenAt}` : 'Producto ADRED · 1 cápsula con el desayuno'}</div>
+        <div className="nb-title">{t('¿Ya tomaste tu Nutribiótico?')}</div>
+        <div className="nb-sub">{done ? t('Registrado · {takenAt}', { takenAt }) : t('Producto ADRED · 1 cápsula con el desayuno')}</div>
         <IonSegment value={slot} onIonChange={(e) => onSlot(String(e.detail.value))} disabled={done}>
-          <IonSegmentButton value="manana">Mañana</IonSegmentButton>
-          <IonSegmentButton value="tarde">Tarde</IonSegmentButton>
-          <IonSegmentButton value="noche">Noche</IonSegmentButton>
+          <IonSegmentButton value="manana">{t('Mañana')}</IonSegmentButton>
+          <IonSegmentButton value="tarde">{t('Tarde')}</IonSegmentButton>
+          <IonSegmentButton value="noche">{t('Noche')}</IonSegmentButton>
         </IonSegment>
         <div className="nb-streak">
           {WEEK_LABELS.map((d, i) => {
@@ -476,10 +482,10 @@ export function NutribioticLesson({
         </div>
         {!done ? (
           <IonButton expand="block" className="bt bt-teal" onClick={onComplete}>
-            Sí, ya lo tomé · +{pts} pts
+            {t('Sí, ya lo tomé · +{pts} pts', { pts: String(pts) })}
           </IonButton>
         ) : (
-          <div className="lesson-done-banner">Dosis de hoy confirmada</div>
+          <div className="lesson-done-banner">{t('Dosis de hoy confirmada')}</div>
         )}
       </div>
     </div>
@@ -495,47 +501,48 @@ export function EmotionalLesson({
   pts: number
   onComplete: (payload: { mood: string; barrier: string }) => void
 }) {
+  const t = useT()
   const [mood, setMood] = useState('')
   const [stress, setStress] = useState(5)
   const [motivation, setMotivation] = useState(8)
   const [sleep, setSleep] = useState('')
   const [barrier, setBarrier] = useState('')
   const [note, setNote] = useState('')
-  const reply = barrier ? BARRIER_REPLY[barrier] : ''
+  const reply = barrier ? t(BARRIER_REPLY[barrier]) : ''
   const ready = Boolean(mood && sleep && barrier)
 
-  const stressLabel = useMemo(() => (stress <= 3 ? 'Bajo' : stress <= 6 ? 'Moderado' : 'Alto'), [stress])
+  const stressLabel = useMemo(() => (stress <= 3 ? t('Bajo') : stress <= 6 ? t('Moderado') : t('Alto')), [stress, t])
 
   return (
     <div className="lsn-stack">
-      <p className="lesson-q">¿Cómo está tu ánimo ahora?</p>
+      <p className="lesson-q">{t('¿Cómo está tu ánimo ahora?')}</p>
       <div className="mood-row">
         {EMOTION_FACES.map((m) => (
           <button key={m.v} type="button" className={`mood-face ${mood === m.v ? 'sel' : ''}`} onClick={() => setMood(m.v)}>
             <span>{m.face}</span>
-            <small>{m.label}</small>
+            <small>{t(m.label)}</small>
           </button>
         ))}
       </div>
 
-      <p className="lesson-q">Estrés · {stressLabel}</p>
+      <p className="lesson-q">{t('Estrés')} · {stressLabel}</p>
       <IonRange min={1} max={10} step={1} snaps value={stress} disabled={done} onIonInput={(e) => setStress(Number(e.detail.value))} />
 
-      <p className="lesson-q">Motivación · {motivation}/10</p>
+      <p className="lesson-q">{t('Motivación')} · {motivation}/10</p>
       <IonRange min={1} max={10} step={1} snaps value={motivation} disabled={done} onIonInput={(e) => setMotivation(Number(e.detail.value))} />
 
-      <p className="lesson-q">Sueño anoche</p>
+      <p className="lesson-q">{t('Sueño anoche')}</p>
       <IonSegment value={sleep} onIonChange={(e) => setSleep(String(e.detail.value ?? ''))} disabled={done}>
         <IonSegmentButton value="5">≤5 h</IonSegmentButton>
         <IonSegmentButton value="6">6–7 h</IonSegmentButton>
         <IonSegmentButton value="8">≥8 h</IonSegmentButton>
       </IonSegment>
 
-      <p className="lesson-q">¿Qué fue lo más difícil esta semana?</p>
+      <p className="lesson-q">{t('¿Qué fue lo más difícil esta semana?')}</p>
       <div className="barrier-opts">
         {WEEK_BARRIERS.map((b) => (
           <IonChip key={b.id} className={barrier === b.id ? 'sel' : undefined} onClick={() => !done && setBarrier(b.id)}>
-            {b.label}
+            {t(b.label)}
           </IonChip>
         ))}
       </div>
@@ -545,7 +552,7 @@ export function EmotionalLesson({
         className="fld post-tx"
         value={note}
         disabled={done}
-        placeholder="Nota opcional para tu psicóloga"
+        placeholder={t('Nota opcional para tu psicóloga')}
         autoGrow
         onIonInput={(e) => setNote(e.detail.value ?? '')}
       />
@@ -553,11 +560,11 @@ export function EmotionalLesson({
       {!done && (
         <IonButton expand="block" className="bt bt-primary" disabled={!ready} onClick={() => onComplete({ mood, barrier })}>
           <IonIcon icon={checkmark} slot="start" />
-          Guardar evaluación · +{pts} pts
+          {t('Guardar evaluación · +{pts} pts', { pts: String(pts) })}
         </IonButton>
       )}
     </div>
   )
 }
 
-export type ProgramTab = 'hoy' | 'racha' | 'evo'
+export type ProgramTab = 'hoy' | 'racha' | 'liga' | 'evo'

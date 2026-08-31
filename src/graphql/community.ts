@@ -1,0 +1,701 @@
+/** Operaciones GraphQL y tipos de la comunidad (escritos a mano, sin codegen). */
+
+// ---------- Tipos ----------
+
+export type ProfileStatus = 'ACTIVE' | 'BANNED'
+
+export interface Profile {
+  id: string
+  displayName: string
+  isSystem?: boolean
+  bio: string | null
+  status: ProfileStatus
+  banReason: string | null
+  bannedAt: string | null
+  createdAt: string
+  posts: Post[]
+}
+
+export interface PostAuthor {
+  id: string
+  displayName: string
+  isSystem?: boolean
+}
+
+export interface LikeRef {
+  id: string
+  profileId: string
+}
+
+export interface Comment {
+  id: string
+  postId: string
+  parentCommentId: string | null
+  body: string
+  createdAt: string
+  profile: PostAuthor
+  replies: Comment[]
+}
+
+export interface Post {
+  id: string
+  body: string
+  pinned: boolean
+  createdAt: string
+  profile: PostAuthor
+  likes: LikeRef[]
+  comments: Comment[]
+}
+
+export interface FeedResult {
+  feed: Post[]
+}
+
+export interface MeResult {
+  me: Profile | null
+}
+
+export interface PostResult {
+  post: Post | null
+}
+
+export interface ProfileResult {
+  profile: Profile | null
+}
+
+export interface CreatePostResult {
+  createPost: Post
+}
+
+export interface LikePostResult {
+  likePost: Post | null
+}
+
+export interface AddCommentResult {
+  addComment: Comment
+}
+
+export interface ReplyResult {
+  replyToComment: Comment
+}
+
+export interface UpdateProfileResult {
+  updateProfile: Profile
+}
+
+export interface Person {
+  profile: Profile
+  isFollowing: boolean
+  isFollower: boolean
+  isFriend: boolean
+}
+
+export interface Message {
+  id: string
+  senderProfileId: string
+  recipientProfileId: string
+  body: string
+  createdAt: string
+}
+
+export interface Conversation {
+  peer: Profile
+  lastMessage: Message | null
+}
+
+/** Clave de conversación: los dos ids de perfil ordenados ascendentemente y
+ *  unidos por ':'. Debe coincidir con el topic del servidor `message_{key}`. */
+export function conversationKey(a: string, b: string): string {
+  return [a, b].sort().join(':')
+}
+
+export interface FollowingFeedResult {
+  followingFeed: Post[]
+}
+
+export interface PeopleResult {
+  people: Person[]
+}
+
+export interface FriendsResult {
+  friends: Profile[]
+}
+
+export interface FollowingResult {
+  following: Profile[]
+}
+
+export interface FollowersResult {
+  followers: Profile[]
+}
+
+export interface ProfileFollowersResult {
+  profileFollowers: Profile[]
+}
+
+export interface ProfileFollowingResult {
+  profileFollowing: Profile[]
+}
+
+export interface ConversationsResult {
+  conversations: Conversation[]
+}
+
+export interface ConversationResult {
+  conversation: Message[]
+}
+
+export interface FollowUserResult {
+  followUser: Profile
+}
+
+export interface UnfollowUserResult {
+  unfollowUser: Profile
+}
+
+export interface SendMessageResult {
+  sendMessage: Message
+}
+
+export interface MessageAddedResult {
+  messageAdded: Message
+}
+
+// ---------- Tipos: grupos de chat ----------
+
+/** Grupo de chat (salón) con el último mensaje para la lista de grupos. */
+export interface ChatGroup {
+  id: string
+  name: string
+  createdByProfileId: string
+  createdAt: string
+  memberCount: number
+  lastMessage: Message | null
+}
+
+export interface GroupResult {
+  groups: ChatGroup[]
+}
+
+export interface GroupHistoryResult {
+  group: Message[]
+}
+
+export interface GroupMembersResult {
+  groupMembers: Profile[]
+}
+
+export interface CreateGroupResult {
+  createGroup: ChatGroup
+}
+
+export interface RenameGroupResult {
+  renameGroup: ChatGroup
+}
+
+export interface AddGroupMemberResult {
+  addGroupMember: ChatGroup
+}
+
+export interface RemoveGroupMemberResult {
+  removeGroupMember: ChatGroup
+}
+
+export interface LeaveGroupResult {
+  leaveGroup: ChatGroup
+}
+
+export interface SendGroupMessageResult {
+  sendGroupMessage: Message
+}
+
+export interface GroupMessageAddedResult {
+  groupMessageAdded: Message
+}
+
+export interface GroupChangedResult {
+  groupChanged: ChatGroup
+}
+
+// ---------- Helper: nombre localizado ----------
+
+/** Devuelve el nombre localizado de un perfil. Si el perfil es de sistema
+ *  (isSystem), usa la clave de traducción; de lo contrario, muestra el
+ *  displayName. */
+export function profileName(
+  profile: { displayName: string; isSystem?: boolean },
+  t: (key: string) => string,
+): string {
+  return profile.isSystem ? t('Equipo ANTARES') : profile.displayName
+}
+
+// ---------- Fragmentos ----------
+
+const PROFILE_FRAGMENT = /* GraphQL */ `
+  fragment ProfileFields on Profile {
+    id
+    displayName
+    isSystem
+    bio
+    status
+    banReason
+    bannedAt
+    createdAt
+  }
+`
+
+const COMMENT_FRAGMENT = /* GraphQL */ `
+  fragment CommentFields on Comment {
+    id
+    postId
+    parentCommentId
+    body
+    createdAt
+    profile {
+      id
+      displayName
+      isSystem
+    }
+    replies {
+      id
+      postId
+      parentCommentId
+      body
+      createdAt
+      profile {
+        id
+        displayName
+        isSystem
+      }
+    }
+  }
+`
+
+const POST_FRAGMENT = /* GraphQL */ `
+  fragment PostFields on Post {
+    id
+    body
+    pinned
+    createdAt
+    profile {
+      id
+      displayName
+      isSystem
+    }
+    likes {
+      id
+      profileId
+    }
+    comments {
+      ...CommentFields
+    }
+  }
+`
+
+// ---------- Queries ----------
+
+export const ME_QUERY = /* GraphQL */ `
+  query Me {
+    me {
+      ...ProfileFields
+      posts {
+        ...PostFields
+      }
+    }
+  }
+  ${PROFILE_FRAGMENT}
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const FEED_QUERY = /* GraphQL */ `
+  query Feed($take: Int!, $skip: Int!) {
+    feed(take: $take, skip: $skip) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const POST_QUERY = /* GraphQL */ `
+  query Post($id: UUID!) {
+    post(id: $id) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const PROFILE_QUERY = /* GraphQL */ `
+  query Profile($id: UUID!) {
+    profile(id: $id) {
+      ...ProfileFields
+      posts {
+        ...PostFields
+      }
+    }
+  }
+  ${PROFILE_FRAGMENT}
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+// ---------- Mutaciones ----------
+
+export const CREATE_POST = /* GraphQL */ `
+  mutation CreatePost($body: String!) {
+    createPost(body: $body) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const LIKE_POST = /* GraphQL */ `
+  mutation LikePost($postId: UUID!) {
+    likePost(postId: $postId) {
+      id
+      likes {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export const UNLIKE_POST = /* GraphQL */ `
+  mutation UnlikePost($postId: UUID!) {
+    unlikePost(postId: $postId) {
+      id
+      likes {
+        id
+        profileId
+      }
+    }
+  }
+`
+
+export const ADD_COMMENT = /* GraphQL */ `
+  mutation AddComment($postId: UUID!, $body: String!) {
+    addComment(postId: $postId, body: $body) {
+      ...CommentFields
+    }
+  }
+  ${COMMENT_FRAGMENT}
+`
+
+export const REPLY_TO_COMMENT = /* GraphQL */ `
+  mutation ReplyToComment($commentId: UUID!, $body: String!) {
+    replyToComment(commentId: $commentId, body: $body) {
+      ...CommentFields
+    }
+  }
+  ${COMMENT_FRAGMENT}
+`
+
+export const UPDATE_PROFILE = /* GraphQL */ `
+  mutation UpdateProfile($displayName: String!, $bio: String) {
+    updateProfile(displayName: $displayName, bio: $bio) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+// ---------- Queries: follows + mensajes ----------
+
+export const FOLLOWING_FEED_QUERY = /* GraphQL */ `
+  query FollowingFeed($take: Int!, $skip: Int!) {
+    followingFeed(take: $take, skip: $skip) {
+      ...PostFields
+    }
+  }
+  ${POST_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+`
+
+export const PEOPLE_SEARCH = /* GraphQL */ `
+  query People($search: String, $take: Int!, $skip: Int!) {
+    people(search: $search, take: $take, skip: $skip) {
+      profile {
+        id
+        displayName
+        isSystem
+        bio
+        status
+      }
+      isFollowing
+      isFollower
+      isFriend
+    }
+  }
+`
+
+export const FRIENDS_QUERY = /* GraphQL */ `
+  query Friends($take: Int!, $skip: Int!) {
+    friends(take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const FOLLOWING_QUERY = /* GraphQL */ `
+  query Following($take: Int!, $skip: Int!) {
+    following(take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const FOLLOWERS_QUERY = /* GraphQL */ `
+  query Followers($take: Int!, $skip: Int!) {
+    followers(take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const PROFILE_FOLLOWERS_QUERY = /* GraphQL */ `
+  query ProfileFollowers($profileId: UUID!, $take: Int!, $skip: Int!) {
+    profileFollowers(profileId: $profileId, take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const PROFILE_FOLLOWING_QUERY = /* GraphQL */ `
+  query ProfileFollowing($profileId: UUID!, $take: Int!, $skip: Int!) {
+    profileFollowing(profileId: $profileId, take: $take, skip: $skip) {
+      ...ProfileFields
+    }
+  }
+  ${PROFILE_FRAGMENT}
+`
+
+export const CONVERSATIONS_QUERY = /* GraphQL */ `
+  query Conversations($take: Int!, $skip: Int!) {
+    conversations(take: $take, skip: $skip) {
+      peer {
+        id
+        displayName
+        isSystem
+      }
+      lastMessage {
+        id
+        senderProfileId
+        recipientProfileId
+        body
+        createdAt
+      }
+    }
+  }
+`
+
+export const CONVERSATION_QUERY = /* GraphQL */ `
+  query Conversation($peerId: UUID!, $take: Int!, $skip: Int!) {
+    conversation(peerId: $peerId, take: $take, skip: $skip) {
+      id
+      senderProfileId
+      recipientProfileId
+      body
+      createdAt
+    }
+  }
+`
+
+// ---------- Mutaciones: follows + mensajes ----------
+
+export const FOLLOW_USER = /* GraphQL */ `
+  mutation FollowUser($profileId: UUID!) {
+    followUser(profileId: $profileId) {
+      id
+    }
+  }
+`
+
+export const UNFOLLOW_USER = /* GraphQL */ `
+  mutation UnfollowUser($profileId: UUID!) {
+    unfollowUser(profileId: $profileId) {
+      id
+    }
+  }
+`
+
+export const SEND_MESSAGE = /* GraphQL */ `
+  mutation SendMessage($recipientProfileId: UUID!, $body: String!) {
+    sendMessage(recipientProfileId: $recipientProfileId, body: $body) {
+      id
+      senderProfileId
+      recipientProfileId
+      body
+      createdAt
+    }
+  }
+`
+
+// ---------- Suscripción ----------
+
+export const MESSAGE_ADDED = /* GraphQL */ `
+  subscription MessageAdded($conversationKey: String!) {
+    messageAdded(conversationKey: $conversationKey) {
+      id
+      senderProfileId
+      recipientProfileId
+      body
+      createdAt
+    }
+  }
+`
+
+/** Evento mínimo de post publicado (para el aviso "ver publicaciones nuevas"). */
+export interface PostAddedEvent {
+  id: string
+  profile: { id: string }
+}
+
+export interface PostAddedResult {
+  postAdded: PostAddedEvent
+}
+
+export const POST_ADDED = /* GraphQL */ `
+  subscription PostAdded {
+    postAdded {
+      id
+      profile {
+        id
+      }
+    }
+  }
+`
+
+// ---------- Queries: grupos de chat ----------
+
+export const GROUPS_QUERY = /* GraphQL */ `
+  query Groups($take: Int!, $skip: Int!) {
+    groups(take: $take, skip: $skip) {
+      id
+      name
+      createdByProfileId
+      createdAt
+      memberCount
+      lastMessage {
+        id
+        body
+        senderProfileId
+        createdAt
+      }
+    }
+  }
+`
+
+export const GROUP_QUERY = /* GraphQL */ `
+  query Group($groupId: UUID!, $take: Int!, $skip: Int!) {
+    group(groupId: $groupId, take: $take, skip: $skip) {
+      id
+      body
+      senderProfileId
+      createdAt
+    }
+  }
+`
+
+export const GROUP_MEMBERS_QUERY = /* GraphQL */ `
+  query GroupMembers($groupId: UUID!) {
+    groupMembers(groupId: $groupId) {
+      id
+      displayName
+      isSystem
+    }
+  }
+`
+
+// ---------- Mutaciones: grupos de chat ----------
+
+export const CREATE_GROUP = /* GraphQL */ `
+  mutation CreateGroup($name: String!, $memberProfileIds: [UUID!]!) {
+    createGroup(name: $name, memberProfileIds: $memberProfileIds) {
+      id
+      name
+      createdAt
+    }
+  }
+`
+
+export const RENAME_GROUP = /* GraphQL */ `
+  mutation RenameGroup($groupId: UUID!, $name: String!) {
+    renameGroup(groupId: $groupId, name: $name) {
+      id
+      name
+    }
+  }
+`
+
+export const ADD_GROUP_MEMBER = /* GraphQL */ `
+  mutation AddGroupMember($groupId: UUID!, $profileId: UUID!) {
+    addGroupMember(groupId: $groupId, profileId: $profileId) {
+      id
+      name
+      memberCount
+    }
+  }
+`
+
+export const REMOVE_GROUP_MEMBER = /* GraphQL */ `
+  mutation RemoveGroupMember($groupId: UUID!, $profileId: UUID!) {
+    removeGroupMember(groupId: $groupId, profileId: $profileId) {
+      id
+      name
+      memberCount
+    }
+  }
+`
+
+export const LEAVE_GROUP = /* GraphQL */ `
+  mutation LeaveGroup($groupId: UUID!) {
+    leaveGroup(groupId: $groupId) {
+      id
+      name
+    }
+  }
+`
+
+export const SEND_GROUP_MESSAGE = /* GraphQL */ `
+  mutation SendGroupMessage($groupId: UUID!, $body: String!) {
+    sendGroupMessage(groupId: $groupId, body: $body) {
+      id
+      body
+      senderProfileId
+      createdAt
+    }
+  }
+`
+
+// ---------- Suscripciones: grupos de chat ----------
+
+export const GROUP_MESSAGE_ADDED = /* GraphQL */ `
+  subscription GroupMessageAdded($groupId: UUID!) {
+    groupMessageAdded(groupId: $groupId) {
+      id
+      body
+      senderProfileId
+      createdAt
+    }
+  }
+`
+
+export const GROUP_CHANGED = /* GraphQL */ `
+  subscription GroupChanged($groupId: UUID!) {
+    groupChanged(groupId: $groupId) {
+      id
+      name
+      memberCount
+    }
+  }
+`
