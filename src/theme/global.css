@@ -3625,7 +3625,9 @@ button.hpill:active {
   padding: 14px;
   box-shadow: var(--shadow-sm);
   position: relative;
-  transition: transform 0.14s var(--ease), box-shadow 0.14s var(--ease);
+  transition:
+    transform 0.14s var(--ease),
+    box-shadow 0.14s var(--ease);
 }
 
 button.metric-card {
@@ -3646,7 +3648,7 @@ button.metric-card:focus-visible {
 }
 
 button.metric-card::after {
-  content: '›';
+  content: "›";
   position: absolute;
   top: 10px;
   right: 12px;
@@ -8919,7 +8921,9 @@ ion-input.vt-input.has-focus {
   animation: tx-drift 7s ease-in-out infinite 1s;
 }
 @keyframes tx-drift {
-  50% { transform: translate3d(10px, 14px, 0) scale(1.08); }
+  50% {
+    transform: translate3d(10px, 14px, 0) scale(1.08);
+  }
 }
 .tx-top {
   display: flex;
@@ -8980,7 +8984,7 @@ ion-input.vt-input.has-focus {
   min-width: 0;
 }
 .tx-greet {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.6px;
@@ -8991,7 +8995,11 @@ ion-input.vt-input.has-focus {
   display: inline-flex;
   padding: 4px 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(98, 216, 255, 0.18), rgba(29, 158, 117, 0.18));
+  background: linear-gradient(
+    90deg,
+    rgba(98, 216, 255, 0.18),
+    rgba(29, 158, 117, 0.18)
+  );
   border: 1px solid rgba(98, 216, 255, 0.28);
   font-size: 11px;
   font-weight: 800;
@@ -9053,7 +9061,7 @@ ion-input.vt-input.has-focus {
 }
 .tx-dock strong {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.4px;
@@ -9103,7 +9111,11 @@ ion-input.vt-input.has-focus {
   animation: tx-pulse 1.8s ease-out infinite;
 }
 @keyframes tx-pulse {
-  70%, 100% { opacity: 0; transform: scale(1.06); }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
 }
 .tx-claim-banner {
   width: 100%;
@@ -9168,7 +9180,7 @@ ion-input.vt-input.has-focus {
 }
 .cx-node b {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 13px;
   font-weight: 800;
   margin-top: 4px;
@@ -9214,13 +9226,27 @@ ion-input.vt-input.has-focus {
   font-size: 18px;
   background: linear-gradient(145deg, var(--navy), var(--blue));
 }
-.cx-glyph.tone-teal { background: linear-gradient(145deg, var(--teal-d), var(--teal)); }
-.cx-glyph.tone-blue { background: linear-gradient(145deg, var(--navy), var(--blue)); }
-.cx-glyph.tone-pur { background: linear-gradient(145deg, var(--pur-d), var(--pur)); }
-.cx-glyph.tone-org { background: linear-gradient(145deg, #9a4b12, var(--org)); }
-.cx-glyph.tone-ice { background: linear-gradient(145deg, var(--ice-d), var(--cyan)); }
-.cx-glyph.tone-gold { background: linear-gradient(145deg, #8b6914, #d4af37); }
-.cx-glyph.claimed { background: var(--teal); }
+.cx-glyph.tone-teal {
+  background: linear-gradient(145deg, var(--teal-d), var(--teal));
+}
+.cx-glyph.tone-blue {
+  background: linear-gradient(145deg, var(--navy), var(--blue));
+}
+.cx-glyph.tone-pur {
+  background: linear-gradient(145deg, var(--pur-d), var(--pur));
+}
+.cx-glyph.tone-org {
+  background: linear-gradient(145deg, #9a4b12, var(--org));
+}
+.cx-glyph.tone-ice {
+  background: linear-gradient(145deg, var(--ice-d), var(--cyan));
+}
+.cx-glyph.tone-gold {
+  background: linear-gradient(145deg, #8b6914, #d4af37);
+}
+.cx-glyph.claimed {
+  background: var(--teal);
+}
 .cx-glyph.locked {
   background: var(--g1);
   color: var(--mu);
@@ -9280,7 +9306,7 @@ ion-input.vt-input.has-focus {
   color: var(--mu);
 }
 .cx-xp {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 12px;
   font-weight: 800;
   color: var(--pur);
@@ -9380,7 +9406,7 @@ ion-input.vt-input.has-focus {
   box-shadow: 0 12px 28px rgba(124, 58, 237, 0.35);
 }
 .cx-open-xp {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 28px;
   font-weight: 800;
   color: var(--pur);
@@ -9393,7 +9419,11 @@ ion-input.vt-input.has-focus {
   margin-bottom: 12px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 90% -10%, rgba(32, 200, 255, 0.35), transparent 52%),
+    radial-gradient(
+      ellipse at 90% -10%,
+      rgba(32, 200, 255, 0.35),
+      transparent 52%
+    ),
     linear-gradient(160deg, #071428, #173c73 55%, #1d55a0);
   overflow: hidden;
 }
@@ -9409,7 +9439,7 @@ ion-input.vt-input.has-focus {
 }
 .rk-hero h2 {
   margin: 8px 0 6px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.6px;
@@ -9443,7 +9473,7 @@ ion-input.vt-input.has-focus {
 .rk-you b {
   display: block;
   margin-top: 3px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 14px;
   font-weight: 800;
 }
@@ -9498,8 +9528,12 @@ ion-input.vt-input.has-focus {
   border: none;
   box-shadow: 0 14px 28px rgba(16, 42, 80, 0.22);
 }
-.rk-pod.p2 { margin-top: 18px; }
-.rk-pod.p3 { margin-top: 28px; }
+.rk-pod.p2 {
+  margin-top: 18px;
+}
+.rk-pod.p3 {
+  margin-top: 28px;
+}
 .rk-pod.me {
   outline: 2px solid var(--cyan);
 }
@@ -9507,9 +9541,15 @@ ion-input.vt-input.has-focus {
   font-size: 22px;
   margin-bottom: 4px;
 }
-.rk-pod.p1 .rk-pod-medal { color: var(--ice); }
-.rk-pod.p2 .rk-pod-medal { color: var(--mu); }
-.rk-pod.p3 .rk-pod-medal { color: var(--org); }
+.rk-pod.p1 .rk-pod-medal {
+  color: var(--ice);
+}
+.rk-pod.p2 .rk-pod-medal {
+  color: var(--mu);
+}
+.rk-pod.p3 .rk-pod-medal {
+  color: var(--org);
+}
 .rk-pod-state {
   font-size: 12px;
   font-weight: 800;
@@ -9522,7 +9562,7 @@ ion-input.vt-input.has-focus {
   margin: 2px 0 6px;
 }
 .rk-pod-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.6px;
@@ -9591,12 +9631,24 @@ ion-input.vt-input.has-focus {
   font-size: 12px;
   margin: 4px auto 6px;
 }
-.rk-avatar.tone-teal { background: linear-gradient(145deg, var(--teal-d), var(--teal)); }
-.rk-avatar.tone-blue { background: linear-gradient(145deg, var(--navy), var(--blue)); }
-.rk-avatar.tone-pur { background: linear-gradient(145deg, var(--pur-d), var(--pur)); }
-.rk-avatar.tone-org { background: linear-gradient(145deg, #9a4b12, var(--org)); }
-.rk-avatar.tone-ice { background: linear-gradient(145deg, var(--ice-d), var(--cyan)); }
-.rk-avatar.tone-navy { background: linear-gradient(145deg, #071428, var(--navy-2)); }
+.rk-avatar.tone-teal {
+  background: linear-gradient(145deg, var(--teal-d), var(--teal));
+}
+.rk-avatar.tone-blue {
+  background: linear-gradient(145deg, var(--navy), var(--blue));
+}
+.rk-avatar.tone-pur {
+  background: linear-gradient(145deg, var(--pur-d), var(--pur));
+}
+.rk-avatar.tone-org {
+  background: linear-gradient(145deg, #9a4b12, var(--org));
+}
+.rk-avatar.tone-ice {
+  background: linear-gradient(145deg, var(--ice-d), var(--cyan));
+}
+.rk-avatar.tone-navy {
+  background: linear-gradient(145deg, #071428, var(--navy-2));
+}
 .rk-name {
   flex: 1;
   min-width: 0;
@@ -9617,7 +9669,7 @@ ion-input.vt-input.has-focus {
   color: var(--ice-d);
 }
 .rk-val {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 14px;
   font-weight: 800;
 }
@@ -9657,7 +9709,7 @@ ion-modal.metric-modal ion-content {
 }
 .mh-head h2 {
   margin: 2px 0 4px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.6px;
@@ -9685,12 +9737,16 @@ ion-modal.metric-modal ion-content {
   border-radius: 20px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--mh-accent) 45%, transparent), transparent 60%),
+    radial-gradient(
+      ellipse at 100% 0%,
+      color-mix(in srgb, var(--mh-accent) 45%, transparent),
+      transparent 60%
+    ),
     linear-gradient(145deg, #102a50, #173c73);
   margin-bottom: 12px;
 }
 .mh-now {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 36px;
   font-weight: 800;
   letter-spacing: -1.2px;
@@ -9709,8 +9765,12 @@ ion-modal.metric-modal ion-content {
   font-size: 12px;
   font-weight: 800;
 }
-.mh-delta.up { color: var(--safe); }
-.mh-delta.down { color: #ffb3c1; }
+.mh-delta.up {
+  color: var(--safe);
+}
+.mh-delta.down {
+  color: #ffb3c1;
+}
 .mh-target {
   text-align: right;
 }
@@ -9801,8 +9861,12 @@ ion-modal.metric-modal ion-content {
   font-weight: 800;
   color: var(--mu);
 }
-.mh-row-meta small.better { color: var(--teal); }
-.mh-row-meta small.worse { color: var(--red); }
+.mh-row-meta small.better {
+  color: var(--teal);
+}
+.mh-row-meta small.worse {
+  color: var(--red);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .tx-aurora,
@@ -9811,4 +9875,182 @@ ion-modal.metric-modal ion-content {
   .tx-dock.streak.hot .tx-dock-ico {
     animation: none;
   }
+}
+
+/* ── Sala virtual (pantalla propia, no afecta las existentes) ───────────── */
+.room-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: #06091a;
+  color: #fff;
+}
+
+.room-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.room-header-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.room-header-copy strong {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-header-copy span {
+  font-size: 12px;
+  color: var(--mu);
+}
+
+.room-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mu);
+}
+
+.room-dot.live {
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+}
+
+.room-close {
+  --background: rgba(255, 255, 255, 0.1) !important;
+  --color: #fff !important;
+}
+
+.room-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.room-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  max-width: 320px;
+  color: #fff;
+}
+
+.room-empty ion-icon {
+  font-size: 44px;
+  color: var(--teal);
+}
+
+.room-empty strong {
+  font-size: 17px;
+}
+
+.room-empty p {
+  font-size: 13px;
+  color: var(--mu);
+  margin: 0;
+}
+
+.room-video {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #0b0f24;
+}
+
+.room-remote {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-remote video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-waiting {
+  color: var(--mu);
+  font-size: 14px;
+}
+
+.room-local {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  width: 96px;
+  height: 128px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: #141a38;
+}
+
+.room-local video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.room-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 22px;
+}
+
+.room-hang {
+  --background: #dc2626 !important;
+  --color: #fff !important;
+  width: 58px;
+  height: 58px;
+  --border-radius: 50%;
+}
+
+.room-hang ion-icon {
+  transform: rotate(135deg);
+}
+
+.room-hint {
+  font-size: 11px;
+  color: var(--mu);
 }
