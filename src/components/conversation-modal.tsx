@@ -342,6 +342,9 @@ export function ConversationModal({
     }
   }
 
+  // Sin par ni grupo seleccionado (modal montado en repos): nada que renderizar.
+  if (!isGroup && !peer) return null;
+
   const grad = isGroup
     ? AVATAR_GRADS[group!.name.charCodeAt(0) % AVATAR_GRADS.length]
     : AVATAR_GRADS[peer!.id.charCodeAt(0) % AVATAR_GRADS.length];
