@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useSubscription } from 'urql'
+import { useClient, useMutation, useQuery, useSubscription } from 'urql'
 import { ensureFreshAccessToken } from '../utils/authApi'
 import {
   ADD_COMMENT,
@@ -19,18 +19,25 @@ import {
   GROUPS_QUERY,
   LEAVE_GROUP,
   LIKE_POST,
+  LIKE_COMMENT,
   ME_QUERY,
   MESSAGE_ADDED,
   PEOPLE_SEARCH,
   POST_IMAGE_UPLOAD_INFO,
+  POST_REPOSTS,
   PROFILE_IMAGE_UPLOAD_INFO,
   REMOVE_GROUP_MEMBER,
   RENAME_GROUP,
   REPLY_TO_COMMENT,
+  REPOST_POST,
+  REPORT_POST,
+  REPORT_COMMENT,
   SEND_GROUP_MESSAGE,
   SEND_MESSAGE,
   UNFOLLOW_USER,
   UNLIKE_POST,
+  UNLIKE_COMMENT,
+  UNREPOST_POST,
   UPDATE_PROFILE,
   VOTE_POLL,
   conversationKey,
@@ -52,6 +59,7 @@ import {
   type GroupMessageAddedResult,
   type GroupResult,
   type LeaveGroupResult,
+  type LikeCommentResult,
   type LikePostResult,
   type MeResult,
   type MessageAddedResult,
@@ -59,14 +67,20 @@ import {
   type Person,
   type Post,
   type PostImageUploadInfoResult,
+  type PostRepostsResult,
   type Profile,
   type ProfileImageUploadInfoResult,
   type RemoveGroupMemberResult,
   type RenameGroupResult,
   type ReplyResult,
+  type RepostPostResult,
+  type ReportCommentResult,
+  type ReportPostResult,
   type SendGroupMessageResult,
   type SendMessageResult,
   type UnfollowUserResult,
+  type UnlikeCommentResult,
+  type UnrepostPostResult,
   type UpdateProfileResult,
   type VotePollResult,
 } from '../graphql/community'
@@ -74,11 +88,13 @@ import {
 const PAGE_SIZE = 20
 const LIST_SIZE = 50
 
-/** Estado del feed (derivado): likes y si el perfil actual ya dio like. */
+/** Estado del feed (derivado): likes, reposts y si el perfil actual ya interactuó. */
 export interface FeedPostView {
   post: Post
   likeCount: number
   likedByMe: boolean
+  repostCount: number
+  repostedByMe: boolean
 }
 
 /**
@@ -198,6 +214,8 @@ export function useCommunity() {
     variables: { take: LIST_SIZE, skip: 0 },
   })
 
+  const client = useClient()
+
   const me: Profile | null = meResult.data?.me ?? null
   const myProfileId = me?.id ?? null
 
@@ -223,12 +241,26 @@ export function useCommunity() {
   const [, leaveGroupMutation] = useMutation<LeaveGroupResult>(LEAVE_GROUP)
   const [, sendGroupMessageMutation] = useMutation<SendGroupMessageResult>(SEND_GROUP_MESSAGE)
 
+  // --- Reportes ---
+  const [, reportPostMutation] = useMutation<ReportPostResult>(REPORT_POST)
+  const [, reportCommentMutation] = useMutation<ReportCommentResult>(REPORT_COMMENT)
+
+  // --- Likes de comentarios ---
+  const [, likeCommentMutation] = useMutation<LikeCommentResult>(LIKE_COMMENT)
+  const [, unlikeCommentMutation] = useMutation<UnlikeCommentResult>(UNLIKE_COMMENT)
+
+  // --- Reposts ---
+  const [, repostPostMutation] = useMutation<RepostPostResult>(REPOST_POST)
+  const [, unrepostPostMutation] = useMutation<UnrepostPostResult>(UNREPOST_POST)
+
   const feed = useMemo<FeedPostView[]>(() => {
     const list = feedResult.data?.feed ?? []
     return list.map((post) => ({
       post,
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
+      repostCount: post.reposts.length,
+      repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
   }, [feedResult.data, myProfileId])
 
@@ -238,6 +270,8 @@ export function useCommunity() {
       post,
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
+      repostCount: post.reposts.length,
+      repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
   }, [followingFeedResult.data, myProfileId])
 
@@ -371,6 +405,71 @@ export function useCommunity() {
       return res.data?.replyToComment
     },
     [replyMutation],
+  )
+
+  // --- Reportes ---
+
+  const reportPost = useCallback(
+    async (postId: string, reason: string, details?: string) => {
+      const res = await reportPostMutation({ postId, reason, details: details || undefined })
+      if (res.error) throw new Error(res.error.message)
+      return res.data?.reportPost
+    },
+    [reportPostMutation],
+  )
+
+  const reportComment = useCallback(
+    async (commentId: string, reason: string, details?: string) => {
+      const res = await reportCommentMutation({ commentId, reason, details: details || undefined })
+      if (res.error) throw new Error(res.error.message)
+      return res.data?.reportComment
+    },
+    [reportCommentMutation],
+  )
+
+  // --- Likes de comentarios ---
+
+  const toggleCommentLike = useCallback(
+    async (commentId: string, liked: boolean) => {
+      if (liked) {
+        const res = await unlikeCommentMutation({ commentId })
+        if (res.error) throw new Error(res.error.message)
+        return res.data?.unlikeComment ?? null
+      }
+      const res = await likeCommentMutation({ commentId })
+      if (res.error) throw new Error(res.error.message)
+      return res.data?.likeComment ?? null
+    },
+    [likeCommentMutation, unlikeCommentMutation],
+  )
+
+  // --- Reposts ---
+
+  const toggleRepost = useCallback(
+    async (post: Post) => {
+      const reposted = myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId)
+      if (reposted) {
+        const res = await unrepostPostMutation({ postId: post.id })
+        if (res.error) throw new Error(res.error.message)
+        reexecuteFeed({ requestPolicy: 'network-only' })
+        return res.data?.unrepostPost ?? null
+      }
+      const res = await repostPostMutation({ postId: post.id })
+      if (res.error) throw new Error(res.error.message)
+      reexecuteFeed({ requestPolicy: 'network-only' })
+      return res.data?.repostPost ?? null
+    },
+    [myProfileId, repostPostMutation, unrepostPostMutation, reexecuteFeed],
+  )
+
+  /** Carga la lista de perfiles que repostearon una publicación. */
+  const fetchPostReposts = useCallback(
+    async (postId: string) => {
+      const res = await client.query<PostRepostsResult>(POST_REPOSTS, { postId, take: 50, skip: 0 }).toPromise()
+      if (res.error) throw new Error(res.error.message)
+      return res.data?.postReposts ?? []
+    },
+    [client],
   )
 
   const updateProfile = useCallback(
@@ -542,6 +641,11 @@ export function useCommunity() {
     toggleLike,
     addComment,
     replyToComment,
+    reportPost,
+    reportComment,
+    toggleCommentLike,
+    toggleRepost,
+    fetchPostReposts,
     updateProfile,
   uploadProfileImage,
     followUser,
