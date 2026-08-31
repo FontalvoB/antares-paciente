@@ -11,11 +11,13 @@ import {
   peopleOutline,
   personAddOutline,
   play,
+  repeatOutline,
   ribbonOutline,
   shareSocialOutline,
 } from 'ionicons/icons'
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 import type { Post, Profile } from '../../graphql/community'
+import type { TimelinePost } from '../../hooks/useCommunity'
 import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, EmptyState, statusBadge } from './community'
 
@@ -61,7 +63,7 @@ export function CommunityProfile({
   pointsTotal: number
   followersCount: number
   followingCount: number
-  posts: Post[]
+  posts: TimelinePost[]
   onSaveProfile: (name: string, bio: string | null, avatarKey?: string | null, coverKey?: string | null) => Promise<void>
   onCompose: () => void
   onShowList: (which: 'followers' | 'following') => void
@@ -381,6 +383,11 @@ export function CommunityProfile({
               onClick={() => onOpenPost(post)}
               aria-label={t('Ver publicación')}
             >
+              {post.isRepost && (
+                <span className="compf-tile-repost">
+                  <IonIcon icon={repeatOutline} /> {t('Reposteado')}
+                </span>
+              )}
               {post.imageUrl ? (
                 <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
               ) : (

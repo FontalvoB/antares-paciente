@@ -11818,6 +11818,25 @@ ion-button.compf-action-edit {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
+.compf-tile-repost {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(124, 58, 237, 0.88);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
 .compf-edit {
   margin: 12px 14px 0;
   background: var(--wh);
