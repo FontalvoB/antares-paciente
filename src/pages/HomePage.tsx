@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { IonIcon, IonProgressBar } from '@ionic/react'
 import { useI18n } from '../i18n/I18nContext'
 import {
@@ -25,9 +25,11 @@ import { LanguageToggle } from '../components/LanguageToggle'
 import { MetricHistoryModal } from '../components/MetricHistoryModal'
 import { HEALTH_METRICS, type MetricId } from '../data/metrics'
 import type { Screen as ScreenId } from '../types'
+import { useProgram } from '../hooks/useProgram'
 
 export function HomePage() {
-  const { user, navigate, openPanic, openVoice, pointsTotal, watchConnected, program, streak, programWeek } = useApp()
+  const { user, navigate, openPanic, openVoice, pointsTotal: appPointsTotal, watchConnected, program, streak: appStreak, programWeek: appProgramWeek } = useApp()
+  const { snapshot } = useProgram()
   const { lang, t } = useI18n()
   const [metricId, setMetricId] = useState<MetricId | null>(null)
 
@@ -38,10 +40,42 @@ export function HomePage() {
   ]
   const first = user.nombre.split(' ')[0]
   const today = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-  const todayDone = PROGRAM_TASKS.filter((task) => program[task.id]).length
-  const todayTotal = PROGRAM_TASKS.length
-  const nextTask = PROGRAM_TASKS.find((task) => !program[task.id])
+
+  const activeStreak = snapshot?.streak?.current ?? appStreak
+  const activePointsTotal = snapshot?.xp?.balance ?? appPointsTotal
+  const activeProgramWeek = snapshot?.template?.currentWeekNumber ?? appProgramWeek
+  const activeTotalWeeks = snapshot?.template?.totalWeeks ?? 24
+
+  const todayDone = snapshot?.todayTasks
+    ? snapshot.todayTasks.filter((t) => t.status === 'Completed').length
+    : PROGRAM_TASKS.filter((task) => program[task.id]).length
+  const todayTotal = snapshot?.todayTasks?.length ?? PROGRAM_TASKS.length
+  const nextServerTask = snapshot?.todayTasks?.find((t) => t.status !== 'Completed')
+  const nextFallbackTask = PROGRAM_TASKS.find((task) => !program[task.id])
+  const nextTaskTitle = nextServerTask?.title || nextFallbackTask?.title || ''
+  const nextTaskShort = nextServerTask?.short || nextFallbackTask?.short || ''
+  const nextTaskId = nextServerTask?.taskCode || nextFallbackTask?.id
   const dayComplete = todayDone === todayTotal
+
+  const initials = user.nombre
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0].toUpperCase())
+    .join('') || 'ME'
+
+  const recentVitals = snapshot?.todayTasks?.find((t) => t.taskCode === 'vitals')?.content?.recentVitals
+
+  const displayMetrics = useMemo(() => {
+    return HEALTH_METRICS.map((m) => {
+      let val = m.current
+      if (m.id === 'pts') val = String(activePointsTotal)
+      else if (m.id === 'imc' && recentVitals?.weightKg) {
+        val = (recentVitals.weightKg / (1.68 * 1.68)).toFixed(1)
+      }
+      return { ...m, current: val }
+    })
+  }, [activePointsTotal, recentVitals])
 
   return (
     <Screen>
@@ -55,7 +89,7 @@ export function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <LanguageToggle />
               <button type="button" className="home-avatar" onClick={() => navigate('prof')} aria-label={t('Abrir perfil')}>
-                MG
+                {initials}
               </button>
             </div>
           </div>
@@ -63,12 +97,14 @@ export function HomePage() {
             <span className="chip chip-glass">
               <span className="dot" /> {t('Riesgo bajo')}
             </span>
-            <span className="chip chip-glass">{t('Semana 12 de 24')}</span>
+            <span className="chip chip-glass">
+              {t('Semana {cur} de {total}', { cur: String(activeProgramWeek), total: String(activeTotalWeeks) })}
+            </span>
           </div>
         </header>
 
         <div className="metric-scroll" aria-label={t('Indicadores de salud')}>
-          {HEALTH_METRICS.map((m) => (
+          {displayMetrics.map((m) => (
             <button
               key={m.id}
               type="button"
@@ -78,7 +114,7 @@ export function HomePage() {
             >
               <div className="metric-card-lbl">{t(m.label)}</div>
               <div className="metric-card-val" style={{ color: m.color }}>
-                {m.id === 'pts' ? String(pointsTotal) : m.current}
+                {m.current}
               </div>
               <div className="metric-card-sub">{t(m.sub)}</div>
             </button>
@@ -92,7 +128,7 @@ export function HomePage() {
           aria-label={
             dayComplete
               ? t('Programa de hoy completado. Abrir protocolo.')
-              : t('Programa de hoy. Siguiente: {next}. {done} de {total} misiones.', { next: nextTask?.title ?? t('continuar'), done: String(todayDone), total: String(todayTotal) })
+              : t('Programa de hoy. Siguiente: {next}. {done} de {total} misiones.', { next: nextTaskTitle || t('continuar'), done: String(todayDone), total: String(todayTotal) })
           }
         >
           <span className="prog-launch-aurora" aria-hidden="true" />
@@ -102,7 +138,7 @@ export function HomePage() {
           </span>
           <div className="prog-launch-head">
             <RingProgress
-              value={todayDone / todayTotal}
+              value={todayTotal > 0 ? todayDone / todayTotal : 0}
               size={78}
               stroke={7}
               trackColor="rgba(255,255,255,0.14)"
@@ -114,19 +150,20 @@ export function HomePage() {
             </RingProgress>
             <div className="prog-launch-copy">
               <div className="prog-launch-title">
-                {dayComplete ? t('Día completado') : t(nextTask?.title ?? '') || t('Tu programa de hoy')}
+                {dayComplete ? t('Día completado') : t(nextTaskTitle) || t('Tu programa de hoy')}
               </div>
               <div className="prog-launch-sub">
                 {dayComplete
-                  ? t('Racha de {streak} días protegida', { streak: String(streak) })
-                  : t('{done} de {total} misiones · {next}', { done: String(todayDone), total: String(todayTotal), next: t(nextTask?.short ?? '') || t('Toca para continuar') })}
+                  ? t('Racha de {streak} días protegida', { streak: String(activeStreak) })
+                  : t('{done} de {total} misiones · {next}', { done: String(todayDone), total: String(todayTotal), next: t(nextTaskShort) || t('Toca para continuar') })}
               </div>
             </div>
           </div>
           <div className="prog-launch-orbs" aria-hidden="true">
             {PROGRAM_TASKS.map((task) => {
-              const on = program[task.id]
-              const next = task.id === nextTask?.id
+              const serverT = snapshot?.todayTasks?.find((t) => t.taskCode === task.id)
+              const on = serverT ? serverT.status === 'Completed' : program[task.id]
+              const next = task.id === nextTaskId
               return (
                 <span
                   key={task.id}
@@ -139,9 +176,9 @@ export function HomePage() {
           </div>
           <div className="prog-launch-foot">
             <span>
-              <IonIcon icon={flame} /> {streak} {t('días')}
+              <IonIcon icon={flame} /> {activeStreak} {t('días')}
             </span>
-            <span>{t('Semana')} {programWeek}</span>
+            <span>{t('Semana')} {activeProgramWeek}</span>
             <span className="prog-launch-cta">
               {dayComplete ? t('Ver resumen') : t('Continuar')}
               <IonIcon icon={chevronForward} />
@@ -235,7 +272,7 @@ export function HomePage() {
           ))}
         </div>
       </Scroll>
-      <MetricHistoryModal metricId={metricId} pointsTotal={pointsTotal} onClose={() => setMetricId(null)} />
+      <MetricHistoryModal metricId={metricId} pointsTotal={activePointsTotal} onClose={() => setMetricId(null)} />
     </Screen>
   )
 }

@@ -37,6 +37,7 @@ export interface UserProfile {
   fam1Parentesco: string
   fam1Cel: string
   fam1Email: string
+  ciudad?: string
 }
 
 export interface ChatMessage {

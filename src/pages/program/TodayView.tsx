@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { IonButton, IonIcon } from '@ionic/react'
 import { motion } from 'framer-motion'
 import { checkmark, chevronForward, gift, sparkles, trophy } from 'ionicons/icons'
@@ -9,12 +10,15 @@ import {
   WEEK_LABELS,
 } from '../../data/program'
 import type { ProgramDay, ProgramTaskId } from '../../types'
+import type { TodayTaskDto } from '../../services/program/types'
 import { useT } from '../../i18n/I18nContext'
 import { TASK_ICONS } from './ui'
 import { CountUp } from './visuals'
 
 export function TodayView({
   program,
+  todayTasks,
+  pointsTodayMax = PROGRAM_POINTS_MAX,
   doneCount,
   allDone,
   currentId,
@@ -31,6 +35,8 @@ export function TodayView({
   readyXp,
 }: {
   program: ProgramDay
+  todayTasks?: TodayTaskDto[]
+  pointsTodayMax?: number
   doneCount: number
   allDone: boolean
   currentId?: ProgramTaskId
@@ -47,7 +53,35 @@ export function TodayView({
   readyXp: number
 }) {
   const t = useT()
-  const fillPct = (doneCount / PROGRAM_TASKS.length) * 100
+
+  const taskList = useMemo(() => {
+    if (todayTasks && todayTasks.length > 0) {
+      return todayTasks.map((t) => {
+        const fallback = PROGRAM_TASKS.find((pt) => pt.id === t.taskCode)
+        return {
+          id: t.taskCode as ProgramTaskId,
+          title: t.title || fallback?.title || t.taskCode,
+          short: t.short || fallback?.short || '',
+          pts: t.points ?? fallback?.pts ?? 0,
+          done: t.status === 'Completed' || Boolean(program[t.taskCode as ProgramTaskId]),
+          tone: fallback?.tone ?? 'teal',
+          icon: TASK_ICONS[t.taskCode as ProgramTaskId] ?? checkmark,
+        }
+      })
+    }
+    return PROGRAM_TASKS.map((pt) => ({
+      id: pt.id,
+      title: pt.title,
+      short: pt.short,
+      pts: pt.pts,
+      done: Boolean(program[pt.id]),
+      tone: pt.tone,
+      icon: TASK_ICONS[pt.id],
+    }))
+  }, [todayTasks, program])
+
+  const totalTasks = taskList.length || 6
+  const fillPct = (doneCount / totalTasks) * 100
 
   return (
     <div className="pg-pane">
@@ -58,7 +92,7 @@ export function TodayView({
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
         <RingProgress
-          value={doneCount / PROGRAM_TASKS.length}
+          value={totalTasks > 0 ? doneCount / totalTasks : 0}
           size={64}
           stroke={7}
           trackColor="rgba(255,255,255,0.16)"
@@ -67,7 +101,7 @@ export function TodayView({
           <b>
             <CountUp to={doneCount} duration={0.6} />
           </b>
-          <small>/6</small>
+          <small>/{totalTasks}</small>
         </RingProgress>
         <div className="duo-unit-copy">
           <div className="pg-kicker">{t('Unidad')} {programWeek}</div>
@@ -75,7 +109,7 @@ export function TodayView({
           <span>
             {allDone
               ? t('Racha protegida · cofre abierto')
-              : `${pointsToday} / ${PROGRAM_POINTS_MAX} XP`}
+              : `${pointsToday} / ${pointsTodayMax} XP`}
           </span>
         </div>
       </motion.div>
@@ -84,8 +118,8 @@ export function TodayView({
         <div className="duo-trail" aria-hidden="true">
           <div className="duo-trail-fill" style={{ height: `${fillPct}%` }} />
         </div>
-        {PROGRAM_TASKS.map((task, i) => {
-          const done = program[task.id]
+        {taskList.map((task, i) => {
+          const done = task.done
           const current = task.id === currentId
           const locked = !done && !current
           return (
@@ -104,7 +138,7 @@ export function TodayView({
                   aria-label={`${t(task.title)}${done ? t(', completada') : current ? t(', siguiente') : ''}`}
                   onClick={() => onOpenTask(task.id)}
                 >
-                  <IonIcon icon={done ? checkmark : TASK_ICONS[task.id]} />
+                  <IonIcon icon={done ? checkmark : task.icon} />
                   {current && !done && <span className="duo-pulse" />}
                 </button>
               </div>

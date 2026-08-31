@@ -15,21 +15,27 @@ import { CountUp } from './visuals'
 
 export function StreakView({
   streak,
+  longestStreak = LONGEST_STREAK,
+  freezesRemaining = 1,
   weekCheckins,
   todayIdx,
   cells,
   weekPct,
   programWeek,
+  programWeeks = PROGRAM_WEEKS,
   claimedChests,
   onCell,
   onClaim,
 }: {
   streak: number
+  longestStreak?: number
+  freezesRemaining?: number
   weekCheckins: boolean[]
   todayIdx: number
   cells: { d: number | null; kind: string }[]
   weekPct: number
   programWeek: number
+  programWeeks?: number
   claimedChests: string[]
   onCell: (day: number, past: boolean) => void
   onClaim: (id: string) => void
@@ -61,10 +67,10 @@ export function StreakView({
         <p className="pg-streak-copy">{t('Cada día completo protege el fuego. No lo dejes apagar.')}</p>
         <div className="pg-streak-chips">
           <span>
-            <IonIcon icon={trophy} /> {t('Máxima')} {LONGEST_STREAK}
+            <IonIcon icon={trophy} /> {t('Máxima')} {longestStreak}
           </span>
           <span>
-            <IonIcon icon={shieldCheckmark} /> {t('1 rescate')}
+            <IonIcon icon={shieldCheckmark} /> {freezesRemaining} {t('rescate(s)')}
           </span>
         </div>
       </motion.section>
@@ -169,7 +175,7 @@ export function StreakView({
         <div className="pg-protocol-top">
           <div className="cs">{t('Recorrido del protocolo')}</div>
           <strong>
-            {t('Semana')} {programWeek}/{PROGRAM_WEEKS}
+            {t('Semana')} {programWeek}/{programWeeks}
           </strong>
         </div>
         <IonProgressBar

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { IonButton, IonIcon } from '@ionic/react'
 import { motion } from 'framer-motion'
 import { trendingUp, warning } from 'ionicons/icons'
@@ -9,12 +10,53 @@ import {
   TRANSFORM_ROWS,
   TRANSFORM_SCORE,
 } from '../../data/program'
+import type { ScoresResponseDto } from '../../services/program/types'
 import { useT } from '../../i18n/I18nContext'
 import { CountUp, Sparkline } from './visuals'
 
-export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
+export function EvolutionView({
+  scores,
+  stale = false,
+  onGoBook,
+}: {
+  scores?: ScoresResponseDto
+  stale?: boolean
+  onGoBook: () => void
+}) {
   const t = useT()
   const trend = HEALTH_TREND.map((p) => p.v)
+  const hs = scores?.health_score || scores?.healthScore
+  const healthScore = hs?.current ?? hs?.score ?? HEALTH_SCORE
+  const prevHealthScore = hs?.previous ?? 81
+  const changeScore = prevHealthScore !== null ? healthScore - prevHealthScore : 5
+
+  const pillars = useMemo(() => {
+    const dims = hs?.dimensions
+    if (!dims) return HEALTH_PILLARS
+    return [
+      { label: 'Nutrición', pct: dims.nutrition, color: '#1d9e75' },
+      { label: 'Ejercicio', pct: dims.exercise, color: '#20c8ff' },
+      { label: 'Bienestar mental', pct: dims.psychology, color: '#a78bfa' },
+      { label: 'Adherencia al plan', pct: dims.adherence, color: '#f59e0b' },
+      { label: 'Control clínico', pct: dims.clinical, color: '#ec4899' },
+    ]
+  }, [hs])
+
+  const ts = scores?.transformation_score || scores?.transformationScore
+  const transformScore = ts?.current ?? ts?.score ?? TRANSFORM_SCORE
+
+  const transformRows = useMemo(() => {
+    const detail = ts?.detail
+    if (!detail || Object.keys(detail).length === 0) return TRANSFORM_ROWS
+    return Object.values(detail).map((d) => ({
+      label: d.name,
+      base: `${d.baseline} ${d.unit}`,
+      cur: `${d.current} ${d.unit}`,
+      delta: `${d.delta > 0 ? '+' : ''}${d.delta} ${d.unit}`,
+    }))
+  }, [ts])
+
+  const isStale = stale
 
   return (
     <div className="pg-pane cpad">
@@ -26,7 +68,7 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
       >
         <div className="pg-evo-top">
           <RingProgress
-            value={HEALTH_SCORE / 100}
+            value={healthScore / 100}
             size={128}
             stroke={11}
             trackColor="var(--g1)"
@@ -34,18 +76,20 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
             glow
           >
             <b className="pg-evo-score">
-              <CountUp to={HEALTH_SCORE} duration={1.1} />
+              <CountUp to={healthScore} duration={1.1} />
             </b>
             <small>Health</small>
           </RingProgress>
           <div className="pg-evo-kpis">
             <div>
               <span>{t('Anterior')}</span>
-              <b>81</b>
+              <b>{prevHealthScore}</b>
             </div>
             <div>
               <span>{t('Cambio')}</span>
-              <b className="up">+5</b>
+              <b className={changeScore >= 0 ? 'up' : 'down'}>
+                {changeScore >= 0 ? `+${changeScore}` : changeScore}
+              </b>
             </div>
             <div>
               <span>{t('Meta')}</span>
@@ -54,7 +98,7 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
           </div>
         </div>
         <div className="hs-bars pg-pillars">
-          {HEALTH_PILLARS.map((p, i) => (
+          {pillars.map((p, i) => (
             <div key={p.label} className="hs-bar-row">
               <div className="hs-bar-top">
                 <span>{t(p.label)}</span>
@@ -86,7 +130,7 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
             <div className="cs">{t('Semanas 6 a 12 del protocolo')}</div>
           </div>
           <span className="pg-trend-chip">
-            <IonIcon icon={trendingUp} /> +14 pts
+            <IonIcon icon={trendingUp} /> {changeScore >= 0 ? `+${changeScore}` : changeScore} pts
           </span>
         </div>
         <Sparkline points={trend} color="var(--teal)" height={72} />
@@ -105,14 +149,17 @@ export function EvolutionView({ onGoBook }: { onGoBook: () => void }) {
       >
         <div className="tf-head">
           <div>
-            <div className="ct">Transformation Score</div>
+            <div className="ct">
+              Transformation Score
+              {isStale && <span className="chip chip-glass" style={{ marginLeft: 8, fontSize: 10 }}>{t('Actualizando…')}</span>}
+            </div>
             <div className="cs">{t('Desde tu línea base · día 0')}</div>
           </div>
           <div className="tf-score">
-            <CountUp to={TRANSFORM_SCORE} duration={1} />
+            <CountUp to={transformScore} duration={1} />
           </div>
         </div>
-        {TRANSFORM_ROWS.map((r, i) => (
+        {transformRows.map((r, i) => (
           <motion.div
             key={r.label}
             className="tf-row pg-tf-row"

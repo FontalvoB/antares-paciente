@@ -1,11 +1,14 @@
-import { useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { IonProgressBar, IonSegment, IonSegmentButton } from '@ionic/react'
 import { PageHeader } from '../components/PageHeader'
 import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
+import { useNutritionLog } from '../hooks/useNutritionLog'
+import { useProgram } from '../hooks/useProgram'
+import type { MealCode } from '../services/program/nutrition-service'
 
-const meals = [
+const defaultMeals = [
   {
     id: 'des',
     emoji: '🌅',
@@ -63,18 +66,51 @@ const week = [
 
 export function NutritionPage() {
   const { hydration, setHydration, mealsLogged, logMeal, showToast } = useApp()
+  const { snapshot } = useProgram()
   const t = useT()
+  const nutritionMutation = useNutritionLog()
   const [tab, setTab] = useState<'hoy' | 'semana' | 'indicaciones' | 'historial'>('hoy')
   const [openDay, setOpenDay] = useState(1)
 
+  const nutContent = snapshot?.todayTasks?.find((t) => t.taskCode === 'nut')?.content
+  const planTitle = nutContent?.nutritionPlanName || t('Ana Torres, RDN · plan asignado')
+  const calorieTarget = nutContent?.dailyCalorieTarget || 1800
+  const carbsTarget = nutContent?.dailyCarbsTarget ? `${nutContent.dailyCarbsTarget}g` : '168g'
+  const proteinTarget = nutContent?.dailyProteinTarget ? `${nutContent.dailyProteinTarget}g` : '90g'
+  const fatTarget = nutContent?.dailyFatTarget ? `${nutContent.dailyFatTarget}g` : '50g'
+  const fiberTarget = nutContent?.dailyFiberTarget ? `${nutContent.dailyFiberTarget}g` : '28g'
+
+  const displayMeals = useMemo(() => {
+    if (nutContent?.nutritionMeals && nutContent.nutritionMeals.length > 0) {
+      return nutContent.nutritionMeals.map((m) => {
+        const typeLower = m.mealType.toLowerCase()
+        const id = typeLower.startsWith('des') ? 'des' : typeLower.startsWith('alm') ? 'alm' : typeLower.startsWith('mer') ? 'mer' : 'cen'
+        const emoji = typeLower.includes('des') ? '🌅' : typeLower.includes('alm') ? '☀️' : typeLower.includes('mer') ? '🍎' : '🌙'
+        return {
+          id,
+          emoji,
+          title: `${m.mealType}${m.calories ? ` · ${m.calories} kcal` : ''}`,
+          kcal: m.calories || 0,
+          items: [
+            ['🍽️', m.description || m.foods || m.mealType, m.notes || 'Recomendación del plan clínico', m.carbsG ? `${m.carbsG}g C` : '', m.proteinG ? `${m.proteinG}g P` : '', m.fatG ? `${m.fatG}g G` : '']
+          ],
+        }
+      })
+    }
+    return defaultMeals
+  }, [nutContent])
+
   const log = (id: string, name: string) => {
     logMeal(id)
+    if (['des', 'alm', 'mer', 'cen', 'agua'].includes(id)) {
+      nutritionMutation.mutate({ mealCode: id as MealCode })
+    }
     showToast(t('Foto de {name} analizada · adherencia alta', { name }), 'ok')
   }
 
   return (
     <Screen>
-      <PageHeader title={t('Nutrición')} sub={t('Ana Torres, RDN · dieta mediterránea')} />
+      <PageHeader title={t('Nutrición')} sub={t(planTitle)} />
 
       <div className="kcal-strip">
         <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
@@ -84,15 +120,15 @@ export function NutritionPage() {
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div className="display" style={{ fontSize: 16, fontWeight: 800 }}>1,650</div>
-            <div style={{ fontSize: 9, color: 'var(--mu)' }}>/1,800</div>
+            <div style={{ fontSize: 9, color: 'var(--mu)' }}>/{calorieTarget}</div>
           </div>
         </div>
         <div style={{ flex: 1 }}>
           {[
-            ['Carbohidratos', '168g', 75, '#1B6CA8'],
-            ['Proteínas', '90g', 88, '#1D9E75'],
-            ['Grasas', '50g', 60, '#E87B2B'],
-            ['Fibra', '28g', 80, '#7C3AED'],
+            ['Carbohidratos', carbsTarget, 75, '#1B6CA8'],
+            ['Proteínas', proteinTarget, 88, '#1D9E75'],
+            ['Grasas', fatTarget, 60, '#E87B2B'],
+            ['Fibra', fiberTarget, 80, '#7C3AED'],
           ].map(([n, v, w, c]) => (
             <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
               <span style={{ fontSize: 10, color: 'var(--mu)', width: 78 }}>{t(String(n))}</span>
@@ -131,7 +167,7 @@ export function NutritionPage() {
                 ))}
               </div>
             </div>
-            {meals.map((m) => (
+            {displayMeals.map((m) => (
               <div key={m.id} className="meal-card">
                 <div className="meal-hdr">
                   <span>{m.emoji}</span>

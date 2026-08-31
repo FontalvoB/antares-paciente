@@ -21,6 +21,7 @@
     "@capacitor/push-notifications": "^8.1.2",
     "@capacitor/status-bar": "^8.0.3",
     "@ionic/react": "^8.8.18",
+    "@tanstack/react-query": "^5.102.8",
     "framer-motion": "^13.1.0",
     "graphql-ws": "^6.2.1",
     "ionicons": "^8.1.0",
