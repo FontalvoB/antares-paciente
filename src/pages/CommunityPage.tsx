@@ -221,6 +221,7 @@ export function CommunityPage() {
   const {
     me,
     meLoading,
+    meTimelinePosts,
     feed,
     feedLoading,
     feedError,
@@ -907,7 +908,7 @@ export function CommunityPage() {
                       pointsTotal={pointsTotal}
                       followersCount={followers.length}
                       followingCount={peopleFollowing.length}
-                      posts={me?.posts ?? []}
+                      posts={meTimelinePosts}
                       onSaveProfile={async (name, bio, avatarKey, coverKey) => {
                         await updateProfile(name, bio, avatarKey, coverKey)
                       }}

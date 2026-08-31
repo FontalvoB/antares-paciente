@@ -4,6 +4,14 @@
 
 export type ProfileStatus = 'ACTIVE' | 'BANNED'
 
+export interface RepostWithPost {
+  id: string
+  postId: string
+  profileId: string
+  createdAt: string
+  post: Post
+}
+
 export interface Profile {
   id: string
   displayName: string
@@ -16,6 +24,7 @@ export interface Profile {
   coverUrl: string | null
   createdAt: string
   posts: Post[]
+  reposts: RepostWithPost[]
 }
 
 export interface PostAuthor {
@@ -367,6 +376,15 @@ export const ME_QUERY = /* GraphQL */ `
       posts {
         ...PostFields
       }
+      reposts {
+        id
+        postId
+        profileId
+        createdAt
+        post {
+          ...PostFields
+        }
+      }
     }
   }
   ${PROFILE_FRAGMENT}
@@ -400,6 +418,15 @@ export const PROFILE_QUERY = /* GraphQL */ `
       ...ProfileFields
       posts {
         ...PostFields
+      }
+      reposts {
+        id
+        postId
+        profileId
+        createdAt
+        post {
+          ...PostFields
+        }
       }
     }
   }

@@ -97,6 +97,12 @@ export interface FeedPostView {
   repostedByMe: boolean
 }
 
+/** Post del perfil que puede ser original o repost, con metadata de repost. */
+export interface TimelinePost extends Post {
+  isRepost: boolean
+  repostedAt?: string
+}
+
 /**
  * Suscribe un conversationKey concreto y ejecuta `onMessage` cada vez que
  * llega un mensaje. El backend exige que seas participante de la conversación,
@@ -218,6 +224,37 @@ export function useCommunity() {
 
   const me: Profile | null = meResult.data?.me ?? null
   const myProfileId = me?.id ?? null
+
+  /** Timeline del perfil actual: publicaciones propias + reposts, ordenadas
+   *  cronológicamente y deduplicadas (si un post es propio y reposteado,
+   *  se conserva la versión original). */
+  const meTimelinePosts = useMemo<TimelinePost[]>(() => {
+    const own: TimelinePost[] = (me?.posts ?? []).map((p) => ({ ...p, isRepost: false }))
+    const reposted: TimelinePost[] = (me?.reposts ?? []).map((r) => ({
+      ...r.post,
+      isRepost: true,
+      repostedAt: r.createdAt,
+    }))
+    const merged = [...own, ...reposted]
+    // Deduplicar: si un post aparece como propio y reposteado, conservar la
+    // versión own (isRepost: false) ya que fue creado por el usuario.
+    const seen = new Set<string>()
+    const deduped: TimelinePost[] = []
+    // Primero ordenar por fecha descendente para que la dedup priorice el más
+    // reciente, luego filtrar duplicados.
+    merged.sort(
+      (a, b) =>
+        new Date(b.repostedAt ?? b.createdAt).getTime() -
+        new Date(a.repostedAt ?? a.createdAt).getTime(),
+    )
+    for (const item of merged) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id)
+        deduped.push(item)
+      }
+    }
+    return deduped
+  }, [me])
 
   const [, createPostMutation] = useMutation<CreatePostResult>(CREATE_POST)
   const [, createPollPostMutation] = useMutation<CreatePollPostResult>(CREATE_POLL_POST)
@@ -605,6 +642,7 @@ export function useCommunity() {
     meLoading: meResult.fetching,
     meError: meResult.error,
     retryMe: () => reexecuteMe({ requestPolicy: 'network-only' }),
+    meTimelinePosts,
     feed,
     feedLoading: feedResult.fetching,
     feedError: feedResult.error,
