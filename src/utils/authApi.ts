@@ -91,7 +91,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
       tokenType: 'Bearer',
       expiresIn: 3600,
     }
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+    persistAccessToken(result.accessToken)
     return result
   }
 
@@ -138,14 +138,31 @@ export async function verifyOtp(documentNumber: string, otp: string, rememberMe:
 
 /**
  * Intenta restaurar la sesión del usuario al cargar la app mediante el refresh
- * token (cookie HttpOnly copp_refresh_token).
+ * token (cookie HttpOnly copp_refresh_token). Si el backend no está disponible o
+ * hay un token demo/local previo, preserva la sesión sin expulsar al usuario.
  */
 export async function restoreSession(): Promise<LoginResult | null> {
+  const existingToken = getAccessToken()
+  if (existingToken === 'demo-access-token') {
+    return {
+      accessToken: 'demo-access-token',
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+    }
+  }
+
   try {
     const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/refresh`)
     persistAccessToken(result.accessToken)
     return result
   } catch {
+    if (existingToken) {
+      return {
+        accessToken: existingToken,
+        tokenType: 'Bearer',
+        expiresIn: 3600,
+      }
+    }
     clearAccessToken()
     return null
   }
