@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useSubscription } from 'urql'
+import { useClient, useMutation, useQuery, useSubscription } from 'urql'
+import { ensureFreshAccessToken } from '../utils/authApi'
 import {
   ADD_COMMENT,
   ADD_GROUP_MEMBER,
   CONVERSATIONS_QUERY,
   CREATE_GROUP,
+  CREATE_POLL_POST,
   CREATE_POST,
   FOLLOWERS_QUERY,
   FOLLOWING_FEED_QUERY,
@@ -17,17 +19,27 @@ import {
   GROUPS_QUERY,
   LEAVE_GROUP,
   LIKE_POST,
+  LIKE_COMMENT,
   ME_QUERY,
   MESSAGE_ADDED,
   PEOPLE_SEARCH,
+  POST_IMAGE_UPLOAD_INFO,
+  POST_REPOSTS,
+  PROFILE_IMAGE_UPLOAD_INFO,
   REMOVE_GROUP_MEMBER,
   RENAME_GROUP,
   REPLY_TO_COMMENT,
+  REPOST_POST,
+  REPORT_POST,
+  REPORT_COMMENT,
   SEND_GROUP_MESSAGE,
   SEND_MESSAGE,
   UNFOLLOW_USER,
   UNLIKE_POST,
+  UNLIKE_COMMENT,
+  UNREPOST_POST,
   UPDATE_PROFILE,
+  VOTE_POLL,
   conversationKey,
   type AddCommentResult,
   type AddGroupMemberResult,
@@ -35,6 +47,7 @@ import {
   type Conversation,
   type ConversationsResult,
   type CreateGroupResult,
+  type CreatePollPostResult,
   type CreatePostResult,
   type FeedResult,
   type FollowersResult,
@@ -46,30 +59,48 @@ import {
   type GroupMessageAddedResult,
   type GroupResult,
   type LeaveGroupResult,
+  type LikeCommentResult,
   type LikePostResult,
   type MeResult,
   type MessageAddedResult,
   type PeopleResult,
   type Person,
   type Post,
+  type PostImageUploadInfoResult,
+  type PostRepostsResult,
   type Profile,
+  type ProfileImageUploadInfoResult,
   type RemoveGroupMemberResult,
   type RenameGroupResult,
   type ReplyResult,
+  type RepostPostResult,
+  type ReportCommentResult,
+  type ReportPostResult,
   type SendGroupMessageResult,
   type SendMessageResult,
   type UnfollowUserResult,
+  type UnlikeCommentResult,
+  type UnrepostPostResult,
   type UpdateProfileResult,
+  type VotePollResult,
 } from '../graphql/community'
 
 const PAGE_SIZE = 20
 const LIST_SIZE = 50
 
-/** Estado del feed (derivado): likes y si el perfil actual ya dio like. */
+/** Estado del feed (derivado): likes, reposts y si el perfil actual ya interactuó. */
 export interface FeedPostView {
   post: Post
   likeCount: number
   likedByMe: boolean
+  repostCount: number
+  repostedByMe: boolean
+}
+
+/** Post del perfil que puede ser original o repost, con metadata de repost. */
+export interface TimelinePost extends Post {
+  isRepost: boolean
+  repostedAt?: string
 }
 
 /**
@@ -189,10 +220,49 @@ export function useCommunity() {
     variables: { take: LIST_SIZE, skip: 0 },
   })
 
+  const client = useClient()
+
   const me: Profile | null = meResult.data?.me ?? null
   const myProfileId = me?.id ?? null
 
+  /** Timeline del perfil actual: publicaciones propias + reposts, ordenadas
+   *  cronológicamente y deduplicadas (si un post es propio y reposteado,
+   *  se conserva la versión original). */
+  const meTimelinePosts = useMemo<TimelinePost[]>(() => {
+    const own: TimelinePost[] = (me?.posts ?? []).map((p) => ({ ...p, isRepost: false }))
+    const reposted: TimelinePost[] = (me?.reposts ?? []).map((r) => ({
+      ...r.post,
+      isRepost: true,
+      repostedAt: r.createdAt,
+    }))
+    const merged = [...own, ...reposted]
+    // Deduplicar: si un post aparece como propio y reposteado, conservar la
+    // versión own (isRepost: false) ya que fue creado por el usuario.
+    const seen = new Set<string>()
+    const deduped: TimelinePost[] = []
+    // Primero ordenar por fecha descendente para que la dedup priorice el más
+    // reciente, luego filtrar duplicados.
+    merged.sort(
+      (a, b) =>
+        new Date(b.repostedAt ?? b.createdAt).getTime() -
+        new Date(a.repostedAt ?? a.createdAt).getTime(),
+    )
+    for (const item of merged) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id)
+        deduped.push(item)
+      }
+    }
+    return deduped
+  }, [me])
+
   const [, createPostMutation] = useMutation<CreatePostResult>(CREATE_POST)
+  const [, createPollPostMutation] = useMutation<CreatePollPostResult>(CREATE_POLL_POST)
+  const [, votePollMutation] = useMutation<VotePollResult>(VOTE_POLL)
+  const [, imageUploadInfoMutation] =
+    useMutation<PostImageUploadInfoResult>(POST_IMAGE_UPLOAD_INFO)
+  const [, profileImageUploadInfoMutation] =
+    useMutation<ProfileImageUploadInfoResult>(PROFILE_IMAGE_UPLOAD_INFO)
   const [, likeMutation] = useMutation<LikePostResult>(LIKE_POST)
   const [, unlikeMutation] = useMutation<LikePostResult>(UNLIKE_POST)
   const [, addCommentMutation] = useMutation<AddCommentResult>(ADD_COMMENT)
@@ -208,12 +278,26 @@ export function useCommunity() {
   const [, leaveGroupMutation] = useMutation<LeaveGroupResult>(LEAVE_GROUP)
   const [, sendGroupMessageMutation] = useMutation<SendGroupMessageResult>(SEND_GROUP_MESSAGE)
 
+  // --- Reportes ---
+  const [, reportPostMutation] = useMutation<ReportPostResult>(REPORT_POST)
+  const [, reportCommentMutation] = useMutation<ReportCommentResult>(REPORT_COMMENT)
+
+  // --- Likes de comentarios ---
+  const [, likeCommentMutation] = useMutation<LikeCommentResult>(LIKE_COMMENT)
+  const [, unlikeCommentMutation] = useMutation<UnlikeCommentResult>(UNLIKE_COMMENT)
+
+  // --- Reposts ---
+  const [, repostPostMutation] = useMutation<RepostPostResult>(REPOST_POST)
+  const [, unrepostPostMutation] = useMutation<UnrepostPostResult>(UNREPOST_POST)
+
   const feed = useMemo<FeedPostView[]>(() => {
     const list = feedResult.data?.feed ?? []
     return list.map((post) => ({
       post,
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
+      repostCount: post.reposts.length,
+      repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
   }, [feedResult.data, myProfileId])
 
@@ -223,6 +307,8 @@ export function useCommunity() {
       post,
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
+      repostCount: post.reposts.length,
+      repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
   }, [followingFeedResult.data, myProfileId])
 
@@ -233,14 +319,99 @@ export function useCommunity() {
   const conversations: Conversation[] = conversationsResult.data?.conversations ?? []
 
   const createPost = useCallback(
-    async (body: string) => {
-      const res = await createPostMutation({ body })
+    async (body: string, imageKey?: string | null) => {
+      const res = await createPostMutation({ body, imageKey: imageKey || undefined })
       if (res.error) throw new Error(res.error.message)
       reexecuteFeed({ requestPolicy: 'network-only' })
       reexecuteMe({ requestPolicy: 'network-only' })
       return res.data?.createPost
     },
     [createPostMutation, reexecuteFeed, reexecuteMe],
+  )
+
+  const createPollPost = useCallback(
+    async (question: string, options: string[]) => {
+      const res = await createPollPostMutation({ question, options })
+      if (res.error) throw new Error(res.error.message)
+      reexecuteFeed({ requestPolicy: 'network-only' })
+      reexecuteMe({ requestPolicy: 'network-only' })
+      return res.data?.createPollPost
+    },
+    [createPollPostMutation, reexecuteFeed, reexecuteMe],
+  )
+
+  /** Registra el voto en la encuesta y devuelve el post con resultados. */
+  const votePoll = useCallback(
+    async (optionId: string) => {
+      const res = await votePollMutation({ optionId })
+      if (res.error) throw new Error(res.error.message)
+      reexecuteFeed({ requestPolicy: 'network-only' })
+      return res.data?.votePoll
+    },
+    [votePollMutation, reexecuteFeed],
+  )
+
+  /** Pide la info de subida (clave + URLs) para la imagen de una publicación. */
+  const createPostImageUpload = useCallback(
+    async (fileName: string, contentType: string) => {
+      const res = await imageUploadInfoMutation({ fileName, contentType })
+      if (res.error) throw new Error(res.error.message)
+      const info = res.data?.createPostImageUploadInfo
+      if (!info) throw new Error('No se obtuvo la URL de subida.')
+      return info
+    },
+    [imageUploadInfoMutation],
+  )
+
+  /** Pide la info de subida para foto de perfil o portada ("AVATAR" | "COVER"). */
+  const createProfileImageUpload = useCallback(
+    async (kind: 'AVATAR' | 'COVER', fileName: string, contentType: string) => {
+      const res = await profileImageUploadInfoMutation({ kind, fileName, contentType })
+      if (res.error) throw new Error(res.error.message)
+      const info = res.data?.createProfileImageUploadInfo
+      if (!info) throw new Error('No se obtuvo la URL de subida.')
+      return info
+    },
+    [profileImageUploadInfoMutation],
+  )
+
+  /** Sube la imagen y devuelve la clave de storage (foto de perfil o portada). */
+  const uploadProfileImage = useCallback(
+    async (kind: 'AVATAR' | 'COVER', file: File) => {
+      const info = await createProfileImageUpload(kind, file.name, file.type)
+      const token = await ensureFreshAccessToken()
+      const res = await fetch(info.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: await file.arrayBuffer(),
+      })
+      if (!res.ok) throw new Error('No se pudo subir la imagen. Inténtalo de nuevo.')
+      return info
+    },
+    [createProfileImageUpload],
+  )
+
+  /** Sube el binario de la imagen a la URL provista (proxy local con Bearer o
+   *  presigned URL de S3). Devuelve la clave de almacenamiento. */
+  const uploadPostImage = useCallback(
+    async (file: File, contentType: string) => {
+      const info = await createPostImageUpload(file.name, contentType)
+      const token = await ensureFreshAccessToken()
+      const res = await fetch(info.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: await file.arrayBuffer(),
+      })
+      if (!res.ok) throw new Error('No se pudo subir la imagen. Inténtalo de nuevo.')
+      return info.key
+    },
+    [createPostImageUpload],
   )
 
   const toggleLike = useCallback(
@@ -273,13 +444,84 @@ export function useCommunity() {
     [replyMutation],
   )
 
-  const updateProfile = useCallback(
-    async (displayName: string, bio?: string | null) => {
-      const res = await updateProfileMutation({ displayName, bio: bio ?? null })
+  // --- Reportes ---
+
+  const reportPost = useCallback(
+    async (postId: string, reason: string, details?: string) => {
+      const res = await reportPostMutation({ postId, reason, details: details || undefined })
       if (res.error) throw new Error(res.error.message)
+      return res.data?.reportPost
+    },
+    [reportPostMutation],
+  )
+
+  const reportComment = useCallback(
+    async (commentId: string, reason: string, details?: string) => {
+      const res = await reportCommentMutation({ commentId, reason, details: details || undefined })
+      if (res.error) throw new Error(res.error.message)
+      return res.data?.reportComment
+    },
+    [reportCommentMutation],
+  )
+
+  // --- Likes de comentarios ---
+
+  const toggleCommentLike = useCallback(
+    async (commentId: string, liked: boolean) => {
+      if (liked) {
+        const res = await unlikeCommentMutation({ commentId })
+        if (res.error) throw new Error(res.error.message)
+        return res.data?.unlikeComment ?? null
+      }
+      const res = await likeCommentMutation({ commentId })
+      if (res.error) throw new Error(res.error.message)
+      return res.data?.likeComment ?? null
+    },
+    [likeCommentMutation, unlikeCommentMutation],
+  )
+
+  // --- Reposts ---
+
+  const toggleRepost = useCallback(
+    async (post: Post) => {
+      const reposted = myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId)
+      if (reposted) {
+        const res = await unrepostPostMutation({ postId: post.id })
+        if (res.error) throw new Error(res.error.message)
+        reexecuteFeed({ requestPolicy: 'network-only' })
+        return res.data?.unrepostPost ?? null
+      }
+      const res = await repostPostMutation({ postId: post.id })
+      if (res.error) throw new Error(res.error.message)
+      reexecuteFeed({ requestPolicy: 'network-only' })
+      return res.data?.repostPost ?? null
+    },
+    [myProfileId, repostPostMutation, unrepostPostMutation, reexecuteFeed],
+  )
+
+  /** Carga la lista de perfiles que repostearon una publicación. */
+  const fetchPostReposts = useCallback(
+    async (postId: string) => {
+      const res = await client.query<PostRepostsResult>(POST_REPOSTS, { postId, take: 50, skip: 0 }).toPromise()
+      if (res.error) throw new Error(res.error.message)
+      return res.data?.postReposts ?? []
+    },
+    [client],
+  )
+
+  const updateProfile = useCallback(
+    async (displayName: string, bio?: string | null, avatarKey?: string | null, coverKey?: string | null) => {
+      const res = await updateProfileMutation({
+        displayName,
+        bio: bio ?? null,
+        avatarKey: avatarKey || undefined,
+        coverKey: coverKey || undefined,
+      })
+      if (res.error) throw new Error(res.error.message)
+      reexecuteMe({ requestPolicy: 'network-only' })
       return res.data?.updateProfile
     },
-    [updateProfileMutation],
+    [updateProfileMutation, reexecuteMe],
   )
 
   const followUser = useCallback(
@@ -400,6 +642,7 @@ export function useCommunity() {
     meLoading: meResult.fetching,
     meError: meResult.error,
     retryMe: () => reexecuteMe({ requestPolicy: 'network-only' }),
+    meTimelinePosts,
     feed,
     feedLoading: feedResult.fetching,
     feedError: feedResult.error,
@@ -429,10 +672,20 @@ export function useCommunity() {
     conversationsError: conversationsResult.error,
     refetchConversations,
     createPost,
+    createPollPost,
+    votePoll,
+    createPostImageUpload,
+    uploadPostImage,
     toggleLike,
     addComment,
     replyToComment,
+    reportPost,
+    reportComment,
+    toggleCommentLike,
+    toggleRepost,
+    fetchPostReposts,
     updateProfile,
+  uploadProfileImage,
     followUser,
     unfollowUser,
     sendMessage,

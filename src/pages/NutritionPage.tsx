@@ -1,12 +1,28 @@
-import { useMemo, useState, type CSSProperties } from 'react'
-import { IonProgressBar, IonSegment, IonSegmentButton } from '@ionic/react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import {
+  IonButton,
+  IonIcon,
+  IonProgressBar,
+  IonSegment,
+  IonSegmentButton,
+  IonSpinner,
+} from '@ionic/react'
+import { cameraOutline, imageOutline, refreshOutline } from 'ionicons/icons'
 import { PageHeader } from '../components/PageHeader'
 import { Screen, Scroll } from '../components/Screen'
+import { CameraCapture } from '../components/CameraCapture'
 import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 import { useNutritionLog } from '../hooks/useNutritionLog'
 import { useProgram } from '../hooks/useProgram'
 import type { MealCode } from '../services/program/nutrition-service'
+import {
+  analyzeFoodImage,
+  displayName,
+  FOOD_EMOJI,
+  type DetectedFood,
+  type FoodAnalysisResult,
+} from '../utils/foodAiApi'
 
 const defaultMeals = [
   {
@@ -98,7 +114,54 @@ export function NutritionPage() {
       })
     }
     return defaultMeals
-  }, [nutContent])
+  }, [nutContent, t])
+
+  type AnalysisState = 'idle' | 'camera' | 'analyzing' | 'success' | 'error'
+  const [analysis, setAnalysis] = useState<AnalysisState>('idle')
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [result, setResult] = useState<FoodAnalysisResult | null>(null)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [step, setStep] = useState(0)
+
+  const steps = [
+    t('Foto tomada'),
+    t('Analizando tu comida…'),
+    t('Identificando alimentos…'),
+    t('Calculando información nutricional…'),
+  ]
+  useEffect(() => {
+    if (analysis !== 'analyzing') return
+    setStep(1)
+    const id = setInterval(() => setStep((s) => Math.min(s + 1, steps.length - 1)), 800)
+    return () => clearInterval(id)
+  }, [analysis, steps.length])
+
+  async function runAnalysis(blob: Blob, fileName: string) {
+    setPhoto(URL.createObjectURL(blob))
+    setAnalysis('analyzing')
+    setAnalysisError(null)
+    setResult(null)
+    try {
+      const data = await analyzeFoodImage(blob, fileName)
+      setResult(data)
+      setAnalysis(data.foods.length > 0 ? 'success' : 'error')
+      if (data.foods.length === 0) {
+        setAnalysisError(t('No se identificaron alimentos con suficiente confianza.'))
+      }
+    } catch (err) {
+      setAnalysisError(err instanceof Error ? err.message : t('Ocurrió un error al analizar la imagen.'))
+      setAnalysis('error')
+    }
+  }
+
+  function resetAnalysis() {
+    if (photo) URL.revokeObjectURL(photo)
+    setPhoto(null)
+    setResult(null)
+    setAnalysisError(null)
+    setAnalysis('idle')
+    setStep(0)
+  }
 
   const log = (id: string, name: string) => {
     logMeal(id)
@@ -111,6 +174,106 @@ export function NutritionPage() {
   return (
     <Screen>
       <PageHeader title={t('Nutrición')} sub={t(planTitle)} />
+
+      {/* ── Analizador de comida con IA (flujo real) ── */}
+      <div className="card" style={{ margin: '10px 14px 0', background: 'var(--navy)', borderColor: 'transparent', color: '#fff' }}>
+        {analysis === 'idle' && (
+          <>
+            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>📸 {t('Analiza tu comida con IA')}</div>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
+              {t('Toma una foto y recibe calorías, macros y porción reales.')}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <IonButton
+                style={{ flex: 1, '--background': 'var(--teal)' } as CSSProperties}
+                onClick={() => setAnalysis('camera')}
+              >
+                <IonIcon icon={cameraOutline} slot="start" />
+                {t('Usar cámara')}
+              </IonButton>
+              <IonButton
+                style={{ flex: 1 }}
+                fill="outline"
+                onClick={() => {
+                  setAnalysis('camera')
+                  setTimeout(() => {
+                    const input = document.querySelector<HTMLInputElement>('input[type="file"][accept="image/*"]')
+                    input?.click()
+                  }, 50)
+                }}
+              >
+                <IonIcon icon={imageOutline} slot="start" />
+                {t('Seleccionar imagen')}
+              </IonButton>
+            </div>
+          </>
+        )}
+
+        {analysis === 'camera' && (
+          <>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>📷 {t('Apunta a tu comida')}</div>
+            <CameraCapture
+              onCapture={(blob, fileName) => runAnalysis(blob, fileName)}
+              onCancel={resetAnalysis}
+            />
+          </>
+        )}
+
+        {analysis === 'analyzing' && photo && (
+          <>
+            <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+              <img src={photo} alt={t('Fotografía de la comida')} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', filter: 'brightness(0.55)' }} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center', padding: 16 }}>
+                <IonSpinner name="crescent" style={{ color: '#fff', width: 34, height: 34 }} />
+                <div style={{ fontWeight: 800, fontSize: 15 }}>{t('Analizando tu comida…')}</div>
+                {steps.map((s, i) => (
+                  <div key={s} style={{ fontSize: 12, opacity: i <= step ? 1 : 0.35, color: '#fff' }}>
+                    {i < step ? '✓ ' : i === step ? '▸ ' : ''}
+                    {s}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {analysis === 'success' && result && photo && (
+          <>
+            <img src={photo} alt={t('Fotografía de la comida')} style={{ width: '100%', borderRadius: 14, aspectRatio: '4/3', objectFit: 'cover', marginBottom: 12 }} />
+            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 10 }}>
+              {t('Alimentos detectados')} ({result.foods.length})
+            </div>
+            {result.foods.map((food, i) => (
+              <FoodResultCard key={`${food.name}-${i}`} food={food} />
+            ))}
+            {result.summary && result.foods.some((f) => f.nutritionStatus === 'available') && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(255,255,255,.25)' }}>
+                <span style={{ fontWeight: 700 }}>{t('TOTAL')}</span>
+                <span style={{ fontWeight: 800, fontSize: 16 }}>{Math.round(result.summary.calories)} kcal</span>
+              </div>
+            )}
+            <IonButton style={{ marginTop: 12, '--background': 'var(--teal)' } as CSSProperties} expand="block" onClick={resetAnalysis}>
+              <IonIcon icon={refreshOutline} slot="start" />
+              {t('Analizar otra comida')}
+            </IonButton>
+          </>
+        )}
+
+        {analysis === 'error' && (
+          <>
+            {photo && <img src={photo} alt={t('Fotografía de la comida')} style={{ width: '100%', borderRadius: 14, aspectRatio: '4/3', objectFit: 'cover', marginBottom: 12 }} />}
+            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 12 }}>⚠️ {analysisError}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <IonButton style={{ flex: 1 }} fill="outline" onClick={resetAnalysis}>
+                {t('Intentar de nuevo')}
+              </IonButton>
+              <IonButton style={{ flex: 1 }} fill="clear" onClick={resetAnalysis}>
+                {t('Cancelar')}
+              </IonButton>
+            </div>
+          </>
+        )}
+      </div>
 
       <div className="kcal-strip">
         <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
@@ -305,5 +468,56 @@ export function NutritionPage() {
         )}
       </Scroll>
     </Screen>
+  )
+}
+
+function FoodResultCard({ food }: { food: DetectedFood }) {
+  const t = useT()
+  const name = displayName(food.name)
+  const emoji = FOOD_EMOJI[food.name] ?? '🍽️'
+  const available = food.nutritionStatus === 'available' && food.nutrition
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,.08)', borderRadius: 12, padding: 10, marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 20 }}>{emoji}</span>
+        <span style={{ fontWeight: 800, fontSize: 14, textTransform: 'capitalize' }}>{name}</span>
+        {food.portion && (
+          <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.75 }}>
+            {Math.round(food.portion.estimatedGrams)} g
+            {food.portion.minGrams != null && food.portion.maxGrams != null
+              ? ` (${Math.round(food.portion.minGrams)}–${Math.round(food.portion.maxGrams)} g)`
+              : ''}
+          </span>
+        )}
+      </div>
+
+      {available && food.nutrition ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+            <span style={{ fontWeight: 800, fontSize: 20 }}>{Math.round(food.nutrition.calories)}</span>
+            <span style={{ fontSize: 12, opacity: 0.7 }}>kcal</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
+            <span style={{ background: 'rgba(255,255,255,.1)', borderRadius: 8, padding: '3px 8px' }}>
+              {t('Proteínas')} {Math.round(food.nutrition.protein)}g
+            </span>
+            <span style={{ background: 'rgba(255,255,255,.1)', borderRadius: 8, padding: '3px 8px' }}>
+              {t('Carbohidratos')} {Math.round(food.nutrition.carbohydrates)}g
+            </span>
+            <span style={{ background: 'rgba(255,255,255,.1)', borderRadius: 8, padding: '3px 8px' }}>
+              {t('Grasas')} {Math.round(food.nutrition.fat)}g
+            </span>
+          </div>
+          {food.source && <div style={{ fontSize: 10, opacity: 0.55, marginTop: 6 }}>{food.source}</div>}
+        </>
+      ) : (
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          {food.nutritionStatus === 'portion_unavailable'
+            ? t('Identificamos este alimento, pero no pudimos estimar una porción.')
+            : t('Identificamos este alimento, pero no tenemos información nutricional disponible.')}
+        </div>
+      )}
+    </div>
   )
 }
