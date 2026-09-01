@@ -19,9 +19,11 @@ export default defineConfig({
         target: "http://localhost:5080",
         changeOrigin: true,
       },
-      "/graphql": {
-        target: "http://localhost:5200",
+      // WebSocket de GraphQL de la comunidad hacia el servicio en :5200.
+      "/api/v1/community/subscriptions": {
+        target: "ws://localhost:5200",
         changeOrigin: true,
+        ws: true,
       },
     },
   },

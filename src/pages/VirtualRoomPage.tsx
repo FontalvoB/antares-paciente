@@ -293,11 +293,6 @@ export function VirtualRoomPage() {
               {t("Entrar a la consulta")}
             </IonButton>
           </div>
-        ) : phase === "connecting" ? (
-          <div className="room-empty">
-            <IonSpinner name="crescent" />
-            <strong>{t("Entrando a la sala…")}</strong>
-          </div>
         ) : phase === "ended" ? (
           <div className="room-empty">
             <IonIcon icon={callOutline} />
@@ -310,22 +305,33 @@ export function VirtualRoomPage() {
             </IonButton>
           </div>
         ) : (
+          // Los contenedores de video se montan DESDE connecting: los tracks
+          // de Twilio llegan vía trackSubscribed tras el connect y los refs
+          // deben existir en ese momento (si no, el attach se pierde y la
+          // pantalla queda vacía).
           <div className="room-video">
             <div className="room-remote" ref={remoteRef}>
-              {participants.length <= 1 ? (
+              {phase === "connecting" ? (
+                <div className="room-connecting">
+                  <IonSpinner name="crescent" />
+                  <strong>{t("Entrando a la sala…")}</strong>
+                </div>
+              ) : participants.length <= 1 ? (
                 <span className="room-waiting">
                   {t("Esperando al profesional…")}
                 </span>
               ) : null}
             </div>
             <div className="room-local" ref={localRef} />
-            <div className="room-pill">
-              <IonIcon icon={micOutline} />
-              <IonIcon icon={videocamOutline} />
-              <span>
-                {participants.length} {t("en sala")}
-              </span>
-            </div>
+            {phase === "connected" ? (
+              <div className="room-pill">
+                <IonIcon icon={micOutline} />
+                <IonIcon icon={videocamOutline} />
+                <span>
+                  {participants.length} {t("en sala")}
+                </span>
+              </div>
+            ) : null}
           </div>
         )}
       </main>

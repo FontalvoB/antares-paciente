@@ -9886,6 +9886,16 @@ ion-modal.metric-modal ion-content {
   flex-direction: column;
   background: #06091a;
   color: #fff;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.room-connecting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 14px;
 }
 
 .room-header {
@@ -10035,7 +10045,8 @@ ion-modal.metric-modal ion-content {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 14px 16px 22px;
+  padding: 14px 16px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom));
 }
 
 .room-hang {
