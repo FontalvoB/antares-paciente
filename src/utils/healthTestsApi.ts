@@ -146,7 +146,7 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/** Mis tests pendientes/en curso. */
+/** Mis tests asignados: pendientes, en curso y completados. */
 export async function fetchMyAssignments(): Promise<MeAssignment[]> {
   return getJson<MeAssignment[]>("/api/v1/health-tests/me/assignments");
 }
