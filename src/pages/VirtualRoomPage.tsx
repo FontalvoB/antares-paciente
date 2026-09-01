@@ -54,10 +54,15 @@ function loadTwilioVideo(): Promise<TwilioVideoSdk> {
     sdkPromise = new Promise<TwilioVideoSdk>((resolve, reject) => {
       const existing = document.querySelector(`script[src="${SDK_URL}"]`);
       if (existing) {
-        resolve(
-          (window as unknown as { Twilio?: { Video?: TwilioVideoSdk } }).Twilio
-            ?.Video,
-        );
+        const sdk = (
+          window as unknown as { Twilio?: { Video?: TwilioVideoSdk } }
+        ).Twilio?.Video;
+        if (sdk) {
+          resolve(sdk);
+          return;
+        }
+        sdkPromise = null;
+        reject(new Error("No se pudo cargar el SDK de video"));
         return;
       }
       const script = document.createElement("script");
@@ -142,22 +147,25 @@ export function VirtualRoomPage() {
    */
   const setupParticipant = useCallback(
     (participant: TwilioParticipant, container: HTMLElement | null) => {
+      const el = container ?? null;
       participant.on("trackSubscribed", (p) => {
         const track = p as TwilioTrack;
         if (
           track &&
+          el &&
           typeof (track as { attach?: unknown }).attach === "function"
         ) {
-          (track as TwilioTrack).attach(container);
+          (track as TwilioTrack).attach(el);
         }
       });
       participant.on("trackUnsubscribed", (p) => {
         const track = p as TwilioTrack;
         if (
           track &&
+          el &&
           typeof (track as { detach?: unknown }).detach === "function"
         ) {
-          (track as TwilioTrack).detach(container);
+          (track as TwilioTrack).detach(el);
         }
       });
       attachParticipant(participant, container);
