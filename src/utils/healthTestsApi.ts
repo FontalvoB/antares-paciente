@@ -56,11 +56,21 @@ export interface MeQuestion {
   code: string;
   section: string | null;
   text: string;
-  type: "scale" | "single" | "multi" | "open";
+  type: "scale" | "single" | "multi" | "open" | "num";
   scoringDirection: "positive" | "reverse";
   sortOrder: number;
   isActive: boolean;
   options: MeAnswerOption[];
+  /** Unidad del valor numérico (tipo num, p. ej. kg/cm). */
+  unit: string | null;
+  minValue: number | null;
+  maxValue: number | null;
+  defaultValue: number | null;
+  /** Etiquetas de los extremos de la escala Likert. */
+  minLabel: string | null;
+  maxLabel: string | null;
+  /** Instrucción/ayuda bajo el texto de la pregunta. */
+  hint: string | null;
 }
 
 /** Versión detallada de un test asignado. */
