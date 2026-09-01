@@ -6,14 +6,16 @@ export function Screen({
   children,
   darkNav = false,
   hideNav = false,
+  className,
 }: {
   children: ReactNode
   darkNav?: boolean
   hideNav?: boolean
+  className?: string
 }) {
   return (
     <motion.div
-      className="screen"
+      className={`screen${className ? ` ${className}` : ''}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
@@ -28,13 +30,15 @@ export function Scroll({
   children,
   noNav = false,
   ref,
+  className,
 }: {
   children: ReactNode
   noNav?: boolean
   ref?: Ref<HTMLDivElement>
+  className?: string
 }) {
   return (
-    <div ref={ref} className={`screen-scroll ${noNav ? 'no-nav' : ''}`}>
+    <div ref={ref} className={`screen-scroll ${noNav ? 'no-nav' : ''}${className ? ` ${className}` : ''}`}>
       {children}
     </div>
   )

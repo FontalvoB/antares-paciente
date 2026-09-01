@@ -22,6 +22,7 @@
     "@capacitor/status-bar": "^8.0.3",
     "@ionic/react": "^8.8.18",
     "framer-motion": "^13.1.0",
+    "graphql": "^17.0.2",
     "graphql-ws": "^6.2.1",
     "ionicons": "^8.1.0",
     "react": "^19.2.8",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "oxlint": "^1.75.0",
+    "playwright": "^1.62.1",
     "puppeteer-core": "^25.8.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.0"
