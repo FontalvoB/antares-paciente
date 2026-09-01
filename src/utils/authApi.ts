@@ -220,3 +220,10 @@ export function clearSessionAndNotify(): void {
     }
   })
 }
+
+export async function ensureFreshAccessToken(): Promise<string | null> {
+  const token = getAccessToken()
+  if (token) return token
+  const restored = await restoreSession()
+  return restored?.accessToken ?? null
+}

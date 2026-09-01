@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -8,6 +9,25 @@ import {
 } from "react";
 import { getMe, logoutUser, onSessionInvalid, restoreSession } from "../utils/authApi";
 import { sendChatMessage } from "../utils/threadApi";
+import {
+  cancelAppointment as cancelAppointmentApi,
+  createRequest,
+  fetchMyAppointments,
+  fetchMyContext,
+  fetchMyRequests,
+  fetchOrganizationsTree,
+  fetchProfessionalsCatalog,
+  hasRealSession,
+  type AppointmentDto,
+  type AppointmentRequestDto,
+  type ProfessionalCatalogItem,
+} from "../utils/appointmentsApi";
+import {
+  buildRealAppointments,
+  realProfessionalByType,
+  type ListedAppointment,
+  type TeamProfessional,
+} from "../data/appointments";
 import { useT } from "../i18n/I18nContext";
 import type {
   ChatMessage,
@@ -72,6 +92,32 @@ interface AppState {
   completeStep: (id: ProgramTaskId, pts: number) => void;
   claimChest: (id: string) => { xp: number; title: string } | null;
   logout: () => void;
+  // ── Citas/telemedicina reales (modo sesión) ──
+  /** Modo real: hay sesión JWT (los datos de citas vienen del backend). */
+  realMode: boolean;
+  /** Próximas citas + solicitudes pendientes (null = demo). */
+  upcomingAppointments: ListedAppointment[] | null;
+  /** Citas anteriores (completadas/canceladas) (null = demo). */
+  pastAppointments: ListedAppointment[] | null;
+  appointmentsLoading: boolean;
+  appointmentsError: string | null;
+  /** Profesional real del catálogo para el tipo de consulta (o el mock). */
+  teamProfessional: (typeId: string) => TeamProfessional;
+  refreshAppointments: () => Promise<void>;
+  /** Envía la solicitud contra el backend (modo real). Devuelve éxito. */
+  submitAppointmentRequest: (input: {
+    typeId: string;
+    date: string;
+    time: string;
+    reason: string;
+    mode: string;
+  }) => Promise<boolean>;
+  /** Cancela una cita real. Devuelve éxito. */
+  cancelAppointmentById: (id: string, reason: string) => Promise<boolean>;
+  /** Abre la sala virtual de una cita. */
+  openRoom: (appointment: ListedAppointment) => void;
+  closeRoom: () => void;
+  roomAppointment: ListedAppointment | null;
 }
 
 const defaultUser: UserProfile = {
@@ -243,6 +289,139 @@ export function AppProvider({
   const [claimedChests, setClaimedChests] = useState<string[]>([
     ...SEED_CLAIMED_CHESTS,
   ]);
+  // ── Citas/telemedicina reales (modo sesión) ──
+  const [catalog, setCatalog] = useState<ProfessionalCatalogItem[] | null>(
+    null,
+  );
+  const [patientCtx, setPatientCtx] = useState<{
+    patientId: string | null;
+    orgId: string;
+  } | null>(null);
+  const [appointments, setAppointments] = useState<AppointmentDto[] | null>(
+    null,
+  );
+  const [requests, setRequests] = useState<AppointmentRequestDto[] | null>(
+    null,
+  );
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [appointmentsError, setAppointmentsError] = useState<string | null>(
+    null,
+  );
+  const [roomAppointment, setRoomAppointment] =
+    useState<ListedAppointment | null>(null);
+  const realMode = hasRealSession();
+
+  const refreshAppointments = useCallback(async () => {
+    if (!hasRealSession()) return;
+    setAppointmentsLoading(true);
+    setAppointmentsError(null);
+    try {
+      const [me, appts, reqs, catalogData, orgs] = await Promise.all([
+        fetchMyContext(),
+        fetchMyAppointments({ pageSize: 100 }),
+        fetchMyRequests(),
+        fetchProfessionalsCatalog(),
+        fetchOrganizationsTree().catch(() => null),
+      ]);
+      setCatalog(catalogData.data);
+      setPatientCtx({
+        patientId: me.patient?.id ?? null,
+        orgId: (orgs?.[0]?.id ?? "") || "5fde219a-89ea-4cf9-be48-379e8b1042cb",
+      });
+      setAppointments(appts.items);
+      setRequests(reqs);
+    } catch (err) {
+      console.warn("[appointments] No se pudieron cargar las citas:", err);
+      setAppointmentsError(
+        err instanceof Error ? err.message : "No se pudieron cargar las citas",
+      );
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  }, []);
+
+  // Con sesión real, refresca citas/catálogo al entrar a la app (Home o Citas)
+  // y cuando la pantalla de citas se vuelve visible. No en la sala (la cita
+  // activa vive en el contexto).
+  useEffect(() => {
+    if (realMode && screen !== "room" && !appointments) {
+      void refreshAppointments();
+    }
+  }, [realMode, screen, appointments, refreshAppointments]);
+
+  useEffect(() => {
+    if (!realMode) return;
+    const onFocus = () => {
+      if (screen === "book") void refreshAppointments();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [realMode, screen, refreshAppointments]);
+
+  const teamProfessional = useCallback(
+    (typeId: string): TeamProfessional => {
+      const typed = (
+        ["medica", "psicologia", "nutricion", "urgencia"] as const
+      ).find((t) => t === typeId);
+      return realProfessionalByType(typed ?? "medica", catalog);
+    },
+    [catalog],
+  );
+
+  const submitAppointmentRequest = useCallback(
+    async (input: {
+      typeId: string;
+      date: string;
+      time: string;
+      reason: string;
+      mode: string;
+    }): Promise<boolean> => {
+      if (!patientCtx?.patientId || !catalog) return false;
+      const professional = realProfessionalByType(
+        input.typeId as "medica" | "psicologia" | "nutricion" | "urgencia",
+        catalog,
+      );
+      const specialty = catalog.find((p) => p.id === professional.id)
+        ?.specialties[0];
+      if (!specialty) return false;
+
+      try {
+        await createRequest({
+          patientId: patientCtx.patientId,
+          organizationId: patientCtx.orgId,
+          specialtyId: specialty.id,
+          professionalId: professional.id,
+          clinicId: catalog.find((p) => p.id === professional.id)?.clinicIds[0],
+          locationId: catalog.find((p) => p.id === professional.id)
+            ?.locations[0]?.id,
+          preferredStart: new Date(
+            `${input.date}T${input.time}:00`,
+          ).toISOString(),
+          reason: input.reason.trim(),
+        });
+        await refreshAppointments();
+        return true;
+      } catch (err) {
+        console.warn("[appointments] No se pudo enviar la solicitud:", err);
+        return false;
+      }
+    },
+    [patientCtx, catalog, refreshAppointments],
+  );
+
+  const cancelAppointmentById = useCallback(
+    async (id: string, reason: string): Promise<boolean> => {
+      try {
+        await cancelAppointmentApi(id, reason);
+        await refreshAppointments();
+        return true;
+      } catch (err) {
+        console.warn("[appointments] No se pudo cancelar la cita:", err);
+        return false;
+      }
+    },
+    [refreshAppointments],
+  );
 
   // Listener para sesión invalidada por refresh 401
   useEffect(() => {
@@ -308,6 +487,11 @@ export function AppProvider({
     [user.id, user.cedula, user.email],
   );
   const threadId = activeThreadId || computedThreadId;
+
+  const builtReal =
+    appointments && requests
+      ? buildRealAppointments(appointments, requests)
+      : null;
 
   const value = useMemo<AppState>(
     () => ({
@@ -511,6 +695,21 @@ export function AppProvider({
         // limpia + WS nuevo) para no servir datos del usuario anterior.
         void logoutUser().then(() => onResetCommunityClient?.());
       },
+      realMode,
+      upcomingAppointments: builtReal?.upcoming ?? null,
+      pastAppointments: builtReal?.past ?? null,
+      appointmentsLoading,
+      appointmentsError,
+      teamProfessional,
+      refreshAppointments,
+      submitAppointmentRequest,
+      cancelAppointmentById,
+      openRoom: (appointment) => {
+        setRoomAppointment(appointment);
+        setScreen("room");
+      },
+      closeRoom: () => setRoomAppointment(null),
+      roomAppointment,
     }),
     [
       authLoading,
@@ -537,6 +736,15 @@ export function AppProvider({
       threadId,
       onResetCommunityClient,
       t,
+      realMode,
+      builtReal,
+      appointmentsLoading,
+      appointmentsError,
+      teamProfessional,
+      refreshAppointments,
+      submitAppointmentRequest,
+      cancelAppointmentById,
+      roomAppointment,
     ],
   );
 
