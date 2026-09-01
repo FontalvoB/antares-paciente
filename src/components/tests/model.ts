@@ -1,290 +1,337 @@
-import {
-  ADHER_QS,
-  ANTECS,
-  CARDIO_QS,
-  FAM_HX,
-  MOV_QS,
-  NUT_QS,
-  PRIORITIES,
-  PURPOSE_OPEN,
-  PURPOSE_SCALE,
-  SISTEMAS,
-  SLEEP_FLAGS,
-  SLEEP_QS,
-  STRESS_QS,
-  TEMP_QS,
-  type ScaleQ,
-} from '../../data/tests'
-import type { MeQuestion } from '../../utils/healthTestsApi'
+import { TESTS, type DemoQuestion } from "../../data/tests";
+import type { MeQuestion } from "../../utils/healthTestsApi";
 
 export type TestMood =
-  | 'clinic'
-  | 'mind'
-  | 'food'
-  | 'move'
-  | 'night'
-  | 'bond'
-  | 'heart'
-  | 'storm'
-  | 'cosmos'
+  | "clinic"
+  | "mind"
+  | "food"
+  | "move"
+  | "night"
+  | "bond"
+  | "heart"
+  | "storm"
+  | "cosmos";
 
 export interface TestTheme {
-  emoji: string
-  accent: string
-  accentSoft: string
-  hero: 'hero-cosmos' | 'hero-navy' | 'hero-teal' | 'hero-pur' | 'hero-indigo'
-  mood: TestMood
-  sub: string
-  kicker: string
-  minutes: number
+  emoji: string;
+  accent: string;
+  accentSoft: string;
+  hero: "hero-cosmos" | "hero-navy" | "hero-teal" | "hero-pur" | "hero-indigo";
+  mood: TestMood;
+  sub: string;
+  kicker: string;
+  minutes: number;
 }
 
-export type LikertVariant = 'likert' | 'cards' | 'yesno'
+export type LikertVariant = "likert" | "cards" | "yesno";
 
 export type WizardStep =
   | {
-      kind: 'intro'
-      key: string
-      title: string
-      sub: string
-      emoji: string
-      minutes: number
-      count: number
+      kind: "intro";
+      key: string;
+      title: string;
+      sub: string;
+      emoji: string;
+      minutes: number;
+      count: number;
     }
   | {
-      kind: 'scale'
-      key: string
-      index: number
-      text: string
-      section?: string
-      scale: string[]
-      leftLabel: string
-      rightLabel: string
-      variant: LikertVariant
-      optionLabels?: string[]
+      kind: "scale";
+      key: string;
+      index: number;
+      text: string;
+      section?: string;
+      hint?: string;
+      emoji: string;
+      scale: string[];
+      leftLabel: string;
+      rightLabel: string;
+      variant: LikertVariant;
+      optionLabels?: string[];
     }
   | {
-      kind: 'multi'
-      key: string
-      title: string
-      hint: string
-      items: { ico: string; label: string }[]
-      store: 'chips' | 'fam' | 'flags' | 'backend'
-      backendIndex?: number
-      layout?: 'clinic' | 'flags'
+      kind: "num";
+      key: string;
+      index: number;
+      text: string;
+      section?: string;
+      hint?: string;
+      emoji: string;
+      unit: string;
+      min: number;
+      max: number;
+      def: number;
     }
   | {
-      kind: 'system'
-      key: string
-      index: number
-      name: string
-      ico: string
-      color: string
-      bg: string
-      symptoms: string[]
+      kind: "multi";
+      key: string;
+      title: string;
+      hint: string;
+      emoji: string;
+      items: { ico: string; label: string }[];
+      store: "backend";
+      backendIndex?: number;
+      layout?: "clinic" | "flags";
     }
   | {
-      kind: 'open'
-      key: string
-      index: number
-      question: string
-      placeholder: string
-    }
-  | {
-      kind: 'priority'
-      key: string
-      items: typeof PRIORITIES
-    }
+      kind: "open";
+      key: string;
+      index: number;
+      question: string;
+      placeholder: string;
+      hint?: string;
+      emoji: string;
+    };
 
 export const THEMES_BY_ID: Record<number, TestTheme> = {
   1: {
-    emoji: '🩺',
-    accent: 'var(--blue)',
-    accentSoft: 'var(--blue-l)',
-    hero: 'hero-navy',
-    mood: 'clinic',
-    sub: 'Antecedentes · Examen físico · Sistemas',
-    kicker: 'Historia clínica',
-    minutes: 4,
+    emoji: "🩺",
+    accent: "var(--blue)",
+    accentSoft: "var(--blue-l)",
+    hero: "hero-navy",
+    mood: "clinic",
+    sub: "Antecedentes, medicamentos y cómo te sientes físicamente.",
+    kicker: "Historia clínica",
+    minutes: 3,
   },
   2: {
-    emoji: '🧠',
-    accent: 'var(--pur)',
-    accentSoft: 'var(--pur-l)',
-    hero: 'hero-pur',
-    mood: 'mind',
-    sub: 'Sanguíneo · Colérico · Melancólico · Flemático',
-    kicker: 'Temperamento',
-    minutes: 5,
+    emoji: "🧠",
+    accent: "var(--pur)",
+    accentSoft: "var(--pur-l)",
+    hero: "hero-pur",
+    mood: "mind",
+    sub: "Tu personalidad determina cómo te acompañamos en el programa.",
+    kicker: "Temperamento",
+    minutes: 3,
   },
   3: {
-    emoji: '🥗',
-    accent: 'var(--teal)',
-    accentSoft: 'var(--teal-l)',
-    hero: 'hero-teal',
-    mood: 'food',
-    sub: 'Alimentación · Conducta · Motivación',
-    kicker: 'Nutrición',
+    emoji: "🥗",
+    accent: "var(--teal)",
+    accentSoft: "var(--teal-l)",
+    hero: "hero-teal",
+    mood: "food",
+    sub: "Tus hábitos alimentarios y tu relación con la comida.",
+    kicker: "Nutrición",
     minutes: 3,
   },
   4: {
-    emoji: '🏃',
-    accent: 'var(--org)',
-    accentSoft: 'var(--org-l)',
-    hero: 'hero-navy',
-    mood: 'move',
-    sub: 'AMAF · Nivel funcional · Capacidad',
-    kicker: 'Movimiento',
+    emoji: "🏃",
+    accent: "var(--org)",
+    accentSoft: "var(--org-l)",
+    hero: "hero-navy",
+    mood: "move",
+    sub: "Tu capacidad física actual determina el circuito que te asignamos.",
+    kicker: "Movimiento · AMAF",
     minutes: 2,
   },
   5: {
-    emoji: '🌙',
-    accent: 'var(--pur)',
-    accentSoft: 'var(--pur-l)',
-    hero: 'hero-pur',
-    mood: 'night',
-    sub: 'Duración · Calidad · Hábitos · Riesgos',
-    kicker: 'Sueño',
-    minutes: 3,
+    emoji: "🌙",
+    accent: "var(--pur)",
+    accentSoft: "var(--pur-l)",
+    hero: "hero-pur",
+    mood: "night",
+    sub: "El sueño impacta directamente tu glucosa, tu peso y tu adherencia.",
+    kicker: "Sueño",
+    minutes: 2,
   },
   6: {
-    emoji: '🤝',
-    accent: 'var(--cyan)',
-    accentSoft: 'var(--ice-l)',
-    hero: 'hero-navy',
-    mood: 'bond',
-    sub: 'Motivación · Autoeficacia · Compromiso',
-    kicker: 'Adherencia',
+    emoji: "🤝",
+    accent: "var(--cyan)",
+    accentSoft: "var(--ice-l)",
+    hero: "hero-navy",
+    mood: "bond",
+    sub: "Tu motivación real determina cómo te acompañamos.",
+    kicker: "Adherencia · IAC",
     minutes: 2,
   },
   7: {
-    emoji: '❤️',
-    accent: 'var(--red)',
-    accentSoft: 'var(--red-l)',
-    hero: 'hero-cosmos',
-    mood: 'heart',
-    sub: 'OMS · Obesidad · Complicaciones · Riesgo',
-    kicker: 'Riesgo ORP',
-    minutes: 3,
+    emoji: "❤️",
+    accent: "var(--red)",
+    accentSoft: "var(--red-l)",
+    hero: "hero-cosmos",
+    mood: "heart",
+    sub: "Información clínica confidencial — solo la ve tu equipo médico.",
+    kicker: "Riesgo cardiometabólico ORP",
+    minutes: 2,
   },
   8: {
-    emoji: '⚡',
-    accent: 'var(--org)',
-    accentSoft: 'var(--org-l)',
-    hero: 'hero-indigo',
-    mood: 'storm',
-    sub: 'Familia · Pareja · Trabajo · Entorno social',
-    kicker: 'Estrés relacional',
+    emoji: "⚡",
+    accent: "var(--org)",
+    accentSoft: "var(--org-l)",
+    hero: "hero-indigo",
+    mood: "storm",
+    sub: "El estrés en casa o en el trabajo es la barrera #1 de la adherencia.",
+    kicker: "Estrés relacional · ERS",
     minutes: 2,
   },
   9: {
-    emoji: '🧬',
-    accent: 'var(--cyan)',
-    accentSoft: 'var(--ice-l)',
-    hero: 'hero-cosmos',
-    mood: 'cosmos',
-    sub: 'PHS · Propósito · Mentalidad · Perfil final',
-    kicker: 'Batería ANTARES',
-    minutes: 4,
+    emoji: "🧬",
+    accent: "var(--cyan)",
+    accentSoft: "var(--ice-l)",
+    hero: "hero-cosmos",
+    mood: "cosmos",
+    sub: "Las respuestas más importantes del programa. Sé completamente honesto/a.",
+    kicker: "Propósito · ANTARES",
+    minutes: 2,
   },
-}
+};
 
 export const THEMES_BY_CODE: Record<string, TestTheme> = {
-  'historia-clinica': THEMES_BY_ID[1],
+  "historia-clinica": THEMES_BY_ID[1],
   temperamento: THEMES_BY_ID[2],
   nutricional: THEMES_BY_ID[3],
   movimiento: THEMES_BY_ID[4],
   sueno: THEMES_BY_ID[5],
-  'iac-adresd': THEMES_BY_ID[6],
+  "iac-adresd": THEMES_BY_ID[6],
   orp: THEMES_BY_ID[7],
   ers: THEMES_BY_ID[8],
-  'bateria-antares': THEMES_BY_ID[9],
-}
+  "bateria-antares": THEMES_BY_ID[9],
+};
 
 export const FALLBACK_THEME: TestTheme = {
-  emoji: '📋',
-  accent: 'var(--blue)',
-  accentSoft: 'var(--blue-l)',
-  hero: 'hero-cosmos',
-  mood: 'clinic',
-  sub: '',
-  kicker: 'Evaluación',
+  emoji: "📋",
+  accent: "var(--blue)",
+  accentSoft: "var(--blue-l)",
+  hero: "hero-cosmos",
+  mood: "clinic",
+  sub: "",
+  kicker: "Evaluación",
   minutes: 3,
+};
+
+export function themeFor(
+  code: string | null | undefined,
+  demoId?: number | null,
+): TestTheme {
+  if (code && THEMES_BY_CODE[code]) return THEMES_BY_CODE[code];
+  if (demoId && THEMES_BY_ID[demoId]) return THEMES_BY_ID[demoId];
+  return FALLBACK_THEME;
 }
 
-export function themeFor(code: string | null | undefined, demoId?: number | null): TestTheme {
-  if (code && THEMES_BY_CODE[code]) return THEMES_BY_CODE[code]
-  if (demoId && THEMES_BY_ID[demoId]) return THEMES_BY_ID[demoId]
-  return FALLBACK_THEME
-}
+// Escala Likert del HTML: siempre 1..5, opciones con score 0..4.
+const LIKERT_SCALE = ["1", "2", "3", "4", "5"];
 
-const SCALE_VALUES: Record<number, string[]> = {
-  2: ['1', '2', '3', '4', '5'],
-  3: ['1', '2', '3', '4', '5'],
-  4: ['1', '2', '3', '4'],
-  5: ['0', '1', '2', '3', '4'],
-  6: ['0', '1', '2', '3', '4'],
-  7: ['0', '1', '2', '3'],
-  8: ['0', '1', '2', '3', '4'],
-  9: ['1', '2', '3', '4', '5'],
-}
+// Emoji por código de pregunta (los ids del HTML/seed). El fallback por
+// sección/tipo garantiza que cualquier pregunta del backend tenga icono.
+const QUESTION_EMOJIS: Record<string, string> = {
+  dx: "🩺",
+  med: "💊",
+  sexo: "⚧️",
+  edad: "🎂",
+  peso: "⚖️",
+  talla: "📏",
+  cintura: "🧵",
+  cadera: "📐",
+  muneca: "⌚",
+  gluc_ayunas: "🩸",
+  gluc_sintomas: "🍬",
+  sintomas: "🤒",
+  antfam: "👨‍👩‍👧‍👦",
+  temp_social: "🫂",
+  temp_metas: "🎯",
+  temp_analisis: "🔍",
+  temp_rutina: "🗓️",
+  temp_emociones: "🌊",
+  temp_abandono: "🚧",
+  nut_comidas: "🍽️",
+  nut_emocional: "🍫",
+  nut_control: "🍴",
+  nut_procesados: "🍟",
+  nut_agua: "💧",
+  nut_motivacion: "🌱",
+  mov_actual: "🏃",
+  mov_fatiga: "🫁",
+  mov_dolor: "🤕",
+  mov_tiempo: "⏰",
+  sue_horas: "😴",
+  sue_calidad: "🌙",
+  sue_ronquidos: "😮‍💨",
+  sue_somnolencia: "😪",
+  adh_compromiso: "🤝",
+  adh_constancia: "🧗",
+  adh_barreras: "🧱",
+  adh_proposito: "💡",
+  card_hba1c: "🧪",
+  card_pa: "❤️‍🩹",
+  card_tabaco: "🚭",
+  card_colesterol: "🥑",
+  ers_familia: "🏠",
+  ers_trabajo: "💼",
+  ers_apoyo: "🤲",
+  ers_tiempo: "🌿",
+  prop_urgencia: "⏳",
+  prop_creencia: "💭",
+  prop_plazo: "📅",
+  prop_meta: "🏆",
+  prop_nota: "✍️",
+};
 
-const SCALE_META: Record<
-  number,
-  { left: string; right: string; variant: LikertVariant; optionLabels?: string[] }
-> = {
-  2: { left: 'Nada como yo', right: 'Totalmente como yo', variant: 'likert' },
-  3: { left: 'Nunca', right: 'Siempre', variant: 'likert' },
-  4: { left: 'No puedo', right: 'Sin dificultad', variant: 'likert' },
-  5: { left: 'Nunca', right: 'Siempre', variant: 'likert' },
-  6: { left: 'Nada', right: 'Totalmente', variant: 'likert' },
-  7: {
-    left: 'No',
-    right: 'Sí',
-    variant: 'cards',
-    optionLabels: ['No', 'Leve', 'Moderado', 'Sí'],
-  },
-  8: { left: 'Nada', right: 'Mucho', variant: 'likert' },
-  9: { left: 'En desacuerdo', right: 'De acuerdo', variant: 'likert' },
-}
+const SECTION_EMOJIS: [RegExp, string][] = [
+  [/diagnósticos|diagnosticos/, "🩺"],
+  [/medicamentos/, "💊"],
+  [/datos personales/, "🧑"],
+  [/biometr/, "📏"],
+  [/glucosa/, "🩸"],
+  [/síntomas|sintomas/, "🤒"],
+  [/antecedentes/, "👨‍👩‍👧‍👦"],
+  [/temperamento/, "🧠"],
+  [/hidratación|hidratacion/, "💧"],
+  [/motivación|motivacion/, "🌱"],
+  [/actividad/, "🏃"],
+  [/capacidad/, "🫁"],
+  [/limitaciones/, "🤕"],
+  [/disponibilidad/, "⏰"],
+  [/sueño|sueno/, "😴"],
+  [/red flags/, "⚠️"],
+  [/compromiso/, "🤝"],
+  [/barreras/, "🧱"],
+  [/propósito|proposito/, "💡"],
+  [/laboratorios/, "🧪"],
+  [/tensión|tension/, "❤️‍🩹"],
+  [/hábitos|habitos|conducta/, "🍽️"],
+  [/tabaquismo/, "🚭"],
+  [/familia/, "🏠"],
+  [/trabajo/, "💼"],
+  [/apoyo/, "🤲"],
+  [/gestión|gestion/, "🌿"],
+  [/urgencia/, "⏳"],
+  [/mentalidad/, "💭"],
+  [/expectativas/, "📅"],
+  [/^meta|meta ·/, "🏆"],
+  [/nota personal/, "✍️"],
+];
 
-const QMAP: Record<number, ScaleQ[]> = {
-  2: TEMP_QS,
-  3: NUT_QS,
-  4: MOV_QS,
-  5: SLEEP_QS,
-  6: ADHER_QS,
-  7: CARDIO_QS,
-  8: STRESS_QS,
-  9: PURPOSE_SCALE,
-}
+const TYPE_EMOJIS: Record<string, string> = {
+  scale: "🔢",
+  single: "✅",
+  multi: "☑️",
+  num: "🔢",
+  open: "✍️",
+};
 
-function scaleSteps(testId: number, questions: ScaleQ[]): WizardStep[] {
-  const meta = SCALE_META[testId] ?? {
-    left: 'Nada',
-    right: 'Mucho',
-    variant: 'likert' as LikertVariant,
+/** Emoji de una pregunta: código → sección → tipo. */
+function questionEmoji(
+  code: string | undefined,
+  section: string | undefined,
+  type: string,
+): string {
+  if (code && QUESTION_EMOJIS[code]) return QUESTION_EMOJIS[code];
+  if (section) {
+    const hit = SECTION_EMOJIS.find(([re]) => re.test(section.toLowerCase()));
+    if (hit) return hit[1];
   }
-  const scale = SCALE_VALUES[testId] ?? ['1', '2', '3', '4', '5']
-  return questions.map((q, i) => ({
-    kind: 'scale' as const,
-    key: `s-${testId}-${i}`,
-    index: i,
-    text: q.text,
-    section: q.section,
-    scale,
-    leftLabel: meta.left,
-    rightLabel: meta.right,
-    variant: meta.variant,
-    optionLabels: meta.optionLabels,
-  }))
+  return TYPE_EMOJIS[type] ?? "📋";
 }
 
-function withIntro(theme: TestTheme, title: string, steps: WizardStep[]): WizardStep[] {
+function withIntro(
+  theme: TestTheme,
+  title: string,
+  steps: WizardStep[],
+): WizardStep[] {
   return [
     {
-      kind: 'intro',
-      key: 'intro',
+      kind: "intro",
+      key: "intro",
       title,
       sub: theme.sub,
       emoji: theme.emoji,
@@ -292,190 +339,184 @@ function withIntro(theme: TestTheme, title: string, steps: WizardStep[]): Wizard
       count: steps.length,
     },
     ...steps,
-  ]
+  ];
 }
 
+function demoStep(q: DemoQuestion, qi: number): WizardStep {
+  const base = {
+    key: q.id,
+    index: qi,
+    text: q.text,
+    section: q.section ?? undefined,
+    hint: q.hint,
+    emoji: questionEmoji(q.id, q.section ?? undefined, q.type),
+  };
+  if (q.type === "num") {
+    return {
+      kind: "num",
+      ...base,
+      unit: q.unit ?? "",
+      min: q.min ?? 0,
+      max: q.max ?? 999,
+      def: q.def ?? 0,
+    };
+  }
+  if (q.type === "multi") {
+    return {
+      kind: "multi",
+      key: q.id,
+      title: q.section ?? q.text,
+      hint: q.hint ?? "Marca todo lo que aplique",
+      emoji: base.emoji,
+      items: (q.options ?? []).map((o) => ({ ico: "•", label: o.text })),
+      store: "backend",
+      backendIndex: qi,
+      layout: "flags",
+    };
+  }
+  if (q.type === "open") {
+    return {
+      kind: "open",
+      key: q.id,
+      index: qi,
+      question: q.text,
+      placeholder: q.hint ?? "Escribe aquí…",
+      hint: q.hint,
+      emoji: base.emoji,
+    };
+  }
+  const labels = (q.options ?? []).map((o) => o.text);
+  if (q.type === "single") {
+    // Selección única: tarjetas con las opciones como etiquetas.
+    return {
+      kind: "scale",
+      ...base,
+      scale: labels.map((_, i) => String(i + 1)),
+      leftLabel: labels[0] ?? "No",
+      rightLabel: labels[labels.length - 1] ?? "Sí",
+      variant: "cards",
+      optionLabels: labels,
+    };
+  }
+  return {
+    kind: "scale",
+    ...base,
+    scale: LIKERT_SCALE,
+    leftLabel: q.minLabel ?? "Nunca",
+    rightLabel: q.maxLabel ?? "Siempre",
+    variant: "likert",
+  };
+}
+
+/** Steps demo (sin backend): contenido exacto del HTML (tests.ts). */
 export function buildDemoSteps(openId: number, title: string): WizardStep[] {
-  const theme = THEMES_BY_ID[openId] ?? FALLBACK_THEME
-
-  if (openId === 1) {
-    const steps: WizardStep[] = [
-      {
-        kind: 'multi',
-        key: 'antecs',
-        title: 'Antecedentes patológicos',
-        hint: 'Marca todo lo que te hayan diagnosticado',
-        items: ANTECS,
-        store: 'chips',
-        layout: 'clinic',
-      },
-      ...SISTEMAS.map((s, i) => ({
-        kind: 'system' as const,
-        key: `sis-${i}`,
-        index: i,
-        name: s.s,
-        ico: s.ico,
-        color: s.color,
-        bg: s.bg,
-        symptoms: s.sintomas,
-      })),
-      {
-        kind: 'multi',
-        key: 'fam',
-        title: 'Antecedentes familiares',
-        hint: 'Lo que conoces de padres, hermanos o hijos',
-        items: FAM_HX,
-        store: 'fam',
-        layout: 'clinic',
-      },
-    ]
-    return withIntro(theme, title, steps)
-  }
-
-  if (openId >= 2 && openId <= 8) {
-    const qs = QMAP[openId] ?? []
-    const steps = scaleSteps(openId, qs)
-    if (openId === 5) {
-      steps.push({
-        kind: 'multi',
-        key: 'flags',
-        title: 'Señales de alerta',
-        hint: 'Marca si te ocurre alguna de estas situaciones',
-        items: SLEEP_FLAGS,
-        store: 'flags',
-      })
-    }
-    return withIntro(theme, title, steps)
-  }
-
-  if (openId === 9) {
-    const steps: WizardStep[] = [
-      ...PURPOSE_OPEN.map((p, i) => ({
-        kind: 'open' as const,
-        key: `open-${i}`,
-        index: i,
-        question: p.q,
-        placeholder: p.ph,
-      })),
-      ...scaleSteps(9, PURPOSE_SCALE),
-      { kind: 'priority', key: 'prio', items: PRIORITIES },
-    ]
-    return withIntro(theme, title, steps)
-  }
-
-  return withIntro(theme, title, [])
+  const theme = THEMES_BY_ID[openId] ?? FALLBACK_THEME;
+  const test = TESTS.find((t) => t.id === openId);
+  const steps = (test?.questions ?? []).map(demoStep);
+  return withIntro(theme, title, steps);
 }
 
-function inferScaleMeta(
-  options: string[],
-  mood?: TestMood,
-): {
-  left: string
-  right: string
-  variant: LikertVariant
-  optionLabels?: string[]
-} {
-  const numeric = options.length > 0 && options.every((o) => /^\d+$/.test(o.trim()))
-  if (mood === 'move') {
-    return {
-      left: !numeric && options[0] ? options[0] : 'No puedo',
-      right: !numeric && options[options.length - 1] ? options[options.length - 1] : 'Sin dificultad',
-      variant: 'likert',
-    }
-  }
-  if (options.length >= 4 && numeric) {
-    return {
-      left: 'Nada',
-      right: 'Mucho',
-      variant: 'likert',
-    }
-  }
-  if (options.length === 2) {
-    return { left: options[0], right: options[1], variant: 'yesno', optionLabels: options }
-  }
-  if (options.length <= 4) {
-    return {
-      left: options[0] ?? 'No',
-      right: options[options.length - 1] ?? 'Sí',
-      variant: 'cards',
-      optionLabels: options,
-    }
-  }
-  return { left: options[0] ?? 'Nada', right: options[options.length - 1] ?? 'Mucho', variant: 'likert' }
-}
-
+/** Steps del backend: preguntas reales de /me/tests/{id} (tipos del catálogo). */
 export function buildBackendSteps(
   questions: MeQuestion[],
   title: string,
   theme: TestTheme,
 ): WizardStep[] {
   const steps: WizardStep[] = questions.map((q, qi) => {
-    if (q.type === 'multi') {
-      return {
-        kind: 'multi' as const,
-        key: q.id,
-        title: q.section || q.text,
-        hint: q.section ? q.text : 'Marca todo lo que aplique',
-        items: q.options.map((o) => ({ ico: '•', label: o.text })),
-        store: 'backend' as const,
-        backendIndex: qi,
-        layout: theme.mood === 'clinic' ? ('clinic' as const) : 'flags',
-      }
-    }
-    if (q.type === 'open') {
-      return {
-        kind: 'open' as const,
-        key: q.id,
-        index: qi,
-        question: q.section || q.text,
-        placeholder: q.text,
-      }
-    }
-    const optionTexts = q.options.map((o) => o.text)
-    const meta = inferScaleMeta(optionTexts, theme.mood)
-    return {
-      kind: 'scale' as const,
+    const base = {
       key: q.id,
       index: qi,
       text: q.text,
       section: q.section ?? undefined,
-      scale: optionTexts.length > 0 ? optionTexts.map((_, i) => String(i + 1)) : ['1', '2', '3', '4', '5'],
-      leftLabel: meta.left,
-      rightLabel: meta.right,
-      variant: meta.variant,
-      optionLabels: meta.optionLabels,
+      hint: q.hint ?? undefined,
+      emoji: questionEmoji(q.code, q.section ?? undefined, q.type),
+    };
+    if (q.type === "num") {
+      return {
+        kind: "num",
+        ...base,
+        unit: q.unit ?? "",
+        min: q.minValue ?? 0,
+        max: q.maxValue ?? 999,
+        def: q.defaultValue ?? 0,
+      };
     }
-  })
-  return withIntro(theme, title, steps)
+    if (q.type === "multi") {
+      return {
+        kind: "multi",
+        key: q.id,
+        title: q.section ?? q.text,
+        hint: q.hint ?? (q.section ? q.text : "Marca todo lo que aplique"),
+        emoji: base.emoji,
+        items: q.options.map((o) => ({ ico: "•", label: o.text })),
+        store: "backend",
+        backendIndex: qi,
+        layout: theme.mood === "clinic" ? "clinic" : "flags",
+      };
+    }
+    if (q.type === "open") {
+      return {
+        kind: "open",
+        key: q.id,
+        index: qi,
+        question: q.text,
+        placeholder: q.hint ?? q.text,
+        hint: q.hint ?? undefined,
+        emoji: base.emoji,
+      };
+    }
+    const labels = q.options.map((o) => o.text);
+    if (q.type === "single") {
+      return {
+        kind: "scale",
+        ...base,
+        scale: labels.map((_, i) => String(i + 1)),
+        leftLabel: labels[0] ?? "No",
+        rightLabel: labels[labels.length - 1] ?? "Sí",
+        variant: "cards",
+        optionLabels: labels,
+      };
+    }
+    return {
+      kind: "scale",
+      ...base,
+      scale: LIKERT_SCALE,
+      leftLabel: q.minLabel ?? "Nunca",
+      rightLabel: q.maxLabel ?? "Siempre",
+      variant: "likert",
+    };
+  });
+  return withIntro(theme, title, steps);
 }
 
 export function isNoneLabel(label: string): boolean {
-  return /ninguno/i.test(label)
+  return /ninguno/i.test(label);
 }
 
 export function itemTint(label: string): { bg: string; fg: string } {
-  const s = label.toLowerCase()
-  if (isNoneLabel(s)) return { bg: 'var(--g1)', fg: 'var(--mu)' }
-  if (/diabetes|prediabetes/.test(s)) return { bg: 'var(--red-l)', fg: 'var(--red)' }
-  if (/hipertens|hta/.test(s)) return { bg: 'var(--blue-l)', fg: 'var(--blue)' }
-  if (/cardio|coronaria/.test(s)) return { bg: 'var(--red-l)', fg: 'var(--red)' }
-  if (/colesterol|triglic/.test(s)) return { bg: 'var(--org-l)', fg: 'var(--org)' }
-  if (/hígado|higado/.test(s)) return { bg: 'var(--org-l)', fg: '#b45309' }
-  if (/asma|epoc/.test(s)) return { bg: 'var(--blue-l)', fg: 'var(--blue)' }
-  if (/artros/.test(s)) return { bg: 'var(--org-l)', fg: '#b45309' }
-  if (/depres|ansied|acv/.test(s)) return { bg: 'var(--pur-l)', fg: 'var(--pur)' }
-  if (/tiroides|cáncer|cancer/.test(s)) return { bg: 'var(--pur-l)', fg: 'var(--pur)' }
-  return { bg: 'var(--blue-l)', fg: 'var(--blue)' }
+  const s = label.toLowerCase();
+  if (isNoneLabel(s)) return { bg: "var(--g1)", fg: "var(--mu)" };
+  if (/diabetes|prediabetes/.test(s))
+    return { bg: "var(--red-l)", fg: "var(--red)" };
+  if (/hipertens|hta/.test(s))
+    return { bg: "var(--blue-l)", fg: "var(--blue)" };
+  if (/cardio|coronaria|acv/.test(s))
+    return { bg: "var(--red-l)", fg: "var(--red)" };
+  if (/colesterol|triglic/.test(s))
+    return { bg: "var(--org-l)", fg: "var(--org)" };
+  if (/obes/.test(s)) return { bg: "var(--org-l)", fg: "#b45309" };
+  return { bg: "var(--blue-l)", fg: "var(--blue)" };
 }
 
 export function sectionTone(section?: string): string {
-  if (!section) return ''
-  const s = section.toLowerCase()
-  if (s.includes('sanguíneo') || s.includes('sanguineo')) return 'sang'
-  if (s.includes('colérico') || s.includes('colerico')) return 'col'
-  if (s.includes('melancólico') || s.includes('melancolico')) return 'mel'
-  if (s.includes('flemático') || s.includes('flematico')) return 'fle'
-  if (s.includes('riesgo') || s.includes('alerta')) return 'risk'
-  if (s.includes('motiv') || s.includes('propósito') || s.includes('proposito')) return 'goal'
-  return ''
+  if (!section) return "";
+  const s = section.toLowerCase();
+  if (s.includes("sanguíneo") || s.includes("sanguineo")) return "sang";
+  if (s.includes("colérico") || s.includes("colerico")) return "col";
+  if (s.includes("melancólico") || s.includes("melancolico")) return "mel";
+  if (s.includes("flemático") || s.includes("flematico")) return "fle";
+  if (s.includes("riesgo") || s.includes("alerta")) return "risk";
+  if (s.includes("motiv") || s.includes("propósito") || s.includes("proposito"))
+    return "goal";
+  return "";
 }
