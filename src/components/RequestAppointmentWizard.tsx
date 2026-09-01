@@ -185,6 +185,13 @@ export function RequestAppointmentWizard({
       return;
     }
     if (!typeId || !mode) return;
+    if (realMode) {
+      // Modo sesión real: "Solicitar cita" envía la solicitud al backend de
+      // inmediato (el wizard cierra con toast de éxito/error). La pantalla
+      // "Solicitud lista" queda para el modo demo.
+      finish();
+      return;
+    }
     setDone(true);
   };
 

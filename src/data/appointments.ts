@@ -182,6 +182,12 @@ const WEEKDAY_SLOTS = [
   "15:30",
   "16:00",
   "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
+  "19:30",
 ] as const;
 
 const URGENCY_WEEKEND_SLOTS = ["09:00", "11:00", "14:00", "16:00"] as const;
@@ -351,13 +357,23 @@ export function realProfessionalByType(
   catalog: ProfessionalCatalogItem[] | null,
 ): TeamProfessional {
   const candidates = (catalog ?? []).filter((p) => p.status === "Active");
+  const medica = typeId === "medica" || typeId === "urgencia";
   const match =
+    (medica
+      ? candidates.find(
+          (p) =>
+            typeFromProfessional(p.professionalTypeName) === typeId &&
+            /physician/i.test(p.professionalTypeName ?? ""),
+        )
+      : undefined) ??
     candidates.find(
       (p) => typeFromProfessional(p.professionalTypeName) === typeId,
     ) ??
-    candidates.find(
-      (p) => typeFromProfessional(p.professionalTypeName) === "medica",
-    );
+    (medica
+      ? candidates.find(
+          (p) => typeFromProfessional(p.professionalTypeName) === "medica",
+        )
+      : undefined);
   if (!match) return professionalByType(typeId);
 
   const type = typeFromProfessional(match.professionalTypeName);
