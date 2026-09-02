@@ -31,6 +31,7 @@ import {
   buildBackendSteps,
   buildDemoSteps,
   FALLBACK_THEME,
+  PATIENT_TITLES,
   themeFor,
   type TestTheme,
 } from "../components/tests/model";
@@ -145,7 +146,10 @@ export function TestsPage() {
           key: a.id,
           id: idx,
           assignmentId: a.id,
-          title: a.testName ?? `Evaluación ${idx + 1}`,
+          title:
+            PATIENT_TITLES[a.testCode ?? ""] ??
+            a.testName ??
+            `Evaluación ${idx + 1}`,
           sub: visual.sub || stateLabel(a.status),
           emoji: visual.emoji,
           bg: visual.accentSoft,
