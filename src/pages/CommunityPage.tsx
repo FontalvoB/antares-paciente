@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   IonAlert,
   IonButton,
   IonIcon,
   IonSearchbar,
   IonSkeletonText,
-} from '@ionic/react'
+} from "@ionic/react";
 import {
   arrowBack,
   arrowUp,
@@ -21,21 +21,23 @@ import {
   personAddOutline,
   personRemoveOutline,
   searchOutline,
+  sendOutline,
   shareSocialOutline,
   sparklesOutline,
   starOutline,
-} from 'ionicons/icons'
-import { Screen, Scroll } from '../components/Screen'
-import { useApp } from '../context/AppContext'
-import { useI18n } from '../i18n/I18nContext'
+} from "ionicons/icons";
+import { Screen, Scroll } from "../components/Screen";
+import { useApp } from "../context/AppContext";
+import { useI18n } from "../i18n/I18nContext";
 import {
   useCommunity,
   useConversationMessageListener,
   useGroupChangedListener,
   useGroupMessageListener,
-} from '../hooks/useCommunity'
-import { useCoverTint } from '../hooks/useCoverTint'
-import { useQuery, useSubscription } from 'urql'
+  type FeedPostView,
+} from "../hooks/useCommunity";
+import { useCoverTint } from "../hooks/useCoverTint";
+import { useQuery, useSubscription } from "urql";
 import {
   POST_ADDED,
   PROFILE_FOLLOWERS_QUERY,
@@ -45,20 +47,37 @@ import {
   type ProfileFollowersResult,
   type ProfileFollowingResult,
   type ProfileResult,
-} from '../graphql/community'
-import type { ChatGroup, Person, Post, Profile } from '../graphql/community'
-import { ErrorBoundary } from '../components/error-boundary'
-import { ConversationModal } from '../components/conversation-modal'
-import { PostCard } from '../components/community/PostCard'
-import { PostDetailModal } from '../components/community/PostDetailModal'
-import { ComposePostModal } from '../components/community/ComposePostModal'
-import { MemberProfile } from '../components/community/MemberProfile'
-import { CreateGroupModal } from '../components/community/CreateGroupModal'
-import { CommunityFab, type FabAction } from '../components/community/CommunityFab'
-import { ComSidebar } from '../components/community/ComSidebar'
-import { CommunityProfile } from '../components/community/CommunityProfile'
-import { NewChatModal } from '../components/community/NewChatModal'
-import { MediaLightbox } from '../components/community/MediaLightbox'
+} from "../graphql/community";
+import type { ChatGroup, Person, Post, Profile } from "../graphql/community";
+import { ErrorBoundary } from "../components/error-boundary";
+import { ConversationModal } from "../components/conversation-modal";
+import { PostCard } from "../components/community/PostCard";
+import {
+  ClubsSection,
+  toFeedPost,
+  MOCK_MY_ID,
+} from "../components/community/ClubsSection";
+import {
+  fetchPublicClubPosts,
+  toggleClubPostLike,
+  addClubComment,
+  voteClubPoll,
+} from "../mocks/clubs-api";
+import type { Club } from "../graphql/clubs";
+import { coverGradient } from "../mocks/clubs-data";
+import { initials } from "../utils/clubs-helpers";
+import { PostDetailModal } from "../components/community/PostDetailModal";
+import { ComposePostModal } from "../components/community/ComposePostModal";
+import { MemberProfile } from "../components/community/MemberProfile";
+import { CreateGroupModal } from "../components/community/CreateGroupModal";
+import {
+  CommunityFab,
+  type FabAction,
+} from "../components/community/CommunityFab";
+import { ComSidebar } from "../components/community/ComSidebar";
+import { CommunityProfile } from "../components/community/CommunityProfile";
+import { NewChatModal } from "../components/community/NewChatModal";
+import { MediaLightbox } from "../components/community/MediaLightbox";
 import {
   Avatar,
   BannedScreen,
@@ -69,7 +88,7 @@ import {
   RowSkeleton,
   timeAgo,
   initialsOf,
-} from '../components/community/community'
+} from "../components/community/community";
 
 /** Suscriptor "invisible" para una conversación: avisa para refrescar la lista
  *  de conversaciones cuando llega un mensaje (tab de chat, modal cerrado). */
@@ -78,12 +97,12 @@ function ConversationMessageListener({
   peerId,
   onMessage,
 }: {
-  meId: string | null
-  peerId: string
-  onMessage: () => void
+  meId: string | null;
+  peerId: string;
+  onMessage: () => void;
 }) {
-  useConversationMessageListener(meId, peerId, onMessage)
-  return null
+  useConversationMessageListener(meId, peerId, onMessage);
+  return null;
 }
 
 /** Suscriptor "invisible" para UN grupo: refresca la lista de grupos cuando
@@ -93,13 +112,13 @@ function GroupListener({
   onMessage,
   onChanged,
 }: {
-  groupId: string
-  onMessage: () => void
-  onChanged: () => void
+  groupId: string;
+  onMessage: () => void;
+  onChanged: () => void;
 }) {
-  useGroupMessageListener(groupId, onMessage)
-  useGroupChangedListener(groupId, onChanged)
-  return null
+  useGroupMessageListener(groupId, onMessage);
+  useGroupChangedListener(groupId, onChanged);
+  return null;
 }
 
 /** Renderiza un suscriptor por grupo (los hooks deben llamarse dentro de un
@@ -109,17 +128,22 @@ function GroupChatListeners({
   onMessage,
   onChanged,
 }: {
-  groups: ChatGroup[]
-  onMessage: () => void
-  onChanged: () => void
+  groups: ChatGroup[];
+  onMessage: () => void;
+  onChanged: () => void;
 }) {
   return (
     <>
       {groups.map((g) => (
-        <GroupListener key={g.id} groupId={g.id} onMessage={onMessage} onChanged={onChanged} />
+        <GroupListener
+          key={g.id}
+          groupId={g.id}
+          onMessage={onMessage}
+          onChanged={onChanged}
+        />
       ))}
     </>
-  )
+  );
 }
 
 /** Botón "volver" de vistas anidadas (perfil de miembro, listas).
@@ -129,20 +153,26 @@ function BackButton({
   label,
   overlay = false,
 }: {
-  onClick: () => void
-  label?: string
-  overlay?: boolean
+  onClick: () => void;
+  label?: string;
+  overlay?: boolean;
 }) {
-  const { t } = useI18n()
-  const resolvedLabel = label ?? t('Volver')
+  const { t } = useI18n();
+  const resolvedLabel = label ?? t("Volver");
   if (overlay) {
     return (
       <div className="mem-back">
-        <IonButton fill="clear" className="mem-back-btn" onClick={onClick} aria-label={resolvedLabel}>
-          <IonIcon icon={arrowBack} style={{ marginRight: 6 }} /> {resolvedLabel}
+        <IonButton
+          fill="clear"
+          className="mem-back-btn"
+          onClick={onClick}
+          aria-label={resolvedLabel}
+        >
+          <IonIcon icon={arrowBack} style={{ marginRight: 6 }} />{" "}
+          {resolvedLabel}
         </IonButton>
       </div>
-    )
+    );
   }
   return (
     <div style={{ padding: 14 }}>
@@ -150,7 +180,7 @@ function BackButton({
         <IonIcon icon={arrowBack} style={{ marginRight: 6 }} /> {resolvedLabel}
       </IonButton>
     </div>
-  )
+  );
 }
 
 /** Tarjeta de amigo/sugerencia: identidad completa (nombre sin recorte) y
@@ -163,12 +193,12 @@ function AmigoRow({
   onClick,
   actions,
 }: {
-  name: string
-  seedId: string
-  src?: string | null
-  sub?: string
-  onClick: () => void
-  actions: ReactNode
+  name: string;
+  seedId: string;
+  src?: string | null;
+  sub?: string;
+  onClick: () => void;
+  actions: ReactNode;
 }) {
   return (
     <div className="com-row amg-row">
@@ -181,43 +211,75 @@ function AmigoRow({
       </div>
       <div className="amg-foot">{actions}</div>
     </div>
-  )
+  );
 }
 
 /** Logos oficiales de cada red (trazos SVG, estilo simple-icons). */
 const BRAND_ICONS = {
   tiktok:
-    'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z',
+    "M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z",
   instagram:
-    'M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z',
+    "M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z",
   facebook:
-    'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.613 23.027 24 18.062 24 12.073z',
+    "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.613 23.027 24 18.062 24 12.073z",
   youtube:
-    'M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z',
+    "M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z",
   whatsapp:
-    'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.768.966-.94 1.164-.173.199-.347.223-.645.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z',
-} as const
+    "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.768.966-.94 1.164-.173.199-.347.223-.645.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z",
+} as const;
 
 const REDES: { icon: string; name: string; sub: string; bg: string }[] = [
-  { icon: BRAND_ICONS.tiktok, name: 'TikTok ANTARES', sub: '@antaresbiohacking · 48.2K', bg: 'linear-gradient(135deg,#010101,#232028)' },
-  { icon: BRAND_ICONS.instagram, name: 'Instagram ANTARES', sub: '@antares.biohacking · 23.7K', bg: 'linear-gradient(135deg,#F58529,#DD2A7B 52%,#8134AF 78%,#515BD4)' },
-  { icon: BRAND_ICONS.facebook, name: 'Facebook Community', sub: '15.4K miembros', bg: 'linear-gradient(135deg,#1877F2,#0E5BB2)' },
-  { icon: BRAND_ICONS.youtube, name: 'YouTube ANTARES', sub: 'SUMMITs · Clases · 8.1K', bg: 'linear-gradient(135deg,#FF0000,#C4302B)' },
-  { icon: BRAND_ICONS.whatsapp, name: 'WhatsApp Miami', sub: 'Grupo COPP-ADRESD · 284', bg: 'linear-gradient(135deg,#25D366,#128C7E)' },
-]
+  {
+    icon: BRAND_ICONS.tiktok,
+    name: "TikTok ANTARES",
+    sub: "@antaresbiohacking · 48.2K",
+    bg: "linear-gradient(135deg,#010101,#232028)",
+  },
+  {
+    icon: BRAND_ICONS.instagram,
+    name: "Instagram ANTARES",
+    sub: "@antares.biohacking · 23.7K",
+    bg: "linear-gradient(135deg,#F58529,#DD2A7B 52%,#8134AF 78%,#515BD4)",
+  },
+  {
+    icon: BRAND_ICONS.facebook,
+    name: "Facebook Community",
+    sub: "15.4K miembros",
+    bg: "linear-gradient(135deg,#1877F2,#0E5BB2)",
+  },
+  {
+    icon: BRAND_ICONS.youtube,
+    name: "YouTube ANTARES",
+    sub: "SUMMITs · Clases · 8.1K",
+    bg: "linear-gradient(135deg,#FF0000,#C4302B)",
+  },
+  {
+    icon: BRAND_ICONS.whatsapp,
+    name: "WhatsApp Miami",
+    sub: "Grupo COPP-ADRESD · 284",
+    bg: "linear-gradient(135deg,#25D366,#128C7E)",
+  },
+];
 
 /** Renderiza el logotipo de una red con su trazo oficial. */
 function BrandIcon({ path, size = 20 }: { path: string; size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+      focusable="false"
+    >
       <path d={path} />
     </svg>
-  )
+  );
 }
 
 export function CommunityPage() {
-  const { showToast, pointsTotal } = useApp()
-  const { t } = useI18n()
+  const { showToast, pointsTotal } = useApp();
+  const { t } = useI18n();
   const {
     me,
     meLoading,
@@ -275,354 +337,437 @@ export function CommunityPage() {
     removeGroupMember,
     leaveGroup,
     sendGroupMessage,
-  } = useCommunity()
+  } = useCommunity();
 
-  const coverTint = useCoverTint(me?.coverUrl)
+  const coverTint = useCoverTint(me?.coverUrl);
   const heroCss = useMemo(() => {
-    const [cr, cg, cb] = coverTint.rgb
+    const [cr, cg, cb] = coverTint.rgb;
     // Adónde se funde el hero en modo claro: el mismo gris del fondo del feed
     // (#d9dfe8) para que el degradado termine sin costura.
-    const LIGHT: [number, number, number] = [217, 223, 232]
+    const LIGHT: [number, number, number] = [217, 223, 232];
     const mixToBg = (t: number): string => {
-      const c = [cr, cg, cb].map((v, i) => Math.round(v + (LIGHT[i] - v) * t))
-      return `rgb(${c[0]}, ${c[1]}, ${c[2]})`
-    }
+      const c = [cr, cg, cb].map((v, i) => Math.round(v + (LIGHT[i] - v) * t));
+      return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+    };
     return {
-      '--me-cover-end': `rgb(${cr}, ${cg}, ${cb})`,
-      '--me-bg': `linear-gradient(180deg, ${mixToBg(0)} 0%, ${mixToBg(0.55)} 52%, ${mixToBg(1)} 100%)`,
-      '--me-on': coverTint.dark ? '#ffffff' : '#14213b',
-      '--me-on-soft': coverTint.dark ? 'rgba(255, 255, 255, 0.82)' : 'rgba(20, 33, 59, 0.82)',
-    } as React.CSSProperties
-  }, [coverTint])
+      "--me-cover-end": `rgb(${cr}, ${cg}, ${cb})`,
+      "--me-bg": `linear-gradient(180deg, ${mixToBg(0)} 0%, ${mixToBg(0.55)} 52%, ${mixToBg(1)} 100%)`,
+      "--me-on": coverTint.dark ? "#ffffff" : "#14213b",
+      "--me-on-soft": coverTint.dark
+        ? "rgba(255, 255, 255, 0.82)"
+        : "rgba(20, 33, 59, 0.82)",
+    } as React.CSSProperties;
+  }, [coverTint]);
 
-  const [tab, setTab] = useState<'feed' | 'perfil' | 'chat' | 'amigos' | 'redes'>('feed')
-  const [feedScope, setFeedScope] = useState<'forYou' | 'following'>('forYou')
-  const [q, setQ] = useState('')
-  const [busyId, setBusyId] = useState<string | null>(null)
-  const [activePeer, setActivePeer] = useState<Profile | null>(null)
-  const [activeGroup, setActiveGroup] = useState<ChatGroup | null>(null)
-  const [createOpen, setCreateOpen] = useState(false)
-  const [viewingId, setViewingId] = useState<string | null>(null)
-  const [unfollowTarget, setUnfollowTarget] = useState<Profile | null>(null)
-  const [perfilList, setPerfilList] = useState<'followers' | 'following' | null>(null)
-  const [memberList, setMemberList] = useState<'followers' | 'following' | null>(null)
-  const [composeOpen, setComposeOpen] = useState(false)
-  const [chatQ, setChatQ] = useState('')
-  const [newChatOpen, setNewChatOpen] = useState(false)
-  const [amigosTab, setAmigosTab] = useState<'amigos' | 'sugerencias'>('amigos')
-  const storiesRef = useRef<HTMLDivElement | null>(null)
-  const storiesDragRef = useRef<{ x: number; left: number; moved: boolean } | null>(null)
-  const storiesTapRef = useRef(false)
+  const [tab, setTab] = useState<
+    "feed" | "perfil" | "chat" | "amigos" | "redes" | "clubes"
+  >("feed");
+  /** Posts públicos de clubes inyectados en el feed general (mock). */
+  const [clubFeed, setClubFeed] = useState<
+    { club: Club; view: FeedPostView }[]
+  >([]);
+  const [clubCommentDraft, setClubCommentDraft] = useState<
+    Record<string, string>
+  >({});
+  const [feedScope, setFeedScope] = useState<"forYou" | "following">("forYou");
+  const [q, setQ] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [activePeer, setActivePeer] = useState<Profile | null>(null);
+  const [activeGroup, setActiveGroup] = useState<ChatGroup | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [unfollowTarget, setUnfollowTarget] = useState<Profile | null>(null);
+  const [perfilList, setPerfilList] = useState<
+    "followers" | "following" | null
+  >(null);
+  const [memberList, setMemberList] = useState<
+    "followers" | "following" | null
+  >(null);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [chatQ, setChatQ] = useState("");
+  const [newChatOpen, setNewChatOpen] = useState(false);
+  const [amigosTab, setAmigosTab] = useState<"amigos" | "sugerencias">(
+    "amigos",
+  );
+  const storiesRef = useRef<HTMLDivElement | null>(null);
+  const storiesDragRef = useRef<{
+    x: number;
+    left: number;
+    moved: boolean;
+  } | null>(null);
+  const storiesTapRef = useRef(false);
 
   // Drag-to-scroll de las burbujas (mouse/pointer); el touch usa el nativo.
   function onStoriesDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.pointerType === 'touch' || !storiesRef.current) return
+    if (e.pointerType === "touch" || !storiesRef.current) return;
     // Sin setPointerCapture: capturar el puntero en el contenedor redirigiría
     // el click derivado al contenedor y las burbujas dejarían de responder.
-    storiesDragRef.current = { x: e.clientX, left: storiesRef.current.scrollLeft, moved: false }
+    storiesDragRef.current = {
+      x: e.clientX,
+      left: storiesRef.current.scrollLeft,
+      moved: false,
+    };
   }
   function onStoriesMove(e: React.PointerEvent<HTMLDivElement>) {
-    const d = storiesDragRef.current
-    if (!d || !storiesRef.current) return
-    const dx = e.clientX - d.x
-    if (Math.abs(dx) > 6) d.moved = true
-    storiesRef.current.scrollLeft = d.left - dx
+    const d = storiesDragRef.current;
+    if (!d || !storiesRef.current) return;
+    const dx = e.clientX - d.x;
+    if (Math.abs(dx) > 6) d.moved = true;
+    storiesRef.current.scrollLeft = d.left - dx;
   }
   function onStoriesEnd() {
-    const d = storiesDragRef.current
-    if (!d) return
+    const d = storiesDragRef.current;
+    if (!d) return;
     if (d.moved) {
-      storiesTapRef.current = true
+      storiesTapRef.current = true;
       window.setTimeout(() => {
-        storiesTapRef.current = false
-      }, 80)
+        storiesTapRef.current = false;
+      }, 80);
     }
-    storiesDragRef.current = null
+    storiesDragRef.current = null;
   }
 
   // Transición del perfil entre vista principal y listas (despliegue/colapso).
-  const [profLeaving, setProfLeaving] = useState(false)
-  const profBusyRef = useRef(false)
-  const profGo = (to: 'followers' | 'following' | 'main') => {
-    if (profBusyRef.current) return
-    profBusyRef.current = true
-    setProfLeaving(true)
+  const [profLeaving, setProfLeaving] = useState(false);
+  const profBusyRef = useRef(false);
+  const profGo = (to: "followers" | "following" | "main") => {
+    if (profBusyRef.current) return;
+    profBusyRef.current = true;
+    setProfLeaving(true);
     window.setTimeout(() => {
-      setPerfilList(to === 'main' ? null : to)
-      setProfLeaving(false)
-      profBusyRef.current = false
-    }, 180)
-  }
+      setPerfilList(to === "main" ? null : to);
+      setProfLeaving(false);
+      profBusyRef.current = false;
+    }, 180);
+  };
 
   const [profileResult, reexecuteProfile] = useQuery<ProfileResult>({
     query: PROFILE_QUERY,
-    variables: { id: viewingId ?? '' },
+    variables: { id: viewingId ?? "" },
     pause: !viewingId,
-  })
-  const [memberFollowersResult, reexecuteMemberFollowers] = useQuery<ProfileFollowersResult>({
-    query: PROFILE_FOLLOWERS_QUERY,
-    variables: { profileId: viewingId ?? '', take: 50, skip: 0 },
-    pause: !viewingId,
-  })
-  const [memberFollowingResult, reexecuteMemberFollowing] = useQuery<ProfileFollowingResult>({
-    query: PROFILE_FOLLOWING_QUERY,
-    variables: { profileId: viewingId ?? '', take: 50, skip: 0 },
-    pause: !viewingId,
-  })
+  });
+  const [memberFollowersResult, reexecuteMemberFollowers] =
+    useQuery<ProfileFollowersResult>({
+      query: PROFILE_FOLLOWERS_QUERY,
+      variables: { profileId: viewingId ?? "", take: 50, skip: 0 },
+      pause: !viewingId,
+    });
+  const [memberFollowingResult, reexecuteMemberFollowing] =
+    useQuery<ProfileFollowingResult>({
+      query: PROFILE_FOLLOWING_QUERY,
+      variables: { profileId: viewingId ?? "", take: 50, skip: 0 },
+      pause: !viewingId,
+    });
   const memberListItems =
-    memberList === 'followers'
+    memberList === "followers"
       ? (memberFollowersResult.data?.profileFollowers ?? [])
-      : (memberFollowingResult.data?.profileFollowing ?? [])
+      : (memberFollowingResult.data?.profileFollowing ?? []);
   const memberListFetching =
-    memberList === 'followers' ? memberFollowersResult.fetching : memberFollowingResult.fetching
+    memberList === "followers"
+      ? memberFollowersResult.fetching
+      : memberFollowingResult.fetching;
   const memberListError =
-    memberList === 'followers' ? memberFollowersResult.error : memberFollowingResult.error
+    memberList === "followers"
+      ? memberFollowersResult.error
+      : memberFollowingResult.error;
   const retryMemberList = () => {
-    if (memberList === 'followers') void reexecuteMemberFollowers({ requestPolicy: 'network-only' })
-    else void reexecuteMemberFollowing({ requestPolicy: 'network-only' })
-  }
-  const profile = profileResult.data?.profile ?? null
-  const followedIds = useMemo(() => new Set(peopleFollowing.map((p) => p.id)), [peopleFollowing])
-  const recommended = followers.filter((f) => !friends.some((x) => x.id === f.id))
-  const profileIsFriend = profile != null && friends.some((x) => x.id === profile.id)
-  const profileFollowingBack = profile != null && followedIds.has(profile.id)
+    if (memberList === "followers")
+      void reexecuteMemberFollowers({ requestPolicy: "network-only" });
+    else void reexecuteMemberFollowing({ requestPolicy: "network-only" });
+  };
+  const profile = profileResult.data?.profile ?? null;
+  const followedIds = useMemo(
+    () => new Set(peopleFollowing.map((p) => p.id)),
+    [peopleFollowing],
+  );
+  const recommended = followers.filter(
+    (f) => !friends.some((x) => x.id === f.id),
+  );
+  const profileIsFriend =
+    profile != null && friends.some((x) => x.id === profile.id);
+  const profileFollowingBack = profile != null && followedIds.has(profile.id);
 
   useEffect(() => {
-    if (tab === 'chat') void refetchConversations()
-  }, [tab, refetchConversations])
+    if (tab === "chat") void refetchConversations();
+  }, [tab, refetchConversations]);
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [newPostsCount, setNewPostsCount] = useState(0)
-  const seenPostIdsRef = useRef(new Set<string>())
-
-  const heroRef = useRef<HTMLDivElement | null>(null)
-  const [topbarOn, setTopbarOn] = useState(false)
-  const topbarOnRef = useRef(false)
-  const [fabHidden, setFabHidden] = useState(false)
-  const fabHiddenRef = useRef(false)
-  fabHiddenRef.current = fabHidden
-  const [hambHidden, setHambHidden] = useState(false)
-  const hambHiddenRef = useRef(false)
-  hambHiddenRef.current = hambHidden
+  // Carga los posts públicos de los clubes para el feed general.
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    let raf = 0
-    let heroH = 0
-    let lastY = el.scrollTop
-    let upAcc = 0
+    if (tab !== "feed") return;
+    void fetchPublicClubPosts().then((items) =>
+      setClubFeed(
+        items.map(({ club, post }) => ({
+          club,
+          view: {
+            post: toFeedPost(post),
+            likeCount: post.likes.length,
+            likedByMe: post.likes.includes(MOCK_MY_ID),
+            repostCount: 0,
+            repostedByMe: false,
+          },
+        })),
+      ),
+    );
+  }, [tab]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [newPostsCount, setNewPostsCount] = useState(0);
+  const seenPostIdsRef = useRef(new Set<string>());
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const [topbarOn, setTopbarOn] = useState(false);
+  const topbarOnRef = useRef(false);
+  const [fabHidden, setFabHidden] = useState(false);
+  const fabHiddenRef = useRef(false);
+  fabHiddenRef.current = fabHidden;
+  const [hambHidden, setHambHidden] = useState(false);
+  const hambHiddenRef = useRef(false);
+  hambHiddenRef.current = hambHidden;
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let raf = 0;
+    let heroH = 0;
+    let lastY = el.scrollTop;
+    let upAcc = 0;
     const onScroll = () => {
-      const st = el.scrollTop
-      const hero = heroRef.current
+      const st = el.scrollTop;
+      const hero = heroRef.current;
       // Desvanecido (smoothstep) + translate leve. Solo propiedades compositor
       // (opacity/transform): NO se toca la altura, así el documento nunca cambia
       // de tamaño durante el scroll (el colapso con maxHeight causaba un bucle
       // de ajuste del navegador → no dejaba volver a subir y traba el scroll).
       if (hero && !raf) {
         raf = window.requestAnimationFrame(() => {
-          raf = 0
-          if (heroH === 0 && hero.offsetHeight) heroH = hero.offsetHeight
-          const fadeDist = Math.max(160, Math.round((heroH || 340) * 0.55))
-          const t = Math.min(1, Math.max(0, st / fadeDist))
-          const fade = 1 - t * t * (3 - 2 * t)
-          hero.style.opacity = String(fade)
-          hero.style.transform = `translate3d(0, ${(-t * 40).toFixed(2)}px, 0)`
-        })
+          raf = 0;
+          if (heroH === 0 && hero.offsetHeight) heroH = hero.offsetHeight;
+          const fadeDist = Math.max(160, Math.round((heroH || 340) * 0.55));
+          const t = Math.min(1, Math.max(0, st / fadeDist));
+          const fade = 1 - t * t * (3 - 2 * t);
+          hero.style.opacity = String(fade);
+          hero.style.transform = `translate3d(0, ${(-t * 40).toFixed(2)}px, 0)`;
+        });
       }
       // Zona muerta <12px (micro-rebotes del dedo) antes de decidir nada.
-      const delta = st - lastY
-      if (Math.abs(delta) <= 12) return
-      lastY = st
+      const delta = st - lastY;
+      if (Math.abs(delta) <= 12) return;
+      lastY = st;
       // Topbar con histéresis amplia: encender >160 (hero casi invisible),
       // apagar <40 (casi al tope).
-      const on = st > (topbarOnRef.current ? 40 : 160)
+      const on = st > (topbarOnRef.current ? 40 : 160);
       if (on !== topbarOnRef.current) {
-        topbarOnRef.current = on
-        setTopbarOn(on)
+        topbarOnRef.current = on;
+        setTopbarOn(on);
       }
       // Oculta el FAB y el hamburger al bajar; los muestra al subir (o al
       // estar en el tope).
       if (st < 26) {
-        upAcc = 0
-        if (fabHiddenRef.current) setFabHidden(false)
-        if (hambHiddenRef.current) setHambHidden(false)
+        upAcc = 0;
+        if (fabHiddenRef.current) setFabHidden(false);
+        if (hambHiddenRef.current) setHambHidden(false);
       } else if (delta > 0) {
-        upAcc = 0
-        if (!fabHiddenRef.current) setFabHidden(true)
-        if (!hambHiddenRef.current) setHambHidden(true)
+        upAcc = 0;
+        if (!fabHiddenRef.current) setFabHidden(true);
+        if (!hambHiddenRef.current) setHambHidden(true);
       } else {
-        upAcc += -delta
+        upAcc += -delta;
         if (upAcc >= 40) {
-          upAcc = 0
-          if (fabHiddenRef.current) setFabHidden(false)
-          if (hambHiddenRef.current) setHambHidden(false)
+          upAcc = 0;
+          if (fabHiddenRef.current) setFabHidden(false);
+          if (hambHiddenRef.current) setHambHidden(false);
         }
       }
-    }
-    el.addEventListener('scroll', onScroll, { passive: true })
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      el.removeEventListener('scroll', onScroll)
-      if (raf) window.cancelAnimationFrame(raf)
-    }
+      el.removeEventListener("scroll", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
     // El Scroll (y su ref) solo existe después de resolver la carga inicial.
-  }, [scrollRef, meLoading, me])
+  }, [scrollRef, meLoading, me]);
 
   const [postAddedResult] = useSubscription<PostAddedResult>({
     query: POST_ADDED,
-    pause: !(tab === 'feed' && !viewingId) || me?.status === 'BANNED',
-  })
+    pause: !(tab === "feed" && !viewingId) || me?.status === "BANNED",
+  });
 
   useEffect(() => {
-    const post = postAddedResult.data?.postAdded
-    if (!post || !post.profile) return
-    if (post.profile.id === me?.id) return
-    if (feedScope === 'following' && !followedIds.has(post.profile.id)) return
-    if (seenPostIdsRef.current.has(post.id)) return
-    seenPostIdsRef.current.add(post.id)
-    setNewPostsCount((c) => c + 1)
-  }, [postAddedResult.data, me?.id, feedScope, followedIds])
+    const post = postAddedResult.data?.postAdded;
+    if (!post || !post.profile) return;
+    if (post.profile.id === me?.id) return;
+    if (feedScope === "following" && !followedIds.has(post.profile.id)) return;
+    if (seenPostIdsRef.current.has(post.id)) return;
+    seenPostIdsRef.current.add(post.id);
+    setNewPostsCount((c) => c + 1);
+  }, [postAddedResult.data, me?.id, feedScope, followedIds]);
 
   useEffect(() => {
-    seenPostIdsRef.current.clear()
-    setNewPostsCount(0)
-  }, [tab, viewingId, feedScope])
+    seenPostIdsRef.current.clear();
+    setNewPostsCount(0);
+  }, [tab, viewingId, feedScope]);
 
-  const [activePost, setActivePost] = useState<Post | null>(null)
-  const [lightbox, setLightbox] = useState<{ url: string; mediaType: 'IMAGE' | 'VIDEO' | null } | null>(null)
-  const openImage = (url: string, mediaType: 'IMAGE' | 'VIDEO' | null) => setLightbox({ url, mediaType })
-
+  const [activePost, setActivePost] = useState<Post | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    url: string;
+    mediaType: "IMAGE" | "VIDEO" | null;
+  } | null>(null);
+  const openImage = (url: string, mediaType: "IMAGE" | "VIDEO" | null) =>
+    setLightbox({ url, mediaType });
 
   async function handleToggleLike(post: Post) {
-    await toggleLike(post)
+    await toggleLike(post);
   }
 
-
   async function handleFollowToggle(person: Person) {
-    const id = person.profile.id
-    const name = person.profile.displayName
-    setBusyId(id)
+    const id = person.profile.id;
+    const name = person.profile.displayName;
+    setBusyId(id);
     try {
       if (person.isFriend) {
-        showToast(t('Ya son amigos'), 'info')
-        return
+        showToast(t("Ya son amigos"), "info");
+        return;
       }
       if (person.isFollowing) {
-        setUnfollowTarget(person.profile)
+        setUnfollowTarget(person.profile);
       } else {
-        await followUser(id)
-        showToast(t('Siguiendo a {name}', { name }), 'ok')
+        await followUser(id);
+        showToast(t("Siguiendo a {name}", { name }), "ok");
       }
     } catch (e) {
-      showToast((e as Error).message, 'err')
+      showToast((e as Error).message, "err");
     } finally {
-      setBusyId(null)
+      setBusyId(null);
     }
   }
 
   async function handleUnfollow(profileId: string, name: string) {
-    setBusyId(profileId)
+    setBusyId(profileId);
     try {
-      await unfollowUser(profileId)
-      showToast(t('Dejaste de seguir a {name}', { name }), 'ok')
+      await unfollowUser(profileId);
+      showToast(t("Dejaste de seguir a {name}", { name }), "ok");
     } catch (e) {
-      showToast((e as Error).message, 'err')
+      showToast((e as Error).message, "err");
     } finally {
-      setBusyId(null)
+      setBusyId(null);
     }
   }
 
   async function handleFollow(profileId: string, name: string) {
-    setBusyId(profileId)
+    setBusyId(profileId);
     try {
-      await followUser(profileId)
-      showToast(t('Siguiendo a {name}', { name }), 'ok')
+      await followUser(profileId);
+      showToast(t("Siguiendo a {name}", { name }), "ok");
     } catch (e) {
-      showToast((e as Error).message, 'err')
+      showToast((e as Error).message, "err");
     } finally {
-      setBusyId(null)
+      setBusyId(null);
     }
   }
 
-  const chatQuery = chatQ.trim().toLowerCase()
+  const chatQuery = chatQ.trim().toLowerCase();
   const filteredConversations = conversations.filter(
     (c) => !chatQuery || c.peer.displayName.toLowerCase().includes(chatQuery),
-  )
+  );
   const filteredGroups = groups.filter(
     (g) => !chatQuery || g.name.toLowerCase().includes(chatQuery),
-  )
+  );
 
-  const handleTab = (id: 'feed' | 'perfil' | 'chat' | 'amigos' | 'redes') => {
-    setTab(id)
-    setViewingId(null)
-    setMemberList(null)
-  }
+  const handleTab = (
+    id: "feed" | "perfil" | "chat" | "amigos" | "redes" | "clubes",
+  ) => {
+    setTab(id);
+    setViewingId(null);
+    setMemberList(null);
+  };
 
   /** Abre el perfil de un miembro; si es el mío, redirige a mi perfil (tab Perfil). */
   const openProfile = (profileId: string) => {
     if (profileId === me?.id) {
-      handleTab('perfil')
-      return
+      handleTab("perfil");
+      return;
     }
-    setViewingId(profileId)
-  }
+    setViewingId(profileId);
+  };
 
-  const [comDark, setComDark] = useState(false)
-  const [themeAnim, setThemeAnim] = useState(false)
+  const [comDark, setComDark] = useState(false);
+  const [themeAnim, setThemeAnim] = useState(false);
 
   const handleFab = (a: FabAction) => {
-    if (a === 'publish') {
-      setComposeOpen(true)
-      return
+    if (a === "publish") {
+      setComposeOpen(true);
+      return;
     }
-    if (a === 'darkmode') {
-      setComDark((d) => !d)
-      setThemeAnim(true)
-      window.setTimeout(() => setThemeAnim(false), 520)
-      return
+    if (a === "darkmode") {
+      setComDark((d) => !d);
+      setThemeAnim(true);
+      window.setTimeout(() => setThemeAnim(false), 520);
+      return;
     }
-    handleTab(a)
-    window.setTimeout(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }), 60)
-  }
+    handleTab(a);
+    window.setTimeout(
+      () => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" }),
+      60,
+    );
+  };
 
   return (
     <ErrorBoundary>
       {meLoading && !me ? (
         <div
           style={{
-            minHeight: '100dvh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            minHeight: "100dvh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             padding: 32,
           }}
         >
           <IonSkeletonText style={{ width: 180, height: 18 }} animated />
         </div>
-      ) : me && me.status === 'BANNED' ? (
+      ) : me && me.status === "BANNED" ? (
         <BannedScreen reason={me.banReason} />
       ) : (
-        <Screen hideNav className={comDark ? 'com-dark' : undefined}>
+        <Screen hideNav className={comDark ? "com-dark" : undefined}>
           <Scroll
             ref={scrollRef}
             noNav
-            className={`com-scroll${themeAnim ? ' com-theme-anim' : ''}`}
+            className={`com-scroll${themeAnim ? " com-theme-anim" : ""}`}
           >
             {viewingId ? (
               memberList ? (
                 <>
                   <BackButton onClick={() => setMemberList(null)} />
-                  <div style={{ padding: '0 14px 6px', fontWeight: 800, fontSize: 14 }}>
-                    {memberList === 'followers' ? t('Seguidores') : t('Siguiendo')}
+                  <div
+                    style={{
+                      padding: "0 14px 6px",
+                      fontWeight: 800,
+                      fontSize: 14,
+                    }}
+                  >
+                    {memberList === "followers"
+                      ? t("Seguidores")
+                      : t("Siguiendo")}
                   </div>
                   {memberListFetching ? (
                     <RowSkeleton rows={3} />
                   ) : memberListError ? (
-                    <ErrorCard message={t('No se pudo cargar la lista.')} onRetry={retryMemberList} />
+                    <ErrorCard
+                      message={t("No se pudo cargar la lista.")}
+                      onRetry={retryMemberList}
+                    />
                   ) : memberListItems.length === 0 ? (
                     <EmptyState
-                      icon={memberList === 'followers' ? peopleOutline : personAddOutline}
-                      tone={memberList === 'followers' ? 'teal' : 'blue'}
-                      title={memberList === 'followers' ? t('Aún no tiene seguidores') : t('No sigue a nadie todavía')}
+                      icon={
+                        memberList === "followers"
+                          ? peopleOutline
+                          : personAddOutline
+                      }
+                      tone={memberList === "followers" ? "teal" : "blue"}
+                      title={
+                        memberList === "followers"
+                          ? t("Aún no tiene seguidores")
+                          : t("No sigue a nadie todavía")
+                      }
                     />
                   ) : (
                     memberListItems.map((row) => (
@@ -631,14 +776,16 @@ export function CommunityPage() {
                         name={row.displayName}
                         seedId={row.id}
                         src={row.avatarUrl}
-                          sub={row.bio?.trim() || t('Sin bio')}
+                        sub={row.bio?.trim() || t("Sin bio")}
                         onClick={() => {
-                          openProfile(row.id)
-                          setMemberList(null)
+                          openProfile(row.id);
+                          setMemberList(null);
                         }}
                       >
                         <span className="com-row-lbl">
-                          {memberList === 'followers' ? t('Te sigue') : t('Siguiendo')}
+                          {memberList === "followers"
+                            ? t("Te sigue")
+                            : t("Siguiendo")}
                         </span>
                       </ComRow>
                     ))
@@ -650,23 +797,51 @@ export function CommunityPage() {
                     <>
                       <BackButton onClick={() => setViewingId(null)} />
                       <div className="com-skel" style={{ margin: 14 }}>
-                        <IonSkeletonText style={{ width: 64, height: 64, borderRadius: 32, margin: '0 auto' }} animated />
-                        <IonSkeletonText style={{ width: '50%', height: 16, margin: '10px auto 0' }} animated />
-                        <IonSkeletonText style={{ width: '80%', height: 12, margin: '10px auto 0' }} animated />
+                        <IonSkeletonText
+                          style={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: 32,
+                            margin: "0 auto",
+                          }}
+                          animated
+                        />
+                        <IonSkeletonText
+                          style={{
+                            width: "50%",
+                            height: 16,
+                            margin: "10px auto 0",
+                          }}
+                          animated
+                        />
+                        <IonSkeletonText
+                          style={{
+                            width: "80%",
+                            height: 12,
+                            margin: "10px auto 0",
+                          }}
+                          animated
+                        />
                       </div>
                     </>
                   ) : profileResult.error ? (
                     <>
                       <BackButton onClick={() => setViewingId(null)} />
                       <ErrorCard
-                        message={t('No se pudo cargar el perfil.')}
-                        onRetry={() => reexecuteProfile({ requestPolicy: 'network-only' })}
+                        message={t("No se pudo cargar el perfil.")}
+                        onRetry={() =>
+                          reexecuteProfile({ requestPolicy: "network-only" })
+                        }
                       />
                     </>
                   ) : !profile ? (
                     <>
                       <BackButton onClick={() => setViewingId(null)} />
-                      <EmptyState icon={searchOutline} tone="pur" title={t('No se encontró el perfil.')} />
+                      <EmptyState
+                        icon={searchOutline}
+                        tone="pur"
+                        title={t("No se encontró el perfil.")}
+                      />
                     </>
                   ) : (
                     <>
@@ -675,10 +850,18 @@ export function CommunityPage() {
                         isFriend={profileIsFriend}
                         isFollowingBack={profileFollowingBack}
                         busy={busyId === profile.id}
-                        followersCount={memberFollowersResult.data?.profileFollowers.length ?? 0}
-                        followingCount={memberFollowingResult.data?.profileFollowing.length ?? 0}
+                        followersCount={
+                          memberFollowersResult.data?.profileFollowers.length ??
+                          0
+                        }
+                        followingCount={
+                          memberFollowingResult.data?.profileFollowing.length ??
+                          0
+                        }
                         onShowList={(w) => setMemberList(w)}
-                        onFollow={() => void handleFollow(profile.id, profile.displayName)}
+                        onFollow={() =>
+                          void handleFollow(profile.id, profile.displayName)
+                        }
                         onUnfollow={() => setUnfollowTarget(profile)}
                         onMessage={() => setActivePeer(profile)}
                         onOpenPost={setActivePost}
@@ -690,37 +873,38 @@ export function CommunityPage() {
               )
             ) : (
               <>
-                {tab === 'feed' && (
+                {tab === "feed" && (
                   <>
-                    <div
-                      className="com-me-hero"
-                      ref={heroRef}
-                      style={heroCss}
-                    >
+                    <div className="com-me-hero" ref={heroRef} style={heroCss}>
                       <div
                         className="compf-cover com-me-cover"
                         style={
                           me?.coverUrl
                             ? {
                                 backgroundImage: `url(${me.coverUrl})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
                               }
                             : undefined
                         }
                       >
                         <span className="compf-cover-kicker">
-                          <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} /> {t('Mi espacio')}
+                          <IonIcon
+                            icon={cameraOutline}
+                            style={{ fontSize: 14 }}
+                          />{" "}
+                          {t("Mi espacio")}
                         </span>
                       </div>
                       <div className="com-me-avatar-slot">
                         <Avatar
-                          name={me?.displayName ?? 'AT'}
-                          seedId={me?.id ?? 'me'}
+                          name={me?.displayName ?? "AT"}
+                          seedId={me?.id ?? "me"}
                           size={86}
                           src={me?.avatarUrl}
                           style={{
-                            boxShadow: '0 0 0 4px var(--wh), 0 12px 26px rgba(124,58,237,0.18)',
+                            boxShadow:
+                              "0 0 0 4px var(--wh), 0 12px 26px rgba(124,58,237,0.18)",
                           }}
                         />
                       </div>
@@ -728,103 +912,222 @@ export function CommunityPage() {
                         <div className="com-me-name">{me.displayName}</div>
                       ) : meLoading ? (
                         <IonSkeletonText
-                          style={{ width: 150, height: 18, margin: '0 auto' }}
+                          style={{ width: 150, height: 18, margin: "0 auto" }}
                           animated
                         />
                       ) : (
-                        <div className="com-me-name">{t('Bienvenido')}</div>
+                        <div className="com-me-name">{t("Bienvenido")}</div>
                       )}
-                      <div className="com-me-kicker">COPP-ADRESD + INFINITO</div>
+                      <div className="com-me-kicker">
+                        COPP-ADRESD + INFINITO
+                      </div>
                       <p className="com-me-bio">
-                        {me?.bio?.trim() ? me.bio : t('Comparte lo que haces con la comunidad.')}
+                        {me?.bio?.trim()
+                          ? me.bio
+                          : t("Comparte lo que haces con la comunidad.")}
                       </p>
                       <div className="com-me-scope-row">
                         <div className="com-scope">
                           <button
                             type="button"
-                            className={`com-scope-btn ${feedScope === 'forYou' ? 'on' : ''}`}
-                            onClick={() => setFeedScope('forYou')}
-                            aria-pressed={feedScope === 'forYou'}
+                            className={`com-scope-btn ${feedScope === "forYou" ? "on" : ""}`}
+                            onClick={() => setFeedScope("forYou")}
+                            aria-pressed={feedScope === "forYou"}
                           >
-                            <IonIcon icon={sparklesOutline} /> {t('Para ti')}
+                            <IonIcon icon={sparklesOutline} /> {t("Para ti")}
                           </button>
                           <button
                             type="button"
-                            className={`com-scope-btn ${feedScope === 'following' ? 'on' : ''}`}
-                            onClick={() => setFeedScope('following')}
-                            aria-pressed={feedScope === 'following'}
+                            className={`com-scope-btn ${feedScope === "following" ? "on" : ""}`}
+                            onClick={() => setFeedScope("following")}
+                            aria-pressed={feedScope === "following"}
                           >
-                            <IonIcon icon={peopleOutline} /> {t('Siguiendo')}
+                            <IonIcon icon={peopleOutline} /> {t("Siguiendo")}
                           </button>
                         </div>
                       </div>
                     </div>
 
                     {newPostsCount > 0 && (
-                      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 14px 10px' }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          padding: "0 14px 10px",
+                        }}
+                      >
                         <IonButton
                           shape="round"
                           size="small"
                           className="com-newpost"
-                          style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 5,
+                          }}
                           onClick={() => {
-                            setNewPostsCount(0)
-                            seenPostIdsRef.current.clear()
-                            if (feedScope === 'forYou') retryFeed()
-                            else retryFollowingFeed()
-                            scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+                            setNewPostsCount(0);
+                            seenPostIdsRef.current.clear();
+                            if (feedScope === "forYou") retryFeed();
+                            else retryFollowingFeed();
+                            scrollRef.current?.scrollTo({
+                              top: 0,
+                              behavior: "smooth",
+                            });
                           }}
                         >
                           <IonIcon icon={arrowUp} />
                           <span>
-                            {t('Ver')} {newPostsCount} {newPostsCount === 1 ? t('publicación nueva') : t('publicaciones nuevas')}
+                            {t("Ver")} {newPostsCount}{" "}
+                            {newPostsCount === 1
+                              ? t("publicación nueva")
+                              : t("publicaciones nuevas")}
                           </span>
                         </IonButton>
                       </div>
                     )}
 
-                    {feedScope === 'forYou' ? (
-                      feedError ? (
+                    {feedScope === "forYou" ? (
+                      feedError && clubFeed.length === 0 ? (
                         <ErrorCard
-                          message={t('No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.')}
+                          message={t(
+                            "No se pudo cargar la comunidad. Verifica tu sesión e inténtalo de nuevo.",
+                          )}
                           onRetry={retryFeed}
                         />
-                      ) : feedLoading && feed.length === 0 ? (
+                      ) : feedLoading &&
+                        feed.length === 0 &&
+                        clubFeed.length === 0 ? (
                         <>
                           <PostSkeleton />
                           <PostSkeleton />
                           <PostSkeleton />
                         </>
-                      ) : feed.length === 0 ? (
+                      ) : feed.length === 0 && clubFeed.length === 0 ? (
                         <EmptyState
                           icon={sparklesOutline}
                           tone="pur"
-                          title={t('La comunidad está en silencio por ahora')}
-                          hint={t('Sé la primera persona en compartir algo con ANTARES.')}
+                          title={t("La comunidad está en silencio por ahora")}
+                          hint={t(
+                            "Sé la primera persona en compartir algo con ANTARES.",
+                          )}
                         />
                       ) : (
-                        feed.map((view, i) => (
-                          <PostCard
-                            key={view.post.id}
-                            index={i}
-                            view={view}
-                            onOpen={setActivePost}
-                            onOpenImage={openImage}
-                            onToggleLike={handleToggleLike}
-                            onToggleRepost={toggleRepost}
-                            onReportPost={reportPost}
-                            onReportComment={reportComment}
-                            onToggleCommentLike={toggleCommentLike}
-                            onFetchPostReposts={fetchPostReposts}
-                            onVotePoll={votePoll}
-                            myId={me?.id ?? null}
-                            onToast={showToast}
-                          />
-                        ))
+                        <>
+                          {clubFeed.map((item) => (
+                            <ClubFeedItem
+                              key={`club-${item.view.post.id}`}
+                              club={item.club}
+                              view={item.view}
+                              commentDraft={
+                                clubCommentDraft[item.view.post.id] ?? ""
+                              }
+                              onCommentDraft={(v) =>
+                                setClubCommentDraft((prev) => ({
+                                  ...prev,
+                                  [item.view.post.id]: v,
+                                }))
+                              }
+                              onToggleLike={async () => {
+                                const updated = await toggleClubPostLike(
+                                  item.club.id,
+                                  item.view.post.id,
+                                );
+                                setClubFeed((prev) =>
+                                  prev.map((x) =>
+                                    x.view.post.id === updated.id
+                                      ? {
+                                          ...x,
+                                          view: {
+                                            ...x.view,
+                                            post: toFeedPost(updated),
+                                            likeCount: updated.likes.length,
+                                            likedByMe:
+                                              updated.likes.includes(
+                                                MOCK_MY_ID,
+                                              ),
+                                          },
+                                        }
+                                      : x,
+                                  ),
+                                );
+                              }}
+                              onComment={async () => {
+                                const body = (
+                                  clubCommentDraft[item.view.post.id] ?? ""
+                                ).trim();
+                                if (!body) return;
+                                const updated = await addClubComment(
+                                  item.club.id,
+                                  item.view.post.id,
+                                  body,
+                                );
+                                setClubCommentDraft((prev) => ({
+                                  ...prev,
+                                  [item.view.post.id]: "",
+                                }));
+                                setClubFeed((prev) =>
+                                  prev.map((x) =>
+                                    x.view.post.id === updated.id
+                                      ? {
+                                          ...x,
+                                          view: {
+                                            ...x.view,
+                                            post: toFeedPost(updated),
+                                          },
+                                        }
+                                      : x,
+                                  ),
+                                );
+                              }}
+                              onVotePoll={async (optionId) => {
+                                const updated = await voteClubPoll(
+                                  item.club.id,
+                                  optionId,
+                                );
+                                setClubFeed((prev) =>
+                                  prev.map((x) =>
+                                    x.view.post.id === updated.id
+                                      ? {
+                                          ...x,
+                                          view: {
+                                            ...x.view,
+                                            post: toFeedPost(updated),
+                                          },
+                                        }
+                                      : x,
+                                  ),
+                                );
+                              }}
+                              myId={me?.id ?? null}
+                              onToast={showToast}
+                            />
+                          ))}
+                          {feed.map((view, i) => (
+                            <PostCard
+                              key={view.post.id}
+                              index={i}
+                              view={view}
+                              onOpen={setActivePost}
+                              onOpenImage={openImage}
+                              onToggleLike={handleToggleLike}
+                              onToggleRepost={toggleRepost}
+                              onReportPost={reportPost}
+                              onReportComment={reportComment}
+                              onToggleCommentLike={toggleCommentLike}
+                              onFetchPostReposts={fetchPostReposts}
+                              onVotePoll={votePoll}
+                              myId={me?.id ?? null}
+                              onToast={showToast}
+                            />
+                          ))}
+                        </>
                       )
                     ) : followingFeedError ? (
                       <ErrorCard
-                        message={t('No se pudo cargar el feed de seguidos. Verifica tu sesión e inténtalo de nuevo.')}
+                        message={t(
+                          "No se pudo cargar el feed de seguidos. Verifica tu sesión e inténtalo de nuevo.",
+                        )}
                         onRetry={retryFollowingFeed}
                       />
                     ) : followingFeedLoading && followingFeed.length === 0 ? (
@@ -837,11 +1140,16 @@ export function CommunityPage() {
                       <EmptyState
                         icon={peopleOutline}
                         tone="teal"
-                        title={t('Aún no sigues a nadie')}
-                        hint={t('Descubre miembros en Amigos y sigue a quien te interese.')}
+                        title={t("Aún no sigues a nadie")}
+                        hint={t(
+                          "Descubre miembros en Amigos y sigue a quien te interese.",
+                        )}
                       >
-                        <IonButton className="bt bt-pur bt-mini" onClick={() => setTab('amigos')}>
-                          {t('Ir a Amigos')}
+                        <IonButton
+                          className="bt bt-pur bt-mini"
+                          onClick={() => setTab("amigos")}
+                        >
+                          {t("Ir a Amigos")}
                         </IonButton>
                       </EmptyState>
                     ) : (
@@ -867,65 +1175,94 @@ export function CommunityPage() {
                   </>
                 )}
 
-                {tab === 'perfil' && (
+                {tab === "perfil" && (
                   <div
-                    key={perfilList ?? 'main'}
-                    className={`prof-view ${profLeaving ? 'out' : ''}`}
+                    key={perfilList ?? "main"}
+                    className={`prof-view ${profLeaving ? "out" : ""}`}
                   >
-                  {perfilList ? (
-                    <>
-                      <BackButton onClick={() => profGo('main')} />
-                      <div style={{ padding: '0 14px 6px', fontWeight: 800, fontSize: 14 }}>
-                        {perfilList === 'followers' ? t('Seguidores') : t('Siguiendo')}
-                      </div>
-                      {(perfilList === 'followers' ? followers : peopleFollowing).length === 0 ? (
-                        <EmptyState
-                          icon={perfilList === 'followers' ? peopleOutline : personAddOutline}
-                          tone={perfilList === 'followers' ? 'teal' : 'blue'}
-                          title={perfilList === 'followers' ? t('Aún no tienes seguidores') : t('No sigues a nadie todavía')}
-                        />
-                      ) : (
-                        (perfilList === 'followers' ? followers : peopleFollowing).map((f) => (
-                          <ComRow
-                            key={f.id}
-                            name={f.displayName}
-                            seedId={f.id}
-                            src={f.avatarUrl}
-                            sub={f.bio?.trim() || t('Sin bio')}
-                            onClick={() => openProfile(f.id)}
-                          >
-                            <span className="com-row-lbl">
-                              {perfilList === 'followers' ? t('Te sigue') : t('Siguiendo')}
-                            </span>
-                          </ComRow>
-                        ))
-                      )}
-                    </>
-                  ) : (
-                    <CommunityProfile
-                      me={me}
-                      meLoading={meLoading}
-                      pointsTotal={pointsTotal}
-                      followersCount={followers.length}
-                      followingCount={peopleFollowing.length}
-                      posts={meTimelinePosts}
-                      onSaveProfile={async (name, bio, avatarKey, coverKey) => {
-                        await updateProfile(name, bio, avatarKey, coverKey)
-                      }}
-                      onCompose={() => setComposeOpen(true)}
-                      onShowList={profGo}
-                      onOpenPost={setActivePost}
-                      onUploadProfileImage={async (kind, file) => {
-                        const info = await uploadProfileImage(kind, file)
-                        return { key: info.key, readUrl: info.readUrl }
-                      }}
-                      onToast={showToast}
-                    />
-                  )}
+                    {perfilList ? (
+                      <>
+                        <BackButton onClick={() => profGo("main")} />
+                        <div
+                          style={{
+                            padding: "0 14px 6px",
+                            fontWeight: 800,
+                            fontSize: 14,
+                          }}
+                        >
+                          {perfilList === "followers"
+                            ? t("Seguidores")
+                            : t("Siguiendo")}
+                        </div>
+                        {(perfilList === "followers"
+                          ? followers
+                          : peopleFollowing
+                        ).length === 0 ? (
+                          <EmptyState
+                            icon={
+                              perfilList === "followers"
+                                ? peopleOutline
+                                : personAddOutline
+                            }
+                            tone={perfilList === "followers" ? "teal" : "blue"}
+                            title={
+                              perfilList === "followers"
+                                ? t("Aún no tienes seguidores")
+                                : t("No sigues a nadie todavía")
+                            }
+                          />
+                        ) : (
+                          (perfilList === "followers"
+                            ? followers
+                            : peopleFollowing
+                          ).map((f) => (
+                            <ComRow
+                              key={f.id}
+                              name={f.displayName}
+                              seedId={f.id}
+                              src={f.avatarUrl}
+                              sub={f.bio?.trim() || t("Sin bio")}
+                              onClick={() => openProfile(f.id)}
+                            >
+                              <span className="com-row-lbl">
+                                {perfilList === "followers"
+                                  ? t("Te sigue")
+                                  : t("Siguiendo")}
+                              </span>
+                            </ComRow>
+                          ))
+                        )}
+                      </>
+                    ) : (
+                      <CommunityProfile
+                        me={me}
+                        meLoading={meLoading}
+                        pointsTotal={pointsTotal}
+                        followersCount={followers.length}
+                        followingCount={peopleFollowing.length}
+                        posts={meTimelinePosts}
+                        onSaveProfile={async (
+                          name,
+                          bio,
+                          avatarKey,
+                          coverKey,
+                        ) => {
+                          await updateProfile(name, bio, avatarKey, coverKey);
+                        }}
+                        onCompose={() => setComposeOpen(true)}
+                        onShowList={profGo}
+                        onOpenPost={setActivePost}
+                        onUploadProfileImage={async (kind, file) => {
+                          const info = await uploadProfileImage(kind, file);
+                          return { key: info.key, readUrl: info.readUrl };
+                        }}
+                        onToast={showToast}
+                      />
+                    )}
                   </div>
                 )}
 
-                {tab === 'chat' && (
+                {tab === "chat" && (
                   <>
                     {!activePeer &&
                       conversations.map((c) => (
@@ -937,34 +1274,51 @@ export function CommunityPage() {
                         />
                       ))}
                     {!activeGroup && (
-                      <GroupChatListeners groups={groups} onMessage={refetchGroups} onChanged={refetchGroups} />
+                      <GroupChatListeners
+                        groups={groups}
+                        onMessage={refetchGroups}
+                        onChanged={refetchGroups}
+                      />
                     )}
 
                     <div className="chat-hero anim-in">
                       <div className="chat-hero-main">
                         <div className="chat-title">
-                          <IonIcon icon={globeOutline} className="chat-globe" /> {t('Chat ANTARES')}
+                          <IonIcon icon={globeOutline} className="chat-globe" />{" "}
+                          {t("Chat ANTARES")}
                         </div>
                         <div className="chat-sub">
-                          <IonIcon icon={peopleOutline} /> {t('Tus amigos y grupos')}
+                          <IonIcon icon={peopleOutline} />{" "}
+                          {t("Tus amigos y grupos")}
                         </div>
                       </div>
                       <div className="chat-hero-actions">
-                        <IonButton className="chat-icon-btn" onClick={() => setCreateOpen(true)} aria-label={t('Nuevo grupo')}>
+                        <IonButton
+                          className="chat-icon-btn"
+                          onClick={() => setCreateOpen(true)}
+                          aria-label={t("Nuevo grupo")}
+                        >
                           <IonIcon icon={personAddOutline} />
                         </IonButton>
-                        <IonButton className="chat-icon-btn" onClick={() => setNewChatOpen(true)} aria-label={t('Nuevo chat')}>
+                        <IonButton
+                          className="chat-icon-btn"
+                          onClick={() => setNewChatOpen(true)}
+                          aria-label={t("Nuevo chat")}
+                        >
                           <IonIcon icon={createOutline} />
                         </IonButton>
                       </div>
                     </div>
 
-                    <div className="chat-search anim-in" style={{ animationDelay: '40ms' }}>
+                    <div
+                      className="chat-search anim-in"
+                      style={{ animationDelay: "40ms" }}
+                    >
                       <IonSearchbar
                         className="sbar chat-sbar"
                         value={chatQ}
-                        placeholder={t('Buscar o preguntar…')}
-                        onIonInput={(e) => setChatQ(e.detail.value ?? '')}
+                        placeholder={t("Buscar o preguntar…")}
+                        onIonInput={(e) => setChatQ(e.detail.value ?? "")}
                       />
                     </div>
 
@@ -972,7 +1326,7 @@ export function CommunityPage() {
                     {(conversations.length > 0 || groups.length > 0) && (
                       <div
                         className="chat-stories anim-in"
-                        style={{ animationDelay: '80ms' }}
+                        style={{ animationDelay: "80ms" }}
                         ref={storiesRef}
                         onPointerDown={onStoriesDown}
                         onPointerMove={onStoriesMove}
@@ -983,11 +1337,11 @@ export function CommunityPage() {
                           <button
                             key={g.id}
                             type="button"
-                            className={`chat-story ${i === 0 ? 'lead' : ''}`}
+                            className={`chat-story ${i === 0 ? "lead" : ""}`}
                             style={{ animationDelay: `${(7 + i) * 45}ms` }}
                             onClick={() => {
-                              if (storiesTapRef.current) return
-                              setActiveGroup(g)
+                              if (storiesTapRef.current) return;
+                              setActiveGroup(g);
                             }}
                           >
                             <span className="chat-story-av group">
@@ -996,32 +1350,44 @@ export function CommunityPage() {
                             <span className="chat-story-name">{g.name}</span>
                           </button>
                         ))}
-                        {conversations.slice(0, groups.length > 0 ? 3 : 4).map((c, i) => (
-                          <button
-                            key={c.peer.id}
-                            type="button"
-                            className={`chat-story ${groups.length === 0 && i === 0 ? 'lead' : ''}`}
-                            style={{ animationDelay: `${(7 + groups.slice(0, 4).length + i) * 45}ms` }}
-                            onClick={() => {
-                              if (storiesTapRef.current) return
-                              setActivePeer(c.peer)
-                            }}
-                          >
-                            <span className="chat-story-av">
-                              {c.peer.avatarUrl ? (
-                                <img src={c.peer.avatarUrl} alt={c.peer.displayName} />
-                              ) : (
-                                initialsOf(c.peer.displayName)
-                              )}
-                            </span>
-                            <span className="chat-story-name">{c.peer.displayName}</span>
-                          </button>
-                        ))}
+                        {conversations
+                          .slice(0, groups.length > 0 ? 3 : 4)
+                          .map((c, i) => (
+                            <button
+                              key={c.peer.id}
+                              type="button"
+                              className={`chat-story ${groups.length === 0 && i === 0 ? "lead" : ""}`}
+                              style={{
+                                animationDelay: `${(7 + groups.slice(0, 4).length + i) * 45}ms`,
+                              }}
+                              onClick={() => {
+                                if (storiesTapRef.current) return;
+                                setActivePeer(c.peer);
+                              }}
+                            >
+                              <span className="chat-story-av">
+                                {c.peer.avatarUrl ? (
+                                  <img
+                                    src={c.peer.avatarUrl}
+                                    alt={c.peer.displayName}
+                                  />
+                                ) : (
+                                  initialsOf(c.peer.displayName)
+                                )}
+                              </span>
+                              <span className="chat-story-name">
+                                {c.peer.displayName}
+                              </span>
+                            </button>
+                          ))}
                       </div>
                     )}
 
-                    <div className="chat-list-head anim-in" style={{ animationDelay: '120ms' }}>
-                      <span>{t('Mensajes')}</span>
+                    <div
+                      className="chat-list-head anim-in"
+                      style={{ animationDelay: "120ms" }}
+                    >
+                      <span>{t("Mensajes")}</span>
                       <span className="chat-list-count">
                         {conversations.length + groups.length}
                       </span>
@@ -1030,19 +1396,21 @@ export function CommunityPage() {
                     {conversationsLoading || groupsLoading ? (
                       <RowSkeleton rows={3} />
                     ) : conversationsError || groupsError ? (
-                        <ErrorCard
-                          message={t('No se pudo cargar tus conversaciones.')}
-                          onRetry={() => {
-                          refetchConversations()
-                          refetchGroups()
+                      <ErrorCard
+                        message={t("No se pudo cargar tus conversaciones.")}
+                        onRetry={() => {
+                          refetchConversations();
+                          refetchGroups();
                         }}
                       />
                     ) : conversations.length === 0 && groups.length === 0 ? (
                       <EmptyState
                         icon={chatbubblesOutline}
                         tone="blue"
-                        title={t('Aún no tienes conversaciones')}
-                        hint={t('Escribe a un amigo desde Amigos o crea un grupo.')}
+                        title={t("Aún no tienes conversaciones")}
+                        hint={t(
+                          "Escribe a un amigo desde Amigos o crea un grupo.",
+                        )}
                       />
                     ) : (
                       <>
@@ -1061,11 +1429,14 @@ export function CommunityPage() {
                               <span className="chat-msg-top">
                                 <span className="chat-msg-name">{g.name}</span>
                                 {g.lastMessage && (
-                                  <span className="chat-msg-time">{timeAgo(g.lastMessage.createdAt, t)}</span>
+                                  <span className="chat-msg-time">
+                                    {timeAgo(g.lastMessage.createdAt, t)}
+                                  </span>
                                 )}
                               </span>
                               <span className="chat-msg-sub">
-                                {g.lastMessage?.body ?? t('Sin mensajes todavía')}
+                                {g.lastMessage?.body ??
+                                  t("Sin mensajes todavía")}
                               </span>
                             </span>
                           </button>
@@ -1075,57 +1446,71 @@ export function CommunityPage() {
                             key={c.peer.id}
                             type="button"
                             className="chat-msg"
-                            style={{ animationDelay: `${(filteredGroups.length + i) * 40}ms` }}
+                            style={{
+                              animationDelay: `${(filteredGroups.length + i) * 40}ms`,
+                            }}
                             onClick={() => setActivePeer(c.peer)}
                           >
                             <span
                               className="chat-msg-av"
                               onClick={(e) => {
-                                e.stopPropagation()
-                                openProfile(c.peer.id)
+                                e.stopPropagation();
+                                openProfile(c.peer.id);
                               }}
                             >
                               {c.peer.avatarUrl ? (
-                                <img src={c.peer.avatarUrl} alt={c.peer.displayName} />
+                                <img
+                                  src={c.peer.avatarUrl}
+                                  alt={c.peer.displayName}
+                                />
                               ) : (
                                 initialsOf(c.peer.displayName)
                               )}
                             </span>
                             <span className="chat-msg-main">
                               <span className="chat-msg-top">
-                                <span className="chat-msg-name">{c.peer.displayName}</span>
+                                <span className="chat-msg-name">
+                                  {c.peer.displayName}
+                                </span>
                                 {c.lastMessage && (
-                                  <span className="chat-msg-time">{timeAgo(c.lastMessage.createdAt, t)}</span>
+                                  <span className="chat-msg-time">
+                                    {timeAgo(c.lastMessage.createdAt, t)}
+                                  </span>
                                 )}
                               </span>
                               <span className="chat-msg-sub">
-                                {c.lastMessage?.body ?? t('Sin mensajes todavía')}
+                                {c.lastMessage?.body ??
+                                  t("Sin mensajes todavía")}
                               </span>
                             </span>
                           </button>
                         ))}
-                        {filteredConversations.length === 0 && filteredGroups.length === 0 && (
-                          <EmptyState
-                            icon={searchOutline}
-                            tone="pur"
-                            title={t('Sin resultados')}
-                            hint={t('No hay conversaciones para «{q}».', { q: chatQ })}
-                          />
-                        )}
+                        {filteredConversations.length === 0 &&
+                          filteredGroups.length === 0 && (
+                            <EmptyState
+                              icon={searchOutline}
+                              tone="pur"
+                              title={t("Sin resultados")}
+                              hint={t("No hay conversaciones para «{q}».", {
+                                q: chatQ,
+                              })}
+                            />
+                          )}
                       </>
                     )}
                   </>
                 )}
 
-                {tab === 'amigos' && (
+                {tab === "amigos" && (
                   <>
                     <div className="com-banner anim-in">
                       <div className="com-banner-main">
                         <div className="com-banner-title">
-                          <IonIcon icon={peopleOutline} /> {t('Amigos ANTARES')}
+                          <IonIcon icon={peopleOutline} /> {t("Amigos ANTARES")}
                         </div>
                         <div className="com-banner-sub">
-                          <IonIcon icon={sparklesOutline} /> {t('Encuentra, conecta y sigue')}
+                          <IonIcon icon={sparklesOutline} />{" "}
+                          {t("Encuentra, conecta y sigue")}
                         </div>
                       </div>
                     </div>
@@ -1133,11 +1518,11 @@ export function CommunityPage() {
                       <IonSearchbar
                         className="sbar"
                         value={q}
-                        placeholder={t('Buscar amigos en ANTARES…')}
+                        placeholder={t("Buscar amigos en ANTARES…")}
                         onIonInput={(e) => {
-                          const v = e.detail.value ?? ''
-                          setQ(v)
-                          setPeopleQuery(v)
+                          const v = e.detail.value ?? "";
+                          setQ(v);
+                          setPeopleQuery(v);
                         }}
                       />
                     </div>
@@ -1146,47 +1531,52 @@ export function CommunityPage() {
                       <div className="com-scope">
                         <button
                           type="button"
-                          className={`com-scope-btn ${amigosTab === 'amigos' ? 'on' : ''}`}
-                          onClick={() => setAmigosTab('amigos')}
-                          aria-pressed={amigosTab === 'amigos'}
+                          className={`com-scope-btn ${amigosTab === "amigos" ? "on" : ""}`}
+                          onClick={() => setAmigosTab("amigos")}
+                          aria-pressed={amigosTab === "amigos"}
                         >
-                          <IonIcon icon={peopleIcon} /> {t('Amigos')}
+                          <IonIcon icon={peopleIcon} /> {t("Amigos")}
                           <span className="amg-count">{friends.length}</span>
                         </button>
                         <button
                           type="button"
-                          className={`com-scope-btn ${amigosTab === 'sugerencias' ? 'on' : ''}`}
-                          onClick={() => setAmigosTab('sugerencias')}
-                          aria-pressed={amigosTab === 'sugerencias'}
+                          className={`com-scope-btn ${amigosTab === "sugerencias" ? "on" : ""}`}
+                          onClick={() => setAmigosTab("sugerencias")}
+                          aria-pressed={amigosTab === "sugerencias"}
                         >
-                          <IonIcon icon={starOutline} /> {t('Sugerencias')}
-                          <span className="amg-count">{recommended.length}</span>
+                          <IonIcon icon={starOutline} /> {t("Sugerencias")}
+                          <span className="amg-count">
+                            {recommended.length}
+                          </span>
                         </button>
                       </div>
                     </div>
 
-                    {q.trim() !== '' ? (
+                    {q.trim() !== "" ? (
                       peopleLoading ? (
                         <RowSkeleton rows={4} />
                       ) : peopleError ? (
-                        <ErrorCard message={t('No se pudo buscar. Inténtalo de nuevo.')} onRetry={() => setPeopleQuery(q)} />
+                        <ErrorCard
+                          message={t("No se pudo buscar. Inténtalo de nuevo.")}
+                          onRetry={() => setPeopleQuery(q)}
+                        />
                       ) : people.length === 0 ? (
                         <EmptyState
                           icon={searchOutline}
                           tone="pur"
-                          title={t('Sin resultados')}
-                          hint={t('No encontramos a nadie para «{q}».', { q })}
+                          title={t("Sin resultados")}
+                          hint={t("No encontramos a nadie para «{q}».", { q })}
                         />
                       ) : (
                         people.map((p) => {
-                          const busy = busyId === p.profile.id
+                          const busy = busyId === p.profile.id;
                           return (
                             <AmigoRow
                               key={p.profile.id}
                               name={p.profile.displayName}
                               seedId={p.profile.id}
                               src={p.profile.avatarUrl}
-                              sub={p.profile.bio?.trim() || t('Sin bio')}
+                              sub={p.profile.bio?.trim() || t("Sin bio")}
                               onClick={() => openProfile(p.profile.id)}
                               actions={
                                 p.isFriend ? (
@@ -1195,16 +1585,26 @@ export function CommunityPage() {
                                       fill="outline"
                                       className="bt bt-mini"
                                       disabled={busy}
-                                      onClick={() => showToast(t('Ya son amigos'), 'info')}
+                                      onClick={() =>
+                                        showToast(t("Ya son amigos"), "info")
+                                      }
                                     >
-                                      <IonIcon icon={checkmark} style={{ marginRight: 4 }} /> {t('Amigos')}
+                                      <IonIcon
+                                        icon={checkmark}
+                                        style={{ marginRight: 4 }}
+                                      />{" "}
+                                      {t("Amigos")}
                                     </IonButton>
                                     <IonButton
                                       className="bt bt-outline bt-mini"
                                       onClick={() => setActivePeer(p.profile)}
-                                      aria-label={t('Escribir a {name}', { name: p.profile.displayName })}
+                                      aria-label={t("Escribir a {name}", {
+                                        name: p.profile.displayName,
+                                      })}
                                     >
-                                      <IonIcon icon={chatbubbleEllipsesOutline} />
+                                      <IonIcon
+                                        icon={chatbubbleEllipsesOutline}
+                                      />
                                     </IonButton>
                                   </>
                                 ) : p.isFollowing ? (
@@ -1214,7 +1614,11 @@ export function CommunityPage() {
                                     disabled={busy}
                                     onClick={() => void handleFollowToggle(p)}
                                   >
-                                    <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> {t('Siguiendo')}
+                                    <IonIcon
+                                      icon={personRemoveOutline}
+                                      style={{ marginRight: 4 }}
+                                    />{" "}
+                                    {t("Siguiendo")}
                                   </IonButton>
                                 ) : (
                                   <IonButton
@@ -1222,25 +1626,34 @@ export function CommunityPage() {
                                     disabled={busy}
                                     onClick={() => void handleFollowToggle(p)}
                                   >
-                                    <IonIcon icon={personAddOutline} style={{ marginRight: 4 }} /> {t('Seguir')}
+                                    <IonIcon
+                                      icon={personAddOutline}
+                                      style={{ marginRight: 4 }}
+                                    />{" "}
+                                    {t("Seguir")}
                                   </IonButton>
                                 )
                               }
                             />
-                          )
+                          );
                         })
                       )
-                    ) : amigosTab === 'amigos' ? (
+                    ) : amigosTab === "amigos" ? (
                       friendsError ? (
-                        <ErrorCard message={t('No se pudo cargar tus amigos.')} onRetry={retryFriends} />
+                        <ErrorCard
+                          message={t("No se pudo cargar tus amigos.")}
+                          onRetry={retryFriends}
+                        />
                       ) : friendsLoading ? (
                         <RowSkeleton rows={3} />
                       ) : friends.length === 0 ? (
                         <EmptyState
                           icon={peopleOutline}
                           tone="pur"
-                          title={t('Aún no tienes amigos')}
-                          hint={t('Sigue a alguien y si te siguen, serán amigos.')}
+                          title={t("Aún no tienes amigos")}
+                          hint={t(
+                            "Sigue a alguien y si te siguen, serán amigos.",
+                          )}
                         />
                       ) : (
                         friends.map((f) => (
@@ -1249,7 +1662,7 @@ export function CommunityPage() {
                             name={f.displayName}
                             seedId={f.id}
                             src={f.avatarUrl}
-                            sub={f.bio?.trim() || t('Sin bio')}
+                            sub={f.bio?.trim() || t("Sin bio")}
                             onClick={() => openProfile(f.id)}
                             actions={
                               <>
@@ -1258,12 +1671,18 @@ export function CommunityPage() {
                                   className="bt bt-mini"
                                   onClick={() => setUnfollowTarget(f)}
                                 >
-                                  <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> {t('Dejar de seguir')}
+                                  <IonIcon
+                                    icon={personRemoveOutline}
+                                    style={{ marginRight: 4 }}
+                                  />{" "}
+                                  {t("Dejar de seguir")}
                                 </IonButton>
                                 <IonButton
                                   className="bt bt-outline bt-mini"
                                   onClick={() => setActivePeer(f)}
-                                  aria-label={t('Escribir a {name}', { name: f.displayName })}
+                                  aria-label={t("Escribir a {name}", {
+                                    name: f.displayName,
+                                  })}
                                 >
                                   <IonIcon icon={chatbubbleEllipsesOutline} />
                                 </IonButton>
@@ -1273,31 +1692,38 @@ export function CommunityPage() {
                         ))
                       )
                     ) : followersError ? (
-                      <ErrorCard message={t('No se pudo cargar tus seguidores.')} onRetry={retryFollowers} />
+                      <ErrorCard
+                        message={t("No se pudo cargar tus seguidores.")}
+                        onRetry={retryFollowers}
+                      />
                     ) : followersLoading ? (
                       <RowSkeleton rows={3} />
                     ) : recommended.length === 0 ? (
                       <EmptyState
                         icon={starOutline}
                         tone="gold"
-                        title={t('No tienes seguidores nuevos por ahora')}
-                        hint={t('Cuando nuevos miembros te sigan, aparecerán aquí para conectar.')}
+                        title={t("No tienes seguidores nuevos por ahora")}
+                        hint={t(
+                          "Cuando nuevos miembros te sigan, aparecerán aquí para conectar.",
+                        )}
                       />
                     ) : (
                       recommended.map((f) => {
-                        const isFollowingBack = followedIds.has(f.id)
-                        const busy = busyId === f.id
+                        const isFollowingBack = followedIds.has(f.id);
+                        const busy = busyId === f.id;
                         return (
                           <AmigoRow
                             key={f.id}
                             name={f.displayName}
                             seedId={f.id}
                             src={f.avatarUrl}
-                            sub={f.bio?.trim() || t('Sin bio')}
+                            sub={f.bio?.trim() || t("Sin bio")}
                             onClick={() => openProfile(f.id)}
                             actions={
                               <>
-                                <span className="com-row-lbl">{t('Te sigue')}</span>
+                                <span className="com-row-lbl">
+                                  {t("Te sigue")}
+                                </span>
                                 {isFollowingBack ? (
                                   <IonButton
                                     fill="outline"
@@ -1305,35 +1731,47 @@ export function CommunityPage() {
                                     disabled={busy}
                                     onClick={() => setUnfollowTarget(f)}
                                   >
-                                    <IonIcon icon={personRemoveOutline} style={{ marginRight: 4 }} /> {t('Siguiendo')}
+                                    <IonIcon
+                                      icon={personRemoveOutline}
+                                      style={{ marginRight: 4 }}
+                                    />{" "}
+                                    {t("Siguiendo")}
                                   </IonButton>
                                 ) : (
                                   <IonButton
                                     className="bt bt-pur bt-mini"
                                     disabled={busy}
-                                    onClick={() => void handleFollow(f.id, f.displayName)}
+                                    onClick={() =>
+                                      void handleFollow(f.id, f.displayName)
+                                    }
                                   >
-                                    <IonIcon icon={personAddOutline} style={{ marginRight: 4 }} /> {t('Seguir de vuelta')}
+                                    <IonIcon
+                                      icon={personAddOutline}
+                                      style={{ marginRight: 4 }}
+                                    />{" "}
+                                    {t("Seguir de vuelta")}
                                   </IonButton>
                                 )}
                               </>
                             }
                           />
-                        )
+                        );
                       })
                     )}
                   </>
                 )}
 
-                {tab === 'redes' && (
+                {tab === "redes" && (
                   <>
                     <div className="com-banner anim-in">
                       <div className="com-banner-main">
                         <div className="com-banner-title">
-                          <IonIcon icon={shareSocialOutline} /> {t('Redes ANTARES')}
+                          <IonIcon icon={shareSocialOutline} />{" "}
+                          {t("Redes ANTARES")}
                         </div>
                         <div className="com-banner-sub">
-                          <IonIcon icon={globeOutline} /> {t('Nuestros canales y comunidades')}
+                          <IonIcon icon={globeOutline} />{" "}
+                          {t("Nuestros canales y comunidades")}
                         </div>
                       </div>
                     </div>
@@ -1343,8 +1781,13 @@ export function CommunityPage() {
                           key={r.name}
                           type="button"
                           className="com-net"
-                          style={{ background: r.bg, animationDelay: `${(i + 1) * 45}ms` }}
-                          onClick={() => showToast(`Abriendo ${r.name}…`, 'info')}
+                          style={{
+                            background: r.bg,
+                            animationDelay: `${(i + 1) * 45}ms`,
+                          }}
+                          onClick={() =>
+                            showToast(`Abriendo ${r.name}…`, "info")
+                          }
                         >
                           <div className="com-net-ico">
                             <BrandIcon path={r.icon} />
@@ -1353,7 +1796,10 @@ export function CommunityPage() {
                             <div className="com-net-name">{r.name}</div>
                             <div className="com-net-sub">{r.sub}</div>
                           </div>
-                          <IonIcon icon={chevronForward} className="com-net-arrow" />
+                          <IonIcon
+                            icon={chevronForward}
+                            className="com-net-arrow"
+                          />
                         </button>
                       ))}
                     </div>
@@ -1361,14 +1807,17 @@ export function CommunityPage() {
                 )}
               </>
             )}
+
+            {tab === "clubes" && <ClubsSection me={me} onToast={showToast} />}
+
             {/* Espacio transparente al final del feed para el FAB */}
             <div style={{ height: 88 }} aria-hidden />
           </Scroll>
 
-          <div className={`com-topbar ${topbarOn ? 'on' : ''}`} aria-hidden>
+          <div className={`com-topbar ${topbarOn ? "on" : ""}`} aria-hidden>
             <div className="com-topbar-title">
               <IonIcon icon={globeOutline} style={{ fontSize: 16 }} />
-              {t('Comunidad ANTARES')}
+              {t("Comunidad ANTARES")}
             </div>
           </div>
 
@@ -1377,10 +1826,10 @@ export function CommunityPage() {
             me={me}
             onClose={() => setActivePost(null)}
             onAddComment={async (postId, body) => {
-              return await addComment(postId, body)
+              return await addComment(postId, body);
             }}
             onReply={async (commentId, body) => {
-              return await replyToComment(commentId, body)
+              return await replyToComment(commentId, body);
             }}
             onOpenImage={openImage}
             onToast={showToast}
@@ -1400,7 +1849,7 @@ export function CommunityPage() {
               onClose={() => setActivePeer(null)}
               onToast={showToast}
               onSend={async (body) => {
-                return await sendMessage(activePeer?.id ?? '', body)
+                return await sendMessage(activePeer?.id ?? "", body);
               }}
             />
           )}
@@ -1414,19 +1863,19 @@ export function CommunityPage() {
               onClose={() => setActiveGroup(null)}
               onToast={showToast}
               onSend={async (body) => {
-                return await sendGroupMessage(activeGroup?.id ?? '', body)
+                return await sendGroupMessage(activeGroup?.id ?? "", body);
               }}
               onRemoveMember={async (gid, pid) => {
-                return await removeGroupMember(gid, pid)
+                return await removeGroupMember(gid, pid);
               }}
               onRenameGroup={async (gid, n) => {
-                return await renameGroup(gid, n)
+                return await renameGroup(gid, n);
               }}
               onAddMember={async (gid, pid) => {
-                return await addGroupMember(gid, pid)
+                return await addGroupMember(gid, pid);
               }}
               onLeaveGroup={async (gid) => {
-                return await leaveGroup(gid)
+                return await leaveGroup(gid);
               }}
             />
           )}
@@ -1436,7 +1885,7 @@ export function CommunityPage() {
             onClose={() => setCreateOpen(false)}
             friends={friends}
             onCreate={async (n, ids) => {
-              return await createGroup(n, ids)
+              return await createGroup(n, ids);
             }}
             onToast={showToast}
           />
@@ -1446,29 +1895,40 @@ export function CommunityPage() {
             onClose={() => setNewChatOpen(false)}
             friends={friends}
             onPick={(friend) => {
-              setNewChatOpen(false)
-              setActivePeer(friend)
+              setNewChatOpen(false);
+              setActivePeer(friend);
             }}
           />
 
           <IonAlert
             isOpen={!!unfollowTarget}
-            header={t('Dejar de seguir')}
-            message={t('¿Dejar de seguir a {name}?', { name: unfollowTarget?.displayName ?? '' })}
+            header={t("Dejar de seguir")}
+            message={t("¿Dejar de seguir a {name}?", {
+              name: unfollowTarget?.displayName ?? "",
+            })}
             buttons={[
-              t('Cancelar'),
+              t("Cancelar"),
               {
-                text: t('Dejar de seguir'),
-                role: 'destructive',
+                text: t("Dejar de seguir"),
+                role: "destructive",
                 handler: () => {
-                  if (unfollowTarget) void handleUnfollow(unfollowTarget.id, unfollowTarget.displayName)
+                  if (unfollowTarget)
+                    void handleUnfollow(
+                      unfollowTarget.id,
+                      unfollowTarget.displayName,
+                    );
                 },
               },
             ]}
             onDidDismiss={() => setUnfollowTarget(null)}
           />
 
-          <CommunityFab scrollRef={scrollRef} hidden={fabHidden} onPick={handleFab} dark={comDark} />
+          <CommunityFab
+            scrollRef={scrollRef}
+            hidden={fabHidden}
+            onPick={handleFab}
+            dark={comDark}
+          />
 
           <MediaLightbox
             url={lightbox?.url ?? null}
@@ -1483,18 +1943,122 @@ export function CommunityPage() {
             onClose={() => setComposeOpen(false)}
             me={me}
             onPublish={async (text, mediaKey) => {
-              await createPost(text, mediaKey ?? undefined)
+              await createPost(text, mediaKey ?? undefined);
             }}
             onPublishPoll={async (question, options) => {
-              await createPollPost(question, options)
+              await createPollPost(question, options);
             }}
             onUploadMedia={async (file, contentType) => {
-              return await uploadPostImage(file, contentType)
+              return await uploadPostImage(file, contentType);
             }}
             onToast={showToast}
           />
         </Screen>
       )}
     </ErrorBoundary>
-  )
+  );
+}
+
+/** Post de un club en el feed general: chip del club + PostCard + comentario. */
+function ClubFeedItem({
+  club,
+  view,
+  commentDraft,
+  onCommentDraft,
+  onToggleLike,
+  onComment,
+  onVotePoll,
+  myId,
+  onToast,
+}: {
+  club: Club;
+  view: FeedPostView;
+  commentDraft: string;
+  onCommentDraft: (v: string) => void;
+  onToggleLike: () => Promise<void>;
+  onComment: () => Promise<void>;
+  onVotePoll: (optionId: string) => Promise<void>;
+  myId: string | null;
+  onToast: (message: string, kind?: "ok" | "warn" | "err" | "info") => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "4px 14px 8px",
+        }}
+      >
+        <span
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 9,
+            background: coverGradient(club.category),
+            color: "#fff",
+            fontSize: 10,
+            fontWeight: 900,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {initials(club.name)}
+        </span>
+        <span style={{ fontSize: 12.5, fontWeight: 800 }}>{club.name}</span>
+        <span
+          style={{
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: "var(--ion-color-primary)",
+            background: "var(--ion-color-primary-tint, #f3ecfe)",
+            padding: "3px 9px",
+            borderRadius: 99,
+          }}
+        >
+          {t("Club")}
+        </span>
+      </div>
+      <PostCard
+        view={view}
+        index={0}
+        onOpen={() => undefined}
+        onToggleLike={onToggleLike}
+        onVotePoll={async (optionId) => {
+          await onVotePoll(optionId);
+          return undefined;
+        }}
+        myId={myId}
+        onToast={onToast}
+      />
+      <div style={{ display: "flex", gap: 6, padding: "0 12px 6px" }}>
+        <input
+          value={commentDraft}
+          onChange={(e) => onCommentDraft(e.target.value)}
+          placeholder={t("Comentar…")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void onComment();
+          }}
+          style={{
+            flex: 1,
+            borderRadius: 99,
+            border: "1px solid var(--ion-color-light-shade)",
+            padding: "8px 14px",
+            fontSize: 13,
+            background: "var(--ion-background-color)",
+          }}
+        />
+        <IonButton
+          size="small"
+          disabled={!commentDraft.trim()}
+          onClick={() => void onComment()}
+        >
+          <IonIcon icon={sendOutline} />
+        </IonButton>
+      </div>
+    </div>
+  );
 }
