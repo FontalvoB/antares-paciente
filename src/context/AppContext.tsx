@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -22,13 +23,14 @@ import {
   type AppointmentRequestDto,
   type ProfessionalCatalogItem,
 } from "../utils/appointmentsApi";
+import { activateSosAlert, type SosDispatchResult } from "../utils/sosApi";
+import { useI18n } from "../i18n/I18nContext";
 import {
   buildRealAppointments,
   realProfessionalByType,
   type ListedAppointment,
   type TeamProfessional,
 } from "../data/appointments";
-import { useT } from "../i18n/I18nContext";
 import type {
   ChatMessage,
   Flow,
@@ -53,6 +55,8 @@ interface AppState {
   panicOpen: boolean;
   voiceOpen: boolean;
   sosActive: boolean;
+  sosCoords: { latitude: number; longitude: number; accuracy?: number } | null;
+  sosDispatch: SosDispatchResult | null;
   user: UserProfile;
   testsDone: number[];
   hydration: number;
@@ -241,14 +245,21 @@ export function AppProvider({
   /** Se invoca tras login/logout para recrear el cliente urql de la comunidad. */
   onResetCommunityClient?: () => void;
 }) {
+  const { lang, t } = useI18n();
   const [authLoading, setAuthLoading] = useState(true);
-  const t = useT();
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
   const [toast, setToast] = useState<ToastState | null>(null);
   const [panicOpen, setPanicOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [sosActive, setSosActive] = useState(false);
+  const [sosCoords, setSosCoords] = useState<{
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  } | null>(null);
+  const [sosDispatch, setSosDispatch] = useState<SosDispatchResult | null>(null);
+  const sosDispatchedRef = useRef(false);
   const [user, setUser] = useState<UserProfile>(loadSavedUser);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
@@ -487,6 +498,8 @@ export function AppProvider({
       panicOpen,
       voiceOpen,
       sosActive,
+      sosCoords,
+      sosDispatch,
       user,
       testsDone,
       hydration,
@@ -550,14 +563,78 @@ export function AppProvider({
         window.setTimeout(() => setToast(null), 2600);
       },
       openPanic: () => {
+        sosDispatchedRef.current = false;
+        setSosCoords(null);
+        setSosDispatch(null);
         setSosActive(false);
         setPanicOpen(true);
       },
       closePanic: () => {
         setPanicOpen(false);
         setSosActive(false);
+        sosDispatchedRef.current = false;
+        setSosCoords(null);
+        setSosDispatch(null);
       },
-      activateSos: () => setSosActive(true),
+      activateSos: () => {
+        // Guard: only dispatch once per activation
+        if (sosDispatchedRef.current) {
+          setSosActive(true);
+          return;
+        }
+        sosDispatchedRef.current = true;
+        setSosActive(true);
+        setSosCoords(null);
+        setSosDispatch(null);
+
+        // Fire-and-forget: geolocation → backend alert
+        void (async () => {
+          // 1. Try to get GPS coordinates
+          let coords: { latitude: number; longitude: number; accuracy?: number } | null = null;
+          try {
+            const pos = await new Promise<GeolocationPosition>(
+              (resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                  timeout: 8000,
+                  maximumAge: 30000,
+                  enableHighAccuracy: true,
+                });
+              },
+            );
+            coords = {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: pos.coords.accuracy,
+            };
+            setSosCoords(coords);
+          } catch {
+            // Geolocation denied or timed out — continue with null coords
+          }
+
+          // 2. Send alert to backend
+          const result = await activateSosAlert({
+            latitude: coords?.latitude ?? null,
+            longitude: coords?.longitude ?? null,
+            accuracyMeters: coords?.accuracy ?? null,
+            locationLabel: null,
+            vitals: {
+              heartRate: 140,
+              spo2: 94,
+              bloodPressure: "160/110",
+            },
+            emergencyContact: user.fam1Nombre
+              ? {
+                  name: user.fam1Nombre,
+                  relationship: user.fam1Parentesco,
+                  phone: user.fam1Cel,
+                  email: user.fam1Email,
+                }
+              : null,
+            language: lang,
+          });
+          setSosDispatch(result);
+        })();
+      },
       openVoice: () => setVoiceOpen(true),
       closeVoice: () => setVoiceOpen(false),
       setHydration,
@@ -704,6 +781,8 @@ export function AppProvider({
       panicOpen,
       voiceOpen,
       sosActive,
+      sosCoords,
+      sosDispatch,
       user,
       testsDone,
       hydration,
@@ -721,6 +800,7 @@ export function AppProvider({
       threadId,
       onResetCommunityClient,
       t,
+      lang,
       realMode,
       builtReal,
       appointmentsLoading,
