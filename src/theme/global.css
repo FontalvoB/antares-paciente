@@ -14236,3 +14236,21 @@ ion-button.ht-cta[disabled] {
     transform: none;
   }
 }
+
+/* Módulo Clubes: pulso del badge EN VIVO y press de las cards. */
+@keyframes livePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(255, 59, 48, 0);
+  }
+}
+.live-pulse {
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+.com-club-card:active {
+  transform: scale(0.985);
+  transition: transform 120ms ease;
+}
