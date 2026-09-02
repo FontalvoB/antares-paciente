@@ -1,7 +1,8 @@
 /**
  * Datos demo de la batería de evaluación inicial ANTARES — espejo EXACTO de
- * `ANTARES_Tests_Perfil_Salud (1).html` (9 tests, 50 preguntas) y del seed del
- * backend (`coppAddresdBack/scripts/generate_health_tests_seed.py`). Cuando hay
+ * `ANTARES_Tests_Perfil_Salud (1).html` (9 tests, 50 preguntas, títulos y
+ * iconos por opción) y del seed del backend
+ * (`coppAddresdBack/scripts/generate_health_tests_seed.py`). Cuando hay
  * sesión/backend, la app usa /me/*; sin sesión degrada a estos datos.
  */
 
@@ -11,6 +12,8 @@ export interface ScaleQ {
 }
 
 export interface DemoOption {
+  /** Icono/emoji de la opción (del HTML). */
+  ico: string;
   text: string;
   score: number;
 }
@@ -39,7 +42,10 @@ export interface DemoQuestion {
 export interface DemoTest {
   id: number;
   emoji: string;
+  /** Título amigable para el paciente (title del HTML). */
   title: string;
+  /** Nombre corto de la tarjeta (tag del HTML). */
+  tag: string;
   sub: string;
   pts: number;
   bg: string;
@@ -47,15 +53,17 @@ export interface DemoTest {
 }
 
 const SCALE_OPTS: DemoOption[] = [1, 2, 3, 4, 5].map((n) => ({
+  ico: ["😞", "😐", "😊", "😃", "🤩"][n - 1],
   text: String(n),
   score: n - 1,
 }));
 
-const single = (texts: string[]): DemoOption[] =>
-  texts.map((text, i) => ({ text, score: i }));
+const single = (entries: [string, string][]): DemoOption[] =>
+  entries.map(([ico, text], i) => ({ ico, text, score: i }));
 
-const multi = (texts: string[]): DemoOption[] =>
-  texts.map((text) => ({
+const multi = (entries: [string, string][]): DemoOption[] =>
+  entries.map(([ico, text]) => ({
+    ico,
     text,
     score: /ningun|bien/i.test(text) ? 0 : 1,
   }));
@@ -64,7 +72,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 1,
     emoji: "🩺",
-    title: "Historia clínica",
+    title: "¿Cómo está tu salud?",
+    tag: "Historia clínica",
     sub: "Antecedentes, medicamentos y cómo te sientes físicamente.",
     pts: 50,
     bg: "#E8F5FF",
@@ -76,12 +85,12 @@ export const TESTS: DemoTest[] = [
         hint: "Marca todos los que aplican.",
         type: "multi",
         options: multi([
-          "Diabetes tipo 2",
-          "Obesidad",
-          "Hipertensión",
-          "Prediabetes",
-          "Colesterol alto",
-          "Ninguno por ahora",
+          ["🩸", "Diabetes tipo 2"],
+          ["⚖️", "Obesidad"],
+          ["💗", "Hipertensión"],
+          ["🫀", "Prediabetes"],
+          ["🧬", "Colesterol alto"],
+          ["✅", "Ninguno por ahora"],
         ]),
       },
       {
@@ -90,9 +99,9 @@ export const TESTS: DemoTest[] = [
         text: "¿Tomas medicamentos actualmente?",
         type: "single",
         options: single([
-          "Sí, con receta médica",
-          "Solo suplementos",
-          "No tomo nada",
+          ["💊", "Sí, con receta médica"],
+          ["🌿", "Solo suplementos"],
+          ["✖️", "No tomo nada"],
         ]),
       },
       {
@@ -101,7 +110,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Cuál es tu sexo biológico?",
         hint: "Necesario para calcular tu % de grasa corporal con mayor precisión.",
         type: "single",
-        options: single(["Masculino", "Femenino"]),
+        options: single([
+          ["♂️", "Masculino"],
+          ["♀️", "Femenino"],
+        ]),
       },
       {
         id: "edad",
@@ -175,10 +187,10 @@ export const TESTS: DemoTest[] = [
         hint: "Ayunas = sin haber comido en las últimas 8 horas.",
         type: "single",
         options: single([
-          "Sí, está en rango (< 100 mg/dL)",
-          "Sí, entre 100 y 125 mg/dL",
-          "Sí, 126 mg/dL o más",
-          "No sé o no me la he medido",
+          ["✅", "Sí, está en rango (< 100 mg/dL)"],
+          ["⚠️", "Sí, entre 100 y 125 mg/dL"],
+          ["🔴", "Sí, 126 mg/dL o más"],
+          ["❓", "No sé o no me la he medido"],
         ]),
       },
       {
@@ -188,12 +200,12 @@ export const TESTS: DemoTest[] = [
         hint: "Estas señales ayudan a estimar si tu glucosa puede estar elevada.",
         type: "multi",
         options: multi([
-          "Sed intensa todo el día",
-          "Orinas muchas veces al día",
-          "Cansancio después de comer",
-          "Antojos intensos de dulce",
-          "Vista borrosa ocasional",
-          "No tengo ninguna de estas",
+          ["💧", "Sed intensa todo el día"],
+          ["🚽", "Orinas muchas veces al día"],
+          ["😴", "Cansancio después de comer"],
+          ["🍬", "Antojos intensos de dulce"],
+          ["👁️", "Vista borrosa ocasional"],
+          ["😊", "No tengo ninguna de estas"],
         ]),
       },
       {
@@ -203,10 +215,10 @@ export const TESTS: DemoTest[] = [
         hint: "Marca todos los que aplican.",
         type: "multi",
         options: multi([
-          "Hormigueo en pies o manos",
-          "Heridas que tardan en sanar",
-          "Dificultad para respirar",
-          "Me siento bien en general",
+          ["🦶", "Hormigueo en pies o manos"],
+          ["🩹", "Heridas que tardan en sanar"],
+          ["😤", "Dificultad para respirar"],
+          ["😊", "Me siento bien en general"],
         ]),
       },
       {
@@ -216,11 +228,11 @@ export const TESTS: DemoTest[] = [
         hint: "Padres, hermanos, abuelos.",
         type: "multi",
         options: multi([
-          "Diabetes",
-          "Hipertensión",
-          "Infarto o ACV",
-          "Obesidad",
-          "Sin antecedentes",
+          ["🩸", "Diabetes"],
+          ["💗", "Hipertensión"],
+          ["🫀", "Infarto o ACV"],
+          ["⚖️", "Obesidad"],
+          ["✅", "Sin antecedentes"],
         ]),
       },
     ],
@@ -228,7 +240,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 2,
     emoji: "🧠",
-    title: "Temperamento",
+    title: "¿Cómo eres tú?",
+    tag: "Temperamento",
     sub: "Tu personalidad determina cómo te acompañamos en el programa.",
     pts: 40,
     bg: "#F3EFFE",
@@ -275,10 +288,10 @@ export const TESTS: DemoTest[] = [
         text: "Cuando algo no sale como esperaba, ¿cuál es tu reacción más común?",
         type: "single",
         options: single([
-          "Me frustro pero sigo intentando",
-          "Lo siento mucho y reflexiono",
-          "Lo dejo ir y busco algo nuevo",
-          "Lo acepto y espero el momento",
+          ["😤", "Me frustro pero sigo intentando"],
+          ["😢", "Lo siento mucho y reflexiono"],
+          ["😄", "Lo dejo ir y busco algo nuevo"],
+          ["😌", "Lo acepto y espero el momento"],
         ]),
       },
       {
@@ -287,10 +300,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Qué es lo más probable que te haga abandonar un programa de salud?",
         type: "single",
         options: single([
-          "La monotonía y el aburrimiento",
-          "No ver resultados rápidos",
-          "Tener demasiada información",
-          "Cambiar mi rutina habitual",
+          ["😴", "La monotonía y el aburrimiento"],
+          ["📉", "No ver resultados rápidos"],
+          ["🤯", "Tener demasiada información"],
+          ["🔄", "Cambiar mi rutina habitual"],
         ]),
       },
     ],
@@ -298,7 +311,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 3,
     emoji: "🥗",
-    title: "Nutrición",
+    title: "¿Cómo comes?",
+    tag: "Nutrición",
     sub: "Tus hábitos alimentarios y tu relación con la comida.",
     pts: 40,
     bg: "#E1F5EE",
@@ -309,10 +323,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Cuántas veces al día comes normalmente (incluyendo meriendas)?",
         type: "single",
         options: single([
-          "1–2 veces",
-          "3 veces",
-          "4–5 veces",
-          "Pico todo el día",
+          ["1️⃣", "1–2 veces"],
+          ["3️⃣", "3 veces"],
+          ["4️⃣", "4–5 veces"],
+          ["🔄", "Pico todo el día"],
         ]),
       },
       {
@@ -348,10 +362,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Cuánta agua tomas al día aproximadamente?",
         type: "single",
         options: single([
-          "Menos de 4 vasos",
-          "4–6 vasos",
-          "7–8 vasos",
-          "Más de 8 vasos",
+          ["😞", "Menos de 4 vasos"],
+          ["😐", "4–6 vasos"],
+          ["😊", "7–8 vasos"],
+          ["💧", "Más de 8 vasos"],
         ]),
       },
       {
@@ -368,7 +382,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 4,
     emoji: "🏃",
-    title: "Movimiento · AMAF",
+    title: "¿Qué tan activo/a eres?",
+    tag: "Movimiento · AMAF",
     sub: "Tu capacidad física actual determina el circuito que te asignamos.",
     pts: 40,
     bg: "#FFF0E8",
@@ -379,10 +394,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Cómo describes tu nivel de actividad física actualmente?",
         type: "single",
         options: single([
-          "Sedentario/a — casi no me muevo",
-          "Camino un poco (< 30 min/día)",
-          "Actividad moderada (30–60 min)",
-          "Activo/a (ejercicio regular)",
+          ["🛋️", "Sedentario/a — casi no me muevo"],
+          ["🚶", "Camino un poco (< 30 min/día)"],
+          ["🏃", "Actividad moderada (30–60 min)"],
+          ["💪", "Activo/a (ejercicio regular)"],
         ]),
       },
       {
@@ -400,9 +415,9 @@ export const TESTS: DemoTest[] = [
         text: "¿Tienes dolor articular o muscular que limita tu movimiento?",
         type: "single",
         options: single([
-          "No, me muevo sin dolor",
-          "Dolor leve ocasional",
-          "Dolor frecuente que me limita",
+          ["✅", "No, me muevo sin dolor"],
+          ["⚠️", "Dolor leve ocasional"],
+          ["🔴", "Dolor frecuente que me limita"],
         ]),
       },
       {
@@ -411,10 +426,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Cuánto tiempo puedes dedicar al ejercicio por día?",
         type: "single",
         options: single([
-          "5–10 minutos",
-          "15–20 minutos",
-          "30–45 minutos",
-          "Más de 45 minutos",
+          ["⏱️", "5–10 minutos"],
+          ["🕐", "15–20 minutos"],
+          ["🕑", "30–45 minutos"],
+          ["🕒", "Más de 45 minutos"],
         ]),
       },
     ],
@@ -422,7 +437,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 5,
     emoji: "🌙",
-    title: "Sueño",
+    title: "¿Cómo duermes?",
+    tag: "Sueño",
     sub: "El sueño impacta directamente tu glucosa, tu peso y tu adherencia.",
     pts: 40,
     bg: "#EDE9FE",
@@ -433,10 +449,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Cuántas horas duermes normalmente por noche?",
         type: "single",
         options: single([
-          "Menos de 5 horas",
-          "5–6 horas",
-          "6–7 horas",
-          "7–9 horas",
+          ["😞", "Menos de 5 horas"],
+          ["😐", "5–6 horas"],
+          ["😊", "6–7 horas"],
+          ["✅", "7–9 horas"],
         ]),
       },
       {
@@ -453,7 +469,11 @@ export const TESTS: DemoTest[] = [
         section: "Red flags · Ronquidos",
         text: "¿Te han dicho que roncas fuerte o que paras de respirar mientras duermes?",
         type: "single",
-        options: single(["No, nunca", "A veces", "Sí, frecuentemente"]),
+        options: single([
+          ["✅", "No, nunca"],
+          ["😐", "A veces"],
+          ["🚨", "Sí, frecuentemente"],
+        ]),
       },
       {
         id: "sue_somnolencia",
@@ -469,7 +489,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 6,
     emoji: "🤝",
-    title: "Adherencia · IAC",
+    title: "¿Qué tan comprometido/a estás?",
+    tag: "Adherencia · IAC",
     sub: "Tu motivación real determina cómo te acompañamos.",
     pts: 40,
     bg: "#E6F1FB",
@@ -499,12 +520,12 @@ export const TESTS: DemoTest[] = [
         hint: "Sé honesto/a, esto nos ayuda a personalizar tu apoyo.",
         type: "multi",
         options: multi([
-          "Falta de tiempo",
-          "Costo económico",
-          "Desmotivación",
-          "Responsabilidades familiares",
-          "Trabajo o estudio",
-          "Ninguna — estoy listo/a",
+          ["⏰", "Falta de tiempo"],
+          ["💸", "Costo económico"],
+          ["😔", "Desmotivación"],
+          ["👨‍👩‍👧", "Responsabilidades familiares"],
+          ["💼", "Trabajo o estudio"],
+          ["💪", "Ninguna — estoy listo/a"],
         ]),
       },
       {
@@ -513,11 +534,11 @@ export const TESTS: DemoTest[] = [
         text: "¿Cuál es tu razón más importante para unirte al programa?",
         type: "single",
         options: single([
-          "Controlar mi enfermedad",
-          "Bajar de peso",
-          "Tener más energía",
-          "Por mi familia",
-          "Sentirme mejor conmigo mismo/a",
+          ["🩺", "Controlar mi enfermedad"],
+          ["⚖️", "Bajar de peso"],
+          ["⚡", "Tener más energía"],
+          ["👨‍👩‍👧", "Por mi familia"],
+          ["🧠", "Sentirme mejor conmigo mismo/a"],
         ]),
       },
     ],
@@ -525,7 +546,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 7,
     emoji: "❤️",
-    title: "Riesgo cardiometabólico ORP",
+    title: "¿Cuál es tu riesgo cardiovascular?",
+    tag: "Riesgo cardiometabólico ORP",
     sub: "Información clínica confidencial — solo la ve tu equipo médico.",
     pts: 40,
     bg: "#FCEBEB",
@@ -537,10 +559,10 @@ export const TESTS: DemoTest[] = [
         hint: 'Si no la tienes, selecciona "No la sé".',
         type: "single",
         options: single([
-          "Menos de 5.7%",
-          "5.7% – 6.4%",
-          "6.5% o más",
-          "No la sé",
+          ["✅", "Menos de 5.7%"],
+          ["⚠️", "5.7% – 6.4%"],
+          ["🔴", "6.5% o más"],
+          ["❓", "No la sé"],
         ]),
       },
       {
@@ -549,10 +571,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Cuál es tu presión arterial habitual?",
         type: "single",
         options: single([
-          "Normal (< 130/80)",
-          "Elevada (130–140 / 80–90)",
-          "Alta (> 140/90)",
-          "No la sé",
+          ["✅", "Normal (< 130/80)"],
+          ["⚠️", "Elevada (130–140 / 80–90)"],
+          ["🔴", "Alta (> 140/90)"],
+          ["❓", "No la sé"],
         ]),
       },
       {
@@ -561,9 +583,9 @@ export const TESTS: DemoTest[] = [
         text: "¿Fumas actualmente o has fumado en los últimos 5 años?",
         type: "single",
         options: single([
-          "Nunca he fumado",
-          "Fumé pero lo dejé",
-          "Sí, fumo actualmente",
+          ["✅", "Nunca he fumado"],
+          ["⏳", "Fumé pero lo dejé"],
+          ["🚬", "Sí, fumo actualmente"],
         ]),
       },
       {
@@ -572,10 +594,10 @@ export const TESTS: DemoTest[] = [
         text: "¿Tu médico te ha dicho que tienes colesterol o triglicéridos altos?",
         type: "single",
         options: single([
-          "No, están en rango normal",
-          "Sí, pero controlado con dieta",
-          "Sí, tomo medicamento",
-          "No lo sé",
+          ["✅", "No, están en rango normal"],
+          ["⚠️", "Sí, pero controlado con dieta"],
+          ["💊", "Sí, tomo medicamento"],
+          ["❓", "No lo sé"],
         ]),
       },
     ],
@@ -583,7 +605,8 @@ export const TESTS: DemoTest[] = [
   {
     id: 8,
     emoji: "⚡",
-    title: "Estrés relacional · ERS",
+    title: "¿Cómo está tu entorno?",
+    tag: "Estrés relacional · ERS",
     sub: "El estrés en casa o en el trabajo es la barrera #1 de la adherencia.",
     pts: 40,
     bg: "#FAEEDA",
@@ -612,9 +635,9 @@ export const TESTS: DemoTest[] = [
         text: "¿Tienes alguien (familia, amigo, pareja) que te acompañe en este proceso?",
         type: "single",
         options: single([
-          "Sí, tengo apoyo sólido",
-          "Algo de apoyo",
-          "Lo hago prácticamente solo/a",
+          ["💪", "Sí, tengo apoyo sólido"],
+          ["😐", "Algo de apoyo"],
+          ["😔", "Lo hago prácticamente solo/a"],
         ]),
       },
       {
@@ -630,8 +653,9 @@ export const TESTS: DemoTest[] = [
   },
   {
     id: 9,
-    emoji: "🧬",
-    title: "Propósito · ANTARES",
+    emoji: "🌱",
+    title: "¿Cuál es tu propósito?",
+    tag: "Propósito · ANTARES",
     sub: "Las respuestas más importantes del programa. Sé completamente honesto/a.",
     pts: 50,
     bg: "#FDF6DC",
@@ -660,10 +684,10 @@ export const TESTS: DemoTest[] = [
         text: "¿En cuánto tiempo esperas ver resultados concretos en tu salud?",
         type: "single",
         options: single([
-          "Menos de 1 mes",
-          "2–3 meses",
-          "6 meses",
-          "Es un proceso de vida",
+          ["⚡", "Menos de 1 mes"],
+          ["📅", "2–3 meses"],
+          ["🎯", "6 meses"],
+          ["♾️", "Es un proceso de vida"],
         ]),
       },
       {
@@ -672,11 +696,11 @@ export const TESTS: DemoTest[] = [
         text: "Si en 6 meses logras UN solo resultado, ¿cuál quieres que sea?",
         type: "single",
         options: single([
-          "Glucosa o HbA1c en rango normal",
-          "Bajar al menos 5 kg de peso",
-          "Reducir o eliminar medicamentos",
-          "Tener energía para disfrutar el día",
-          "Sentirme mejor emocionalmente",
+          ["🩸", "Glucosa o HbA1c en rango normal"],
+          ["⚖️", "Bajar al menos 5 kg de peso"],
+          ["💊", "Reducir o eliminar medicamentos"],
+          ["⚡", "Tener energía para disfrutar el día"],
+          ["😊", "Sentirme mejor emocionalmente"],
         ]),
       },
       {
@@ -691,11 +715,14 @@ export const TESTS: DemoTest[] = [
 ];
 
 /** Meta de la lista de tests (compatibilidad con la lista de TestsPage). */
-export const TESTS_META = TESTS.map(({ id, emoji, title, sub, pts, bg }) => ({
-  id,
-  emoji,
-  title,
-  sub,
-  pts,
-  bg,
-}));
+export const TESTS_META = TESTS.map(
+  ({ id, emoji, title, tag, sub, pts, bg }) => ({
+    id,
+    emoji,
+    title,
+    tag,
+    sub,
+    pts,
+    bg,
+  }),
+);

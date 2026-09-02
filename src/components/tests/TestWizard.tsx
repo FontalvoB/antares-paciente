@@ -13,6 +13,7 @@ import { useT } from "../../i18n/I18nContext";
 import {
   isNoneLabel,
   itemTint,
+  optionEmoji,
   sectionTone,
   type TestTheme,
   type WizardStep,
@@ -496,6 +497,9 @@ function ScaleControl({
                 whileTap={reduce ? undefined : { scale: 0.97 }}
                 animate={on ? { y: -2 } : { y: 0 }}
               >
+                <span className="ht-card-ico" aria-hidden="true">
+                  {optionEmoji(label)}
+                </span>
                 <span className="ht-card-lab">{t(label)}</span>
               </motion.button>
             );
