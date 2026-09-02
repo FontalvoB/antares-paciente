@@ -19,12 +19,16 @@ const config: CapacitorConfig = {
         "ANTARES usa la cámara para las consultas de telemedicina.",
       NSMicrophoneUsageDescription:
         "ANTARES usa el micrófono para las consultas de telemedicina.",
+      NSLocationWhenInUseUsageDescription:
+        "ANTARES usa tu ubicación para enviar tu posición en caso de emergencia SOS.",
     },
   },
   android: {
     permissions: [
       "android.permission.CAMERA",
       "android.permission.RECORD_AUDIO",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_COARSE_LOCATION",
     ],
   },
   plugins: {
