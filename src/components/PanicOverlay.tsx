@@ -11,9 +11,11 @@ import {
   pulse,
   volumeHigh,
 } from 'ionicons/icons'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { useT } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/I18nContext'
+import { buildSosDataBlock } from '../utils/sosMessage'
+import type { SosDispatchResult } from '../utils/sosApi'
 
 type SosView = 'protocol' | 'call911' | 'callFamily'
 type CallPhase = 'dialing' | 'ringing' | 'connected'
@@ -23,6 +25,18 @@ const RING = 2 * Math.PI * 78
 function mmss(sec: number) {
   const s = Math.max(0, Math.floor(sec))
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+}
+
+/** Format decimal degrees to display string: 25.7617° N, 80.1918° W */
+function formatCoordDisplay(decimal: number, isLat: boolean): string {
+  const abs = Math.abs(decimal)
+  const dir = isLat ? (decimal >= 0 ? 'N' : 'S') : (decimal >= 0 ? 'E' : 'W')
+  return `${abs.toFixed(4)}° ${dir}`
+}
+
+/** Strip spaces, parens, dashes from a phone number for tel: links */
+function cleanPhone(raw: string): string {
+  return raw.replace(/[\s()\-+]/g, '')
 }
 
 function Waveform({ live }: { live: boolean }) {
@@ -35,15 +49,18 @@ function Waveform({ live }: { live: boolean }) {
   )
 }
 
+const SOS_VITALS = { heartRate: 140, spo2: 94, bloodPressure: '160/110' } as const
+
 export function PanicOverlay() {
-  const { panicOpen, sosActive, closePanic, activateSos, user, showToast } = useApp()
-  const t = useT()
+  const { panicOpen, sosActive, sosCoords, sosDispatch, closePanic, activateSos, user, showToast } = useApp()
+  const { t, lang } = useI18n()
   const [count, setCount] = useState(5)
   const [view, setView] = useState<SosView>('protocol')
   const [phase, setPhase] = useState<CallPhase>('dialing')
   const [callSec, setCallSec] = useState(0)
   const [lit, setLit] = useState(0)
   const [speakerOn, setSpeakerOn] = useState(true)
+  const countdownAutoDialRef = useRef(false)
 
   const family = user.fam1Nombre
   const familyRole = user.fam1Parentesco
@@ -55,6 +72,9 @@ export function PanicOverlay() {
     .join('')
     .toUpperCase()
 
+  const emergencyNumber = sosDispatch?.emergencyNumber ?? '911'
+
+  // Cancel speech when overlay closes
   useEffect(() => {
     if (!panicOpen) {
       setView('protocol')
@@ -63,25 +83,36 @@ export function PanicOverlay() {
       setLit(0)
       setCount(5)
       setSpeakerOn(true)
+      countdownAutoDialRef.current = false
+      if (typeof speechSynthesis !== 'undefined') {
+        speechSynthesis.cancel()
+      }
     }
   }, [panicOpen])
 
+  // Countdown timer — auto-dial when countdown reaches 0
   useEffect(() => {
     if (!panicOpen || sosActive) return
     setCount(5)
+    countdownAutoDialRef.current = false
     const id = window.setInterval(() => {
-      setCount((c) => {
-        if (c <= 1) {
-          window.clearInterval(id)
-          activateSos()
-          return 0
-        }
-        return c - 1
-      })
+      setCount((c) => (c <= 1 ? 0 : c - 1))
     }, 1000)
     return () => window.clearInterval(id)
-  }, [panicOpen, sosActive, activateSos])
+  }, [panicOpen, sosActive])
 
+  // Auto-dial 911 at countdown zero (NOT on manual orb tap: sosActive blocks this)
+  useEffect(() => {
+    if (!panicOpen || sosActive || count !== 0) return
+    if (countdownAutoDialRef.current) return
+    countdownAutoDialRef.current = true
+    activateSos()
+    try {
+      window.location.href = `tel:${emergencyNumber}`
+    } catch { /* native dialer may not be available in web */ }
+  }, [panicOpen, sosActive, count, activateSos, emergencyNumber])
+
+  // Feed row lighting animation
   useEffect(() => {
     if (!sosActive) {
       setLit(0)
@@ -91,9 +122,10 @@ export function PanicOverlay() {
     const timers = [450, 950, 1450, 1950, 2400].map((ms, i) =>
       window.setTimeout(() => setLit(i + 2), ms),
     )
-    return () => timers.forEach((t) => window.clearTimeout(t))
+    return () => timers.forEach((tm) => window.clearTimeout(tm))
   }, [sosActive])
 
+  // Simulated call phase transitions
   useEffect(() => {
     if (view !== 'call911' && view !== 'callFamily') return
     setPhase('dialing')
@@ -115,6 +147,11 @@ export function PanicOverlay() {
   const startCall = (next: SosView) => {
     if (!sosActive) activateSos()
     setView(next)
+    // Trigger native dialer
+    try {
+      const phone = next === 'call911' ? emergencyNumber : cleanPhone(familyCel)
+      window.location.href = `tel:${phone}`
+    } catch { /* native dialer may not be available in web */ }
   }
 
   const hangUp = () => {
@@ -128,6 +165,19 @@ export function PanicOverlay() {
     showToast(t('Alerta cancelada. Quédate en observación.'), 'ok')
   }
 
+  /** "No puedo hablar" — speak the SOS data block via TTS */
+  const speakSosMessage = () => {
+    const text = buildSosDataBlock(user, sosCoords, SOS_VITALS, lang)
+    if (typeof speechSynthesis === 'undefined' || !window.speechSynthesis) {
+      showToast(t('Tu dispositivo no soporta lectura de voz.'), 'warn')
+      return
+    }
+    speechSynthesis.cancel()
+    const utter = new SpeechSynthesisUtterance(text)
+    utter.lang = lang === 'es' ? 'es-ES' : 'en-US'
+    speechSynthesis.speak(utter)
+  }
+
   const ringPct = sosActive ? 1 : count / 5
   const calling911 = view === 'call911'
   const callingFam = view === 'callFamily'
@@ -135,19 +185,37 @@ export function PanicOverlay() {
   const phaseLabel =
     phase === 'dialing' ? t('Marcando…') : phase === 'ringing' ? t('Sonando…') : t('En llamada')
 
+  // ── GPS display text ──────────────────────────────────────────────
+  const gpsDisplayText = sosCoords
+    ? `${formatCoordDisplay(sosCoords.latitude, true)}, ${formatCoordDisplay(sosCoords.longitude, false)}`
+    : null
+
+  // ── Feed rows with real channel status when sosDispatch is present ──
   const rows: { key: string; ico: string; title: string; sub: string; tone: string }[] = [
+    // 911 / SMS row — always red tone, reflect real voice channel if available
     {
       key: 'amb',
       ico: medkit,
       title: t('Emergencias 911'),
-      sub: sosActive ? (lit >= 1 ? t('Alerta enviada · despacho en curso') : t('Notificando…')) : t('En espera del conteo'),
+      sub: sosActive
+        ? (lit >= 1
+          ? (sosDispatch
+            ? voiceChannelLabel(sosDispatch, t)
+            : t('Alerta enviada · despacho en curso'))
+          : t('Notificando…'))
+        : t('En espera del conteo'),
       tone: 'red',
     },
+    // Family row — reflect real SMS/email status if available
     {
       key: 'fam',
       ico: people,
       title: family,
-      sub: sosActive && lit >= 2 ? t('Alerta enviada · {phone}', { phone: familyCel }) : `${familyRole} · ${familyCel}`,
+      sub: sosActive && lit >= 2
+        ? (sosDispatch
+          ? familyChannelLabel(sosDispatch, familyCel, t)
+          : t('Alerta enviada · {phone}', { phone: familyCel }))
+        : `${familyRole} · ${familyCel}`,
       tone: 'ice',
     },
     {
@@ -157,11 +225,16 @@ export function PanicOverlay() {
       sub: sosActive && lit >= 3 ? t('Equipo COPP-ADRESD notificado') : t('Médico de cabecera'),
       tone: 'blue',
     },
+    // GPS row — real coords when available
     {
       key: 'gps',
       ico: location,
       title: t('Ubicación GPS'),
-      sub: sosActive && lit >= 4 ? t('Enviando 25.7617° N, 80.1918° W') : t('Se comparte al activar'),
+      sub: sosActive && lit >= 4
+        ? (gpsDisplayText
+          ? t('Enviando coordenadas GPS') + ' · ' + gpsDisplayText
+          : t('Ubicación no disponible'))
+        : t('Se comparte al activar'),
       tone: 'teal',
     },
     {
@@ -269,6 +342,10 @@ export function PanicOverlay() {
                     {t('Llamar familiar')}
                   </IonButton>
                 </div>
+                <IonButton expand="block" className="bt sos-act-speak" onClick={speakSosMessage}>
+                  <IonIcon icon={volumeHigh} slot="start" />
+                  {t('No puedo hablar')}
+                </IonButton>
                 <IonButton expand="block" className="bt sos-act-ok" onClick={imOk}>
                   <IonIcon icon={sosActive ? checkmarkCircle : close} slot="start" />
                   {t('Estoy bien')}
@@ -351,4 +428,24 @@ export function PanicOverlay() {
       )}
     </AnimatePresence>
   )
+}
+
+// ── Channel label helpers ──────────────────────────────────────────────
+
+function voiceChannelLabel(d: SosDispatchResult, t: (s: string, p?: Record<string, string>) => string): string {
+  const v = d.channels.voice.status
+  if (v === 'Sent') return t('Llamada con mensaje enviada')
+  if (v === 'Failed') return t('Fallo de llamada')
+  return t('Alerta enviada · despacho en curso')
+}
+
+function familyChannelLabel(d: SosDispatchResult, phone: string, t: (s: string, p?: Record<string, string>) => string): string {
+  const sms = d.channels.sms.status
+  const email = d.channels.email.status
+  const sent = (s: string) => s === 'Sent'
+  if (sent(sms) && sent(email)) return t('Alerta enviada · SMS + correo')
+  if (sent(sms)) return t('Alerta enviada · {phone}', { phone })
+  if (sent(email)) return t('Alerta enviada · correo electrónico')
+  if (sms === 'Failed' || email === 'Failed') return t('Fallo al enviar alerta')
+  return t('Alerta enviada · {phone}', { phone })
 }

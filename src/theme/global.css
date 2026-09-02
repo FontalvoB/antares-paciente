@@ -4440,6 +4440,16 @@ ion-button.sos-act-ok {
   width: 100%;
   margin-top: 8px;
 }
+ion-button.sos-act-speak {
+  --background: rgba(98, 216, 255, 0.12);
+  --color: var(--ice);
+  --border-width: 1.5px;
+  --border-style: solid;
+  --border-color: rgba(98, 216, 255, 0.4);
+  --border-radius: 14px;
+  width: 100%;
+  margin-top: 8px;
+}
 ion-button.sos-hang {
   width: 76px;
   height: 76px;
