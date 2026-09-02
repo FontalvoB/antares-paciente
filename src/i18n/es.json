@@ -1547,5 +1547,17 @@
   "Club solo por invitación: escanea el QR o usa el enlace del organizador": "Club solo por invitación: escanea el QR o usa el enlace del organizador",
   "eventos": "eventos",
   "Ver el club": "Ver el club",
-  "Lleno": "Lleno"
+  "Lleno": "Lleno",
+  "No puedo hablar": "No puedo hablar",
+  "Reproducir mensaje": "Reproducir mensaje",
+  "Llamada con mensaje enviada": "Llamada con mensaje enviada",
+  "Fallo de llamada": "Fallo de llamada",
+  "Fallo al enviar alerta": "Fallo al enviar alerta",
+  "Alerta enviada · SMS + correo": "Alerta enviada · SMS + correo",
+  "Alerta enviada · correo electrónico": "Alerta enviada · correo electrónico",
+  "Tu dispositivo no soporta lectura de voz.": "Tu dispositivo no soporta lectura de voz.",
+  "Enviando coordenadas GPS": "Enviando coordenadas GPS",
+  "Ubicación no disponible": "Ubicación no disponible",
+  "Alerta SOS activa": "Alerta SOS activa",
+  "Mensaje de emergencia listo para reproducir.": "Mensaje de emergencia listo para reproducir."
 }
