@@ -5,7 +5,7 @@ description: Matriz de decisión de componentes Ionic para ANTARES Paciente. Qu�
 
 # Componentes Ionic — matriz de decisión
 
-**ESTADO ACTUAL (verificado):** el proyecto solo importa `IonApp` e `IonIcon` (`App.tsx:1`, `BottomNav.tsx:1`, `ChatPage.tsx:1`, `HomePage.tsx:1`, `PanicOverlay.tsx:2`, `VoiceOverlay.tsx:2`). Todo lo demás es HTML/CSS custom. **ESTADO RECOMENDADO:** usar los componentes de abajo en todo desarrollo nuevo. **MIGRACIÓN FUTURA:** los "hoy custom" se migrarán uno a uno con autorización (catálogo completo en `docs/auditoria.md` §6).
+**ESTADO ACTUAL (verificado):** ~34 archivos importan de `@ionic/react`. En uso real: `IonApp`, `IonIcon`, `IonButton`, `IonInput`, `IonCheckbox`, `IonTextarea`, `IonModal`, `IonContent`, `IonToast`, `IonAlert`, `IonProgressBar`, `IonSpinner`, `IonSkeletonText`, `IonSegment`, `IonSegmentButton`, `IonSearchbar`, `IonBadge`. **Los formularios de LoginPage/HomePage ya son Ionic** (`IonInput`/`IonCheckbox`/`IonButton`/`IonProgressBar`/`IonSkeletonText`). Resto de la app (tabs, listas, cards) sigue HTML/CSS custom. **ESTADO RECOMENDADO:** usar los componentes de abajo en todo desarrollo nuevo. **MIGRACIÓN FUTURA:** los "hoy custom" se migrarán uno a uno con autorización (catálogo completo en `docs/auditoria.md` §6).
 
 Versiones reales (`package.json`): `@ionic/react ^8.8.18`, `ionicons ^8.1.0`, `react-router-dom ^7.18.2` (SIN USO), `framer-motion ^13.1.0`.
 

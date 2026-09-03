@@ -12,11 +12,14 @@
  */
 
 import { getAccessToken, clearSessionAndNotify } from './authApi'
+import { getApiBaseUrl, getAuthBaseUrl } from './apiBaseUrl'
 
 // --- Base URL resolution (DESIGN §Capacitor native) ---
+// Todo el tráfico pasa por el gateway (YARP): los helpers resuelven
+// env → Capacitor (10.0.2.2:5080) → ruta relativa (proxy de Vite).
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-const AUTH_BASE = import.meta.env.VITE_AUTH_BASE_URL ?? ''
+const API_BASE = getApiBaseUrl()
+const AUTH_BASE = getAuthBaseUrl()
 
 // --- ApiError (RFC 7807 compatible) ---
 
@@ -143,9 +146,9 @@ export interface ApiFetchOptions extends Omit<RequestInit, 'method' | 'body'> {
 }
 
 /**
- * Resolve a relative API path to a full URL using env vars.
+ * Resolve a relative API path to a full URL (siempre vía gateway).
  * In dev, Vite proxy handles relative paths (API_BASE is empty).
- * In Capacitor native, VITE_API_BASE_URL provides the public HTTPS gateway.
+ * In Capacitor native, the gateway base (10.0.2.2:5080 o VITE_GATEWAY_BASE_URL) applies.
  */
 function resolveUrl(path: string): string {
   if (path.startsWith('/api/auth')) {
