@@ -24,10 +24,10 @@ import {
   TRANSFORM_ROWS,
   levelForXp,
 } from '../data/program'
-import { readyChests, readyXp } from '../data/chests'
 import { USER_STATE, userRank } from '../data/rankings'
 import type { ProgramDay, ProgramTaskId } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
+import { deriveLoggedMeals } from '../utils/nutritionProgress'
 import { EvolutionView } from './program/EvolutionView'
 import {
   EmotionalLesson,
@@ -43,11 +43,13 @@ import { StreakView } from './program/StreakView'
 import { TodayView } from './program/TodayView'
 import { TransformHero } from './program/TransformHero'
 import { paneMotion } from './program/ui'
+import { useClinicalChests } from '../hooks/useClinicalChests'
 import { useProgram } from '../hooks/useProgram'
+import { useStreakChests } from '../hooks/useStreakChests'
 import { useCompleteTask, type CelebrateInfo } from '../hooks/useCompleteTask'
 import { useProgramScores } from '../hooks/useProgramScores'
 import { useProgramCalendar } from '../hooks/useProgramCalendar'
-import type { CalendarDayDetailDto, TaskCode } from '../services/program/types'
+import type { CalendarDayDetailDto, TaskCode, VitalsPayload } from '../services/program/types'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
 
@@ -107,15 +109,12 @@ export function ProgramPage() {
     pointsTotal: appPointsTotal,
     navigate,
     showToast,
-    mealsLogged,
     streak: appStreak,
     programWeek: appProgramWeek,
     weekCheckins,
     user,
     watchConnected,
     connectWatch,
-    claimedChests,
-    claimChest,
   } = useApp()
 
   const t = useT()
@@ -144,6 +143,14 @@ export function ProgramPage() {
 
   const completeTaskMutation = useCompleteTask()
   const { scores, stale: scoresStale } = useProgramScores()
+  // Chest trail from server truth (catalog defs + ledger grants); falls back
+  // to static defs when the backend field is absent (chests module, T8).
+  const { chests } = useStreakChests()
+
+  // S4: comidas registradas hoy desde la verdad server-side del snapshot
+  // (nutritionIntakeLogs + capa optimista del cache). Reemplaza el consumo
+  // de AppContext.mealsLogged en flujos conectados (sin shim).
+  const serverLoggedMeals = useMemo(() => deriveLoggedMeals(snapshot), [snapshot])
 
   const now = new Date()
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
@@ -217,8 +224,8 @@ export function ProgramPage() {
 
   const first = user.nombre.split(' ')[0]
   const cells = useMemo(() => buildMonthCells(calendarData?.days), [calendarData])
-  const claimable = readyChests(activeStreak, claimedChests)
-  const claimableXp = readyXp(activeStreak, claimedChests)
+  // Read-only clinical chest progress from real scores (chests module, T9).
+  const clinicalChests = useClinicalChests(scores, activeProgramWeek)
   const liga = userRank('racha')
 
   const burst = (pts: number, withConfetti = false) => {
@@ -249,12 +256,30 @@ export function ProgramPage() {
     return () => window.removeEventListener('program:task-celebrated', handleCelebrate)
   }, [])
 
+  // Chest auto-open celebration (chests module, R3.2): a newly granted chest
+  // (server truth diffed in useProgram) opens the chest modal + confetti. The
+  // XP was already granted server-side; this is presentation only.
+  useEffect(() => {
+    const handleChestGranted = (e: Event) => {
+      const detail = (e as CustomEvent<{ days: number; xp: number }>).detail
+      if (!detail) return
+      setOpenedChest({
+        title: t('Cofre de {days} días', { days: String(detail.days) }),
+        xp: detail.xp,
+      })
+      burst(detail.xp, true)
+    }
+    window.addEventListener('program:chest-granted', handleChestGranted)
+    return () => window.removeEventListener('program:chest-granted', handleChestGranted)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const finish = useCallback(
     (
       id: ProgramTaskId,
       pts: number,
       msg: string,
-      extra?: { moodScore?: number; barriers?: string },
+      extra?: { moodScore?: number; barriers?: string; vitals?: VitalsPayload | null },
     ) => {
       if (program[id]) return
 
@@ -263,6 +288,7 @@ export function ProgramPage() {
         taskCode: id as TaskCode,
         moodScore: extra?.moodScore,
         barriers: extra?.barriers,
+        vitals: extra?.vitals,
       })
 
       // Also update local AppContext for fallback continuity
@@ -281,14 +307,6 @@ export function ProgramPage() {
     },
     [program, completeTaskMutation, completeStep, doneCount, showToast, t],
   )
-
-  const openChest = (id: string) => {
-    const result = claimChest(id)
-    if (!result) return
-    showToast(t('¡{title} abierto! +{xp} XP', { title: t(result.title), xp: String(result.xp) }), 'ok')
-    burst(result.xp, true)
-    setOpenedChest(result)
-  }
 
   const exContent = snapshot?.todayTasks?.find((t) => t.taskCode === 'ejercicio')?.content
   const activeExerciseSteps = useMemo(() => {
@@ -403,7 +421,9 @@ export function ProgramPage() {
           healthScore={activeHealthScore}
           stateRank={liga.rank}
           stateName={USER_STATE}
-          readyChests={claimable.length}
+          // Chests are auto-granted server-side now: nothing sits in a
+          // "ready to claim" state anymore (chests module, R3.2).
+          readyChests={0}
           allDone={allDone}
           onOpenStreak={() => setTab('racha')}
           onOpenEvo={() => setTab('evo')}
@@ -439,8 +459,8 @@ export function ProgramPage() {
                 onGoEvo={() => setTab('evo')}
                 onGoChat={() => navigate('chat')}
                 onGoChests={() => setTab('racha')}
-                readyChests={claimable.length}
-                readyXp={claimableXp}
+                readyChests={0}
+                readyXp={0}
               />
             )}
             {tab === 'racha' && (
@@ -454,11 +474,10 @@ export function ProgramPage() {
                 weekPct={weekPct}
                 programWeek={activeProgramWeek}
                 programWeeks={activeTotalWeeks}
-                claimedChests={claimedChests}
-                onClaim={openChest}
-                onCell={(day, past) =>
-                  showToast(past ? `Día ${day} completado` : 'Hoy · sigue la racha', 'info')
-                }
+                chests={chests}
+                clinicalChests={clinicalChests}
+                nbStreak={snapshot?.streak?.nbStreak ?? 0}
+                nbNextMilestone={snapshot?.streak?.nbNextMilestone ?? null}
               />
             )}
             {tab === 'liga' && (
@@ -536,7 +555,7 @@ export function ProgramPage() {
                     connectWatch('ANTARES Watch Pro')
                     showToast(t('Reloj listo para sincronizar'), 'ok')
                   }}
-                  onComplete={() => finish('vitals', taskPts, t('+{pts} pts por signos vitales', { pts: String(taskPts) }))}
+                  onComplete={(vitals) => finish('vitals', taskPts, t('+{pts} pts por signos vitales', { pts: String(taskPts) }), { vitals })}
                 />
               )}
               {task.id === 'nut' && (
@@ -550,7 +569,7 @@ export function ProgramPage() {
                   dailyFatTarget={serverActiveTask?.content?.dailyFatTarget}
                   dailyFiberTarget={serverActiveTask?.content?.dailyFiberTarget}
                   nutritionMeals={serverActiveTask?.content?.nutritionMeals}
-                  mealsLogged={mealsLogged}
+                  mealsLogged={serverLoggedMeals}
                   onGoPlan={() => {
                     setActive(null)
                     navigate('nut')

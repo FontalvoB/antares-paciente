@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import {
   IonButton,
   IonIcon,
+  IonInput,
+  IonModal,
   IonProgressBar,
   IonSegment,
   IonSegmentButton,
@@ -15,7 +17,11 @@ import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 import { useNutritionLog } from '../hooks/useNutritionLog'
 import { useProgram } from '../hooks/useProgram'
-import type { MealCode } from '../services/program/nutrition-service'
+import type { MealCode, NutritionIntakePayload } from '../services/program/nutrition-service'
+import { ApiError } from '../utils/apiClient'
+import { mealTypeToCode } from '../utils/mealTypeToCode'
+import { buildHydrationIntake, buildPlanTargets, prefillIntakeForm } from '../utils/nutritionForm'
+import { deriveLoggedMeals } from '../utils/nutritionProgress'
 import {
   analyzeFoodImage,
   displayName,
@@ -23,6 +29,24 @@ import {
   type DetectedFood,
   type FoodAnalysisResult,
 } from '../utils/foodAiApi'
+
+const MEAL_LABELS: Record<MealCode, string> = {
+  des: 'Desayuno',
+  alm: 'Almuerzo',
+  mer: 'Merienda',
+  cen: 'Cena',
+  agua: 'Hidratación',
+}
+
+// Emoji por MealCode (B3): derivado del código canónico, nunca por
+// fallthrough de prefijos del mealType (Snack → mer, no cen).
+const MEAL_CODE_EMOJI: Record<MealCode, string> = {
+  des: '🌅',
+  alm: '☀️',
+  mer: '🍎',
+  cen: '🌙',
+  agua: '💧',
+}
 
 const defaultMeals = [
   {
@@ -81,12 +105,22 @@ const week = [
 ]
 
 export function NutritionPage() {
-  const { hydration, setHydration, mealsLogged, logMeal, showToast } = useApp()
+  const { hydration, setHydration, logMeal, showToast } = useApp()
   const { snapshot } = useProgram()
   const t = useT()
   const nutritionMutation = useNutritionLog()
   const [tab, setTab] = useState<'hoy' | 'semana' | 'indicaciones' | 'historial'>('hoy')
   const [openDay, setOpenDay] = useState(1)
+
+  // ── Registro manual prefilled (SPEC nutrition-intake-adherence) ──
+  const [registerTarget, setRegisterTarget] = useState<MealCode | null>(null)
+  const [intakeForm, setIntakeForm] = useState({
+    calories: '',
+    proteinG: '',
+    carbsG: '',
+    fatG: '',
+    fiberG: '',
+  })
 
   const nutContent = snapshot?.todayTasks?.find((t) => t.taskCode === 'nut')?.content
   const planTitle = nutContent?.nutritionPlanName || t('Ana Torres, RDN · plan asignado')
@@ -96,12 +130,27 @@ export function NutritionPage() {
   const fatTarget = nutContent?.dailyFatTarget ? `${nutContent.dailyFatTarget}g` : '50g'
   const fiberTarget = nutContent?.dailyFiberTarget ? `${nutContent.dailyFiberTarget}g` : '28g'
 
+  // Metas del plan por código de comida (D4 vía mealTypeToCode): alimentan el
+  // prefill del modal de registro. Sin plan → mapa vacío → formulario en blanco.
+  const planTargets = useMemo(
+    () => buildPlanTargets(nutContent?.nutritionMeals),
+    [nutContent],
+  )
+
+  // Verdad server-side de lo registrado hoy (S4): deriveLoggedMeals unifica a
+  // todos los consumidores sobre nutritionIntakeLogs (+ capa optimista del
+  // cache) — agua excluida (hidratación nunca cuenta como comida del plan).
+  const loggedSet = useMemo(() => new Set(deriveLoggedMeals(snapshot)), [snapshot])
+
   const displayMeals = useMemo(() => {
     if (nutContent?.nutritionMeals && nutContent.nutritionMeals.length > 0) {
       return nutContent.nutritionMeals.map((m) => {
-        const typeLower = m.mealType.toLowerCase()
-        const id = typeLower.startsWith('des') ? 'des' : typeLower.startsWith('alm') ? 'alm' : typeLower.startsWith('mer') ? 'mer' : 'cen'
-        const emoji = typeLower.includes('des') ? '🌅' : typeLower.includes('alm') ? '☀️' : typeLower.includes('mer') ? '🍎' : '🌙'
+        // B3: el id se deriva del mapa canónico mealTypeToCode (D4) — Snack →
+        // 'mer', NO el fallthrough por prefijo que lo mandaba a 'cen' (bug
+        // vivo en el código de registro Y en el prefill). Solo tipos
+        // genuinamente desconocidos caen en 'cen'.
+        const id = mealTypeToCode(m.mealType) ?? 'cen'
+        const emoji = MEAL_CODE_EMOJI[id]
         return {
           id,
           emoji,
@@ -163,12 +212,126 @@ export function NutritionPage() {
     setStep(0)
   }
 
-  const log = (id: string, name: string) => {
-    logMeal(id)
-    if (['des', 'alm', 'mer', 'cen', 'agua'].includes(id)) {
-      nutritionMutation.mutate({ mealCode: id as MealCode })
+  // Abre el modal de registro con el prefill del plan (o vacío sin plan).
+  const openRegister = (id: MealCode) => {
+    setIntakeForm(prefillIntakeForm(planTargets.get(id)))
+    setRegisterTarget(id)
+  }
+
+  // Guarda el registro manual (source manual). Sin snapshot (demo) se conserva
+  // el doble write del AppContext como fallback; con snapshot solo la API.
+  // B7: el toast de éxito solo se muestra en onSuccess; errores de negocio
+  // (p.ej. 400 intake inválido) se muestran con el mensaje del servidor y el
+  // formulario queda abierto para corregir; 409 → silencioso (keep-state).
+  const submitRegister = () => {
+    if (!registerTarget) return
+    const num = (s: string): number | undefined => {
+      if (s.trim() === '') return undefined
+      const value = Number(s)
+      return Number.isNaN(value) ? undefined : value
     }
-    showToast(t('Foto de {name} analizada · adherencia alta', { name }), 'ok')
+    const intake: NutritionIntakePayload = {
+      calories: num(intakeForm.calories),
+      proteinG: num(intakeForm.proteinG),
+      carbsG: num(intakeForm.carbsG),
+      fatG: num(intakeForm.fatG),
+      fiberG: num(intakeForm.fiberG),
+      source: 'manual',
+    }
+    if (!snapshot) logMeal(registerTarget)
+    nutritionMutation.mutate(
+      { mealCode: registerTarget, intake },
+      {
+        onSuccess: () => {
+          showToast(t('Comida registrada'), 'ok')
+          setRegisterTarget(null)
+        },
+        onError: (error) => {
+          if (error instanceof ApiError && error.status === 409) {
+            setRegisterTarget(null)
+            return
+          }
+          // 422 NUTRITION_EVIDENCE_REQUIRED (D3): el gate lista las comidas
+          // del plan sin evidencia — se muestran al paciente (B7 contract).
+          if (error instanceof ApiError && error.errors?.missingMealCodes?.length) {
+            showToast(
+              t('Faltan comidas del plan: {meals}', {
+                meals: error.errors.missingMealCodes.join(', '),
+              }),
+              'err',
+            )
+            return
+          }
+          showToast(error.message || t('No se pudo registrar la comida'), 'err')
+        },
+      },
+    )
+  }
+
+  // Confirma un análisis de foto en una comida: persiste con source ai_photo
+  // + analysisId (reemplaza el descarte anterior) y los macros del summary.
+  // B7: mismo contrato de toasts que submitRegister.
+  const logAnalysis = (id: MealCode) => {
+    const summary = result?.summary
+    const intake: NutritionIntakePayload = summary
+      ? {
+          calories: Math.round(summary.calories),
+          proteinG: summary.protein,
+          carbsG: summary.carbohydrates,
+          fatG: summary.fat,
+          fiberG: summary.fiber,
+          source: 'ai_photo',
+          foodAnalysisId: result?.analysisId,
+        }
+      : { source: 'ai_photo', foodAnalysisId: result?.analysisId }
+    if (!snapshot) logMeal(id)
+    nutritionMutation.mutate(
+      { mealCode: id, intake },
+      {
+        onSuccess: () => {
+          showToast(t('Comida registrada con foto'), 'ok')
+          resetAnalysis()
+        },
+        onError: (error) => {
+          if (error instanceof ApiError && error.status === 409) {
+            resetAnalysis()
+            return
+          }
+          if (error instanceof ApiError && error.errors?.missingMealCodes?.length) {
+            showToast(
+              t('Faltan comidas del plan: {meals}', {
+                meals: error.errors.missingMealCodes.join(', '),
+              }),
+              'err',
+            )
+            return
+          }
+          showToast(error.message || t('No se pudo registrar la comida'), 'err')
+        },
+      },
+    )
+  }
+
+  // Hidratación: registra en la API con mealCode 'agua' + waterMl (250 ml por
+  // vaso) y actualiza el contador optimista. Error-surfacing B7 (residual del
+  // re-gate Batch 1): 409 silencioso (ya logueado), resto → toast err con el
+  // mensaje del servidor.
+  const tapGlass = (n: number) => {
+    setHydration(n)
+    if (n > hydration) {
+      nutritionMutation.mutate(
+        {
+          mealCode: 'agua',
+          intake: buildHydrationIntake(n),
+        },
+        {
+          onError: (error) => {
+            if (error instanceof ApiError && error.status === 409) return
+            showToast(error.message || t('No se pudo registrar la comida'), 'err')
+          },
+        },
+      )
+    }
   }
 
   return (
@@ -252,6 +415,16 @@ export function NutritionPage() {
                 <span style={{ fontWeight: 800, fontSize: 16 }}>{Math.round(result.summary.calories)} kcal</span>
               </div>
             )}
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>{t('Registrar en…')}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {(['des', 'alm', 'mer', 'cen'] as MealCode[]).map((id) => (
+                  <IonButton key={id} size="small" fill="outline" onClick={() => logAnalysis(id)}>
+                    {t('Registrar en {meal}', { meal: t(MEAL_LABELS[id]) })}
+                  </IonButton>
+                ))}
+              </div>
+            </div>
             <IonButton style={{ marginTop: 12, '--background': 'var(--teal)' } as CSSProperties} expand="block" onClick={resetAnalysis}>
               <IonIcon icon={refreshOutline} slot="start" />
               {t('Analizar otra comida')}
@@ -324,7 +497,7 @@ export function NutritionPage() {
               <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 10, fontSize: 13 }}>{t('💧 Hidratación · 8 vasos (2L)')}</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <button key={i} className={`hyd-glass ${i < hydration ? 'full' : ''}`} onClick={() => setHydration(i + 1)}>
+                  <button key={i} className={`hyd-glass ${i < hydration ? 'full' : ''}`} onClick={() => tapGlass(i + 1)}>
                     🥛
                   </button>
                 ))}
@@ -351,13 +524,13 @@ export function NutritionPage() {
                     </div>
                   </div>
                 ))}
-                {mealsLogged.includes(m.id) ? (
+                {loggedSet.has(m.id) ? (
                   <div style={{ margin: 12, background: 'var(--teal-l)', borderRadius: 12, padding: 12, color: '#0F6E56', fontWeight: 700, fontSize: 13 }}>
                     {t('✓ Registrado con foto · IA 92% adherencia')}
                   </div>
                 ) : (
                   <button
-                    onClick={() => log(m.id, m.title)}
+                    onClick={() => openRegister(m.id as MealCode)}
                     style={{
                       margin: 12,
                       width: 'calc(100% - 24px)',
@@ -467,6 +640,74 @@ export function NutritionPage() {
           </div>
         )}
       </Scroll>
+
+      {/* ── Registro manual de comida (prefill del plan, editable) ── */}
+      <IonModal isOpen={registerTarget !== null} onDidDismiss={() => setRegisterTarget(null)}>
+        <div style={{ padding: 20 }}>
+          <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 4 }}>{t('Registrar comida')}</div>
+          {registerTarget && (
+            <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 14 }}>
+              {t(MEAL_LABELS[registerTarget])}
+              {planTargets.has(registerTarget) && ` · ${t('Valores del plan de hoy · editables')}`}
+            </div>
+          )}
+          <IonInput
+            label={t('Calorías (kcal)')}
+            labelPlacement="stacked"
+            fill="outline"
+            type="number"
+            inputmode="numeric"
+            value={intakeForm.calories}
+            onIonInput={(e) => setIntakeForm((f) => ({ ...f, calories: String(e.target.value ?? '') }))}
+          />
+          <IonInput
+            label={t('Proteínas (g)')}
+            labelPlacement="stacked"
+            fill="outline"
+            type="number"
+            inputmode="decimal"
+            value={intakeForm.proteinG}
+            onIonInput={(e) => setIntakeForm((f) => ({ ...f, proteinG: String(e.target.value ?? '') }))}
+          />
+          <IonInput
+            label={t('Carbohidratos (g)')}
+            labelPlacement="stacked"
+            fill="outline"
+            type="number"
+            inputmode="decimal"
+            value={intakeForm.carbsG}
+            onIonInput={(e) => setIntakeForm((f) => ({ ...f, carbsG: String(e.target.value ?? '') }))}
+          />
+          <IonInput
+            label={t('Grasas (g)')}
+            labelPlacement="stacked"
+            fill="outline"
+            type="number"
+            inputmode="decimal"
+            value={intakeForm.fatG}
+            onIonInput={(e) => setIntakeForm((f) => ({ ...f, fatG: String(e.target.value ?? '') }))}
+          />
+          <IonInput
+            label={t('Fibra (g)')}
+            labelPlacement="stacked"
+            fill="outline"
+            type="number"
+            inputmode="decimal"
+            value={intakeForm.fiberG}
+            onIonInput={(e) => setIntakeForm((f) => ({ ...f, fiberG: String(e.target.value ?? '') }))}
+          />
+          <IonButton
+            expand="block"
+            style={{ marginTop: 16, '--background': 'var(--teal)' } as CSSProperties}
+            onClick={submitRegister}
+          >
+            {t('Guardar')}
+          </IonButton>
+          <IonButton expand="block" fill="clear" onClick={() => setRegisterTarget(null)}>
+            {t('Cancelar')}
+          </IonButton>
+        </div>
+      </IonModal>
     </Screen>
   )
 }

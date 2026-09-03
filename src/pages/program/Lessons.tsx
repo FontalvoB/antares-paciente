@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ExerciseItemDto, NutritionMealDto, PodcastChapterDto, RecentVitalsDto } from '../../services/program/types'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ExerciseItemDto, NutritionMealDto, PodcastChapterDto, RecentVitalsDto, VitalsPayload } from '../../services/program/types'
 import {
   IonButton,
   IonChip,
@@ -34,6 +34,7 @@ import {
   WEEK_LABELS,
 } from '../../data/program'
 import { weekdayMondayIndex } from '../../utils/dates'
+import { mealTypeToCode } from '../../utils/mealTypeToCode'
 import { useT } from '../../i18n/I18nContext'
 
 function mmss(sec: number) {
@@ -191,7 +192,7 @@ export function VitalsLesson({
   recentVitals?: RecentVitalsDto | null
   watchConnected: boolean
   onConnectWatch: () => void
-  onComplete: () => void
+  onComplete: (vitals: VitalsPayload) => void
 }) {
   const t = useT()
   const [vals, setVals] = useState<Record<string, string>>({})
@@ -210,6 +211,45 @@ export function VitalsLesson({
     if (recentVitals.temperatureC) res.temp = String(recentVitals.temperatureC)
     return res
   }, [recentVitals])
+
+  /**
+   * Build the wire `VitalsPayload` from the six collected `VITAL_FIELDS`
+   * strings. Field mapping (design §Contracts / spec):
+   *   fc → heartRate; pa → systolic/diastolic (split on "/");
+   *   spo2 → o2Saturation; glu → glucose; peso → weightKg; temp → temperatureC.
+   * Empty/blank inputs are sent as `undefined` (omitted) so the backend treats
+   * them as "not provided"; `measuredAt` is the completion instant (ISO). The
+   * offline queue re-sends this object verbatim (JSON-serialized).
+   */
+  const buildVitalsPayload = useCallback((): VitalsPayload => {
+    const parse = (raw: string | undefined): number | undefined => {
+      if (!raw || !raw.trim()) return undefined
+      const n = vitalNumber(raw)
+      return Number.isNaN(n) ? undefined : n
+    }
+
+    const pa = vals['pa']?.trim()
+    let systolic: number | undefined
+    let diastolic: number | undefined
+    if (pa && pa.includes('/')) {
+      const parts = pa.split('/')
+      const s = parseFloat(parts[0].replace(',', '.'))
+      const d = parseFloat(parts[1].replace(',', '.'))
+      if (!Number.isNaN(s)) systolic = s
+      if (!Number.isNaN(d)) diastolic = d
+    }
+
+    return {
+      heartRate: parse(vals['fc']),
+      systolic,
+      diastolic,
+      o2Saturation: parse(vals['spo2']),
+      glucose: parse(vals['glu']),
+      weightKg: parse(vals['peso']),
+      temperatureC: parse(vals['temp']),
+      measuredAt: new Date().toISOString(),
+    }
+  }, [vals])
 
   useEffect(
     () => () => {
@@ -317,7 +357,7 @@ export function VitalsLesson({
       </div>
 
       {!done && (
-        <IonButton expand="block" className="bt bt-primary" disabled={filled < 4} onClick={onComplete}>
+        <IonButton expand="block" className="bt bt-primary" disabled={filled < 4} onClick={() => onComplete(buildVitalsPayload())}>
           {filled < 4 ? t('Registra al menos 4 signos ({filled}/6)', { filled: String(filled) }) : t('Guardar signos · +{pts} pts', { pts: String(pts) })}
         </IonButton>
       )}
@@ -375,7 +415,12 @@ export function NutritionLesson({
         if (macros.length > 0) details.push(`[${macros.join(' · ')}]`)
 
         return {
-          id: mealTypeLower || `meal-${idx}`,
+          // D4: el id es el mealCode canónico (des/alm/mer/cen), NO el
+          // mealTypeLower crudo ('desayuno') — que nunca matcheaba los
+          // códigos de nutritionIntakeLogs y rompía ring/kcal/checkmarks
+          // (bug vivo Lessons.tsx:417/437). Tipos desconocidos → id único
+          // sin match (no registrado).
+          id: mealTypeToCode(m.mealType) ?? `meal-${idx}`,
           emoji,
           title: m.mealType,
           items: details.join(' ') || 'Comida planificada',

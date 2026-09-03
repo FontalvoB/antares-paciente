@@ -30,6 +30,25 @@ export interface NutritionMealDto {
   sortOrder: number
 }
 
+/**
+ * Log de intake de hoy del snapshot `nut` (SPEC nutrition-intake-adherence):
+ * verdad server-side del progreso nutricional. Para `nut` la lista SIEMPRE
+ * viene materializada (`[]` sin logs, nunca null).
+ */
+export interface NutritionIntakeLogDto {
+  mealCode: 'des' | 'alm' | 'mer' | 'cen' | 'agua'
+  localDate: string
+  calories?: number | null
+  proteinG?: number | null
+  carbsG?: number | null
+  fatG?: number | null
+  fiberG?: number | null
+  waterMl?: number | null
+  source: string
+  foodAnalysisId?: string | null
+  createdAt: string
+}
+
 export interface ExerciseItemDto {
   name: string
   description?: string | null
@@ -59,6 +78,26 @@ export interface RecentVitalsDto {
   recordedAt?: string | null
 }
 
+/**
+ * Nested vitals payload carried by `CompleteTaskInput` for the `vitals` task.
+ * Wire contract mirrors the backend `VitalsPayload` record
+ * (ProgramProgressDtos.cs): ints for fc/pa/spo2, decimals for glu/peso/temp.
+ * All fields optional — an all-null payload is treated as "no vitals" and
+ * does NOT alter completion behaviour (backwards compatible).
+ * `measuredAt` is an ISO-8601 string when the client knows the measurement
+ * time; the backend falls back to UtcNow when null.
+ */
+export interface VitalsPayload {
+  heartRate?: number | null
+  systolic?: number | null
+  diastolic?: number | null
+  o2Saturation?: number | null
+  glucose?: number | null
+  weightKg?: number | null
+  temperatureC?: number | null
+  measuredAt?: string | null
+}
+
 export interface TodayTaskContentDto {
   mediaId?: string | null
   title?: string | null
@@ -83,6 +122,8 @@ export interface TodayTaskContentDto {
   takeaways?: string[] | null
   contentUnavailable?: boolean
   exercises?: ExerciseItemDto[] | null
+  /** Logs de intake de hoy (siempre `[]` para `nut`, nunca null). */
+  nutritionIntakeLogs?: NutritionIntakeLogDto[] | null
 }
 
 export interface TodayTaskDto {
@@ -105,6 +146,20 @@ export interface NbNextMilestoneDto {
   days: number
   xp: number
   daysRemaining: number
+}
+
+/**
+ * Streak chest from the snapshot (chests module): milestone definition from
+ * the active STREAK_* catalog rules plus its REAL grant state from the XP
+ * ledger (once-per-enrollment). The UI must render chests from this truth and
+ * never derive claim state from `streak.current` (break + regrow would
+ * resurrect already-paid chests). Additive field — treat as optional (R7.1).
+ */
+export interface StreakChestDto {
+  days: number
+  xp: number
+  granted: boolean
+  grantedAt?: string | null
 }
 
 export interface StreakInfoDto {
@@ -149,6 +204,8 @@ export interface ProgramSnapshotDto {
   streak: StreakInfoDto
   nextMilestoneDays: number
   calendar: unknown[]
+  // Additive fields (R7.1) — optional
+  streakChests?: StreakChestDto[] | null
 }
 
 export interface ProgramEnrollmentDto {
@@ -172,6 +229,9 @@ export interface CompleteTaskInput {
   moodScore?: number
   barriers?: string
   contentFingerprint?: string
+  // Additive (vital-signs-tracking): optional nested vitals for the `vitals`
+  // task. Null/empty payloads are ignored by the backend (no behaviour change).
+  vitals?: VitalsPayload | null
 }
 
 export interface CompleteTaskResponseDto {

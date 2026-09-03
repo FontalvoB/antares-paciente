@@ -34,11 +34,13 @@ import { enqueue } from '../services/program/offline-queue'
 import { programKeys } from './queryKeys'
 import { ApiError } from '../utils/apiClient'
 import { useApp } from '../context/AppContext'
+import { useT } from '../i18n/I18nContext'
 import type {
   CompleteTaskInput,
   CompleteTaskResponseDto,
   ProgramSnapshotDto,
   TaskCode,
+  VitalsPayload,
 } from '../services/program/types'
 
 // ---------------------------------------------------------------------------
@@ -52,6 +54,9 @@ export interface CompleteTaskVars {
   barriers?: string
   contentFingerprint?: string
   clientCompletedAt?: string
+  // Additive (vital-signs-tracking): optional nested vitals for the `vitals`
+  // task. Carried verbatim into the wire payload and the offline queue.
+  vitals?: VitalsPayload | null
 }
 
 /** Payload delivered to the celebration listener / onCelebrate callback. */
@@ -178,6 +183,7 @@ function buildPayload(snapshot: ProgramSnapshotDto, vars: MutationVars): Complet
     moodScore: vars.moodScore,
     barriers: vars.barriers,
     contentFingerprint: vars.contentFingerprint,
+    vitals: vars.vitals,
   }
 }
 
@@ -192,6 +198,7 @@ export function useCompleteTask(
 } {
   const queryClient = useQueryClient()
   const { showToast } = useApp()
+  const t = useT()
   const onCelebrate = options?.onCelebrate
 
   const mutation = useMutation<CompleteTaskResponseDto, ApiError, MutationVars, CompleteTaskContext>({
@@ -241,10 +248,22 @@ export function useCompleteTask(
       return { previousSnapshot, payload, clientRequestId: vars.clientRequestId }
     },
 
-    onError: (_err, _vars, ctx): void => {
+    onError: (error, _vars, ctx): void => {
       // R5.3 — roll back ALL caches modified in onMutate.
       if (ctx?.previousSnapshot) {
         queryClient.setQueryData(programKeys.snapshot, ctx.previousSnapshot)
+      }
+      // 422 NUTRITION_EVIDENCE_REQUIRED (S4/D3): el gate de adherencia
+      // nutricional lista las comidas del plan sin evidencia — toast err con
+      // el detalle (B7 contract). Solo este shape; el resto de errores
+      // conserva el comportamiento previo (rollback silencioso).
+      if (error instanceof ApiError && error.errors?.missingMealCodes?.length) {
+        showToast(
+          t('Faltan comidas del plan: {meals}', {
+            meals: error.errors.missingMealCodes.join(', '),
+          }),
+          'err',
+        )
       }
     },
 
