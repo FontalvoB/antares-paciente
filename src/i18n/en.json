@@ -1233,8 +1233,6 @@
   "Sugerencias": "Suggestions",
   "SUMMIT presenciales": "SUMMIT in-person",
   "Tampa": "Tampa",
-  "West Palm Beach": "West Palm Beach",
-<<<<<<< HEAD
   "+{pts} pts nutrición": "+{pts} pts nutrition",
   "+{pts} pts por signos vitales": "+{pts} pts for vitals",
   "Actualizando…": "Updating…",
@@ -1248,8 +1246,7 @@
   "Podcast escuchado · +{pts} pts": "Podcast listened · +{pts} pts",
   "rescate(s)": "rescue(s)",
   "Semana {cur} de {total}": "Week {cur} of {total}",
-  "Último": "Latest"
-=======
+  "Último": "Latest",
   "Lee y acepta tu autorización": "Read and accept your authorization",
   "Acepta los términos para continuar": "Accept the terms to continue",
   "Cuidador principal": "Primary caregiver",
