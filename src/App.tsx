@@ -31,6 +31,7 @@ import { ChatPage } from "./pages/ChatPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ProgramPage } from "./pages/ProgramPage";
 import { CommunityPage } from "./pages/CommunityPage";
+import { VirtualRoomPage } from "./pages/VirtualRoomPage";
 
 setupIonicReact({ mode: "ios" });
 
@@ -103,6 +104,9 @@ function Router() {
         break;
       case "com":
         content = <CommunityPage />;
+        break;
+      case "room":
+        content = <VirtualRoomPage />;
         break;
       default:
         content = <HomePage />;
