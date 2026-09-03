@@ -184,3 +184,10 @@ export async function logoutUser(): Promise<void> {
 export function getAccessToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY)
 }
+
+export async function ensureFreshAccessToken(): Promise<string | null> {
+  const token = getAccessToken()
+  if (token) return token
+  const restored = await restoreSession()
+  return restored?.accessToken ?? null
+}
