@@ -19,17 +19,16 @@ const payload = {
   vitals: { heartRate: 140, spo2: 94, bloodPressure: '160/110' },
 }
 
-const dispatchResult = {
+// Respuesta cruda del backend: sms/email/voice son propiedades de nivel superior.
+const rawDispatch = {
   id: 'abc',
   status: 'Sent',
   triggeredAt: '2026-09-03T00:00:00Z',
   messageText: 'ALERTA SOS',
   emergencyNumber: '911',
-  channels: {
-    sms: { status: 'Sent' },
-    email: { status: 'Sent' },
-    voice: { status: 'Sent' },
-  },
+  sms: { status: 'Sent' },
+  email: { status: 'Sent' },
+  voice: { status: 'Sent' },
 }
 
 describe('activateSosAlert', () => {
@@ -48,10 +47,10 @@ describe('activateSosAlert', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('envía POST con Bearer, body JSON y parsea el resultado', async () => {
+  it('envía POST con Bearer, body JSON y normaliza los canales', async () => {
     mockedToken.mockReturnValue('jwt-123')
     fetchMock.mockResolvedValue(
-      new Response(JSON.stringify(dispatchResult), { status: 200 }),
+      new Response(JSON.stringify(rawDispatch), { status: 200 }),
     )
 
     const result = await activateSosAlert(payload)
@@ -64,7 +63,18 @@ describe('activateSosAlert', () => {
       },
       body: JSON.stringify(payload),
     })
-    expect(result).toEqual(dispatchResult)
+    expect(result).toEqual({
+      id: 'abc',
+      status: 'Sent',
+      triggeredAt: '2026-09-03T00:00:00Z',
+      messageText: 'ALERTA SOS',
+      emergencyNumber: '911',
+      channels: {
+        sms: { status: 'Sent' },
+        email: { status: 'Sent' },
+        voice: { status: 'Sent' },
+      },
+    })
   })
 
   it('respuesta no ok (401) devuelve null', async () => {

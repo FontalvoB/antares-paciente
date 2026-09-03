@@ -50,6 +50,21 @@ export interface SosAlertPayload {
 // ── API call ───────────────────────────────────────────────────────────
 
 /**
+ * Raw backend response: sms/email/voice are top-level properties
+ * (SosAlertResult en el backend), no anidados bajo `channels`.
+ */
+interface SosDispatchRaw {
+  id: string;
+  status: SosDispatchStatus;
+  triggeredAt: string;
+  messageText: string;
+  emergencyNumber: string;
+  sms: SosChannelResult;
+  email: SosChannelResult;
+  voice: SosChannelResult;
+}
+
+/**
  * Sends the SOS alert to the backend.
  * NEVER throws — returns null on missing token or any error.
  */
@@ -68,7 +83,19 @@ export async function activateSosAlert(
       body: JSON.stringify(payload),
     });
     if (!res.ok) return null;
-    return (await res.json()) as SosDispatchResult;
+    const raw = (await res.json()) as SosDispatchRaw;
+    return {
+      id: raw.id,
+      status: raw.status,
+      triggeredAt: raw.triggeredAt,
+      messageText: raw.messageText,
+      emergencyNumber: raw.emergencyNumber,
+      channels: {
+        sms: raw.sms,
+        email: raw.email,
+        voice: raw.voice,
+      },
+    };
   } catch {
     return null;
   }
