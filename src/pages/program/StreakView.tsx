@@ -2,7 +2,7 @@ import { IonIcon, IonProgressBar } from '@ionic/react'
 import { motion } from 'framer-motion'
 import type { CSSProperties } from 'react'
 import { flame, shieldCheckmark, trophy } from 'ionicons/icons'
-import { CLINICAL_CHESTS, chestStatus, nextStreakChest, STREAK_CHESTS } from '../../data/chests'
+import { NB_STREAK_DEFS } from '../../data/chests'
 import { useI18n } from '../../i18n/I18nContext'
 import {
   CAL_DAY_LABELS,
@@ -10,36 +10,57 @@ import {
   PROGRAM_WEEKS,
   WEEK_LABELS,
 } from '../../data/program'
-import { ChestCard, NextChestGoal, StreakChestsTrail } from './ChestsPanel'
+import { ClinicalChestCard, NextChestGoal, StreakChestsTrail } from './ChestsPanel'
 import { CountUp } from './visuals'
+import type { StreakChestDto, NbNextMilestoneDto } from '../../services/program/types'
+import type { ClinicalChestView } from '../../hooks/useClinicalChests'
 
 export function StreakView({
   streak,
+  longestStreak = LONGEST_STREAK,
+  freezesRemaining = 1,
   weekCheckins,
   todayIdx,
   cells,
   weekPct,
   programWeek,
-  claimedChests,
-  onCell,
-  onClaim,
+  programWeeks = PROGRAM_WEEKS,
+  chests,
+  clinicalChests,
+  nbStreak,
+  nbNextMilestone,
 }: {
   streak: number
+  longestStreak?: number
+  freezesRemaining?: number
   weekCheckins: boolean[]
   todayIdx: number
   cells: { d: number | null; kind: string }[]
   weekPct: number
   programWeek: number
-  claimedChests: string[]
-  onCell: (day: number, past: boolean) => void
-  onClaim: (id: string) => void
+  programWeeks?: number
+  /** Streak chest trail: server truth (or static fallback), already resolved. */
+  chests: StreakChestDto[]
+  /** Clinical chests: read-only progress resolved from scores. */
+  clinicalChests: ClinicalChestView[]
+  /** Nutribiótico streak (per-run): earns NB chests when >= def.days. */
+  nbStreak: number
+  /** Server-computed next NB milestone (takes precedence when present). */
+  nbNextMilestone?: NbNextMilestoneDto | null
 }) {
   const { lang, t } = useI18n()
   const monthRaw = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' })
   const monthTitle = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1)
-  const today = new Date().getDate()
-  const upcoming = nextStreakChest(streak, claimedChests)
-  const claimableStreak = STREAK_CHESTS.filter((c) => chestStatus(c, streak, claimedChests) === 'ready')
+
+  const nextStreakChest = chests.find((chest) => !chest.granted)
+  const nbChests: StreakChestDto[] = NB_STREAK_DEFS.map((def) => ({
+    days: def.days,
+    xp: def.xp,
+    // Per-run semantics (AC-39): each completed run re-earns its milestone,
+    // so deriving from the current nbStreak is correct for NB chests.
+    granted: nbStreak >= def.days,
+  }))
+  const nextNb = nbNextMilestone ?? nbChests.find((chest) => !chest.granted)
 
   return (
     <div className="pg-pane cpad">
@@ -61,10 +82,10 @@ export function StreakView({
         <p className="pg-streak-copy">{t('Cada día completo protege el fuego. No lo dejes apagar.')}</p>
         <div className="pg-streak-chips">
           <span>
-            <IonIcon icon={trophy} /> {t('Máxima')} {LONGEST_STREAK}
+            <IonIcon icon={trophy} /> {t('Máxima')} {longestStreak}
           </span>
           <span>
-            <IonIcon icon={shieldCheckmark} /> {t('1 rescate')}
+            <IonIcon icon={shieldCheckmark} /> {freezesRemaining} {t('rescate(s)')}
           </span>
         </div>
       </motion.section>
@@ -115,7 +136,6 @@ export function StreakView({
               className={`pg-cal-orb ${c.kind}`}
               disabled={!c.d}
               aria-label={c.d ? `${t('Día')} ${c.d}` : undefined}
-              onClick={() => c.d && onCell(c.d, c.d < today)}
             >
               {c.d ?? ''}
             </button>
@@ -138,38 +158,32 @@ export function StreakView({
       </div>
 
       <div className="stitle">{t('Cofres de racha')}</div>
-      <p className="cx-lead">{t('Cada hito de días seguidos desbloquea un cofre de experiencia.')}</p>
-      <StreakChestsTrail chests={STREAK_CHESTS} streak={streak} claimed={claimedChests} onClaim={onClaim} />
-      {claimableStreak.map((chest, i) => (
-        <ChestCard
-          key={chest.id}
-          chest={chest}
+      <p className="cx-lead">{t('Cada hito de días seguidos abre su cofre de experiencia automáticamente.')}</p>
+      <StreakChestsTrail chests={chests} streak={streak} />
+      {nextStreakChest && (
+        <NextChestGoal
+          days={nextStreakChest.days}
+          xp={nextStreakChest.xp}
           streak={streak}
-          claimed={claimedChests}
-          onClaim={onClaim}
-          index={i}
         />
-      ))}
-      {upcoming && <NextChestGoal chest={upcoming} streak={streak} />}
+      )}
+
+      <div className="stitle">{t('Cofres de nutribiótico')}</div>
+      <p className="cx-lead">{t('Cada corrida constante de nutribiótico desbloquea su propio premio.')}</p>
+      <StreakChestsTrail chests={nbChests} streak={nbStreak} />
+      {nextNb && <NextChestGoal days={nextNb.days} xp={nextNb.xp} streak={nbStreak} />}
 
       <div className="stitle">{t('Cofres clínicos')}</div>
-      <p className="cx-lead">{t('Cumple objetivos de salud y reclama XP extra.')}</p>
-      {CLINICAL_CHESTS.map((chest, i) => (
-        <ChestCard
-          key={chest.id}
-          chest={chest}
-          streak={streak}
-          claimed={claimedChests}
-          onClaim={onClaim}
-          index={i}
-        />
+      <p className="cx-lead">{t('Tu evolución real frente a la línea base. Sin reclamos: tu equipo valida la XP.')}</p>
+      {clinicalChests.map((chest, i) => (
+        <ClinicalChestCard key={chest.id} chest={chest} index={i} />
       ))}
 
       <div className="card pg-protocol">
         <div className="pg-protocol-top">
           <div className="cs">{t('Recorrido del protocolo')}</div>
           <strong>
-            {t('Semana')} {programWeek}/{PROGRAM_WEEKS}
+            {t('Semana')} {programWeek}/{programWeeks}
           </strong>
         </div>
         <IonProgressBar
