@@ -1695,5 +1695,6 @@
   "Enviando coordenadas GPS": "Sending GPS coordinates",
   "Ubicación no disponible": "Location unavailable",
   "Alerta SOS activa": "SOS alert active",
-  "Mensaje de emergencia listo para reproducir.": "Emergency message ready to play."
+  "Mensaje de emergencia listo para reproducir.": "Emergency message ready to play.",
+  "lives": "Lives"
 }
