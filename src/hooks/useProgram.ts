@@ -19,7 +19,7 @@
  * verbatimModuleSyntax: all type imports use `import type`.
  */
 
-import { useMemo, useRef, useState, type MutableRefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { ApiError } from '../utils/apiClient'
@@ -261,6 +261,34 @@ export function useProgram(): UseProgramResult {
     // Loading (no data, no error yet).
     return { snapshot: null, programState: 'active' as ProgramState, productMessage: null }
   }, [data, error])
+
+  // Chest auto-open celebration (chests module, spec R3.2 / S2): when a
+  // snapshot refetch reveals a newly granted streak chest, fire a one-shot
+  // `program:chest-granted` event for the UI to celebrate. The FIRST
+  // observation is a baseline — already-granted history never celebrates, and
+  // each chest celebrates exactly once per session (dedupe by days). Zero
+  // client XP mutation: the XP was granted server-side when the milestone was
+  // crossed.
+  const celebratedChestsRef = useRef<Set<number> | null>(null)
+  useEffect(() => {
+    const chests = data?.streakChests
+    if (!chests || chests.length === 0) return
+    const granted = chests.filter((chest) => chest.granted)
+    if (celebratedChestsRef.current === null) {
+      celebratedChestsRef.current = new Set(granted.map((chest) => chest.days))
+      return
+    }
+    const seen = celebratedChestsRef.current
+    for (const chest of granted) {
+      if (seen.has(chest.days)) continue
+      seen.add(chest.days)
+      window.dispatchEvent(
+        new CustomEvent('program:chest-granted', {
+          detail: { days: chest.days, xp: chest.xp },
+        }),
+      )
+    }
+  }, [data])
 
   return {
     snapshot,

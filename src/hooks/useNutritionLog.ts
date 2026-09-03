@@ -23,9 +23,14 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { logMeal, type MealCode } from '../services/program/nutrition-service'
+import {
+  logMeal,
+  type MealCode,
+  type NutritionIntakePayload,
+} from '../services/program/nutrition-service'
 import { enqueue } from '../services/program/offline-queue'
 import { programKeys, programInvalidation } from './queryKeys'
+import { deriveLoggedMeals } from '../utils/nutritionProgress'
 
 import { ApiError } from '../utils/apiClient'
 import type {
@@ -37,6 +42,8 @@ import type {
 export interface LogMealVariables {
   mealCode: MealCode
   localDate?: string
+  /** Intake enriquecido opcional (SPEC nutrition-intake-adherence). */
+  intake?: NutritionIntakePayload
 }
 
 /**
@@ -46,6 +53,17 @@ export interface LogMealVariables {
  */
 type CachedSnapshot = ProgramSnapshotDto & {
   todayNutritionLogged?: string[]
+}
+
+/**
+ * Verdad server-side de los meals registrados hoy: el snapshot `nut` trae
+ * `nutritionIntakeLogs` (SIEMPRE materializado, `[]` sin logs). El marcador
+ * client-only (`todayNutritionLogged`) solo se usa como capa optimista por
+ * encima de esa verdad — implementación compartida en
+ * `deriveLoggedMeals` (S4, unifica todos los consumidores).
+ */
+function loggedMealsFromSnapshot(old: CachedSnapshot): string[] {
+  return deriveLoggedMeals(old)
 }
 
 /** Transport failure eligible for offline-queue replay (R5.4 / R5.5). */
@@ -77,7 +95,7 @@ export function useNutritionLog() {
     // still surface via onError and are enqueued (R5.4).
     networkMode: 'online',
 
-    mutationFn: ({ mealCode, localDate }) => logMeal(mealCode, localDate),
+    mutationFn: ({ mealCode, localDate, intake }) => logMeal(mealCode, localDate, intake),
 
     onMutate: async (vars) => {
       // Cancel in-flight snapshot/scores queries so the optimistic patch wins.
@@ -87,9 +105,11 @@ export function useNutritionLog() {
       ])
 
       // Optimistically mark the meal/hydration as logged for instant UI feedback.
+      // El marcador parte de la verdad server-side (nutritionIntakeLogs del
+      // snapshot) + el estado optimista previo.
       queryClient.setQueryData<CachedSnapshot>(programKeys.snapshot, (old) => {
         if (!old) return old
-        const logged = new Set(old.todayNutritionLogged ?? [])
+        const logged = new Set(loggedMealsFromSnapshot(old))
         logged.add(vars.mealCode)
         return { ...old, todayNutritionLogged: [...logged] }
       })
@@ -101,12 +121,19 @@ export function useNutritionLog() {
       if (isAlreadyLogged(error)) return
 
       // Transport failure → enqueue for ordered replay with the SAME
-      // mealCode+localDate. The server's per-meal/per-day dedup makes the replay
-      // idempotent without a clientRequestId on the wire (R3.2 / R5.5).
+      // mealCode+localDate+intake (verbatim). The server's per-meal/per-day
+      // dedup makes the replay idempotent without a clientRequestId on the
+      // wire (R3.2 / R5.5); el payload viaja con el MISMO shape anidado que
+      // logMeal (`{ mealCode, localDate?, intake }`, B2) para que el replay
+      // persista los mismos macros/fuente/análisis.
       if (isTransportError(error)) {
         enqueue<LogMealVariables>({
           actionType: 'nutritionLog',
-          payload: { mealCode: vars.mealCode, localDate: vars.localDate },
+          payload: {
+            mealCode: vars.mealCode,
+            ...(vars.localDate !== undefined && { localDate: vars.localDate }),
+            ...(vars.intake !== undefined && { intake: vars.intake }),
+          },
           clientRequestId: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
         })
@@ -121,7 +148,7 @@ export function useNutritionLog() {
         if (!old) return old
         return {
           ...old,
-          todayNutritionLogged: [...new Set([...(old.todayNutritionLogged ?? []), vars.mealCode])],
+          todayNutritionLogged: [...new Set([...loggedMealsFromSnapshot(old), vars.mealCode])],
           xp: { ...old.xp, balance: old.xp.balance + data.xpAwarded },
         }
       })
