@@ -33,6 +33,9 @@ android/
 **/android/gradlew
 **/.cxx/
 
+# Capturas locales de diseño (scripts/shot.mjs)
+.shots/
+
 # Environment & local notes
 PROMPT-CONTEXT.md
 *.local

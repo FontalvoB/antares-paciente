@@ -4,8 +4,6 @@ import {
   IonContent,
   IonIcon,
   IonModal,
-  IonSegment,
-  IonSegmentButton,
 } from '@ionic/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { close, flame, gift, refresh } from 'ionicons/icons'
@@ -15,16 +13,13 @@ import { useT } from '../i18n/I18nContext'
 import {
   CIRCUIT_STEPS,
   DAY_BONUS_PTS,
-  HEALTH_SCORE,
   LONGEST_STREAK,
   PODCAST_EPISODE,
-  PROGRAM_LEVELS,
+  PROGRAM_POINTS_MAX,
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
   TRANSFORM_ROWS,
-  levelForXp,
 } from '../data/program'
-import { USER_STATE, userRank } from '../data/rankings'
 import type { ProgramDay, ProgramTaskId } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
 import { deriveLoggedMeals } from '../utils/nutritionProgress'
@@ -38,10 +33,10 @@ import {
   VitalsLesson,
   type ProgramTab,
 } from './program/Lessons'
+import { ProgramHeader } from './program/ProgramHeader'
 import { RankingView } from './program/RankingView'
 import { StreakView } from './program/StreakView'
 import { TodayView } from './program/TodayView'
-import { TransformHero } from './program/TransformHero'
 import { paneMotion } from './program/ui'
 import { useClinicalChests } from '../hooks/useClinicalChests'
 import { useProgram } from '../hooks/useProgram'
@@ -52,13 +47,6 @@ import { useProgramCalendar } from '../hooks/useProgramCalendar'
 import type { CalendarDayDetailDto, TaskCode, VitalsPayload } from '../services/program/types'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
-
-function greeting(t: (s: string) => string) {
-  const h = new Date().getHours()
-  if (h < 12) return t('Buenos días')
-  if (h < 19) return t('Buenas tardes')
-  return t('Buenas noches')
-}
 
 function buildMonthCells(calendarDays?: CalendarDayDetailDto[]) {
   const now = new Date()
@@ -106,7 +94,6 @@ export function ProgramPage() {
     program: appProgram,
     completeStep,
     pointsToday: appPointsToday,
-    pointsTotal: appPointsTotal,
     navigate,
     showToast,
     streak: appStreak,
@@ -180,12 +167,10 @@ export function ProgramPage() {
   const activeStreak = snapshot?.streak?.current ?? appStreak
   const activeStreakLongest = snapshot?.streak?.longest ?? LONGEST_STREAK
   const activeFreezes = snapshot?.streak?.freezesRemaining ?? 0
-  const activePointsTotal = snapshot?.xp?.balance ?? appPointsTotal
   const activePointsToday = snapshot?.todayPoints ?? appPointsToday
   const activeProgramWeek = snapshot?.template?.currentWeekNumber ?? appProgramWeek
   const activeTotalWeeks = snapshot?.template?.totalWeeks ?? PROGRAM_WEEKS
   const weekPct = activeTotalWeeks > 0 ? activeProgramWeek / activeTotalWeeks : 0
-  const activeHealthScore = scores?.healthScore?.score ?? HEALTH_SCORE
 
   const activeWeekCheckins = useMemo(() => {
     if (snapshot?.calendar && Array.isArray(snapshot.calendar) && snapshot.calendar.length > 0) {
@@ -207,26 +192,10 @@ export function ProgramPage() {
   const taskHint = serverActiveTask?.short || (task ? t(task.hint) : '')
   const taskPts = serverActiveTask?.points ?? task?.pts ?? 0
 
-  // XP & Levels
-  const lvl = levelForXp(activePointsTotal)
-  const serverLevelName = snapshot?.xp?.level
-  const activeLevelName = serverLevelName || lvl.name
-  const activeNextLevelAt = snapshot?.xp?.nextLevelAt
-  const activeXpToNext = activeNextLevelAt
-    ? Math.max(0, activeNextLevelAt - activePointsTotal)
-    : (PROGRAM_LEVELS[lvl.idx + 1] ? Math.max(0, PROGRAM_LEVELS[lvl.idx + 1].min - activePointsTotal) : 0)
-  const activeLevelPct = activeNextLevelAt && activeNextLevelAt > 0
-    ? Math.min(1, Math.max(0, activePointsTotal / activeNextLevelAt))
-    : lvl.pct
-  const activeLevel = lvl.level
-  const nextLv = PROGRAM_LEVELS[lvl.idx + 1]
-  const activeNextLevelName = nextLv?.name ?? activeLevelName
-
   const first = user.nombre.split(' ')[0]
   const cells = useMemo(() => buildMonthCells(calendarData?.days), [calendarData])
   // Read-only clinical chest progress from real scores (chests module, T9).
   const clinicalChests = useClinicalChests(scores, activeProgramWeek)
-  const liga = userRank('racha')
 
   const burst = (pts: number, withConfetti = false) => {
     setXpPop(pts)
@@ -378,7 +347,7 @@ export function ProgramPage() {
 
   return (
     <Screen>
-      <Scroll>
+      <Scroll className="pg-scroll">
         {productMessage && (
           <div
             className="card"
@@ -406,39 +375,20 @@ export function ProgramPage() {
           </div>
         )}
 
-        <TransformHero
-          greeting={greeting(t)}
-          first={first}
+        <ProgramHeader
           programWeek={activeProgramWeek}
-          programWeeks={activeTotalWeeks}
-          level={activeLevel}
-          levelName={activeLevelName}
-          levelPct={activeLevelPct}
-          pointsTotal={activePointsTotal}
-          xpToNext={activeXpToNext}
-          nextLevelName={activeNextLevelName}
-          streak={activeStreak}
-          healthScore={activeHealthScore}
-          stateRank={liga.rank}
-          stateName={USER_STATE}
+          doneCount={doneCount}
+          total={PROGRAM_TASKS.length}
+          allDone={allDone}
+          pointsToday={activePointsToday}
+          pointsMax={snapshot?.todayPointsMax ?? PROGRAM_POINTS_MAX}
           // Chests are auto-granted server-side now: nothing sits in a
           // "ready to claim" state anymore (chests module, R3.2).
           readyChests={0}
-          allDone={allDone}
-          onOpenStreak={() => setTab('racha')}
-          onOpenEvo={() => setTab('evo')}
-          onOpenLiga={() => setTab('liga')}
+          tab={tab}
+          onTab={setTab}
           onOpenChests={() => setTab('racha')}
         />
-
-        <div className="duo-seg-wrap tabs-4">
-          <IonSegment value={tab} onIonChange={(e) => setTab((e.detail.value as ProgramTab) || 'hoy')}>
-            <IonSegmentButton value="hoy">{t('Hoy')}</IonSegmentButton>
-            <IonSegmentButton value="racha">{t('Racha')}</IonSegmentButton>
-            <IonSegmentButton value="liga">{t('Liga')}</IonSegmentButton>
-            <IonSegmentButton value="evo">{t('Evo')}</IonSegmentButton>
-          </IonSegment>
-        </div>
 
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={tab} {...paneMotion}>
@@ -446,11 +396,8 @@ export function ProgramPage() {
               <TodayView
                 program={program}
                 todayTasks={snapshot?.todayTasks}
-                pointsTodayMax={snapshot?.todayPointsMax}
-                doneCount={doneCount}
                 allDone={allDone}
                 currentId={currentId}
-                pointsToday={activePointsToday}
                 first={first}
                 programWeek={activeProgramWeek}
                 todayIdx={todayIdx}
@@ -458,9 +405,6 @@ export function ProgramPage() {
                 onOpenTask={setActive}
                 onGoEvo={() => setTab('evo')}
                 onGoChat={() => navigate('chat')}
-                onGoChests={() => setTab('racha')}
-                readyChests={0}
-                readyXp={0}
               />
             )}
             {tab === 'racha' && (
