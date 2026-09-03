@@ -8,12 +8,19 @@ import {
   IonSpinner,
 } from "@ionic/react";
 import {
+  calendar,
   checkmarkCircle,
   chevronBack,
   chevronForward,
+  link,
+  person,
   sparkles,
+  star,
 } from "ionicons/icons";
 import { TESTS_META } from "../data/tests";
+import { HEALTH_PROFILE } from "../data/healthProfile";
+import { RingProgress } from "../components/RingProgress";
+import { RadarChart } from "../components/tests/RadarChart";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import {
@@ -51,15 +58,6 @@ const CODE_TO_DEMO: Record<string, number> = {
   "bateria-antares": 9,
 };
 
-const DEMO_SCORES: { label: string; value: number; color: string }[] = [
-  { label: "Metabolismo", value: 62, color: "#E87B2B" },
-  { label: "Nutrición", value: 74, color: "#1D9E75" },
-  { label: "Movimiento", value: 58, color: "#1B6CA8" },
-  { label: "Sueño", value: 51, color: "#7C3AED" },
-  { label: "Adherencia", value: 81, color: "var(--cyan)" },
-  { label: "Estrés", value: 44, color: "#E24B4A" },
-];
-
 function stateLabel(status: MeAssignment["status"]): string {
   if (status === "completed") return "Completado";
   if (status === "in_progress") return "En curso";
@@ -87,7 +85,8 @@ function mergeAssignmentList(
 }
 
 export function TestsPage() {
-  const { testsDone, markTest, skipTests, finishTests, showToast } = useApp();
+  const { testsDone, markTest, skipTests, finishTests, showToast, navigate } =
+    useApp();
   const t = useT();
   const reduce = useReducedMotion();
 
@@ -313,14 +312,18 @@ export function TestsPage() {
     if (backendResults && backendResults.length > 0) {
       return backendResults
         .filter((r) => r.resultType === "subscale" || r.resultType === "score")
-        .slice(0, 6)
+        .slice(0, HEALTH_PROFILE.dims.length)
         .map((r) => ({
           label: r.label,
           value: Math.min(100, Math.round(r.value)),
           color: "var(--cyan)",
         }));
     }
-    return DEMO_SCORES;
+    return HEALTH_PROFILE.dims.map((d) => ({
+      label: d.label,
+      value: d.value,
+      color: d.color,
+    }));
   }, [backendResults]);
 
   const currentAnswers = openId !== null ? (answers[openId] ?? {}) : {};
@@ -356,75 +359,90 @@ export function TestsPage() {
     },
   };
 
-  const heroClass = showResult
-    ? "hero-cosmos"
-    : openId !== null
-      ? theme.hero
-      : "hero-cosmos";
+  const heroClass = openId !== null ? theme.hero : "hero-cosmos";
 
   return (
     <div
       className={`screen ht-page mood-${showResult ? "cosmos" : openId !== null ? theme.mood : "list"}`}
     >
-      <div className={`hero ${heroClass} ht-hero`}>
-        <div className="ht-hero-orbs" aria-hidden="true" />
-        <div className="ht-hero-top">
-          {(openId !== null || showResult) && (
+      {showResult ? (
+        <div className="hero ht-hero ht-hero-ghost">
+          <div className="ht-hero-top">
             <IonButton
               fill="clear"
               className="ht-hero-back"
               aria-label={t("Volver")}
-              onClick={() => {
-                if (showResult) setShowResult(false);
-                else closeTest();
-              }}
+              onClick={() => setShowResult(false)}
             >
               <IonIcon slot="icon-only" icon={chevronBack} />
             </IonButton>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="kicker">{t("ANTARES · PERFIL DE SALUD")}</div>
-            <div className="h2">
-              {openId !== null && !showResult
-                ? t(openTitle || theme.kicker)
-                : t("Batería de evaluación inicial")}
-            </div>
           </div>
-          {!showResult && canSkip && (
-            <IonButton fill="solid" className="bt ht-skip" onClick={trySkip}>
-              {t("Después")}
-            </IonButton>
+        </div>
+      ) : (
+        <div className={`hero ${heroClass} ht-hero`}>
+          <div className="ht-hero-orbs" aria-hidden="true" />
+          <div className="ht-hero-top">
+            {openId !== null && (
+              <IonButton
+                fill="clear"
+                className="ht-hero-back"
+                aria-label={t("Volver")}
+                onClick={closeTest}
+              >
+                <IonIcon slot="icon-only" icon={chevronBack} />
+              </IonButton>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="kicker">{t("ANTARES · PERFIL DE SALUD")}</div>
+              <div className="h2">
+                {openId !== null
+                  ? t(openTitle || theme.kicker)
+                  : t("Batería de evaluación inicial")}
+              </div>
+            </div>
+            {canSkip && (
+              <IonButton fill="solid" className="bt ht-skip" onClick={trySkip}>
+                {t("Después")}
+              </IonButton>
+            )}
+          </div>
+          {openId === null && (
+            <>
+              <div className="ht-hero-meta">
+                <span>
+                  {t("{completed} de {total} evaluaciones", {
+                    completed: String(completed),
+                    total: String(totalTests),
+                  })}
+                </span>
+                <span>{pct}%</span>
+              </div>
+              <IonProgressBar
+                className="pb"
+                style={
+                  {
+                    marginTop: 8,
+                    "--background": "rgba(255,255,255,.12)",
+                    "--progress-background":
+                      "linear-gradient(90deg,var(--teal),var(--cyan))",
+                  } as CSSProperties
+                }
+                value={pct / 100}
+              />
+            </>
           )}
         </div>
-        {openId === null && !showResult && (
-          <>
-            <div className="ht-hero-meta">
-              <span>
-                {t("{completed} de {total} evaluaciones", {
-                  completed: String(completed),
-                  total: String(totalTests),
-                })}
-              </span>
-              <span>{pct}%</span>
-            </div>
-            <IonProgressBar
-              className="pb"
-              style={
-                {
-                  marginTop: 8,
-                  "--background": "rgba(255,255,255,.12)",
-                  "--progress-background":
-                    "linear-gradient(90deg,var(--teal),var(--cyan))",
-                } as CSSProperties
-              }
-              value={pct / 100}
-            />
-          </>
-        )}
-      </div>
+      )}
 
       {showResult ? (
-        <HealthResult scores={resultScores} onEnter={finishTests} />
+        <HealthResult
+          scores={resultScores}
+          onEnter={finishTests}
+          onCommunity={() => {
+            finishTests();
+            navigate("com");
+          }}
+        />
       ) : openId === null ? (
         <div className="screen-scroll no-nav ht-list">
           <p className="ht-lead">
@@ -559,67 +577,278 @@ export function TestsPage() {
 function HealthResult({
   scores,
   onEnter,
+  onCommunity,
 }: {
   scores: { label: string; value: number; color: string }[];
   onEnter: () => void;
+  onCommunity: () => void;
 }) {
   const t = useT();
   const reduce = useReducedMotion();
 
+  const p = useMemo(() => {
+    const dims = HEALTH_PROFILE.dims.map((d, i) =>
+      scores[i]
+        ? {
+            ...d,
+            label: String(scores[i].label),
+            value: scores[i].value,
+            color: String(scores[i].color),
+          }
+        : d,
+    );
+    return { ...HEALTH_PROFILE, dims };
+  }, [scores]);
+
+  const fade = (i: number) => ({
+    initial: reduce ? false : ({ opacity: 0, y: 16 } as const),
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.45, delay: reduce ? 0 : i * 0.07, ease: EASE },
+  });
+
   return (
-    <div className="screen-scroll no-nav ht-result">
-      <motion.div
-        className="ht-scoreboard"
-        initial={reduce ? false : { opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        {scores.map((s, i) => (
-          <div key={String(s.label)} className="ht-score-row">
-            <span>{t(String(s.label))}</span>
-            <div className="ht-score-track">
-              <motion.div
-                className="ht-score-fill"
-                style={{ background: String(s.color) }}
-                initial={{ width: 0 }}
-                animate={{ width: `${Number(s.value)}%` }}
-                transition={{
-                  duration: reduce ? 0 : 0.9,
-                  delay: i * 0.08,
-                  ease: EASE,
-                }}
-              />
+    <div className="screen-scroll no-nav ht-result htp-page">
+      <motion.div className="htp-hero" {...fade(0)}>
+        <div className="htp-hero-orbs" aria-hidden="true" />
+        <div className="htp-hero-top">
+          <RingProgress
+            value={p.ahs / 100}
+            size={92}
+            stroke={10}
+            gradient={["#3d7b72", "#87aeca"]}
+          >
+            <b>{p.ahs}</b>
+            <small>/100</small>
+          </RingProgress>
+          <div className="htp-hero-info">
+            <div className="htp-hero-kicker">{t("Mi Perfil ANTARES")}</div>
+            <div className="htp-hero-badges">
+              <span className="htp-hero-cond">🫀 {t(p.condition)}</span>
+              <span className="htp-hero-ahs">
+                <IonIcon icon={star} />
+                {t("AHS {score}/100", { score: String(p.ahs) })} ·{" "}
+                {t(p.summary)}
+              </span>
             </div>
-            <strong>{s.value}</strong>
+          </div>
+        </div>
+        <div className="htp-chips">
+          {p.chips.map((c) => (
+            <span key={c.text} className="htp-chip">
+              <span className="htp-chip-ico">{c.ico}</span>
+              {t(c.text)}
+            </span>
+          ))}
+        </div>
+      </motion.div>
+
+      <motion.div className="htp-banner" {...fade(1)}>
+        <div className="htp-banner-ico">🩸</div>
+        <div>
+          <div className="htp-banner-title">{t(p.banner.title)}</div>
+          <div className="htp-banner-text">{t(p.banner.text)}</div>
+        </div>
+      </motion.div>
+
+      <motion.div className="htp-sec" {...fade(2)}>
+        <span className="htp-sec-ico">📊</span>
+        {t("Tus indicadores calculados")}
+      </motion.div>
+      <motion.div className="htp-metrics" {...fade(3)}>
+        {p.indicators.map((m) => (
+          <div key={m.label} className={`htp-metric ${m.tone}`}>
+            <div className="htp-metric-ico">{m.ico}</div>
+            <div className="htp-metric-value">{m.value}</div>
+            <div className="htp-metric-unit">{t(m.unit)}</div>
+            <span className="htp-metric-q">{t(m.qualifier)}</span>
+            <div className="htp-metric-label">{t(m.label)}</div>
           </div>
         ))}
       </motion.div>
+      <motion.p className="htp-footnote" {...fade(4)}>
+        {t(p.footnote)}
+      </motion.p>
 
-      <motion.div
-        className="ht-ai-card"
-        initial={reduce ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: reduce ? 0 : 0.35 }}
-      >
-        <div className="ht-ai-label">{t("🤖 ANTARES AI")}</div>
-        <p>
-          {t(
-            "Perfil de riesgo bajo-moderado. Prediabetes (HbA1c 5.9%) con buena adherencia (81%) y temperamento mixto sanguíneo-flemático. Prioriza sueño, control glucémico y movimiento progresivo de 12 min/día.",
-          )}
-        </p>
+      <motion.div className="htp-ai" {...fade(5)}>
+        <div className="htp-ai-avatar">
+          <IonIcon icon={sparkles} />
+        </div>
+        <div className="htp-ai-body">
+          <div className="htp-ai-label">{t(p.ai.label)}</div>
+          <p>{t(p.ai.message)}</p>
+        </div>
       </motion.div>
 
-      <div className="ht-split">
-        <div className="ht-pill-card ok">
-          <div className="ht-pill-h">{t("Fortalezas")}</div>
-          <div>{t("Adherencia alta · Apoyo familiar · Motivación clara")}</div>
+      <motion.div className="htp-sec" {...fade(6)}>
+        <span className="htp-sec-ico">📡</span>
+        {t("Radar de 7 dimensiones")}
+      </motion.div>
+      <motion.div className="htp-card htp-radar" {...fade(7)}>
+        <RadarChart dims={p.dims} />
+        <div className="htp-dims">
+          {p.dims.map((d) => (
+            <div key={d.label} className="htp-dim">
+              <span
+                className="htp-dim-ico"
+                style={{ background: `${d.color}1f` }}
+              >
+                {d.ico}
+              </span>
+              <div className="htp-dim-body">
+                <div className="htp-dim-top">
+                  <span>{t(d.label)}</span>
+                  <strong>{d.value}</strong>
+                </div>
+                <div className="htp-dim-track">
+                  <motion.div
+                    className="htp-dim-fill"
+                    style={{ background: d.color }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${d.value}%` }}
+                    transition={{ duration: reduce ? 0 : 0.8, ease: EASE }}
+                  />
+                </div>
+                {d.note && <div className="htp-dim-note">{t(d.note)}</div>}
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="ht-pill-card risk">
-          <div className="ht-pill-h">{t("Riesgos")}</div>
-          <div>{t("Prediabetes · Sueño 6.8h · Antecedente familiar DM2")}</div>
-        </div>
-      </div>
+      </motion.div>
 
-      <IonButton expand="block" className="bt bt-gold ht-cta" onClick={onEnter}>
+      <motion.div className="htp-sec" {...fade(8)}>
+        <span className="htp-sec-ico">🧭</span>
+        {t("Análisis DOFA")}
+      </motion.div>
+      <motion.div className="htp-dofa" {...fade(9)}>
+        <div className="htp-dofa-card ok">
+          <div className="htp-dofa-h">
+            <span>✅</span>
+            {t("Fortalezas")}
+          </div>
+          {p.dofa.f.map((x) => (
+            <div className="htp-dofa-item" key={x}>
+              {t(x)}
+            </div>
+          ))}
+        </div>
+        <div className="htp-dofa-card bad">
+          <div className="htp-dofa-h">
+            <span>⚠️</span>
+            {t("Debilidades")}
+          </div>
+          {p.dofa.d.map((x) => (
+            <div className="htp-dofa-item" key={x}>
+              {t(x)}
+            </div>
+          ))}
+        </div>
+        <div className="htp-dofa-card op">
+          <div className="htp-dofa-h">
+            <span>🌟</span>
+            {t("Oportunidades")}
+          </div>
+          {p.dofa.o.map((x) => (
+            <div className="htp-dofa-item" key={x}>
+              {t(x)}
+            </div>
+          ))}
+        </div>
+        <div className="htp-dofa-card th">
+          <div className="htp-dofa-h">
+            <span>🚨</span>
+            {t("Amenazas")}
+          </div>
+          {p.dofa.a.map((x) => (
+            <div className="htp-dofa-item" key={x}>
+              {t(x)}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      <motion.div className="htp-sec" {...fade(10)}>
+        <span className="htp-sec-ico">🔗</span>
+        {t("Correlaciones detectadas")}
+      </motion.div>
+      {p.correlations.map((c, i) => (
+        <motion.div
+          key={c.title}
+          className="htp-card htp-corr"
+          style={{ borderLeftColor: c.color }}
+          {...fade(11 + i)}
+        >
+          <div className="htp-corr-top">
+            <IonIcon icon={link} style={{ color: c.color }} />
+            <strong>{t(c.title)}</strong>
+          </div>
+          <p>{t(c.text)}</p>
+        </motion.div>
+      ))}
+
+      <motion.div className="htp-sec" {...fade(13)}>
+        <span className="htp-sec-ico">🎯</span>
+        {t("Plan de intervención priorizado")}
+      </motion.div>
+      <motion.div className="htp-plan" {...fade(14)}>
+        {p.plan.map((item, i) => {
+          const inner = (
+            <>
+              <span className="htp-plan-num" style={{ background: item.color }}>
+                {i + 1}
+              </span>
+              <div className="htp-plan-body">
+                <div className="htp-plan-title">{t(item.title)}</div>
+                <div className="htp-plan-meta">
+                  <span
+                    className="htp-plan-spec"
+                    style={{ color: item.color, background: `${item.color}1a` }}
+                  >
+                    {t(item.specialty)}
+                  </span>
+                  {item.prof && (
+                    <span className="htp-plan-prof">
+                      <IonIcon icon={person} />
+                      {t(item.prof)}
+                    </span>
+                  )}
+                  {item.week && (
+                    <span className="htp-plan-week">
+                      <IonIcon icon={calendar} />
+                      {t(item.week)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {item.action ? (
+                <span className="htp-plan-cta">{t("Ver en comunidad")}</span>
+              ) : (
+                <IonIcon icon={chevronForward} className="htp-plan-chev" />
+              )}
+            </>
+          );
+          return item.action ? (
+            <button
+              key={item.title}
+              type="button"
+              className="htp-plan-item"
+              onClick={onCommunity}
+            >
+              {inner}
+            </button>
+          ) : (
+            <div key={item.title} className="htp-plan-item">
+              {inner}
+            </div>
+          );
+        })}
+      </motion.div>
+
+      <IonButton
+        expand="block"
+        className="bt bt-gold ht-cta"
+        style={{ marginTop: 14 }}
+        onClick={onEnter}
+      >
         {t("Entrar a mi programa ANTARES")}
       </IonButton>
     </div>
