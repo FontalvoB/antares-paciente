@@ -24,8 +24,12 @@ description: Componentes reutilizables de ANTARES Paciente. Clasificación (Ioni
 | `Scroll` | ídem | ídem | Área scrolleable con padding para nav (`noNav` si no hay nav) |
 | `BottomNav` | `BottomNav` | `src/components/BottomNav.tsx` | Barra inferior 5 tabs (`home,book,nut,chat,prof`) + SOS (lo monta `Screen`) |
 | `useApp` | hook | `src/context/AppContext.tsx` | Todo estado global y acciones (`navigate`, `showToast`, `pointsTotal`) |
+| `LanguageToggle` | `LanguageToggle` | `src/components/LanguageToggle.tsx` | Selector es/en — va en login (`.auth-lang`), headers de pantalla (`.hm-chips`) y páginas |
+| `CTABanner` | `CTABanner` | `src/components/CTABanner.tsx` | Banner CTA con gradiente + icono + título + subtítulo (extraído de HomePage) |
+| `ProtocolWheel` | `ProtocolWheel` | `src/components/ProtocolWheel.tsx` | Rueda del protocolo diario (ring con segmentos) — se usa en HomePage (`hm-wheel-card`) |
+| `MetricHistoryModal` | `MetricHistoryModal` | `src/components/MetricHistoryModal.tsx` | Historial de un indicador de salud (`IonModal`) — lo abre HomePage |
 | `ScaleList` / `ChipGrid` | `{ ScaleList, ChipGrid }` | `src/components/Forms.tsx` | Preguntas de escala (tests) y chips de selección múltiple |
-| `ToastHost` | `ToastHost` | `src/components/ToastHost.tsx` | Toast global (montado en `App.tsx:61`) — MIGRACIÓN FUTURA: reemplazar por `IonToast` |
+| `ToastHost` | `ToastHost` | `src/components/ToastHost.tsx` | Toast global (montado en `App.tsx`) — **YA usa `IonToast`** (migrado) |
 
 ## Cómo usar
 
@@ -34,7 +38,7 @@ import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 ```
 
-1. Toda página: `<Screen><Scroll>…</Scroll></Screen>` (ver `HomePage.tsx:36-37`).
+1. Toda página: `<Screen><Scroll>…</Scroll></Screen>` (ver `HomePage.tsx:213-214`).
 2. Estado/acciones compartidas: `const { navigate, showToast, pointsTotal } = useApp()`.
 3. Tests: `ScaleList` + `ChipGrid` (`TestsPage.tsx:19-20`).
 
@@ -50,12 +54,14 @@ Solo se permite wrapper propio si: (a) Ionic no cubre la necesidad, O (b) el wra
 
 | Patrón duplicado | Ocurrencias | Sugerencia |
 |---|---|---|
-| Banner CTA (gradiente + icono + título + subtítulo) | HomePage:80-103 (pánico), 105-133 (voz), 153-178 (programa) | Crear `CTABanner` (props: gradient, icon, title, sub, onClick) |
-| Card módulo (`card card-accent` + `ico` + `ct` + `cs`) | HomePage modules, InfinitoPage, AcademyPage | Crear `ModuleCard` |
-| Fila de lista (`prow`/`row-card` con icono + texto + chevron) | ProfilePage:50-113, CommunityPage:127-139, HomePage:187-198 | MIGRACIÓN FUTURA: `IonList`/`IonItem` (o crear `ListRow` Domain) |
+| Card módulo (`card card-accent` + `ico` + `ct` + `cs`) | HomePage accesos (`grid-2`), InfinitoPage, AcademyPage | Crear `ModuleCard` |
+| Fila de lista (`prow`/`row-card`/`group-row` con icono + texto + chevron) | ProfilePage, CommunityPage, HomePage (`group-list`) | MIGRACIÓN FUTURA: `IonList`/`IonItem` (o crear `ListRow` Domain) |
 | Header de página (hero + chips) | todas las pages | Mantener patrón `hero hero-X` + `.chips` (CSS ya centralizado) |
-| Botón con icono circular | ChatPage:94-112, VoiceOverlay:54-90 | `IonButton` `fill="clear"` round |
+| Botón con icono circular | ChatPage, VoiceOverlay | `IonButton` `fill="clear"` round |
 | Barra de progreso | ~8 pages (`.ptrack/.pfill`) | MIGRACIÓN FUTURA: `IonProgressBar` |
+| Botón píldora con icono + label + chevrons | LoginPage (3 usos: `cta-pill`) | Ya centralizado en `global.css` (`.cta-pill`), no extraer a componente — variante de `IonButton` |
+
+> Los banners CTA de HomePage (pánico/voz/programa) YA se extrajeron a `CTABanner.tsx` — no duplicar.
 
 ## Reglas
 
@@ -69,5 +75,5 @@ Solo se permite wrapper propio si: (a) Ionic no cubre la necesidad, O (b) el wra
 
 ## PENDIENTE DE VALIDACIÓN
 
-- `MealCard`/`food-item` (NutritionPage:133-183) — candidato Domain si el plan se repite en otras pantallas.
-- Post card de Comunidad (CommunityPage:58-90) — candidato `PostCard` si crece el feed.
+- `MealCard`/`food-item` (NutritionPage) — candidato Domain si el plan se repite en otras pantallas.
+- Componentes de comunidad (`PostCard`, `ComposePostModal`, `CreateGroupModal`, `MemberProfile`, `MediaLightbox`, `PostDetailModal`, `NewChatModal`, `ComSidebar`, `PollBlock`) — existen en `src/components/community/`; extraer/reutilizar si otra pantalla necesita feed social.

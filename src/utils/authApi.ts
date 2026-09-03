@@ -1,4 +1,4 @@
-import { getAuthBaseUrl } from './apiBaseUrl'
+import { getAuthBaseUrl, getApplicationCode } from './apiBaseUrl'
 
 const ACCESS_TOKEN_KEY = 'copp_access_token'
 
@@ -98,7 +98,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
   const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/login`, {
     documentNumber,
     password,
-    application: 'app',
+    application: getApplicationCode(),
     rememberMe,
   })
   persistAccessToken(result.accessToken)
@@ -112,7 +112,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
 export async function lookupId(documentNumber: string): Promise<IdLookupResult> {
   return postJson<IdLookupResult>(`${getAuthBaseUrl()}/api/auth/id-lookup`, {
     documentNumber,
-    application: 'app',
+    application: getApplicationCode(),
   })
 }
 
@@ -129,7 +129,7 @@ export async function verifyOtp(documentNumber: string, otp: string, rememberMe:
   const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/verify-otp`, {
     documentNumber,
     otp,
-    application: 'app',
+    application: getApplicationCode(),
     rememberMe,
   })
   persistAccessToken(result.accessToken)

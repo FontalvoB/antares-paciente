@@ -23,13 +23,14 @@
 import type { ScoresResponseDto } from './types'
 import { getAccessToken, clearSessionAndNotify } from '../../utils/authApi'
 import { ApiError } from '../../utils/apiClient'
+import { getApiBaseUrl, getAuthBaseUrl } from '../../utils/apiBaseUrl'
 
 const SCORES_PATH = '/api/v1/program/scores'
 const AUTH_REFRESH_PATH = '/api/auth/refresh'
 const TIMEOUT_MS = 15_000
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-const AUTH_BASE = import.meta.env.VITE_AUTH_BASE_URL ?? ''
+const API_BASE = getApiBaseUrl()
+const AUTH_BASE = getAuthBaseUrl()
 
 export interface ScoresResult {
   data: ScoresResponseDto

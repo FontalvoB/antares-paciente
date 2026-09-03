@@ -6,10 +6,11 @@ import {
 } from 'urql'
 import { createClient as createWsClient, type Client as WsClient } from 'graphql-ws'
 import { ensureFreshAccessToken } from '../utils/authApi'
+import { getCommunityApiUrl, getCommunityWsUrl } from '../utils/apiBaseUrl'
 
-/** URL del WebSocket de GraphQL. Se toma de la env VITE_COMMUNITY_WS_URL y,
- *  si no está definida, cae a ws://localhost:5200/api/v1/community/subscriptions para desarrollo. */
-const WS_URL = import.meta.env.VITE_COMMUNITY_WS_URL ?? 'ws://localhost:5200/api/v1/community/subscriptions'
+// URL del WebSocket de GraphQL de la comunidad, derivada del gateway
+// (getCommunityWsUrl → ws://<gateway>/api/v1/community/subscriptions).
+const WS_URL = getCommunityWsUrl()
 
 // Cliente WS activo a nivel de módulo. Se conserva la referencia para poder
 // cerrar (dispose) la conexión anterior cuando se recrea el cliente urql en una
@@ -52,7 +53,7 @@ export function createCommunityClient() {
   activeWsClient = wsClient
 
   return createClient({
-    url: '/api/v1/community/graphql',
+    url: getCommunityApiUrl(),
     exchanges: [
       cacheExchange,
       subscriptionExchange({
