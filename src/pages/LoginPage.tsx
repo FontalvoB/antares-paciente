@@ -6,24 +6,29 @@ import {
   chevronForwardOutline,
   eye,
   eyeOff,
-  idCardOutline,
-  infinite,
   keyOutline,
   lockClosedOutline,
   mailOutline,
-  personOutline,
   phonePortraitOutline,
   shieldCheckmarkOutline,
-  timeOutline,
 } from 'ionicons/icons'
 import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 import { LanguageToggle } from '../components/LanguageToggle'
 import { DEMO_LOGIN, loginUser, lookupId, sendOtp, verifyOtp, type ContactMethod, type IdLookupResult } from '../utils/authApi'
+import logoLetras from '../assets/LogoConLetras.png'
 import type { UserProfile } from '../types'
 
 type LoginMode = 'login' | 'first'
 type FirstStep = 'id' | 'contacts' | 'otp'
+
+/** Transición compartida por los paneles de modo/paso del acceso. */
+const panelMotion = {
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
+  transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const },
+}
 
 export function LoginPage() {
   const { finishLogin, showToast } = useApp()
@@ -196,422 +201,315 @@ export function LoginPage() {
 
   const fullName = lookup ? `${lookup.firstName} ${lookup.lastName}`.trim() : ''
 
+  const busyBar = (
+    <AnimatePresence>
+      {busy && (
+        <motion.div
+          className="auth-busy"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <IonSpinner name="crescent" style={{ width: 16, height: 16 }} />
+          <span>{busyMessage}</span>
+          <IonProgressBar type="indeterminate" className="auth-busy-bar" />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+
   return (
-    <div className="screen login-screen" style={{ position: 'relative' }}>
-    <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+    <div className="screen auth">
+      <div className="auth-lang">
         <LanguageToggle />
       </div>
-      <div className="login-layout">
-        <section className="login-brand" aria-label={t('Identidad de ANTARES')}>
-          <div className="login-brand-art" aria-hidden="true">
-            <div className="login-stars" />
-            <div className="login-stars-2" />
-            <div className="login-aurora" />
-          </div>
 
-          <div className="login-brand-content">
-            <div className="login-brand-mark">
-              <div className="login-brand-logo">
-                <IonIcon icon={infinite} />
-              </div>
-              <span className="login-brand-word">ANTARES</span>
-            </div>
-            <div className="login-brand-kicker">ANTARES BIOHACKING</div>
-            <h2 className="login-brand-title">{t('Tu salud, conectada')}</h2>
+      <div className="auth-scroll">
+        <img className="auth-logo" src={logoLetras} alt="COPP-ADRESD" />
 
-            <div className="login-stats" aria-label={t('Beneficios de la plataforma')}>
-              <div>
-                <strong>24/7</strong>
-                <span>{t('Disponibilidad')}</span>
-              </div>
-              <div>
-                <strong>100%</strong>
-                <span>{t('Seguro')}</span>
-              </div>
-              <div>
-                <strong>HIPAA</strong>
-                <span>{t('Compatible')}</span>
-              </div>
-            </div>
+        <AnimatePresence mode="wait" initial={false}>
+          {mode === 'login' ? (
+            <motion.div key="login" className="auth-body" {...panelMotion}>
+              <h1 className="auth-title">
+                {t('Transforma')}
+                <br />
+                <strong>{t('tus')}</strong> {t('hábitos')}
+              </h1>
 
-            <div className="login-system-status">{t('Todos los sistemas operativos')}</div>
-          </div>
+              <form className="auth-form" onSubmit={(e) => { e.preventDefault(); submit() }}>
+                <div className="auth-field">
+                  <label htmlFor="login-id">{t('Número de identificación')}</label>
+                  <IonInput
+                    id="login-id"
+                    className="auth-input"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    enterkeyhint="next"
+                    value={documentNumber}
+                    placeholder={t('Ej. 32534534')}
+                    onIonInput={(e) => setDocumentNumber((e.detail.value ?? '').replace(/\s/g, ''))}
+                  />
+                </div>
 
-          <div className="login-brand-footer">{t('COPP-ADRESD · Salud preventiva conectada')}</div>
-        </section>
-
-        <section className="login-form-panel" aria-label={t('Acceso a ANTARES')}>
-          <div className="login-form-wrap">
-            <AnimatePresence mode="wait" initial={false}>
-              {mode === 'first' ? (
-                <motion.div
-                  key="first"
-                  className="login-mode-panel"
-                  initial={{ opacity: 0, scaleY: 0.9, y: 26, transformOrigin: 'top center' }}
-                  animate={{ opacity: 1, scaleY: 1, y: 0 }}
-                  exit={{ opacity: 0, scaleY: 0.95, y: -18 }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <header className="login-form-heading">
-                    <div className="login-heading-icon">
-                      <IonIcon icon={shieldCheckmarkOutline} />
-                    </div>
-                    <div>
-                      <h1>{t('Primer inicio de sesión')}</h1>
-                      <p className="login-heading-sub">
-{firstStep === 'id' && t('Verifica tu identidad para completar tu perfil')}
-{firstStep === 'contacts' && t('Elige por dónde quieres recibir tu código')}
-{firstStep === 'otp' && t('Introduce el código que te enviamos')}
-                      </p>
-                    </div>
-                  </header>
-                  <div className="login-form">
-                    <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={`${firstStep}-${unfoldSeq}`}
-                    className="login-step"
-                    initial={{ opacity: 0, scaleY: 0.9, y: 20, transformOrigin: 'top center' }}
-                    animate={{ opacity: 1, scaleY: 1, y: 0 }}
-                    exit={{ opacity: 0, scaleY: 0.94, y: -14 }}
-                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                <div className="auth-field">
+                  <label htmlFor="login-password">{t('Contraseña')}</label>
+                  <IonInput
+                    id="login-password"
+                    className="auth-input"
+                    type={showPwd ? 'text' : 'password'}
+                    enterkeyhint="done"
+                    value={pwd}
+                    placeholder={t('••••••••')}
+                    style={{ '--padding-end': '48px' } as CSSProperties}
+                    onIonInput={(e) => setPwd(e.detail.value ?? '')}
+                  />
+                  <IonButton
+                    type="button"
+                    fill="clear"
+                    className="auth-eye"
+                    aria-label={showPwd ? t('Ocultar contraseña') : t('Mostrar contraseña')}
+                    onClick={() => setShowPwd((v) => !v)}
                   >
-                    {firstStep === 'id' && (
-                      <form onSubmit={(e) => { e.preventDefault(); confirmId() }}>
-                    <div className="login-id-note">
-                      <IonIcon icon={shieldCheckmarkOutline} />
-<span>
-                {t('Buscaremos los correos y teléfonos asociados a tu número de identificación para verificar que eres tú.')}
-              </span>
-                    </div>
+                    <IonIcon icon={showPwd ? eyeOff : eye} />
+                  </IonButton>
+                </div>
 
-                    <div className="login-field">
-                      <label htmlFor="login-first-id">
-                        <IonIcon icon={idCardOutline} />
-                        {t('Número de identificación')}
-                      </label>
-                      <IonInput
-                        id="login-first-id"
-                        className="fld login-input"
-                        type="text"
-                        inputmode="numeric"
-                        autocomplete="off"
-                        enterkeyhint="done"
-                        value={idInput}
-placeholder={t('Ej. 32534534')}
-                        style={{ '--placeholder-color': '#bdcbe0' } as CSSProperties}
-                        onIonInput={(e) => setIdInput((e.detail.value ?? '').replace(/\s/g, ''))}
-                      />
-                    </div>
+                <div className="auth-options">
+                  <label className="auth-remember">
+                    <IonCheckbox
+                      checked={remember}
+                      aria-label={t('Recordarme')}
+                      onIonChange={(e) => setRemember(e.detail.checked)}
+                    />
+                    <span>{t('Recordarme')}</span>
+                  </label>
+                  <IonButton
+                    type="button"
+                    fill="clear"
+                    className="auth-link-btn"
+                    onClick={() => showToast(t('Demo: recuperación de contraseña no disponible'), 'info')}
+                  >
+                    {t('¿Olvidaste tu contraseña?')}
+                  </IonButton>
+                </div>
 
-                    <IonButton expand="block" className="login-submit" type="submit" disabled={busy}>
-                      {busy ? (
-                        <>
-                          <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                          {t('Buscando…')}
-                        </>
-                      ) : (
-                        <>
-                          <IonIcon icon={shieldCheckmarkOutline} />
-                          {t('Confirmar identidad')}
-                        </>
-                      )}
-                    </IonButton>
+                {busyBar}
 
-                    <IonButton
-                      fill="clear"
-                      expand="block"
-                      type="button"
-                      className="login-first-back"
-                      onClick={() => setMode('login')}
-                    >
-                      <IonIcon icon={arrowBackOutline} />
-                      {t('Volver al inicio de sesión')}
-                    </IonButton>
-                  </form>
-                )}
+                <IonButton expand="block" className="cta-pill" type="submit" disabled={busy}>
+                  <span className="cta-pill-ico">
+                    {busy ? <IonSpinner name="crescent" style={{ width: 18, height: 18 }} /> : <IonIcon icon={chevronForwardOutline} />}
+                  </span>
+                  <span className="cta-pill-label">{busy ? t('Verificando…') : t('Comencemos')}</span>
+                  <span className="cta-pill-chevrons" aria-hidden="true">
+                    <IonIcon icon={chevronForwardOutline} />
+                    <IonIcon icon={chevronForwardOutline} />
+                    <IonIcon icon={chevronForwardOutline} />
+                  </span>
+                </IonButton>
 
-                {firstStep === 'contacts' && lookup && (
-                  <div>
-                    {fullName && (
-                      <div className="login-person" aria-label={`Identidad encontrada: ${fullName}`}>
-                        <div className="login-person-avatar">{fullName.charAt(0).toUpperCase()}</div>
-                        <div>
-                          <div className="login-person-name">{fullName}</div>
-                          <div className="login-person-meta">ID {lookup.documentNumber}</div>
-                        </div>
-                      </div>
-                    )}
+                <p className="auth-demo">
+                  {t('Acceso demo: ID')} <strong>{DEMO_LOGIN.documentNumber}</strong>
+                  {' · '}
+                  {t('Contraseña')} <strong>{DEMO_LOGIN.password}</strong>
+                </p>
+              </form>
 
-                    <p className="login-contacts-hint">
-                      {t('Encontramos')} <strong>{lookup.contacts.length}</strong>{' '}
-                      {lookup.contacts.length === 1 ? t('método de contacto') : t('métodos de contacto')} {t('asociado')}
-                      {lookup.contacts.length === 1 ? '' : 's'} {t('a tu identificación.')}
-                    </p>
-
-                    <div className="login-contact-list" role="radiogroup" aria-label={t('Métodos de contacto')}>
-                      {lookup.contacts.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={false}
-                          className={`login-contact ${c.type === 'Email' ? 'mail' : 'phone'}`}
-                          onClick={() => pickContact(c)}
-                          disabled={busy}
-                        >
-                          <span className="login-contact-icon">
-                            <IonIcon icon={c.type === 'Email' ? mailOutline : phonePortraitOutline} />
-                          </span>
-                          <span className="login-contact-body">
-                            <span className="login-contact-label">{c.label}</span>
-                            <span className="login-contact-sub">
-                              {t('Enviar código por {channel}', { channel: c.type === 'Email' ? 'correo electrónico' : 'SMS' })}
-                            </span>
-                          </span>
-                          <IonIcon icon={chevronForwardOutline} className="login-contact-arrow" />
-                        </button>
-                      ))}
-                    </div>
-
-                    <IonButton
-                      fill="clear"
-                      expand="block"
-                      type="button"
-                      className="login-first-back"
-                      onClick={backFromFirst}
-                    >
-                      <IonIcon icon={arrowBackOutline} />
-                      {t('Cambiar número de identificación')}
-                    </IonButton>
-                  </div>
-                )}
-
-                {firstStep === 'otp' && contact && (
-                  <div>
-                    <div className="login-otp-note">
-                      {t('Enviamos un código de 6 dígitos a')} <strong>{contact.label}</strong>
-                    </div>
-
-                    <div className="login-otp-row">
-                      {otp.map((d, i) => (
-                        <input
-                          key={i}
-                          id={`login-otp-${i}`}
-                          className={`otp ${d ? 'filled' : ''}`}
-                          maxLength={i === 0 ? 6 : 1}
-                          inputMode="numeric"
-                          autoComplete={i === 0 ? 'one-time-code' : 'off'}
-                          aria-label={t('Dígito {n}', { n: String(i + 1) })}
-                          value={d}
-                          onChange={(e) => fillOtp(i, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Backspace' && !otp[i] && i > 0) {
-                              const prev = document.getElementById(`login-otp-${i - 1}`)
-                              if (prev instanceof HTMLInputElement) prev.focus()
-                            }
-                          }}
-                          onPaste={(e) => {
-                            e.preventDefault()
-                            fillOtp(0, e.clipboardData.getData('text'))
-                          }}
-                        />
-                      ))}
-                    </div>
-
-                    {devCode && <div className="login-dev-code">{t('Código de prueba:')} {devCode}</div>}
-
-                    <div className="login-otp-resend">
-                      {otpLeft > 0 ? (
-                        <span>{t('Reenviar en')} 0:{String(Math.min(otpLeft, 59)).padStart(2, '0')}</span>
-                      ) : (
-                        <IonButton fill="clear" type="button" className="login-resend" onClick={resendOtp}>
-                          {t('Reenviar código')}
-                        </IonButton>
-                      )}
-                    </div>
-
-                    <IonButton
-                      expand="block"
-                      className="login-submit"
-                      type="button"
-                      disabled={busy || otp.join('').length !== 6}
-                      onClick={submitOtp}
-                    >
-                      {busy ? (
-                        <>
-                          <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                          {t('Verificando…')}
-                        </>
-                      ) : (
-                        <>
-                          <IonIcon icon={shieldCheckmarkOutline} />
-                          {t('Verificar y entrar')}
-                        </>
-                      )}
-                    </IonButton>
-
-                    <IonButton
-                      fill="clear"
-                      expand="block"
-                      type="button"
-                      className="login-first-back"
-                      onClick={backFromFirst}
-                    >
-                      <IonIcon icon={arrowBackOutline} />
-                      {t('Elegir otro método')}
-                    </IonButton>
-                  </div>
-                )}
-
-                    <AnimatePresence>
-                      {busy && (
-                        <motion.div
-                          className="login-busy-bar"
-                          initial={{ opacity: 0, scaleY: 0.6, height: 0 }}
-                          animate={{ opacity: 1, scaleY: 1, height: 'auto' }}
-                          exit={{ opacity: 0, scaleY: 0.6, height: 0 }}
-                          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                          style={{ transformOrigin: 'top center' }}
-                        >
-                          <IonSpinner name="crescent" style={{ width: 18, height: 18 }} />
-                          <span>{busyMessage}</span>
-                          <IonProgressBar type="indeterminate" className="login-busy-progress" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                </AnimatePresence>
+              <div className="auth-alt">
+                <span>{t('¿Es tu primera vez aquí?')}</span>
+                <button type="button" className="auth-alt-link" onClick={goFirst}>
+                  {t('Activa tu cuenta')}
+                </button>
               </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="login"
-                className="login-mode-panel"
-                initial={{ opacity: 0, scaleY: 0.9, y: 26, transformOrigin: 'top center' }}
-                animate={{ opacity: 1, scaleY: 1, y: 0 }}
-                exit={{ opacity: 0, scaleY: 0.95, y: -18 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <header className="login-form-heading">
-                  <div className="login-heading-icon">
-                    <IonIcon icon={personOutline} />
-                  </div>
-                  <div>
-                    <h1>{t('Bienvenido de nuevo')}</h1>
-                  </div>
-                </header>
-                <form className="login-form" onSubmit={(e) => { e.preventDefault(); submit() }}>
-                  <div className="login-field">
-                    <label htmlFor="login-id">
-                      <IonIcon icon={idCardOutline} />
-                      {t('Número de identificación')}
-                    </label>
-                    <IonInput
-                      id="login-id"
-                      className="fld login-input"
-                      type="text"
-                      inputmode="numeric"
-                      autocomplete="off"
-                      enterkeyhint="next"
-                      value={documentNumber}
-                      placeholder={t('Ej. 32534534')}
-                      style={{ '--placeholder-color': '#bdcbe0' } as CSSProperties}
-                      onIonInput={(e) => setDocumentNumber((e.detail.value ?? '').replace(/\s/g, ''))}
-                    />
-                  </div>
+            </motion.div>
+          ) : (
+            <motion.div key="first" className="auth-body" {...panelMotion}>
+              <header className="auth-head">
+                <button type="button" className="auth-back" onClick={backFromFirst} aria-label={t('Volver')}>
+                  <IonIcon icon={arrowBackOutline} />
+                </button>
+                <div>
+                  <h1 className="auth-head-title">{t('Activa tu cuenta')}</h1>
+                  <p className="auth-head-sub">
+                    {firstStep === 'id' && t('Verifica tu identidad para completar tu perfil')}
+                    {firstStep === 'contacts' && t('Elige por dónde quieres recibir tu código')}
+                    {firstStep === 'otp' && t('Introduce el código que te enviamos')}
+                  </p>
+                </div>
+              </header>
 
-                  <div className="login-field login-password-field">
-                    <label htmlFor="login-password">
-                      <IonIcon icon={keyOutline} />
-                      {t('Contraseña')}
-                    </label>
-                    <IonInput
-                      id="login-password"
-                      className="fld login-input"
-                      type={showPwd ? 'text' : 'password'}
-                      enterkeyhint="done"
-                      value={pwd}
-                      placeholder={t('••••••••')}
-                      style={{ '--padding-end': '48px', '--placeholder-color': '#bdcbe0' } as CSSProperties}
-                      onIonInput={(e) => setPwd(e.detail.value ?? '')}
-                    />
-                    <IonButton
-                      type="button"
-                      fill="clear"
-                      className="fld-eye"
-                      aria-label={showPwd ? t('Ocultar contraseña') : t('Mostrar contraseña')}
-                      onClick={() => setShowPwd((v) => !v)}
-                    >
-                      <IonIcon icon={showPwd ? eyeOff : eye} />
-                    </IonButton>
-                  </div>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div key={`${firstStep}-${unfoldSeq}`} className="auth-form" {...panelMotion}>
+                  {firstStep === 'id' && (
+                    <form onSubmit={(e) => { e.preventDefault(); confirmId() }}>
+                      <div className="auth-note">
+                        <IonIcon icon={shieldCheckmarkOutline} />
+                        <span>
+                          {t('Buscaremos los correos y teléfonos asociados a tu número de identificación para verificar que eres tú.')}
+                        </span>
+                      </div>
 
-                    <div className="login-options">
-                      <div className="login-remember">
-                        <IonCheckbox
-                          checked={remember}
-                          color="primary"
-                          aria-label={t('Recordarme')}
-                          onIonChange={(e) => setRemember(e.detail.checked)}
+                      <div className="auth-field">
+                        <label htmlFor="login-first-id">{t('Número de identificación')}</label>
+                        <IonInput
+                          id="login-first-id"
+                          className="auth-input"
+                          type="text"
+                          inputmode="numeric"
+                          autocomplete="off"
+                          enterkeyhint="done"
+                          value={idInput}
+                          placeholder={t('Ej. 32534534')}
+                          onIonInput={(e) => setIdInput((e.detail.value ?? '').replace(/\s/g, ''))}
                         />
-                        <IonIcon icon={timeOutline} />
-                        <span>{t('Recordarme')}</span>
                       </div>
-                      <div className="login-links">
-                        <IonButton
-                          type="button"
-                          fill="clear"
-                          className="login-forgot"
-                          onClick={() => showToast('Demo: recuperación de contraseña no disponible', 'info')}
-                        >
-                          {t('¿Olvidaste tu contraseña?')}
-                        </IonButton>
-                      </div>
-                    </div>
 
-                    <IonButton expand="block" className="login-submit" type="submit" disabled={busy}>
-                      {busy ? (
-                        <>
-                          <IonSpinner name="crescent" color="light" style={{ width: 18, height: 18, marginRight: 8 }} />
-                          {t('Verificando…')}
-                        </>
-                      ) : (
-                        <>
-                          <IonIcon icon={lockClosedOutline} />
-                          {t('Iniciar sesión')}
-                        </>
+                      {busyBar}
+
+                      <IonButton expand="block" className="cta-pill" type="submit" disabled={busy}>
+                        <span className="cta-pill-ico">
+                          {busy ? <IonSpinner name="crescent" style={{ width: 18, height: 18 }} /> : <IonIcon icon={shieldCheckmarkOutline} />}
+                        </span>
+                        <span className="cta-pill-label">{busy ? t('Buscando…') : t('Confirmar identidad')}</span>
+                        <span className="cta-pill-chevrons" aria-hidden="true">
+                          <IonIcon icon={chevronForwardOutline} />
+                          <IonIcon icon={chevronForwardOutline} />
+                          <IonIcon icon={chevronForwardOutline} />
+                        </span>
+                      </IonButton>
+                    </form>
+                  )}
+
+                  {firstStep === 'contacts' && lookup && (
+                    <div>
+                      {fullName && (
+                        <div className="auth-person">
+                          <span className="auth-person-avatar">{fullName.charAt(0).toUpperCase()}</span>
+                          <span className="auth-person-body">
+                            <strong>{fullName}</strong>
+                            <small>ID {lookup.documentNumber}</small>
+                          </span>
+                        </div>
                       )}
-                    </IonButton>
 
-                    <p className="login-demo-note">
-                      {t('Acceso demo: ID')} <strong>{DEMO_LOGIN.documentNumber}</strong>
-                      {' · '}
-                      {t('Contraseña')} <strong>{DEMO_LOGIN.password}</strong>
-                    </p>
+                      <p className="auth-hint">
+                        {t('Encontramos')} <strong>{lookup.contacts.length}</strong>{' '}
+                        {lookup.contacts.length === 1 ? t('método de contacto') : t('métodos de contacto')} {t('asociado')}
+                        {lookup.contacts.length === 1 ? '' : 's'} {t('a tu identificación.')}
+                      </p>
 
-                    <div className="login-divider" role="separator" aria-label={t('O')}>
-                      <span>{t('o')}</span>
+                      <div className="auth-contacts" role="radiogroup" aria-label={t('Métodos de contacto')}>
+                        {lookup.contacts.map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={false}
+                            className="auth-contact"
+                            onClick={() => pickContact(c)}
+                            disabled={busy}
+                          >
+                            <span className="auth-contact-ico">
+                              <IonIcon icon={c.type === 'Email' ? mailOutline : phonePortraitOutline} />
+                            </span>
+                            <span className="auth-contact-body">
+                              <strong>{c.label}</strong>
+                              <small>
+                                {t('Enviar código por {channel}', { channel: c.type === 'Email' ? 'correo electrónico' : 'SMS' })}
+                              </small>
+                            </span>
+                            <IonIcon icon={chevronForwardOutline} className="auth-contact-arrow" />
+                          </button>
+                        ))}
+                      </div>
+
+                      {busyBar}
                     </div>
+                  )}
 
-                    <IonButton type="button" expand="block" className="login-first-method" onClick={goFirst}>
-                      <span className="login-first-method-icon">
-                        <IonIcon icon={idCardOutline} />
-                      </span>
-                      {t('Primer inicio de sesión')}
-                    </IonButton>
+                  {firstStep === 'otp' && contact && (
+                    <div>
+                      <p className="auth-hint">
+                        {t('Enviamos un código de 6 dígitos a')} <strong>{contact.label}</strong>
+                      </p>
 
-<div className="login-security">
-                      <IonIcon icon={shieldCheckmarkOutline} />
-                      {t('Conexión segura con cifrado de extremo a extremo')}
+                      <div className="auth-otp-row">
+                        {otp.map((d, i) => (
+                          <input
+                            key={i}
+                            id={`login-otp-${i}`}
+                            className={`auth-otp ${d ? 'filled' : ''}`}
+                            maxLength={i === 0 ? 6 : 1}
+                            inputMode="numeric"
+                            autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                            aria-label={t('Dígito {n}', { n: String(i + 1) })}
+                            value={d}
+                            onChange={(e) => fillOtp(i, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Backspace' && !otp[i] && i > 0) {
+                                const prev = document.getElementById(`login-otp-${i - 1}`)
+                                if (prev instanceof HTMLInputElement) prev.focus()
+                              }
+                            }}
+                            onPaste={(e) => {
+                              e.preventDefault()
+                              fillOtp(0, e.clipboardData.getData('text'))
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {devCode && <div className="auth-devcode">{t('Código de prueba:')} {devCode}</div>}
+
+                      <div className="auth-resend">
+                        {otpLeft > 0 ? (
+                          <span>{t('Reenviar en')} 0:{String(Math.min(otpLeft, 59)).padStart(2, '0')}</span>
+                        ) : (
+                          <button type="button" className="auth-alt-link" onClick={resendOtp}>
+                            {t('Reenviar código')}
+                          </button>
+                        )}
+                      </div>
+
+                      {busyBar}
+
+                      <IonButton
+                        expand="block"
+                        className="cta-pill"
+                        type="button"
+                        disabled={busy || otp.join('').length !== 6}
+                        onClick={submitOtp}
+                      >
+                        <span className="cta-pill-ico">
+                          {busy ? <IonSpinner name="crescent" style={{ width: 18, height: 18 }} /> : <IonIcon icon={lockClosedOutline} />}
+                        </span>
+                        <span className="cta-pill-label">{busy ? t('Verificando…') : t('Verificar y entrar')}</span>
+                        <span className="cta-pill-chevrons" aria-hidden="true">
+                          <IonIcon icon={chevronForwardOutline} />
+                          <IonIcon icon={chevronForwardOutline} />
+                          <IonIcon icon={chevronForwardOutline} />
+                        </span>
+                      </IonButton>
                     </div>
-                </form>
+                  )}
+                </motion.div>
+              </AnimatePresence>
 
-                <footer className="login-footer">{t('© 2026 ANTARES · Plataforma de salud preventiva')}</footer>
-              </motion.div>
-            )}
-            </AnimatePresence>
-          </div>
-        </section>
+              <div className="auth-alt">
+                <span>{t('¿Ya tienes contraseña?')}</span>
+                <button type="button" className="auth-alt-link" onClick={() => setMode('login')}>
+                  {t('Iniciar sesión')}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <footer className="auth-footer">
+          <IonIcon icon={keyOutline} />
+          {t('Conexión segura con cifrado de extremo a extremo')}
+        </footer>
       </div>
     </div>
   )
