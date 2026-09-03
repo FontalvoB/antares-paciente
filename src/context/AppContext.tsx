@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getMe, logoutUser, restoreSession } from "../utils/authApi";
+import { getMe, logoutUser, onSessionInvalid, restoreSession } from "../utils/authApi";
 import { sendChatMessage } from "../utils/threadApi";
 import {
   cancelAppointment as cancelAppointmentApi,
@@ -41,7 +41,6 @@ import type {
 } from "../types";
 import { weekdayMondayIndex } from "../utils/dates";
 import { DAY_BONUS_PTS } from "../data/program";
-import { chestStatus, findChest, SEED_CLAIMED_CHESTS } from "../data/chests";
 
 const USER_STORAGE_KEY = "antares_user_profile";
 
@@ -68,7 +67,6 @@ interface AppState {
   weekCheckins: boolean[];
   pointsToday: number;
   pointsTotal: number;
-  claimedChests: string[];
   navigate: (s: Screen) => void;
   finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void;
   backToLogin: () => void;
@@ -90,7 +88,6 @@ interface AppState {
   connectWatch: (name: string) => void;
   disconnectWatch: () => void;
   completeStep: (id: ProgramTaskId, pts: number) => void;
-  claimChest: (id: string) => { xp: number; title: string } | null;
   logout: () => void;
   // ── Citas/telemedicina reales (modo sesión) ──
   /** Modo real: hay sesión JWT (los datos de citas vienen del backend). */
@@ -253,12 +250,18 @@ export function AppProvider({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
   const [hydration, setHydration] = useState(7);
+  // DEMO FALLBACK SOLO (S4, nutrition-intake-adherence): `mealsLogged`/
+  // `logMeal` quedan únicamente para el modo sin backend (NutritionPage los
+  // usa solo cuando no hay snapshot). En flujos conectados los consumidores
+  // leen la verdad server-side vía `deriveLoggedMeals(snapshot)`. TODO:
+  // eliminar junto con el resto del estado legacy in-memory.
   const [mealsLogged, setMealsLogged] = useState<string[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>(() => [
     createWelcomeMessage(loadSavedUser().nombre),
   ]);
   const [watchConnected, setWatchConnected] = useState(false);
   const [watchName, setWatchName] = useState("ANTARES Watch Pro");
+  // TODO: Remove after full migration — legacy in-memory program state
   const [program, setProgram] = useState<ProgramDay>({
     podcast: false,
     vitals: false,
@@ -267,8 +270,11 @@ export function AppProvider({
     nutribiotico: false,
     emocional: false,
   });
+  // TODO: Remove after full migration
   const [programWeek] = useState(12);
+  // TODO: Remove after full migration
   const [streak, setStreak] = useState(22);
+  // TODO: Remove after full migration
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([
     true,
     true,
@@ -278,12 +284,11 @@ export function AppProvider({
     false,
     false,
   ]);
+  // TODO: Remove after full migration
   const [pointsToday, setPointsToday] = useState(0);
+  // TODO: Remove after full migration
   const [pointsTotal, setPointsTotal] = useState(4820);
-  const [claimedChests, setClaimedChests] = useState<string[]>([
-    ...SEED_CLAIMED_CHESTS,
-  ]);
-  // ── Citas/telemedicina reales (modo sesión) ──
+
   const [catalog, setCatalog] = useState<ProfessionalCatalogItem[] | null>(
     null,
   );
@@ -417,6 +422,15 @@ export function AppProvider({
     [refreshAppointments],
   );
 
+  // Listener para sesión invalidada por refresh 401
+  useEffect(() => {
+    return onSessionInvalid(() => {
+      setFlow("login");
+      setScreen("home");
+      localStorage.removeItem(USER_STORAGE_KEY);
+    });
+  }, []);
+
   // Restauración automática de sesión al inicio
   useEffect(() => {
     let active = true;
@@ -502,7 +516,6 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
-      claimedChests,
       navigate: (s) => setScreen(s),
       finishLogin: (seed, next = "onboarding") => {
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
@@ -561,6 +574,7 @@ export function AppProvider({
       openVoice: () => setVoiceOpen(true),
       closeVoice: () => setVoiceOpen(false),
       setHydration,
+      // DEMO FALLBACK SOLO (S4): flujos conectados usan la API + snapshot.
       logMeal: (id) =>
         setMealsLogged((prev) => (prev.includes(id) ? prev : [...prev, id])),
       sendChat: (text) => {
@@ -660,15 +674,6 @@ export function AppProvider({
           return next;
         });
       },
-      claimChest: (id) => {
-        const chest = findChest(id);
-        if (!chest || chestStatus(chest, streak, claimedChests) !== "ready")
-          return null;
-        setClaimedChests((prev) => (prev.includes(id) ? prev : [...prev, id]));
-        setPointsToday((n) => n + chest.xp);
-        setPointsTotal((n) => n + chest.xp);
-        return { xp: chest.xp, title: chest.title };
-      },
       logout: () => {
         setFlow("login");
         setScreen("home");
@@ -717,7 +722,6 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
-      claimedChests,
       threadId,
       onResetCommunityClient,
       t,
