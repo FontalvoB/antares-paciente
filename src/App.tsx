@@ -1,5 +1,4 @@
-import { setupIonicReact, IonApp, IonIcon, IonSpinner } from "@ionic/react";
-import { infinite } from "ionicons/icons";
+import { setupIonicReact, IonApp, IonSpinner } from "@ionic/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   useCallback,
@@ -8,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "urql";
 import { createCommunityClient } from "./graphql/client";
 import { registerForPush } from "./utils/pushNotifications";
@@ -16,7 +16,6 @@ import { I18nProvider } from "./i18n/I18nContext";
 import { PanicOverlay } from "./components/PanicOverlay";
 import { VoiceOverlay } from "./components/VoiceOverlay";
 import { ToastHost } from "./components/ToastHost";
-import { ChatFab } from "./components/ChatFab";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
@@ -32,8 +31,20 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { ProgramPage } from "./pages/ProgramPage";
 import { CommunityPage } from "./pages/CommunityPage";
 import { VirtualRoomPage } from "./pages/VirtualRoomPage";
+import logoLetras from "./assets/LogoConLetras.png";
 
 setupIonicReact({ mode: "ios" });
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: true,
+      networkMode: "online",
+    },
+  },
+});
 
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
@@ -42,23 +53,11 @@ function Router() {
 
   if (authLoading) {
     return (
-      <div
-        className="login-screen"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          flexDirection: "column",
-          gap: 14,
-        }}
-      >
-        <div className="login-logo" style={{ margin: 0 }}>
-          <IonIcon icon={infinite} />
-        </div>
+      <div className="screen auth auth-splash">
+        <img src={logoLetras} alt="COPP-ADRESD" className="auth-logo" />
         <IonSpinner
           name="crescent"
-          color="light"
+          color="primary"
           style={{ width: 26, height: 26 }}
         />
       </div>
@@ -150,9 +149,8 @@ function Shell() {
 
   return (
     <div className="app-stage">
-      <div className={`app-shell ${flow === "login" ? "app-shell-login" : ""}`}>
+      <div className="app-shell">
         <Router />
-        <ChatFab />
         <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />
@@ -177,13 +175,15 @@ export default function App() {
 
   return (
     <Provider value={communityClientState}>
-      <I18nProvider>
-        <AppProvider onResetCommunityClient={resetCommunityClient}>
-          <IonApp>
-            <Shell />
-          </IonApp>
-        </AppProvider>
-      </I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <AppProvider onResetCommunityClient={resetCommunityClient}>
+            <IonApp>
+              <Shell />
+            </IonApp>
+          </AppProvider>
+        </I18nProvider>
+      </QueryClientProvider>
     </Provider>
   );
 }

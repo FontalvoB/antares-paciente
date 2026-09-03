@@ -1,57 +1,81 @@
 :root {
   --ion-font-family: 'Inter', system-ui, sans-serif;
-  --ion-color-primary: #2f78df;
-  --ion-color-primary-rgb: 47, 120, 223;
+  --ion-color-primary: #142855;
+  --ion-color-primary-rgb: 20, 40, 85;
   --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-shade: #173b73;
-  --ion-color-primary-tint: #62a4f0;
-  --ion-background-color: #f4f7fb;
-  --ion-text-color: #14213b;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0d1c3d;
+  --ion-color-primary-tint: #2b4374;
+  --ion-color-secondary: #035d4d;
+  --ion-color-secondary-rgb: 3, 93, 77;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #024036;
+  --ion-color-secondary-tint: #1d7361;
+  --ion-background-color: #ffffff;
+  --ion-text-color: #142855;
   --ion-toolbar-background: transparent;
   --ion-safe-area-top: env(safe-area-inset-top, 0px);
   --ion-safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
-  --cosmos: #071428;
-  --cosmos-2: #102a50;
-  --navy: #102a50;
-  --navy-2: #173c73;
-  --blue: #2f78df;
-  --blue-l: #e8f1fc;
-  --teal: #1d9e75;
-  --teal-d: #0f6e56;
-  --teal-l: #e1f5ee;
-  --ice: #62d8ff;
-  --ice-d: #1487b8;
-  --ice-l: #e6f8ff;
-  --cyan: #20c8ff;
-  /* Highlight de marca (antes oro). Alias para clases .chip-gold / .bt-gold */
-  --gold: #62d8ff;
-  --gold-d: #1487b8;
-  --gold-l: #e6f8ff;
-  --pur: #7c3aed;
-  --pur-d: #2d1b69;
-  --pur-l: #ede9fe;
-  --org: #e87b2b;
-  --org-l: #faeeda;
-  --red: #e24b4a;
-  --red-l: #fcebeb;
-  --wh: #ffffff;
-  --g0: #f4f7fb;
-  --g1: #e8eef6;
-  --bd: #dbe4ef;
-  --tx: #14213b;
-  --mu: #6f84a0;
-  --panic: #ff2d55;
-  --safe: #30d158;
-  --indigo: #4f7cff;
+  /* ---------------------------------------------------------------
+     Paleta de marca COPP-ADRESD.
+     Los tokens semánticos (--navy, --blue, --teal…) apuntan a esta
+     paleta: cambiar aquí repinta toda la app sin tocar las pantallas.
+     --------------------------------------------------------------- */
+  --brand-navy: #142855;
+  --brand-navy-deep: #023467;
+  --brand-blue-mid: #0c4c6b;
+  --brand-green: #035d4d;
+  --brand-green-soft: #3d7b72;
+  --brand-sky: #87aeca;
+  --brand-sky-mid: #5581a2;
+  --brand-sky-deep: #4b7086;
+  --grad-brand: linear-gradient(90deg, #0c4c6b 0%, #3d7b72 32%, #023467 100%);
+  --grad-brand-v: linear-gradient(160deg, #023467 0%, #0c4c6b 58%, #3d7b72 100%);
+  --grad-sky: linear-gradient(90deg, #87aeca 0%, #5581a2 62%, #4b7086 100%);
 
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
-  --shadow-sm: 0 4px 16px rgba(16, 42, 80, 0.06);
-  --shadow-md: 0 12px 32px rgba(16, 42, 80, 0.1);
-  --nav-h: calc(72px + env(safe-area-inset-bottom, 0px));
+  --cosmos: #04203f;
+  --cosmos-2: #023467;
+  --navy: #142855;
+  --navy-2: #023467;
+  --blue: #0c4c6b;
+  --blue-l: #e4edf4;
+  --teal: #035d4d;
+  --teal-d: #024036;
+  --teal-l: #e0efe9;
+  --ice: #87aeca;
+  --ice-d: #4b7086;
+  --ice-l: #eef4f9;
+  --cyan: #5581a2;
+  /* Highlight de marca (antes oro). Alias para clases .chip-gold / .bt-gold */
+  --gold: #3d7b72;
+  --gold-d: #2b5a53;
+  --gold-l: #e4efec;
+  --pur: #6d4fa8;
+  --pur-d: #34215e;
+  --pur-l: #ece7f6;
+  --org: #d97824;
+  --org-l: #faeeda;
+  --red: #d9534f;
+  --red-l: #fbebeb;
+  --wh: #ffffff;
+  --g0: #f4f6f9;
+  --g1: #e9edf3;
+  --bd: #dfe6ee;
+  --tx: #142855;
+  --mu: #6b7c96;
+  --panic: #e0344f;
+  --safe: #1d9e75;
+  --indigo: #3f5fa8;
+
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 4px 16px rgba(20, 40, 85, 0.07);
+  --shadow-md: 0 12px 32px rgba(20, 40, 85, 0.12);
+  --nav-h: calc(78px + env(safe-area-inset-bottom, 0px));
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 

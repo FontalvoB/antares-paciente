@@ -163,6 +163,28 @@ export const CLINICAL_CHESTS: ClinicalChest[] = [
 
 export const ALL_CHESTS: ProgramChest[] = [...STREAK_CHESTS, ...CLINICAL_CHESTS]
 
+/**
+ * FALLBACK ONLY (chests module): streak chest definitions used when the
+ * backend snapshot does not provide `streakChests` (old deploy / offline
+ * first load). The server catalog (xp_rules STREAK_*) is the source of truth
+ * for days and XP once the field is present.
+ */
+export const FALLBACK_STREAK_CHESTS = STREAK_CHESTS
+
+/**
+ * Nutribiótico chest definitions (backend NB_STREAK_7/14/30/60/90, SPEC §19).
+ * Per-run milestones: unlike streak chests, they re-award on every completed
+ * run, so "earned this run" is correctly derivable from `nbStreak >= days`.
+ * Static defs are an accepted drift risk (documented in the chests design).
+ */
+export const NB_STREAK_DEFS: { days: number; xp: number; tone: ChestTone }[] = [
+  { days: 7, xp: 50, tone: 'teal' },
+  { days: 14, xp: 100, tone: 'blue' },
+  { days: 30, xp: 250, tone: 'pur' },
+  { days: 60, xp: 500, tone: 'org' },
+  { days: 90, xp: 1000, tone: 'gold' },
+]
+
 export const SEED_CLAIMED_CHESTS = ['streak-7'] as const
 
 export function findChest(id: string): ProgramChest | undefined {

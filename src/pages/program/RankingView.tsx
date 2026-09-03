@@ -6,8 +6,7 @@ import {
   FLORIDA_PATIENTS,
   RANK_CATEGORIES,
   USER_STATE,
-  rankedPatients,
-  userRank,
+  type PatientRank,
   type RankCategory,
 } from '../../data/rankings'
 import { useT } from '../../i18n/I18nContext'
@@ -23,15 +22,51 @@ function firstName(name: string) {
   return name.split(' ')[0] ?? name
 }
 
-export function RankingView() {
+export function RankingView({
+  user: currentUser,
+}: {
+  user?: { name: string; streak: number; evo: number; adh: number; rec: number; city?: string }
+}) {
   const t = useT()
   const [cat, setCat] = useState<RankCategory>('racha')
-  const rows = useMemo(() => rankedPatients(cat), [cat])
-  const mine = useMemo(() => userRank(cat), [cat])
+
+  const patientsList = useMemo<PatientRank[]>(() => {
+    if (!currentUser) return FLORIDA_PATIENTS
+    const initials = currentUser.name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0].toUpperCase())
+      .join('') || 'ME'
+    return FLORIDA_PATIENTS.map((p) => {
+      if (p.you) {
+        return {
+          ...p,
+          name: currentUser.name,
+          initials,
+          city: currentUser.city || p.city,
+          racha: currentUser.streak,
+          evo: currentUser.evo,
+          adh: currentUser.adh,
+          rec: currentUser.rec,
+        }
+      }
+      return p
+    })
+  }, [currentUser])
+
+  const rows = useMemo(() => {
+    const sorted = [...patientsList].sort(
+      (a, b) => b[cat] - a[cat] || a.name.localeCompare(b.name, 'es')
+    )
+    return sorted.map((p, idx) => ({ ...p, rank: idx + 1, value: p[cat] }))
+  }, [patientsList, cat])
+
+  const mine = useMemo(() => rows.find((r) => r.you) ?? rows[0], [rows])
   const meta = RANK_CATEGORIES.find((c) => c.id === cat)!
   const top3 = rows.slice(0, 3)
   const rest = rows.slice(3)
-  const total = FLORIDA_PATIENTS.length
+  const total = patientsList.length
 
   return (
     <div className="pg-pane cpad">

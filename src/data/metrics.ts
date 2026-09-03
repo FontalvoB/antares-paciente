@@ -19,6 +19,21 @@ export interface MetricDef {
   history: MetricSample[]
 }
 
+/**
+ * Avance de la métrica entre su línea base (primer registro) y la meta
+ * clínica, en 0..1. Sirve para la barra que acompaña cada indicador.
+ */
+export function metricProgress(metric: MetricDef): number {
+  const start = metric.history[0]?.value
+  const current = Number.parseFloat(metric.current)
+  const target = Number.parseFloat(metric.target.replace(/[^\d.]/g, ''))
+  if (!Number.isFinite(start) || !Number.isFinite(current) || !Number.isFinite(target)) return 0
+  const span = metric.direction === 'down' ? start - target : target - start
+  if (span === 0) return 1
+  const advance = metric.direction === 'down' ? start - current : current - start
+  return Math.min(1, Math.max(0, advance / span))
+}
+
 export const HEALTH_METRICS: MetricDef[] = [
   {
     id: 'imc',
