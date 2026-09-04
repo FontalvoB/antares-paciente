@@ -52,8 +52,6 @@ function formatDob(dob: string): string | null {
  *   Address: <label>          (only if coords.label is provided)
  *   Decimal: lat, lng (±N m)
  *   DMS: lat° dir, lng° dir
- *   --- Emergency Contact ---
- *   <name> · <relationship> · <phone>
  *   Call 911 if needed.
  *
  * Signature kept as (user, coords, vitals, lang) for backward compat.
@@ -142,15 +140,6 @@ export function buildSosDataBlock(
     lines.push(`DMS: ${latStr}, ${lngStr}`);
   } else {
     lines.push("Location: Not available");
-  }
-
-  // Emergency Contact
-  if (user.fam1Nombre) {
-    lines.push("--- Emergency Contact ---");
-    const contactParts = [user.fam1Nombre, user.fam1Parentesco, user.fam1Cel]
-      .filter(Boolean)
-      .join(" · ");
-    lines.push(contactParts);
   }
 
   // Footer
