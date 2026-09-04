@@ -54,7 +54,7 @@ interface AppState {
   panicOpen: boolean;
   voiceOpen: boolean;
   sosActive: boolean;
-  sosCoords: { latitude: number; longitude: number; accuracy?: number } | null;
+  sosCoords: { latitude: number; longitude: number; accuracy?: number; label?: string | null } | null;
   sosDispatch: SosDispatchResult | null;
   user: UserProfile;
   testsDone: number[];
@@ -254,6 +254,7 @@ export function AppProvider({
     latitude: number;
     longitude: number;
     accuracy?: number;
+    label?: string | null;
   } | null>(null);
   const [sosDispatch, setSosDispatch] = useState<SosDispatchResult | null>(null);
   const sosDispatchedRef = useRef(false);
@@ -600,10 +601,10 @@ export function AppProvider({
         setSosCoords(null);
         setSosDispatch(null);
 
-        // Fire-and-forget: geolocation → backend alert
+        // Fire-and-forget: geolocation → reverse geocode → backend alert
         void (async () => {
           // 1. Try to get GPS coordinates
-          let coords: { latitude: number; longitude: number; accuracy?: number } | null = null;
+          let coords: { latitude: number; longitude: number; accuracy?: number; label?: string | null } | null = null;
           try {
             const pos = await new Promise<GeolocationPosition>(
               (resolve, reject) => {
@@ -619,17 +620,40 @@ export function AppProvider({
               longitude: pos.coords.longitude,
               accuracy: pos.coords.accuracy,
             };
+
+            // 2. Attempt reverse geocoding (fail-open, ~3s timeout)
+            try {
+              const { NativeGeocoder } = await import("@capgo/capacitor-nativegeocoder");
+              const result = await Promise.race([
+                NativeGeocoder.reverseGeocode({
+                  latitude: pos.coords.latitude,
+                  longitude: pos.coords.longitude,
+                }),
+                new Promise<never>((_, reject) =>
+                  window.setTimeout(() => reject(new Error("geocode timeout")), 3000),
+                ),
+              ]);
+              if (result && result.addresses?.length > 0) {
+                const addr = result.addresses[0];
+                coords.label = [addr.thoroughfare, addr.locality, addr.administrativeArea]
+                  .filter(Boolean)
+                  .join(", ");
+              }
+            } catch {
+              // Geocoder unavailable or timed out — omit label, continue
+            }
+
             setSosCoords(coords);
           } catch {
             // Geolocation denied or timed out — continue with null coords
           }
 
-          // 2. Send alert to backend
+          // 3. Send alert to backend
           const result = await activateSosAlert({
             latitude: coords?.latitude ?? null,
             longitude: coords?.longitude ?? null,
             accuracyMeters: coords?.accuracy ?? null,
-            locationLabel: null,
+            locationLabel: coords?.label ?? null,
             vitals: {
               heartRate: 140,
               spo2: 94,

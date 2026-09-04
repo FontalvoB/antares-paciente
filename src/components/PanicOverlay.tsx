@@ -53,7 +53,7 @@ const SOS_VITALS = { heartRate: 140, spo2: 94, bloodPressure: '160/110' } as con
 
 export function PanicOverlay() {
   const { panicOpen, sosActive, sosCoords, sosDispatch, closePanic, activateSos, user, showToast } = useApp()
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
   const [count, setCount] = useState(5)
   const [view, setView] = useState<SosView>('protocol')
   const [phase, setPhase] = useState<CallPhase>('dialing')
@@ -165,18 +165,16 @@ export function PanicOverlay() {
     showToast(t('Alerta cancelada. Quédate en observación.'), 'ok')
   }
 
-  /** "No puedo hablar" — speak the SOS data block via TTS */
-  const speakSosMessage = () => {
-    const text = buildSosDataBlock(user, sosCoords, SOS_VITALS, lang)
-    if (typeof speechSynthesis === 'undefined' || !window.speechSynthesis) {
-      showToast(t('Tu dispositivo no soporta lectura de voz.'), 'warn')
-      return
-    }
+  // Auto-speak the SOS message when sosActive becomes true
+  useEffect(() => {
+    if (!sosActive) return
+    if (typeof speechSynthesis === 'undefined' || !window.speechSynthesis) return
+    const text = sosDispatch?.messageText ?? buildSosDataBlock(user, sosCoords, SOS_VITALS, 'en')
     speechSynthesis.cancel()
     const utter = new SpeechSynthesisUtterance(text)
-    utter.lang = lang === 'es' ? 'es-ES' : 'en-US'
+    utter.lang = 'en-US'
     speechSynthesis.speak(utter)
-  }
+  }, [sosActive, sosDispatch, user, sosCoords])
 
   const ringPct = sosActive ? 1 : count / 5
   const calling911 = view === 'call911'
@@ -342,10 +340,6 @@ export function PanicOverlay() {
                     {t('Llamar familiar')}
                   </IonButton>
                 </div>
-                <IonButton expand="block" className="bt sos-act-speak" onClick={speakSosMessage}>
-                  <IonIcon icon={volumeHigh} slot="start" />
-                  {t('No puedo hablar')}
-                </IonButton>
                 <IonButton expand="block" className="bt sos-act-ok" onClick={imOk}>
                   <IonIcon icon={sosActive ? checkmarkCircle : close} slot="start" />
                   {t('Estoy bien')}

@@ -9,12 +9,12 @@ import { buildSosDataBlock } from '../utils/sosMessage'
 const SOS_VITALS = { heartRate: 140, spo2: 94, bloodPressure: '160/110' } as const
 
 export function VoiceOverlay() {
-  const { voiceOpen, closeVoice, showToast, sosActive, sosCoords, user } = useApp()
-  const { t, lang } = useI18n()
+  const { voiceOpen, closeVoice, showToast, sosActive, sosCoords, sosDispatch, user } = useApp()
+  const { t } = useI18n()
   const [muted, setMuted] = useState(false)
 
   const sosMessageText = sosActive
-    ? buildSosDataBlock(user, sosCoords, SOS_VITALS, lang)
+    ? (sosDispatch?.messageText ?? buildSosDataBlock(user, sosCoords, SOS_VITALS, 'en'))
     : null
 
   const speakSosMessage = () => {
@@ -24,7 +24,7 @@ export function VoiceOverlay() {
     }
     speechSynthesis.cancel()
     const utter = new SpeechSynthesisUtterance(sosMessageText ?? '')
-    utter.lang = lang === 'es' ? 'es-ES' : 'en-US'
+    utter.lang = 'en-US'
     speechSynthesis.speak(utter)
   }
 
