@@ -82,7 +82,7 @@ export function PanicOverlay() {
     }
   }, [panicOpen])
 
-  // Countdown timer — auto-dial when countdown reaches 0
+  // Countdown timer — auto-activate SOS when it reaches 0 (Twilio dispatch takes over)
   useEffect(() => {
     if (!panicOpen || sosActive) return
     setCount(5)
@@ -91,6 +91,12 @@ export function PanicOverlay() {
     }, 1000)
     return () => window.clearInterval(id)
   }, [panicOpen, sosActive])
+
+  // Auto-activate at countdown zero (no device dialing — Twilio handles the calls)
+  useEffect(() => {
+    if (!panicOpen || sosActive || count !== 0) return
+    activateSos()
+  }, [panicOpen, sosActive, count, activateSos])
 
   // Feed row lighting animation
   useEffect(() => {
