@@ -73,6 +73,7 @@ export function buildSosDataBlock(
 
   // Header
   lines.push("=== SOS ALERT - EMERGENCY ===");
+  lines.push(`URGENT: ${user.nombre} triggered the SOS emergency button on the device.`);
 
   // Patient
   if (user.nombre) {

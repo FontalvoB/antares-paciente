@@ -30,6 +30,7 @@ describe('buildSosDataBlock', () => {
   it('full English block with all data', () => {
     const block = buildSosDataBlock(makeUser(), coords, vitals, 'en')
     expect(block).toContain('=== SOS ALERT - EMERGENCY ===')
+    expect(block).toContain('URGENT:')
     expect(block).toContain('Patient: María González')
     expect(block).toMatch(/^Age \d+ years \(DOB \d{2}\/\d{2}\/\d{4}\)$/m)
     expect(block).toContain('Document: 12345678')
