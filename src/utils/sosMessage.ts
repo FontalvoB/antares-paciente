@@ -25,117 +25,136 @@ function formatCoordDMS(decimal: number, isLat: boolean): string {
   return `${abs.toFixed(4)}° ${dir}`;
 }
 
+// ── DOB → MM/dd/yyyy ──────────────────────────────────────────────────
+
+function formatDob(dob: string): string | null {
+  if (!dob) return null;
+  const parts = dob.split("-");
+  if (parts.length !== 3) return null;
+  const [y, m, d] = parts;
+  return `${m.padStart(2, "0")}/${d.padStart(2, "0")}/${y}`;
+}
+
 // ── Build SOS data block ───────────────────────────────────────────────
 
 /**
- * Builds a localized emergency text block for TTS, SMS/email, and display.
- * Omit missing fields gracefully — output must NEVER contain "null", "undefined",
- * or empty placeholders.
+ * Builds an English emergency text block matching the backend format:
+ *   === SOS ALERT - EMERGENCY ===
+ *   Patient: <name>
+ *   Age N years (DOB MM/dd/yyyy)
+ *   Document: <cedula>
+ *   Blood type: <grupo>
+ *   Insurer: <seguro>
+ *   Member ID: <poliza>
+ *   --- Vital Signs ---
+ *   Heart Rate N bpm / SpO2 N% / Blood Pressure X
+ *   Location:
+ *   Address: <label>          (only if coords.label is provided)
+ *   Decimal: lat, lng (±N m)
+ *   DMS: lat° dir, lng° dir
+ *   --- Emergency Contact ---
+ *   <name> · <relationship> · <phone>
+ *   Call 911 if needed.
+ *
+ * Signature kept as (user, coords, vitals, lang) for backward compat.
+ * Output is always English regardless of `lang`.
+ * NEVER emits "null", "undefined", or empty placeholders.
  */
 export function buildSosDataBlock(
   user: UserProfile,
-  coords: { latitude: number; longitude: number; accuracy?: number } | null,
+  coords: { latitude: number; longitude: number; accuracy?: number; label?: string | null } | null,
   vitals: {
     heartRate?: number | null;
     spo2?: number | null;
     bloodPressure?: string | null;
   },
-  lang: "es" | "en",
+  lang: "es" | "en", // kept for backward-compat signature; output always English
 ): string {
-  const isEs = lang === "es";
+  void lang; // output is always English regardless of lang param
   const lines: string[] = [];
 
   // Header
-  lines.push(isEs ? "ALERTA SOS — COPP-ADRESD" : "SOS ALERT — COPP-ADRESD");
+  lines.push("=== SOS ALERT - EMERGENCY ===");
 
-  // Name
+  // Patient
   if (user.nombre) {
-    lines.push(
-      isEs
-        ? `Paciente: ${user.nombre}`
-        : `Patient: ${user.nombre}`,
-    );
+    lines.push(`Patient: ${user.nombre}`);
   }
 
-  // Age from dob
+  // Age + DOB
   const age = computeAge(user.dob);
   if (age !== null) {
-    lines.push(
-      isEs ? `Edad: ${age} años` : `Age: ${age} years`,
-    );
+    const dobFormatted = formatDob(user.dob);
+    lines.push(dobFormatted ? `Age ${age} years (DOB ${dobFormatted})` : `Age ${age} years`);
   }
 
-  // Cédula
+  // Document
   if (user.cedula) {
-    lines.push(
-      isEs ? `Cédula: ${user.cedula}` : `ID: ${user.cedula}`,
-    );
+    lines.push(`Document: ${user.cedula}`);
   }
 
-  // Blood type / grupo
+  // Blood type
   if (user.grupo) {
-    lines.push(
-      isEs ? `Grupo sangre: ${user.grupo}` : `Blood type: ${user.grupo}`,
-    );
+    lines.push(`Blood type: ${user.grupo}`);
   }
 
-  // Insurance
-  if (user.seguro || user.poliza) {
-    const parts = [user.seguro, user.poliza].filter(Boolean);
-    lines.push(
-      isEs
-        ? `Seguro: ${parts.join(" · ")}`
-        : `Insurance: ${parts.join(" · ")}`,
-    );
+  // Insurer
+  if (user.seguro) {
+    lines.push(`Insurer: ${user.seguro}`);
   }
 
-  // Vitals
+  // Member ID
+  if (user.poliza) {
+    lines.push(`Member ID: ${user.poliza}`);
+  }
+
+  // Vital Signs
   const vitalParts: string[] = [];
   if (vitals.heartRate != null && vitals.heartRate !== undefined) {
-    vitalParts.push(`FC ${vitals.heartRate} lpm`);
+    vitalParts.push(`Heart Rate ${vitals.heartRate} bpm`);
   }
   if (vitals.spo2 != null && vitals.spo2 !== undefined) {
     vitalParts.push(`SpO2 ${vitals.spo2}%`);
   }
   if (vitals.bloodPressure) {
-    vitalParts.push(`TA ${vitals.bloodPressure}`);
+    vitalParts.push(`Blood Pressure ${vitals.bloodPressure}`);
   }
   if (vitalParts.length > 0) {
-    lines.push(isEs ? `Vitales: ${vitalParts.join(" · ")}` : `Vitals: ${vitalParts.join(" · ")}`);
+    lines.push("--- Vital Signs ---");
+    lines.push(vitalParts.join(" / "));
   }
 
-  // GPS
+  // Location
   if (coords) {
     const latStr = formatCoordDMS(coords.latitude, true);
     const lngStr = formatCoordDMS(coords.longitude, false);
-    const mapsLink = `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`;
     const accStr =
       coords.accuracy != null
-        ? isEs
-          ? ` (±${Math.round(coords.accuracy)} m)`
-          : ` (±${Math.round(coords.accuracy)} m)`
+        ? ` (\u00B1${Math.round(coords.accuracy)} m)`
         : "";
+    lines.push("Location:");
+    if (coords.label) {
+      lines.push(`Address: ${coords.label}`);
+    }
     lines.push(
-      isEs
-        ? `Ubicación: ${latStr}, ${lngStr}${accStr}`
-        : `Location: ${latStr}, ${lngStr}${accStr}`,
+      `Decimal: ${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}${accStr}`,
     );
-    lines.push(mapsLink);
+    lines.push(`DMS: ${latStr}, ${lngStr}`);
   } else {
-    lines.push(isEs ? "Ubicación no disponible" : "Location unavailable");
+    lines.push("Location: Not available");
   }
 
-  // Family contact
+  // Emergency Contact
   if (user.fam1Nombre) {
+    lines.push("--- Emergency Contact ---");
     const contactParts = [user.fam1Nombre, user.fam1Parentesco, user.fam1Cel]
       .filter(Boolean)
       .join(" · ");
-    lines.push(
-      isEs
-        ? `Contacto de emergencia: ${contactParts}`
-        : `Emergency contact: ${contactParts}`,
-    );
+    lines.push(contactParts);
   }
+
+  // Footer
+  lines.push("Call 911 if needed.");
 
   return lines.join("\n");
 }
