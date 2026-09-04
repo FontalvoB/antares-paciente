@@ -1,32 +1,28 @@
 import { type CSSProperties } from 'react'
 import { IonButton, IonIcon, IonModal } from '@ionic/react'
-import { call, mic, micOff, volumeHigh } from 'ionicons/icons'
+import { call, mic, micOff } from 'ionicons/icons'
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../i18n/I18nContext'
-import { buildSosDataBlock } from '../utils/sosMessage'
+import type { SosChannelStatus, SosDispatchResult } from '../utils/sosApi'
 
-const SOS_VITALS = { heartRate: 140, spo2: 94, bloodPressure: '160/110' } as const
+function channelBadge(status: SosChannelStatus, t: (s: string) => string): string {
+  if (status === 'Sent') return t('Llamada con mensaje enviada')
+  if (status === 'Failed') return t('Fallo de llamada')
+  return t('Enviando…')
+}
+
+function voiceStatusSummary(d: SosDispatchResult, t: (s: string) => string): string {
+  const v = d.channels.voice.status
+  if (v === 'Sent') return t('Llamada con mensaje enviada')
+  if (v === 'Failed') return t('Fallo de llamada')
+  return t('Alerta enviada · despacho en curso')
+}
 
 export function VoiceOverlay() {
-  const { voiceOpen, closeVoice, showToast, sosActive, sosCoords, sosDispatch, user } = useApp()
+  const { voiceOpen, closeVoice, showToast, sosActive, sosDispatch } = useApp()
   const { t } = useI18n()
   const [muted, setMuted] = useState(false)
-
-  const sosMessageText = sosActive
-    ? (sosDispatch?.messageText ?? buildSosDataBlock(user, sosCoords, SOS_VITALS, 'en'))
-    : null
-
-  const speakSosMessage = () => {
-    if (typeof speechSynthesis === 'undefined' || !window.speechSynthesis) {
-      showToast(t('Tu dispositivo no soporta lectura de voz.'), 'warn')
-      return
-    }
-    speechSynthesis.cancel()
-    const utter = new SpeechSynthesisUtterance(sosMessageText ?? '')
-    utter.lang = 'en-US'
-    speechSynthesis.speak(utter)
-  }
 
   return (
     <IonModal isOpen={voiceOpen} onDidDismiss={closeVoice} className="voice-modal">
@@ -35,11 +31,13 @@ export function VoiceOverlay() {
           <IonIcon icon={mic} style={{ fontSize: 56, color: 'var(--ice)' }} />
         </div>
         <div className="display" style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
-          {sosActive ? t('Alerta SOS activa') : t('Agente de voz ANTARES')}
+          {sosActive ? t('Llamando a tu contacto de emergencia…') : t('Agente de voz ANTARES')}
         </div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', textAlign: 'center', maxWidth: 280, lineHeight: 1.6 }}>
           {sosActive
-            ? t('Mensaje de emergencia listo para reproducir.')
+            ? sosDispatch
+              ? voiceStatusSummary(sosDispatch, t)
+              : t('Alerta enviada · despacho en curso')
             : t('Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ice)', fontSize: 13 }}>
@@ -64,21 +62,27 @@ export function VoiceOverlay() {
             lineHeight: 1.65,
           }}
         >
-          {sosActive && sosMessageText
-            ? <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{sosMessageText}</pre>
+          {sosActive
+            ? (
+              <ul style={{ margin: 0, paddingLeft: 18, listStyle: 'none' }}>
+                {sosDispatch ? (
+                  <>
+                    <li>{t('Voz')}: {channelBadge(sosDispatch.channels.voice.status, t)}</li>
+                    <li>{t('SMS')}: {channelBadge(sosDispatch.channels.sms.status, t)}</li>
+                    <li>{t('Correo')}: {channelBadge(sosDispatch.channels.email.status, t)}</li>
+                  </>
+                ) : (
+                  <>
+                    <li>{t('Voz')}: {t('Enviando…')}</li>
+                    <li>{t('SMS')}: {t('Enviando…')}</li>
+                    <li>{t('Correo')}: {t('Enviando…')}</li>
+                  </>
+                )}
+              </ul>
+            )
             : t('Hola María, soy tu agente de salud ANTARES. ¿Cómo te sientes hoy? Puedes preguntarme sobre síntomas, tu plan nutricional o agendar una cita.')}
         </div>
         <div style={{ display: 'flex', gap: 14 }}>
-          {sosActive && (
-            <IonButton
-              className="bt bt-round-lg"
-              style={{ '--background': 'var(--panic)', '--color': '#fff' } as CSSProperties}
-              onClick={speakSosMessage}
-              aria-label={t('Reproducir mensaje')}
-            >
-              <IonIcon icon={volumeHigh} style={{ fontSize: 24 }} />
-            </IonButton>
-          )}
           <IonButton
             className="bt bt-round-lg"
             style={{ '--background': 'rgba(255,255,255,.12)', '--color': '#fff', '--border-color': 'rgba(255,255,255,.2)', '--border-width': '1px', '--border-style': 'solid' } as CSSProperties}

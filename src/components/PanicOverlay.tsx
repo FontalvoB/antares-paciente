@@ -11,10 +11,9 @@ import {
   pulse,
   volumeHigh,
 } from 'ionicons/icons'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../i18n/I18nContext'
-import { buildSosDataBlock } from '../utils/sosMessage'
 import type { SosDispatchResult } from '../utils/sosApi'
 
 type SosView = 'protocol' | 'call911' | 'callFamily'
@@ -49,8 +48,6 @@ function Waveform({ live }: { live: boolean }) {
   )
 }
 
-const SOS_VITALS = { heartRate: 140, spo2: 94, bloodPressure: '160/110' } as const
-
 export function PanicOverlay() {
   const { panicOpen, sosActive, sosCoords, sosDispatch, closePanic, activateSos, user, showToast } = useApp()
   const { t } = useI18n()
@@ -60,7 +57,6 @@ export function PanicOverlay() {
   const [callSec, setCallSec] = useState(0)
   const [lit, setLit] = useState(0)
   const [speakerOn, setSpeakerOn] = useState(true)
-  const countdownAutoDialRef = useRef(false)
 
   const family = user.fam1Nombre
   const familyRole = user.fam1Parentesco
@@ -74,7 +70,7 @@ export function PanicOverlay() {
 
   const emergencyNumber = sosDispatch?.emergencyNumber ?? '911'
 
-  // Cancel speech when overlay closes
+  // Reset state when overlay closes
   useEffect(() => {
     if (!panicOpen) {
       setView('protocol')
@@ -83,10 +79,6 @@ export function PanicOverlay() {
       setLit(0)
       setCount(5)
       setSpeakerOn(true)
-      countdownAutoDialRef.current = false
-      if (typeof speechSynthesis !== 'undefined') {
-        speechSynthesis.cancel()
-      }
     }
   }, [panicOpen])
 
@@ -94,23 +86,11 @@ export function PanicOverlay() {
   useEffect(() => {
     if (!panicOpen || sosActive) return
     setCount(5)
-    countdownAutoDialRef.current = false
     const id = window.setInterval(() => {
       setCount((c) => (c <= 1 ? 0 : c - 1))
     }, 1000)
     return () => window.clearInterval(id)
   }, [panicOpen, sosActive])
-
-  // Auto-dial 911 at countdown zero (NOT on manual orb tap: sosActive blocks this)
-  useEffect(() => {
-    if (!panicOpen || sosActive || count !== 0) return
-    if (countdownAutoDialRef.current) return
-    countdownAutoDialRef.current = true
-    activateSos()
-    try {
-      window.location.href = `tel:${emergencyNumber}`
-    } catch { /* native dialer may not be available in web */ }
-  }, [panicOpen, sosActive, count, activateSos, emergencyNumber])
 
   // Feed row lighting animation
   useEffect(() => {
@@ -164,17 +144,6 @@ export function PanicOverlay() {
     closePanic()
     showToast(t('Alerta cancelada. Quédate en observación.'), 'ok')
   }
-
-  // Auto-speak the SOS message when sosActive becomes true
-  useEffect(() => {
-    if (!sosActive) return
-    if (typeof speechSynthesis === 'undefined' || !window.speechSynthesis) return
-    const text = sosDispatch?.messageText ?? buildSosDataBlock(user, sosCoords, SOS_VITALS, 'en')
-    speechSynthesis.cancel()
-    const utter = new SpeechSynthesisUtterance(text)
-    utter.lang = 'en-US'
-    speechSynthesis.speak(utter)
-  }, [sosActive, sosDispatch, user, sosCoords])
 
   const ringPct = sosActive ? 1 : count / 5
   const calling911 = view === 'call911'
@@ -270,7 +239,7 @@ export function PanicOverlay() {
                   <span className={`sos-live ${sosActive ? 'on' : ''}`}>
                     {sosActive ? t('SOS ACTIVO') : t('PROTOCOLO ARMADO')}
                   </span>
-                  <p>{sosActive ? t('Ayuda en camino') : t('Se activa sola en')}</p>
+                  <p>{sosActive ? t('Llamando a tu contacto de emergencia…') : t('Se activa sola en')}</p>
                 </header>
 
                 <div className="sos-orb-wrap">
@@ -330,16 +299,18 @@ export function PanicOverlay() {
                   })}
                 </ul>
 
-                <div className="sos-actions">
-                  <IonButton className="bt sos-act-911" onClick={() => startCall('call911')}>
-                    <IonIcon icon={call} slot="start" />
-                    {t('Llamar 911')}
-                  </IonButton>
-                  <IonButton className="bt sos-act-fam" onClick={() => startCall('callFamily')}>
-                    <IonIcon icon={people} slot="start" />
-                    {t('Llamar familiar')}
-                  </IonButton>
-                </div>
+                {!sosActive && (
+                  <div className="sos-actions">
+                    <IonButton className="bt sos-act-911" onClick={() => startCall('call911')}>
+                      <IonIcon icon={call} slot="start" />
+                      {t('Llamar 911')}
+                    </IonButton>
+                    <IonButton className="bt sos-act-fam" onClick={() => startCall('callFamily')}>
+                      <IonIcon icon={people} slot="start" />
+                      {t('Llamar familiar')}
+                    </IonButton>
+                  </div>
+                )}
                 <IonButton expand="block" className="bt sos-act-ok" onClick={imOk}>
                   <IonIcon icon={sosActive ? checkmarkCircle : close} slot="start" />
                   {t('Estoy bien')}
