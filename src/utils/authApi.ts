@@ -86,13 +86,26 @@ function clearAccessToken(): void {
 /** Login con contraseña por número de identificación (usuarios ya registrados). */
 export async function loginUser(documentNumber: string, password: string, rememberMe: boolean): Promise<LoginResult> {
   if (isDemoCredentials(documentNumber, password)) {
-    const result: LoginResult = {
-      accessToken: 'demo-access-token',
-      tokenType: 'Bearer',
-      expiresIn: 3600,
+    // Try real backend login first so demo users get a real patient JWT
+    try {
+      const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/login`, {
+        documentNumber: '1000000002',
+        password: 'Demo1234!',
+        application: 'app',
+        rememberMe,
+      })
+      persistAccessToken(result.accessToken)
+      return result
+    } catch {
+      // Backend unavailable — fall back to client-side demo token
+      const result: LoginResult = {
+        accessToken: 'demo-access-token',
+        tokenType: 'Bearer',
+        expiresIn: 3600,
+      }
+      persistAccessToken(result.accessToken)
+      return result
     }
-    persistAccessToken(result.accessToken)
-    return result
   }
 
   const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/login`, {
