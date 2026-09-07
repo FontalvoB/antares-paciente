@@ -179,7 +179,7 @@ export function HomePage() {
       vitals: Boolean(byCode.vitals),
       nut: Boolean(byCode.nut),
       ejercicio: Boolean(byCode.ejercicio),
-      nutribiotico: Boolean(byCode.nutribiotico),
+      nutraceutico: Boolean(byCode.nutraceutico),
       emocional: Boolean(byCode.emocional),
     };
   }, [snapshot, appProgram]);

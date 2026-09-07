@@ -25,6 +25,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../utils/apiClient'
 import { getSnapshot, enrollMe } from '../services/program/program-service'
 import { programKeys } from './queryKeys'
+import { toLocalISODate } from '../utils/dates'
 
 import type { ProgramSnapshotDto } from '../services/program/types'
 
@@ -109,7 +110,11 @@ const MOCK_FALLBACK_SNAPSHOT: ProgramSnapshotDto = {
   todayLocalDate: '2026-01-01',
   todayTasks: [],
   todayPoints: 0,
-  todayBonusAvailable: false,
+  // Fallback offline/sin-cache: NUNCA debe pintar el bonus como otorgado
+  // (la tarjeta del cofre lee `todayBonusAvailable === false` como "ya
+  // ganado"). true = "aún ganable" → el cofre se renderiza pendiente,
+  // que es lo honesto cuando no hay verdad del servidor.
+  todayBonusAvailable: true,
   todayPointsMax: 0,
   xp: { balance: 0, level: '1', nextLevelAt: 1000 },
   streak: {
@@ -203,6 +208,36 @@ export function useProgram(): UseProgramResult {
   })
 
   const { data, isLoading, isError, error, refetch } = query
+
+  // Midnight rollover (R7.1): when the app comes back to the foreground and the
+  // device's local date no longer matches the snapshot's server `today`,
+  // refetch so the day's tasks roll over. No polling: the check runs only on
+  // `visibilitychange` → visible and window `focus` (TanStack already refetches
+  // on window focus when stale; this covers the case where the snapshot is
+  // still fresh but the calendar day changed). `lastCheckedDayRef` prevents
+  // duplicate refetches within the same device day.
+  const lastCheckedDayRef = useRef<string | null>(null)
+  useEffect(() => {
+    const maybeRollover = () => {
+      if (document.visibilityState === 'visible') {
+        const deviceToday = toLocalISODate()
+        if (
+          lastCheckedDayRef.current !== deviceToday &&
+          data?.todayLocalDate &&
+          data.todayLocalDate !== deviceToday
+        ) {
+          lastCheckedDayRef.current = deviceToday
+          void refetch()
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', maybeRollover)
+    window.addEventListener('focus', maybeRollover)
+    return () => {
+      document.removeEventListener('visibilitychange', maybeRollover)
+      window.removeEventListener('focus', maybeRollover)
+    }
+  }, [data?.todayLocalDate, refetch])
 
   const { snapshot, programState, productMessage } = useMemo(() => {
     if (data) {

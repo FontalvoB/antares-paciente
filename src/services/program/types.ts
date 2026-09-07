@@ -6,7 +6,7 @@
  * verbatimModuleSyntax: use `import type` for all type imports.
  */
 
-export type TaskCode = 'podcast' | 'vitals' | 'nut' | 'ejercicio' | 'nutribiotico' | 'emocional'
+export type TaskCode = 'podcast' | 'vitals' | 'nut' | 'ejercicio' | 'nutraceutico' | 'emocional'
 
 export type TaskStatus = 'Pending' | 'Completed'
 
@@ -206,6 +206,12 @@ export interface ProgramSnapshotDto {
   calendar: unknown[]
   // Additive fields (R7.1) — optional
   streakChests?: StreakChestDto[] | null
+  /**
+   * Monto base REAL de la regla DAY_BONUS del catálogo (sin multiplicador);
+   * el que compone `todayPointsMax`. 50 cuando la regla no existe/inactiva;
+   * null solo en respuestas previas (R7.1).
+   */
+  dailyBonusAmount?: number | null
 }
 
 export interface ProgramEnrollmentDto {
@@ -306,17 +312,36 @@ export interface HealthScoreDto {
   previous?: number | null
   trend: string
   dimensions?: HealthScoreDimensionsDto | null
+  /**
+   * 5 dimensiones de la fila persistida del período anterior (la misma que
+   * alimenta `previous`); null cuando no hay fila previa o en el primer
+   * cómputo. Aditivo — nunca rompe clientes (R7.1).
+   */
+  dimensions_previous?: HealthScoreDimensionsDto | null
   score?: number
   indicators?: IndicatorDetailDto[] | null
 }
 
 export interface TransformationDetailDto {
-  name: string
   baseline: number
   current: number
   unit: string
   delta: number
-  changePercent?: number | null
+  /**
+   * Wire `delta_pct` (backend IndicatorDetailDto, snake_case): % de cambio
+   * vs línea base. La app NO mapea el payload (scores-service pasa el body
+   * intacto) → el tipo usa el nombre del WIRE, no una variante camelCase
+   * que nunca llega. Aditivo: payloads previos sin él → ausente.
+   */
+  delta_pct?: number | null
+  /**
+   * Direccionalidad normalizada por el backend (additivo): true cuando el
+   * cambio es FAVORABLE para la métrica (peso baja = favorable; glucosa sube
+   * = NO favorable). Sin él (payload previo) no se puede inferir mejora —
+   * los consumidores deben tratar el dato como ausente.
+   */
+  favorable?: boolean | null
+  score?: number | null
 }
 
 export interface TransformationScoreDto {
@@ -336,12 +361,87 @@ export interface ScoresResponseDto {
   transformationScore?: TransformationScoreDto
 }
 
+// --- Scores history (Evo tab, GET /api/v1/program/me/scores-history) ---
+// Contrato FROZEN: ASC por weekNumber, SOLO semanas persistidas (puede ser
+// sparse/corta, ej. 1-2 puntos en la semana 2). Los scores pueden ser null en
+// una semana persistida sin cómputo.
+
+export interface ScoresHistoryPointDto {
+  weekNumber: number
+  periodStart: string | null
+  periodEnd: string
+  healthScore: number | null
+  healthPrevious: number | null
+  transformationScore: number | null
+}
+
+export interface ScoresHistoryDto {
+  points: ScoresHistoryPointDto[]
+}
+
 // --- Nutrition ---
 
 export interface NutritionLogResultDto {
   mealCode: string
   localDate: string
   xpAwarded: number
+}
+
+// --- League (LEAGUE v1, camelCase wire) ---
+
+export type LeagueScope = 'state' | 'national'
+
+export interface LeagueCohortDto {
+  scope: LeagueScope
+  stateCode: string | null
+  participants: number
+  /** ISO-8601: momento (UTC) en que se computó el cohorte. */
+  computedAt: string
+}
+
+export interface LeagueMeDto {
+  optedIn: boolean
+  nickname: string | null
+}
+
+export interface LeagueEntryDto {
+  position: number
+  /** Nickname o código anónimo (2 letras + 4 dígitos, hash determinista). */
+  display: string
+  isMe: boolean
+  value: number
+}
+
+export interface LeagueCategoryDto {
+  /** Top 10 (+ fila propia real si está fuera del top 10). */
+  entries: LeagueEntryDto[]
+  /** null = sin valor en la categoría o sin opt-in. */
+  myRank: number | null
+  myValue: number | null
+  totalParticipants: number
+}
+
+export interface LeagueCategoriesDto {
+  racha: LeagueCategoryDto
+  evo: LeagueCategoryDto
+  adh: LeagueCategoryDto
+  clin: LeagueCategoryDto
+}
+
+export interface LeagueResponseDto {
+  cohort: LeagueCohortDto
+  me: LeagueMeDto
+  categories: LeagueCategoriesDto
+}
+
+export interface LeaguePreferencesInput {
+  nickname: string | null
+  optIn: boolean
+}
+
+export interface LeaguePreferencesDto {
+  optedIn: boolean
+  nickname: string | null
 }
 
 // --- Enrollment request ---
