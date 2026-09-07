@@ -1,4 +1,5 @@
-import { IonIcon } from "@ionic/react";
+import { useEffect, useRef, useState } from "react";
+import { IonButton, IonIcon, IonInput, IonSkeletonText, IonToggle } from "@ionic/react";
 import {
   calendarOutline,
   clipboardOutline,
@@ -9,12 +10,157 @@ import {
   medkit,
   schoolOutline,
 } from "ionicons/icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import { useI18n } from "../i18n/I18nContext";
 import type { Screen as ScreenId } from "../types";
+import { useLeague } from "../hooks/useLeague";
+import { updateLeaguePreferences } from "../services/program/league-service";
+import { programKeys } from "../hooks/queryKeys";
+import { ApiError } from "../utils/apiClient";
+import { isValidNickname } from "../utils/league";
+import type { LeagueResponseDto } from "../services/program/types";
+
+/**
+ * Sección "Liga" del perfil: opt-in + apodo (LEAGUE v1). La verdad de las
+ * preferencias sale del GET league (`me`); el guardado hace PUT y parchea el
+ * cache de la liga (el cohorte no cambia). Errores 400 con mensajes reales
+ * del backend (p.ej. token reservado) se muestran inline vía `errors`.
+ */
+function LeagueSection() {
+  const { league, isLoading, isError, refetch } = useLeague();
+  const queryClient = useQueryClient();
+  const { showToast } = useApp();
+  const t = useT();
+  const [optedIn, setOptedIn] = useState(false);
+  const [nickname, setNickname] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  // Snapshot pre-guardado: si el PUT falla se REVIERTE toggle+input a estos
+  // valores (sin writes al cache, sin verdades a medias).
+  const preSaveRef = useRef<{ optedIn: boolean; nickname: string }>({
+    optedIn: false,
+    nickname: "",
+  });
+
+  // Sincroniza el borrador con la verdad del server cuando llega la liga.
+  useEffect(() => {
+    if (league) {
+      setOptedIn(league.me.optedIn);
+      setNickname(league.me.nickname ?? "");
+      setServerError(null);
+    }
+  }, [league]);
+
+  const trimmed = nickname.trim();
+  const nicknameValid = isValidNickname(trimmed);
+  const canSave = !saving && (!optedIn || nicknameValid);
+
+  async function save() {
+    if (!canSave) return;
+    preSaveRef.current = { optedIn, nickname };
+    setSaving(true);
+    setServerError(null);
+    try {
+      // Opt-out → nickname null SIEMPRE limpia lo almacenado (server).
+      const saved = await updateLeaguePreferences({
+        optIn: optedIn,
+        nickname: optedIn ? trimmed : null,
+      });
+      setOptedIn(saved.optedIn);
+      setNickname(saved.nickname ?? "");
+      // Patch local inmediato (feedback del toggle) + invalidación para que
+      // el refetch traiga entries/isMe/myRank frescos — un paciente recién
+      // opt-in debe aparecer en SU ranking sin esperar el staleTime.
+      queryClient.setQueryData<LeagueResponseDto>(programKeys.league, (old) =>
+        old ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } } : old,
+      );
+      void queryClient.invalidateQueries({ queryKey: programKeys.league });
+      showToast(t("Preferencias guardadas"), "ok");
+    } catch (e) {
+      // Fallo → REVERT al snapshot pre-guardado (no mentir sobre el estado).
+      setOptedIn(preSaveRef.current.optedIn);
+      setNickname(preSaveRef.current.nickname);
+      if (e instanceof ApiError) {
+        // El 400 de validación trae el mensaje real en `errors` (RFC 7807);
+        // passthrough inline. El resto → toast.
+        const first = e.errors ? Object.values(e.errors).flat()[0] : undefined;
+        if (first) setServerError(first);
+        else showToast(e.message, "err");
+      } else {
+        showToast(t("No pudimos guardar tus preferencias."), "err");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="card league-prefs">
+        <IonSkeletonText animated style={{ width: "60%", height: 18 }} />
+        <IonSkeletonText animated style={{ width: "85%", height: 13 }} />
+      </div>
+    );
+  }
+
+  if (isError || !league) {
+    // Degradación honesta: sin datos, la sección queda deshabilitada con
+    // reintento — nunca un toggle "off-unknown" que parezca verdad.
+    return (
+      <div className="card league-prefs">
+        <strong>{t("No pudimos cargar tus preferencias de la Liga.")}</strong>
+        <IonButton fill="clear" size="small" onClick={() => void refetch()}>
+          {t("Reintentar")}
+        </IonButton>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card league-prefs">
+      <div className="league-prefs-row">
+        <div>
+          <strong>{t("Aparecer en la Liga")}</strong>
+          <small>{t("Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.")}</small>
+        </div>
+        <IonToggle
+          checked={optedIn}
+          disabled={saving}
+          onIonChange={(e) => setOptedIn(e.detail.checked)}
+          aria-label={t("Aparecer en la Liga")}
+        />
+      </div>
+      {serverError && <small className="league-prefs-err">{serverError}</small>}
+      {optedIn && (
+        <div className="league-prefs-nick">
+          <IonInput
+            value={nickname}
+            maxlength={32}
+            counter
+            disabled={saving}
+            label={t("Apodo")}
+            labelPlacement="stacked"
+            placeholder={t("Apodo")}
+            onIonInput={(e) => setNickname(String(e.detail.value ?? ""))}
+            className={nickname && !nicknameValid ? "ion-invalid" : undefined}
+          />
+          {nickname && !nicknameValid && (
+            <small className="league-prefs-err">
+              {t("El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.")}
+            </small>
+          )}
+          <IonButton expand="block" className="bt bt-teal" disabled={!canSave} onClick={() => void save()}>
+            {saving ? t("Guardando…") : t("Guardar")}
+          </IonButton>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ProfilePage() {
   const {
@@ -184,6 +330,7 @@ export function ProfilePage() {
         </div>
 
         <div className="sec">{t("Cuenta")}</div>
+        <LeagueSection />
         <div className="group-list" style={{ marginBottom: 20 }}>
           <button type="button" className="group-row" onClick={toggleLang}>
             <span className="group-row-ico">

@@ -20,7 +20,35 @@ import type {
   ProgramCalendarDto,
   ProgramEnrollmentDto,
   EnrollRequest,
+  TaskCode,
 } from './types'
+
+// --- DTO-boundary wire normalization (legacy task-code compat) ---
+
+/**
+ * Normaliza el wire code LEGADO de la tarea nutracéutico: backends antiguos
+ * (y payloads de la cola offline cuando `flush()` exista) pueden emitir
+ * `nutribiotico` — el enum actual es `nutraceutico` (JsonStringEnumConverter,
+ * match exacto). La normalización vive EN LA FRONTERA del servicio para que
+ * hooks/UI/tests solo vean el código canónico.
+ */
+export function normalizeTaskCode(code: string): TaskCode {
+  return code === 'nutribiotico' ? 'nutraceutico' : (code as TaskCode)
+}
+
+/** Aplica la normalización a los todayTasks del snapshot (inmutable, no-op si no hay cambios). */
+export function normalizeSnapshotTasks(snapshot: ProgramSnapshotDto): ProgramSnapshotDto {
+  // El wire legado no pertenece a la unión canónica TaskCode — comparación
+  // contra el literal con cast explícito (fuera de la unión a propósito).
+  const LEGACY_NB_CODE = 'nutribiotico' as TaskCode
+  let changed = false
+  const todayTasks = snapshot.todayTasks.map((task) => {
+    if (task.taskCode !== LEGACY_NB_CODE) return task
+    changed = true
+    return { ...task, taskCode: 'nutraceutico' as TaskCode }
+  })
+  return changed ? { ...snapshot, todayTasks } : snapshot
+}
 
 // --- Calendar range guard (DESIGN §Tipos: rango ≤ 92 días) ---
 
@@ -51,9 +79,10 @@ const MAX_CALENDAR_RANGE_DAYS = 92
  * Server resolves enrollment + patient from JWT. 404 = NO_ACTIVE_ENROLLMENT.
  */
 export async function getSnapshot(): Promise<ProgramSnapshotDto> {
-  return apiFetch<ProgramSnapshotDto>('/api/v1/program/me/snapshot', {
+  const snapshot = await apiFetch<ProgramSnapshotDto>('/api/v1/program/me/snapshot', {
     method: 'GET',
   })
+  return normalizeSnapshotTasks(snapshot)
 }
 
 /**
