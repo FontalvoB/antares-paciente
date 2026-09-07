@@ -13,21 +13,21 @@ import { useT } from '../i18n/I18nContext'
 import {
   CIRCUIT_STEPS,
   DAY_BONUS_PTS,
-  LONGEST_STREAK,
   PODCAST_EPISODE,
   PROGRAM_POINTS_MAX,
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
-  TRANSFORM_ROWS,
 } from '../data/program'
 import type { ProgramDay, ProgramTaskId } from '../types'
 import { weekdayMondayIndex } from '../utils/dates'
 import { deriveLoggedMeals } from '../utils/nutritionProgress'
+import { buildMonthCells } from '../utils/monthCells'
+import { emptyWeekCells, mapWeekCheckins, weekTodayIndex } from '../utils/weekStrip'
 import { EvolutionView } from './program/EvolutionView'
 import {
   EmotionalLesson,
   ExerciseLesson,
-  NutribioticLesson,
+  NutraceuticLesson,
   NutritionLesson,
   PodcastLesson,
   VitalsLesson,
@@ -44,50 +44,9 @@ import { useStreakChests } from '../hooks/useStreakChests'
 import { useCompleteTask, type CelebrateInfo } from '../hooks/useCompleteTask'
 import { useProgramScores } from '../hooks/useProgramScores'
 import { useProgramCalendar } from '../hooks/useProgramCalendar'
-import type { CalendarDayDetailDto, TaskCode, VitalsPayload } from '../services/program/types'
+import type { TaskCode, VitalsPayload } from '../services/program/types'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
-
-function buildMonthCells(calendarDays?: CalendarDayDetailDto[]) {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = now.getMonth()
-  const today = now.getDate()
-  const pad = new Date(y, m, 1).getDay()
-  const last = new Date(y, m + 1, 0).getDate()
-  const milestones = new Set([7, 11, 22])
-
-  const dayMap = new Map<number, CalendarDayDetailDto>()
-  if (calendarDays) {
-    for (const d of calendarDays) {
-      const parts = d.localDate.split('-')
-      if (parts.length === 3) {
-        const dayNum = parseInt(parts[2], 10)
-        dayMap.set(dayNum, d)
-      }
-    }
-  }
-
-  const cells: { d: number | null; kind: string }[] = []
-  for (let i = 0; i < pad; i++) cells.push({ d: null, kind: 'empty' })
-  for (let d = 1; d <= last; d++) {
-    let kind = 'future'
-    const calDay = dayMap.get(d)
-    if (calDay) {
-      if (calDay.isPerfectDay) kind = 'ok'
-      else if (calDay.points > 0) kind = 'partial'
-      else if (d < today) kind = 'partial'
-    } else if (d < today) {
-      kind = d === 10 ? 'partial' : 'ok'
-    } else if (d === today) {
-      kind = 'today'
-    }
-    if (d === today && !kind.includes('today')) kind += ' today'
-    if (milestones.has(d) && d <= today) kind += ' mile'
-    cells.push({ d, kind })
-  }
-  return cells
-}
 
 export function ProgramPage() {
   const {
@@ -112,6 +71,8 @@ export function ProgramPage() {
   const [confetti, setConfetti] = useState<{ id: number; left: number; delay: number; dur: number; color: string }[]>([])
   const [podPlaying, setPodPlaying] = useState(false)
   const [podProgress, setPodProgress] = useState(0)
+  const [audioError, setAudioError] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [exRunning, setExRunning] = useState(false)
   const [exStep, setExStep] = useState(0)
   const [exLeft, setExLeft] = useState(CIRCUIT_STEPS[0].sec)
@@ -129,7 +90,13 @@ export function ProgramPage() {
   } = useProgram()
 
   const completeTaskMutation = useCompleteTask()
-  const { scores, stale: scoresStale } = useProgramScores()
+  const {
+    scores,
+    stale: scoresStale,
+    isLoading: scoresLoading,
+    isError: scoresError,
+    refetch: refetchScores,
+  } = useProgramScores()
   // Chest trail from server truth (catalog defs + ledger grants); falls back
   // to static defs when the backend field is absent (chests module, T8).
   const { chests } = useStreakChests()
@@ -145,6 +112,20 @@ export function ProgramPage() {
   const monthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
   const { data: calendarData } = useProgramCalendar(monthStart, monthEnd)
 
+  // Semana REAL del programa (server): fetch propio por rango — el hook
+  // namespaced la query por from/to. Se gatilla SOLO en la pestaña Racha
+  // (evita un round-trip extra por completación/focus para quien no usa la
+  // franja; el primer cambio de tab dispara el fetch) y sin snapshot (sin
+  // rango) queda deshabilitado.
+  const weekStartLocal = snapshot?.template?.currentWeekStartDateLocal ?? null
+  const weekEndLocal = snapshot?.template?.currentWeekEndDateLocal ?? null
+  const weekRangeReady = Boolean(weekStartLocal && weekEndLocal)
+  const { data: weekCalendarData } = useProgramCalendar(
+    weekStartLocal ?? '',
+    weekEndLocal ?? '',
+    { enabled: weekRangeReady && tab === 'racha' },
+  )
+
   // Derived states from server snapshot with seamless fallback to AppContext/constants
   const program: ProgramDay = useMemo(() => {
     if (snapshot?.todayTasks && snapshot.todayTasks.length > 0) {
@@ -157,7 +138,7 @@ export function ProgramPage() {
         vitals: Boolean(taskMap.vitals),
         nut: Boolean(taskMap.nut),
         ejercicio: Boolean(taskMap.ejercicio),
-        nutribiotico: Boolean(taskMap.nutribiotico),
+        nutraceutico: Boolean(taskMap.nutraceutico),
         emocional: Boolean(taskMap.emocional),
       }
     }
@@ -165,35 +146,94 @@ export function ProgramPage() {
   }, [snapshot, appProgram])
 
   const activeStreak = snapshot?.streak?.current ?? appStreak
-  const activeStreakLongest = snapshot?.streak?.longest ?? LONGEST_STREAK
+  // Máxima racha REAL del server; null sin snapshot → el chip "Máxima" no se
+  // renderiza (nada inventado).
+  const activeStreakLongest = snapshot?.streak?.longest ?? null
   const activeFreezes = snapshot?.streak?.freezesRemaining ?? 0
   const activePointsToday = snapshot?.todayPoints ?? appPointsToday
   const activeProgramWeek = snapshot?.template?.currentWeekNumber ?? appProgramWeek
   const activeTotalWeeks = snapshot?.template?.totalWeeks ?? PROGRAM_WEEKS
   const weekPct = activeTotalWeeks > 0 ? activeProgramWeek / activeTotalWeeks : 0
 
-  const activeWeekCheckins = useMemo(() => {
-    if (snapshot?.calendar && Array.isArray(snapshot.calendar) && snapshot.calendar.length > 0) {
-      return (snapshot.calendar as Array<{ status: string; weekday: number }>).map((c) => c.status === 'Completed')
-    }
-    return weekCheckins
-  }, [snapshot, weekCheckins])
-
-  const doneCount = PROGRAM_TASKS.filter((pt) => program[pt.id]).length
-  const allDone = doneCount === PROGRAM_TASKS.length
-  const currentId = PROGRAM_TASKS.find((pt) => !program[pt.id])?.id
+  // Índice device (lunes-primero): fallback del marcador de HOY cuando las
+  // fechas del server no están o caen fuera de la semana.
   const todayIdx = weekdayMondayIndex()
+
+  // Franja "Esta semana" resuelta por el SERVIDOR: celdas de la semana del
+  // programa indexadas por weekday ISO (mapWeekCheckins). Con snapshot pero
+  // SIN celdas (error de negocio 4xx re-lanzado por R5.2, o mock transport)
+  // → 7 celdas nodata (done:false, hasData:false) — NUNCA el arreglo demo
+  // verde. El arreglo device legado (weekCheckins) se usa SOLO en el flujo
+  // demo sin snapshot (null).
+  const weekStrip = useMemo(() => {
+    if (!snapshot) return null
+    if (!weekCalendarData?.days) return emptyWeekCells()
+    return mapWeekCheckins(weekCalendarData.days, weekStartLocal, weekEndLocal)
+  }, [snapshot, weekCalendarData, weekStartLocal, weekEndLocal])
+
+  // Marcador de HOY de la franja: derivado de las fechas del server; sin
+  // fechas o fuera de rango → marcador device (lunes-primero) documentado.
+  const stripTodayIdx = useMemo(
+    () => weekTodayIndex(weekStartLocal, snapshot?.todayLocalDate ?? null) ?? todayIdx,
+    [weekStartLocal, snapshot, todayIdx],
+  )
+
+  // Progreso del día compartido por el ring, "Día perfecto" y el cofre
+  // (Task 4): con snapshot se cuenta sobre la lista SERVER (status
+  // Completed); sin snapshot se cae a la derivación local del plan.
+  const progress = useMemo(() => {
+    const serverCount = snapshot?.todayTasks?.length
+    if (serverCount) {
+      const serverDone = snapshot.todayTasks.filter((t) => t.status === 'Completed').length
+      return {
+        doneCount: serverDone,
+        total: serverCount,
+        allDone: serverDone === serverCount,
+      }
+    }
+    const localDone = PROGRAM_TASKS.filter((pt) => program[pt.id]).length
+    return {
+      doneCount: localDone,
+      total: PROGRAM_TASKS.length,
+      allDone: localDone === PROGRAM_TASKS.length,
+    }
+  }, [snapshot, program])
+  const { doneCount, allDone } = progress
+  const currentId = PROGRAM_TASKS.find((pt) => !program[pt.id])?.id
   const task = useMemo(() => PROGRAM_TASKS.find((pt) => pt.id === active) ?? null, [active])
   const serverActiveTask = useMemo(
     () => snapshot?.todayTasks?.find((t) => t.taskCode === active) ?? null,
     [snapshot, active],
   )
   const taskTitle = serverActiveTask?.title || (task ? t(task.title) : '')
-  const taskHint = serverActiveTask?.short || (task ? t(task.hint) : '')
+  const taskHint = useMemo(() => {
+    if (active === 'podcast' && serverActiveTask?.content?.title) {
+      const durationMin = serverActiveTask.content.durationSecs
+        ? Math.round(serverActiveTask.content.durationSecs / 60)
+        : null
+      return durationMin
+        ? `${serverActiveTask.content.title} · ${durationMin} min`
+        : serverActiveTask.content.title
+    }
+    return serverActiveTask?.short || (task ? t(task.hint) : '')
+  }, [active, serverActiveTask, task, t])
   const taskPts = serverActiveTask?.points ?? task?.pts ?? 0
 
   const first = user.nombre.split(' ')[0]
-  const cells = useMemo(() => buildMonthCells(calendarData?.days), [calendarData])
+  // Mapa mensual: verdad del server (nunca inventa días 'ok'); el marcador de
+  // hoy usa snapshot.todayLocalDate cuando aplica al mes.
+  const monthYear = now.getFullYear()
+  const monthIndex = now.getMonth()
+  const cells = useMemo(
+    () =>
+      buildMonthCells({
+        year: monthYear,
+        month: monthIndex,
+        days: calendarData?.days,
+        serverTodayIso: snapshot?.todayLocalDate ?? null,
+      }),
+    [calendarData, snapshot, monthYear, monthIndex],
+  )
   // Read-only clinical chest progress from real scores (chests module, T9).
   const clinicalChests = useClinicalChests(scores, activeProgramWeek)
 
@@ -263,10 +303,14 @@ export function ProgramPage() {
       // Also update local AppContext for fallback continuity
       completeStep(id, pts)
 
-      const willComplete = doneCount + 1 === PROGRAM_TASKS.length
-      showToast(willComplete ? `${msg} · ${t('Bonus +{pts}', { pts: String(DAY_BONUS_PTS) })}` : msg, 'ok')
-      burst(willComplete ? pts + DAY_BONUS_PTS : pts, willComplete)
-      if (id === 'nutribiotico') {
+      const willComplete = progress.doneCount + 1 === progress.total
+      // El monto del bonus sale del snapshot (regla DAY_BONUS real) para que
+      // el toast/burst coincida con la tarjeta del cofre; DAY_BONUS_PTS solo
+      // como fallback local.
+      const bonusPts = snapshot?.dailyBonusAmount ?? DAY_BONUS_PTS
+      showToast(willComplete ? `${msg} · ${t('Bonus +{pts}', { pts: String(bonusPts) })}` : msg, 'ok')
+      burst(willComplete ? pts + bonusPts : pts, willComplete)
+      if (id === 'nutraceutico') {
         const n = new Date()
         setTakenAt(
           n.toLocaleTimeString('es-ES', { hour: 'numeric', minute: '2-digit' }),
@@ -274,7 +318,7 @@ export function ProgramPage() {
       }
       setActive(null)
     },
-    [program, completeTaskMutation, completeStep, doneCount, showToast, t],
+    [program, completeTaskMutation, completeStep, progress, snapshot, showToast, t],
   )
 
   const exContent = snapshot?.todayTasks?.find((t) => t.taskCode === 'ejercicio')?.content
@@ -310,8 +354,100 @@ export function ProgramPage() {
     prevAll.current = allDone
   }, [allDone])
 
+  // Stop audio and reset playing state when closing the task sheet or switching away from podcast
   useEffect(() => {
-    if (!podPlaying) return
+    if (active !== 'podcast' && audioRef.current) {
+      audioRef.current.pause()
+      setPodPlaying(false)
+    }
+  }, [active])
+
+  // Cleanup audio element on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+        audioRef.current = null
+      }
+    }
+  }, [])
+
+  const handleTogglePodcast = useCallback(() => {
+    const mediaUrl = serverActiveTask?.content?.mediaUrl
+    setAudioError(null)
+
+    if (mediaUrl) {
+      // If we don't have an audio instance or the source changed, initialize it
+      if (!audioRef.current || audioRef.current.src !== mediaUrl) {
+        if (audioRef.current) {
+          audioRef.current.pause()
+        }
+        const audio = new Audio(mediaUrl)
+        audio.ontimeupdate = () => {
+          if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
+            setPodProgress(audio.currentTime / audio.duration)
+          }
+        }
+        audio.onended = () => {
+          setPodPlaying(false)
+          setPodProgress(1)
+        }
+        audio.onpause = () => setPodPlaying(false)
+        audio.onplay = () => setPodPlaying(true)
+        audio.onerror = (e) => {
+          console.error('Audio playback error', e)
+          setPodPlaying(false)
+          setAudioError(t('No se pudo reproducir el archivo de audio.'))
+        }
+        audioRef.current = audio
+      }
+
+      if (podPlaying) {
+        audioRef.current.pause()
+      } else {
+        if (podProgress >= 1 && audioRef.current) {
+          audioRef.current.currentTime = 0
+        }
+        audioRef.current.play().catch((err) => {
+          console.error('Failed to play podcast audio', err)
+          setPodPlaying(false)
+          setAudioError(t('Error al iniciar la reproducción de audio.'))
+        })
+      }
+    } else {
+      // Simulated playback fallback when offline or no mediaUrl
+      setPodPlaying((v) => !v)
+    }
+  }, [serverActiveTask?.content?.mediaUrl, podPlaying, podProgress, t])
+
+  const handleSkipPodcast = useCallback(
+    (delta: number) => {
+      const mediaUrl = serverActiveTask?.content?.mediaUrl
+      const duration = serverActiveTask?.content?.durationSecs || PODCAST_EPISODE.durationSec
+
+      if (audioRef.current && mediaUrl) {
+        const current = audioRef.current.currentTime
+        const total =
+          audioRef.current.duration && Number.isFinite(audioRef.current.duration) && audioRef.current.duration > 0
+            ? audioRef.current.duration
+            : duration
+        const target = Math.max(0, Math.min(total, current + delta))
+        audioRef.current.currentTime = target
+        if (total > 0) {
+          setPodProgress(target / total)
+        }
+      } else {
+        setPodProgress((p) => Math.min(1, Math.max(0, p + delta / duration)))
+      }
+    },
+    [serverActiveTask?.content?.mediaUrl, serverActiveTask?.content?.durationSecs],
+  )
+
+  // Fallback timer when playing without mediaUrl (e.g. offline mock)
+  useEffect(() => {
+    if (!podPlaying || serverActiveTask?.content?.mediaUrl) return
+    const dur = serverActiveTask?.content?.durationSecs || PODCAST_EPISODE.durationSec
     const id = window.setInterval(() => {
       setPodProgress((p) => {
         if (p >= 1) {
@@ -319,11 +455,11 @@ export function ProgramPage() {
           setPodPlaying(false)
           return 1
         }
-        return Math.min(1, p + 1 / 24)
+        return Math.min(1, p + 1 / (dur || 24))
       })
-    }, 220)
+    }, 1000)
     return () => window.clearInterval(id)
-  }, [podPlaying])
+  }, [podPlaying, serverActiveTask?.content?.mediaUrl, serverActiveTask?.content?.durationSecs])
 
   useEffect(() => {
     if (!exRunning) return
@@ -378,7 +514,7 @@ export function ProgramPage() {
         <ProgramHeader
           programWeek={activeProgramWeek}
           doneCount={doneCount}
-          total={PROGRAM_TASKS.length}
+          total={progress.total}
           allDone={allDone}
           pointsToday={activePointsToday}
           pointsMax={snapshot?.todayPointsMax ?? PROGRAM_POINTS_MAX}
@@ -402,6 +538,12 @@ export function ProgramPage() {
                 programWeek={activeProgramWeek}
                 todayIdx={todayIdx}
                 takenAt={takenAt}
+                nbWeekDays={snapshot?.streak?.nbWeekDays}
+                weekStartDateLocal={snapshot?.template?.currentWeekStartDateLocal}
+                todayLocalDate={snapshot?.todayLocalDate}
+                dailyBonusAmount={snapshot?.dailyBonusAmount}
+                todayBonusAvailable={snapshot?.todayBonusAvailable}
+                scores={scores}
                 onOpenTask={setActive}
                 onGoEvo={() => setTab('evo')}
                 onGoChat={() => navigate('chat')}
@@ -412,8 +554,9 @@ export function ProgramPage() {
                 streak={activeStreak}
                 longestStreak={activeStreakLongest}
                 freezesRemaining={activeFreezes}
-                weekCheckins={activeWeekCheckins}
-                todayIdx={todayIdx}
+                weekCheckins={weekCheckins}
+                weekCells={weekStrip}
+                todayIdx={stripTodayIdx}
                 cells={cells}
                 weekPct={weekPct}
                 programWeek={activeProgramWeek}
@@ -422,24 +565,20 @@ export function ProgramPage() {
                 clinicalChests={clinicalChests}
                 nbStreak={snapshot?.streak?.nbStreak ?? 0}
                 nbNextMilestone={snapshot?.streak?.nbNextMilestone ?? null}
+                multiplierActive={snapshot?.streak?.multiplierActive}
+                multiplierRemainingHours={snapshot?.streak?.multiplierRemainingHours}
               />
             )}
             {tab === 'liga' && (
-              <RankingView
-                user={{
-                  name: user.nombre,
-                  streak: activeStreak,
-                  evo: scores?.transformation_score?.current ?? scores?.transformationScore?.current ?? scores?.transformationScore?.score ?? 27,
-                  adh: scores?.health_score?.dimensions?.adherence ?? scores?.healthScore?.dimensions?.adherence ?? 88,
-                  rec: scores?.health_score?.dimensions?.clinical ?? scores?.healthScore?.dimensions?.clinical ?? 74,
-                  city: user.ciudad || 'Miami',
-                }}
-              />
+              <RankingView />
             )}
             {tab === 'evo' && (
               <EvolutionView
                 scores={scores}
                 stale={scoresStale}
+                scoresLoading={scoresLoading}
+                scoresError={scoresError}
+                onRetryScores={() => void refetchScores()}
                 onGoBook={() => navigate('book')}
               />
             )}
@@ -480,12 +619,14 @@ export function ProgramPage() {
                   author={serverActiveTask?.content?.author}
                   description={serverActiveTask?.content?.description}
                   durationSecs={serverActiveTask?.content?.durationSecs}
+                  mediaUrl={serverActiveTask?.content?.mediaUrl}
+                  audioError={audioError}
                   chapters={serverActiveTask?.content?.chapters}
                   takeaways={serverActiveTask?.content?.takeaways}
                   playing={podPlaying}
                   progress={podProgress}
-                  onToggle={() => setPodPlaying((v) => !v)}
-                  onSkip={(d) => setPodProgress((p) => Math.min(1, Math.max(0, p + d / (serverActiveTask?.content?.durationSecs || PODCAST_EPISODE.durationSec))))}
+                  onToggle={handleTogglePodcast}
+                  onSkip={handleSkipPodcast}
                   onComplete={() => finish('podcast', taskPts, t('Podcast escuchado · +{pts} pts', { pts: String(taskPts) }))}
                 />
               )}
@@ -535,15 +676,15 @@ export function ProgramPage() {
                   onComplete={() => finish('ejercicio', taskPts, t('Ejercicio del día · +{pts} pts', { pts: String(taskPts) }))}
                 />
               )}
-              {task.id === 'nutribiotico' && (
-                <NutribioticLesson
-                  done={program.nutribiotico}
+              {task.id === 'nutraceutico' && (
+                <NutraceuticLesson
+                  done={program.nutraceutico}
                   pts={taskPts}
                   takenAt={takenAt}
                   slot={nutriSlot}
                   nbWeekDays={snapshot?.streak?.nbWeekDays}
                   onSlot={setNutriSlot}
-                  onComplete={() => finish('nutribiotico', taskPts, t('Nutribiótico registrado · +{pts} pts', { pts: String(taskPts) }))}
+                  onComplete={() => finish('nutraceutico', taskPts, t('Nutracéutico registrado · +{pts} pts', { pts: String(taskPts) }))}
                 />
               )}
               {task.id === 'emocional' && (
@@ -586,18 +727,19 @@ export function ProgramPage() {
                     <b>+{activePointsToday}</b>
                     <span>{t('pts hoy')}</span>
                   </div>
-                  <div>
-                    <b>x2 · 24h</b>
-                    <span>{t('próximo hito')}</span>
-                  </div>
-                </div>
-                <div className="ms-evo-mini">
-                  {TRANSFORM_ROWS.slice(0, 4).map((r) => (
-                    <div key={r.label}>
-                      <span>{t(r.label)}</span>
-                      <strong>{r.delta}</strong>
+                  {/* Multiplicador SOLO con el dato real del snapshot; un `x2 ·
+                      24h` fijo fabricaba un bonus que puede estar inactivo. */}
+                  {(snapshot?.streak?.multiplierActive ?? 0) > 1 && (
+                    <div>
+                      <b>
+                        {t('x{multiplier} · {hours}h', {
+                          multiplier: String(snapshot?.streak?.multiplierActive),
+                          hours: String(Math.ceil(snapshot?.streak?.multiplierRemainingHours ?? 0)),
+                        })}
+                      </b>
+                      <span>{t('próximo hito')}</span>
                     </div>
-                  ))}
+                  )}
                 </div>
                 <IonButton expand="block" className="bt bt-primary" onClick={() => setCelebrate(false)}>
                   {t('Seguir transformándome')}

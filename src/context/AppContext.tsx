@@ -267,7 +267,7 @@ export function AppProvider({
     vitals: false,
     nut: false,
     ejercicio: false,
-    nutribiotico: false,
+    nutraceutico: false,
     emocional: false,
   });
   // TODO: Remove after full migration

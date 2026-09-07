@@ -26,16 +26,16 @@ import {
   BARRIER_REPLY,
   CIRCUIT_STEPS,
   EMOTION_FACES,
-  NB_WEEK_SEED,
   PODCAST_EPISODE,
   TODAY_PLAN,
   VITAL_FIELDS,
   WEEK_BARRIERS,
   WEEK_LABELS,
 } from '../../data/program'
-import { weekdayMondayIndex } from '../../utils/dates'
+import { formatDateForDisplay, toLocalISODate, weekdayMondayIndex } from '../../utils/dates'
+import { resolveNbDayOk } from '../../utils/nbWeekDays'
 import { mealTypeToCode } from '../../utils/mealTypeToCode'
-import { useT } from '../../i18n/I18nContext'
+import { useI18n, useT } from '../../i18n/I18nContext'
 
 function mmss(sec: number) {
   const s = Math.max(0, Math.floor(sec))
@@ -74,6 +74,8 @@ export function PodcastLesson({
   author,
   description,
   durationSecs,
+  mediaUrl,
+  audioError,
   chapters,
   takeaways,
   playing,
@@ -88,6 +90,8 @@ export function PodcastLesson({
   author?: string | null
   description?: string | null
   durationSecs?: number | null
+  mediaUrl?: string | null
+  audioError?: string | null
   chapters?: PodcastChapterDto[] | null
   takeaways?: string[] | null
   playing: boolean
@@ -136,7 +140,18 @@ export function PodcastLesson({
         <span>
           {podHost} · {t(podBlurb)}
         </span>
+        {mediaUrl && (
+          <span className="pod-stream-badge text-[10px] opacity-75">
+            ● {t('Audio en streaming')}
+          </span>
+        )}
       </div>
+
+      {audioError && (
+        <div className="pod-error text-xs text-red-500 text-center py-1">
+          {audioError}
+        </div>
+      )}
 
       <div className="pod-transport">
         <IonButton fill="clear" aria-label={t('Retroceder 15 segundos')} onClick={() => onSkip(-15)} disabled={done}>
@@ -194,11 +209,10 @@ export function VitalsLesson({
   onConnectWatch: () => void
   onComplete: (vitals: VitalsPayload) => void
 }) {
-  const t = useT()
+  const { t, lang } = useI18n()
   const [vals, setVals] = useState<Record<string, string>>({})
   const [syncing, setSyncing] = useState(false)
   const syncRef = useRef<number | null>(null)
-  const filled = VITAL_FIELDS.filter((f) => (vals[f.id] ?? '').trim()).length
 
   const lastRecorded = useMemo<Record<string, string>>(() => {
     if (!recentVitals) return {}
@@ -211,6 +225,30 @@ export function VitalsLesson({
     if (recentVitals.temperatureC) res.temp = String(recentVitals.temperatureC)
     return res
   }, [recentVitals])
+
+  /**
+   * Completed view (done === true): display the recorded values. Prefer what
+   * the user typed this session (`vals`), then the snapshot's `recentVitals`
+   * (`lastRecorded`). Never fall back to demo constants in the completed
+   * state — a field without a recorded value renders empty ("—" placeholder).
+   * Pending flow keeps the raw typed value only.
+   */
+  const displayVal = (fieldId: string): string =>
+    done ? vals[fieldId] ?? lastRecorded[fieldId] ?? '' : vals[fieldId] ?? ''
+
+  const filled = VITAL_FIELDS.filter((f) => displayVal(f.id).trim()).length
+
+  /** Footer stamp with the real recordedAt from the snapshot (completed view). */
+  const recordedStamp = useMemo(() => {
+    if (!done || !recentVitals?.recordedAt) return null
+    const dt = new Date(recentVitals.recordedAt)
+    if (Number.isNaN(dt.getTime())) return null
+    const locale = lang === 'en' ? 'en-US' : 'es-ES'
+    const time = dt.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
+    return toLocalISODate(dt) === toLocalISODate()
+      ? t('Registrado hoy · {time}', { time })
+      : t('Registrado {date} · {time}', { date: formatDateForDisplay(toLocalISODate(dt)), time })
+  }, [done, recentVitals, lang, t])
 
   /**
    * Build the wire `VitalsPayload` from the six collected `VITAL_FIELDS`
@@ -295,7 +333,7 @@ export function VitalsLesson({
         <p>{t('Compara con mediciones anteriores. La tendencia importa más que un solo número.')}</p>
       </section>
 
-      {watchConnected ? (
+      {!done && (watchConnected ? (
         <button type="button" className="vt-sync" onClick={sync} disabled={done || syncing}>
           <span className={`vt-sync-orb ${syncing ? 'on' : ''}`}>
             {syncing ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}
@@ -315,11 +353,11 @@ export function VitalsLesson({
             <small>{t('Autollenar FC, SpO2, presión y peso')}</small>
           </span>
         </button>
-      )}
+      ))}
 
       <div className="vt-grid">
         {VITAL_FIELDS.map((f) => {
-          const v = vals[f.id] ?? ''
+          const v = displayVal(f.id)
           const n = vitalNumber(v)
           const st = vitalStatus(v, f.lo, f.hi, t)
           const span = f.hi - f.lo || 1
@@ -349,12 +387,18 @@ export function VitalsLesson({
               </div>
               <footer>
                 <span className={st.cls || undefined}>{st.label}</span>
-                <span>{lastRecorded[f.id] ? `${t('Último')} ${priorVal}` : `${t('Ayer')} ${priorVal}`}</span>
+                {done ? (
+                  <span className="vt-hint">{t(f.hint)}</span>
+                ) : (
+                  <span>{lastRecorded[f.id] ? `${t('Último')} ${priorVal}` : `${t('Ayer')} ${priorVal}`}</span>
+                )}
               </footer>
             </article>
           )
         })}
       </div>
+
+      {recordedStamp && <div className="vt-stamp">{recordedStamp}</div>}
 
       {!done && (
         <IonButton expand="block" className="bt bt-primary" disabled={filled < 4} onClick={() => onComplete(buildVitalsPayload())}>
@@ -605,7 +649,7 @@ export function ExerciseLesson({
   )
 }
 
-export function NutribioticLesson({
+export function NutraceuticLesson({
   done,
   pts,
   takenAt,
@@ -627,7 +671,7 @@ export function NutribioticLesson({
   return (
     <div className="lsn-stack">
       <div className="nb-card">
-        <div className="nb-title">{t('¿Ya tomaste tu Nutribiótico?')}</div>
+        <div className="nb-title">{t('¿Ya tomaste tu Nutracéutico?')}</div>
         <div className="nb-sub">{done ? t('Registrado · {takenAt}', { takenAt }) : t('Producto ADRED · 1 cápsula con el desayuno')}</div>
         <IonSegment value={slot} onIonChange={(e) => onSlot(String(e.detail.value))} disabled={done}>
           <IonSegmentButton value="manana">{t('Mañana')}</IonSegmentButton>
@@ -636,10 +680,13 @@ export function NutribioticLesson({
         </IonSegment>
         <div className="nb-streak">
           {WEEK_LABELS.map((d, i) => {
+            // Misma resolución que la franja de la vista Hoy (resolveNbDayOk):
+            // verdad del servidor cuando `nbWeekDays` viene (7 ítems), con el
+            // estado optimista local ganando solo para hoy; sin arreglo cae a
+            // la derivación local legada (pasado ok · futuro no) — sin datos
+            // demo NB_WEEK_SEED.
             const isToday = i === todayIdx
-            const ok = nbWeekDays && nbWeekDays.length === 7
-              ? (isToday ? done || nbWeekDays[i] : nbWeekDays[i])
-              : (isToday ? done : NB_WEEK_SEED[i])
+            const ok = resolveNbDayOk(i, todayIdx, nbWeekDays, done)
             return (
               <div key={d} className={`nb-day ${ok ? 'ok' : 'no'} ${isToday ? 'today' : ''}`}>
                 {d}

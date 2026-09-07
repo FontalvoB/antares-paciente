@@ -1,12 +1,11 @@
 import { IonIcon, IonProgressBar } from '@ionic/react'
 import { motion } from 'framer-motion'
 import type { CSSProperties } from 'react'
-import { flame, shieldCheckmark, trophy } from 'ionicons/icons'
+import { flame, flash, shieldCheckmark, trophy } from 'ionicons/icons'
 import { NB_STREAK_DEFS } from '../../data/chests'
 import { useI18n } from '../../i18n/I18nContext'
 import {
   CAL_DAY_LABELS,
-  LONGEST_STREAK,
   PROGRAM_WEEKS,
   WEEK_LABELS,
 } from '../../data/program'
@@ -14,12 +13,14 @@ import { ClinicalChestCard, NextChestGoal, StreakChestsTrail } from './ChestsPan
 import { CountUp } from './visuals'
 import type { StreakChestDto, NbNextMilestoneDto } from '../../services/program/types'
 import type { ClinicalChestView } from '../../hooks/useClinicalChests'
+import type { WeekStripCell } from '../../utils/weekStrip'
 
 export function StreakView({
   streak,
-  longestStreak = LONGEST_STREAK,
+  longestStreak,
   freezesRemaining = 1,
   weekCheckins,
+  weekCells,
   todayIdx,
   cells,
   weekPct,
@@ -29,11 +30,17 @@ export function StreakView({
   clinicalChests,
   nbStreak,
   nbNextMilestone,
+  multiplierActive,
+  multiplierRemainingHours,
 }: {
   streak: number
-  longestStreak?: number
+  /** Máxima racha REAL (server); null → sin chip (nada inventado). */
+  longestStreak?: number | null
   freezesRemaining?: number
+  /** Fallback legado (device behavior) cuando no hay celdas del servidor. */
   weekCheckins: boolean[]
+  /** Celdas de la semana del PROGRAMA resueltas por el server (7 ítems). */
+  weekCells?: WeekStripCell[] | null
   todayIdx: number
   cells: { d: number | null; kind: string }[]
   weekPct: number
@@ -43,10 +50,14 @@ export function StreakView({
   chests: StreakChestDto[]
   /** Clinical chests: read-only progress resolved from scores. */
   clinicalChests: ClinicalChestView[]
-  /** Nutribiótico streak (per-run): earns NB chests when >= def.days. */
+  /** Nutracéutico streak (per-run): earns NB chests when >= def.days. */
   nbStreak: number
   /** Server-computed next NB milestone (takes precedence when present). */
   nbNextMilestone?: NbNextMilestoneDto | null
+  /** Multiplicador de XP activo (1.0 = inactivo; 2.0 = x2). */
+  multiplierActive?: number
+  /** Horas restantes del multiplicador (server). */
+  multiplierRemainingHours?: number
 }) {
   const { lang, t } = useI18n()
   const monthRaw = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' })
@@ -81,25 +92,37 @@ export function StreakView({
         <div className="pg-streak-lbl">{t('días seguidos')}</div>
         <p className="pg-streak-copy">{t('Cada día completo protege el fuego. No lo dejes apagar.')}</p>
         <div className="pg-streak-chips">
-          <span>
-            <IonIcon icon={trophy} /> {t('Máxima')} {longestStreak}
-          </span>
+          {longestStreak != null && (
+            <span>
+              <IonIcon icon={trophy} /> {t('Máxima')} {longestStreak}
+            </span>
+          )}
           <span>
             <IonIcon icon={shieldCheckmark} /> {freezesRemaining} {t('rescate(s)')}
           </span>
+          {multiplierActive != null && multiplierActive > 1 && (
+            <span className="xp-multiplier">
+              <IonIcon icon={flash} /> x{multiplierActive} XP
+              {multiplierRemainingHours != null && ` · ${t('quedan {h} h', { h: String(Math.ceil(multiplierRemainingHours)) })}`}
+            </span>
+          )}
         </div>
       </motion.section>
 
       <div className="pg-week-card">
         <div className="pg-week-lbl">{t('Esta semana')}</div>
         <div className="pg-week">
+          {/* Las semanas del programa arrancan en lunes (lógica de inscripción);
+              las celdas ya vienen indexadas por weekday ISO 1=lunes..7=domingo. */}
           {WEEK_LABELS.map((label, i) => {
-            const done = weekCheckins[i]
+            const cell = weekCells?.[i]
+            // Sin celdas del servidor → fallback legado (boolean[] device).
+            const done = cell ? cell.done : Boolean(weekCheckins[i])
             const isToday = i === todayIdx
             return (
               <motion.div
                 key={label}
-                className={`pg-week-day ${done ? 'done' : ''} ${isToday ? 'today' : ''}`}
+                className={`pg-week-day ${done ? 'done' : ''} ${cell && !cell.hasData ? 'nodata' : ''} ${isToday ? 'today' : ''}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 + i * 0.05, duration: 0.3 }}
@@ -149,10 +172,10 @@ export function StreakView({
             <i className="partial" /> {t('Parcial')}
           </span>
           <span>
-            <i className="today" /> {t('Hoy')}
+            <i className="missed" /> {t('Perdido')}
           </span>
           <span>
-            <i className="mile" /> {t('Hito')}
+            <i className="today" /> {t('Hoy')}
           </span>
         </div>
       </div>
@@ -168,8 +191,8 @@ export function StreakView({
         />
       )}
 
-      <div className="stitle">{t('Cofres de nutribiótico')}</div>
-      <p className="cx-lead">{t('Cada corrida constante de nutribiótico desbloquea su propio premio.')}</p>
+      <div className="stitle">{t('Cofres de nutracéutico')}</div>
+      <p className="cx-lead">{t('Cada corrida constante de nutracéutico desbloquea su propio premio.')}</p>
       <StreakChestsTrail chests={nbChests} streak={nbStreak} />
       {nextNb && <NextChestGoal days={nextNb.days} xp={nextNb.xp} streak={nbStreak} />}
 
