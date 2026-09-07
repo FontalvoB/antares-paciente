@@ -2522,10 +2522,6 @@ button.hpill:active {
   box-shadow: 0 0 0 2px var(--ice);
   animation: calGlow 2s ease-in-out infinite;
 }
-.cal-cell.mile::after {
-  content: "🏆";
-  font-size: 8px;
-}
 @keyframes calGlow {
   50% {
     box-shadow:
@@ -2718,6 +2714,30 @@ button.hpill:active {
   font-size: 10px;
   font-weight: 800;
   color: var(--teal);
+}
+/* Evo rework: tono del delta según `favorable` del backend (formato puro en
+   src/utils/formatTransformDelta.ts). neutral = payload sin el campo aditivo:
+   delta crudo firmado, SIN afirmación de color. */
+.tf-delta.fav {
+  color: var(--teal);
+}
+.tf-delta.unfav {
+  color: var(--red);
+}
+.tf-delta.neutral {
+  color: var(--mu);
+}
+/* Estado requires-data (Evo rework): nota muda consistente con el patrón
+   ClinicalChestCard — nunca barras/números fabricados. */
+.tf-reqdata {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--g0);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--mu);
 }
 
 .wk-card {
@@ -3024,22 +3044,6 @@ button.hpill:active {
 .ms-mini span {
   font-size: 10px;
   color: var(--mu);
-}
-.ms-evo-mini {
-  text-align: left;
-  background: var(--g0);
-  border-radius: 12px;
-  padding: 10px 12px;
-  margin-bottom: 14px;
-}
-.ms-evo-mini div {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  padding: 4px 0;
-}
-.ms-evo-mini strong {
-  color: var(--teal-d);
 }
 
 .xp-pop {
@@ -7418,6 +7422,17 @@ ion-button.login-first-method:focus-visible {
   color: var(--org);
   background: var(--org-l);
 }
+.pg-week-day.nodata {
+  opacity: 0.45;
+}
+.pg-streak-chips .xp-multiplier {
+  background: rgba(212, 175, 55, 0.14);
+  border-color: rgba(212, 175, 55, 0.35);
+  color: #ffd977;
+}
+.pg-streak-chips .xp-multiplier ion-icon {
+  color: #ffd977;
+}
 
 .pg-cal-card {
   overflow: hidden;
@@ -7507,6 +7522,9 @@ ion-button.login-first-method:focus-visible {
 .pg-evo-kpis .up {
   color: var(--teal);
 }
+.pg-evo-kpis .down {
+  color: var(--red);
+}
 .pg-pillars .hs-bar-track {
   height: 7px;
   border-radius: 99px;
@@ -7535,6 +7553,16 @@ ion-button.login-first-method:focus-visible {
 }
 .pg-trend-chip ion-icon {
   font-size: 14px;
+}
+/* Evo rework: estado vacío honesto de la trend card (sin semanas suficientes
+   o endpoint 404 en backend sin desplegar) — nunca un chart fabricado. */
+.pg-trend-empty {
+  padding: 20px 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--mu);
 }
 .pg-spark {
   width: 100%;
@@ -8123,6 +8151,17 @@ ion-input.vt-input.has-focus {
 .vt-tile footer .warn {
   color: var(--org);
 }
+.vt-tile footer .vt-hint {
+  font-weight: 600;
+  opacity: 0.75;
+}
+.vt-stamp {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+  padding: 2px 0 10px;
+}
 
 .pg-cal-v2 {
   background: #fff;
@@ -8211,6 +8250,18 @@ ion-input.vt-input.has-focus {
   color: var(--tx);
   box-shadow: 0 4px 0 #d9c4a8;
 }
+.pg-cal-orb.missed {
+  background: var(--g2);
+  color: var(--mu);
+  opacity: 0.85;
+  box-shadow: 0 4px 0 rgba(16, 42, 80, 0.18);
+  text-decoration: line-through;
+}
+.pg-cal-orb.nodata {
+  background: var(--g1);
+  color: var(--mu);
+  opacity: 0.45;
+}
 .pg-cal-orb.today {
   background: #fff;
   color: var(--org);
@@ -8223,16 +8274,13 @@ ion-input.vt-input.has-focus {
   background: linear-gradient(180deg, #ff9a4a, var(--org));
   color: #fff;
 }
-.pg-cal-orb.mile::after {
-  content: "";
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff6b5, #d4af37 55%, #8b6914);
-  box-shadow: 0 1px 3px rgba(16, 42, 80, 0.25);
+.pg-cal-orb.missed.today,
+.pg-cal-orb.nodata.today {
+  background: #fff;
+  color: var(--mu);
+  box-shadow:
+    0 0 0 3px var(--org),
+    0 6px 14px rgba(232, 123, 43, 0.28);
 }
 .pg-cal-orb:not(:disabled):active {
   transform: translateY(2px);
@@ -8271,12 +8319,13 @@ ion-input.vt-input.has-focus {
 .pg-cal-v2-legend i.partial {
   background: conic-gradient(var(--org) 0 180deg, var(--g1) 180deg 360deg);
 }
+.pg-cal-v2-legend i.missed {
+  background: var(--g2);
+  border: 1px solid rgba(16, 42, 80, 0.2);
+}
 .pg-cal-v2-legend i.today {
   background: #fff;
   box-shadow: 0 0 0 2px var(--org);
-}
-.pg-cal-v2-legend i.mile {
-  background: radial-gradient(circle at 30% 30%, #fff6b5, #d4af37);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -9555,12 +9604,6 @@ ion-input.vt-input.has-focus {
   font-weight: 800;
   margin: 2px 0 0;
 }
-.rk-pod-city {
-  font-size: 9px;
-  font-weight: 700;
-  opacity: 0.55;
-  margin: 2px 0 6px;
-}
 .rk-pod-val {
   font-family: "Space Grotesk", sans-serif;
   font-size: 20px;
@@ -9673,19 +9716,131 @@ ion-input.vt-input.has-focus {
   font-size: 14px;
   font-weight: 800;
 }
-.rk-foot {
+.rk-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.72);
+}
+.rk-optin-banner {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin: 12px 2px 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--tx);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.rk-optin-banner ion-icon {
+  font-size: 15px;
+  color: #d4af37;
+  flex-shrink: 0;
+}
+.rk-empty {
+  margin-top: 24px;
+  text-align: center;
+  padding: 24px 18px;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  border-radius: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.rk-empty-ico {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ice-l);
+  color: var(--cyan);
+  font-size: 26px;
+}
+.rk-empty h3 {
+  margin: 0 0 6px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--tx);
+}
+.rk-empty p {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mu);
+}
+.rk-empty ion-button + ion-button {
+  margin-top: 8px;
+}
+
+/* Liga — preferencias en Perfil (LEAGUE v1) */
+.league-prefs {
+  margin: 0 16px 12px;
+  padding: 14px;
+  border-radius: 18px;
+}
+.league-prefs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.league-prefs-row strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--tx);
+}
+.league-prefs-row small {
+  display: block;
+  margin-top: 2px;
   font-size: 11px;
   line-height: 1.4;
   color: var(--mu);
 }
-.rk-foot ion-icon {
-  font-size: 14px;
-  margin-top: 1px;
+.league-prefs-row ion-toggle {
+  --track-background: var(--g2);
+  --track-background-checked: var(--teal);
   flex-shrink: 0;
+}
+.league-prefs-nick {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.league-prefs-nick ion-input {
+  --background: var(--g1);
+  --padding-start: 12px;
+  --padding-end: 12px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+.league-prefs-nick ion-input.ion-invalid {
+  --border-color: var(--red);
+  border: 1px solid var(--red-l);
+}
+.league-prefs-err {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red);
+  margin-top: 6px;
 }
 
 ion-modal.metric-modal {
