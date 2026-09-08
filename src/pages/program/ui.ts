@@ -13,7 +13,7 @@ export const TASK_ICONS: Record<ProgramTaskId, string> = {
   vitals: pulse,
   nut: nutrition,
   ejercicio: barbell,
-  nutribiotico: flask,
+  nutraceutico: flask,
   emocional: happy,
 }
 

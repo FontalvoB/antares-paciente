@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import type { CSSProperties } from 'react'
 import { checkmarkCircle, gift, lockClosed } from 'ionicons/icons'
 import { RingProgress } from '../../components/RingProgress'
-import { useT } from '../../i18n/I18nContext'
+import { useI18n } from '../../i18n/I18nContext'
 import type { StreakChestDto } from '../../services/program/types'
 import type { ClinicalChestView } from '../../hooks/useClinicalChests'
 
@@ -49,7 +49,8 @@ export function StreakChestsTrail({
   chests: StreakChestDto[]
   streak: number
 }) {
-  const t = useT()
+  const { lang, t } = useI18n()
+  const numLocale = lang === 'en' ? 'en-US' : 'es-ES'
   return (
     <div className="cx-trail" role="list" aria-label={t('Cofres de racha')}>
       {chests.map((chest, i) => {
@@ -71,7 +72,7 @@ export function StreakChestsTrail({
           >
             <ChestGlyph status={status} tone={tone} />
             <b>{chest.days}d</b>
-            <small>+{chest.xp.toLocaleString('es-ES')}</small>
+            <small>+{chest.xp.toLocaleString(numLocale)}</small>
           </motion.div>
         )
       })}
@@ -86,7 +87,8 @@ export function ClinicalChestCard({
   chest: ClinicalChestView
   index?: number
 }) {
-  const t = useT()
+  const { lang, t } = useI18n()
+  const numLocale = lang === 'en' ? 'en-US' : 'es-ES'
   const statusClass =
     chest.status === 'achieved' ? 'claimed' : chest.status === 'progress' ? 'ready' : 'locked'
   const pct =
@@ -106,7 +108,7 @@ export function ClinicalChestCard({
           <h3>{t(chest.title)}</h3>
           <p>{t(chest.hint)}</p>
         </div>
-        <div className="cx-xp">+{chest.xp.toLocaleString('es-ES')}</div>
+        <div className="cx-xp">+{chest.xp.toLocaleString(numLocale)}</div>
       </div>
 
       {chest.status === 'requires-data' && (
@@ -152,7 +154,8 @@ export function NextChestGoal({
   xp: number
   streak: number
 }) {
-  const t = useT()
+  const { lang, t } = useI18n()
+  const numLocale = lang === 'en' ? 'en-US' : 'es-ES'
   const pct = Math.min(1, streak / days)
   const remain = Math.max(0, days - streak)
   return (
@@ -191,7 +194,7 @@ export function NextChestGoal({
         }
       />
       <div className="chest-next-meta">
-        {streak} {t('de')} {days} · +{xp.toLocaleString('es-ES')} XP {t('al abrir')}
+        {streak} {t('de')} {days} · +{xp.toLocaleString(numLocale)} XP {t('al abrir')}
       </div>
     </div>
   )

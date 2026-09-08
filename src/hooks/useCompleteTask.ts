@@ -40,6 +40,7 @@ import type {
   CompleteTaskResponseDto,
   ProgramSnapshotDto,
   TaskCode,
+  TodayTaskDto,
   VitalsPayload,
 } from '../services/program/types'
 
@@ -139,8 +140,28 @@ function isRetryableNetworkError(err: ApiError): boolean {
   )
 }
 
-/** Optimistic completion: mark task Completed + add its point estimate to XP/today. */
-function applyOptimistic(snapshot: ProgramSnapshotDto, taskCode: TaskCode): ProgramSnapshotDto {
+/** Vitals payload keys that map 1:1 into `RecentVitalsDto` (measuredAt → recordedAt). */
+const VITAL_RECORD_KEYS = ['heartRate', 'systolic', 'diastolic', 'o2Saturation', 'glucose', 'weightKg', 'temperatureC'] as const
+
+/**
+ * Optimistic completion: mark task Completed + add its point estimate to
+ * XP/today. For the `vitals` task with at least one provided value, the
+ * submitted values are MERGED over the cached `content.recentVitals`
+ * (recordedAt = measuredAt ?? now) so the completed view shows what was just
+ * submitted without waiting for a refetch. The merge mirrors the server's
+ * eventual truth (last-value-per-metric over 90 days): submitted metrics are
+ * overwritten, non-submitted metrics keep their previous value, recordedAt
+ * advances. The optimistic state is visible immediately; on mutation failure
+ * (e.g. offline) `onError` rolls the snapshot back to `previousSnapshot` and
+ * the completion is enqueued for replay, then `onSettled` invalidates the
+ * snapshot so the refetch reconciles to server truth. No vitals → behaviour
+ * identical to before. Never mutates the input snapshot.
+ */
+export function applyOptimistic(
+  snapshot: ProgramSnapshotDto,
+  taskCode: TaskCode,
+  vitals?: VitalsPayload | null,
+): ProgramSnapshotDto {
   const task = snapshot.todayTasks.find((t) => t.taskCode === taskCode)
   if (!task || task.status === 'Completed') return snapshot
 
@@ -149,16 +170,40 @@ function applyOptimistic(snapshot: ProgramSnapshotDto, taskCode: TaskCode): Prog
     ...snapshot,
     xp: { ...snapshot.xp, balance: snapshot.xp.balance + xpEstimate },
     todayPoints: snapshot.todayPoints + xpEstimate,
-    todayTasks: snapshot.todayTasks.map((t) =>
-      t.taskCode === taskCode
-        ? { ...t, status: 'Completed', completedAt: new Date().toISOString() }
-        : t,
-    ),
+    todayTasks: snapshot.todayTasks.map((t) => {
+      if (t.taskCode !== taskCode) return t
+      const completed: TodayTaskDto = { ...t, status: 'Completed', completedAt: new Date().toISOString() }
+      if (taskCode !== 'vitals' || vitals == null) return completed
+      const hasVitals = VITAL_RECORD_KEYS.some((k) => vitals[k] != null)
+      if (!hasVitals) return completed
+      const { measuredAt, ...values } = vitals
+      return {
+        ...completed,
+        content: {
+          ...(t.content ?? {}),
+          // Merge (no replace): el servidor reconcilia last-value-per-metric
+          // sobre 90 días — lo no enviado hoy conserva su valor previo, lo
+          // enviado se sobreescribe y recordedAt avanza. Así el estado
+          // optimista coincide con el eventual post-refetch.
+          recentVitals: { ...(t.content?.recentVitals ?? {}), ...values, recordedAt: measuredAt ?? new Date().toISOString() },
+        },
+      }
+    }),
   }
 }
 
-/** Reconcile authoritative values returned by the server (R5.3). */
-function reconcileSnapshot(
+/**
+ * Reconcile authoritative values returned by the server (R5.3).
+ *
+ * `todayBonusAvailable` server semantics: "bonus STILL EARNABLE" — true when
+ * the perfect-day bonus has NOT been awarded yet today, false once awarded
+ * (`checkin.IsPerfectDay != true`). The earned signal is the server's
+ * `isPerfectDay` (robusto incluso ante una regla DAY_BONUS hipotética de
+ * monto 0, donde `dailyBonusAwarded` sería 0 con el día ya perfecto): cuando
+ * el día es perfecto la UI debe pintar el cofre como desbloqueado; si no, se
+ * conserva el valor cacheado previo. Exported for unit tests.
+ */
+export function reconcileSnapshot(
   snapshot: ProgramSnapshotDto | undefined,
   data: CompleteTaskResponseDto,
 ): ProgramSnapshotDto | undefined {
@@ -168,7 +213,7 @@ function reconcileSnapshot(
     xp: { ...snapshot.xp, balance: data.xpBalanceAfter },
     streak: { ...snapshot.streak, current: data.streakCurrent },
     todayPoints: data.dayPoints,
-    todayBonusAvailable: data.dailyBonusAwarded > 0,
+    todayBonusAvailable: data.isPerfectDay ? false : snapshot.todayBonusAvailable,
   }
 }
 
@@ -237,7 +282,7 @@ export function useCompleteTask(
 
       if (snapshot) {
         queryClient.setQueryData<ProgramSnapshotDto>(programKeys.snapshot, (old) =>
-          old ? applyOptimistic(old, vars.taskCode) : old,
+          old ? applyOptimistic(old, vars.taskCode, vars.vitals) : old,
         )
       }
 
