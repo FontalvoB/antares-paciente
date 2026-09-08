@@ -16,6 +16,16 @@ const KEYS = {
   'Índices sobre tu cuerpo': 'Indices on your body',
   'Toca un índice para ver qué significa y cuál es tu meta.':
     'Tap an index to see what it means and what your target is.',
+  'Toca una zona del cuerpo o un índice para ver el detalle.':
+    'Tap a body area or an index to see the details.',
+  Frente: 'Front',
+  Espalda: 'Back',
+  'Abdomen y cintura': 'Abdomen and waist',
+  'Tronco y caderas': 'Torso and hips',
+  'Antebrazo · sitio de medición': 'Forearm · measurement site',
+  'Masa corporal': 'Body mass',
+  'Estatura completa': 'Full stature',
+  'Muñeca y antebrazo': 'Wrist and forearm',
   'Figura del cuerpo con los índices de salud señalados':
     'Body figure with the health indices marked on it',
   Mediciones: 'Measurements',

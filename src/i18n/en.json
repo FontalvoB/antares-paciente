@@ -1806,5 +1806,14 @@
   "Mediciones tomadas en consulta el 05/08/2026. El % de grasa es un estimado calculado con fórmulas validadas y no reemplaza una bioimpedancia clínica.": "Measurements taken in consultation on 05/08/2026. Body fat % is an estimate computed with validated formulas and does not replace a clinical bioimpedance test.",
   "Audio en streaming": "Streaming audio",
   "Error al iniciar la reproducción de audio.": "Error starting audio playback.",
-  "No se pudo reproducir el archivo de audio.": "The audio file could not be played."
+  "No se pudo reproducir el archivo de audio.": "The audio file could not be played.",
+  "Toca una zona del cuerpo o un índice para ver el detalle.": "Tap a body area or an index to see the details.",
+  "Frente": "Front",
+  "Espalda": "Back",
+  "Abdomen y cintura": "Abdomen and waist",
+  "Tronco y caderas": "Torso and hips",
+  "Antebrazo · sitio de medición": "Forearm · measurement site",
+  "Masa corporal": "Body mass",
+  "Estatura completa": "Full stature",
+  "Muñeca y antebrazo": "Wrist and forearm"
 }
