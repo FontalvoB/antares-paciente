@@ -10,7 +10,8 @@ export type Screen =
   | "prof"
   | "prog"
   | "com"
-  | "room";
+  | "room"
+  | "body";
 
 export type Flow = "login" | "onboarding" | "tests" | "app";
 

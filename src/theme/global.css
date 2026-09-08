@@ -1514,6 +1514,487 @@ ion-accordion-group.hc-acc {
   line-height: 1.45;
 }
 
+/* --------------------------------------------------------------------------
+   Visualización del perfil — figura corporal, índices y mediciones.
+   Misma línea visual que el inicio y la historia clínica: cabecera clara,
+   panel gris de 24px y contenido en blanco. Cada índice aporta su color
+   en `--a`.
+   -------------------------------------------------------------------------- */
+.bp-head {
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 4px;
+  color: var(--brand-navy);
+}
+
+.bp-head-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bp-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #97a2b3;
+}
+
+.bp-title {
+  margin: 4px 0 2px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--brand-navy);
+}
+
+.bp-date {
+  margin: 0;
+  font-size: 14px;
+  color: #7d8798;
+}
+
+.bp-badge {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--brand-navy);
+  color: #fff;
+  font-size: 22px;
+}
+
+.bp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.bp-chip {
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.bp-chip.green {
+  background: var(--brand-green-soft);
+}
+
+.bp-chip.navy {
+  background: var(--brand-navy);
+}
+
+.bp-chip.soft {
+  background: #f1f3f6;
+  color: var(--brand-navy);
+}
+
+.bp-card {
+  width: calc(100% - 32px);
+  margin: 0 16px;
+  padding: 14px 12px 12px;
+  border-radius: 24px;
+  background: #f1f3f6;
+}
+
+.bp-hint {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--mu);
+}
+
+/* Figura: caja del viewBox. Las etiquetas se salen a los márgenes y se
+   conectan con la línea guía que sale del marcador. */
+.bm-figure {
+  position: relative;
+  width: 146px;
+  aspect-ratio: 200 / 384;
+  margin: 6px auto 12px;
+}
+
+.bm-figure .bm-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bm-fill {
+  fill: #dfe6f0;
+}
+
+.bm-limb {
+  fill: none;
+  stroke: #dfe6f0;
+  stroke-linecap: round;
+  stroke-width: 21;
+}
+
+.bm-arm {
+  stroke-width: 15;
+}
+
+.bm-neck {
+  stroke-width: 17;
+}
+
+.bm-lead {
+  stroke: #c3cddb;
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+.bm-lead.on {
+  stroke: var(--a, var(--brand-navy));
+  stroke-dasharray: none;
+}
+
+.bm-halo {
+  fill: var(--a, var(--brand-navy));
+}
+
+.bm-dot {
+  fill: #fff;
+  stroke: #b6c2d2;
+  stroke-width: 2.5;
+}
+
+.bm-dot.on {
+  fill: var(--a, var(--brand-navy));
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.bm-tag {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 78px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: #fff;
+  transform: translateY(-50%);
+  transition:
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+
+.bm-tag.left {
+  right: 100%;
+  margin-right: 8px;
+  text-align: right;
+}
+
+.bm-tag.right {
+  left: 100%;
+  margin-left: 8px;
+  text-align: left;
+}
+
+.bm-tag strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.6px;
+  color: var(--a, var(--brand-navy));
+}
+
+.bm-tag small {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.bm-tag.on {
+  border-color: var(--a, var(--brand-navy));
+  box-shadow: 0 4px 14px
+    color-mix(in srgb, var(--a, var(--brand-navy)) 24%, transparent);
+}
+
+.bm-tag:active {
+  transform: translateY(-50%) scale(0.97);
+}
+
+/* Detalle del índice seleccionado. */
+.bp-detail {
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.bp-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bp-detail-val {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.bp-detail-val strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1.4px;
+  color: var(--a, var(--brand-navy));
+}
+
+.bp-detail-val span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.bp-detail-id {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bp-detail-id b {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--brand-navy);
+}
+
+.bp-tone {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.bp-tone.ok {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+
+.bp-tone.warn {
+  background: var(--org-l);
+  color: var(--org);
+}
+
+.bp-tone.risk {
+  background: var(--red-l);
+  color: var(--red);
+}
+
+/* Escala de referencia: tramos proporcionales al rango clínico. */
+.bp-scale {
+  margin: 14px 0 12px;
+}
+
+.bp-scale-track {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 8px;
+}
+
+.bp-band {
+  flex-basis: 0;
+  border-radius: 999px;
+}
+
+.bp-band.ok {
+  background: var(--brand-green-soft);
+}
+
+.bp-band.warn {
+  background: #eab866;
+}
+
+.bp-band.risk {
+  background: #e2938f;
+}
+
+.bp-scale-pin {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  border: 3px solid var(--a, var(--brand-navy));
+  background: #fff;
+  transform: translateY(-50%);
+  box-shadow: 0 2px 6px rgba(20, 40, 85, 0.22);
+}
+
+.bp-scale-legend {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.bp-scale-legend span {
+  flex-basis: 0;
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--mu);
+}
+
+.bp-detail-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--mu);
+}
+
+.bp-target {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 10%, #fff);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--a, var(--brand-navy));
+}
+
+/* Lista de mediciones (IonList vestido con el design system). */
+ion-list.bp-list {
+  width: calc(100% - 32px);
+  margin: 0 16px;
+  padding: 4px 0;
+  border-radius: 24px;
+  background: #f1f3f6;
+}
+
+.bp-list ion-item {
+  --background: transparent;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --min-height: 62px;
+  --border-color: rgba(20, 40, 85, 0.08);
+}
+
+.bp-list ion-item ion-label h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-navy);
+}
+
+.bp-list ion-item ion-label p {
+  font-size: 11.5px;
+  color: var(--mu);
+}
+
+ion-note.bp-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 0;
+}
+
+.bp-note b {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: var(--brand-navy);
+}
+
+.bp-note b i {
+  font-style: normal;
+  font-family: "Inter", sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.bp-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--g1);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mu);
+}
+
+.bp-delta.good {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+
+.bp-delta ion-icon {
+  font-size: 10px;
+}
+
+/* Lecturas derivadas de las mediciones. */
+.bp-derived {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  width: calc(100% - 32px);
+  margin: 9px 16px 0;
+}
+
+.bp-derived-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 13px;
+  border-radius: 18px;
+  background: var(--brand-navy);
+  color: #fff;
+}
+
+.bp-derived-item small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.bp-derived-item strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+}
+
+.bp-derived-item span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.bp-foot {
+  margin: 14px 20px 20px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: #93a0b3;
+}
+
 .meal-card {
   margin: 8px 14px;
   background: #fff;
@@ -16447,7 +16928,9 @@ ion-button.cta-pill.button-disabled {
 }
 
 /* Accesos y progreso: mismo lenguaje que el resto del inicio — panel gris
-   suave de 24px con el contenido en blanco y los iconos en navy de marca. */
+   suave de 24px con el contenido en blanco. Cada fila define su acento en
+   `--a`; el icono lo usa a plena saturación y el fondo en tinte al 10 %, para
+   que la lista se recorra por color en vez de ser un bloque navy uniforme. */
 .hm-access,
 .hm-week {
   width: calc(100% - 32px);
@@ -16467,6 +16950,7 @@ ion-button.cta-pill.button-disabled {
 }
 
 .hm-access-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -16476,6 +16960,19 @@ ion-button.cta-pill.button-disabled {
   border-radius: 18px;
   background: #fff;
   text-align: left;
+  transition: transform 0.18s var(--ease);
+}
+
+/* Filo de color en el borde superior: identifica el módulo sin gritar. */
+.hm-access-tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 18px 18px 0 0;
+  background: var(--a, var(--brand-navy));
 }
 
 .hm-access-tile:active,
@@ -16490,8 +16987,8 @@ ion-button.cta-pill.button-disabled {
   height: 38px;
   margin-bottom: 7px;
   border-radius: 13px;
-  background: var(--brand-navy);
-  color: #fff;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
+  color: var(--a, var(--brand-navy));
   font-size: 19px;
 }
 
@@ -16505,6 +17002,14 @@ ion-button.cta-pill.button-disabled {
 .hm-access-tile small {
   font-size: 11.5px;
   color: var(--mu);
+}
+
+.hm-access-tile-chev {
+  position: absolute;
+  top: 15px;
+  right: 12px;
+  font-size: 15px;
+  color: #c2ccda;
 }
 
 .hm-access-rows {
@@ -16525,6 +17030,7 @@ ion-button.cta-pill.button-disabled {
   border-top: 1px solid var(--g1);
   background: #fff;
   text-align: left;
+  transition: transform 0.18s var(--ease);
 }
 
 .hm-access-row:first-child {
@@ -16538,8 +17044,8 @@ ion-button.cta-pill.button-disabled {
   width: 38px;
   height: 38px;
   border-radius: 13px;
-  background: var(--brand-navy);
-  color: #fff;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
+  color: var(--a, var(--brand-navy));
   font-size: 18px;
 }
 
@@ -16570,29 +17076,103 @@ ion-button.cta-pill.button-disabled {
 
 .hm-week {
   margin-bottom: 20px;
-  padding: 15px 14px;
+  padding: 12px;
+}
+
+/* Resumen: promedio de los hábitos y cuántos llegan a meta. */
+.hm-week-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: 18px;
+  background: var(--brand-navy);
+  color: #fff;
+}
+
+.hm-week-score {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hm-week-score strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.hm-week-score small {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hm-week-tag {
+  flex-shrink: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  color: #fff;
+}
+
+.hm-week-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: #fff;
 }
 
 .hm-week-row + .hm-week-row {
-  margin-top: 15px;
+  margin-top: 7px;
+}
+
+.hm-week-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
+  color: var(--a, var(--brand-navy));
+  font-size: 17px;
+}
+
+.hm-week-body {
+  flex: 1;
+  min-width: 0;
 }
 
 .hm-week-top {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
 }
 
 .hm-week-top strong {
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
   font-size: 13px;
   font-weight: 700;
   color: var(--brand-navy);
 }
 
 .hm-week-top span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 11.5px;
   color: var(--mu);
 }
@@ -16605,13 +17185,13 @@ ion-button.cta-pill.button-disabled {
   font-weight: 700;
   letter-spacing: -0.4px;
   text-align: right;
-  color: var(--brand-navy);
+  color: var(--a, var(--brand-navy));
 }
 
 ion-progress-bar.hm-week-bar {
   height: 7px;
   border-radius: 999px;
-  --background: rgba(20, 40, 85, 0.1);
+  --background: color-mix(in srgb, var(--a, var(--brand-navy)) 14%, #fff);
 }
 
 /* --------------------------------------------------------------------------
