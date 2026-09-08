@@ -43,11 +43,14 @@ export interface SendOtpResult {
  * sin CORS). El application es el código de la app móvil: "app".
  */
 async function postJson<T>(path: string, body?: unknown): Promise<T> {
+  // Timeout defensivo (10 s): en WebView nativo una IP inalcanzable puede
+  // dejar el fetch colgado para siempre y con él el splash de arranque.
   const res = await fetch(path, {
     method: 'POST',
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(10000),
   })
 
   if (!res.ok) {
@@ -181,6 +184,7 @@ export async function getMe(): Promise<CurrentUser | null> {
         Authorization: `Bearer ${token}`,
       },
       credentials: 'include',
+      signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) return null
     return (await res.json()) as CurrentUser
