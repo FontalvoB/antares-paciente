@@ -389,81 +389,78 @@ export function HomePage() {
         </div>
 
         <div className="sec">{t("Accesos")}</div>
-        <div className="grid-2" style={{ marginBottom: 8 }}>
-          {[
-            {
-              id: "book" as ScreenId,
-              title: t("Citas"),
-              sub: featuredReal
-                ? `${featuredReal.time} · ${t(featuredReal.day)}`
-                : realMode
-                  ? t("Sin citas")
-                  : t("Hoy 3:00 PM"),
-              icon: calendar,
-              bg: "var(--teal-l)",
-              color: "var(--teal)",
-            },
-            {
-              id: "nut" as ScreenId,
-              title: t("Nutrición"),
-              sub: t("1,650 / 1,800 kcal"),
-              icon: leaf,
-              bg: "var(--ice-l)",
-              color: "var(--teal-d)",
-            },
-          ].map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className="card widget-card"
-              onClick={() => navigate(m.id)}
-            >
-              <div className="ico" style={{ background: m.bg, color: m.color }}>
-                <IonIcon icon={m.icon} />
-              </div>
-              <div className="ct">{m.title}</div>
-              <div className="cs">{m.sub}</div>
-            </button>
-          ))}
-        </div>
-
-        <div className="group-list">
-          {moreModules.map((m) => (
-            <button
-              key={m.title}
-              type="button"
-              className="group-row"
-              onClick={() => navigate(m.id)}
-            >
-              <span className="group-row-ico">
-                <IonIcon icon={m.icon} />
-              </span>
-              <span className="group-row-body">
+        <div className="hm-access">
+          <div className="hm-access-grid">
+            {[
+              {
+                id: "book" as ScreenId,
+                title: t("Citas"),
+                sub: featuredReal
+                  ? `${featuredReal.time} · ${t(featuredReal.day)}`
+                  : realMode
+                    ? t("Sin citas")
+                    : t("Hoy 3:00 PM"),
+                icon: calendar,
+              },
+              {
+                id: "nut" as ScreenId,
+                title: t("Nutrición"),
+                sub: t("1,650 / 1,800 kcal"),
+                icon: leaf,
+              },
+            ].map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className="hm-access-tile"
+                onClick={() => navigate(m.id)}
+              >
+                <span className="hm-access-tile-ico">
+                  <IonIcon icon={m.icon} />
+                </span>
                 <strong>{m.title}</strong>
                 <small>{m.sub}</small>
-              </span>
-              <span className="group-row-chevron">
-                <IonIcon icon={chevronForward} />
-              </span>
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
+
+          <div className="hm-access-rows">
+            {moreModules.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className="hm-access-row"
+                onClick={() => navigate(m.id)}
+              >
+                <span className="hm-access-row-ico">
+                  <IonIcon icon={m.icon} />
+                </span>
+                <span className="hm-access-row-body">
+                  <strong>{m.title}</strong>
+                  <small>{m.sub}</small>
+                </span>
+                <IonIcon className="hm-access-row-chev" icon={chevronForward} />
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="sec">{t("Progreso semanal")}</div>
-        <div className="card" style={{ margin: "0 16px 20px" }}>
+        <div className="hm-week">
           {[
-            [t("Hidratación"), "7/8 vasos", 87, "var(--teal)"],
-            [t("Pasos"), "6,240 / 8,000", 78, "var(--blue)"],
+            [t("Hidratación"), "7/8 vasos", 87, "var(--brand-green)"],
+            [t("Pasos"), "6,240 / 8,000", 78, "var(--brand-blue-mid)"],
             [t("Calorías"), "1,650 / 1,800", 91, "var(--org)"],
-            [t("Academia"), "Módulo 5", 68, "var(--cyan)"],
+            [t("Academia"), "Módulo 5", 68, "var(--brand-sky-mid)"],
           ].map(([l, r, w, c]) => (
-            <div key={String(l)} className="progress-row">
-              <div className="progress-row-top">
-                <span>{l}</span>
+            <div key={String(l)} className="hm-week-row">
+              <div className="hm-week-top">
+                <strong>{l}</strong>
                 <span>{r}</span>
+                <em>{w}%</em>
               </div>
               <IonProgressBar
-                className="pb"
+                className="hm-week-bar"
                 style={{ "--progress-background": String(c) } as CSSProperties}
                 value={Number(w) / 100}
               />
