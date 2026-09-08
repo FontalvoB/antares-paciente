@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IonButton, IonIcon, IonInput, IonSkeletonText, IonToggle } from "@ionic/react";
 import {
+  bodyOutline,
   calendarOutline,
   clipboardOutline,
   infinite,
@@ -237,6 +238,12 @@ export function ProfilePage() {
               t: "Historia clínica",
               s: "Diagnósticos · Lab · Medicamentos",
               fn: () => go("hc"),
+            },
+            {
+              ico: bodyOutline,
+              t: "Visualización del perfil",
+              s: "Índices y mediciones corporales",
+              fn: () => go("body"),
             },
             {
               ico: clipboardOutline,
