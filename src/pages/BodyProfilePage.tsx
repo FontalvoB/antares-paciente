@@ -1,5 +1,14 @@
 import { useState } from 'react'
-import { IonIcon, IonLabel, IonList, IonItem, IonNote } from '@ionic/react'
+import type { CSSProperties } from 'react'
+import {
+  IonIcon,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonNote,
+  IonSegment,
+  IonSegmentButton,
+} from '@ionic/react'
 import { arrowDown, arrowUp, bodyOutline, removeOutline } from 'ionicons/icons'
 import { BodyMap } from '../components/BodyMap'
 import { Screen, Scroll } from '../components/Screen'
@@ -8,10 +17,11 @@ import {
   BODY_FOOTNOTE,
   BODY_INDICES,
   BODY_MEASURES,
+  bodySelection,
+  type BodyIndex,
+  type BodyView,
 } from '../data/bodyProfile'
-import type { BodyIndex } from '../data/bodyProfile'
 import { useT } from '../i18n/I18nContext'
-import type { CSSProperties } from 'react'
 
 /** Posición del valor dentro de la escala de referencia, en 0-100 %. */
 function pinAt(index: BodyIndex) {
@@ -24,7 +34,18 @@ const TREND_ICON = { down: arrowDown, up: arrowUp, flat: removeOutline }
 export function BodyProfilePage() {
   const t = useT()
   const [activeId, setActiveId] = useState(BODY_INDICES[0].id as string)
-  const active = BODY_INDICES.find((i) => i.id === activeId) ?? BODY_INDICES[0]
+  const [view, setView] = useState<BodyView>('front')
+  const selection = bodySelection(activeId)
+  const accent =
+    selection.kind === 'index' ? selection.item.color : selection.item.color
+
+  const select = (id: string) => {
+    const next = bodySelection(id)
+    setActiveId(id)
+    if (next.kind === 'measure' || next.item.regions[view].length === 0) {
+      setView(next.item.preferredView)
+    }
+  }
 
   return (
     <Screen>
@@ -51,79 +72,67 @@ export function BodyProfilePage() {
         <div className="sec">{t('Índices sobre tu cuerpo')}</div>
 
         <div className="bp-card">
+          <IonSegment
+            className="bp-seg nut-period"
+            value={view}
+            onIonChange={(e) =>
+              setView((e.detail.value as BodyView) || 'front')
+            }
+          >
+            <IonSegmentButton value="front">{t('Frente')}</IonSegmentButton>
+            <IonSegmentButton value="back">{t('Espalda')}</IonSegmentButton>
+          </IonSegment>
+
           <p className="bp-hint">
-            {t('Toca un índice para ver qué significa y cuál es tu meta.')}
+            {t('Toca una zona del cuerpo o un índice para ver el detalle.')}
           </p>
 
           <BodyMap
             indices={BODY_INDICES}
             activeId={activeId}
-            onSelect={setActiveId}
+            view={view}
+            onSelect={select}
           />
 
-          <div
-            className="bp-detail"
-            style={{ '--a': active.color } as CSSProperties}
-          >
-            <div className="bp-detail-top">
-              <div className="bp-detail-val">
-                <strong>{active.value}</strong>
-                <span>{active.unit}</span>
+          {selection.kind === 'index' ? (
+            <IndexDetail index={selection.item} />
+          ) : (
+            <div
+              className="bp-detail"
+              style={{ '--a': accent } as CSSProperties}
+            >
+              <div className="bp-detail-top">
+                <div className="bp-detail-val">
+                  <strong>{selection.item.value}</strong>
+                  <span>{selection.item.unit}</span>
+                </div>
+                <div className="bp-detail-id">
+                  <b>{t(selection.item.label)}</b>
+                  <span className="bp-tone ok">{t(selection.item.zone)}</span>
+                </div>
               </div>
-              <div className="bp-detail-id">
-                <b>{t(active.label)}</b>
-                <span className={`bp-tone ${active.tone}`}>
-                  {t(active.qualifier)}
+              <p className="bp-detail-text">{t(selection.item.note)}</p>
+              {selection.item.delta ? (
+                <span className={`bp-delta${selection.item.good ? ' good' : ''}`}>
+                  <IonIcon icon={TREND_ICON[selection.item.trend]} />
+                  {selection.item.delta}
                 </span>
-              </div>
+              ) : null}
             </div>
-
-            <div className="bp-scale">
-              <div className="bp-scale-track">
-                {active.scale.bands.map((band, i) => {
-                  const from =
-                    i === 0 ? active.scale.min : active.scale.bands[i - 1].to
-                  const span =
-                    (band.to - from) / (active.scale.max - active.scale.min)
-                  return (
-                    <i
-                      key={band.label}
-                      className={`bp-band ${band.tone}`}
-                      style={{ flexGrow: span }}
-                    />
-                  )
-                })}
-                <span
-                  className="bp-scale-pin"
-                  style={{ left: `${pinAt(active)}%` }}
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="bp-scale-legend">
-                {active.scale.bands.map((band, i) => {
-                  const from =
-                    i === 0 ? active.scale.min : active.scale.bands[i - 1].to
-                  const span =
-                    (band.to - from) / (active.scale.max - active.scale.min)
-                  return (
-                    <span key={band.label} style={{ flexGrow: span }}>
-                      {t(band.label)}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-
-            <p className="bp-detail-text">{t(active.detail)}</p>
-            <span className="bp-target">{t(active.target)}</span>
-          </div>
+          )}
         </div>
 
         <div className="sec">{t('Mediciones')}</div>
 
         <IonList className="bp-list" lines="full">
           {BODY_MEASURES.map((m) => (
-            <IonItem key={m.id}>
+            <IonItem
+              key={m.id}
+              button
+              detail={false}
+              className={m.id === activeId ? 'on' : undefined}
+              onClick={() => select(m.id)}
+            >
               <IonLabel>
                 <h3>{t(m.label)}</h3>
                 <p>{t(m.note)}</p>
@@ -157,5 +166,58 @@ export function BodyProfilePage() {
         <p className="bp-foot">{t(BODY_FOOTNOTE)}</p>
       </Scroll>
     </Screen>
+  )
+}
+
+function IndexDetail({ index }: { index: BodyIndex }) {
+  const t = useT()
+  return (
+    <div className="bp-detail" style={{ '--a': index.color } as CSSProperties}>
+      <div className="bp-detail-top">
+        <div className="bp-detail-val">
+          <strong>{index.value}</strong>
+          <span>{index.unit}</span>
+        </div>
+        <div className="bp-detail-id">
+          <b>{t(index.label)}</b>
+          <span className={`bp-tone ${index.tone}`}>{t(index.qualifier)}</span>
+        </div>
+      </div>
+
+      <div className="bp-scale">
+        <div className="bp-scale-track">
+          {index.scale.bands.map((band, i) => {
+            const from = i === 0 ? index.scale.min : index.scale.bands[i - 1].to
+            const span = (band.to - from) / (index.scale.max - index.scale.min)
+            return (
+              <i
+                key={band.label}
+                className={`bp-band ${band.tone}`}
+                style={{ flexGrow: span }}
+              />
+            )
+          })}
+          <span
+            className="bp-scale-pin"
+            style={{ left: `${pinAt(index)}%` }}
+            aria-hidden="true"
+          />
+        </div>
+        <div className="bp-scale-legend">
+          {index.scale.bands.map((band, i) => {
+            const from = i === 0 ? index.scale.min : index.scale.bands[i - 1].to
+            const span = (band.to - from) / (index.scale.max - index.scale.min)
+            return (
+              <span key={band.label} style={{ flexGrow: span }}>
+                {t(band.label)}
+              </span>
+            )
+          })}
+        </div>
+      </div>
+
+      <p className="bp-detail-text">{t(index.detail)}</p>
+      <span className="bp-target">{t(index.target)}</span>
+    </div>
   )
 }

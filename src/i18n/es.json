@@ -1782,5 +1782,14 @@
   "Mediciones tomadas en consulta el 05/08/2026. El % de grasa es un estimado calculado con fórmulas validadas y no reemplaza una bioimpedancia clínica.": "Mediciones tomadas en consulta el 05/08/2026. El % de grasa es un estimado calculado con fórmulas validadas y no reemplaza una bioimpedancia clínica.",
   "Audio en streaming": "Audio en streaming",
   "Error al iniciar la reproducción de audio.": "Error al iniciar la reproducción de audio.",
-  "No se pudo reproducir el archivo de audio.": "No se pudo reproducir el archivo de audio."
+  "No se pudo reproducir el archivo de audio.": "No se pudo reproducir el archivo de audio.",
+  "Toca una zona del cuerpo o un índice para ver el detalle.": "Toca una zona del cuerpo o un índice para ver el detalle.",
+  "Frente": "Frente",
+  "Espalda": "Espalda",
+  "Abdomen y cintura": "Abdomen y cintura",
+  "Tronco y caderas": "Tronco y caderas",
+  "Antebrazo · sitio de medición": "Antebrazo · sitio de medición",
+  "Masa corporal": "Masa corporal",
+  "Estatura completa": "Estatura completa",
+  "Muñeca y antebrazo": "Muñeca y antebrazo"
 }

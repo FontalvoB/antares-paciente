@@ -79,7 +79,7 @@ async function main() {
       await wait(700)
     }
     if (step.startsWith('go:')) {
-      await clickText(page, '.hm-access-row, .hm-access-tile, .group-row, .bm-tag', step.slice(3))
+      await clickText(page, '.hm-access-row, .hm-access-tile, .group-row, .bm-tag, ion-item', step.slice(3))
       await wait(1400)
     }
     await wait(400)

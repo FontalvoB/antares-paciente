@@ -1609,99 +1609,75 @@ ion-accordion-group.hc-acc {
   color: var(--mu);
 }
 
-/* Figura: caja del viewBox. Las etiquetas se salen a los márgenes y se
-   conectan con la línea guía que sale del marcador. */
-.bm-figure {
-  position: relative;
-  width: 146px;
-  aspect-ratio: 200 / 384;
-  margin: 6px auto 12px;
+ion-segment.bp-seg {
+  margin: 0 0 8px;
+  min-height: 38px;
 }
 
-.bm-figure .bm-svg {
+/* Figura anatómica: rieles laterales para las etiquetas + SVG al centro.
+   El highlighter fija width/height en el svg; se reescala aquí. */
+.bm-stage {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 84px;
+  align-items: stretch;
+  column-gap: 2px;
+  margin: 2px 0 10px;
+}
+
+.bm-rail {
+  position: relative;
+  min-height: 320px;
+}
+
+.bm-anatomy {
+  display: flex;
+  justify-content: center;
+  min-height: 320px;
+}
+
+.bm-anatomy svg {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  max-width: 210px;
+  height: auto !important;
   overflow: visible;
 }
 
-.bm-fill {
-  fill: #dfe6f0;
+.bm-anatomy svg path {
+  transition: fill 0.2s var(--ease);
 }
 
-.bm-limb {
-  fill: none;
-  stroke: #dfe6f0;
-  stroke-linecap: round;
-  stroke-width: 21;
-}
-
-.bm-arm {
-  stroke-width: 15;
-}
-
-.bm-neck {
-  stroke-width: 17;
-}
-
-.bm-lead {
-  stroke: #c3cddb;
-  stroke-width: 1.2;
-  stroke-dasharray: 3 3;
-}
-
-.bm-lead.on {
-  stroke: var(--a, var(--brand-navy));
-  stroke-dasharray: none;
-}
-
-.bm-halo {
-  fill: var(--a, var(--brand-navy));
-}
-
-.bm-dot {
-  fill: #fff;
-  stroke: #b6c2d2;
-  stroke-width: 2.5;
-}
-
-.bm-dot.on {
-  fill: var(--a, var(--brand-navy));
-  stroke: #fff;
-  stroke-width: 3;
+.bm-zone {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--a, var(--brand-navy));
 }
 
 .bm-tag {
   position: absolute;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
-  width: 78px;
+  width: auto;
   padding: 7px 8px;
   border: 1px solid transparent;
   border-radius: 13px;
   background: #fff;
   transform: translateY(-50%);
+  text-align: left;
   transition:
     border-color 0.18s var(--ease),
     box-shadow 0.18s var(--ease);
 }
 
-.bm-tag.left {
-  right: 100%;
-  margin-right: 8px;
-  text-align: right;
-}
-
-.bm-tag.right {
-  left: 100%;
-  margin-left: 8px;
-  text-align: left;
-}
-
 .bm-tag strong {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.6px;
@@ -1862,6 +1838,10 @@ ion-accordion-group.hc-acc {
   color: var(--mu);
 }
 
+.bp-detail .bp-delta {
+  margin-top: 10px;
+}
+
 .bp-target {
   display: inline-block;
   margin-top: 10px;
@@ -1888,6 +1868,11 @@ ion-list.bp-list {
   --inner-padding-end: 16px;
   --min-height: 62px;
   --border-color: rgba(20, 40, 85, 0.08);
+}
+
+.bp-list ion-item.on {
+  --background: #fff;
+  box-shadow: inset 3px 0 0 var(--brand-navy);
 }
 
 .bp-list ion-item ion-label h3 {
