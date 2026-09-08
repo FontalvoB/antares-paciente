@@ -71,6 +71,17 @@ async function main() {
       })
       await wait(900)
     }
+    if (step.startsWith('scrollTo:')) {
+      await page.evaluate((top) => {
+        const el = document.querySelector('.screen-scroll')
+        if (el) el.scrollTop = top
+      }, Number(step.slice(9)))
+      await wait(700)
+    }
+    if (step.startsWith('go:')) {
+      await clickText(page, '.hm-access-row, .hm-access-tile, .group-row, .bm-tag', step.slice(3))
+      await wait(1400)
+    }
     await wait(400)
   }
 

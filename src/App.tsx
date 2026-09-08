@@ -22,6 +22,7 @@ import { TestsPage } from "./pages/TestsPage";
 import { HomePage } from "./pages/HomePage";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
+import { BodyProfilePage } from "./pages/BodyProfilePage";
 import { NutritionPage } from "./pages/NutritionPage";
 import { AcademyPage } from "./pages/AcademyPage";
 import { InfinitoPage } from "./pages/InfinitoPage";
@@ -79,6 +80,9 @@ function Router() {
         break;
       case "hc":
         content = <HistoryPage />;
+        break;
+      case "body":
+        content = <BodyProfilePage />;
         break;
       case "nut":
         content = <NutritionPage />;
