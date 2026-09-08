@@ -1,10 +1,24 @@
-import { useState } from 'react'
+import { IonAccordion, IonAccordionGroup, IonIcon, IonItem, IonLabel } from '@ionic/react'
+import { shieldCheckmarkOutline } from 'ionicons/icons'
 import { Screen, Scroll } from '../components/Screen'
 import { useT } from '../i18n/I18nContext'
 
+/** Resumen del paciente que encabeza el expediente (demo, sin backend). */
+const patient = {
+  name: 'María González',
+  meta: 'CC 10247381 · 38 años · O+',
+  stats: [
+    ['26.4', 'IMC'],
+    ['5.9%', 'HbA1c'],
+    ['118/76', 'TA'],
+  ],
+}
+
 const sections = [
   {
-    title: '👤 Datos de identificación',
+    id: 'ident',
+    emoji: '👤',
+    title: 'Datos de identificación',
     rows: [
       ['Nombre', 'María González'],
       ['Documento', 'CC 10247381'],
@@ -16,7 +30,9 @@ const sections = [
     ],
   },
   {
-    title: '🩺 Diagnósticos activos (ICD-10)',
+    id: 'dx',
+    emoji: '🩺',
+    title: 'Diagnósticos activos (ICD-10)',
     rows: [
       ['Principal', 'E66.01 — Obesidad leve · IMC 26.4'],
       ['Secundario', 'R73.09 — Prediabetes · HbA1c 5.9%'],
@@ -26,7 +42,9 @@ const sections = [
     ],
   },
   {
-    title: '💊 Medicamentos activos',
+    id: 'meds',
+    emoji: '💊',
+    title: 'Medicamentos activos',
     rows: [
       ['Metformina', '500mg · 1 vez/día con desayuno'],
       ['Vitamina D3', '2,000 UI/día'],
@@ -35,7 +53,9 @@ const sections = [
     ],
   },
   {
-    title: '🧪 Resultados de laboratorio',
+    id: 'lab',
+    emoji: '🧪',
+    title: 'Resultados de laboratorio',
     rows: [
       ['Glucosa', '95 mg/dL · Prediabetes'],
       ['HbA1c', '5.9% · Meta <5.7%'],
@@ -46,7 +66,9 @@ const sections = [
     ],
   },
   {
-    title: '⚠️ Alergias y antecedentes',
+    id: 'alerts',
+    emoji: '⚠️',
+    title: 'Alergias y antecedentes',
     rows: [
       ['Alergias', 'Penicilina · Reacción anafiláctica'],
       ['Intolerancia', 'Lactosa leve · Gluten (no celíaca)'],
@@ -57,40 +79,66 @@ const sections = [
 ]
 
 export function HistoryPage() {
-  const [open, setOpen] = useState(0)
   const t = useT()
 
   return (
     <Screen>
-      <Scroll>
-        <div className="hero hero-navy">
-          <div className="h1">{t('📋 Historia clínica')}</div>
-          <div className="sub">{t('HIPAA protegida · Actualizada 05/08/2026')}</div>
-          <div className="chips">
-            <span className="chip chip-glass">{t('ID: COPP-2024-00142')}</span>
-            <span className="chip chip-gold">{t('NPI verificado')}</span>
+      <Scroll className="hc">
+        <header className="hc-head">
+          <div className="hc-head-top">
+            <div>
+              <span className="hc-kicker">{t('Expediente clínico')}</span>
+              <h1 className="hc-title">{t('Historia clínica')}</h1>
+              <p className="hc-date">{t('Actualizada 05/08/2026')}</p>
+            </div>
+            <span className="hc-shield" aria-hidden="true">
+              <IonIcon icon={shieldCheckmarkOutline} />
+            </span>
+          </div>
+
+          <div className="hc-chips">
+            <span className="hc-chip green">{t('HIPAA protegida')}</span>
+            <span className="hc-chip navy">{t('ID: COPP-2024-00142')}</span>
+            <span className="hc-chip soft">{t('NPI verificado')}</span>
+          </div>
+        </header>
+
+        <div className="hc-patient">
+          <span className="hc-patient-kicker">{t('Paciente')}</span>
+          <strong className="hc-patient-name">{patient.name}</strong>
+          <span className="hc-patient-meta">{patient.meta}</span>
+          <div className="hc-patient-stats">
+            {patient.stats.map(([value, label]) => (
+              <div key={label} className="hc-stat">
+                <b>{value}</b>
+                <small>{t(label)}</small>
+              </div>
+            ))}
           </div>
         </div>
-{sections.map((s, i) => (
-            <div key={s.title} className="hc-sec">
-              <button className="hc-hdr" onClick={() => setOpen(open === i ? -1 : i)}>
-                <span>{t(s.title)}</span>
-                <span>{open === i ? '▲' : '▼'}</span>
-              </button>
-              {open === i && (
-                <div className="hc-body">
-                  {s.rows.map(([l, v]) => (
-                    <div key={l} className="hc-row">
-                      <div className="hc-lbl">{t(l)}</div>
-                      <div className="hc-val">
-                        <strong>{t(v)}</strong>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
+        <div className="sec">{t('Secciones del expediente')}</div>
+
+        <IonAccordionGroup className="hc-acc" value="ident">
+          {sections.map((s) => (
+            <IonAccordion key={s.id} value={s.id}>
+              <IonItem slot="header" lines="none">
+                <span className="hc-acc-ico" aria-hidden="true">
+                  {s.emoji}
+                </span>
+                <IonLabel>{t(s.title)}</IonLabel>
+              </IonItem>
+              <div slot="content" className="hc-acc-body">
+                {s.rows.map(([l, v]) => (
+                  <div key={l} className="hc-row">
+                    <span className="hc-lbl">{t(l)}</span>
+                    <strong className="hc-val">{t(v)}</strong>
+                  </div>
+                ))}
+              </div>
+            </IonAccordion>
           ))}
+        </IonAccordionGroup>
       </Scroll>
     </Screen>
   )

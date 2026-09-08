@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import {
+  IonActionSheet,
   IonButton,
   IonIcon,
   IonInput,
@@ -9,15 +10,21 @@ import {
   IonSegmentButton,
   IonSpinner,
 } from '@ionic/react'
-import { cameraOutline, imageOutline, refreshOutline } from 'ionicons/icons'
+import {
+  cameraOutline,
+  ellipsisHorizontal,
+  flameOutline,
+  refreshOutline,
+} from 'ionicons/icons'
 import { PageHeader } from '../components/PageHeader'
 import { Screen, Scroll } from '../components/Screen'
 import { CameraCapture } from '../components/CameraCapture'
 import { useApp } from '../context/AppContext'
-import { useT } from '../i18n/I18nContext'
+import { useI18n, useT } from '../i18n/I18nContext'
 import { useNutritionLog } from '../hooks/useNutritionLog'
 import { useProgram } from '../hooks/useProgram'
 import type { MealCode, NutritionIntakePayload } from '../services/program/nutrition-service'
+import type { NutritionIntakeLogDto } from '../services/program/types'
 import { ApiError } from '../utils/apiClient'
 import { mealTypeToCode } from '../utils/mealTypeToCode'
 import { buildHydrationIntake, buildPlanTargets, prefillIntakeForm } from '../utils/nutritionForm'
@@ -38,8 +45,6 @@ const MEAL_LABELS: Record<MealCode, string> = {
   agua: 'Hidratación',
 }
 
-// Emoji por MealCode (B3): derivado del código canónico, nunca por
-// fallthrough de prefijos del mealType (Snack → mer, no cen).
 const MEAL_CODE_EMOJI: Record<MealCode, string> = {
   des: '🌅',
   alm: '☀️',
@@ -48,71 +53,124 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
   agua: '💧',
 }
 
-const defaultMeals = [
+const MACRO_COLORS = {
+  carbs: 'var(--blue)',
+  protein: 'var(--teal)',
+  fat: 'var(--org)',
+  fiber: 'var(--pur)',
+} as const
+
+type FoodRow = {
+  emoji: string
+  name: string
+  note: string
+  carbs: string
+  protein: string
+  fat: string
+}
+
+type DisplayMeal = {
+  id: MealCode
+  emoji: string
+  name: string
+  time: string
+  kcal: number
+  items: FoodRow[]
+}
+
+const defaultMeals: DisplayMeal[] = [
   {
     id: 'des',
     emoji: '🌅',
-    title: 'Desayuno · 7:00 AM',
+    name: 'Desayuno',
+    time: '7:00 AM',
     kcal: 380,
     items: [
-      ['🥣', 'Avena enrollada (½ taza)', 'β-glucanos · Bajo IG', '31g C', '5g P', ''],
-      ['🍓', 'Frutos rojos mixtos', 'Antioxidantes · Vit. C', '10g C', '', ''],
-      ['🥚', '2 claras de huevo', 'Proteína magra', '', '7g P', ''],
-      ['🍵', 'Té verde sin azúcar', 'EGCG · 0 kcal', '0g', '', ''],
+      { emoji: '🥣', name: 'Avena enrollada (½ taza)', note: 'β-glucanos · Bajo IG', carbs: '31g C', protein: '5g P', fat: '' },
+      { emoji: '🍓', name: 'Frutos rojos mixtos', note: 'Antioxidantes · Vit. C', carbs: '10g C', protein: '', fat: '' },
+      { emoji: '🥚', name: '2 claras de huevo', note: 'Proteína magra', carbs: '', protein: '7g P', fat: '' },
+      { emoji: '🍵', name: 'Té verde sin azúcar', note: 'EGCG · 0 kcal', carbs: '0g', protein: '', fat: '' },
     ],
   },
   {
     id: 'alm',
     emoji: '☀️',
-    title: 'Almuerzo · 12:00 PM',
+    name: 'Almuerzo',
+    time: '12:00 PM',
     kcal: 620,
     items: [
-      ['🍗', 'Pechuga de pollo 4 oz', 'Proteína magra · sin piel', '', '26g P', '3g G'],
-      ['🍚', 'Arroz integral ½ taza', 'Grano entero · 2g fibra', '22g C', '', ''],
-      ['🥗', 'Ensalada + EVOO y limón', 'Espinaca · Omega-9', '8g C', '', '7g G'],
+      { emoji: '🍗', name: 'Pechuga de pollo 4 oz', note: 'Proteína magra · sin piel', carbs: '', protein: '26g P', fat: '3g G' },
+      { emoji: '🍚', name: 'Arroz integral ½ taza', note: 'Grano entero · 2g fibra', carbs: '22g C', protein: '', fat: '' },
+      { emoji: '🥗', name: 'Ensalada + EVOO y limón', note: 'Espinaca · Omega-9', carbs: '8g C', protein: '', fat: '7g G' },
     ],
   },
   {
     id: 'mer',
     emoji: '🍎',
-    title: 'Merienda · 3:30 PM',
+    name: 'Merienda',
+    time: '3:30 PM',
     kcal: 200,
     items: [
-      ['🍎', 'Manzana mediana', 'Pectina · IG bajo 36', '25g C', '', ''],
-      ['🥜', 'Almendras 1 oz', 'Vit. E · Mg', '', '6g P', '14g G'],
+      { emoji: '🍎', name: 'Manzana mediana', note: 'Pectina · IG bajo 36', carbs: '25g C', protein: '', fat: '' },
+      { emoji: '🥜', name: 'Almendras 1 oz', note: 'Vit. E · Mg', carbs: '', protein: '6g P', fat: '14g G' },
     ],
   },
   {
     id: 'cen',
     emoji: '🌙',
-    title: 'Cena · 7:00 PM',
+    name: 'Cena',
+    time: '7:00 PM',
     kcal: 450,
     items: [
-      ['🍲', 'Sopa de lentejas 1½ taza', '18g proteína vegetal', '40g C', '18g P', ''],
-      ['🍞', 'Pan integral 1 rebanada', 'Grano entero · 3g fibra', '15g C', '', ''],
+      { emoji: '🍲', name: 'Sopa de lentejas 1½ taza', note: '18g proteína vegetal', carbs: '40g C', protein: '18g P', fat: '' },
+      { emoji: '🍞', name: 'Pan integral 1 rebanada', note: 'Grano entero · 3g fibra', carbs: '15g C', protein: '', fat: '' },
     ],
   },
 ]
 
 const week = [
-  ['Lun', 96, 'var(--teal)'],
-  ['Mar', 88, 'var(--teal)'],
-  ['Mié', 74, 'var(--org)'],
-  ['Jue', 91, 'var(--teal)'],
-  ['Vie', 85, 'var(--teal)'],
-  ['Sáb', 68, 'var(--org)'],
-  ['Dom', 93, 'var(--teal)'],
-]
+  ['Lu', 96],
+  ['Ma', 88],
+  ['Mi', 74],
+  ['Ju', 91],
+  ['Vi', 85],
+  ['Sa', 68],
+  ['Do', 93],
+] as const
+
+const RING_R = 38
+const RING_CIRC = 2 * Math.PI * RING_R
+
+function sumIntake(logs: NutritionIntakeLogDto[] | null | undefined) {
+  const acc = { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 }
+  for (const log of logs ?? []) {
+    if (log.mealCode === 'agua') continue
+    acc.kcal += log.calories ?? 0
+    acc.carbs += log.carbsG ?? 0
+    acc.protein += log.proteinG ?? 0
+    acc.fat += log.fatG ?? 0
+    acc.fiber += log.fiberG ?? 0
+  }
+  return acc
+}
+
+function formatQty(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)
+}
 
 export function NutritionPage() {
   const { hydration, setHydration, logMeal, showToast } = useApp()
   const { snapshot } = useProgram()
   const t = useT()
+  const { lang } = useI18n()
+  const locale = lang === 'en' ? 'en-US' : 'es-ES'
   const nutritionMutation = useNutritionLog()
   const [tab, setTab] = useState<'hoy' | 'semana' | 'indicaciones' | 'historial'>('hoy')
   const [openDay, setOpenDay] = useState(1)
+  const [selectedMealId, setSelectedMealId] = useState<MealCode>('des')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [pickGallery, setPickGallery] = useState(false)
 
-  // ── Registro manual prefilled (SPEC nutrition-intake-adherence) ──
   const [registerTarget, setRegisterTarget] = useState<MealCode | null>(null)
   const [intakeForm, setIntakeForm] = useState({
     calories: '',
@@ -122,48 +180,70 @@ export function NutritionPage() {
     fiberG: '',
   })
 
-  const nutContent = snapshot?.todayTasks?.find((t) => t.taskCode === 'nut')?.content
+  const nutContent = snapshot?.todayTasks?.find((task) => task.taskCode === 'nut')?.content
   const planTitle = nutContent?.nutritionPlanName || t('Ana Torres, RDN · plan asignado')
   const calorieTarget = nutContent?.dailyCalorieTarget || 1800
-  const carbsTarget = nutContent?.dailyCarbsTarget ? `${nutContent.dailyCarbsTarget}g` : '168g'
-  const proteinTarget = nutContent?.dailyProteinTarget ? `${nutContent.dailyProteinTarget}g` : '90g'
-  const fatTarget = nutContent?.dailyFatTarget ? `${nutContent.dailyFatTarget}g` : '50g'
-  const fiberTarget = nutContent?.dailyFiberTarget ? `${nutContent.dailyFiberTarget}g` : '28g'
+  const carbsGoal = nutContent?.dailyCarbsTarget || 168
+  const proteinGoal = nutContent?.dailyProteinTarget || 90
+  const fatGoal = nutContent?.dailyFatTarget || 50
+  const fiberGoal = nutContent?.dailyFiberTarget || 28
 
-  // Metas del plan por código de comida (D4 vía mealTypeToCode): alimentan el
-  // prefill del modal de registro. Sin plan → mapa vacío → formulario en blanco.
   const planTargets = useMemo(
     () => buildPlanTargets(nutContent?.nutritionMeals),
     [nutContent],
   )
 
-  // Verdad server-side de lo registrado hoy (S4): deriveLoggedMeals unifica a
-  // todos los consumidores sobre nutritionIntakeLogs (+ capa optimista del
-  // cache) — agua excluida (hidratación nunca cuenta como comida del plan).
   const loggedSet = useMemo(() => new Set(deriveLoggedMeals(snapshot)), [snapshot])
 
   const displayMeals = useMemo(() => {
     if (nutContent?.nutritionMeals && nutContent.nutritionMeals.length > 0) {
-      return nutContent.nutritionMeals.map((m) => {
-        // B3: el id se deriva del mapa canónico mealTypeToCode (D4) — Snack →
-        // 'mer', NO el fallthrough por prefijo que lo mandaba a 'cen' (bug
-        // vivo en el código de registro Y en el prefill). Solo tipos
-        // genuinamente desconocidos caen en 'cen'.
-        const id = mealTypeToCode(m.mealType) ?? 'cen'
-        const emoji = MEAL_CODE_EMOJI[id]
-        return {
-          id,
-          emoji,
-          title: `${m.mealType}${m.calories ? ` · ${m.calories} kcal` : ''}`,
-          kcal: m.calories || 0,
-          items: [
-            ['🍽️', m.description || m.foods || m.mealType, m.notes || 'Recomendación del plan clínico', m.carbsG ? `${m.carbsG}g C` : '', m.proteinG ? `${m.proteinG}g P` : '', m.fatG ? `${m.fatG}g G` : '']
-          ],
+      const byId = new Map<MealCode, DisplayMeal>()
+      for (const meal of nutContent.nutritionMeals) {
+        const id = mealTypeToCode(meal.mealType) ?? 'cen'
+        const row: FoodRow = {
+          emoji: '🍽️',
+          name: meal.description || meal.foods || meal.mealType,
+          note: meal.notes || 'Recomendación del plan clínico',
+          carbs: meal.carbsG ? `${meal.carbsG}g C` : '',
+          protein: meal.proteinG ? `${meal.proteinG}g P` : '',
+          fat: meal.fatG ? `${meal.fatG}g G` : '',
         }
-      })
+        const existing = byId.get(id)
+        if (existing) {
+          existing.items.push(row)
+          existing.kcal += meal.calories || 0
+        } else {
+          byId.set(id, {
+            id,
+            emoji: MEAL_CODE_EMOJI[id],
+            name: MEAL_LABELS[id],
+            time: '',
+            kcal: meal.calories || 0,
+            items: [row],
+          })
+        }
+      }
+      return [...byId.values()]
     }
     return defaultMeals
-  }, [nutContent, t])
+  }, [nutContent])
+
+  useEffect(() => {
+    if (!displayMeals.some((meal) => meal.id === selectedMealId) && displayMeals[0]) {
+      setSelectedMealId(displayMeals[0].id)
+    }
+  }, [displayMeals, selectedMealId])
+
+  const selectedMeal = displayMeals.find((meal) => meal.id === selectedMealId) ?? displayMeals[0]
+  const selectedLogged = selectedMeal ? loggedSet.has(selectedMeal.id) : false
+
+  const consumed = useMemo(() => {
+    const fromLogs = sumIntake(nutContent?.nutritionIntakeLogs)
+    if (snapshot) return fromLogs
+    return { kcal: 1650, carbs: 158, protein: 79, fat: 42, fiber: 22 }
+  }, [nutContent, snapshot])
+
+  const kcalPct = calorieTarget > 0 ? Math.min(1, consumed.kcal / calorieTarget) : 0
 
   type AnalysisState = 'idle' | 'camera' | 'analyzing' | 'success' | 'error'
   const [analysis, setAnalysis] = useState<AnalysisState>('idle')
@@ -184,6 +264,15 @@ export function NutritionPage() {
     const id = setInterval(() => setStep((s) => Math.min(s + 1, steps.length - 1)), 800)
     return () => clearInterval(id)
   }, [analysis, steps.length])
+
+  useEffect(() => {
+    if (analysis !== 'camera' || !pickGallery) return
+    const timer = window.setTimeout(() => {
+      document.querySelector<HTMLInputElement>('input[type="file"][accept="image/*"]')?.click()
+      setPickGallery(false)
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [analysis, pickGallery])
 
   async function runAnalysis(blob: Blob, fileName: string) {
     setPhoto(URL.createObjectURL(blob))
@@ -210,19 +299,14 @@ export function NutritionPage() {
     setAnalysisError(null)
     setAnalysis('idle')
     setStep(0)
+    setPickGallery(false)
   }
 
-  // Abre el modal de registro con el prefill del plan (o vacío sin plan).
   const openRegister = (id: MealCode) => {
     setIntakeForm(prefillIntakeForm(planTargets.get(id)))
     setRegisterTarget(id)
   }
 
-  // Guarda el registro manual (source manual). Sin snapshot (demo) se conserva
-  // el doble write del AppContext como fallback; con snapshot solo la API.
-  // B7: el toast de éxito solo se muestra en onSuccess; errores de negocio
-  // (p.ej. 400 intake inválido) se muestran con el mensaje del servidor y el
-  // formulario queda abierto para corregir; 409 → silencioso (keep-state).
   const submitRegister = () => {
     if (!registerTarget) return
     const num = (s: string): number | undefined => {
@@ -251,8 +335,6 @@ export function NutritionPage() {
             setRegisterTarget(null)
             return
           }
-          // 422 NUTRITION_EVIDENCE_REQUIRED (D3): el gate lista las comidas
-          // del plan sin evidencia — se muestran al paciente (B7 contract).
           if (error instanceof ApiError && error.errors?.missingMealCodes?.length) {
             showToast(
               t('Faltan comidas del plan: {meals}', {
@@ -268,9 +350,6 @@ export function NutritionPage() {
     )
   }
 
-  // Confirma un análisis de foto en una comida: persiste con source ai_photo
-  // + analysisId (reemplaza el descarte anterior) y los macros del summary.
-  // B7: mismo contrato de toasts que submitRegister.
   const logAnalysis = (id: MealCode) => {
     const summary = result?.summary
     const intake: NutritionIntakePayload = summary
@@ -312,10 +391,6 @@ export function NutritionPage() {
     )
   }
 
-  // Hidratación: registra en la API con mealCode 'agua' + waterMl (250 ml por
-  // vaso) y actualiza el contador optimista. Error-surfacing B7 (residual del
-  // re-gate Batch 1): 409 silencioso (ya logueado), resto → toast err con el
-  // mensaje del servidor.
   const tapGlass = (n: number) => {
     setHydration(n)
     if (n > hydration) {
@@ -334,153 +409,91 @@ export function NutritionPage() {
     }
   }
 
+  const openCamera = () => {
+    setPickGallery(false)
+    setAnalysis('camera')
+  }
+
+  const openGallery = () => {
+    setPickGallery(true)
+    setAnalysis('camera')
+  }
+
+  const macros = [
+    { key: 'Carbohidratos', value: consumed.carbs, goal: carbsGoal, color: MACRO_COLORS.carbs },
+    { key: 'Proteínas', value: consumed.protein, goal: proteinGoal, color: MACRO_COLORS.protein },
+    { key: 'Grasas', value: consumed.fat, goal: fatGoal, color: MACRO_COLORS.fat },
+    { key: 'Fibra', value: consumed.fiber, goal: fiberGoal, color: MACRO_COLORS.fiber },
+  ]
+
   return (
     <Screen>
       <PageHeader title={t('Nutrición')} sub={t(planTitle)} />
 
-      {/* ── Analizador de comida con IA (flujo real) ── */}
-      <div className="card" style={{ margin: '10px 14px 0', background: 'var(--navy)', borderColor: 'transparent', color: '#fff' }}>
-        {analysis === 'idle' && (
-          <>
-            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>📸 {t('Analiza tu comida con IA')}</div>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
-              {t('Toma una foto y recibe calorías, macros y porción reales.')}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <IonButton
-                style={{ flex: 1, '--background': 'var(--teal)' } as CSSProperties}
-                onClick={() => setAnalysis('camera')}
-              >
-                <IonIcon icon={cameraOutline} slot="start" />
-                {t('Usar cámara')}
-              </IonButton>
-              <IonButton
-                style={{ flex: 1 }}
-                fill="outline"
-                onClick={() => {
-                  setAnalysis('camera')
-                  setTimeout(() => {
-                    const input = document.querySelector<HTMLInputElement>('input[type="file"][accept="image/*"]')
-                    input?.click()
-                  }, 50)
-                }}
-              >
-                <IonIcon icon={imageOutline} slot="start" />
-                {t('Seleccionar imagen')}
-              </IonButton>
-            </div>
-          </>
-        )}
-
-        {analysis === 'camera' && (
-          <>
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>📷 {t('Apunta a tu comida')}</div>
-            <CameraCapture
-              onCapture={(blob, fileName) => runAnalysis(blob, fileName)}
-              onCancel={resetAnalysis}
-            />
-          </>
-        )}
-
-        {analysis === 'analyzing' && photo && (
-          <>
-            <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
-              <img src={photo} alt={t('Fotografía de la comida')} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', filter: 'brightness(0.55)' }} />
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center', padding: 16 }}>
-                <IonSpinner name="crescent" style={{ color: '#fff', width: 34, height: 34 }} />
-                <div style={{ fontWeight: 800, fontSize: 15 }}>{t('Analizando tu comida…')}</div>
-                {steps.map((s, i) => (
-                  <div key={s} style={{ fontSize: 12, opacity: i <= step ? 1 : 0.35, color: '#fff' }}>
-                    {i < step ? '✓ ' : i === step ? '▸ ' : ''}
-                    {s}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {analysis === 'success' && result && photo && (
-          <>
-            <img src={photo} alt={t('Fotografía de la comida')} style={{ width: '100%', borderRadius: 14, aspectRatio: '4/3', objectFit: 'cover', marginBottom: 12 }} />
-            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 10 }}>
-              {t('Alimentos detectados')} ({result.foods.length})
-            </div>
-            {result.foods.map((food, i) => (
-              <FoodResultCard key={`${food.name}-${i}`} food={food} />
-            ))}
-            {result.summary && result.foods.some((f) => f.nutritionStatus === 'available') && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(255,255,255,.25)' }}>
-                <span style={{ fontWeight: 700 }}>{t('TOTAL')}</span>
-                <span style={{ fontWeight: 800, fontSize: 16 }}>{Math.round(result.summary.calories)} kcal</span>
-              </div>
-            )}
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>{t('Registrar en…')}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {(['des', 'alm', 'mer', 'cen'] as MealCode[]).map((id) => (
-                  <IonButton key={id} size="small" fill="outline" onClick={() => logAnalysis(id)}>
-                    {t('Registrar en {meal}', { meal: t(MEAL_LABELS[id]) })}
-                  </IonButton>
-                ))}
-              </div>
-            </div>
-            <IonButton style={{ marginTop: 12, '--background': 'var(--teal)' } as CSSProperties} expand="block" onClick={resetAnalysis}>
-              <IonIcon icon={refreshOutline} slot="start" />
-              {t('Analizar otra comida')}
-            </IonButton>
-          </>
-        )}
-
-        {analysis === 'error' && (
-          <>
-            {photo && <img src={photo} alt={t('Fotografía de la comida')} style={{ width: '100%', borderRadius: 14, aspectRatio: '4/3', objectFit: 'cover', marginBottom: 12 }} />}
-            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 12 }}>⚠️ {analysisError}</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <IonButton style={{ flex: 1 }} fill="outline" onClick={resetAnalysis}>
-                {t('Intentar de nuevo')}
-              </IonButton>
-              <IonButton style={{ flex: 1 }} fill="clear" onClick={resetAnalysis}>
-                {t('Cancelar')}
-              </IonButton>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="kcal-strip">
-        <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
-          <svg width="92" height="92" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx="50" cy="50" r="38" fill="none" stroke="#E8EEF4" strokeWidth="10" />
-            <circle cx="50" cy="50" r="38" fill="none" stroke="#1D9E75" strokeWidth="10" strokeDasharray="239" strokeDashoffset="36" strokeLinecap="round" />
-          </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div className="display" style={{ fontSize: 16, fontWeight: 800 }}>1,650</div>
-            <div style={{ fontSize: 9, color: 'var(--mu)' }}>/{calorieTarget}</div>
-          </div>
-        </div>
-        <div style={{ flex: 1 }}>
-          {[
-            ['Carbohidratos', carbsTarget, 75, '#1B6CA8'],
-            ['Proteínas', proteinTarget, 88, '#1D9E75'],
-            ['Grasas', fatTarget, 60, '#E87B2B'],
-            ['Fibra', fiberTarget, 80, '#7C3AED'],
-          ].map(([n, v, w, c]) => (
-            <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: 10, color: 'var(--mu)', width: 78 }}>{t(String(n))}</span>
+      <div className="nut-dash">
+        <div className="nut-macros">
+          {macros.map((macro) => (
+            <div key={macro.key} className="nut-macro">
+              <span className="nut-macro-label">{t(macro.key)}</span>
               <IonProgressBar
-                className="pb"
-                style={{ flex: 1, '--progress-background': String(c) } as CSSProperties}
-                value={Number(w) / 100}
+                className="nut-macro-bar"
+                style={{ '--progress-background': macro.color } as CSSProperties}
+                value={macro.goal > 0 ? Math.min(1, macro.value / macro.goal) : 0}
               />
-              <span style={{ fontSize: 11, fontWeight: 700, width: 36, textAlign: 'right' }}>{v}</span>
+              <span className="nut-macro-val">{t('{n}g', { n: String(Math.round(macro.value)) })}</span>
             </div>
           ))}
         </div>
+        <div
+          className="nut-ring"
+          role="img"
+          aria-label={t('{kcal} de {target} kcal', {
+            kcal: formatQty(consumed.kcal, locale),
+            target: formatQty(calorieTarget, locale),
+          })}
+        >
+          <svg width="108" height="108" viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r={RING_R} fill="none" stroke="rgba(255,255,255,.16)" strokeWidth="9" />
+            <circle
+              cx="50"
+              cy="50"
+              r={RING_R}
+              fill="none"
+              stroke="var(--teal)"
+              strokeWidth="9"
+              strokeDasharray={RING_CIRC}
+              strokeDashoffset={RING_CIRC * (1 - kcalPct)}
+              strokeLinecap="round"
+              transform="rotate(-90 50 50)"
+            />
+          </svg>
+          <div className="nut-ring-label" aria-hidden="true">
+            <strong>{formatQty(consumed.kcal, locale)}</strong>
+            <span>/{formatQty(calorieTarget, locale)}</span>
+          </div>
+        </div>
       </div>
 
+      {tab === 'hoy' && (
+        <div className="nut-meals" role="tablist" aria-label={t('Comidas')}>
+          {displayMeals.map((meal) => (
+            <button
+              key={meal.id}
+              type="button"
+              role="tab"
+              aria-selected={meal.id === selectedMeal?.id}
+              className={`nut-meal-tab${meal.id === selectedMeal?.id ? ' on' : ''}`}
+              onClick={() => setSelectedMealId(meal.id)}
+            >
+              <span className="nut-meal-tab-name">{t(meal.name)}</span>
+              {meal.time ? <span className="nut-meal-tab-time">({meal.time})</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
+
       <IonSegment
-        className="plan-seg"
+        className="plan-seg nut-period"
         value={tab}
         onIonChange={(e) => setTab((e.detail.value as typeof tab) ?? 'hoy')}
       >
@@ -491,105 +504,114 @@ export function NutritionPage() {
       </IonSegment>
 
       <Scroll>
-        {tab === 'hoy' && (
+        {tab === 'hoy' && selectedMeal && (
           <>
-            <div className="card" style={{ margin: '10px 14px', background: 'var(--blue-l)', borderColor: '#B5D4F4' }}>
-              <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 10, fontSize: 13 }}>{t('💧 Hidratación · 8 vasos (2L)')}</div>
-              <div style={{ display: 'flex', gap: 6 }}>
+            <div className="nut-hyd">
+              <div className="nut-hyd-title">{t('💧 Hidratación · 8 vasos (2L)')}</div>
+              <div className="nut-hyd-row">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <button key={i} className={`hyd-glass ${i < hydration ? 'full' : ''}`} onClick={() => tapGlass(i + 1)}>
-                    🥛
+                  <button
+                    key={i}
+                    type="button"
+                    className={`nut-glass${i < hydration ? ' full' : ''}`}
+                    aria-label={t('Vaso {n} de 8', { n: String(i + 1) })}
+                    onClick={() => tapGlass(i + 1)}
+                  >
+                    <HydrationGlass filled={i < hydration} />
                   </button>
                 ))}
               </div>
             </div>
-            {displayMeals.map((m) => (
-              <div key={m.id} className="meal-card">
-                <div className="meal-hdr">
-                  <span>{m.emoji}</span>
-                  <span style={{ flex: 1, fontWeight: 700 }}>{t(m.title)}</span>
-                  <span style={{ opacity: 0.75, fontSize: 12 }}>{m.kcal} kcal</span>
-                </div>
-                {m.items.map((it) => (
-                  <div key={it[1]} className="food-item">
-                    <span>{it[0]}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{t(it[1])}</div>
-                      <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t(it[2])}</div>
-                    </div>
-                    <div>
-                      {it[3] && <span className="fm fm-c">{it[3]}</span>}
-                      {it[4] && <span className="fm fm-p">{it[4]}</span>}
-                      {it[5] && <span className="fm fm-g">{it[5]}</span>}
-                    </div>
-                  </div>
-                ))}
-                {loggedSet.has(m.id) ? (
-                  <div style={{ margin: 12, background: 'var(--teal-l)', borderRadius: 12, padding: 12, color: '#0F6E56', fontWeight: 700, fontSize: 13 }}>
-                    {t('✓ Registrado con foto · IA 92% adherencia')}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => openRegister(m.id as MealCode)}
-                    style={{
-                      margin: 12,
-                      width: 'calc(100% - 24px)',
-                      background: 'linear-gradient(145deg,#102a50,#173c73)',
-                      border: '1.5px dashed rgba(32,200,255,.4)',
-                      borderRadius: 12,
-                      padding: 12,
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      textAlign: 'left',
-                    }}
-                  >
-                    <span style={{ fontSize: 20 }}>📸</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>{t('Registrar lo que comí')}</div>
-                      <div style={{ fontSize: 11, opacity: 0.6 }}>{t('IA analiza gramos · kcal · adherencia')}</div>
-                    </div>
-                  </button>
-                )}
+
+            <div className="nut-meal-sum">
+              <div className="nut-thumb" aria-hidden="true">{selectedMeal.emoji}</div>
+              <div className="nut-meal-sum-txt">
+                <strong>
+                  {t(selectedMeal.name)}
+                  {selectedMeal.time ? ` · ${selectedMeal.time}` : ''}
+                </strong>
+                <span>
+                  <IonIcon icon={flameOutline} />
+                  {t('{n} kcal', { n: formatQty(selectedMeal.kcal, locale) })}
+                </span>
               </div>
-            ))}
+              <IonButton
+                fill="clear"
+                className="nut-menu-btn"
+                aria-label={t('Menú de la comida')}
+                onClick={() => setMenuOpen(true)}
+              >
+                <IonIcon icon={ellipsisHorizontal} slot="icon-only" />
+              </IonButton>
+            </div>
+
+            <div className="nut-foods">
+              {selectedMeal.items.map((item) => (
+                <div key={item.name} className="nut-food">
+                  <span className="nut-food-ico" aria-hidden="true">{item.emoji}</span>
+                  <div className="nut-food-txt">
+                    <strong>{t(item.name)}</strong>
+                    {item.note ? <span>{t(item.note)}</span> : null}
+                  </div>
+                  <div className="nut-food-macros">
+                    {item.carbs && <span className="fm fm-c">{item.carbs}</span>}
+                    {item.protein && <span className="fm fm-p">{item.protein}</span>}
+                    {item.fat && <span className="fm fm-g">{item.fat}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {selectedLogged ? (
+              <div className="nut-logged">{t('✓ Registrado con foto · IA 92% adherencia')}</div>
+            ) : (
+              <IonButton expand="block" className="nut-cta" onClick={openCamera}>
+                <IonIcon icon={cameraOutline} slot="start" />
+                <span className="nut-cta-copy">
+                  <strong>{t('Registrar lo que comí')}</strong>
+                  <em>{t('IA analiza gramos · kcal · adherencia')}</em>
+                </span>
+              </IonButton>
+            )}
           </>
         )}
 
         {tab === 'semana' && (
-          <div style={{ padding: '12px 0' }}>
-            <div className="card" style={{ margin: '0 14px 12px' }}>
-              <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('📊 Adherencia semanal')}</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90 }}>
-                {week.map(([d, h, c]) => (
-                  <div key={String(d)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700 }}>{h}%</span>
-                    <div style={{ width: '100%', height: Number(h) * 0.7, background: String(c), borderRadius: '4px 4px 0 0' }} />
-                    <span style={{ fontSize: 10, color: 'var(--mu)' }}>{t(String(d))}</span>
+          <div className="nut-stack">
+            <div className="nut-card">
+              <div className="nut-card-title">{t('📊 Adherencia semanal')}</div>
+              <div className="nut-chart">
+                {week.map(([day, pct]) => (
+                  <div key={day} className="nut-bar">
+                    <span className="nut-bar-pct">{pct}%</span>
+                    <div className="nut-bar-track">
+                      <div className="nut-bar-fill" style={{ height: `${pct}%` }} />
+                    </div>
+                    <span className="nut-bar-day">{t(day)}</span>
                   </div>
                 ))}
               </div>
             </div>
             {[
-              ['04/08/2026', '1,720 kcal · 96%', 0],
-              ['05/08/2026 · HOY', '1,650 kcal · 88%', 1],
-              ['06/08/2026', 'Plan 1,760 kcal', 2],
-            ].map(([n, k, i]) => (
+              ['04/08/2026', '1,720 kcal · 96%', 0, false],
+              ['05/08/2026', '1,650 kcal · 88%', 1, true],
+              ['06/08/2026', t('Plan 1,760 kcal'), 2, false],
+            ].map(([date, meta, idx, isToday]) => (
               <button
-                key={String(n)}
-                className="card"
-                style={{ margin: '0 14px 8px', textAlign: 'left' }}
-                onClick={() => setOpenDay(Number(i))}
+                key={String(date)}
+                type="button"
+                className={`nut-day${isToday ? ' today' : ''}${openDay === idx ? ' open' : ''}`}
+                onClick={() => setOpenDay(Number(idx))}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                  {n}
-                  <span className="chip chip-teal">{k}</span>
+                <div className="nut-day-row">
+                  <strong>
+                    {date}
+                    {isToday ? ` · ${t('HOY')}` : ''}
+                  </strong>
+                  <span>{meta}</span>
                 </div>
-                {openDay === i && (
-                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--mu)', lineHeight: 1.7 }}>
-                    {t('Desayuno · Almuerzo · Merienda · Cena según plan mediterráneo.')}
-                  </div>
+                {openDay === idx && (
+                  <p>{t('Desayuno · Almuerzo · Merienda · Cena según plan mediterráneo.')}</p>
                 )}
               </button>
             ))}
@@ -597,56 +619,153 @@ export function NutritionPage() {
         )}
 
         {tab === 'indicaciones' && (
-          <div className="card" style={{ margin: 14 }}>
+          <div className="nut-card nut-goals">
             {[
-              ['🔥', 'Calorías diarias', '1,800 kcal'],
-              ['🍚', 'Carbohidratos', '≤ 200g/día'],
-              ['🥩', 'Proteínas', '≥ 90g/día'],
-              ['🧂', 'Sodio (AHA)', '≤ 2,300mg'],
-              ['🍬', 'Azúcar añadida', '≤ 25g/día'],
-              ['💧', 'Agua (USDA)', '≥ 2L/día'],
-            ].map(([e, n, v]) => (
-              <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--g1)' }}>
-                <span>{e}</span>
-                <span style={{ flex: 1, fontWeight: 600 }}>{t(String(n))}</span>
-                <span style={{ fontWeight: 800, color: 'var(--teal)' }}>{t(String(v))}</span>
+              ['🔥', 'Calorías diarias', t('{n} kcal', { n: formatQty(calorieTarget, locale) })],
+              ['🍎', 'Carbohidratos', t('{n}g/día', { n: String(nutContent?.dailyCarbsTarget || 200) })],
+              ['🥩', 'Proteínas', t('{n}g/día', { n: String(proteinGoal) })],
+              ['🧂', 'Sodio (AHA)', t('≤ 2,300mg')],
+              ['🍬', 'Azúcar añadida', t('≤ 25g/día')],
+              ['💧', 'Agua (USDA)', t('≥ 2L/día')],
+            ].map(([ico, label, value]) => (
+              <div key={String(label)} className="nut-goal">
+                <span className="nut-goal-ico" aria-hidden="true">{ico}</span>
+                <span className="nut-goal-label">{t(String(label))}</span>
+                <span className="nut-goal-val">{value}</span>
               </div>
             ))}
           </div>
         )}
 
         {tab === 'historial' && (
-          <div className="card" style={{ margin: 14, padding: 0 }}>
-            <div style={{ background: 'var(--navy)', color: '#fff', padding: 12, fontWeight: 700 }}>{t('📉 Evolución de peso')}</div>
+          <div className="nut-card nut-hist">
+            <div className="nut-hist-head">{t('📉 Evolución de peso')}</div>
             {[
               ['1 may', '71.7 kg', 'IMC 27.6 · Inicio', ''],
               ['01/06/2026', '70.2 kg', 'IMC 27.0', '↓ 1.5 kg'],
               ['05/08/2026', '68.5 kg', 'IMC 26.4 · HbA1c 5.9%', '↓ 0.8 kg'],
             ].map(([d, k, s, ch]) => (
-              <div key={d} style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid var(--g1)', alignItems: 'center' }}>
-                <div style={{ width: 48, fontSize: 11, color: 'var(--mu)' }}>{d}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800 }}>{k}</div>
-                  <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t(String(s))}</div>
+              <div key={d} className="nut-hist-row">
+                <div className="nut-hist-date">{d}</div>
+                <div className="nut-hist-txt">
+                  <strong>{k}</strong>
+                  <span>{t(String(s))}</span>
                 </div>
-                <span style={{ color: 'var(--teal)', fontWeight: 700, fontSize: 12 }}>{ch}</span>
+                <em>{ch}</em>
               </div>
             ))}
-            <div style={{ padding: 12, background: '#F8FBF8' }}>
-              <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Meta semana 24')}</div>
-              <div style={{ fontWeight: 800 }}>{t('65 kg · IMC≤25 · HbA1c<5.7%')}</div>
-              <IonProgressBar className="pb" style={{ marginTop: 8, '--progress-background': 'var(--teal)' } as CSSProperties} value={0.5} />
+            <div className="nut-hist-goal">
+              <span>{t('Meta semana 24')}</span>
+              <strong>{t('65 kg · IMC≤25 · HbA1c<5.7%')}</strong>
+              <IonProgressBar
+                className="nut-goal-bar"
+                style={{ '--progress-background': 'var(--teal)' } as CSSProperties}
+                value={0.5}
+              />
             </div>
           </div>
         )}
       </Scroll>
 
-      {/* ── Registro manual de comida (prefill del plan, editable) ── */}
+      <IonActionSheet
+        isOpen={menuOpen}
+        header={t('Opciones de registro')}
+        onDidDismiss={() => setMenuOpen(false)}
+        buttons={[
+          { text: t('Usar cámara'), handler: openCamera },
+          { text: t('Seleccionar imagen'), handler: openGallery },
+          {
+            text: t('Registro manual'),
+            handler: () => {
+              if (selectedMeal) openRegister(selectedMeal.id)
+            },
+          },
+          { text: t('Cancelar'), role: 'cancel' },
+        ]}
+      />
+
+      <IonModal isOpen={analysis !== 'idle'} onDidDismiss={resetAnalysis} className="nut-ai-modal">
+        <div className="nut-ai">
+          {analysis === 'camera' && (
+            <>
+              <div className="nut-ai-title">📷 {t('Apunta a tu comida')}</div>
+              <CameraCapture
+                onCapture={(blob, fileName) => runAnalysis(blob, fileName)}
+                onCancel={resetAnalysis}
+              />
+            </>
+          )}
+
+          {analysis === 'analyzing' && photo && (
+            <div className="nut-ai-photo">
+              <img src={photo} alt={t('Fotografía de la comida')} />
+              <div className="nut-ai-overlay">
+                <IonSpinner name="crescent" />
+                <div className="nut-ai-title">{t('Analizando tu comida…')}</div>
+                {steps.map((label, i) => (
+                  <div key={label} className={`nut-ai-step${i <= step ? ' on' : ''}`}>
+                    {i < step ? '✓ ' : i === step ? '▸ ' : ''}
+                    {label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {analysis === 'success' && result && photo && (
+            <>
+              <img className="nut-ai-preview" src={photo} alt={t('Fotografía de la comida')} />
+              <div className="nut-ai-title">
+                {t('Alimentos detectados')} ({result.foods.length})
+              </div>
+              {result.foods.map((food, i) => (
+                <FoodResultCard key={`${food.name}-${i}`} food={food} />
+              ))}
+              {result.summary && result.foods.some((f) => f.nutritionStatus === 'available') && (
+                <div className="nut-ai-total">
+                  <span>{t('TOTAL')}</span>
+                  <strong>{Math.round(result.summary.calories)} kcal</strong>
+                </div>
+              )}
+              <div className="nut-ai-register">
+                <div className="nut-ai-hint">{t('Registrar en…')}</div>
+                <div className="nut-ai-grid">
+                  {(['des', 'alm', 'mer', 'cen'] as MealCode[]).map((id) => (
+                    <IonButton key={id} size="small" fill="outline" onClick={() => logAnalysis(id)}>
+                      {t('Registrar en {meal}', { meal: t(MEAL_LABELS[id]) })}
+                    </IonButton>
+                  ))}
+                </div>
+              </div>
+              <IonButton className="bt-teal" expand="block" onClick={resetAnalysis}>
+                <IonIcon icon={refreshOutline} slot="start" />
+                {t('Analizar otra comida')}
+              </IonButton>
+            </>
+          )}
+
+          {analysis === 'error' && (
+            <>
+              {photo && <img className="nut-ai-preview" src={photo} alt={t('Fotografía de la comida')} />}
+              <div className="nut-ai-error">⚠️ {analysisError}</div>
+              <div className="nut-ai-actions">
+                <IonButton style={{ flex: 1 }} fill="outline" onClick={resetAnalysis}>
+                  {t('Intentar de nuevo')}
+                </IonButton>
+                <IonButton style={{ flex: 1 }} fill="clear" onClick={resetAnalysis}>
+                  {t('Cancelar')}
+                </IonButton>
+              </div>
+            </>
+          )}
+        </div>
+      </IonModal>
+
       <IonModal isOpen={registerTarget !== null} onDidDismiss={() => setRegisterTarget(null)}>
-        <div style={{ padding: 20 }}>
-          <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 4 }}>{t('Registrar comida')}</div>
+        <div className="nut-reg">
+          <div className="nut-ai-title">{t('Registrar comida')}</div>
           {registerTarget && (
-            <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 14 }}>
+            <div className="nut-ai-hint">
               {t(MEAL_LABELS[registerTarget])}
               {planTargets.has(registerTarget) && ` · ${t('Valores del plan de hoy · editables')}`}
             </div>
@@ -696,11 +815,7 @@ export function NutritionPage() {
             value={intakeForm.fiberG}
             onIonInput={(e) => setIntakeForm((f) => ({ ...f, fiberG: String(e.target.value ?? '') }))}
           />
-          <IonButton
-            expand="block"
-            style={{ marginTop: 16, '--background': 'var(--teal)' } as CSSProperties}
-            onClick={submitRegister}
-          >
+          <IonButton expand="block" className="bt-teal" style={{ marginTop: 16 }} onClick={submitRegister}>
             {t('Guardar')}
           </IonButton>
           <IonButton expand="block" fill="clear" onClick={() => setRegisterTarget(null)}>
@@ -712,6 +827,24 @@ export function NutritionPage() {
   )
 }
 
+/** Vaso de hidratación: Ionic no tiene un ícono de vaso de agua. */
+function HydrationGlass({ filled }: { filled: boolean }) {
+  return (
+    <svg className="nut-glass-ico" viewBox="0 0 24 32" aria-hidden="true">
+      <path
+        className="nut-glass-outline"
+        d="M5 2.4h14l-1.55 22.6A3.4 3.4 0 0 1 14.1 28.6H9.9A3.4 3.4 0 0 1 6.55 25L5 2.4Z"
+      />
+      {filled ? (
+        <path
+          className="nut-glass-water"
+          d="M7.15 11.2h9.7l-1.05 13.6a1.85 1.85 0 0 1-1.83 1.7H10.03a1.85 1.85 0 0 1-1.83-1.7L7.15 11.2Z"
+        />
+      ) : null}
+    </svg>
+  )
+}
+
 function FoodResultCard({ food }: { food: DetectedFood }) {
   const t = useT()
   const name = displayName(food.name)
@@ -719,41 +852,35 @@ function FoodResultCard({ food }: { food: DetectedFood }) {
   const available = food.nutritionStatus === 'available' && food.nutrition
 
   return (
-    <div style={{ background: 'rgba(255,255,255,.08)', borderRadius: 12, padding: 10, marginBottom: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: 20 }}>{emoji}</span>
-        <span style={{ fontWeight: 800, fontSize: 14, textTransform: 'capitalize' }}>{name}</span>
+    <div className="nut-ai-food">
+      <div className="nut-ai-food-top">
+        <span>{emoji}</span>
+        <strong>{name}</strong>
         {food.portion && (
-          <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.75 }}>
+          <em>
             {Math.round(food.portion.estimatedGrams)} g
             {food.portion.minGrams != null && food.portion.maxGrams != null
               ? ` (${Math.round(food.portion.minGrams)}–${Math.round(food.portion.maxGrams)} g)`
               : ''}
-          </span>
+          </em>
         )}
       </div>
 
       {available && food.nutrition ? (
         <>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
-            <span style={{ fontWeight: 800, fontSize: 20 }}>{Math.round(food.nutrition.calories)}</span>
-            <span style={{ fontSize: 12, opacity: 0.7 }}>kcal</span>
+          <div className="nut-ai-kcal">
+            <b>{Math.round(food.nutrition.calories)}</b>
+            <span>kcal</span>
           </div>
-          <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
-            <span style={{ background: 'rgba(255,255,255,.1)', borderRadius: 8, padding: '3px 8px' }}>
-              {t('Proteínas')} {Math.round(food.nutrition.protein)}g
-            </span>
-            <span style={{ background: 'rgba(255,255,255,.1)', borderRadius: 8, padding: '3px 8px' }}>
-              {t('Carbohidratos')} {Math.round(food.nutrition.carbohydrates)}g
-            </span>
-            <span style={{ background: 'rgba(255,255,255,.1)', borderRadius: 8, padding: '3px 8px' }}>
-              {t('Grasas')} {Math.round(food.nutrition.fat)}g
-            </span>
+          <div className="nut-ai-chips">
+            <span>{t('Proteínas')} {Math.round(food.nutrition.protein)}g</span>
+            <span>{t('Carbohidratos')} {Math.round(food.nutrition.carbohydrates)}g</span>
+            <span>{t('Grasas')} {Math.round(food.nutrition.fat)}g</span>
           </div>
-          {food.source && <div style={{ fontSize: 10, opacity: 0.55, marginTop: 6 }}>{food.source}</div>}
+          {food.source && <div className="nut-ai-src">{food.source}</div>}
         </>
       ) : (
-        <div style={{ fontSize: 12, opacity: 0.8 }}>
+        <div className="nut-ai-hint">
           {food.nutritionStatus === 'portion_unavailable'
             ? t('Identificamos este alimento, pero no pudimos estimar una porción.')
             : t('Identificamos este alimento, pero no tenemos información nutricional disponible.')}
