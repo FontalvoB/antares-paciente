@@ -17,6 +17,12 @@ export const programKeys = {
   /** GET /api/v1/program/scores */
   scores: ['program', 'scores'] as const,
 
+  /** GET /api/v1/program/me/league */
+  league: ['program', 'league'] as const,
+
+  /** GET /api/v1/program/me/scores-history?weeks=12 (tab Evo, trend card) */
+  scoresHistory: ['program', 'scores-history'] as const,
+
   /** All program queries — use for enrollment-level invalidation */
   all: ['program'] as const,
 } as const
@@ -26,6 +32,9 @@ export const programKeys = {
  * - completing/registering task → invalidate snapshot + path + calendar + scores
  * - enrollment → invalidate ALL program queries
  * - focus/reconnect → TanStack Query handles staleTime refresh
+ * - scoresHistory is INTENTIONALLY not invalidated on task completion: the
+ *   series has weekly granularity (a task won't change it) and the query's
+ *   staleTime absorbs it; invalidating would only trigger a redundant refetch.
  */
 export const programInvalidation = {
   /** After completing a task or registering nutrition */

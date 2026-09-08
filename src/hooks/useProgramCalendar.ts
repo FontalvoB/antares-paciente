@@ -89,8 +89,10 @@ function buildMockCalendar(from: string, to: string): ProgramCalendarDto {
 export function useProgramCalendar(
   from: string,
   to: string,
+  options?: { enabled?: boolean },
 ): UseQueryResult<ProgramCalendarDto, ApiError> {
   const queryClient = useQueryClient()
+  const enabled = options?.enabled ?? true
 
   return useQuery<ProgramCalendarDto, ApiError>({
     queryKey: programKeys.calendar(from, to),
@@ -116,5 +118,6 @@ export function useProgramCalendar(
     staleTime: CALENDAR_STALE_TIME_MS,
     retry: false, // retry handled inside queryFn for eligible errors only
     refetchOnWindowFocus: true,
+    enabled,
   })
 }

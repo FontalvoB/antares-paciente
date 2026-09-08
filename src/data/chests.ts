@@ -172,7 +172,7 @@ export const ALL_CHESTS: ProgramChest[] = [...STREAK_CHESTS, ...CLINICAL_CHESTS]
 export const FALLBACK_STREAK_CHESTS = STREAK_CHESTS
 
 /**
- * Nutribiótico chest definitions (backend NB_STREAK_7/14/30/60/90, SPEC §19).
+ * Nutracéutico chest definitions (backend NB_STREAK_7/14/30/60/90, SPEC §19).
  * Per-run milestones: unlike streak chests, they re-award on every completed
  * run, so "earned this run" is correctly derivable from `nbStreak >= days`.
  * Static defs are an accepted drift risk (documented in the chests design).

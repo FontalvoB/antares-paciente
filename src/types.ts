@@ -107,6 +107,6 @@ export interface Friend {
 }
 
 export type ProgramTaskId =
-  "podcast" | "vitals" | "nut" | "ejercicio" | "nutribiotico" | "emocional";
+  "podcast" | "vitals" | "nut" | "ejercicio" | "nutraceutico" | "emocional";
 
 export type ProgramDay = Record<ProgramTaskId, boolean>;

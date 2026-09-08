@@ -14,9 +14,11 @@
  *  - Eligible errors (network / 5xx) never surface a toast in a query.
  *  - TanStack Query retains the previous successful payload as `data` on a
  *    failed refetch, so a stale cache is automatically reused.
- *  - When there is NO prior cache and the request fails, we fall back to the
- *    mock below so the view never breaks.
- *  - The mock is temporary integration scaffolding and MUST be removed.
+ *  - When there is NO prior cache and the request fails, `scores` is
+ *    `undefined` and `isError` is `true` — the view renders honest states
+ *    (loading skeleton / error with retry / empty). The old mock fallback
+ *    (which fabricated a zeroed payload) was REMOVED in the Evo tab rework;
+ *    no mock ever substitutes real data again.
  */
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
@@ -24,32 +26,22 @@ import { getScores, type ScoresResult } from '../services/program/scores-service
 import { programKeys } from './queryKeys'
 import type { ScoresResponseDto } from '../services/program/types'
 
-const MOCK_SCORES: ScoresResult = {
-  data: {
-    healthScore: { current: 0, score: 0, trend: 'flat', indicators: [] },
-    transformationScore: { current: 0, score: 0, trend: 'flat', indicators: [] },
-  },
-  stale: false,
-  recalculated: false,
-}
-
 export type UseProgramScoresResult = UseQueryResult<ScoresResult> & {
-  /** The scores payload, or the mock fallback when there is no cache and the request failed. */
+  /** The scores payload; undefined while loading or on error without cache. */
   scores: ScoresResponseDto | undefined
   /** Server freshness: scores are stale (header `X-Score-Stale`). Header-derived only (G3). */
   stale: boolean
   /** Server freshness: scores were recalculated (header `X-Score-Recalculated`). Header-derived only (G3). */
   recalculated: boolean
-  /** True when the mock fallback is active (no cache + eligible error). */
-  isFallback: boolean
 }
 
 /**
  * Query hook feeding `EvolutionView` with the program scores plus freshness.
  *
- * @returns Query state extended with `scores`, `stale`, `recalculated` and
- *          `isFallback`. On error with no cache, `scores` is the mock fallback
- *          and `isFallback` is `true`. No toast is emitted (R5.2).
+ * @returns Query state extended with `scores`, `stale`, `recalculated`.
+ *          `isLoading` / `isError` / `refetch` come from the QueryResult
+ *          spread. On error with no cache, `scores` is `undefined` — the UI
+ *          shows honest states. No toast is emitted (R5.2).
  */
 export function useProgramScores(): UseProgramScoresResult {
   const query = useQuery<ScoresResult>({
@@ -57,18 +49,10 @@ export function useProgramScores(): UseProgramScoresResult {
     queryFn: getScores,
   })
 
-  // No cached payload AND the latest fetch errored → mock fallback (R5.2).
-  const isFallback = !query.data && query.isError
-
-  const scores = query.data?.data ?? (isFallback ? MOCK_SCORES.data : undefined)
-  const stale = query.data?.stale ?? false
-  const recalculated = query.data?.recalculated ?? false
-
   return {
     ...query,
-    scores,
-    stale,
-    recalculated,
-    isFallback,
+    scores: query.data?.data,
+    stale: query.data?.stale ?? false,
+    recalculated: query.data?.recalculated ?? false,
   }
 }
