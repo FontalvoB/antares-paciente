@@ -70,6 +70,107 @@ body {
   position: relative;
 }
 
+/* Inset del teclado virtual (hook useKeyboardInset, solo nativo iOS):
+   encoge la caja del screen para que el footer en flujo (composer del
+   chat) o el contenido del login suban por encima del teclado en lugar
+   de quedar tapados. */
+.screen.chat-kb,
+.screen.auth-kb {
+  padding-bottom: var(--kb, 0px);
+  transition: padding-bottom 0.22s ease-out;
+}
+
+/* Con el teclado abierto se colapsa el héroe del login (logo + título)
+   para que los campos quepan sin solaparse ni hacer zoom. */
+.kb-open .auth-logo {
+  display: none;
+}
+.kb-open .auth-title {
+  font-size: clamp(24px, 7vw, 30px);
+  margin-bottom: 12px;
+}
+.kb-open .auth-scroll {
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+.kb-open .auth-lang {
+  display: none;
+}
+
+/* Con el teclado abierto, el BottomNav se oculta y el composer del chat
+   pierde su margen de despeje: así queda pegado al teclado sin huecos. */
+.kb-open .chat-kb .bnav {
+  display: none;
+}
+.kb-open .chat-kb .composer {
+  margin-bottom: 0;
+}
+
+/* Mensajes enriquecidos del agente (ChatRichText): subconjunto Markdown. */
+.bub p {
+  margin: 0 0 6px;
+}
+.bub p:last-child {
+  margin-bottom: 0;
+}
+.md-h {
+  font-weight: 800;
+  margin: 2px 0 6px;
+}
+.md-list {
+  margin: 2px 0 6px;
+  padding-left: 18px;
+}
+.md-list li {
+  margin-bottom: 3px;
+}
+.md-list li:last-child {
+  margin-bottom: 0;
+}
+.md-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+.md-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+/* Indicador "escribiendo" mientras llega el primer token del stream. */
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 2px;
+}
+.typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  animation: typing-bounce 1.1s infinite ease-in-out;
+}
+.typing i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.typing i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@keyframes typing-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
 /* Wrapper de transición entre pantallas (AnimatePresence en App.tsx) */
 .router-page {
   flex: 1;
@@ -5149,7 +5250,8 @@ ion-select.fld {
   --highlight-color-focused: var(--tx);
   --placeholder-opacity: 1;
   font-family: inherit;
-  font-size: 15px;
+  /* 16px mínimo: iOS hace auto-zoom con fuentes menores. */
+  font-size: 16px;
   font-weight: 400;
   line-height: normal;
   letter-spacing: normal;
@@ -15910,7 +16012,8 @@ ion-input.auth-input {
   border-radius: 16px;
   border: 1.5px solid transparent;
   background: #f1f4f8;
-  font-size: 15px;
+  /* 16px mínimo: iOS hace auto-zoom con fuentes menores y rompe el layout. */
+  font-size: 16px;
   font-weight: 600;
   transition:
     border-color 0.18s var(--ease),
@@ -17585,7 +17688,6 @@ ion-button.bt-gold {
 .stitle::after {
   display: none;
 }
-
 
 /* ──────────────────────────────────────────────────────────────────────
    PERFIL DE SALUD ANTARES — VERSIÓN CLARA (idioma visual de Home).

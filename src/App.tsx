@@ -13,6 +13,7 @@ import { createCommunityClient } from "./graphql/client";
 import { registerForPush } from "./utils/pushNotifications";
 import { AppProvider, useApp } from "./context/AppContext";
 import { I18nProvider } from "./i18n/I18nContext";
+import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { PanicOverlay } from "./components/PanicOverlay";
 import { VoiceOverlay } from "./components/VoiceOverlay";
 import { ToastHost } from "./components/ToastHost";
@@ -135,6 +136,9 @@ function Router() {
 function Shell() {
   const { flow, navigate, setActiveThreadId } = useApp();
   const pushStarted = useRef(false);
+
+  // Inset global del teclado virtual (una sola instancia para toda la app).
+  useKeyboardInset();
 
   // Al entrar a la app (flow === 'app') se registra el dispositivo para push.
   // Al tocar una notificación se navega al chat para ver el mensaje inyectado.

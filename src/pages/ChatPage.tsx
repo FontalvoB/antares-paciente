@@ -3,6 +3,7 @@ import { medkit, mic, send as sendIcon } from "ionicons/icons";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { PageHeader } from "../components/PageHeader";
 import { Screen } from "../components/Screen";
+import { ChatRichText } from "../components/ChatRichText";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import { fetchThreadState } from "../utils/threadApi";
@@ -53,7 +54,7 @@ export function ChatPage() {
   };
 
   return (
-    <Screen>
+    <Screen className="chat-kb">
       <PageHeader
         title={t("Chat")}
         sub={t("ANTARES AI · en línea 24/7")}
@@ -124,7 +125,7 @@ export function ChatPage() {
                 className={`bub ${m.role === "user" ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
                 style={{ whiteSpace: "pre-wrap" }}
               >
-                {t(m.text)}
+                {m.role === "user" ? m.text : <ChatRichText text={m.text} />}
               </div>
               <div
                 style={{

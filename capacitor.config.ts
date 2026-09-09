@@ -29,7 +29,9 @@ const config: CapacitorConfig = {
   },
   plugins: {
     Keyboard: {
-      resize: "body",
+      // "none": el inset lo gestiona useKeyboardInset (variable --kb).
+      // "body" duplicaba el desplazamiento y dejaba un hueco sobre el teclado.
+      resize: "none",
     },
     StatusBar: {
       style: "DARK",
