@@ -1,3 +1,5 @@
+import { IonIcon } from "@ionic/react";
+import { warningOutline } from "ionicons/icons";
 import { useI18n } from "../i18n/I18nContext";
 import { displayName, FOOD_EMOJI, type DetectedFood } from "../utils/foodAiApi";
 
@@ -30,7 +32,13 @@ export function FoodResultCard({ food }: { food: DetectedFood }) {
       >
         <span style={{ fontSize: 20 }}>{emoji}</span>
         <span
-          style={{ fontWeight: 800, fontSize: 14, textTransform: "capitalize" }}
+          style={{
+            fontWeight: 800,
+            fontSize: 14,
+            textTransform: "capitalize",
+            minWidth: 0,
+            overflowWrap: "anywhere",
+          }}
         >
           {name}
         </span>
@@ -59,7 +67,9 @@ export function FoodResultCard({ food }: { food: DetectedFood }) {
             </span>
             <span style={{ fontSize: 12, opacity: 0.7 }}>kcal</span>
           </div>
-          <div style={{ display: "flex", gap: 8, fontSize: 11 }}>
+          <div
+            style={{ display: "flex", gap: 8, fontSize: 11, flexWrap: "wrap" }}
+          >
             <span
               style={{
                 background: "rgba(255,255,255,.1)",
@@ -87,6 +97,17 @@ export function FoodResultCard({ food }: { food: DetectedFood }) {
             >
               {t("Grasas")} {Math.round(food.nutrition.fat)}g
             </span>
+            {food.nutrition.fiber != null && (
+              <span
+                style={{
+                  background: "rgba(255,255,255,.1)",
+                  borderRadius: 8,
+                  padding: "3px 8px",
+                }}
+              >
+                {t("Fibra")} {Math.round(food.nutrition.fiber)}g
+              </span>
+            )}
           </div>
           {food.source && (
             <div style={{ fontSize: 10, opacity: 0.55, marginTop: 6 }}>
@@ -95,14 +116,20 @@ export function FoodResultCard({ food }: { food: DetectedFood }) {
           )}
         </>
       ) : (
-        <div style={{ fontSize: 12, opacity: 0.8 }}>
-          {food.nutritionStatus === "portion_unavailable"
-            ? t(
-                "Identificamos este alimento, pero no pudimos estimar una porción.",
-              )
-            : t(
-                "Identificamos este alimento, pero no tenemos información nutricional disponible.",
-              )}
+        <div className="nut-missing" role="note">
+          <IonIcon icon={warningOutline} aria-hidden="true" />
+          <div>
+            <strong>{t("Información nutricional no disponible")}</strong>
+            <small>
+              {food.nutritionStatus === "portion_unavailable"
+                ? t(
+                    "Identificamos este alimento, pero no pudimos estimar una porción.",
+                  )
+                : t(
+                    "Identificamos este alimento, pero no tenemos información nutricional disponible.",
+                  )}
+            </small>
+          </div>
         </div>
       )}
     </div>
