@@ -1,0 +1,115 @@
+{
+  "version": 2,
+  "reference": "Basis",
+  "type": "relative additive morph targets; evaluated before skinning",
+  "range": [
+    0,
+    1
+  ],
+  "targets": [
+    {
+      "name": "BodyVolume",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Volumen general: abdomen, cintura, pecho, caderas/glúteos, brazos, muslos, pantorrillas y rostro; protege articulaciones y plantas."
+    },
+    {
+      "name": "BodyLean",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Reducción general suave de torso y extremidades; alternativa a BodyVolume."
+    },
+    {
+      "name": "Abdomen",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Proyección y volumen abdominal anterior."
+    },
+    {
+      "name": "Waist",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Anchura y perímetro de cintura."
+    },
+    {
+      "name": "Chest",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Volumen del pecho y tórax."
+    },
+    {
+      "name": "Arms",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Grosor de brazos y antebrazos; protege manos y axilas."
+    },
+    {
+      "name": "Thighs",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Volumen de muslos; protege entrepierna y hueco poplíteo."
+    },
+    {
+      "name": "FaceVolume",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Volumen leve de mejillas, mandíbula y cuello."
+    },
+    {
+      "name": "MuscleDefinition",
+      "range": [
+        0,
+        1
+      ],
+      "zone": "Recupera relieves anatómicos moderados sobre la base neutra."
+    }
+  ],
+  "constraints": [
+    "BodyVolume y BodyLean son alternativas: mantener uno de los dos en 0.",
+    "Para combinar ajustes regionales con BodyVolume=g, cada ajuste regional <= 1 - 0.75*g.",
+    "MuscleDefinition recomendado con BodyVolume=0.",
+    "No representan porcentajes de grasa ni mediciones clínicas."
+  ],
+  "presets": {
+    "neutral": {},
+    "larger": {
+      "BodyVolume": 1
+    },
+    "intermediate": {
+      "BodyVolume": 0.5
+    },
+    "lean": {
+      "BodyLean": 1
+    },
+    "defined": {
+      "BodyLean": 0.5,
+      "MuscleDefinition": 1
+    }
+  },
+  "clothing_strategy": [
+    "Usar el mismo skeleton, nombres, jerarquía y bind pose.",
+    "Crear cada prenda sobre Basis en A-pose con holgura.",
+    "Transferir pesos de piel y normalizar a un máximo de 4 influencias.",
+    "Para cada target corporal, ajustar una COPIA de la prenda mediante Surface Deform o transferencia por superficie; hornear esa deformación como shape key homónima con idéntica topología de prenda.",
+    "Corregir manualmente holguras y pliegues de cada target.",
+    "Usar el mismo orden/nombre y peso en cuerpo y prenda; comprobar extremos, mezclas e Idle.",
+    "No escalar huesos para volumen corporal. No usar un target corporal directamente sobre índices de vértices de una prenda distinta.",
+    "No se generó ropa ni un sistema de vestuario en esta tarea."
+  ]
+}

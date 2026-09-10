@@ -1,0 +1,32 @@
+{
+  "intent": "neutral body with progressive morphs and natural Idle",
+  "construction": "EXISTING male-base reused; no generation",
+  "units": "metres; Blender Z-up and forward +Y, exported Y-up forward -Z",
+  "protected": {
+    "bodies/male-base.glb": "e534289aee8d107914d9d487d4b08f1b29713d1fbb6483c504390af6db4395af",
+    "sources/male-base/male-base.blend": "3091a538aa6c2ff26fcb7388a4836dd68cfa5a066bb04531e6df44dc489ddef8",
+    "animations/rig-check.glb": "484ccdb3f9b686df22c56f990ffeb113c9d37b4c103748b76dbe48309f3cd9b2"
+  },
+  "deliverables": [
+    "bodies/male-body-base-v2.glb",
+    "sources/male-body-base-v2/male-body-base-v2.blend",
+    "animations/idle.glb"
+  ],
+  "hierarchy": "same canonical 51 bones, no hierarchy or bind changes",
+  "morphs": "Basis neutral + BodyVolume, BodyLean, Abdomen, Waist, Chest, Arms, Thighs, FaceVolume, MuscleDefinition",
+  "states": "neutral zero; larger BodyVolume 1; intermediate BodyVolume .5; smaller BodyLean 1",
+  "look": "reused PBR skin/briefs, softened muscle definition, same 1024 maps",
+  "shot": "front and profile full body, matching cameras, neutral studio inspection",
+  "motion": "Idle 5 seconds 30fps, relaxed arms, stable feet, subtle respiration, no root motion",
+  "acceptance": "morph interpolation; topology; skin <=4 influences; original skeleton intact; morph+rigcheck+idle; seamless loop; glTF roundtrip",
+  "refs_read": [
+    "blender-scene",
+    "blender-scene-spec",
+    "blender-modeling",
+    "blender-lookdev",
+    "blender-animation",
+    "blender-lighting-camera",
+    "blender-audit-finalize",
+    "blender-volatile"
+  ]
+}
