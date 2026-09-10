@@ -185,6 +185,9 @@ export function ProfilePage() {
         sub={t("ID COPP-2024-00142 · Semana 12/24")}
       />
       <Scroll>
+        <IonButton expand="block" fill="outline" style={{ margin: '12px 16px', minHeight: 44 }} onClick={() => go('avatar')}>
+          {t('Probar avatar 3D')}
+        </IonButton>
         <div className="profile-hero-card">
           <div
             className="avatar"

@@ -31,6 +31,7 @@ import { InfinitoPage } from "./pages/InfinitoPage";
 import { WearablePage } from "./pages/WearablePage";
 import { ChatPage } from "./pages/ChatPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { AvatarPage } from "./pages/AvatarPage";
 import { ProgramPage } from "./pages/ProgramPage";
 import { CommunityPage } from "./pages/CommunityPage";
 import { VirtualRoomPage } from "./pages/VirtualRoomPage";
@@ -103,6 +104,9 @@ function Router() {
         break;
       case "prof":
         content = <ProfilePage />;
+        break;
+      case "avatar":
+        content = <AvatarPage />;
         break;
       case "prog":
         content = <ProgramPage />;

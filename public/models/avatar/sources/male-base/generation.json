@@ -1,0 +1,102 @@
+{
+  "model": "tripo_3d",
+  "params": {
+    "prompt": "Full-body adult male human base avatar for a modern mobile wellness app. Clean subtly stylized realism, lean athletic natural proportions, warm medium tan skin, neutral friendly face, bald, no beard. Symmetrical A-pose, arms diagonally down 45 degrees, straight elbows, open hands with five separated fingers, feet flat slightly apart. Bare torso and feet, only fitted plain charcoal boxer briefs. Clean continuous anatomy for future clothing, good joint edge loops and UVs. No hair, shoes, accessories, logos, pedestal or background geometry.",
+    "texture": true,
+    "pbr": true,
+    "geometry_quality": "standard",
+    "texture_quality": "standard"
+  },
+  "passport": {
+    "scene": {
+      "intent": "Primer cuerpo masculino base ANTARES, asset móvil reutilizable",
+      "deliverable": "GLB glTF2 + fuente Blender, sin código de aplicación",
+      "units": "metres; Blender Z-up, forward +Y; export Y-up forward -Z",
+      "render": "neutral inspection, 30fps",
+      "dynamic": "rig validation only"
+    },
+    "hierarchy": {
+      "collections": [
+        "Mesh",
+        "Skeleton",
+        "Materials"
+      ],
+      "protected": [
+        "Cube",
+        "Camera",
+        "Light"
+      ],
+      "parent": "male-base_Mesh -> male-base_Armature; canonical Hips root"
+    },
+    "assets": [
+      {
+        "name": "male-base",
+        "route": "GEN",
+        "fidelity": "clean stylized human",
+        "height": 1.7,
+        "origin": "feet at 0,0,0",
+        "pose": "A-pose 45 degrees",
+        "estimate": "5 credits returned by submission",
+        "submission": "completed via tripo_3d"
+      }
+    ],
+    "shot": {
+      "camera": "dedicated inspection camera",
+      "framing": "full body front and side, neutral background"
+    },
+    "look": {
+      "material": "generated PBR, dielectric skin roughness .5, neutral fitted underwear",
+      "texture": "UV; embedded, target 1024",
+      "relief": "normal only"
+    },
+    "lighting": {
+      "intent": "neutral asset inspection",
+      "environment": "NONE",
+      "key": "broad soft frontal side",
+      "fill": "only recover shadows",
+      "exposure": 0
+    },
+    "motion": {
+      "fps": 30,
+      "intent": "minimal joint flex validation; return to A-pose"
+    },
+    "acceptance": {
+      "structural": "canonical hierarchy; scale; clean geometry; <=4 normalized influences; GLB reimport",
+      "motion": "deformation samples, no unbound vertices",
+      "visual": "human silhouette and coherent materials",
+      "performance": "~15k triangles target, not hard limit"
+    },
+    "refs_read": [
+      "blender-scene",
+      "blender-scene-spec",
+      "blender-modeling",
+      "blender-lookdev",
+      "blender-lighting-camera",
+      "blender-animation",
+      "blender-generation",
+      "blender-volatile",
+      "blender-audit-finalize"
+    ]
+  },
+  "attempts": [
+    {
+      "model": "tripo_3d",
+      "result": "422; prompt longer than 1024 characters"
+    },
+    {
+      "model": "meshy_v6_text_to_3d",
+      "result": "422; prompt longer than 600 characters"
+    },
+    {
+      "model": "meshy_v6_text_to_3d",
+      "route": "addon hf_fnf_3d",
+      "result": "no remote job created; cause not exposed"
+    }
+  ],
+  "generation_job": "f2a9c5eb-c1d8-4b70-8e12-8cc08a326509",
+  "generation_credits": 5,
+  "rig_job": "4ddaf5d0-405d-4d95-b352-94e5d4379b91",
+  "rig_credits": 5,
+  "rig_result": "failed without provider detail; canonical rig created in Blender",
+  "actual_output": "bodies/male-base.glb"
+}

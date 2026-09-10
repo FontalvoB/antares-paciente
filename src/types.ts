@@ -8,6 +8,7 @@ export type Screen =
   | "bt"
   | "chat"
   | "prof"
+  | "avatar"
   | "prog"
   | "com"
   | "room"
