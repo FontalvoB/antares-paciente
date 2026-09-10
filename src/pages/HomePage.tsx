@@ -572,12 +572,6 @@ export function HomePage() {
               </button>
             ))}
           </div>
-                <strong>{m.title}</strong>
-                <small>{m.sub}</small>
-                <IonIcon className="hm-access-tile-chev" icon={chevronForward} />
-              </button>
-            ))}
-          </div>
 
           <div className="hm-access-rows">
             {moreModules.map((m) => (
