@@ -62,6 +62,8 @@ export interface ChatMessage {
   threadId?: string;
   /** CTA adjunto al mensaje del bot (ej. sugerencia de agendar cita). */
   cta?: ChatSuggestion | null;
+  /** Marcador local: el bot respondió a un examen de laboratorio procesado. */
+  kind?: "lab-exam";
 }
 
 export interface Appointment {
