@@ -49,4 +49,6 @@ PROMPT-CONTEXT.md
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
+.codegraph/
+
 

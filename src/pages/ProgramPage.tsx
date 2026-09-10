@@ -11,9 +11,7 @@ import { Screen, Scroll } from '../components/Screen'
 import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 import {
-  CIRCUIT_STEPS,
   DAY_BONUS_PTS,
-  PODCAST_EPISODE,
   PROGRAM_POINTS_MAX,
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
@@ -41,9 +39,10 @@ import { paneMotion } from './program/ui'
 import { useClinicalChests } from '../hooks/useClinicalChests'
 import { useProgram } from '../hooks/useProgram'
 import { useStreakChests } from '../hooks/useStreakChests'
-import { useCompleteTask, type CelebrateInfo } from '../hooks/useCompleteTask'
+import { useCompleteTask } from '../hooks/useCompleteTask'
 import { useProgramScores } from '../hooks/useProgramScores'
 import { useProgramCalendar } from '../hooks/useProgramCalendar'
+import { resolveStationSec } from '../utils/exerciseSteps'
 import type { TaskCode, VitalsPayload } from '../services/program/types'
 
 const CONF_COLORS = ['var(--teal)', 'var(--ice)', 'var(--pur)', 'var(--org)', 'var(--blue)', 'var(--red)']
@@ -75,7 +74,7 @@ export function ProgramPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [exRunning, setExRunning] = useState(false)
   const [exStep, setExStep] = useState(0)
-  const [exLeft, setExLeft] = useState(CIRCUIT_STEPS[0].sec)
+  const [exLeft, setExLeft] = useState(45)
   const [nutriSlot, setNutriSlot] = useState('manana')
   const [takenAt, setTakenAt] = useState('')
   const [openedChest, setOpenedChest] = useState<{ title: string; xp: number } | null>(null)
@@ -205,6 +204,11 @@ export function ProgramPage() {
     () => snapshot?.todayTasks?.find((t) => t.taskCode === active) ?? null,
     [snapshot, active],
   )
+  // Lección SIN contenido real del servidor (content null o marcado
+  // contentUnavailable): podcast/nut/ejercicio degradan a "contenido no
+  // disponible aún" — nunca fabricación de episodios, circuitos o planes.
+  const activeContent = serverActiveTask?.content
+  const activeContentUnavailable = !activeContent || activeContent.contentUnavailable === true
   const taskTitle = serverActiveTask?.title || (task ? t(task.title) : '')
   const taskHint = useMemo(() => {
     if (active === 'podcast' && serverActiveTask?.content?.title) {
@@ -253,18 +257,6 @@ export function ProgramPage() {
     window.setTimeout(() => setConfetti([]), 2400)
   }
 
-  // Listen to custom celebration events from useCompleteTask
-  useEffect(() => {
-    const handleCelebrate = (e: Event) => {
-      const detail = (e as CustomEvent<CelebrateInfo>).detail
-      if (detail?.xpEstimate) {
-        burst(detail.xpEstimate, true)
-      }
-    }
-    window.addEventListener('program:task-celebrated', handleCelebrate)
-    return () => window.removeEventListener('program:task-celebrated', handleCelebrate)
-  }, [])
-
   // Chest auto-open celebration (chests module, R3.2): a newly granted chest
   // (server truth diffed in useProgram) opens the chest modal + confetti. The
   // XP was already granted server-side; this is presentation only.
@@ -292,30 +284,43 @@ export function ProgramPage() {
     ) => {
       if (program[id]) return
 
-      // Trigger backend mutation
-      completeTaskMutation.completeTask({
-        taskCode: id as TaskCode,
-        moodScore: extra?.moodScore,
-        barriers: extra?.barriers,
-        vitals: extra?.vitals,
-      })
-
-      // Also update local AppContext for fallback continuity
-      completeStep(id, pts)
-
       const willComplete = progress.doneCount + 1 === progress.total
       // El monto del bonus sale del snapshot (regla DAY_BONUS real) para que
       // el toast/burst coincida con la tarjeta del cofre; DAY_BONUS_PTS solo
       // como fallback local.
       const bonusPts = snapshot?.dailyBonusAmount ?? DAY_BONUS_PTS
-      showToast(willComplete ? `${msg} · ${t('Bonus +{pts}', { pts: String(bonusPts) })}` : msg, 'ok')
-      burst(willComplete ? pts + bonusPts : pts, willComplete)
-      if (id === 'nutraceutico') {
-        const n = new Date()
-        setTakenAt(
-          n.toLocaleTimeString('es-ES', { hour: 'numeric', minute: '2-digit' }),
-        )
-      }
+
+      // Todo el feedback local (marca AppContext, toast ok, confeti) queda
+      // ATADO AL SUCCESS del servidor: un 422 del gate de adherencia (o
+      // cualquier rechazo) no debe dejar la tarea "completada" en la UI —
+      // el rollback del snapshot + el toast de error del hook ya muestran
+      // la verdad.
+      completeTaskMutation.completeTask(
+        {
+          taskCode: id as TaskCode,
+          moodScore: extra?.moodScore,
+          barriers: extra?.barriers,
+          vitals: extra?.vitals,
+        },
+        {
+          onSuccess: () => {
+            // AppContext para fallback continuity — solo tras confirmación.
+            completeStep(id, pts)
+            showToast(
+              willComplete ? `${msg} · ${t('Bonus +{pts}', { pts: String(bonusPts) })}` : msg,
+              'ok',
+            )
+            burst(willComplete ? pts + bonusPts : pts, true)
+            if (id === 'nutraceutico') {
+              const n = new Date()
+              setTakenAt(
+                n.toLocaleTimeString('es-ES', { hour: 'numeric', minute: '2-digit' }),
+              )
+            }
+          },
+        },
+      )
+
       setActive(null)
     },
     [program, completeTaskMutation, completeStep, progress, snapshot, showToast, t],
@@ -326,7 +331,8 @@ export function ProgramPage() {
     if (exContent?.exercises && exContent.exercises.length > 0) {
       return exContent.exercises.map((ex) => ({
         name: ex.name,
-        sec: ex.durationSecs || (ex.restSeconds ? ex.restSeconds * (ex.sets || 1) : 45),
+        // W4: duración defensiva compartida (negativos jamás auto-completan).
+        sec: resolveStationSec(ex),
         cue: [
           ex.sets && ex.repetitions ? `${ex.sets} series x ${ex.repetitions} reps` : ex.sets ? `${ex.sets} series` : '',
           ex.description,
@@ -334,8 +340,25 @@ export function ProgramPage() {
         ].filter(Boolean).join(' · ') || 'Ejecuta con buena postura',
       }))
     }
-    return CIRCUIT_STEPS
+    // Sin rutina del servidor → sin estaciones: la lección degrada al estado
+    // honesto "contenido no disponible" (nunca el circuito fabricado).
+    return []
   }, [exContent])
+
+  // W3: el timer se resetea SOLO en la transición hacia la lección de
+  // ejercicio. Un refetch por window-focus re-crea `activeExerciseSteps`
+  // (misma identidad de rutina) y NO debe reiniciar un circuito a mitad de
+  // camino — eso lo silenciaba sin que el usuario lo pidiera.
+  const prevActive = useRef<ProgramTaskId | null>(null)
+  useEffect(() => {
+    const enteringExercise = active === 'ejercicio' && prevActive.current !== 'ejercicio'
+    prevActive.current = active
+    if (enteringExercise && activeExerciseSteps.length > 0) {
+      setExStep(0)
+      setExLeft(activeExerciseSteps[0]?.sec ?? 45)
+      setExRunning(false)
+    }
+  }, [active, activeExerciseSteps])
 
   const skipStation = () => {
     if (program.ejercicio) return
@@ -362,6 +385,26 @@ export function ProgramPage() {
     }
   }, [active])
 
+  // W2: el progreso pertenece al audio que lo generó. Cuando el mediaUrl del
+  // episodio cambia (rotación diaria del snapshot), el 80% del episodio
+  // anterior no debe heredarse: reset a 0 + pausa, para que "Marcar
+  // escuchado" exija escuchar el episodio REAL. Cerrar/reabrir el MISMO
+  // episodio conserva el progreso (resume natural de la sesión).
+  const podProgressForUrl = useRef<string | null>(null)
+  useEffect(() => {
+    const url = serverActiveTask?.content?.mediaUrl ?? null
+    if (url && podProgressForUrl.current !== url) {
+      setPodProgress(0)
+      setPodPlaying(false)
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+        audioRef.current = null
+      }
+    }
+    podProgressForUrl.current = url
+  }, [serverActiveTask?.content?.mediaUrl])
+
   // Cleanup audio element on unmount
   useEffect(() => {
     return () => {
@@ -377,54 +420,53 @@ export function ProgramPage() {
     const mediaUrl = serverActiveTask?.content?.mediaUrl
     setAudioError(null)
 
-    if (mediaUrl) {
-      // If we don't have an audio instance or the source changed, initialize it
-      if (!audioRef.current || audioRef.current.src !== mediaUrl) {
-        if (audioRef.current) {
-          audioRef.current.pause()
-        }
-        const audio = new Audio(mediaUrl)
-        audio.ontimeupdate = () => {
-          if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
-            setPodProgress(audio.currentTime / audio.duration)
-          }
-        }
-        audio.onended = () => {
-          setPodPlaying(false)
-          setPodProgress(1)
-        }
-        audio.onpause = () => setPodPlaying(false)
-        audio.onplay = () => setPodPlaying(true)
-        audio.onerror = (e) => {
-          console.error('Audio playback error', e)
-          setPodPlaying(false)
-          setAudioError(t('No se pudo reproducir el archivo de audio.'))
-        }
-        audioRef.current = audio
-      }
+    // Player real SOLO con mediaUrl: sin audio del servidor la lección se
+    // muestra como "contenido no disponible" (no hay playback simulado).
+    if (!mediaUrl) return
 
-      if (podPlaying) {
+    // If we don't have an audio instance or the source changed, initialize it
+    if (!audioRef.current || audioRef.current.src !== mediaUrl) {
+      if (audioRef.current) {
         audioRef.current.pause()
-      } else {
-        if (podProgress >= 1 && audioRef.current) {
-          audioRef.current.currentTime = 0
-        }
-        audioRef.current.play().catch((err) => {
-          console.error('Failed to play podcast audio', err)
-          setPodPlaying(false)
-          setAudioError(t('Error al iniciar la reproducción de audio.'))
-        })
       }
+      const audio = new Audio(mediaUrl)
+      audio.ontimeupdate = () => {
+        if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
+          setPodProgress(audio.currentTime / audio.duration)
+        }
+      }
+      audio.onended = () => {
+        setPodPlaying(false)
+        setPodProgress(1)
+      }
+      audio.onpause = () => setPodPlaying(false)
+      audio.onplay = () => setPodPlaying(true)
+      audio.onerror = (e) => {
+        console.error('Audio playback error', e)
+        setPodPlaying(false)
+        setAudioError(t('No se pudo reproducir el archivo de audio.'))
+      }
+      audioRef.current = audio
+    }
+
+    if (podPlaying) {
+      audioRef.current.pause()
     } else {
-      // Simulated playback fallback when offline or no mediaUrl
-      setPodPlaying((v) => !v)
+      if (podProgress >= 1 && audioRef.current) {
+        audioRef.current.currentTime = 0
+      }
+      audioRef.current.play().catch((err) => {
+        console.error('Failed to play podcast audio', err)
+        setPodPlaying(false)
+        setAudioError(t('Error al iniciar la reproducción de audio.'))
+      })
     }
   }, [serverActiveTask?.content?.mediaUrl, podPlaying, podProgress, t])
 
   const handleSkipPodcast = useCallback(
     (delta: number) => {
       const mediaUrl = serverActiveTask?.content?.mediaUrl
-      const duration = serverActiveTask?.content?.durationSecs || PODCAST_EPISODE.durationSec
+      const duration = serverActiveTask?.content?.durationSecs || 0
 
       if (audioRef.current && mediaUrl) {
         const current = audioRef.current.currentTime
@@ -437,29 +479,10 @@ export function ProgramPage() {
         if (total > 0) {
           setPodProgress(target / total)
         }
-      } else {
-        setPodProgress((p) => Math.min(1, Math.max(0, p + delta / duration)))
       }
     },
     [serverActiveTask?.content?.mediaUrl, serverActiveTask?.content?.durationSecs],
   )
-
-  // Fallback timer when playing without mediaUrl (e.g. offline mock)
-  useEffect(() => {
-    if (!podPlaying || serverActiveTask?.content?.mediaUrl) return
-    const dur = serverActiveTask?.content?.durationSecs || PODCAST_EPISODE.durationSec
-    const id = window.setInterval(() => {
-      setPodProgress((p) => {
-        if (p >= 1) {
-          window.clearInterval(id)
-          setPodPlaying(false)
-          return 1
-        }
-        return Math.min(1, p + 1 / (dur || 24))
-      })
-    }, 1000)
-    return () => window.clearInterval(id)
-  }, [podPlaying, serverActiveTask?.content?.mediaUrl, serverActiveTask?.content?.durationSecs])
 
   useEffect(() => {
     if (!exRunning) return
@@ -627,7 +650,12 @@ export function ProgramPage() {
                   progress={podProgress}
                   onToggle={handleTogglePodcast}
                   onSkip={handleSkipPodcast}
+                  // W1: sin Audio creado aún, skip/capítulos estarían en no-op
+                  // silencioso — la lección los deshabilita hasta el primer play
+                  // (audioRef.current se vuelve reactivo vía podPlaying).
+                  audioReady={audioRef.current != null}
                   onComplete={() => finish('podcast', taskPts, t('Podcast escuchado · +{pts} pts', { pts: String(taskPts) }))}
+                  unavailable={activeContentUnavailable}
                 />
               )}
               {task.id === 'vitals' && (
@@ -660,6 +688,7 @@ export function ProgramPage() {
                     navigate('nut')
                   }}
                   onComplete={() => finish('nut', taskPts, t('+{pts} pts nutrición', { pts: String(taskPts) }))}
+                  unavailable={activeContentUnavailable}
                 />
               )}
               {task.id === 'ejercicio' && (
@@ -674,6 +703,7 @@ export function ProgramPage() {
                   onToggle={() => setExRunning((r) => !r)}
                   onSkip={skipStation}
                   onComplete={() => finish('ejercicio', taskPts, t('Ejercicio del día · +{pts} pts', { pts: String(taskPts) }))}
+                  unavailable={activeContentUnavailable}
                 />
               )}
               {task.id === 'nutraceutico' && (
@@ -696,7 +726,7 @@ export function ProgramPage() {
                       moodScore: parseInt(mood, 10) || 3,
                       barriers: barrier,
                     })
-                    if (barrier) showToast(t('IA: registro enviado a tu equipo'), 'info')
+                    if (barrier) showToast(t('Registro enviado a tu equipo'), 'info')
                   }}
                 />
               )}

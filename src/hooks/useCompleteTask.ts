@@ -6,12 +6,16 @@
  * Behaviour:
  *  - Generates a UUID `clientRequestId` ONCE per action; reuses it on retries
  *    (R3.1). A replay with the same key returns the same body with no extra XP
- *    (R3.2) — celebration is fired in `onMutate` only, deduped by key, so a
- *    server replay never re-animates (R3.2: "replay body has NO flag").
+ *    (R3.2) — celebration is fired in `onSuccess` only, deduped by key: the UI
+ *    NEVER celebrates a completion the server rejected (e.g. the 422
+ *    nutrition-adherence gate). A server replay never re-animates.
  *  - `onMutate`: cancel snapshot query, snapshot previous cache, optimistically
- *    mark the task Completed + XP estimate, fire celebration once per key.
- *  - `onError`: roll back the cached snapshot (R5.3).
- *  - `onSuccess`: reconcile XP / streak / day-points / bonus from the response.
+ *    mark the task Completed + XP estimate (visible immediately; rolled back by
+ *    `onError` if the server rejects).
+ *  - `onError`: roll back the cached snapshot (R5.3) and toast the 422
+ *    `missingMealCodes` contract (B7).
+ *  - `onSuccess`: fire the celebration, then reconcile XP / streak /
+ *    day-points / bonus from the response.
  *  - `onSettled`: invalidate snapshot / path / calendar / scores (R5.3).
  *  - Network / 5xx failure → enqueue to offline-queue (R5.4) + "offline" toast.
  *  - 409 IDEMPOTENCY_KEY_REUSED → new key + single retry (R3.3).
@@ -72,6 +76,13 @@ export interface UseCompleteTaskOptions {
   /** Override the celebration trigger. Defaults to a `program:task-celebrated`
    *  window CustomEvent so the UI can wire confetti/popup without coupling. */
   onCelebrate?: (info: CelebrateInfo) => void
+}
+
+/** Per-call side-effect hooks (ProgramPage marks AppContext / toasts / bursts
+ *  ONLY after the server confirmed — never on an optimistic lie). */
+export interface CompleteTaskCallOptions {
+  onSuccess?: (data: CompleteTaskResponseDto) => void
+  onError?: (error: ApiError) => void
 }
 
 /** Internal mutation variables (clientRequestId attached by the wrapper). */
@@ -239,7 +250,7 @@ function buildPayload(snapshot: ProgramSnapshotDto, vars: MutationVars): Complet
 export function useCompleteTask(
   options?: UseCompleteTaskOptions,
 ): UseMutationResult<CompleteTaskResponseDto, ApiError, MutationVars, CompleteTaskContext> & {
-  completeTask: (vars: CompleteTaskVars) => void
+  completeTask: (vars: CompleteTaskVars, opts?: CompleteTaskCallOptions) => void
 } {
   const queryClient = useQueryClient()
   const { showToast } = useApp()
@@ -288,8 +299,6 @@ export function useCompleteTask(
 
       const payload = snapshot ? buildPayload(snapshot, vars) : null
 
-      fireCelebrationOnce(vars.clientRequestId, vars.taskCode, previousSnapshot, onCelebrate)
-
       return { previousSnapshot, payload, clientRequestId: vars.clientRequestId }
     },
 
@@ -312,7 +321,13 @@ export function useCompleteTask(
       }
     },
 
-    onSuccess: (data, _vars, _ctx): void => {
+    onSuccess: (data, vars, _ctx): void => {
+      // Celebración recién cuando el servidor CONFIRMÓ: un 422 del gate
+      // nutricional (o cualquier rechazo) nunca anima ni marca progreso local.
+      // Dedupe por clientRequestId (R3.2): un replay del server no reanima.
+      const snapshotForCelebration = queryClient.getQueryData<ProgramSnapshotDto>(programKeys.snapshot) ?? null
+      fireCelebrationOnce(vars.clientRequestId, vars.taskCode, snapshotForCelebration, onCelebrate)
+
       queryClient.setQueryData<ProgramSnapshotDto>(programKeys.snapshot, (old) =>
         reconcileSnapshot(old, data),
       )
@@ -353,8 +368,16 @@ export function useCompleteTask(
   })
 
   const complete = useCallback(
-    (vars: CompleteTaskVars): void => {
-      mutation.mutate({ ...vars, clientRequestId: newClientRequestId() })
+    (vars: CompleteTaskVars, opts?: CompleteTaskCallOptions): void => {
+      // react-query runs hook-level callbacks first, then these per-call ones:
+      // `onSuccess` here fires ONLY after the server confirmed the completion.
+      mutation.mutate(
+        { ...vars, clientRequestId: newClientRequestId() },
+        {
+          onSuccess: (data) => opts?.onSuccess?.(data),
+          onError: (error) => opts?.onError?.(error),
+        },
+      )
     },
     [mutation],
   )

@@ -23,6 +23,9 @@ export const programKeys = {
   /** GET /api/v1/program/me/scores-history?weeks=12 (tab Evo, trend card) */
   scoresHistory: ['program', 'scores-history'] as const,
 
+  /** GET /api/v1/program/me/metrics-history?codes=...&days=180 (Home metric cards) */
+  metricsHistory: ['program', 'metrics-history'] as const,
+
   /** All program queries — use for enrollment-level invalidation */
   all: ['program'] as const,
 } as const

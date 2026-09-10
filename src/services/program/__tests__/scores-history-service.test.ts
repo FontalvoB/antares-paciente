@@ -76,6 +76,63 @@ describe('getScoresHistory — parse del contrato FROZEN', () => {
     expect(history.points[2].weekNumber).toBe(5)
   })
 
+  it('parsea el aditivo dimensions (adherence + resto) cuando el wire lo trae', async () => {
+    apiFetchMock.mockResolvedValue({
+      points: [
+        {
+          weekNumber: 6,
+          periodStart: '2026-07-20',
+          periodEnd: '2026-07-26',
+          healthScore: 74,
+          healthPrevious: 72,
+          transformationScore: 19,
+          dimensions: {
+            adherence: 81,
+            clinical: 68,
+            nutrition: 77,
+            psychology: 72,
+            exercise: 85,
+          },
+        },
+      ],
+    })
+    const history = await getScoresHistory()
+    expect(history.points[0].dimensions).toEqual({
+      adherence: 81,
+      clinical: 68,
+      nutrition: 77,
+      psychology: 72,
+      exercise: 85,
+    })
+  })
+
+  it('dimensions ausente o null viaja tal cual (payloads previos sin cómputo)', async () => {
+    apiFetchMock.mockResolvedValue({
+      points: [
+        {
+          weekNumber: 1,
+          periodStart: null,
+          periodEnd: '2026-06-21',
+          healthScore: null,
+          healthPrevious: null,
+          transformationScore: null,
+        },
+        {
+          weekNumber: 7,
+          periodStart: '2026-07-27',
+          periodEnd: '2026-08-02',
+          healthScore: 78,
+          healthPrevious: null,
+          transformationScore: 21,
+          dimensions: null,
+        },
+      ],
+    })
+    const history = await getScoresHistory()
+    expect('dimensions' in history.points[0]).toBe(false)
+    expect(history.points[1].dimensions).toBeNull()
+  })
+
   it('SCORES_HISTORY_WEEKS es el default del contrato (12)', () => {
     expect(SCORES_HISTORY_WEEKS).toBe(12)
   })
