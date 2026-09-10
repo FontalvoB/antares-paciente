@@ -1,0 +1,149 @@
+{
+  "asset": "male-base",
+  "format": "glTF 2.0 Binary",
+  "file": "bodies/male-base.glb",
+  "triangles": 23924,
+  "vertices_source": 11960,
+  "materials": 1,
+  "draw_calls": 1,
+  "textures": [
+    {
+      "name": "male-base-normal",
+      "mime": "image/png",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "bytes": 331193
+    },
+    {
+      "name": "male-base-albedo",
+      "mime": "image/jpeg",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "bytes": 86073
+    },
+    {
+      "name": "male-base-orm",
+      "mime": "image/png",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "bytes": 308629
+    }
+  ],
+  "file_bytes": 1884852,
+  "sha256": "e534289aee8d107914d9d487d4b08f1b29713d1fbb6483c504390af6db4395af",
+  "skeleton": {
+    "bones": 51,
+    "root": "Hips",
+    "canonical_hierarchy": "compatible",
+    "rig": "created and adjusted in Blender",
+    "reference_pose": "A-pose 45 degrees",
+    "height_m": 1.7,
+    "export_up": "+Y",
+    "export_forward": "-Z",
+    "origin": "feet at 0,0,0"
+  },
+  "skinning": {
+    "unweighted_vertices": 0,
+    "max_influences": 4,
+    "max_weight_sum_error": 1.7881393432617188e-07
+  },
+  "geometry": {
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "signed_volume_m3": 0.07645638727381665
+  },
+  "animation": {
+    "name": "RigCheck",
+    "file": "animations/rig-check.glb",
+    "fps": 30,
+    "seconds": 2,
+    "file_bytes": 56736,
+    "root_motion": false,
+    "purpose": "validation only; not a production idle"
+  },
+  "roundtrip": [
+    {
+      "frame": 1,
+      "max_roundtrip_vertex_error_m": 1.8989518366652192e-06
+    },
+    {
+      "frame": 16,
+      "max_roundtrip_vertex_error_m": 4.468300630833255e-06
+    },
+    {
+      "frame": 31,
+      "max_roundtrip_vertex_error_m": 8.251221515820362e-06
+    },
+    {
+      "frame": 46,
+      "max_roundtrip_vertex_error_m": 4.468300630833255e-06
+    },
+    {
+      "frame": 61,
+      "max_roundtrip_vertex_error_m": 1.8989518366652192e-06
+    }
+  ],
+  "visual_validation": "Blender front, side, rest and joint flex renders inspected; GLB and separate animation reimport inspected",
+  "limitations": [
+    "Mobile FPS, memory and Three.js runtime not measured in this asset-only task.",
+    "Triangulated optimized generated topology; extreme deformations require further checks.",
+    "Plain boxer briefs are part of the base mesh/material; interchangeable clothing will be separate future assets."
+  ],
+  "problems_resolved": [
+    "Long prompt caused 422; shortened prompt generated with Tripo.",
+    "Meshy addon generation created no remote job; switched to available Bridge tool.",
+    "Higgsfield rigging job failed without reason; created canonical rig in Blender.",
+    "Original 1,444,567 triangles reduced; UV seam vertices welded before decimation; 76 micro flaps removed.",
+    "Export filtered to active scene to exclude original default scene.",
+    "Animation reimport set to 30 fps to preserve timing."
+  ],
+  "application_code_modified": false,
+  "dependencies_added": [],
+  "source_blend_readback": {
+    "scenes": [
+      "Avatar_Male_Base"
+    ],
+    "objects": [
+      "male-base_Mesh",
+      "male-base_Armature",
+      "Avatar_Key",
+      "Avatar_InspectionCamera",
+      "Avatar_Fill"
+    ],
+    "actions": [
+      "RigCheck"
+    ],
+    "textures": [
+      {
+        "name": "male-base_orm.001",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true
+      },
+      {
+        "name": "male-base_normal.001",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true
+      },
+      {
+        "name": "male-base_albedo.001",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true
+      }
+    ]
+  }
+}
