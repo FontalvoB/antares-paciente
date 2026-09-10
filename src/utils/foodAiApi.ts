@@ -117,8 +117,71 @@ export const FOOD_EMOJI: Record<string, string> = {
 
 /** Nombre legible del canonical (el backend devuelve canonical en snake_case). */
 export function displayName(name: string): string {
+  const es = FOOD_DISPLAY_ES[name.trim().toLowerCase()];
+  if (es) return es;
   return name.replace(/_/g, " ");
 }
+
+/**
+ * Nombre visible en español para canónicos USDA (datos, no chrome de UI —
+ * mismo patrón que FOOD_EMOJI). Clave = canonical en minúsculas con guiones.
+ */
+const FOOD_DISPLAY_ES: Record<string, string> = {
+  chicken: "pollo",
+  grilled_chicken: "pollo a la plancha",
+  fried_chicken: "pollo frito",
+  chicken_nuggets: "nuggets de pollo",
+  pork: "cerdo",
+  beef: "carne de res",
+  steak: "bistec",
+  fish: "pescado",
+  salmon: "salmón",
+  tuna: "atún",
+  shrimp: "camarones",
+  rice: "arroz",
+  beans: "frijoles",
+  beans_yellow_mature_seeds_raw: "frijoles amarillos",
+  lentil: "lentejas",
+  chickpea: "garbanzos",
+  peanuts: "maní",
+  peanut: "maní",
+  potato: "papa",
+  potatoes: "papas",
+  egg: "huevo",
+  eggs: "huevos",
+  cheese: "queso",
+  milk: "leche",
+  yogurt: "yogur",
+  bread: "pan",
+  pasta: "pasta",
+  noodles: "fideos",
+  salad: "ensalada",
+  soup: "sopa",
+  pizza: "pizza",
+  hamburger: "hamburguesa",
+  hot_dog: "perro caliente",
+  taco: "taco",
+  arepa: "arepa",
+  empanada: "empanada",
+  chocolate: "chocolate",
+  candy: "dulce",
+  cookie: "galleta",
+  cake: "torta",
+  ice_cream: "helado",
+  avocado: "aguacate",
+  mango: "mango",
+  corn: "maíz",
+  bacon: "tocineta",
+  sausage: "chorizo",
+  ham: "jamón",
+  oatmeal: "avena",
+  pancakes: "panqueques",
+  juice: "jugo",
+  coffee: "café",
+  apple: "manzana",
+  banana: "banano",
+  orange: "naranja",
+};
 
 /**
  * Envía la imagen al backend y devuelve el análisis tipado.
