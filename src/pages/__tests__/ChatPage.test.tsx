@@ -13,6 +13,18 @@ vi.mock("../../components/Screen", () => ({
   Scroll: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+// Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
+const mockState = vi.hoisted(() => ({
+  lang: "en" as "es" | "en",
+  chat: [] as Array<{
+    id: string;
+    role: "bot" | "user" | "alert";
+    text: string;
+    time: string;
+    kind?: "lab-exam";
+  }>,
+}));
+
 const sendChatMock = vi.fn();
 const openPanicMock = vi.fn();
 const openVoiceMock = vi.fn();
@@ -20,17 +32,11 @@ const hydrateChatMock = vi.fn();
 const openBookingWizardMock = vi.fn();
 const appendChatMessagesMock = vi.fn();
 const showToastMock = vi.fn();
+const navigateMock = vi.fn();
 
 vi.mock("../../context/AppContext", () => ({
   useApp: () => ({
-    chat: [
-      {
-        id: "msg-1",
-        role: "bot",
-        text: "Hola María 👋 Soy tu agente de salud ANTARES.",
-        time: "10:00 AM",
-      },
-    ],
+    chat: mockState.chat,
     sendChat: sendChatMock,
     openPanic: openPanicMock,
     openVoice: openVoiceMock,
@@ -40,17 +46,27 @@ vi.mock("../../context/AppContext", () => ({
     openBookingWizard: openBookingWizardMock,
     appendChatMessages: appendChatMessagesMock,
     showToast: showToastMock,
+    navigate: navigateMock,
   }),
 }));
 
 vi.mock("../../i18n/I18nContext", () => ({
   useT: () => (key: string) => key,
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({ t: (key: string) => key, lang: mockState.lang }),
 }));
+
+const welcomeMessage = {
+  id: "msg-1",
+  role: "bot" as const,
+  text: "Hola María 👋 Soy tu agente de salud ANTARES.",
+  time: "10:00 AM",
+};
 
 describe("ChatPage — Lab Exam Upload Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockState.lang = "en";
+    mockState.chat = [welcomeMessage];
   });
 
   it("renders attachment button and hidden file input with accepted types", () => {
@@ -108,7 +124,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     expect(appendChatMessagesMock).not.toHaveBeenCalled();
   });
 
-  it("uploads valid file, calls uploadLabExam, and appends user and bot bubbles", async () => {
+  it("uploads valid file, sends the UI language, and tags the bot bubble as lab-exam", async () => {
     vi.mocked(uploadLabExam).mockResolvedValueOnce({
       batchId: "batch-123",
       summary: "Se detectó glucosa en ayunas (95 mg/dL).",
@@ -128,7 +144,11 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     fireEvent.change(fileInput, { target: { files: [validFile] } });
 
     await waitFor(() => {
-      expect(uploadLabExam).toHaveBeenCalledWith(validFile, "test-thread-123");
+      expect(uploadLabExam).toHaveBeenCalledWith(
+        validFile,
+        "test-thread-123",
+        "en",
+      );
     });
 
     expect(appendChatMessagesMock).toHaveBeenCalledWith([
@@ -139,6 +159,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
       {
         role: "bot",
         text: "Se detectó glucosa en ayunas (95 mg/dL).",
+        kind: "lab-exam",
       },
     ]);
   });
@@ -167,5 +188,46 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     });
 
     expect(appendChatMessagesMock).not.toHaveBeenCalled();
+  });
+
+  it("renders the exam-processed badge and the metrics button on lab-exam messages", () => {
+    mockState.chat = [
+      {
+        id: "msg-lab",
+        role: "bot",
+        text: "**¡Hola!** Recibí tu examen de laboratorio.",
+        time: "10:05 AM",
+        kind: "lab-exam",
+      },
+    ];
+
+    render(<ChatPage />);
+
+    expect(screen.getByText("Examen procesado")).toBeTruthy();
+    expect(screen.getByLabelText("Ver todas las métricas")).toBeTruthy();
+  });
+
+  it("navigates to the metrics history screen (hc) when tapping view all metrics", () => {
+    mockState.chat = [
+      {
+        id: "msg-lab",
+        role: "bot",
+        text: "Recibí tu examen de laboratorio.",
+        time: "10:05 AM",
+        kind: "lab-exam",
+      },
+    ];
+
+    render(<ChatPage />);
+    fireEvent.click(screen.getByLabelText("Ver todas las métricas"));
+
+    expect(navigateMock).toHaveBeenCalledWith("hc");
+  });
+
+  it("does not render the badge or the metrics button on regular messages", () => {
+    render(<ChatPage />);
+
+    expect(screen.queryByText("Examen procesado")).toBeNull();
+    expect(screen.queryByLabelText("Ver todas las métricas")).toBeNull();
   });
 });
