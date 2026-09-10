@@ -1,11 +1,11 @@
-import { IonButton, IonIcon, IonInput, IonSpinner } from "@ionic/react";
+import { IonBadge, IonButton, IonIcon, IonInput, IonSpinner } from "@ionic/react";
 import { attach, medkit, mic, send as sendIcon } from "ionicons/icons";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { PageHeader } from "../components/PageHeader";
 import { Screen } from "../components/Screen";
 import { ChatRichText } from "../components/ChatRichText";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
 
 const quick = [
@@ -28,6 +28,7 @@ export function ChatPage() {
     openBookingWizard,
     appendChatMessages,
     showToast,
+    navigate,
   } = useApp();
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -57,6 +58,7 @@ export function ChatPage() {
   }, [chat.length, uploading]);
 
   const t = useT();
+  const { lang } = useI18n();
 
   const send = (msg = text) => {
     if (uploading) return;
@@ -92,7 +94,7 @@ export function ChatPage() {
 
     setUploading(true);
     try {
-      const result = await uploadLabExam(file, threadId);
+      const result = await uploadLabExam(file, threadId, lang);
       appendChatMessages([
         {
           role: "user",
@@ -101,6 +103,7 @@ export function ChatPage() {
         {
           role: "bot",
           text: result.summary,
+          kind: "lab-exam",
         },
       ]);
     } catch (err: unknown) {
@@ -197,6 +200,27 @@ export function ChatPage() {
                   >
                     {t(m.cta.ctaText)}
                   </IonButton>
+                )}
+                {m.role === "bot" && m.kind === "lab-exam" && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      marginTop: 8,
+                    }}
+                  >
+                    <IonBadge color="success">{t("Examen procesado")}</IonBadge>
+                    <IonButton
+                      size="small"
+                      fill="clear"
+                      aria-label={t("Ver todas las métricas")}
+                      onClick={() => navigate("hc")}
+                    >
+                      {t("Ver todas las métricas")}
+                    </IonButton>
+                  </div>
                 )}
               </div>
               <div
