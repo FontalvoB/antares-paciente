@@ -135,4 +135,93 @@ export async function uploadLabExam(file: File, threadId?: string): Promise<LabE
   }
 
   return (await res.json()) as LabExamUploadResult
-}
+}
+
+export interface StreamCallbacks {
+  /** Cada fragmento de texto del agente, en orden, para pintado en vivo. */
+  onToken?: (token: string) => void
+}
+
+/**
+ * Chat con streaming SSE vía el backend .NET (POST /api/v1/chat/stream,
+ * relay crudo del AI Service). Lanza si el HTTP falla (el llamador cae al
+ * fallback local). Robusto a líneas JSON cortadas entre chunks de red.
+ */
+export async function streamChatMessage(
+  message: string,
+  threadId: string,
+  callbacks: StreamCallbacks = {},
+): Promise<ChatResult> {
+  const token = getAccessToken()
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/chat/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ message, threadId }),
+  })
+
+  if (!res.ok || !res.body) {
+    throw new Error(`Error al enviar mensaje (${res.status})`)
+  }
+
+  let reply = ''
+  let outThreadId = threadId
+  let executionId: string | undefined
+  let streamError: string | null = null
+  let pending = ''
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+
+  const handleLine = (line: string) => {
+    const trimmed = line.trim()
+    if (!trimmed) return
+    if (trimmed.startsWith('event: ')) return
+    if (!trimmed.startsWith('data: ')) return
+    const data = trimmed.slice('data: '.length)
+    if (!data || data === '{}') return
+    try {
+      const parsed = JSON.parse(data) as {
+        type?: string
+        token?: string
+        content?: string
+        error?: string
+        thread_id?: string
+        execution_id?: string
+      }
+      // El AI Service emite {"type":"token","content":"..."}.
+      const piece = parsed.content ?? parsed.token
+      if (parsed.type === 'token' && piece) {
+        reply += piece
+        callbacks.onToken?.(piece)
+      } else if (parsed.type === 'error' && parsed.error) {
+        streamError = parsed.error
+      } else if (parsed.thread_id || parsed.execution_id) {
+        if (parsed.thread_id) outThreadId = parsed.thread_id
+        if (parsed.execution_id) executionId = parsed.execution_id
+      }
+    } catch {
+      /* data no-JSON: se ignora */
+    }
+  }
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      pending += decoder.decode(value, { stream: true })
+      const lines = pending.split('\n')
+      pending = lines.pop() ?? ''
+      for (const line of lines) handleLine(line)
+    }
+    if (pending.trim()) handleLine(pending)
+  } finally {
+    reader.releaseLock()
+  }
+
+  if (streamError) throw new Error(streamError)
+  if (!reply) throw new Error('El agente no respondió.')
+  return { reply, threadId: outThreadId, executionId }
+}

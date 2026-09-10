@@ -21,56 +21,6 @@ const DOT_COUNT = 44
 /** Hueco angular entre segmentos, en grados. */
 const GAP_DEG = 2.4
 
-/**
- * Espectro cromático del anillo. Es identidad visual del protocolo, no tokens
- * de marca: el tono avanza por la derecha (violeta → azul → verde → amarillo
- * → naranja) y regresa por la izquierda (verde → azul → púrpura → magenta),
- * igual que en el diseño de referencia. 0° = arriba, sentido del reloj.
- */
-const SPECTRUM: { at: number; color: string }[] = [
-  { at: 0, color: '#6a45a8' },
-  { at: 22, color: '#2b4a9e' },
-  { at: 45, color: '#1f7f92' },
-  { at: 68, color: '#4fa663' },
-  { at: 88, color: '#94b83c' },
-  { at: 106, color: '#eec12f' },
-  { at: 140, color: '#f2ab2c' },
-  { at: 166, color: '#e3b830' },
-  { at: 182, color: '#c6b535' },
-  { at: 200, color: '#86ab48' },
-  { at: 216, color: '#46937a' },
-  { at: 240, color: '#1e7392' },
-  { at: 262, color: '#3a5eae' },
-  { at: 284, color: '#6a4aa4' },
-  { at: 306, color: '#8b4ea6' },
-  { at: 326, color: '#a4479a' },
-  { at: 344, color: '#953d8d' },
-  { at: 360, color: '#6a45a8' },
-]
-
-function lerpHex(from: string, to: string, ratio: number) {
-  const parse = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
-  const a = parse(from)
-  const b = parse(to)
-  return `#${a
-    .map((v, i) => Math.round(v + (b[i] - v) * ratio).toString(16).padStart(2, '0'))
-    .join('')}`
-}
-
-/** Color del espectro en un ángulo dado (0° = arriba, sentido del reloj). */
-function wheelColorAt(deg: number) {
-  const d = ((deg % 360) + 360) % 360
-  for (let i = 1; i < SPECTRUM.length; i++) {
-    const prev = SPECTRUM[i - 1]
-    const next = SPECTRUM[i]
-    if (d <= next.at) return lerpHex(prev.color, next.color, (d - prev.at) / (next.at - prev.at))
-  }
-  return SPECTRUM[0].color
-}
-
-/** Degradado cónico del anillo: CSS también arranca arriba y gira al reloj. */
-const RING_GRADIENT = `conic-gradient(${SPECTRUM.map((s) => `${s.color} ${s.at}deg`).join(', ')})`
-
 /** Segmentos: las 6 misiones del día más el cofre que las corona. */
 const SEGMENT_KEYS: (ProgramTaskId | 'chest')[] = [
   ...PROGRAM_TASKS.map((task) => task.id),
@@ -78,10 +28,40 @@ const SEGMENT_KEYS: (ProgramTaskId | 'chest')[] = [
 ]
 const SLICE = 360 / SEGMENT_KEYS.length
 
-/** Color asignado a cada misión: el del centro de su segmento. */
+/**
+ * Un color sólido por segmento, recorriendo el arcoíris en sentido del reloj
+ * desde arriba. Son identidad visual del protocolo, no tokens de marca: cada
+ * misión se reconoce por su color y el anillo deja de ser un degradado.
+ * El amarillo y el naranja van oscurecidos para que el icono blanco se lea.
+ */
+const RAINBOW = [
+  '#e0342f', // rojo
+  '#ee7a21', // naranja
+  '#d89b0c', // amarillo
+  '#2fa24e', // verde
+  '#14a0a8', // turquesa
+  '#2160c4', // azul
+  '#7b3fb5', // violeta
+]
+
+/** Color asignado a cada misión. */
 export const WHEEL_COLORS = Object.fromEntries(
-  SEGMENT_KEYS.map((key, i) => [key, wheelColorAt(i * SLICE)]),
+  SEGMENT_KEYS.map((key, i) => [key, RAINBOW[i % RAINBOW.length]]),
 ) as Record<ProgramTaskId | 'chest', string>
+
+/**
+ * Anillo con paradas duras: cada segmento ocupa exactamente su porción y no
+ * hay mezcla entre vecinos. El primero está centrado arriba, así que se parte
+ * en dos tramos (el final del círculo y el principio).
+ */
+const RING_GRADIENT = `conic-gradient(${[
+  `${RAINBOW[0]} 0deg ${SLICE / 2}deg`,
+  ...SEGMENT_KEYS.slice(1).map(
+    (_, i) =>
+      `${RAINBOW[i + 1]} ${(i + 1) * SLICE - SLICE / 2}deg ${(i + 1) * SLICE + SLICE / 2}deg`,
+  ),
+  `${RAINBOW[0]} ${360 - SLICE / 2}deg 360deg`,
+].join(', ')})`
 
 /** Punto del anillo en coordenadas del viewBox (0° = arriba). */
 function point(deg: number, radius: number) {

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSubscription } from "urql";
 import { IonButton, IonIcon, IonSearchbar } from "@ionic/react";
 import {
   albumsOutline,
@@ -43,15 +44,16 @@ import {
   toggleClubPostLike,
   addClubComment,
   voteClubPoll,
-} from "../../mocks/clubs-api";
-import { coverGradient, CLUB_CATEGORIES } from "../../mocks/clubs-data";
-import { formatDateTime, initials } from "../../utils/clubs-helpers";
+} from "../../services/clubs-api";
+import { LIVE_CHAT_MESSAGE_ADDED } from "../../graphql/clubs-operations";
+import {
+  CLUB_CATEGORIES,
+  coverGradient,
+  formatDateTime,
+  initials,
+} from "../../utils/clubs-helpers";
 import { EmptyState } from "./community";
 import { PostCard } from "./PostCard";
-
-/** Id del perfil mock con el que el usuario interactúa en los clubes. */
-export const MOCK_MY_ID = "m-1";
-const MOCK_MY_NAME = "Equipo ANTARES";
 
 interface ClubsSectionProps {
   me: Profile | null;
@@ -77,9 +79,46 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
   const [lives, setLives] = useState<LiveSession[]>([]);
   const [requested, setRequested] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [inviteToken, setInviteToken] = useState("");
   const [liveChat, setLiveChat] = useState<LiveSession | null>(null);
   const [draft, setDraft] = useState("");
   const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
+
+  /* Chat del live en vivo: cuando el modal está abierto, suscribimos mensajes
+     nuevos y los anexamos al chat local sin refetch. */
+  const liveChatRef = useRef(liveChat);
+  liveChatRef.current = liveChat;
+  const [liveSub] = useSubscription<{
+    liveChatMessageAdded: {
+      id: string;
+      senderProfileId: string;
+      body: string;
+      sentAt: string;
+    };
+  }>({
+    query: LIVE_CHAT_MESSAGE_ADDED,
+    variables: { liveId: liveChat?.id ?? "" },
+    pause: !liveChat,
+  });
+  useEffect(() => {
+    const msg = liveSub.data?.liveChatMessageAdded;
+    if (!msg || !liveChatRef.current) return;
+    setLiveChat((prev) => {
+      if (!prev || prev.chat.some((m) => m.id === msg.id)) return prev;
+      return {
+        ...prev,
+        chat: [
+          ...prev.chat,
+          {
+            id: msg.id,
+            sender: { id: msg.senderProfileId, displayName: "Miembro" },
+            body: msg.body,
+            sentAt: msg.sentAt,
+          },
+        ],
+      };
+    });
+  }, [liveSub.data]);
 
   const reloadClubs = async () => {
     const [all, mine] = await Promise.all([fetchClubs({}), fetchMyClubs()]);
@@ -155,10 +194,26 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
 
   const joinWithInvite = async () => {
     if (!selected) return;
-    await joinWithInvitation(selected.id);
-    setQrOpen(false);
-    onToast(t("Te uniste al club"));
-    await loadClub(selected.id);
+    const token = (inviteToken.trim() || inviteTokenFromUrl()) as string;
+    if (!token) {
+      onToast(t("Pega el código de invitación"), "info");
+      return;
+    }
+    try {
+      await joinWithInvitation(selected.id, token);
+      setQrOpen(false);
+      onToast(t("Te uniste al club"));
+      await loadClub(selected.id);
+    } catch {
+      onToast(t("La invitación no es válida o ya expiró"), "err");
+    }
+  };
+
+  const inviteTokenFromUrl = (): string | null => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("club-token");
+    return t && t.trim().length > 0 ? t.trim() : null;
   };
 
   const exit = async () => {
@@ -189,9 +244,6 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
     if (!selected || !liveChat || !draft.trim()) return;
     await sendLiveChatMessage(liveChat.id, draft.trim());
     setDraft("");
-    const updated = await fetchClubLiveSessions(selected.id);
-    setLives(updated);
-    setLiveChat(updated.find((l) => l.id === liveChat.id) ?? null);
   };
 
   const toggleLike = async (clubId: string, post: ClubPost) => {
@@ -213,13 +265,13 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
     setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
 
-  const myId = me?.id ?? MOCK_MY_ID;
+  const myId = me?.id ?? null;
 
   /* ── Detalle del club ─────────────────────────────────────────────── */
 
   if (selected) {
     const feedViews: FeedPostView[] = posts.map((p) => {
-      const likedByMe = p.likes.includes(MOCK_MY_ID);
+      const likedByMe = myId != null && p.likes.includes(myId);
       return {
         post: toFeedPost(p),
         likeCount: p.likes.length,
@@ -251,13 +303,16 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
             margin: "10px 14px 0",
             height: 170,
             borderRadius: 20,
-            background: coverGradient(selected.category),
+            background: selected.coverUrl
+              ? `url(${selected.coverUrl}) center/cover no-repeat`
+              : coverGradient(selected.category),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             position: "relative",
           }}
         >
+          {!selected.coverUrl && (
           <span
             style={{
               fontSize: 52,
@@ -268,6 +323,7 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
           >
             {initials(selected.name)}
           </span>
+          )}
           <span
             style={{
               position: "absolute",
@@ -793,6 +849,20 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                 "Club solo por invitación: escanea el QR o usa el enlace del organizador",
               )}
             </p>
+            <input
+              value={inviteToken}
+              onChange={(e) => setInviteToken(e.target.value)}
+              placeholder={t("Código de invitación")}
+              style={{
+                width: "100%",
+                borderRadius: 99,
+                border: "1px solid var(--ion-color-light-shade)",
+                padding: "9px 14px",
+                fontSize: 13,
+                textAlign: "center",
+                background: "var(--ion-background-color)",
+              }}
+            />
             <IonButton expand="block" onClick={() => void joinWithInvite()}>
               {t("Unirme con invitación")}
             </IonButton>
@@ -984,13 +1054,16 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
               <div
                 style={{
                   height: 96,
-                  background: coverGradient(club.category),
+                  background: club.coverUrl
+                    ? `url(${club.coverUrl}) center/cover no-repeat`
+                    : coverGradient(club.category),
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   position: "relative",
                 }}
               >
+                {!club.coverUrl && (
                 <span
                   style={{
                     fontSize: 30,
@@ -1001,6 +1074,7 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                 >
                   {initials(club.name)}
                 </span>
+                )}
                 <span
                   style={{
                     position: "absolute",
@@ -1081,7 +1155,7 @@ export function toFeedPost(p: ClubPost): Post {
     id: p.author.id,
     displayName: p.author.displayName,
     avatarUrl: p.author.avatarUrl ?? null,
-    isSystem: p.author.displayName === MOCK_MY_NAME,
+    isSystem: false,
   };
   return {
     id: p.id,

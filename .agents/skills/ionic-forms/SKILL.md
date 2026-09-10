@@ -5,7 +5,7 @@ description: Formularios en ANTARES Paciente (Ionic React). Mapeo completo de co
 
 # Formularios Ionic — ANTARES Paciente
 
-**ESTADO ACTUAL:** todos los formularios son HTML nativo (`.field input/select/textarea`, `OnboardingPage.tsx:161-200`). **ESTADO RECOMENDADO:** formularios NUEVOS con componentes Ionic. **MIGRACIÓN FUTURA:** migrar los existentes uno a uno (los inputs ganan teclado móvil, labels flotantes y focus nativos gratis).
+**ESTADO ACTUAL:** mezcla. **Login/activación ya es Ionic** (`LoginPage.tsx`: `IonInput`+`IonCheckbox`+`IonButton`+`IonSpinner`+`IonProgressBar`, con `label` HTML externo y clase `.auth-input` en el HOST). El resto de formularios son HTML nativo (`.field input/select/textarea`, `OnboardingPage.tsx:161-200`). **ESTADO RECOMENDADO:** formularios NUEVOS con componentes Ionic. **MIGRACIÓN FUTURA:** migrar los existentes uno a uno (los inputs ganan teclado móvil, labels flotantes y focus nativos gratis).
 
 ## Mapeo de controles (obligatorio)
 
@@ -117,7 +117,7 @@ const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
 ### OTP (6 dígitos)
 
-ESTADO ACTUAL: 6 `input.otp` con focus manual (`OnboardingPage.tsx:236-252`). Opciones:
+ESTADO ACTUAL: custom en 2 sitios — `OnboardingPage.tsx:236-252` y `LoginPage.tsx:157-179` (6 `<input class="auth-otp">` con focus manual, autofocus al escribir, pegado de código completo en la primera celda, `Backspace` retrocede). Opciones:
 - Mantener custom (funciona), o
 - 6 `IonInput` con `inputmode="numeric" maxlength={1}` (validar autofocus manual).
 - **PENDIENTE DE VALIDACIÓN:** `IonCodeInput` en Ionic 8.8 antes de usarlo.

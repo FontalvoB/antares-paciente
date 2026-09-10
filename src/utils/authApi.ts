@@ -1,4 +1,4 @@
-import { getAuthBaseUrl } from './apiBaseUrl'
+import { getAuthBaseUrl, getApplicationCode } from './apiBaseUrl'
 
 const ACCESS_TOKEN_KEY = 'copp_access_token'
 
@@ -43,11 +43,14 @@ export interface SendOtpResult {
  * sin CORS). El application es el código de la app móvil: "app".
  */
 async function postJson<T>(path: string, body?: unknown): Promise<T> {
+  // Timeout defensivo (10 s): en WebView nativo una IP inalcanzable puede
+  // dejar el fetch colgado para siempre y con él el splash de arranque.
   const res = await fetch(path, {
     method: 'POST',
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(10000),
   })
 
   if (!res.ok) {
@@ -98,7 +101,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
   const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/login`, {
     documentNumber,
     password,
-    application: 'app',
+    application: getApplicationCode(),
     rememberMe,
   })
   persistAccessToken(result.accessToken)
@@ -112,7 +115,7 @@ export async function loginUser(documentNumber: string, password: string, rememb
 export async function lookupId(documentNumber: string): Promise<IdLookupResult> {
   return postJson<IdLookupResult>(`${getAuthBaseUrl()}/api/auth/id-lookup`, {
     documentNumber,
-    application: 'app',
+    application: getApplicationCode(),
   })
 }
 
@@ -129,7 +132,7 @@ export async function verifyOtp(documentNumber: string, otp: string, rememberMe:
   const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/verify-otp`, {
     documentNumber,
     otp,
-    application: 'app',
+    application: getApplicationCode(),
     rememberMe,
   })
   persistAccessToken(result.accessToken)
@@ -181,6 +184,7 @@ export async function getMe(): Promise<CurrentUser | null> {
         Authorization: `Bearer ${token}`,
       },
       credentials: 'include',
+      signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) return null
     return (await res.json()) as CurrentUser

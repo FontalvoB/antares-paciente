@@ -55,16 +55,15 @@ import { PostCard } from "../components/community/PostCard";
 import {
   ClubsSection,
   toFeedPost,
-  MOCK_MY_ID,
 } from "../components/community/ClubsSection";
 import {
   fetchPublicClubPosts,
   toggleClubPostLike,
   addClubComment,
   voteClubPoll,
-} from "../mocks/clubs-api";
+} from "../services/clubs-api";
 import type { Club } from "../graphql/clubs";
-import { coverGradient } from "../mocks/clubs-data";
+import { coverGradient } from "../utils/clubs-helpers";
 import { initials } from "../utils/clubs-helpers";
 import { PostDetailModal } from "../components/community/PostDetailModal";
 import { ComposePostModal } from "../components/community/ComposePostModal";
@@ -501,14 +500,14 @@ export function CommunityPage() {
           view: {
             post: toFeedPost(post),
             likeCount: post.likes.length,
-            likedByMe: post.likes.includes(MOCK_MY_ID),
+            likedByMe: me != null && post.likes.includes(me.id),
             repostCount: 0,
             repostedByMe: false,
           },
         })),
       ),
     );
-  }, [tab]);
+  }, [tab, me]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [newPostsCount, setNewPostsCount] = useState(0);
@@ -1043,9 +1042,7 @@ export function CommunityPage() {
                                             post: toFeedPost(updated),
                                             likeCount: updated.likes.length,
                                             likedByMe:
-                                              updated.likes.includes(
-                                                MOCK_MY_ID,
-                                              ),
+                                              updated.likes.includes(me?.id ?? ""),
                                           },
                                         }
                                       : x,
