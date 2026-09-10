@@ -98,6 +98,7 @@ interface AppState {
       role: "bot" | "user" | "alert";
       text: string;
       cta?: ChatSuggestion | null;
+      kind?: ChatMessage["kind"];
     }>,
   ) => void;
   connectWatch: (name: string) => void;
@@ -722,6 +723,7 @@ export function AppProvider({
           time: nowLabel(),
           threadId,
           cta: m.cta,
+          kind: m.kind,
         }));
         setChat((prev) => {
           const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";

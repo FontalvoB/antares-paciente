@@ -87,13 +87,18 @@ export interface LabExamUploadResult {
  * (POST /api/v1/lab-exams). El backend valida, comprime, almacena en S3,
  * extrae métricas mediante el AI Service y persiste en clinical_measurements.
  */
-export async function uploadLabExam(file: File, threadId?: string): Promise<LabExamUploadResult> {
+export async function uploadLabExam(
+  file: File,
+  threadId?: string,
+  language: 'es' | 'en' = 'es',
+): Promise<LabExamUploadResult> {
   const token = getAccessToken()
   const formData = new FormData()
   formData.append('file', file)
   if (threadId) {
     formData.append('threadId', threadId)
   }
+  formData.append('language', language)
 
   const res = await fetch(`${getApiBaseUrl()}/api/v1/lab-exams`, {
     method: 'POST',
