@@ -1,0 +1,102 @@
+[
+  {
+    "state": "base",
+    "frame": 1,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "base",
+    "frame": 61,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "base",
+    "frame": 121,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "base",
+    "frame": 181,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "base",
+    "frame": 241,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "larger",
+    "frame": 1,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "larger",
+    "frame": 61,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "larger",
+    "frame": 121,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "larger",
+    "frame": 181,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "larger",
+    "frame": 241,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "intermediate",
+    "frame": 1,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "intermediate",
+    "frame": 61,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "intermediate",
+    "frame": 121,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "intermediate",
+    "frame": 181,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "intermediate",
+    "frame": 241,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "lean",
+    "frame": 1,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "lean",
+    "frame": 61,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "lean",
+    "frame": 121,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "lean",
+    "frame": 181,
+    "maxError_m": 1.8989518366652192e-06
+  },
+  {
+    "state": "lean",
+    "frame": 241,
+    "maxError_m": 1.8989518366652192e-06
+  }
+]
