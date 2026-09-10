@@ -18783,6 +18783,213 @@ ion-button.nut-cta {
   gap: 8px;
 }
 
+/* Flujo por comida (MealFoodFlow) — iteración 2: cabecera única con
+ * safe-area, resumen nutricional compacto y estados intencionales.
+ * Solo layout/jerarquía; colores y radios del design system existente. */
+.nut-flow-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  margin-bottom: 16px;
+}
+
+ion-button.nut-flow-back {
+  --padding-start: 4px;
+  --padding-end: 8px;
+  margin: 0;
+  min-height: 44px;
+}
+
+.nut-flow-back ion-icon {
+  font-size: 24px;
+}
+
+.nut-flow-titles {
+  min-width: 0;
+}
+
+.nut-flow-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--brand-navy, var(--navy));
+}
+
+.nut-flow-sub {
+  font-size: 13px;
+  color: var(--mu);
+  margin-top: 2px;
+}
+
+.nut-flow-sec {
+  margin-top: 16px;
+}
+
+ion-button.nut-flow-primary {
+  margin-top: 16px;
+}
+
+.nut-fig {
+  margin: 0 0 10px;
+}
+
+.nut-fig .nut-ai-preview {
+  display: block;
+}
+
+/* Texto secundario sobre el overlay de análisis (hereda el blanco). */
+.nut-ai-keep {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Detalle: esqueleto de foto mientras se resuelve el análisis. */
+.nut-img-skel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  background: var(--g0);
+  margin-bottom: 10px;
+}
+
+.nut-img-skel ion-spinner {
+  width: 32px;
+  height: 32px;
+}
+
+/* Detalle sin foto: estado vacío profesional con acción. */
+.nut-img-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 20px;
+  border: 1.5px dashed var(--bd);
+  border-radius: 16px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.nut-img-empty ion-icon {
+  font-size: 36px;
+  color: var(--mu);
+}
+
+.nut-img-empty strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* Detalle con fallo de carga: error compacto con reintento. */
+.nut-img-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--g0);
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--org);
+}
+
+.nut-sum-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: var(--g0);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.nut-sum-hero span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nut-sum-hero strong {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.nut-sum-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.nut-sum-cell {
+  background: var(--g0);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nut-sum-cell span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+}
+
+.nut-sum-cell strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.nut-missing {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--g0);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.nut-missing ion-icon {
+  font-size: 20px;
+  color: var(--org);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.nut-missing strong {
+  display: block;
+  font-size: 13px;
+}
+
+.nut-missing small {
+  display: block;
+  font-size: 12px;
+  color: var(--mu);
+  margin-top: 2px;
+}
+
+.nut-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--mu);
+  margin: 12px 0;
+}
+
+.nut-status ion-icon {
+  font-size: 20px;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
 .nut-ai-error {
   font-size: 13px;
   margin: 10px 0 14px;
