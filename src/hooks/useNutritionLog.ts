@@ -23,29 +23,30 @@
  * verbatimModuleSyntax: all type imports use `import type`.
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   logMeal,
+  updateMeal,
   type MealCode,
   type NutritionIntakePayload,
-} from '../services/program/nutrition-service'
-import { enqueue } from '../services/program/offline-queue'
-import { programKeys, programInvalidation } from './queryKeys'
-import { deriveLoggedMeals } from '../utils/nutritionProgress'
+} from "../services/program/nutrition-service";
+import { enqueue } from "../services/program/offline-queue";
+import { programKeys, programInvalidation } from "./queryKeys";
+import { deriveLoggedMeals } from "../utils/nutritionProgress";
 
-import { ApiError } from '../utils/apiClient'
+import { ApiError } from "../utils/apiClient";
 import type {
   NutritionLogResultDto,
   ProgramSnapshotDto,
-} from '../services/program/types'
+} from "../services/program/types";
 
 /** Mutation input. */
 export interface LogMealVariables {
-  mealCode: MealCode
-  localDate?: string
+  mealCode: MealCode;
+  localDate?: string;
   /** Intake enriquecido opcional (SPEC nutrition-intake-adherence). */
-  intake?: NutritionIntakePayload
+  intake?: NutritionIntakePayload;
 }
 
 /**
@@ -54,8 +55,8 @@ export interface LogMealVariables {
  * the TanStack cache to give instant UI feedback and is dropped on refetch.
  */
 type CachedSnapshot = ProgramSnapshotDto & {
-  todayNutritionLogged?: string[]
-}
+  todayNutritionLogged?: string[];
+};
 
 /**
  * Verdad server-side de los meals registrados hoy: el snapshot `nut` trae
@@ -65,19 +66,23 @@ type CachedSnapshot = ProgramSnapshotDto & {
  * `deriveLoggedMeals` (S4, unifica todos los consumidores).
  */
 function loggedMealsFromSnapshot(old: CachedSnapshot): string[] {
-  return deriveLoggedMeals(old)
+  return deriveLoggedMeals(old);
 }
 
 /** Transport failure eligible for offline-queue replay (R5.4 / R5.5). */
 function isTransportError(err: unknown): err is ApiError {
-  if (!(err instanceof ApiError)) return false
-  if (err.errorType === 'network' || err.errorType === 'TIMEOUT') return true
-  return err.errorType === 'server' && err.status >= 500
+  if (!(err instanceof ApiError)) return false;
+  if (err.errorType === "network" || err.errorType === "TIMEOUT") return true;
+  return err.errorType === "server" && err.status >= 500;
 }
 
 /** Business conflict: meal/hydration already logged today (R2.6 / R5.6). */
 function isAlreadyLogged(err: unknown): err is ApiError {
-  return err instanceof ApiError && err.status === 409 && err.code === 'HABIT_ALREADY_LOGGED'
+  return (
+    err instanceof ApiError &&
+    err.status === 409 &&
+    err.code === "HABIT_ALREADY_LOGGED"
+  );
 }
 
 /**
@@ -89,38 +94,39 @@ function isAlreadyLogged(err: unknown): err is ApiError {
  *   enqueued for replay and `error.errorType` is 'network' | 'TIMEOUT' | 'server'.
  */
 export function useNutritionLog() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation<NutritionLogResultDto, ApiError, LogMealVariables>({
     // DESIGN §query keys: networkMode 'online' so an offline trigger is paused
     // (not silently dropped); transport failures during an in-flight request
     // still surface via onError and are enqueued (R5.4).
-    networkMode: 'online',
+    networkMode: "online",
 
-    mutationFn: ({ mealCode, localDate, intake }) => logMeal(mealCode, localDate, intake),
+    mutationFn: ({ mealCode, localDate, intake }) =>
+      logMeal(mealCode, localDate, intake),
 
     onMutate: async (vars) => {
       // Cancel in-flight snapshot/scores queries so the optimistic patch wins.
       await Promise.all([
         queryClient.cancelQueries({ queryKey: programKeys.snapshot }),
         queryClient.cancelQueries({ queryKey: programKeys.scores }),
-      ])
+      ]);
 
       // Optimistically mark the meal/hydration as logged for instant UI feedback.
       // El marcador parte de la verdad server-side (nutritionIntakeLogs del
       // snapshot) + el estado optimista previo.
       queryClient.setQueryData<CachedSnapshot>(programKeys.snapshot, (old) => {
-        if (!old) return old
-        const logged = new Set(loggedMealsFromSnapshot(old))
-        logged.add(vars.mealCode)
-        return { ...old, todayNutritionLogged: [...logged] }
-      })
+        if (!old) return old;
+        const logged = new Set(loggedMealsFromSnapshot(old));
+        logged.add(vars.mealCode);
+        return { ...old, todayNutritionLogged: [...logged] };
+      });
     },
 
     onError: (error, vars) => {
       // 409 HABIT_ALREADY_LOGGED: the meal is already recorded server-side, so
       // the optimistic marker is already correct. No extra XP, NO enqueue (R5.6).
-      if (isAlreadyLogged(error)) return
+      if (isAlreadyLogged(error)) return;
 
       // Transport failure → enqueue for ordered replay with the SAME
       // mealCode+localDate+intake (verbatim). The server's per-meal/per-day
@@ -130,7 +136,7 @@ export function useNutritionLog() {
       // persista los mismos macros/fuente/análisis.
       if (isTransportError(error)) {
         enqueue<LogMealVariables>({
-          actionType: 'nutritionLog',
+          actionType: "nutritionLog",
           payload: {
             mealCode: vars.mealCode,
             ...(vars.localDate !== undefined && { localDate: vars.localDate }),
@@ -138,33 +144,37 @@ export function useNutritionLog() {
           },
           clientRequestId: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
-        })
-        return
+        });
+        return;
       }
       // Any other 4xx: per R5.6 do NOT enqueue AND revert the optimistic
       // marker — el server rechazó el log, así que el checkmark no debe
       // sobrevivir (misma honestidad que el rollback de useCompleteTask;
       // onSettled no invalida en error, por eso se revierte acá).
       queryClient.setQueryData<CachedSnapshot>(programKeys.snapshot, (old) => {
-        if (!old?.todayNutritionLogged) return old
+        if (!old?.todayNutritionLogged) return old;
         return {
           ...old,
-          todayNutritionLogged: old.todayNutritionLogged.filter((m) => m !== vars.mealCode),
-        }
-      })
+          todayNutritionLogged: old.todayNutritionLogged.filter(
+            (m) => m !== vars.mealCode,
+          ),
+        };
+      });
     },
 
     onSuccess: (data, vars) => {
       // Reconcile from server truth: ensure logged + add the awarded XP exactly
       // once (no optimistic XP was added, so no double-count possible).
       queryClient.setQueryData<CachedSnapshot>(programKeys.snapshot, (old) => {
-        if (!old) return old
+        if (!old) return old;
         return {
           ...old,
-          todayNutritionLogged: [...new Set([...loggedMealsFromSnapshot(old), vars.mealCode])],
+          todayNutritionLogged: [
+            ...new Set([...loggedMealsFromSnapshot(old), vars.mealCode]),
+          ],
           xp: { ...old.xp, balance: old.xp.balance + data.xpAwarded },
-        }
-      })
+        };
+      });
     },
 
     onSettled: (_data, error) => {
@@ -172,8 +182,46 @@ export function useNutritionLog() {
       // 409 awards no XP and transport keeps the queued optimistic marker, so we
       // skip invalidation in both cases (R2.6 / R5.4). The offline queue's own
       // replay flushes invalidate everything after reconnect (R5.5).
-      if (error) return
-      void programInvalidation.afterNutritionLog(queryClient)
+      if (error) return;
+      void programInvalidation.afterNutritionLog(queryClient);
     },
-  })
+  });
+}
+
+/**
+ * Edición del intake de una comida ya registrada (mismo día, mismo
+ * HabitCheck: sin duplicados, sin XP). La comida YA está marcada como
+ * registrada, así que no hay optimismo que revertir: éxito invalida el
+ * snapshot (nuevo estado de verdad), fallo de transporte encola el replay
+ * (el servidor la trata como upsert idempotente por comida+día).
+ */
+export function useUpdateNutritionLog() {
+  const queryClient = useQueryClient();
+
+  return useMutation<NutritionLogResultDto, ApiError, LogMealVariables>({
+    networkMode: "online",
+
+    mutationFn: ({ mealCode, localDate, intake }) =>
+      updateMeal(mealCode, localDate, intake),
+
+    onError: (error, vars) => {
+      if (isTransportError(error)) {
+        enqueue<LogMealVariables>({
+          actionType: "nutritionLog",
+          payload: {
+            mealCode: vars.mealCode,
+            ...(vars.localDate !== undefined && { localDate: vars.localDate }),
+            ...(vars.intake !== undefined && { intake: vars.intake }),
+          },
+          clientRequestId: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+        });
+      }
+    },
+
+    onSettled: (_data, error) => {
+      if (error) return;
+      void programInvalidation.afterNutritionLog(queryClient);
+    },
+  });
 }

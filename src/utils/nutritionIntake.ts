@@ -1,5 +1,8 @@
-import type { NutritionIntakeLogDto, ProgramSnapshotDto } from '../services/program/types'
-import type { MealCode } from '../services/program/nutrition-service'
+import type {
+  NutritionIntakeLogDto,
+  ProgramSnapshotDto,
+} from "../services/program/types";
+import type { MealCode } from "../services/program/nutrition-service";
 
 /**
  * Resolvers puros del intake nutricional (de-mock de NutritionPage) — misma
@@ -12,41 +15,57 @@ import type { MealCode } from '../services/program/nutrition-service'
  */
 
 export interface IntakeTotals {
-  calories: number
-  proteinG: number
-  carbsG: number
-  fatG: number
-  fiberG: number
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number;
 }
 
 export interface PlanTargets {
-  calories: number | null
-  proteinG: number | null
-  carbsG: number | null
-  fatG: number | null
-  fiberG: number | null
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  fiberG: number | null;
 }
 
-export type MealLogSource = 'manual' | 'ai_photo'
+export type MealLogSource = "manual" | "ai_photo";
 
-export type TrendDirection = 'up' | 'down' | 'flat' | null
+export type TrendDirection = "up" | "down" | "flat" | null;
 
 /** Contenido `nut` del snapshot (undefined sin snapshot o sin tarea nut). */
 function nutContent(snapshot: ProgramSnapshotDto | null | undefined) {
-  return snapshot?.todayTasks?.find((task) => task.taskCode === 'nut')?.content
+  return snapshot?.todayTasks?.find((task) => task.taskCode === "nut")?.content;
+}
+
+/**
+ * Log de una comida del snapshot (para detalle/edición). Incluye el
+ * marcador optimista de `todayNutritionLogged`? NO: el detalle necesita la
+ * verdad con valores (intake + foodAnalysisId), que solo existe server-side.
+ * Sin log → null (pendiente).
+ */
+export function findMealLog(
+  snapshot: ProgramSnapshotDto | null | undefined,
+  mealCode: MealCode,
+): NutritionIntakeLogDto | null {
+  if (mealCode === "agua") return null;
+  const log = (nutContent(snapshot)?.nutritionIntakeLogs ?? []).find(
+    (l) => l.mealCode === mealCode,
+  );
+  return log ?? null;
 }
 
 /** Suma defensiva de un campo numérico nullable de los logs. */
-function sumOf<K extends 'calories' | 'proteinG' | 'carbsG' | 'fatG' | 'fiberG' | 'waterMl'>(
-  logs: NutritionIntakeLogDto[],
-  field: K,
-): number {
-  let total = 0
+function sumOf<
+  K extends "calories" | "proteinG" | "carbsG" | "fatG" | "fiberG" | "waterMl",
+>(logs: NutritionIntakeLogDto[], field: K): number {
+  let total = 0;
   for (const log of logs) {
-    const value = log[field]
-    if (typeof value === 'number' && Number.isFinite(value)) total += value
+    const value = log[field];
+    if (typeof value === "number" && Number.isFinite(value)) total += value;
   }
-  return total
+  return total;
 }
 
 /**
@@ -58,15 +77,15 @@ export function deriveIntakeTotals(
   snapshot: ProgramSnapshotDto | null | undefined,
 ): IntakeTotals {
   const logs = (nutContent(snapshot)?.nutritionIntakeLogs ?? []).filter(
-    (log) => log.mealCode !== 'agua',
-  )
+    (log) => log.mealCode !== "agua",
+  );
   return {
-    calories: sumOf(logs, 'calories'),
-    proteinG: sumOf(logs, 'proteinG'),
-    carbsG: sumOf(logs, 'carbsG'),
-    fatG: sumOf(logs, 'fatG'),
-    fiberG: sumOf(logs, 'fiberG'),
-  }
+    calories: sumOf(logs, "calories"),
+    proteinG: sumOf(logs, "proteinG"),
+    carbsG: sumOf(logs, "carbsG"),
+    fatG: sumOf(logs, "fatG"),
+    fiberG: sumOf(logs, "fiberG"),
+  };
 }
 
 /**
@@ -78,9 +97,9 @@ export function deriveWaterGlasses(
   snapshot: ProgramSnapshotDto | null | undefined,
 ): number {
   const logs = (nutContent(snapshot)?.nutritionIntakeLogs ?? []).filter(
-    (log) => log.mealCode === 'agua',
-  )
-  return Math.floor(sumOf(logs, 'waterMl') / 250)
+    (log) => log.mealCode === "agua",
+  );
+  return Math.floor(sumOf(logs, "waterMl") / 250);
 }
 
 /**
@@ -95,10 +114,10 @@ export function deriveMealSource(
   mealCode: MealCode,
 ): MealLogSource | null {
   const log = (nutContent(snapshot)?.nutritionIntakeLogs ?? []).find(
-    (l) => l.mealCode === mealCode && l.mealCode !== 'agua',
-  )
-  if (!log) return null
-  return log.source === 'ai_photo' ? 'ai_photo' : 'manual'
+    (l) => l.mealCode === mealCode && l.mealCode !== "agua",
+  );
+  if (!log) return null;
+  return log.source === "ai_photo" ? "ai_photo" : "manual";
 }
 
 /**
@@ -109,14 +128,14 @@ export function deriveMealSource(
 export function derivePlanTargets(
   snapshot: ProgramSnapshotDto | null | undefined,
 ): PlanTargets {
-  const content = nutContent(snapshot)
+  const content = nutContent(snapshot);
   return {
     calories: content?.dailyCalorieTarget ?? null,
     proteinG: content?.dailyProteinTarget ?? null,
     carbsG: content?.dailyCarbsTarget ?? null,
     fatG: content?.dailyFatTarget ?? null,
     fiberG: content?.dailyFiberTarget ?? null,
-  }
+  };
 }
 
 /**
@@ -128,8 +147,8 @@ export function deriveTrend(
   current: number | null | undefined,
   previous: number | null | undefined,
 ): TrendDirection {
-  if (current == null || previous == null) return null
-  if (current > previous) return 'up'
-  if (current < previous) return 'down'
-  return 'flat'
+  if (current == null || previous == null) return null;
+  if (current > previous) return "up";
+  if (current < previous) return "down";
+  return "flat";
 }

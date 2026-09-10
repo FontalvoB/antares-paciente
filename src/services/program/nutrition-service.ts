@@ -6,19 +6,19 @@
  * 409 HABIT_ALREADY_LOGGED propagates as ApiError — caller decides UX.
  */
 
-import { apiFetch } from '../../utils/apiClient'
-import type { NutritionLogResultDto } from './types'
+import { apiFetch } from "../../utils/apiClient";
+import type { NutritionLogResultDto } from "./types";
 
 /** Valid meal codes — exhaustive union matching the backend enum. */
-export type MealCode = 'des' | 'alm' | 'mer' | 'cen' | 'agua'
+export type MealCode = "des" | "alm" | "mer" | "cen" | "agua";
 
 const VALID_MEAL_CODES: ReadonlySet<string> = new Set<MealCode>([
-  'des',
-  'alm',
-  'mer',
-  'cen',
-  'agua',
-])
+  "des",
+  "alm",
+  "mer",
+  "cen",
+  "agua",
+]);
 
 /**
  * Intake nutricional opcional del log (SPEC nutrition-intake-adherence):
@@ -28,14 +28,14 @@ const VALID_MEAL_CODES: ReadonlySet<string> = new Set<MealCode>([
  * persiste un análisis de foto confirmado en lugar de descartarlo.
  */
 export interface NutritionIntakePayload {
-  calories?: number | null
-  proteinG?: number | null
-  carbsG?: number | null
-  fatG?: number | null
-  fiberG?: number | null
-  waterMl?: number | null
-  source?: 'manual' | 'ai_photo' | string | null
-  foodAnalysisId?: string | null
+  calories?: number | null;
+  proteinG?: number | null;
+  carbsG?: number | null;
+  fatG?: number | null;
+  fiberG?: number | null;
+  waterMl?: number | null;
+  source?: "manual" | "ai_photo" | string | null;
+  foodAnalysisId?: string | null;
 }
 
 /**
@@ -63,20 +63,44 @@ export async function logMeal(
   if (!VALID_MEAL_CODES.has(mealCode)) {
     throw new Error(
       `Invalid mealCode: '${mealCode}'. Must be one of: des, alm, mer, cen, agua`,
-    )
+    );
+  }
+
+  return apiFetch<NutritionLogResultDto>("/api/v1/program/nutrition/log", {
+    method: "POST",
+    body: {
+      mealCode,
+      ...(localDate !== undefined && { localDate }),
+      // Intake ANIDADO (shape del backend); los campos del payload viajan
+      // verbatim dentro del bloque. Sin intake → shape anterior intacto.
+      ...(intake !== undefined && { intake }),
+    },
+  });
+}
+
+/**
+ * Actualiza el intake de una comida ya registrada (mismo día, mismo
+ * HabitCheck: sin duplicados, sin XP adicional). 404 si no existe log.
+ */
+export async function updateMeal(
+  mealCode: MealCode,
+  localDate?: string,
+  intake?: NutritionIntakePayload,
+): Promise<NutritionLogResultDto> {
+  if (!VALID_MEAL_CODES.has(mealCode)) {
+    throw new Error(
+      `Invalid mealCode: '${mealCode}'. Must be one of: des, alm, mer, cen, agua`,
+    );
   }
 
   return apiFetch<NutritionLogResultDto>(
-    '/api/v1/program/nutrition/log',
+    `/api/v1/program/nutrition/log/${mealCode}`,
     {
-      method: 'POST',
+      method: "PUT",
       body: {
-        mealCode,
         ...(localDate !== undefined && { localDate }),
-        // Intake ANIDADO (shape del backend); los campos del payload viajan
-        // verbatim dentro del bloque. Sin intake → shape anterior intacto.
         ...(intake !== undefined && { intake }),
       },
     },
-  )
+  );
 }

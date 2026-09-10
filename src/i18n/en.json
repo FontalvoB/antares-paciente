@@ -1825,5 +1825,20 @@
   "Meta semana 24": "Week 24 goal",
   "Riesgo bajo": "Low risk",
   "Examen procesado": "Exam processed",
-  "Ver todas las métricas": "View all metrics"
+  "Ver todas las métricas": "View all metrics",
+  "¿Qué comida vas a registrar?": "Which meal are you logging?",
+  "Comida actualizada": "Meal updated",
+  "Consumido": "Consumed",
+  "Editar comida": "Edit meal",
+  "Editar valores": "Edit values",
+  "Esta comida ya estaba registrada": "This meal was already logged",
+  "Guardar {meal}": "Save {meal}",
+  "Guardar cambios": "Save changes",
+  "No se pudo actualizar la comida": "Couldn't update the meal",
+  "Objetivo del plan": "Plan target",
+  "Registrar {meal}": "Log {meal}",
+  "Revisar {meal}": "Review {meal}",
+  "Se actualiza el mismo registro, sin duplicados.": "The same entry is updated, no duplicates.",
+  "Sin valores registrados": "No values logged",
+  "Ver detalle": "View details"
 }

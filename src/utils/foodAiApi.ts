@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "./apiBaseUrl";
+import { apiFetch } from "./apiClient";
 
 /**
  * Cliente del módulo Food AI (backend .NET → food-ai-service).
@@ -64,6 +65,63 @@ export interface MealIntake {
   carbsG: number;
   fatG: number;
   fiberG: number;
+}
+
+/** Item de un análisis persistido (GET /api/v1/foodai/analyses/{id}). */
+export interface FoodAnalysisItem {
+  name: string;
+  confidence: number;
+  boundingBox: { x: number; y: number; width: number; height: number };
+  portion: PortionInfo | null;
+  nutrition: NutritionValues | null;
+  nutritionStatus: NutritionStatus;
+  source: string | null;
+}
+
+/** Detalle de un análisis persistido (para Ver/Editar comidas registradas). */
+export interface FoodAnalysisDetail {
+  analysisId: string;
+  status: string;
+  imageKey: string | null;
+  foods: FoodAnalysisItem[];
+  summary: NutritionValues | null;
+}
+
+/**
+ * Recupera un análisis persistido ([Authorize] + ownership server-side).
+ * Sirve la foto original (imageKey) y los alimentos con porción/nutrición.
+ */
+export async function getFoodAnalysis(
+  analysisId: string,
+): Promise<FoodAnalysisDetail> {
+  return apiFetch<FoodAnalysisDetail>(`/api/v1/foodai/analyses/${analysisId}`);
+}
+
+/**
+ * URL firmada temporal para mostrar la foto original en <img>.
+ * El storage acepta Bearer o firma; en <img> no hay Bearer → se firma.
+ */
+export async function getSignedImageUrl(imageKey: string): Promise<string> {
+  const res = await apiFetch<{ url: string }>(
+    `/api/v1/storage/sign?key=${encodeURIComponent(imageKey)}`,
+  );
+  const base = getApiBaseUrl();
+  // El backend firma con su propio host (localhost en dev): en web dev el
+  // proxy de Vite la resuelve; en nativo se usa la URL absoluta tal cual.
+  if (!base) {
+    try {
+      const u = new URL(res.url);
+      return `${u.pathname}${u.search}`;
+    } catch {
+      return res.url;
+    }
+  }
+  try {
+    const u = new URL(res.url);
+    return `${base}${u.pathname}${u.search}`;
+  } catch {
+    return res.url;
+  }
 }
 
 export class FoodAiError extends Error {
