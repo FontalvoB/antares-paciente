@@ -54,10 +54,39 @@ body {
   }
 }
 
-@media (min-width: 481px) {
+/* Marco de teléfono solo entre 481px y 767px (p. ej. iPhone landscape).
+   A 600px+ en ambos ejes (iPad mini = 744, iPad = 768+) la app va a pantalla completa — no exigir
+   pointer:coarse: el Simulator de Xcode y Safari RDM usan ratón (pointer:fine). */
+@media (min-width: 481px) and (max-width: 767px) {
   .app-shell {
     border-radius: 40px;
     border: 8px solid #111;
+  }
+}
+
+@media (min-width: 600px) and (min-height: 600px) {
+  .app-stage {
+    padding: 0;
+    background: #fff;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  .app-shell,
+  .app-shell.app-shell-login {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+  ion-modal.voice-modal,
+  ion-modal.request-modal {
+    --max-width: 100%;
+  }
+  ion-modal.lesson-modal,
+  ion-modal.metric-modal {
+    --max-width: min(560px, 100%);
   }
 }
 
@@ -16832,12 +16861,91 @@ ion-button.cta-pill.button-disabled {
   flex-direction: column;
   align-items: center;
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
   width: calc(100% - 32px);
   margin: 14px 16px 0;
   padding: 18px 16px 16px;
   border: none;
   border-radius: 26px;
-  background: #f1f3f6;
+  background:
+    radial-gradient(
+      ellipse 70% 62% at 50% 46%,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(255, 255, 255, 0) 58%
+    ),
+    radial-gradient(
+      ellipse at 10% 8%,
+      rgba(135, 174, 202, 0.42) 0%,
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 94% 92%,
+      rgba(61, 123, 114, 0.3) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse at 88% 6%,
+      rgba(85, 129, 162, 0.22) 0%,
+      transparent 40%
+    ),
+    linear-gradient(165deg, #eef4f8 0%, #e7eef3 46%, #e8f1ee 100%);
+}
+
+.hm-wheel-card .wheel {
+  --wheel-gap: #eef4f8;
+}
+
+.hm-wheel-card::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(320px, 92%);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      transparent 38%,
+      rgba(135, 174, 202, 0.22) 39%,
+      transparent 40.4%
+    ),
+    radial-gradient(
+      circle,
+      transparent 52%,
+      rgba(61, 123, 114, 0.16) 53%,
+      transparent 54.4%
+    ),
+    radial-gradient(
+      circle,
+      transparent 66%,
+      rgba(20, 40, 85, 0.08) 67%,
+      transparent 68.4%
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hm-wheel-card::after {
+  content: "";
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  bottom: 14%;
+  height: 42px;
+  opacity: 0.28;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 40' preserveAspectRatio='none'%3E%3Cpath d='M0 22 H24 L30 22 L36 8 L42 34 L48 22 H68 L74 14 L80 22 H160' fill='none' stroke='%235581a2' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 200px 42px;
+  background-position: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hm-wheel-card > * {
+  z-index: 1;
 }
 
 .hm-wheel-card:active {
@@ -18885,4 +18993,54 @@ ion-button.nut-cta {
 
 .nut-ai-result .nut-ai-error ion-icon {
   font-size: 38px;
+}
+
+/* --- iPad / tablet: pantalla completa (sin simulador de teléfono) --- */
+html.is-tablet .app-stage,
+html.plt-ipad .app-stage,
+html.plt-tablet .app-stage {
+  padding: 0;
+  background: #fff;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+html.is-tablet .app-shell,
+html.is-tablet .app-shell.app-shell-login,
+html.plt-ipad .app-shell,
+html.plt-ipad .app-shell.app-shell-login,
+html.plt-tablet .app-shell,
+html.plt-tablet .app-shell.app-shell-login {
+  width: 100%;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+html.is-tablet ion-modal.voice-modal,
+html.is-tablet ion-modal.request-modal,
+html.plt-ipad ion-modal.voice-modal,
+html.plt-ipad ion-modal.request-modal,
+html.plt-tablet ion-modal.voice-modal,
+html.plt-tablet ion-modal.request-modal {
+  --max-width: 100%;
+}
+
+html.is-tablet ion-modal.lesson-modal,
+html.is-tablet ion-modal.metric-modal,
+html.plt-ipad ion-modal.lesson-modal,
+html.plt-ipad ion-modal.metric-modal,
+html.plt-tablet ion-modal.lesson-modal,
+html.plt-tablet ion-modal.metric-modal {
+  --max-width: min(560px, 100%);
+}
+
+html.is-tablet .screen.auth .auth-scroll,
+html.plt-ipad .screen.auth .auth-scroll,
+html.plt-tablet .screen.auth .auth-scroll {
+  max-width: 560px;
+  width: 100%;
+  margin-inline: auto;
 }
