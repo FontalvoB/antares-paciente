@@ -12,6 +12,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ANTARES" />
     <title>ANTARES · App Paciente</title>
+    <script>
+      /* iPad/tablet: clase inmediata. Por geometría, no por pointer:coarse (el Simulator usa ratón). */
+      (function () {
+        try {
+          var w = window.innerWidth, h = window.innerHeight;
+          var shortest = Math.min(w, h), longest = Math.max(w, h);
+          if (shortest >= 600 && longest >= 768) {
+            document.documentElement.classList.add("is-tablet");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
