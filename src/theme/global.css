@@ -18995,6 +18995,40 @@ ion-button.nut-cta {
   font-size: 38px;
 }
 
+/* Cámara sobre tarjeta oscura (nut-ai-card navy): botones de alto contraste.
+ * CameraCapture solo se usa aquí, así que estos estilos son su contexto real. */
+.nut-cam-main {
+  --background: var(--wh);
+  --color: var(--brand-navy);
+  --border-radius: 14px;
+  min-height: 52px;
+  font-weight: 800;
+}
+
+.nut-cam-gallery {
+  --background: transparent;
+  --color: var(--wh);
+  --border-color: rgba(255, 255, 255, 0.55);
+  --border-width: 1.5px;
+  --border-radius: 14px;
+  min-height: 52px;
+  font-weight: 700;
+}
+
+.nut-cam-close {
+  --color: var(--wh);
+  min-height: 52px;
+  min-width: 52px;
+}
+
+.nut-ai-card .nut-ai-hint {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.nut-ai-card .nut-ai-title {
+  color: var(--wh);
+}
+
 /* --- iPad / tablet: pantalla completa (sin simulador de teléfono) --- */
 html.is-tablet .app-stage,
 html.plt-ipad .app-stage,

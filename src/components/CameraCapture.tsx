@@ -249,6 +249,7 @@ export function CameraCapture({ onCapture, onCancel }: Props) {
           )}
 
           <IonButton
+            className="nut-cam-main"
             expand="block"
             onClick={onTakePhoto}
             aria-label={t("Tomar fotografía")}
@@ -258,6 +259,7 @@ export function CameraCapture({ onCapture, onCancel }: Props) {
           </IonButton>
           <div className="nut-cam-actions">
             <IonButton
+              className="nut-cam-gallery"
               style={{ flex: 1 }}
               fill="outline"
               onClick={onPickGallery}
@@ -266,6 +268,7 @@ export function CameraCapture({ onCapture, onCancel }: Props) {
               {t("Seleccionar imagen")}
             </IonButton>
             <IonButton
+              className="nut-cam-close"
               fill="clear"
               onClick={onCancel}
               aria-label={t("Cancelar")}

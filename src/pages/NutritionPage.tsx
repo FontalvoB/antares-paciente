@@ -578,353 +578,6 @@ export function NutritionPage() {
     <Screen>
       <PageHeader title={t("Nutrición")} sub={t(planTitle)} />
 
-      {/* ── Analizador de comida con IA (flujo real) ── */}
-      <div
-        className="card"
-        style={{
-          margin: "10px 14px 0",
-          background: "var(--navy)",
-          borderColor: "transparent",
-          color: "#fff",
-        }}
-      >
-        {analysis === "idle" && (
-          <>
-            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
-              📸 {t("Analiza tu comida con IA")}
-            </div>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
-              {t("Toma una foto y recibe calorías, macros y porción reales.")}
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <IonButton
-                style={
-                  { flex: 1, "--background": "var(--teal)" } as CSSProperties
-                }
-                onClick={() => setAnalysis("camera")}
-              >
-                <IonIcon icon={cameraOutline} slot="start" />
-                {t("Usar cámara")}
-              </IonButton>
-              <IonButton
-                style={{ flex: 1 }}
-                fill="outline"
-                onClick={() => {
-                  setAnalysis("camera");
-                  setTimeout(() => {
-                    const input = document.querySelector<HTMLInputElement>(
-                      'input[type="file"][accept="image/*"]',
-                    );
-                    input?.click();
-                  }, 50);
-                }}
-              >
-                <IonIcon icon={imageOutline} slot="start" />
-                {t("Seleccionar imagen")}
-              </IonButton>
-            </div>
-          </>
-        )}
-
-        {analysis === "camera" && (
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28 }}
-          >
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-              📷 {t("Apunta a tu comida")}
-            </div>
-            <CameraCapture
-              onCapture={(blob, fileName) => runAnalysis(blob, fileName)}
-              onCancel={resetAnalysis}
-            />
-          </motion.div>
-        )}
-
-        {analysis === "analyzing" && photo && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div
-              style={{
-                position: "relative",
-                borderRadius: 14,
-                overflow: "hidden",
-                marginBottom: 12,
-              }}
-            >
-              <img
-                src={photo}
-                alt={t("Fotografía de la comida")}
-                style={{
-                  width: "100%",
-                  aspectRatio: "4/3",
-                  objectFit: "cover",
-                  filter: "brightness(0.55)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  textAlign: "center",
-                  padding: 16,
-                }}
-              >
-                <IonSpinner
-                  name="crescent"
-                  style={{ color: "#fff", width: 34, height: 34 }}
-                />
-                <div style={{ fontWeight: 800, fontSize: 15 }}>
-                  {t("Analizando tu comida…")}
-                </div>
-                {steps.map((s, i) => (
-                  <div
-                    key={s}
-                    style={{
-                      fontSize: 12,
-                      opacity: i <= step ? 1 : 0.35,
-                      color: "#fff",
-                    }}
-                  >
-                    {i < step ? "✓ " : i === step ? "▸ " : ""}
-                    {s}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {analysis === "success" && result && photo && (
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <img
-              src={photo}
-              alt={t("Fotografía de la comida")}
-              style={{
-                width: "100%",
-                borderRadius: 14,
-                aspectRatio: "4/3",
-                objectFit: "cover",
-                marginBottom: 12,
-              }}
-            />
-            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 10 }}>
-              {t("Alimentos detectados")} ({result.foods.length})
-            </div>
-            {result.foods.map((food, i) => (
-              <FoodResultCard key={`${food.name}-${i}`} food={food} />
-            ))}
-            {result.summary &&
-              result.foods.some((f) => f.nutritionStatus === "available") && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginTop: 10,
-                    paddingTop: 10,
-                    borderTop: "1px dashed rgba(255,255,255,.25)",
-                  }}
-                >
-                  <span style={{ fontWeight: 700 }}>{t("TOTAL")}</span>
-                  <span style={{ fontWeight: 800, fontSize: 16 }}>
-                    {Math.round(result.summary.calories)} kcal
-                  </span>
-                </div>
-              )}
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>
-                {t("Registrar en…")}
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 8,
-                }}
-              >
-                {(["des", "alm", "mer", "cen"] as MealCode[]).map((id) => (
-                  <IonButton
-                    key={id}
-                    size="small"
-                    fill="outline"
-                    onClick={() => logAnalysis(id)}
-                  >
-                    {t("Registrar en {meal}", { meal: t(MEAL_LABELS[id]) })}
-                  </IonButton>
-                ))}
-              </div>
-            </div>
-            <IonButton
-              style={
-                {
-                  marginTop: 12,
-                  "--background": "var(--teal)",
-                } as CSSProperties
-              }
-              expand="block"
-              onClick={resetAnalysis}
-            >
-              <IonIcon icon={refreshOutline} slot="start" />
-              {t("Analizar otra comida")}
-            </IonButton>
-          </motion.div>
-        )}
-
-        {analysis === "error" && (
-          <motion.div
-            className="nut-ai-result"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {photo && (
-              <img
-                src={photo}
-                alt={t("Fotografía de la comida")}
-                style={{
-                  width: "100%",
-                  borderRadius: 14,
-                  aspectRatio: "4/3",
-                  objectFit: "cover",
-                  marginBottom: 12,
-                }}
-              />
-            )}
-            <div className="nut-ai-error" role="alert">
-              <IonIcon icon={alertCircleOutline} aria-hidden="true" />
-              <span>{analysisError}</span>
-            </div>
-            <IonButton expand="block" onClick={() => setAnalysis("camera")}>
-              <IonIcon icon={cameraOutline} slot="start" />
-              {t("Intentar de nuevo")}
-            </IonButton>
-            <IonButton expand="block" fill="clear" onClick={resetAnalysis}>
-              {t("Cancelar")}
-            </IonButton>
-          </motion.div>
-        )}
-      </div>
-
-      <div className="kcal-strip">
-        <div
-          style={{ position: "relative", width: 92, height: 92, flexShrink: 0 }}
-        >
-          <svg
-            width="92"
-            height="92"
-            viewBox="0 0 100 100"
-            style={{ transform: "rotate(-90deg)" }}
-          >
-            <circle
-              cx="50"
-              cy="50"
-              r="38"
-              fill="none"
-              stroke="#E8EEF4"
-              strokeWidth="10"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="38"
-              fill="none"
-              stroke="#1D9E75"
-              strokeWidth="10"
-              strokeDasharray="239"
-              strokeDashoffset={ringOffset}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div className="display" style={{ fontSize: 16, fontWeight: 800 }}>
-              {formatMetricValue(intakeTotals.calories, 0, locale)}
-            </div>
-            {kcalRatio != null && (
-              <div style={{ fontSize: 9, color: "var(--mu)" }}>
-                /
-                {formatMetricValue(serverTargets.calories as number, 0, locale)}
-              </div>
-            )}
-          </div>
-        </div>
-        <div style={{ flex: 1 }}>
-          {macroBars.length > 0 ? (
-            macroBars.map((b) => (
-              <div
-                key={b.key}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginBottom: 6,
-                }}
-              >
-                <span style={{ fontSize: 10, color: "var(--mu)", width: 78 }}>
-                  {t(b.key)}
-                </span>
-                <IonProgressBar
-                  className="pb"
-                  style={
-                    {
-                      flex: 1,
-                      "--progress-background": b.color,
-                    } as CSSProperties
-                  }
-                  value={Math.min(
-                    1,
-                    Math.max(0, b.value / (b.target as number)),
-                  )}
-                />
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    width: 36,
-                    textAlign: "right",
-                  }}
-                >
-                  {Math.round(b.value)}g
-                </span>
-              </div>
-            ))
-          ) : (
-            <div
-              style={{
-                fontSize: 11,
-                color: "var(--mu)",
-                lineHeight: 1.5,
-                paddingTop: 4,
-              }}
-            >
-              {t("Registra tus comidas para ver tu progreso")}
-            </div>
-          )}
-        </div>
-      </div>
-
       <IonSegment
         className="plan-seg"
         value={tab}
@@ -936,7 +589,367 @@ export function NutritionPage() {
         <IonSegmentButton value="historial">{t("Historial")}</IonSegmentButton>
       </IonSegment>
 
+      {/* Todo lo demás hace scroll: analizador + resumen + contenido del tab. */}
       <Scroll>
+        {/* ── Analizador de comida con IA (flujo real) ── */}
+        <div
+          className="card nut-ai-card"
+          style={{
+            margin: "10px 14px 0",
+            background: "var(--navy)",
+            borderColor: "transparent",
+            color: "#fff",
+          }}
+        >
+          {analysis === "idle" && (
+            <>
+              <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
+                📸 {t("Analiza tu comida con IA")}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
+                {t("Toma una foto y recibe calorías, macros y porción reales.")}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <IonButton
+                  style={
+                    { flex: 1, "--background": "var(--teal)" } as CSSProperties
+                  }
+                  onClick={() => setAnalysis("camera")}
+                >
+                  <IonIcon icon={cameraOutline} slot="start" />
+                  {t("Usar cámara")}
+                </IonButton>
+                <IonButton
+                  style={{ flex: 1 }}
+                  fill="outline"
+                  onClick={() => {
+                    setAnalysis("camera");
+                    setTimeout(() => {
+                      const input = document.querySelector<HTMLInputElement>(
+                        'input[type="file"][accept="image/*"]',
+                      );
+                      input?.click();
+                    }, 50);
+                  }}
+                >
+                  <IonIcon icon={imageOutline} slot="start" />
+                  {t("Seleccionar imagen")}
+                </IonButton>
+              </div>
+            </>
+          )}
+
+          {analysis === "camera" && (
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28 }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                📷 {t("Apunta a tu comida")}
+              </div>
+              <CameraCapture
+                onCapture={(blob, fileName) => runAnalysis(blob, fileName)}
+                onCancel={resetAnalysis}
+              />
+            </motion.div>
+          )}
+
+          {analysis === "analyzing" && photo && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  marginBottom: 12,
+                }}
+              >
+                <img
+                  src={photo}
+                  alt={t("Fotografía de la comida")}
+                  style={{
+                    width: "100%",
+                    aspectRatio: "4/3",
+                    objectFit: "cover",
+                    filter: "brightness(0.55)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    textAlign: "center",
+                    padding: 16,
+                  }}
+                >
+                  <IonSpinner
+                    name="crescent"
+                    style={{ color: "#fff", width: 34, height: 34 }}
+                  />
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>
+                    {t("Analizando tu comida…")}
+                  </div>
+                  {steps.map((s, i) => (
+                    <div
+                      key={s}
+                      style={{
+                        fontSize: 12,
+                        opacity: i <= step ? 1 : 0.35,
+                        color: "#fff",
+                      }}
+                    >
+                      {i < step ? "✓ " : i === step ? "▸ " : ""}
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {analysis === "success" && result && photo && (
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <img
+                src={photo}
+                alt={t("Fotografía de la comida")}
+                style={{
+                  width: "100%",
+                  borderRadius: 14,
+                  aspectRatio: "4/3",
+                  objectFit: "cover",
+                  marginBottom: 12,
+                }}
+              />
+              <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 10 }}>
+                {t("Alimentos detectados")} ({result.foods.length})
+              </div>
+              {result.foods.map((food, i) => (
+                <FoodResultCard key={`${food.name}-${i}`} food={food} />
+              ))}
+              {result.summary &&
+                result.foods.some((f) => f.nutritionStatus === "available") && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 10,
+                      paddingTop: 10,
+                      borderTop: "1px dashed rgba(255,255,255,.25)",
+                    }}
+                  >
+                    <span style={{ fontWeight: 700 }}>{t("TOTAL")}</span>
+                    <span style={{ fontWeight: 800, fontSize: 16 }}>
+                      {Math.round(result.summary.calories)} kcal
+                    </span>
+                  </div>
+                )}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>
+                  {t("Registrar en…")}
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
+                  {(["des", "alm", "mer", "cen"] as MealCode[]).map((id) => (
+                    <IonButton
+                      key={id}
+                      size="small"
+                      fill="outline"
+                      onClick={() => logAnalysis(id)}
+                    >
+                      {t("Registrar en {meal}", { meal: t(MEAL_LABELS[id]) })}
+                    </IonButton>
+                  ))}
+                </div>
+              </div>
+              <IonButton
+                style={
+                  {
+                    marginTop: 12,
+                    "--background": "var(--teal)",
+                  } as CSSProperties
+                }
+                expand="block"
+                onClick={resetAnalysis}
+              >
+                <IonIcon icon={refreshOutline} slot="start" />
+                {t("Analizar otra comida")}
+              </IonButton>
+            </motion.div>
+          )}
+
+          {analysis === "error" && (
+            <motion.div
+              className="nut-ai-result"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {photo && (
+                <img
+                  src={photo}
+                  alt={t("Fotografía de la comida")}
+                  style={{
+                    width: "100%",
+                    borderRadius: 14,
+                    aspectRatio: "4/3",
+                    objectFit: "cover",
+                    marginBottom: 12,
+                  }}
+                />
+              )}
+              <div className="nut-ai-error" role="alert">
+                <IonIcon icon={alertCircleOutline} aria-hidden="true" />
+                <span>{analysisError}</span>
+              </div>
+              <IonButton expand="block" onClick={() => setAnalysis("camera")}>
+                <IonIcon icon={cameraOutline} slot="start" />
+                {t("Intentar de nuevo")}
+              </IonButton>
+              <IonButton expand="block" fill="clear" onClick={resetAnalysis}>
+                {t("Cancelar")}
+              </IonButton>
+            </motion.div>
+          )}
+        </div>
+
+        <div className="kcal-strip">
+          <div
+            style={{
+              position: "relative",
+              width: 92,
+              height: 92,
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              width="92"
+              height="92"
+              viewBox="0 0 100 100"
+              style={{ transform: "rotate(-90deg)" }}
+            >
+              <circle
+                cx="50"
+                cy="50"
+                r="38"
+                fill="none"
+                stroke="#E8EEF4"
+                strokeWidth="10"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="38"
+                fill="none"
+                stroke="#1D9E75"
+                strokeWidth="10"
+                strokeDasharray="239"
+                strokeDashoffset={ringOffset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                className="display"
+                style={{ fontSize: 16, fontWeight: 800 }}
+              >
+                {formatMetricValue(intakeTotals.calories, 0, locale)}
+              </div>
+              {kcalRatio != null && (
+                <div style={{ fontSize: 9, color: "var(--mu)" }}>
+                  /
+                  {formatMetricValue(
+                    serverTargets.calories as number,
+                    0,
+                    locale,
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            {macroBars.length > 0 ? (
+              macroBars.map((b) => (
+                <div
+                  key={b.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    marginBottom: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 10, color: "var(--mu)", width: 78 }}>
+                    {t(b.key)}
+                  </span>
+                  <IonProgressBar
+                    className="pb"
+                    style={
+                      {
+                        flex: 1,
+                        "--progress-background": b.color,
+                      } as CSSProperties
+                    }
+                    value={Math.min(
+                      1,
+                      Math.max(0, b.value / (b.target as number)),
+                    )}
+                  />
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      width: 36,
+                      textAlign: "right",
+                    }}
+                  >
+                    {Math.round(b.value)}g
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--mu)",
+                  lineHeight: 1.5,
+                  paddingTop: 4,
+                }}
+              >
+                {t("Registra tus comidas para ver tu progreso")}
+              </div>
+            )}
+          </div>
+        </div>
+
         {tab === "hoy" && (
           <>
             <div
