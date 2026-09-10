@@ -11,14 +11,19 @@ const config: CapacitorConfig = {
     // En producción se usa 'https' (el gateway AWS termina TLS).
     androidScheme: "http",
   },
-  // Sala virtual (Twilio Video): permisos de cámara y micrófono en las
-  // plataformas nativas (se aplican en `pnpm run sync`).
+  // Cámara (consultas de telemedicina + análisis de comidas con
+  // @capacitor/camera) y galería (selector de fotos de comidas).
+  // Se aplican en `npm run sync`.
   ios: {
     infoPlist: {
       NSCameraUsageDescription:
-        "ANTARES usa la cámara para las consultas de telemedicina.",
+        "ANTARES usa la cámara para las consultas de telemedicina y el análisis de comidas.",
       NSMicrophoneUsageDescription:
         "ANTARES usa el micrófono para las consultas de telemedicina.",
+      NSPhotoLibraryUsageDescription:
+        "ANTARES accede a tus fotos para analizar tus comidas.",
+      NSPhotoLibraryAddUsageDescription:
+        "ANTARES guarda las fotos de tus comidas para tu registro nutricional.",
     },
   },
   android: {
