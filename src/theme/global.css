@@ -70,6 +70,107 @@ body {
   position: relative;
 }
 
+/* Inset del teclado virtual (hook useKeyboardInset, solo nativo iOS):
+   encoge la caja del screen para que el footer en flujo (composer del
+   chat) o el contenido del login suban por encima del teclado en lugar
+   de quedar tapados. */
+.screen.chat-kb,
+.screen.auth-kb {
+  padding-bottom: var(--kb, 0px);
+  transition: padding-bottom 0.22s ease-out;
+}
+
+/* Con el teclado abierto se colapsa el héroe del login (logo + título)
+   para que los campos quepan sin solaparse ni hacer zoom. */
+.kb-open .auth-logo {
+  display: none;
+}
+.kb-open .auth-title {
+  font-size: clamp(24px, 7vw, 30px);
+  margin-bottom: 12px;
+}
+.kb-open .auth-scroll {
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+.kb-open .auth-lang {
+  display: none;
+}
+
+/* Con el teclado abierto, el BottomNav se oculta y el composer del chat
+   pierde su margen de despeje: así queda pegado al teclado sin huecos. */
+.kb-open .chat-kb .bnav {
+  display: none;
+}
+.kb-open .chat-kb .composer {
+  margin-bottom: 0;
+}
+
+/* Mensajes enriquecidos del agente (ChatRichText): subconjunto Markdown. */
+.bub p {
+  margin: 0 0 6px;
+}
+.bub p:last-child {
+  margin-bottom: 0;
+}
+.md-h {
+  font-weight: 800;
+  margin: 2px 0 6px;
+}
+.md-list {
+  margin: 2px 0 6px;
+  padding-left: 18px;
+}
+.md-list li {
+  margin-bottom: 3px;
+}
+.md-list li:last-child {
+  margin-bottom: 0;
+}
+.md-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+.md-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+/* Indicador "escribiendo" mientras llega el primer token del stream. */
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 2px;
+}
+.typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  animation: typing-bounce 1.1s infinite ease-in-out;
+}
+.typing i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.typing i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@keyframes typing-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
 /* Wrapper de transición entre pantallas (AnimatePresence en App.tsx) */
 .router-page {
   flex: 1;
@@ -1292,49 +1393,692 @@ ion-button.onb-back-login {
   }
 }
 
-.hc-sec {
-  margin: 8px 14px;
+/* --------------------------------------------------------------------------
+   Historia clínica — misma línea visual que el inicio: fondo blanco, cabecera
+   tipográfica, tarjeta navy de resumen y acordeones sobre panel gris suave.
+   -------------------------------------------------------------------------- */
+
+.screen-scroll.hc {
   background: #fff;
-  border-radius: 14px;
-  border: 1px solid var(--bd);
+}
+
+.hc-head {
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 4px;
+  color: var(--brand-navy);
+}
+
+.hc-head-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hc-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #97a2b3;
+}
+
+.hc-title {
+  margin: 4px 0 2px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--brand-navy);
+}
+
+.hc-date {
+  margin: 0;
+  font-size: 14px;
+  color: #7d8798;
+}
+
+.hc-shield {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--brand-navy);
+  color: #fff;
+  font-size: 22px;
+}
+
+.hc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.hc-chip {
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hc-chip.green {
+  background: var(--brand-green-soft);
+}
+
+.hc-chip.navy {
+  background: var(--brand-navy);
+}
+
+.hc-chip.soft {
+  background: #f1f3f6;
+  color: var(--brand-navy);
+}
+
+.hc-patient {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 32px);
+  margin: 14px 16px 0;
+  padding: 16px 18px 6px;
+  border-radius: 24px;
+  background: var(--brand-navy);
+  color: #fff;
+}
+
+.hc-patient-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hc-patient-name {
+  margin-top: 3px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.hc-patient-meta {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hc-patient-stats {
+  display: flex;
+  margin-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.hc-stat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 13px 0 12px;
+}
+
+.hc-stat + .hc-stat {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  padding-left: 14px;
+}
+
+.hc-stat b {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+}
+
+.hc-stat small {
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Acordeón Ionic vestido con el design system (capa de adaptación). */
+ion-accordion-group.hc-acc {
+  width: calc(100% - 32px);
+  margin: 0 16px 20px;
+  padding: 10px;
+  border-radius: 24px;
+  background: #f1f3f6;
+}
+
+.hc-acc ion-accordion {
+  border-radius: 18px;
+  background: #fff;
   overflow: hidden;
 }
-.hc-hdr {
-  background: linear-gradient(90deg, var(--navy), #1d55a0);
-  color: #fff;
-  padding: 12px 14px;
-  font-size: 13px;
+
+.hc-acc ion-accordion + ion-accordion {
+  margin-top: 8px;
+}
+
+.hc-acc ion-accordion ion-item[slot="header"] {
+  --background: #fff;
+  --inner-padding-end: 0;
+  --padding-start: 13px;
+  --padding-end: 13px;
+  --min-height: 58px;
+  --color: var(--brand-navy);
+  font-size: 14px;
   font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  border: none;
 }
-.hc-body {
-  padding: 8px 14px 12px;
+
+.hc-acc ion-accordion ion-item[slot="header"] ion-label {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: normal;
 }
+
+.hc-acc-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  margin-right: 12px;
+  border-radius: 13px;
+  background: #f1f3f6;
+  font-size: 18px;
+}
+
+.hc-acc-body {
+  padding: 2px 14px 6px;
+}
+
 .hc-row {
   display: flex;
   gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--g1);
+  padding: 10px 0;
+  border-top: 1px solid var(--g1);
 }
-.hc-row:last-child {
-  border-bottom: none;
-}
+
 .hc-lbl {
+  flex-shrink: 0;
+  width: 96px;
   font-size: 11px;
   font-weight: 700;
   color: var(--mu);
-  width: 92px;
+  line-height: 1.45;
+}
+
+.hc-val {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-navy);
+  line-height: 1.45;
+}
+
+/* --------------------------------------------------------------------------
+   Visualización del perfil — figura corporal, índices y mediciones.
+   Misma línea visual que el inicio y la historia clínica: cabecera clara,
+   panel gris de 24px y contenido en blanco. Cada índice aporta su color
+   en `--a`.
+   -------------------------------------------------------------------------- */
+.bp-head {
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 4px;
+  color: var(--brand-navy);
+}
+
+.bp-head-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bp-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #97a2b3;
+}
+
+.bp-title {
+  margin: 4px 0 2px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--brand-navy);
+}
+
+.bp-date {
+  margin: 0;
+  font-size: 14px;
+  color: #7d8798;
+}
+
+.bp-badge {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--brand-navy);
+  color: #fff;
+  font-size: 22px;
+}
+
+.bp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.bp-chip {
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.bp-chip.green {
+  background: var(--brand-green-soft);
+}
+
+.bp-chip.navy {
+  background: var(--brand-navy);
+}
+
+.bp-chip.soft {
+  background: #f1f3f6;
+  color: var(--brand-navy);
+}
+
+.bp-card {
+  width: calc(100% - 32px);
+  margin: 0 16px;
+  padding: 14px 12px 12px;
+  border-radius: 24px;
+  background: #f1f3f6;
+}
+
+.bp-hint {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--mu);
+}
+
+ion-segment.bp-seg {
+  margin: 0 0 8px;
+  min-height: 38px;
+}
+
+/* Figura anatómica: rieles laterales para las etiquetas + SVG al centro.
+   El highlighter fija width/height en el svg; se reescala aquí. */
+.bm-stage {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 84px;
+  align-items: stretch;
+  column-gap: 2px;
+  margin: 2px 0 10px;
+}
+
+.bm-rail {
+  position: relative;
+  min-height: 320px;
+}
+
+.bm-anatomy {
+  display: flex;
+  justify-content: center;
+  min-height: 320px;
+}
+
+.bm-anatomy svg {
+  display: block;
+  width: 100% !important;
+  max-width: 210px;
+  height: auto !important;
+  overflow: visible;
+}
+
+.bm-anatomy svg path {
+  transition: fill 0.2s var(--ease);
+}
+
+.bm-zone {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--a, var(--brand-navy));
+}
+
+.bm-tag {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: auto;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: #fff;
+  transform: translateY(-50%);
+  text-align: left;
+  transition:
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+
+.bm-tag strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.6px;
+  color: var(--a, var(--brand-navy));
+}
+
+.bm-tag small {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.bm-tag.on {
+  border-color: var(--a, var(--brand-navy));
+  box-shadow: 0 4px 14px
+    color-mix(in srgb, var(--a, var(--brand-navy)) 24%, transparent);
+}
+
+.bm-tag:active {
+  transform: translateY(-50%) scale(0.97);
+}
+
+/* Detalle del índice seleccionado. */
+.bp-detail {
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.bp-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bp-detail-val {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
   flex-shrink: 0;
 }
-.hc-val {
-  font-size: 13px;
-  color: var(--tx);
+
+.bp-detail-val strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1.4px;
+  color: var(--a, var(--brand-navy));
+}
+
+.bp-detail-val span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.bp-detail-id {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bp-detail-id b {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--brand-navy);
+}
+
+.bp-tone {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.bp-tone.ok {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+
+.bp-tone.warn {
+  background: var(--org-l);
+  color: var(--org);
+}
+
+.bp-tone.risk {
+  background: var(--red-l);
+  color: var(--red);
+}
+
+/* Escala de referencia: tramos proporcionales al rango clínico. */
+.bp-scale {
+  margin: 14px 0 12px;
+}
+
+.bp-scale-track {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 8px;
+}
+
+.bp-band {
+  flex-basis: 0;
+  border-radius: 999px;
+}
+
+.bp-band.ok {
+  background: var(--brand-green-soft);
+}
+
+.bp-band.warn {
+  background: #eab866;
+}
+
+.bp-band.risk {
+  background: #e2938f;
+}
+
+.bp-scale-pin {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  border: 3px solid var(--a, var(--brand-navy));
+  background: #fff;
+  transform: translateY(-50%);
+  box-shadow: 0 2px 6px rgba(20, 40, 85, 0.22);
+}
+
+.bp-scale-legend {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.bp-scale-legend span {
+  flex-basis: 0;
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--mu);
+}
+
+.bp-detail-text {
+  margin: 0;
+  font-size: 12.5px;
   line-height: 1.45;
-  flex: 1;
+  color: var(--mu);
+}
+
+.bp-detail .bp-delta {
+  margin-top: 10px;
+}
+
+.bp-target {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 10%, #fff);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--a, var(--brand-navy));
+}
+
+/* Lista de mediciones (IonList vestido con el design system). */
+ion-list.bp-list {
+  width: calc(100% - 32px);
+  margin: 0 16px;
+  padding: 4px 0;
+  border-radius: 24px;
+  background: #f1f3f6;
+}
+
+.bp-list ion-item {
+  --background: transparent;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --min-height: 62px;
+  --border-color: rgba(20, 40, 85, 0.08);
+}
+
+.bp-list ion-item.on {
+  --background: #fff;
+  box-shadow: inset 3px 0 0 var(--brand-navy);
+}
+
+.bp-list ion-item ion-label h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-navy);
+}
+
+.bp-list ion-item ion-label p {
+  font-size: 11.5px;
+  color: var(--mu);
+}
+
+ion-note.bp-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 0;
+}
+
+.bp-note b {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: var(--brand-navy);
+}
+
+.bp-note b i {
+  font-style: normal;
+  font-family: "Inter", sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.bp-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--g1);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mu);
+}
+
+.bp-delta.good {
+  background: var(--teal-l);
+  color: var(--teal);
+}
+
+.bp-delta ion-icon {
+  font-size: 10px;
+}
+
+/* Lecturas derivadas de las mediciones. */
+.bp-derived {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  width: calc(100% - 32px);
+  margin: 9px 16px 0;
+}
+
+.bp-derived-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 13px;
+  border-radius: 18px;
+  background: var(--brand-navy);
+  color: #fff;
+}
+
+.bp-derived-item small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.bp-derived-item strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+}
+
+.bp-derived-item span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.bp-foot {
+  margin: 14px 20px 20px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: #93a0b3;
 }
 
 .meal-card {
@@ -4355,11 +5099,25 @@ ion-item.group-item p {
   border-bottom: 1px solid var(--g1);
 }
 
-ion-segment.plan-seg {
-  min-height: 40px;
-  margin: 8px 16px 0;
+ion-segment.plan-seg,
+ion-segment.nut-period {
+  min-height: 42px;
+  margin: 10px 16px 0;
   --background: var(--g1);
-  border-radius: 12px;
+  border-radius: 14px;
+}
+
+ion-segment.nut-period ion-segment-button {
+  --color: var(--mu);
+  --color-checked: var(--navy);
+  --indicator-color: #fff;
+  --indicator-box-shadow: var(--shadow-sm);
+  --border-radius: 12px;
+  min-height: 38px;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .watch-pair .group-list {
@@ -4532,7 +5290,8 @@ ion-select.fld {
   --highlight-color-focused: var(--tx);
   --placeholder-opacity: 1;
   font-family: inherit;
-  font-size: 15px;
+  /* 16px mínimo: iOS hace auto-zoom con fuentes menores. */
+  font-size: 16px;
   font-weight: 400;
   line-height: normal;
   letter-spacing: normal;
@@ -15310,7 +16069,8 @@ ion-input.auth-input {
   border-radius: 16px;
   border: 1.5px solid transparent;
   background: #f1f4f8;
-  font-size: 15px;
+  /* 16px mínimo: iOS hace auto-zoom con fuentes menores y rompe el layout. */
+  font-size: 16px;
   font-weight: 600;
   transition:
     border-color 0.18s var(--ease),
@@ -16342,6 +17102,273 @@ ion-button.cta-pill.button-disabled {
   color: var(--brand-navy);
 }
 
+/* Accesos y progreso: mismo lenguaje que el resto del inicio — panel gris
+   suave de 24px con el contenido en blanco. Cada fila define su acento en
+   `--a`; el icono lo usa a plena saturación y el fondo en tinte al 10 %, para
+   que la lista se recorra por color en vez de ser un bloque navy uniforme. */
+.hm-access,
+.hm-week {
+  width: calc(100% - 32px);
+  margin: 0 16px;
+  border-radius: 24px;
+  background: #f1f3f6;
+}
+
+.hm-access {
+  padding: 10px;
+}
+
+.hm-access-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hm-access-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 13px 13px 12px;
+  border: none;
+  border-radius: 18px;
+  background: #fff;
+  text-align: left;
+  transition: transform 0.18s var(--ease);
+}
+
+/* Filo de color en el borde superior: identifica el módulo sin gritar. */
+.hm-access-tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 18px 18px 0 0;
+  background: var(--a, var(--brand-navy));
+}
+
+.hm-access-tile:active,
+.hm-access-row:active {
+  transform: scale(0.98);
+}
+
+.hm-access-tile-ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 7px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
+  color: var(--a, var(--brand-navy));
+  font-size: 19px;
+}
+
+.hm-access-tile strong {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--brand-navy);
+}
+
+.hm-access-tile small {
+  font-size: 11.5px;
+  color: var(--mu);
+}
+
+.hm-access-tile-chev {
+  position: absolute;
+  top: 15px;
+  right: 12px;
+  font-size: 15px;
+  color: #c2ccda;
+}
+
+.hm-access-rows {
+  margin-top: 8px;
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.hm-access-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 11px 13px;
+  border: none;
+  border-top: 1px solid var(--g1);
+  background: #fff;
+  text-align: left;
+  transition: transform 0.18s var(--ease);
+}
+
+.hm-access-row:first-child {
+  border-top: none;
+}
+
+.hm-access-row-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
+  color: var(--a, var(--brand-navy));
+  font-size: 18px;
+}
+
+.hm-access-row-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.hm-access-row-body strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-navy);
+}
+
+.hm-access-row-body small {
+  font-size: 12px;
+  color: var(--mu);
+}
+
+.hm-access-row-chev {
+  flex-shrink: 0;
+  font-size: 19px;
+  color: #b3bdcc;
+}
+
+.hm-week {
+  margin-bottom: 20px;
+  padding: 12px;
+}
+
+/* Resumen: promedio de los hábitos y cuántos llegan a meta. */
+.hm-week-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: 18px;
+  background: var(--brand-navy);
+  color: #fff;
+}
+
+.hm-week-score {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hm-week-score strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.hm-week-score small {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hm-week-tag {
+  flex-shrink: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  color: #fff;
+}
+
+.hm-week-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.hm-week-row + .hm-week-row {
+  margin-top: 7px;
+}
+
+.hm-week-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
+  color: var(--a, var(--brand-navy));
+  font-size: 17px;
+}
+
+.hm-week-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hm-week-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.hm-week-top strong {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-navy);
+}
+
+.hm-week-top span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--mu);
+}
+
+.hm-week-top em {
+  min-width: 36px;
+  font-family: "Space Grotesk", sans-serif;
+  font-style: normal;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  text-align: right;
+  color: var(--a, var(--brand-navy));
+}
+
+ion-progress-bar.hm-week-bar {
+  height: 7px;
+  border-radius: 999px;
+  --background: color-mix(in srgb, var(--a, var(--brand-navy)) 14%, #fff);
+}
+
 /* --------------------------------------------------------------------------
    Protocolo diario — cabecera y tarjetas de misión
    -------------------------------------------------------------------------- */
@@ -16991,4 +18018,726 @@ ion-button.bt-gold {
   --color: var(--tx);
   border: 1px solid var(--bd);
   box-shadow: var(--shadow-sm);
+}
+
+/* --- Plan nutricional (rediseño) --- */
+.nut-dash {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 16px 0;
+  padding: 16px 14px;
+  background: linear-gradient(160deg, var(--navy-2) 0%, var(--navy) 72%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  color: #fff;
+}
+
+.nut-macros {
+  flex: 1;
+  min-width: 0;
+}
+
+.nut-macro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.nut-macro:last-child {
+  margin-bottom: 0;
+}
+
+.nut-macro-label {
+  width: 86px;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.nut-macro-bar {
+  flex: 1;
+  --background: rgba(255, 255, 255, 0.16);
+  --progress-background: var(--teal);
+  height: 7px;
+  border-radius: 999px;
+}
+
+.nut-macro-val {
+  width: 36px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.nut-ring {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  flex-shrink: 0;
+}
+
+.nut-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+}
+
+/* El anillo repite la jerarquía de la referencia: consumido grande, meta debajo. */
+.nut-ring-label {
+  flex-direction: column;
+}
+
+.nut-ring-label strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.6px;
+}
+
+.nut-ring-label span {
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.nut-meals {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 16px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nut-meals::-webkit-scrollbar {
+  display: none;
+}
+
+.nut-meal-tab {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 52px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 16px;
+  background: var(--g1);
+  color: var(--mu);
+  white-space: nowrap;
+}
+
+.nut-meal-tab-name {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.nut-meal-tab-time {
+  font-size: 10.5px;
+  font-weight: 700;
+  opacity: 0.62;
+}
+
+.nut-meal-tab.on {
+  background: var(--brand-navy);
+  color: #fff;
+}
+
+.nut-meal-tab:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.nut-hyd {
+  margin: 12px 16px 0;
+  padding: 14px 14px 12px;
+  background: var(--blue-l);
+  border: 1px solid #b5d4f4;
+  border-radius: var(--radius-lg);
+}
+
+.nut-hyd-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+
+.nut-hyd-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.nut-glass {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--blue);
+  font-size: 16px;
+  opacity: 0.4;
+  display: grid;
+  place-items: center;
+}
+
+.nut-glass.full {
+  background: var(--teal);
+  color: #fff;
+  opacity: 1;
+}
+
+.nut-glass-ico {
+  width: 16px;
+  height: 22px;
+  display: block;
+}
+
+.nut-glass-outline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+
+.nut-glass-water {
+  fill: currentColor;
+}
+
+.nut-glass.full .nut-glass-outline {
+  stroke-width: 1.9;
+}
+
+.nut-meal-sum,
+.nut-foods,
+.nut-card,
+.nut-day,
+.nut-logged {
+  margin: 10px 16px 0;
+  background: #fff;
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.nut-meal-sum {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.nut-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--ice-l);
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.nut-meal-sum-txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.nut-meal-sum-txt strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.nut-meal-sum-txt span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--org);
+}
+
+.nut-meal-sum-txt ion-icon {
+  font-size: 14px;
+}
+
+ion-button.nut-menu-btn {
+  --padding-start: 0;
+  --padding-end: 0;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  color: var(--mu);
+}
+
+.nut-foods {
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.nut-food {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--g1);
+}
+
+.nut-food:first-child {
+  border-top: none;
+}
+
+.nut-food-ico {
+  width: 28px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.nut-food-txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.nut-food-txt strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nut-food-txt span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--mu);
+}
+
+.nut-food-macros {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 42%;
+}
+
+.nut-logged {
+  padding: 14px;
+  background: var(--teal-l);
+  border-color: transparent;
+  color: #0f6e56;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+ion-button.nut-cta {
+  margin: 12px 16px 8px;
+  height: 64px;
+  min-height: 64px;
+  --background: var(--navy);
+  --background-activated: var(--navy-2);
+  --color: #fff;
+  --border-radius: 18px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+.nut-cta-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.nut-cta-copy strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.nut-cta-copy em {
+  margin-top: 3px;
+  font-size: 11px;
+  font-style: normal;
+  opacity: 0.62;
+  font-weight: 600;
+}
+
+.nut-stack {
+  padding: 4px 0 8px;
+}
+
+.nut-card {
+  padding: 14px;
+}
+
+.nut-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.nut-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  height: 132px;
+}
+
+.nut-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.nut-bar-pct {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.nut-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.nut-bar-fill {
+  width: 100%;
+  border-radius: 10px 10px 4px 4px;
+  background: linear-gradient(
+    180deg,
+    var(--brand-sky) 0%,
+    var(--brand-green-soft) 42%,
+    var(--brand-navy-deep) 100%
+  );
+}
+
+.nut-bar-day {
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--mu);
+}
+
+.nut-day {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 8px 16px 0;
+  padding: 14px;
+  text-align: left;
+  border: 1px solid var(--bd);
+}
+
+.nut-day.today {
+  background: var(--blue-l);
+  border-color: #c5d8ea;
+}
+
+.nut-day-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.nut-day-row strong {
+  font-weight: 800;
+}
+
+.nut-day-row span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal);
+}
+
+.nut-day p {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--mu);
+}
+
+.nut-goals {
+  padding: 6px 14px;
+}
+
+.nut-goal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--g1);
+}
+
+.nut-goal:last-child {
+  border-bottom: none;
+}
+
+.nut-goal-ico {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--g0);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+.nut-goal-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.nut-goal-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--teal);
+}
+
+.nut-hist {
+  padding: 0;
+  overflow: hidden;
+}
+
+.nut-hist-head {
+  background: var(--navy);
+  color: #fff;
+  padding: 13px 14px;
+  font-weight: 800;
+}
+
+.nut-hist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--g1);
+}
+
+.nut-hist-date {
+  width: 72px;
+  font-size: 11px;
+  color: var(--mu);
+}
+
+.nut-hist-txt {
+  flex: 1;
+}
+
+.nut-hist-txt strong {
+  display: block;
+  font-weight: 800;
+}
+
+.nut-hist-txt span {
+  font-size: 11px;
+  color: var(--mu);
+}
+
+.nut-hist-row em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--teal);
+}
+
+.nut-hist-goal {
+  padding: 12px 14px 16px;
+  background: #f8fbf8;
+}
+
+.nut-hist-goal span {
+  display: block;
+  font-size: 11px;
+  color: var(--mu);
+}
+
+.nut-hist-goal strong {
+  display: block;
+  margin: 2px 0 8px;
+  font-weight: 800;
+}
+
+.nut-goal-bar {
+  --background: var(--g1);
+  height: 7px;
+  border-radius: 999px;
+}
+
+.nut-ai,
+.nut-reg {
+  padding: 20px 16px 28px;
+}
+
+.nut-ai-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.nut-ai-hint {
+  font-size: 13px;
+  color: var(--mu);
+  margin-bottom: 12px;
+}
+
+.nut-ai-photo {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.nut-ai-photo img,
+.nut-ai-preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.nut-ai-photo img {
+  filter: brightness(0.55);
+}
+
+.nut-ai-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  color: #fff;
+}
+
+.nut-ai-overlay ion-spinner {
+  color: #fff;
+  width: 34px;
+  height: 34px;
+}
+
+.nut-ai-step {
+  font-size: 12px;
+  opacity: 0.35;
+  color: #fff;
+}
+
+.nut-ai-step.on {
+  opacity: 1;
+}
+
+.nut-ai-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--bd);
+  font-weight: 800;
+}
+
+.nut-ai-register {
+  margin: 12px 0;
+}
+
+.nut-ai-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.nut-ai-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nut-ai-error {
+  font-size: 13px;
+  margin: 10px 0 14px;
+  color: var(--org);
+}
+
+.nut-ai-food {
+  background: var(--g0);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.nut-ai-food-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nut-ai-food-top strong {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.nut-ai-food-top em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--mu);
+}
+
+.nut-ai-kcal {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.nut-ai-kcal b {
+  font-size: 20px;
+}
+
+.nut-ai-kcal span,
+.nut-ai-src {
+  font-size: 12px;
+  color: var(--mu);
+}
+
+.nut-ai-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.nut-ai-chips span {
+  background: #fff;
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+
+.nut-reg ion-input {
+  margin-bottom: 8px;
 }

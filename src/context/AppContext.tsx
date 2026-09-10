@@ -7,8 +7,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getMe, logoutUser, onSessionInvalid, restoreSession } from "../utils/authApi";
-import { sendChatMessage } from "../utils/threadApi";
+import {
+  getMe,
+  logoutUser,
+  onSessionInvalid,
+  restoreSession,
+} from "../utils/authApi";
+import { sendChatMessage, streamChatMessage } from "../utils/threadApi";
 import {
   cancelAppointment as cancelAppointmentApi,
   createRequest,
@@ -597,40 +602,89 @@ export function AppProvider({
           return isOnlyWelcome ? [userMsg] : [...prev, userMsg];
         });
 
-        void (async () => {
+        // Vía bloqueante como respaldo del streaming (misma respuesta final).
+        const tryBlockingChat = async (): Promise<ChatMessage | null> => {
           try {
             const result = await sendChatMessage(text, threadId);
-            // v1: adjuntar la primera sugerencia de tipo "appointment" como CTA.
             const suggestion = result.suggestions?.find(
               (s) => s.type === "appointment",
             );
-            setChat((prev) => [
-              ...prev,
-              {
-                id: crypto.randomUUID(),
-                role: "bot",
-                text: result.reply,
-                time: nowLabel(),
-                threadId: result.threadId || threadId,
-                cta: suggestion,
-              },
-            ]);
-          } catch (err) {
-            console.warn(
-              "[chat] Falló respuesta del AI service, usando fallback:",
-              err,
+            return {
+              id: crypto.randomUUID(),
+              role: "bot",
+              text: result.reply,
+              time: nowLabel(),
+              threadId: result.threadId || threadId,
+              cta: suggestion,
+            };
+          } catch {
+            return null;
+          }
+        };
+
+        void (async () => {
+          // Streaming: el mensaje del bot se crea vacío y se rellena token
+          // a token. Si el stream falla sin haber pintado nada, se intenta
+          // la vía bloqueante y al final el fallback local.
+          const liveId = crypto.randomUUID();
+          let painted = "";
+          setChat((prev) => [
+            ...prev,
+            { id: liveId, role: "bot", text: "", time: nowLabel(), threadId },
+          ]);
+          const appendToken = (piece: string) => {
+            painted += piece;
+            const snapshot = painted;
+            setChat((prev) =>
+              prev.map((m) => (m.id === liveId ? { ...m, text: snapshot } : m)),
             );
-            const reply = botReply(text, t);
-            setChat((prev) => [
-              ...prev,
-              {
-                id: crypto.randomUUID(),
-                role: reply.role,
-                text: reply.text,
-                time: nowLabel(),
-                threadId,
-              },
-            ]);
+          };
+          try {
+            const result = await streamChatMessage(text, threadId, {
+              onToken: appendToken,
+            });
+            const suggestion = result.suggestions?.find(
+              (s) => s.type === "appointment",
+            );
+            setChat((prev) =>
+              prev.map((m) =>
+                m.id === liveId
+                  ? {
+                      ...m,
+                      text: result.reply,
+                      threadId: result.threadId || threadId,
+                      cta: suggestion,
+                    }
+                  : m,
+              ),
+            );
+          } catch (err) {
+            if (!painted) {
+              // Sin streaming ni respuesta: se retira el vacío y va el fallback.
+              setChat((prev) => prev.filter((m) => m.id !== liveId));
+              const reply = await tryBlockingChat();
+              if (reply) {
+                setChat((prev) => [...prev, reply]);
+              } else {
+                // Safari serializa Error como {}: loguear el mensaje para ver
+                // el status real (p. ej. "Error al enviar mensaje (401)").
+                console.warn(
+                  "[chat] Falló respuesta del AI service, usando fallback:",
+                  err instanceof Error ? err.message : err,
+                );
+                const local = botReply(text, t);
+                setChat((prev) => [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    role: local.role,
+                    text: local.text,
+                    time: nowLabel(),
+                    threadId,
+                  },
+                ]);
+              }
+            }
           }
         })();
       },

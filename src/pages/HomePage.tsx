@@ -4,10 +4,12 @@ import { useI18n } from "../i18n/I18nContext";
 import {
   add,
   bluetooth,
+  body,
   calendar,
   chatbubbleEllipses,
   chevronForward,
   clipboard,
+  flame,
   leaf,
   medkit,
   mic,
@@ -15,6 +17,9 @@ import {
   people,
   person,
   refreshOutline,
+  school,
+  walk,
+  water,
 } from "ionicons/icons";
 import { ProtocolWheel } from "../components/ProtocolWheel";
 import { Screen, Scroll } from "../components/Screen";
@@ -134,31 +139,89 @@ export function HomePage() {
     },
   }[apptState];
 
+  /**
+   * Accesos secundarios. Cada módulo lleva su propio color para que el listado
+   * se recorra por tono y no como un bloque uniforme de iconos navy.
+   */
   const moreModules: {
     id: ScreenId;
     title: string;
     sub: string;
     icon: string;
+    color: string;
   }[] = [
+    {
+      id: "body",
+      title: t("Visualización del perfil"),
+      sub: t("Índices y mediciones corporales"),
+      icon: body,
+      color: "var(--pur)",
+    },
     {
       id: "hc",
       title: t("Historia clínica"),
       sub: t("Diagnósticos, lab y medicamentos"),
       icon: clipboard,
+      color: "var(--brand-blue-mid)",
     },
     {
       id: "com",
       title: t("Comunidad"),
       sub: t("Diagnóstico, grupos y apoyo"),
       icon: people,
+      color: "var(--brand-sky-mid)",
     },
     {
       id: "prof",
       title: t("Mi perfil"),
       sub: t("Seguros, equipo y ajustes"),
       icon: person,
+      color: "var(--brand-sky-deep)",
     },
   ];
+
+  /**
+   * Hábitos de la semana. El porcentaje es la fuente del resumen (promedio y
+   * cuántos llegan a meta), así no hay cifras escritas a mano que se desfasen.
+   */
+  const weekGoals = [
+    {
+      id: "hyd",
+      label: t("Hidratación"),
+      value: t("7 / 8 vasos"),
+      pct: 87,
+      color: "var(--brand-blue-mid)",
+      icon: water,
+    },
+    {
+      id: "steps",
+      label: t("Pasos"),
+      value: "6,240 / 8,000",
+      pct: 78,
+      color: "var(--brand-green)",
+      icon: walk,
+    },
+    {
+      id: "kcal",
+      label: t("Calorías"),
+      value: "1,650 / 1,800 kcal",
+      pct: 91,
+      color: "var(--org)",
+      icon: flame,
+    },
+    {
+      id: "edu",
+      label: t("Academia"),
+      value: t("Módulo 5 de 8"),
+      pct: 68,
+      color: "var(--pur)",
+      icon: school,
+    },
+  ];
+  const weekAvg = Math.round(
+    weekGoals.reduce((sum, g) => sum + g.pct, 0) / weekGoals.length,
+  );
+  const weekOnTarget = weekGoals.filter((g) => g.pct >= 80).length;
   const first = user.nombre.split(" ")[0];
   const initials =
     user.nombre
@@ -471,92 +534,111 @@ export function HomePage() {
           </button>
         </div>
 
-        <div className="sec">{t("Accesos")}</div>
-        <div className="grid-2" style={{ marginBottom: 8 }}>
-          {[
-            {
-              id: "book" as ScreenId,
-              title: t("Citas"),
-              sub: featuredReal
-                ? `${featuredReal.time} · ${t(featuredReal.day)}`
-                : realMode
-                  ? t("Sin citas")
-                  : t("Hoy 3:00 PM"),
-              icon: calendar,
-              bg: "var(--teal-l)",
-              color: "var(--teal)",
-            },
-            {
-              id: "nut" as ScreenId,
-              title: t("Nutrición"),
-              // W5: el sub "1,650 / 1,800 kcal" es fabricación de la demo; en
-              // modo real sin dato agregado del backend → placeholder honesto.
-              sub: realMode ? t("Sin datos") : t("1,650 / 1,800 kcal"),
-              icon: leaf,
-              bg: "var(--ice-l)",
-              color: "var(--teal-d)",
-            },
-          ].map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className="card widget-card"
-              onClick={() => navigate(m.id)}
-            >
-              <div className="ico" style={{ background: m.bg, color: m.color }}>
-                <IonIcon icon={m.icon} />
-              </div>
-              <div className="ct">{m.title}</div>
-              <div className="cs">{m.sub}</div>
-            </button>
-          ))}
-        </div>
-
-        <div className="group-list">
-          {moreModules.map((m) => (
-            <button
-              key={m.title}
-              type="button"
-              className="group-row"
-              onClick={() => navigate(m.id)}
-            >
-              <span className="group-row-ico">
-                <IonIcon icon={m.icon} />
-              </span>
-              <span className="group-row-body">
+        <div className="hm-access">
+          <div className="hm-access-grid">
+            {[
+              {
+                id: "book" as ScreenId,
+                title: t("Citas"),
+                sub: featuredReal
+                  ? `${featuredReal.time} · ${t(featuredReal.day)}`
+                  : realMode
+                    ? t("Sin citas")
+                    : t("Hoy 3:00 PM"),
+                icon: calendar,
+                color: "var(--brand-navy-deep)",
+              },
+              {
+                id: "nut" as ScreenId,
+                title: t("Nutrición"),
+                sub: realMode ? t("Sin datos") : t("1,650 / 1,800 kcal"),
+                icon: leaf,
+                color: "var(--brand-green)",
+              },
+            ].map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className="hm-access-tile"
+                style={{ "--a": m.color } as CSSProperties}
+                onClick={() => navigate(m.id)}
+              >
+                <span className="hm-access-tile-ico">
+                  <IonIcon icon={m.icon} />
+                </span>
                 <strong>{m.title}</strong>
                 <small>{m.sub}</small>
-              </span>
-              <span className="group-row-chevron">
-                <IonIcon icon={chevronForward} />
-              </span>
-            </button>
-          ))}
+                <IonIcon className="hm-access-tile-chev" icon={chevronForward} />
+              </button>
+            ))}
+          </div>
+                <strong>{m.title}</strong>
+                <small>{m.sub}</small>
+                <IonIcon className="hm-access-tile-chev" icon={chevronForward} />
+              </button>
+            ))}
+          </div>
+
+          <div className="hm-access-rows">
+            {moreModules.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className="hm-access-row"
+                style={{ "--a": m.color } as CSSProperties}
+                onClick={() => navigate(m.id)}
+              >
+                <span className="hm-access-row-ico">
+                  <IonIcon icon={m.icon} />
+                </span>
+                <span className="hm-access-row-body">
+                  <strong>{m.title}</strong>
+                  <small>{m.sub}</small>
+                </span>
+                <IonIcon className="hm-access-row-chev" icon={chevronForward} />
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* W5: "Progreso semanal" (vasos/pasos/calorías/academia) son cifras fijas
-          de la demo sin fuente real — en modo real la sección se oculta
-          completa (nunca fabricación), en demo se conserva. */}
         {!realMode && (
           <>
             <div className="sec">{t("Progreso semanal")}</div>
-            <div className="card" style={{ margin: "0 16px 20px" }}>
-              {[
-                [t("Hidratación"), "7/8 vasos", 87, "var(--teal)"],
-                [t("Pasos"), "6,240 / 8,000", 78, "var(--blue)"],
-                [t("Calorías"), "1,650 / 1,800", 91, "var(--org)"],
-                [t("Academia"), "Módulo 5", 68, "var(--cyan)"],
-              ].map(([l, r, w, c]) => (
-                <div key={String(l)} className="progress-row">
-                  <div className="progress-row-top">
-                    <span>{l}</span>
-                    <span>{r}</span>
+            <div className="hm-week">
+              <div className="hm-week-head">
+                <div className="hm-week-score">
+                  <strong>{weekAvg}%</strong>
+                  <small>{t("Cumplimiento promedio")}</small>
+                </div>
+                <span className="hm-week-tag">
+                  {t("{done} de {total} hábitos en meta", {
+                    done: String(weekOnTarget),
+                    total: String(weekGoals.length),
+                  })}
+                </span>
+              </div>
+
+              {weekGoals.map((g) => (
+                <div
+                  key={g.id}
+                  className="hm-week-row"
+                  style={{ "--a": g.color } as CSSProperties}
+                >
+                  <span className="hm-week-ico">
+                    <IonIcon icon={g.icon} />
+                  </span>
+                  <div className="hm-week-body">
+                    <div className="hm-week-top">
+                      <strong>{g.label}</strong>
+                      <span>{g.value}</span>
+                      <em>{g.pct}%</em>
+                    </div>
+                    <IonProgressBar
+                      className="hm-week-bar"
+                      style={{ "--progress-background": g.color } as CSSProperties}
+                      value={g.pct / 100}
+                    />
                   </div>
-                  <IonProgressBar
-                    className="pb"
-                    style={{ "--progress-background": String(c) } as CSSProperties}
-                    value={Number(w) / 100}
-                  />
                 </div>
               ))}
             </div>
