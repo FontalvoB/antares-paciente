@@ -18850,6 +18850,45 @@ ion-button.nut-cta {
   margin-bottom: 8px;
 }
 
+/* Formulario Registrar comida: inputs con identidad de acceso
+ * (fondo gris, radius 16, focus verde). Patrón auth-input adaptado. */
+.nut-reg ion-input {
+  --background: #f1f4f8;
+  --border-radius: 16px;
+  --padding-top: 15px;
+  --padding-bottom: 15px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --color: var(--navy);
+  font-size: 16px;
+  font-weight: 700;
+  min-height: 54px;
+}
+
+.nut-reg ion-input.has-focus {
+  --background: var(--wh);
+  --border-color: var(--brand-green-soft);
+  --border-width: 1.5px;
+}
+
+.nut-reg-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--brand-navy);
+  margin-bottom: 4px;
+}
+
+.nut-reg-sub {
+  font-size: 13px;
+  color: var(--mu);
+  margin-bottom: 16px;
+}
+
+.nut-reg-sub strong {
+  color: var(--brand-navy);
+}
+
 /* Captura de comida (CameraCapture): visor + guía de encuadre + estados. */
 .nut-cam {
   display: flex;

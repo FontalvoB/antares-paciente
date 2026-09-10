@@ -23,6 +23,13 @@ import { useT } from "../i18n/I18nContext";
 interface Props {
   onCapture: (blob: Blob, fileName: string) => void;
   onCancel: () => void;
+  /**
+   * Apertura directa de una fuente al montar (flujo por comida: el usuario
+   * ya eligió cámara/galería). Nativo → plugin directo; web → input
+   * correspondiente. Sin autoSource se muestra el selector (comportamiento
+   * actual).
+   */
+  autoSource?: "camera" | "gallery";
 }
 
 type CamState = "starting" | "ready" | "error" | "busy";
@@ -37,10 +44,11 @@ function canPreview(): boolean {
   );
 }
 
-export function CameraCapture({ onCapture, onCancel }: Props) {
+export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
   const t = useT();
   const isNative = Capacitor.isNativePlatform();
   const preview = !isNative && canPreview();
+  const autoOpened = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -194,6 +202,22 @@ export function CameraCapture({ onCapture, onCancel }: Props) {
     stopCamera();
     onCapture(file, file.name);
   }
+
+  // Apertura directa al montar (una sola vez): el flujo por comida ya sabe
+  // qué fuente quiere el usuario.
+  useEffect(() => {
+    if (!autoSource || autoOpened.current) return;
+    autoOpened.current = true;
+    if (isNative) {
+      void takeNative(
+        autoSource === "camera" ? CameraSource.Camera : CameraSource.Photos,
+      );
+    } else if (autoSource === "gallery") {
+      galleryInputRef.current?.click();
+    } else if (!preview) {
+      cameraInputRef.current?.click();
+    }
+  }, [autoSource, isNative, preview]);
 
   if (state === "busy") {
     return (

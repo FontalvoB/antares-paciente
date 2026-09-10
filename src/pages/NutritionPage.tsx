@@ -1,24 +1,20 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { motion } from "framer-motion";
 import {
+  IonActionSheet,
   IonButton,
   IonIcon,
-  IonInput,
   IonModal,
   IonProgressBar,
   IonSegment,
   IonSegmentButton,
   IonSpinner,
 } from "@ionic/react";
-import {
-  alertCircleOutline,
-  cameraOutline,
-  imageOutline,
-  refreshOutline,
-} from "ionicons/icons";
+import { cameraOutline, imageOutline } from "ionicons/icons";
 import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
-import { CameraCapture } from "../components/CameraCapture";
+import { MealFoodFlow } from "../components/MealFoodFlow";
+import { MealIntakeForm } from "../components/MealIntakeForm";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../i18n/I18nContext";
 import { useNutritionLog } from "../hooks/useNutritionLog";
@@ -34,7 +30,8 @@ import { mealTypeToCode } from "../utils/mealTypeToCode";
 import {
   buildHydrationIntake,
   buildPlanTargets,
-  prefillIntakeForm,
+  EMPTY_INTAKE_FORM,
+  type IntakeFormState,
 } from "../utils/nutritionForm";
 import { deriveLoggedMeals } from "../utils/nutritionProgress";
 import {
@@ -43,16 +40,10 @@ import {
   derivePlanTargets,
   deriveTrend,
   deriveWaterGlasses,
+  findMealLog,
 } from "../utils/nutritionIntake";
 import { formatMetricTarget, formatMetricValue } from "../data/metrics";
 import { formatDateForDisplay } from "../utils/dates";
-import {
-  analyzeFoodImage,
-  displayName,
-  FOOD_EMOJI,
-  type DetectedFood,
-  type FoodAnalysisResult,
-} from "../utils/foodAiApi";
 
 const MEAL_LABELS: Record<MealCode, string> = {
   des: "Desayuno",
@@ -95,15 +86,26 @@ export function NutritionPage() {
   // S3: locale activo para números (es-ES coma decimal / en-US punto).
   const locale = lang === "en" ? "en-US" : "es-ES";
 
-  // ── Registro manual prefilled (SPEC nutrition-intake-adherence) ──
+  // ── Registro manual (formulario vacío; el plan es REFERENCIA, no consumo) ──
   const [registerTarget, setRegisterTarget] = useState<MealCode | null>(null);
-  const [intakeForm, setIntakeForm] = useState({
-    calories: "",
-    proteinG: "",
-    carbsG: "",
-    fatG: "",
-    fiberG: "",
-  });
+
+  // ── Flujo por comida (máquina local): pending → capturing → analyzing →
+  // review → registered (+ editing/error). El contexto (meal) nunca se pierde.
+  interface MealFlow {
+    meal: Exclude<MealCode, "agua">;
+    mode: "register" | "detail";
+    startAt?: "detail" | "edit";
+    autoSource?: "camera" | "gallery";
+  }
+  const [flow, setFlow] = useState<MealFlow | null>(null);
+  // Hoja de opciones al pedir registrar (foto/galería/manual).
+  const [sheetMeal, setSheetMeal] = useState<Exclude<MealCode, "agua"> | null>(
+    null,
+  );
+  // La tarjeta IA global pide primero la comida y luego abre el flujo.
+  const [mealPickerSource, setMealPickerSource] = useState<
+    "camera" | "gallery" | null
+  >(null);
 
   const nutContent = snapshot?.todayTasks?.find(
     (t) => t.taskCode === "nut",
@@ -319,73 +321,32 @@ export function NutritionPage() {
     },
   ].filter((b) => b.target != null && b.target > 0);
 
-  type AnalysisState = "idle" | "camera" | "analyzing" | "success" | "error";
-  const [analysis, setAnalysis] = useState<AnalysisState>("idle");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [result, setResult] = useState<FoodAnalysisResult | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [step, setStep] = useState(0);
-
-  const steps = [
-    t("Foto tomada"),
-    t("Analizando tu comida…"),
-    t("Identificando alimentos…"),
-    t("Calculando información nutricional…"),
-  ];
-  useEffect(() => {
-    if (analysis !== "analyzing") return;
-    setStep(1);
-    const id = setInterval(
-      () => setStep((s) => Math.min(s + 1, steps.length - 1)),
-      800,
-    );
-    return () => clearInterval(id);
-  }, [analysis, steps.length]);
-
-  async function runAnalysis(blob: Blob, fileName: string) {
-    setPhoto(URL.createObjectURL(blob));
-    setAnalysis("analyzing");
-    setAnalysisError(null);
-    setResult(null);
-    try {
-      const data = await analyzeFoodImage(blob, fileName);
-      setResult(data);
-      setAnalysis(data.foods.length > 0 ? "success" : "error");
-      if (data.foods.length === 0) {
-        setAnalysisError(
-          t("No se identificaron alimentos con suficiente confianza."),
-        );
-      }
-    } catch (err) {
-      setAnalysisError(
-        err instanceof Error
-          ? err.message
-          : t("Ocurrió un error al analizar la imagen."),
-      );
-      setAnalysis("error");
-    }
-  }
-
-  function resetAnalysis() {
-    if (photo) URL.revokeObjectURL(photo);
-    setPhoto(null);
-    setResult(null);
-    setAnalysisError(null);
-    setAnalysis("idle");
-    setStep(0);
-  }
-
-  // Abre el modal de registro con el prefill del plan (o vacío sin plan).
+  // Abre el modal de registro manual con el formulario VACÍO. Los valores
+  // del plan se muestran como referencia ("Objetivo"), nunca como consumo.
   const openRegister = (id: MealCode) => {
-    setIntakeForm(prefillIntakeForm(planTargets.get(id)));
+    setSheetMeal(null);
     setRegisterTarget(id);
+  };
+
+  // Referencia del plan para el registro manual ("Objetivo del plan: …").
+  // Null sin meta → el formulario no muestra referencia (honesto).
+  const planReferenceFor = (id: MealCode): string | null => {
+    const target = planTargets.get(id);
+    if (!target || target.calories == null) return null;
+    const parts = [`${target.calories} kcal`];
+    if (target.proteinG != null)
+      parts.push(`${t("Proteínas")} ${target.proteinG}g`);
+    if (target.carbsG != null)
+      parts.push(`${t("Carbohidratos")} ${target.carbsG}g`);
+    if (target.fatG != null) parts.push(`${t("Grasas")} ${target.fatG}g`);
+    return `${t("Objetivo del plan")}: ${parts.join(" · ")}`;
   };
 
   // Guarda el registro manual (source manual). Solo API — sin fallback demo.
   // B7: el toast de éxito solo se muestra en onSuccess; errores de negocio
   // (p.ej. 400 intake inválido) se muestran con el mensaje del servidor y el
   // formulario queda abierto para corregir; 409 → silencioso (keep-state).
-  const submitRegister = () => {
+  const submitRegister = (form: IntakeFormState) => {
     if (!canMutate || !registerTarget) return;
     const num = (s: string): number | undefined => {
       if (s.trim() === "") return undefined;
@@ -393,11 +354,11 @@ export function NutritionPage() {
       return Number.isNaN(value) ? undefined : value;
     };
     const intake: NutritionIntakePayload = {
-      calories: num(intakeForm.calories),
-      proteinG: num(intakeForm.proteinG),
-      carbsG: num(intakeForm.carbsG),
-      fatG: num(intakeForm.fatG),
-      fiberG: num(intakeForm.fiberG),
+      calories: num(form.calories),
+      proteinG: num(form.proteinG),
+      carbsG: num(form.carbsG),
+      fatG: num(form.fatG),
+      fiberG: num(form.fiberG),
       source: "manual",
     };
     nutritionMutation.mutate(
@@ -414,56 +375,6 @@ export function NutritionPage() {
           }
           // 422 NUTRITION_EVIDENCE_REQUIRED (D3): el gate lista las comidas
           // del plan sin evidencia — se muestran al paciente (B7 contract).
-          if (
-            error instanceof ApiError &&
-            error.errors?.missingMealCodes?.length
-          ) {
-            showToast(
-              t("Faltan comidas del plan: {meals}", {
-                meals: error.errors.missingMealCodes.join(", "),
-              }),
-              "err",
-            );
-            return;
-          }
-          showToast(
-            error.message || t("No se pudo registrar la comida"),
-            "err",
-          );
-        },
-      },
-    );
-  };
-
-  // Confirma un análisis de foto en una comida: persiste con source ai_photo
-  // + analysisId (reemplaza el descarte anterior) y los macros del summary.
-  // B7: mismo contrato de toasts que submitRegister.
-  const logAnalysis = (id: MealCode) => {
-    if (!canMutate) return;
-    const summary = result?.summary;
-    const intake: NutritionIntakePayload = summary
-      ? {
-          calories: Math.round(summary.calories),
-          proteinG: summary.protein,
-          carbsG: summary.carbohydrates,
-          fatG: summary.fat,
-          fiberG: summary.fiber,
-          source: "ai_photo",
-          foodAnalysisId: result?.analysisId,
-        }
-      : { source: "ai_photo", foodAnalysisId: result?.analysisId };
-    nutritionMutation.mutate(
-      { mealCode: id, intake },
-      {
-        onSuccess: () => {
-          showToast(t("Comida registrada con foto"), "ok");
-          resetAnalysis();
-        },
-        onError: (error) => {
-          if (error instanceof ApiError && error.status === 409) {
-            resetAnalysis();
-            return;
-          }
           if (
             error instanceof ApiError &&
             error.errors?.missingMealCodes?.length
@@ -601,7 +512,7 @@ export function NutritionPage() {
             color: "#fff",
           }}
         >
-          {analysis === "idle" && (
+          {flow === null && (
             <>
               <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
                 📸 {t("Analiza tu comida con IA")}
@@ -614,7 +525,8 @@ export function NutritionPage() {
                   style={
                     { flex: 1, "--background": "var(--teal)" } as CSSProperties
                   }
-                  onClick={() => setAnalysis("camera")}
+                  disabled={!canMutate}
+                  onClick={() => setMealPickerSource("camera")}
                 >
                   <IonIcon icon={cameraOutline} slot="start" />
                   {t("Usar cámara")}
@@ -622,213 +534,14 @@ export function NutritionPage() {
                 <IonButton
                   style={{ flex: 1 }}
                   fill="outline"
-                  onClick={() => {
-                    setAnalysis("camera");
-                    setTimeout(() => {
-                      const input = document.querySelector<HTMLInputElement>(
-                        'input[type="file"][accept="image/*"]',
-                      );
-                      input?.click();
-                    }, 50);
-                  }}
+                  disabled={!canMutate}
+                  onClick={() => setMealPickerSource("gallery")}
                 >
                   <IonIcon icon={imageOutline} slot="start" />
                   {t("Seleccionar imagen")}
                 </IonButton>
               </div>
             </>
-          )}
-
-          {analysis === "camera" && (
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.28 }}
-            >
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-                📷 {t("Apunta a tu comida")}
-              </div>
-              <CameraCapture
-                onCapture={(blob, fileName) => runAnalysis(blob, fileName)}
-                onCancel={resetAnalysis}
-              />
-            </motion.div>
-          )}
-
-          {analysis === "analyzing" && photo && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div
-                style={{
-                  position: "relative",
-                  borderRadius: 14,
-                  overflow: "hidden",
-                  marginBottom: 12,
-                }}
-              >
-                <img
-                  src={photo}
-                  alt={t("Fotografía de la comida")}
-                  style={{
-                    width: "100%",
-                    aspectRatio: "4/3",
-                    objectFit: "cover",
-                    filter: "brightness(0.55)",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                    textAlign: "center",
-                    padding: 16,
-                  }}
-                >
-                  <IonSpinner
-                    name="crescent"
-                    style={{ color: "#fff", width: 34, height: 34 }}
-                  />
-                  <div style={{ fontWeight: 800, fontSize: 15 }}>
-                    {t("Analizando tu comida…")}
-                  </div>
-                  {steps.map((s, i) => (
-                    <div
-                      key={s}
-                      style={{
-                        fontSize: 12,
-                        opacity: i <= step ? 1 : 0.35,
-                        color: "#fff",
-                      }}
-                    >
-                      {i < step ? "✓ " : i === step ? "▸ " : ""}
-                      {s}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {analysis === "success" && result && photo && (
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <img
-                src={photo}
-                alt={t("Fotografía de la comida")}
-                style={{
-                  width: "100%",
-                  borderRadius: 14,
-                  aspectRatio: "4/3",
-                  objectFit: "cover",
-                  marginBottom: 12,
-                }}
-              />
-              <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 10 }}>
-                {t("Alimentos detectados")} ({result.foods.length})
-              </div>
-              {result.foods.map((food, i) => (
-                <FoodResultCard key={`${food.name}-${i}`} food={food} />
-              ))}
-              {result.summary &&
-                result.foods.some((f) => f.nutritionStatus === "available") && (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginTop: 10,
-                      paddingTop: 10,
-                      borderTop: "1px dashed rgba(255,255,255,.25)",
-                    }}
-                  >
-                    <span style={{ fontWeight: 700 }}>{t("TOTAL")}</span>
-                    <span style={{ fontWeight: 800, fontSize: 16 }}>
-                      {Math.round(result.summary.calories)} kcal
-                    </span>
-                  </div>
-                )}
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>
-                  {t("Registrar en…")}
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                  }}
-                >
-                  {(["des", "alm", "mer", "cen"] as MealCode[]).map((id) => (
-                    <IonButton
-                      key={id}
-                      size="small"
-                      fill="outline"
-                      onClick={() => logAnalysis(id)}
-                    >
-                      {t("Registrar en {meal}", { meal: t(MEAL_LABELS[id]) })}
-                    </IonButton>
-                  ))}
-                </div>
-              </div>
-              <IonButton
-                style={
-                  {
-                    marginTop: 12,
-                    "--background": "var(--teal)",
-                  } as CSSProperties
-                }
-                expand="block"
-                onClick={resetAnalysis}
-              >
-                <IonIcon icon={refreshOutline} slot="start" />
-                {t("Analizar otra comida")}
-              </IonButton>
-            </motion.div>
-          )}
-
-          {analysis === "error" && (
-            <motion.div
-              className="nut-ai-result"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {photo && (
-                <img
-                  src={photo}
-                  alt={t("Fotografía de la comida")}
-                  style={{
-                    width: "100%",
-                    borderRadius: 14,
-                    aspectRatio: "4/3",
-                    objectFit: "cover",
-                    marginBottom: 12,
-                  }}
-                />
-              )}
-              <div className="nut-ai-error" role="alert">
-                <IonIcon icon={alertCircleOutline} aria-hidden="true" />
-                <span>{analysisError}</span>
-              </div>
-              <IonButton expand="block" onClick={() => setAnalysis("camera")}>
-                <IonIcon icon={cameraOutline} slot="start" />
-                {t("Intentar de nuevo")}
-              </IonButton>
-              <IonButton expand="block" fill="clear" onClick={resetAnalysis}>
-                {t("Cancelar")}
-              </IonButton>
-            </motion.div>
           )}
         </div>
 
@@ -1034,15 +747,50 @@ export function NutritionPage() {
                       fontSize: 13,
                     }}
                   >
-                    {mealSources.get(m.id as MealCode) === "ai_photo"
-                      ? t("✓ Registrado con foto · análisis IA")
-                      : mealSources.get(m.id as MealCode) === "manual"
-                        ? t("✓ Registrado manualmente")
-                        : t("✓ Registrado")}
+                    <div style={{ marginBottom: 8 }}>
+                      {mealSources.get(m.id as MealCode) === "ai_photo"
+                        ? t("✓ Registrado con foto · análisis IA")
+                        : mealSources.get(m.id as MealCode) === "manual"
+                          ? t("✓ Registrado manualmente")
+                          : t("✓ Registrado")}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <IonButton
+                        size="small"
+                        fill="outline"
+                        style={{ flex: 1 }}
+                        onClick={() =>
+                          setFlow({
+                            meal: m.id as Exclude<MealCode, "agua">,
+                            mode: "detail",
+                            startAt: "detail",
+                          })
+                        }
+                      >
+                        {t("Ver detalle")}
+                      </IonButton>
+                      <IonButton
+                        size="small"
+                        fill="outline"
+                        style={{ flex: 1 }}
+                        onClick={() =>
+                          setFlow({
+                            meal: m.id as Exclude<MealCode, "agua">,
+                            mode: "detail",
+                            startAt: "edit",
+                          })
+                        }
+                      >
+                        {t("Editar comida")}
+                      </IonButton>
+                    </div>
                   </div>
                 ) : (
                   <button
-                    onClick={() => openRegister(m.id as MealCode)}
+                    onClick={() =>
+                      canMutate &&
+                      setSheetMeal(m.id as Exclude<MealCode, "agua">)
+                    }
                     disabled={!canMutate}
                     style={{
                       margin: 12,
@@ -1303,96 +1051,22 @@ export function NutritionPage() {
         isOpen={registerTarget !== null}
         onDidDismiss={() => setRegisterTarget(null)}
       >
-        <div style={{ padding: 20 }}>
-          <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 4 }}>
-            {t("Registrar comida")}
-          </div>
+        <motion.div
+          style={{ padding: 20 }}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28 }}
+        >
+          <div className="nut-reg-title">{t("Registrar comida")}</div>
           {registerTarget && (
-            <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 14 }}>
-              {t(MEAL_LABELS[registerTarget])}
-              {planTargets.has(registerTarget) &&
-                ` · ${t("Valores del plan de hoy · editables")}`}
-            </div>
+            <MealIntakeForm
+              initial={EMPTY_INTAKE_FORM}
+              submitLabel={t("Guardar")}
+              pending={nutritionMutation.isPending}
+              planReference={planReferenceFor(registerTarget)}
+              onSubmit={submitRegister}
+            />
           )}
-          <IonInput
-            label={t("Calorías (kcal)")}
-            labelPlacement="stacked"
-            fill="outline"
-            type="number"
-            inputmode="numeric"
-            value={intakeForm.calories}
-            onIonInput={(e) =>
-              setIntakeForm((f) => ({
-                ...f,
-                calories: String(e.target.value ?? ""),
-              }))
-            }
-          />
-          <IonInput
-            label={t("Proteínas (g)")}
-            labelPlacement="stacked"
-            fill="outline"
-            type="number"
-            inputmode="decimal"
-            value={intakeForm.proteinG}
-            onIonInput={(e) =>
-              setIntakeForm((f) => ({
-                ...f,
-                proteinG: String(e.target.value ?? ""),
-              }))
-            }
-          />
-          <IonInput
-            label={t("Carbohidratos (g)")}
-            labelPlacement="stacked"
-            fill="outline"
-            type="number"
-            inputmode="decimal"
-            value={intakeForm.carbsG}
-            onIonInput={(e) =>
-              setIntakeForm((f) => ({
-                ...f,
-                carbsG: String(e.target.value ?? ""),
-              }))
-            }
-          />
-          <IonInput
-            label={t("Grasas (g)")}
-            labelPlacement="stacked"
-            fill="outline"
-            type="number"
-            inputmode="decimal"
-            value={intakeForm.fatG}
-            onIonInput={(e) =>
-              setIntakeForm((f) => ({
-                ...f,
-                fatG: String(e.target.value ?? ""),
-              }))
-            }
-          />
-          <IonInput
-            label={t("Fibra (g)")}
-            labelPlacement="stacked"
-            fill="outline"
-            type="number"
-            inputmode="decimal"
-            value={intakeForm.fiberG}
-            onIonInput={(e) =>
-              setIntakeForm((f) => ({
-                ...f,
-                fiberG: String(e.target.value ?? ""),
-              }))
-            }
-          />
-          <IonButton
-            expand="block"
-            style={
-              { marginTop: 16, "--background": "var(--teal)" } as CSSProperties
-            }
-            onClick={submitRegister}
-          >
-            {t("Guardar")}
-          </IonButton>
           <IonButton
             expand="block"
             fill="clear"
@@ -1400,112 +1074,93 @@ export function NutritionPage() {
           >
             {t("Cancelar")}
           </IonButton>
+        </motion.div>
+      </IonModal>
+
+      {/* ── Hoja por comida: foto / galería / manual (contexto preservado) ── */}
+      <IonActionSheet
+        isOpen={sheetMeal !== null}
+        onDidDismiss={() => setSheetMeal(null)}
+        header={
+          sheetMeal
+            ? t("Registrar {meal}", { meal: t(MEAL_LABELS[sheetMeal]) })
+            : ""
+        }
+        buttons={[
+          {
+            text: t("Tomar foto"),
+            handler: () => {
+              if (sheetMeal)
+                setFlow({
+                  meal: sheetMeal,
+                  mode: "register",
+                  autoSource: "camera",
+                });
+            },
+          },
+          {
+            text: t("Seleccionar imagen"),
+            handler: () => {
+              if (sheetMeal)
+                setFlow({
+                  meal: sheetMeal,
+                  mode: "register",
+                  autoSource: "gallery",
+                });
+            },
+          },
+          {
+            text: t("Registro manual"),
+            handler: () => {
+              if (sheetMeal) openRegister(sheetMeal);
+            },
+          },
+          { text: t("Cancelar"), role: "cancel" },
+        ]}
+      />
+
+      {/* ── La tarjeta IA global pide primero la comida ── */}
+      <IonActionSheet
+        isOpen={mealPickerSource !== null}
+        onDidDismiss={() => setMealPickerSource(null)}
+        header={t("¿Qué comida vas a registrar?")}
+        buttons={[
+          ...(["des", "alm", "mer", "cen"] as Exclude<MealCode, "agua">[])
+            .filter((code) => !loggedSet.has(code))
+            .map((code) => ({
+              text: t(MEAL_LABELS[code]),
+              handler: () => {
+                if (mealPickerSource)
+                  setFlow({
+                    meal: code,
+                    mode: "register",
+                    autoSource: mealPickerSource,
+                  });
+              },
+            })),
+          { text: t("Cancelar"), role: "cancel" as const },
+        ]}
+      />
+
+      {/* ── Flujo por comida (captura → revisión → detalle/edición) ── */}
+      <IonModal isOpen={flow !== null} onDidDismiss={() => setFlow(null)}>
+        <div style={{ padding: 20 }}>
+          {flow && (
+            <MealFoodFlow
+              meal={flow.meal}
+              mode={flow.mode}
+              autoSource={flow.autoSource}
+              startAt={flow.startAt}
+              log={findMealLog(snapshot, flow.meal)}
+              onClose={() => setFlow(null)}
+              onManual={(meal) => {
+                setFlow(null);
+                openRegister(meal);
+              }}
+            />
+          )}
         </div>
       </IonModal>
     </Screen>
-  );
-}
-
-function FoodResultCard({ food }: { food: DetectedFood }) {
-  const { t } = useI18n();
-  const name = displayName(food.name);
-  const emoji = FOOD_EMOJI[food.name] ?? "🍽️";
-  const available = food.nutritionStatus === "available" && food.nutrition;
-
-  return (
-    <div
-      style={{
-        background: "rgba(255,255,255,.08)",
-        borderRadius: 12,
-        padding: 10,
-        marginBottom: 8,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 6,
-        }}
-      >
-        <span style={{ fontSize: 20 }}>{emoji}</span>
-        <span
-          style={{ fontWeight: 800, fontSize: 14, textTransform: "capitalize" }}
-        >
-          {name}
-        </span>
-        {food.portion && (
-          <span style={{ marginLeft: "auto", fontSize: 12, opacity: 0.75 }}>
-            {Math.round(food.portion.estimatedGrams)} g
-            {food.portion.minGrams != null && food.portion.maxGrams != null
-              ? ` (${Math.round(food.portion.minGrams)}–${Math.round(food.portion.maxGrams)} g)`
-              : ""}
-          </span>
-        )}
-      </div>
-
-      {available && food.nutrition ? (
-        <>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 6,
-              marginBottom: 6,
-            }}
-          >
-            <span style={{ fontWeight: 800, fontSize: 20 }}>
-              {Math.round(food.nutrition.calories)}
-            </span>
-            <span style={{ fontSize: 12, opacity: 0.7 }}>kcal</span>
-          </div>
-          <div style={{ display: "flex", gap: 8, fontSize: 11 }}>
-            <span
-              style={{
-                background: "rgba(255,255,255,.1)",
-                borderRadius: 8,
-                padding: "3px 8px",
-              }}
-            >
-              {t("Proteínas")} {Math.round(food.nutrition.protein)}g
-            </span>
-            <span
-              style={{
-                background: "rgba(255,255,255,.1)",
-                borderRadius: 8,
-                padding: "3px 8px",
-              }}
-            >
-              {t("Carbohidratos")} {Math.round(food.nutrition.carbohydrates)}g
-            </span>
-            <span
-              style={{
-                background: "rgba(255,255,255,.1)",
-                borderRadius: 8,
-                padding: "3px 8px",
-              }}
-            >
-              {t("Grasas")} {Math.round(food.nutrition.fat)}g
-            </span>
-          </div>
-          {food.source && (
-            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 6 }}>
-              {food.source}
-            </div>
-          )}
-        </>
-      ) : (
-        <div style={{ fontSize: 12, opacity: 0.8 }}>
-          {food.nutritionStatus === "portion_unavailable"
-            ? t(
-                "Identificamos este alimento, pero no pudimos estimar una porción.",
-              )
-            : t(
-                "Identificamos este alimento, pero no tenemos información nutricional disponible.",
-              )}
-        </div>
-      )}
-    </div>
   );
 }
