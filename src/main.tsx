@@ -9,7 +9,10 @@ import '@ionic/react/css/flex-utils.css'
 import '@ionic/react/css/display.css'
 import './theme/variables.css'
 import './theme/global.css'
+import { applyTabletLayoutClass } from './utils/viewport'
 import App from './App.tsx'
+
+applyTabletLayoutClass()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
