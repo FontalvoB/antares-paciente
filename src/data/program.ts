@@ -97,29 +97,6 @@ export function levelForXp(xp: number) {
   return { idx, level: idx + 1, name: lv.name, min: lv.min, max: lv.max, pct }
 }
 
-export const PODCAST_EPISODE = {
-  title: 'Biohacking y metabolismo',
-  host: 'Dr. Carlos Ramírez',
-  durationSec: 492,
-  blurb: 'Cómo la consistencia diaria baja la glucosa más que cualquier atajo de una semana.',
-  chapters: [
-    { at: 0, label: 'Por qué la racha importa' },
-    { at: 95, label: 'Insulina y horarios' },
-    { at: 260, label: 'El circuito de 12 minutos' },
-    { at: 400, label: 'Reto de hoy' },
-  ],
-  takeaways: ['Misma hora · mismo ritual', 'Proteína en cada comida', '12 min bastan si son diarios'],
-}
-
-export const CIRCUIT_STEPS = [
-  { name: 'Calentamiento', sec: 120, cue: 'Cuello, hombros y cadera · respiración nasal' },
-  { name: 'Sentadillas', sec: 120, cue: 'Ritmo controlado · rodillas alineadas' },
-  { name: 'Plancha', sec: 60, cue: 'Core activo · no hundir la lumbar' },
-  { name: 'Caminata', sec: 180, cue: 'Paso amplio · brazos sueltos' },
-  { name: 'Estiramiento', sec: 120, cue: 'Isquiotibiales, pecho y psoas' },
-  { name: 'Respiración 4-7-8', sec: 120, cue: 'Inhala 4 · retén 7 · exhala 8' },
-]
-
 export const VITAL_FIELDS = [
   { id: 'fc', emoji: '❤️', label: 'Frecuencia cardíaca', unit: 'lpm', demo: '72', watch: '71', hint: '50–100 en reposo', lo: 50, hi: 100 },
   { id: 'pa', emoji: '🩺', label: 'Presión arterial', unit: 'mmHg', demo: '118/76', watch: '116/74', hint: 'Ideal < 130/80', lo: 90, hi: 130 },
@@ -128,13 +105,6 @@ export const VITAL_FIELDS = [
   { id: 'peso', emoji: '⚖️', label: 'Peso', unit: 'kg', demo: '87.8', watch: '87.8', hint: 'Tendencia > cifra', lo: 50, hi: 140 },
   { id: 'temp', emoji: '🌡️', label: 'Temperatura', unit: '°C', demo: '36.6', watch: '36.5', hint: '36.1–37.2', lo: 36, hi: 37.2 },
 ] as const
-
-export const TODAY_PLAN = [
-  { id: 'des', emoji: '🌅', title: 'Desayuno', kcal: 380, items: 'Avena · frutos rojos · claras' },
-  { id: 'alm', emoji: '☀️', title: 'Almuerzo', kcal: 620, items: 'Pollo · arroz integral · ensalada' },
-  { id: 'mer', emoji: '🍎', title: 'Merienda', kcal: 200, items: 'Manzana · almendras' },
-  { id: 'cen', emoji: '🌙', title: 'Cena', kcal: 450, items: 'Lentejas · pan integral' },
-]
 
 export const EMOTION_FACES = [
   { v: '1', face: '😔', label: 'Bajo' },
@@ -153,15 +123,3 @@ export const WEEK_BARRIERS = [
   { id: 'ninguno', label: '✅ Nada, fue bien' },
 ]
 
-export const BARRIER_REPLY: Record<string, string> = {
-  antojos: 'Vamos a agregar snacks estratégicos para manejar los antojos.',
-  tiempo: 'Ajustaré opciones de 15 min para los días apurados.',
-  menu: 'Tu nutricionista recibirá el feedback y ajustará el menú.',
-  emocional: 'Voy a notificar a tu psicóloga para acompañarte esta semana.',
-  comprension: 'Simplificaré el plan y dejaré guías visuales en Academia.',
-  ninguno: 'Excelente. Sigamos construyendo sobre lo que ya estás logrando.',
-}
-
-export const NB_WEEK_SEED = [true, true, true, true, false, true, false]
-
-export const NEXT_CHEST_DAYS = 50

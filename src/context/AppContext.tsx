@@ -31,6 +31,7 @@ import {
 import { useT } from "../i18n/I18nContext";
 import type {
   ChatMessage,
+  ChatSuggestion,
   Flow,
   ProgramDay,
   ProgramTaskId,
@@ -54,8 +55,6 @@ interface AppState {
   sosActive: boolean;
   user: UserProfile;
   testsDone: number[];
-  hydration: number;
-  mealsLogged: string[];
   chat: ChatMessage[];
   threadId: string;
   setActiveThreadId: (id: string | null) => void;
@@ -68,6 +67,12 @@ interface AppState {
   pointsToday: number;
   pointsTotal: number;
   navigate: (s: Screen) => void;
+  /** Navega a Citas y auto-abre el asistente de solicitud (CTA del chat). */
+  openBookingWizard: () => void;
+  /** Consumido por AppointmentsPage: true = abrir el wizard al montar. */
+  bookingWizardAutoOpen: boolean;
+  /** Limpia el flag one-shot de auto-apertura del wizard. */
+  clearBookingWizardAutoOpen: () => void;
   finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void;
   backToLogin: () => void;
   finishOnboarding: (user: UserProfile) => void;
@@ -81,10 +86,15 @@ interface AppState {
   activateSos: () => void;
   openVoice: () => void;
   closeVoice: () => void;
-  setHydration: (n: number) => void;
-  logMeal: (id: string) => void;
   sendChat: (text: string) => void;
   hydrateChat: (messages: { text: string }[]) => void;
+  appendChatMessages: (
+    messages: Array<{
+      role: "bot" | "user" | "alert";
+      text: string;
+      cta?: ChatSuggestion | null;
+    }>,
+  ) => void;
   connectWatch: (name: string) => void;
   disconnectWatch: () => void;
   completeStep: (id: ProgramTaskId, pts: number) => void;
@@ -242,6 +252,8 @@ export function AppProvider({
   const t = useT();
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
+  // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
+  const [bookingWizardAutoOpen, setBookingWizardAutoOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [panicOpen, setPanicOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -249,13 +261,6 @@ export function AppProvider({
   const [user, setUser] = useState<UserProfile>(loadSavedUser);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
-  const [hydration, setHydration] = useState(7);
-  // DEMO FALLBACK SOLO (S4, nutrition-intake-adherence): `mealsLogged`/
-  // `logMeal` quedan únicamente para el modo sin backend (NutritionPage los
-  // usa solo cuando no hay snapshot). En flujos conectados los consumidores
-  // leen la verdad server-side vía `deriveLoggedMeals(snapshot)`. TODO:
-  // eliminar junto con el resto del estado legacy in-memory.
-  const [mealsLogged, setMealsLogged] = useState<string[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>(() => [
     createWelcomeMessage(loadSavedUser().nombre),
   ]);
@@ -503,8 +508,6 @@ export function AppProvider({
       sosActive,
       user,
       testsDone,
-      hydration,
-      mealsLogged,
       chat,
       threadId,
       setActiveThreadId,
@@ -517,6 +520,12 @@ export function AppProvider({
       pointsToday,
       pointsTotal,
       navigate: (s) => setScreen(s),
+      openBookingWizard: () => {
+        setBookingWizardAutoOpen(true);
+        setScreen("book");
+      },
+      bookingWizardAutoOpen,
+      clearBookingWizardAutoOpen: () => setBookingWizardAutoOpen(false),
       finishLogin: (seed, next = "onboarding") => {
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
@@ -573,10 +582,6 @@ export function AppProvider({
       activateSos: () => setSosActive(true),
       openVoice: () => setVoiceOpen(true),
       closeVoice: () => setVoiceOpen(false),
-      setHydration,
-      // DEMO FALLBACK SOLO (S4): flujos conectados usan la API + snapshot.
-      logMeal: (id) =>
-        setMealsLogged((prev) => (prev.includes(id) ? prev : [...prev, id])),
       sendChat: (text) => {
         const userMsg: ChatMessage = {
           id: crypto.randomUUID(),
@@ -595,6 +600,10 @@ export function AppProvider({
         void (async () => {
           try {
             const result = await sendChatMessage(text, threadId);
+            // v1: adjuntar la primera sugerencia de tipo "appointment" como CTA.
+            const suggestion = result.suggestions?.find(
+              (s) => s.type === "appointment",
+            );
             setChat((prev) => [
               ...prev,
               {
@@ -603,6 +612,7 @@ export function AppProvider({
                 text: result.reply,
                 time: nowLabel(),
                 threadId: result.threadId || threadId,
+                cta: suggestion,
               },
             ]);
           } catch (err) {
@@ -647,6 +657,21 @@ export function AppProvider({
           const fresh = stamped.filter((m) => !existing.has(m.text));
           if (!fresh.length) return prev;
           return [...fresh, ...prev];
+        });
+      },
+      appendChatMessages: (msgs) => {
+        if (!msgs.length) return;
+        const newMsgs: ChatMessage[] = msgs.map((m) => ({
+          id: crypto.randomUUID(),
+          role: m.role,
+          text: m.text,
+          time: nowLabel(),
+          threadId,
+          cta: m.cta,
+        }));
+        setChat((prev) => {
+          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
+          return isOnlyWelcome ? newMsgs : [...prev, ...newMsgs];
         });
       },
       connectWatch: (name) => {
@@ -705,14 +730,13 @@ export function AppProvider({
       authLoading,
       flow,
       screen,
+      bookingWizardAutoOpen,
       toast,
       panicOpen,
       voiceOpen,
       sosActive,
       user,
       testsDone,
-      hydration,
-      mealsLogged,
       chat,
       watchConnected,
       watchName,

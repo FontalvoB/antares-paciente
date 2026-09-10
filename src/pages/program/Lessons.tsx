@@ -23,11 +23,7 @@ import {
   playForward,
 } from 'ionicons/icons'
 import {
-  BARRIER_REPLY,
-  CIRCUIT_STEPS,
   EMOTION_FACES,
-  PODCAST_EPISODE,
-  TODAY_PLAN,
   VITAL_FIELDS,
   WEEK_BARRIERS,
   WEEK_LABELS,
@@ -35,11 +31,28 @@ import {
 import { formatDateForDisplay, toLocalISODate, weekdayMondayIndex } from '../../utils/dates'
 import { resolveNbDayOk } from '../../utils/nbWeekDays'
 import { mealTypeToCode } from '../../utils/mealTypeToCode'
+import { resolveStationSec } from '../../utils/exerciseSteps'
 import { useI18n, useT } from '../../i18n/I18nContext'
 
 function mmss(sec: number) {
   const s = Math.max(0, Math.floor(sec))
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+}
+
+/**
+ * Estado honesto para lecciones SIN contenido del servidor (content == null,
+ * contentUnavailable o arrays vacíos): nunca fabricar episodios, circuitos o
+ * planes. Misma lección para podcast / nutrición / ejercicio.
+ */
+function LessonUnavailable() {
+  const t = useT()
+  return (
+    <div className="lsn-stack">
+      <div className="lsn-unavailable">
+        <p>{t('Contenido no disponible aún · tu equipo lo está preparando')}</p>
+      </div>
+    </div>
+  )
 }
 
 function vitalNumber(raw: string) {
@@ -83,6 +96,8 @@ export function PodcastLesson({
   onToggle,
   onSkip,
   onComplete,
+  unavailable,
+  audioReady,
 }: {
   done: boolean
   pts: number
@@ -99,21 +114,34 @@ export function PodcastLesson({
   onToggle: () => void
   onSkip: (delta: number) => void
   onComplete: () => void
+  unavailable?: boolean
+  /** W1: el Audio del servidor ya existe (primer play hecho) → seek real. */
+  audioReady?: boolean
 }) {
   const t = useT()
-  const duration = durationSecs || PODCAST_EPISODE.durationSec
-  const podTitle = title || PODCAST_EPISODE.title
-  const podHost = author || PODCAST_EPISODE.host
-  const podBlurb = description || PODCAST_EPISODE.blurb
+  // Player real SOLO con audio del servidor: sin content (o contentUnavailable)
+  // o sin mediaUrl no hay nada que reproducir — estado honesto, no fabricación.
+  if (unavailable || !mediaUrl) return <LessonUnavailable />
+
+  // W1: antes del primer play no hay Audio que buscar — skip y capítulos se
+  // deshabilitan (sin no-op silencioso); el play es la puerta de entrada.
+  const seekDisabled = done || !audioReady
+
+  const duration = durationSecs || 0
+  const podTitle = title || ''
+  const podHost = author || ''
+  const podBlurb = description || ''
   const podChapters = chapters && chapters.length > 0
     ? chapters.map((c) => ({ at: c.atSeconds, label: c.label }))
-    : PODCAST_EPISODE.chapters
+    : []
   const podTakeaways = takeaways && takeaways.length > 0
     ? takeaways
-    : PODCAST_EPISODE.takeaways
+    : []
 
   const elapsed = progress * duration
-  const chapter = [...podChapters].reverse().find((c) => elapsed >= c.at) ?? podChapters[0]
+  const chapter = podChapters.length > 0
+    ? [...podChapters].reverse().find((c) => elapsed >= c.at) ?? podChapters[0]
+    : null
 
   return (
     <div className="lsn-stack">
@@ -127,7 +155,7 @@ export function PodcastLesson({
             />
           ))}
         </div>
-        <div className="pod-now">{t(chapter.label)}</div>
+        <div className="pod-now">{chapter ? t(chapter.label) : ''}</div>
         <div className="pod-times">
           <span>{mmss(elapsed)}</span>
           <span>{mmss(duration)}</span>
@@ -137,9 +165,7 @@ export function PodcastLesson({
 
       <div className="pod-copy">
         <strong>{t(podTitle)}</strong>
-        <span>
-          {podHost} · {t(podBlurb)}
-        </span>
+        <span>{[podHost, t(podBlurb)].filter(Boolean).join(' · ')}</span>
         {mediaUrl && (
           <span className="pod-stream-badge text-[10px] opacity-75">
             ● {t('Audio en streaming')}
@@ -154,36 +180,41 @@ export function PodcastLesson({
       )}
 
       <div className="pod-transport">
-        <IonButton fill="clear" aria-label={t('Retroceder 15 segundos')} onClick={() => onSkip(-15)} disabled={done}>
+        <IonButton fill="clear" aria-label={t('Retroceder 15 segundos')} onClick={() => onSkip(-15)} disabled={seekDisabled}>
           <IonIcon slot="icon-only" icon={playBack} />
         </IonButton>
         <IonButton className="bt bt-pur pod-play" onClick={onToggle} disabled={done}>
           <IonIcon icon={playing ? pause : play} slot="start" />
           {playing ? t('Pausar') : progress >= 1 ? t('Repetir') : t('Reproducir')}
         </IonButton>
-        <IonButton fill="clear" aria-label={t('Adelantar 15 segundos')} onClick={() => onSkip(15)} disabled={done}>
+        <IonButton fill="clear" aria-label={t('Adelantar 15 segundos')} onClick={() => onSkip(15)} disabled={seekDisabled}>
           <IonIcon slot="icon-only" icon={playForward} />
         </IonButton>
       </div>
 
-      <div className="lsn-chapters">
-        {podChapters.map((c) => (
-          <button
-            key={c.at}
-            type="button"
-            className={`lsn-chip ${elapsed >= c.at ? 'on' : ''}`}
-            onClick={() => onSkip(c.at - elapsed)}
-          >
-            {mmss(c.at)} · {t(c.label)}
-          </button>
-        ))}
-      </div>
+      {podChapters.length > 0 && (
+        <div className="lsn-chapters">
+          {podChapters.map((c) => (
+            <button
+              key={c.at}
+              type="button"
+              className={`lsn-chip ${elapsed >= c.at ? 'on' : ''}`}
+              onClick={() => onSkip(c.at - elapsed)}
+              disabled={seekDisabled}
+            >
+              {mmss(c.at)} · {t(c.label)}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="lsn-tips">
-        {podTakeaways.map((tip) => (
-          <div key={tip}>✓ {t(tip)}</div>
-        ))}
-      </div>
+      {podTakeaways.length > 0 && (
+        <div className="lsn-tips">
+          {podTakeaways.map((tip) => (
+            <div key={tip}>✓ {t(tip)}</div>
+          ))}
+        </div>
+      )}
 
       {!done && (
         <IonButton expand="block" className="bt bt-primary" disabled={progress < 0.7} onClick={onComplete}>
@@ -422,6 +453,7 @@ export function NutritionLesson({
   mealsLogged,
   onGoPlan,
   onComplete,
+  unavailable,
 }: {
   done: boolean
   pts: number
@@ -435,47 +467,52 @@ export function NutritionLesson({
   mealsLogged: string[]
   onGoPlan: () => void
   onComplete: () => void
+  unavailable?: boolean
 }) {
   const t = useT()
 
-  const meals = useMemo(() => {
-    if (nutritionMeals && nutritionMeals.length > 0) {
-      return nutritionMeals.map((m, idx) => {
-        const mealTypeLower = m.mealType.toLowerCase()
-        let emoji = '🥗'
-        if (mealTypeLower.includes('desayuno')) emoji = '🌅'
-        else if (mealTypeLower.includes('almuerzo')) emoji = '☀️'
-        else if (mealTypeLower.includes('cena')) emoji = '🌙'
-        else if (mealTypeLower.includes('snack') || mealTypeLower.includes('merienda')) emoji = '🍎'
+  // Sin plan del servidor (content null/contentUnavailable o sin comidas):
+  // estado honesto — nunca un plan fabricado.
+  if (unavailable || !nutritionMeals || nutritionMeals.length === 0) {
+    return <LessonUnavailable />
+  }
 
-        const details: string[] = []
-        if (m.description) details.push(m.description)
-        if (m.foods) details.push(`(${m.foods})`)
-        const macros: string[] = []
-        if (m.proteinG) macros.push(`P: ${m.proteinG}g`)
-        if (m.carbsG) macros.push(`C: ${m.carbsG}g`)
-        if (m.fatG) macros.push(`G: ${m.fatG}g`)
-        if (m.fiberG) macros.push(`Fib: ${m.fiberG}g`)
-        if (macros.length > 0) details.push(`[${macros.join(' · ')}]`)
+  const meals = nutritionMeals.map((m, idx) => {
+    const mealTypeLower = m.mealType.toLowerCase()
+    let emoji = '🥗'
+    if (mealTypeLower.includes('desayuno')) emoji = '🌅'
+    else if (mealTypeLower.includes('almuerzo')) emoji = '☀️'
+    else if (mealTypeLower.includes('cena')) emoji = '🌙'
+    else if (mealTypeLower.includes('snack') || mealTypeLower.includes('merienda')) emoji = '🍎'
 
-        return {
-          // D4: el id es el mealCode canónico (des/alm/mer/cen), NO el
-          // mealTypeLower crudo ('desayuno') — que nunca matcheaba los
-          // códigos de nutritionIntakeLogs y rompía ring/kcal/checkmarks
-          // (bug vivo Lessons.tsx:417/437). Tipos desconocidos → id único
-          // sin match (no registrado).
-          id: mealTypeToCode(m.mealType) ?? `meal-${idx}`,
-          emoji,
-          title: m.mealType,
-          items: details.join(' ') || 'Comida planificada',
-          kcal: m.calories || 0,
-        }
-      })
+    const details: string[] = []
+    if (m.description) details.push(m.description)
+    if (m.foods) details.push(`(${m.foods})`)
+    const macros: string[] = []
+    if (m.proteinG) macros.push(`P: ${m.proteinG}g`)
+    if (m.carbsG) macros.push(`C: ${m.carbsG}g`)
+    if (m.fatG) macros.push(`G: ${m.fatG}g`)
+    if (m.fiberG) macros.push(`Fib: ${m.fiberG}g`)
+    if (macros.length > 0) details.push(`[${macros.join(' · ')}]`)
+
+    return {
+      // D4: el id es el mealCode canónico (des/alm/mer/cen), NO el
+      // mealTypeLower crudo ('desayuno') — que nunca matcheaba los
+      // códigos de nutritionIntakeLogs y rompía ring/kcal/checkmarks
+      // (bug vivo Lessons.tsx:417/437). Tipos desconocidos → id único
+      // sin match (no registrado).
+      id: mealTypeToCode(m.mealType) ?? `meal-${idx}`,
+      emoji,
+      title: m.mealType,
+      items: details.join(' ') || 'Comida planificada',
+      kcal: m.calories || 0,
     }
-    return TODAY_PLAN
-  }, [nutritionMeals])
+  })
 
-  const targetKcal = dailyCalorieTarget || 1800
+  // S1: sin meta calórica REAL del servidor (null/0/negativo) no se inventa
+  // el 1.800 de la demo — el titular muestra "—" y los macros siguen si vienen.
+  const targetKcal =
+    dailyCalorieTarget != null && dailyCalorieTarget > 0 ? dailyCalorieTarget : null
   const targetProtein = dailyProteinTarget ? `${dailyProteinTarget} g proteína` : null
   const targetFat = dailyFatTarget ? `${dailyFatTarget} g grasa` : null
   const targetCarbs = dailyCarbsTarget ? `${dailyCarbsTarget} g carbs` : null
@@ -493,7 +530,10 @@ export function NutritionLesson({
           <div className="kicker" style={{ color: 'var(--teal-d)' }}>
             {t(title || 'Plan de Alimentación')}
           </div>
-          <strong>{targetKcal} kcal {macroSubtext ? `· ${macroSubtext}` : ''}</strong>
+          <strong>
+            {targetKcal != null ? `${targetKcal} kcal` : '—'}
+            {macroSubtext ? ` · ${macroSubtext}` : ''}
+          </strong>
           <span>{t('Hoy llevas {kcal} kcal registradas · {pct}% de comidas', { kcal: String(kcal), pct: String(Math.round(pct * 100)) })}</span>
         </div>
         <div className="nut-ring" aria-hidden="true">
@@ -549,6 +589,7 @@ export function ExerciseLesson({
   onToggle,
   onSkip,
   onComplete,
+  unavailable,
 }: {
   done: boolean
   pts: number
@@ -560,28 +601,32 @@ export function ExerciseLesson({
   onToggle: () => void
   onSkip: () => void
   onComplete: () => void
+  unavailable?: boolean
 }) {
   const t = useT()
 
-  const steps = useMemo(() => {
-    if (exercises && exercises.length > 0) {
-      return exercises.map((ex) => {
-        const sec = ex.durationSecs || (ex.restSeconds ? ex.restSeconds * (ex.sets || 1) : 45)
-        const cueParts: string[] = []
-        if (ex.sets && ex.repetitions) cueParts.push(`${ex.sets} series x ${ex.repetitions} reps`)
-        else if (ex.sets) cueParts.push(`${ex.sets} series`)
-        if (ex.description) cueParts.push(ex.description)
-        if (ex.tips) cueParts.push(ex.tips)
+  // Sin rutina del servidor (content null/contentUnavailable o sin ejercicios):
+  // estado honesto — nunca un circuito fabricado.
+  if (unavailable || !exercises || exercises.length === 0) {
+    return <LessonUnavailable />
+  }
 
-        return {
-          name: ex.name,
-          sec: sec > 0 ? sec : 60,
-          cue: cueParts.join(' · ') || 'Ejecuta con buena postura',
-        }
-      })
+  const steps = exercises.map((ex) => {
+    // W4: duración defensiva compartida con ProgramPage (resolveStationSec) —
+    // un durationSecs negativo jamás crea una estación de 0s.
+    const sec = resolveStationSec(ex)
+    const cueParts: string[] = []
+    if (ex.sets && ex.repetitions) cueParts.push(`${ex.sets} series x ${ex.repetitions} reps`)
+    else if (ex.sets) cueParts.push(`${ex.sets} series`)
+    if (ex.description) cueParts.push(ex.description)
+    if (ex.tips) cueParts.push(ex.tips)
+
+    return {
+      name: ex.name,
+      sec,
+      cue: cueParts.join(' · ') || 'Ejecuta con buena postura',
     }
-    return CIRCUIT_STEPS
-  }, [exercises])
+  })
 
   const safeStep = Math.min(step, steps.length - 1)
   const cur = steps[safeStep] || steps[0]
@@ -684,7 +729,7 @@ export function NutraceuticLesson({
             // verdad del servidor cuando `nbWeekDays` viene (7 ítems), con el
             // estado optimista local ganando solo para hoy; sin arreglo cae a
             // la derivación local legada (pasado ok · futuro no) — sin datos
-            // demo NB_WEEK_SEED.
+            // demo.
             const isToday = i === todayIdx
             const ok = resolveNbDayOk(i, todayIdx, nbWeekDays, done)
             return (
@@ -722,7 +767,8 @@ export function EmotionalLesson({
   const [sleep, setSleep] = useState('')
   const [barrier, setBarrier] = useState('')
   const [note, setNote] = useState('')
-  const reply = barrier ? t(BARRIER_REPLY[barrier]) : ''
+  // Confirmación única y neutral del registro (sin respuestas fabricadas de IA).
+  const reply = barrier ? t('Gracias, tu equipo recibió tu registro') : ''
   const ready = Boolean(mood && sleep && barrier)
 
   const stressLabel = useMemo(() => (stress <= 3 ? t('Bajo') : stress <= 6 ? t('Moderado') : t('Alto')), [stress, t])

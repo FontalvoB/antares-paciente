@@ -22,17 +22,19 @@ import { useApp } from "../context/AppContext";
 import { PROGRAM_TASKS } from "../data/program";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { MetricHistoryModal } from "../components/MetricHistoryModal";
-import { HEALTH_METRICS, metricProgress, type MetricId } from "../data/metrics";
+import {
+  formatMetricValue,
+  HOME_METRIC_CARDS,
+  resolveHomeCards,
+  type HomeMetricCard,
+  type MetricId,
+} from "../data/metrics";
 import { useProgram } from "../hooks/useProgram";
+import { useMetricsHistory } from "../hooks/useMetricsHistory";
+import { useScoresHistory } from "../hooks/useScoresHistory";
 import logoIcon from "../assets/LogoIndividual.png";
 import type { CSSProperties } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
-
-/** Indicadores clínicos que van en la tarjeta destacada del inicio. */
-const CARD_METRIC_IDS: MetricId[] = ["imc", "hba1c", "fat"];
-const CARD_METRICS = HEALTH_METRICS.filter((m) =>
-  CARD_METRIC_IDS.includes(m.id),
-);
 
 export function HomePage() {
   const {
@@ -55,6 +57,16 @@ export function HomePage() {
   } = useApp();
   const { snapshot } = useProgram();
   const { lang, t } = useI18n();
+
+  // Verdad clínica de las tarjetas: metrics-history (bmi/hba1c/fat) +
+  // scores-history (dimensions.adherence). Pueden 404 hasta que el backend
+  // esté desplegado → el resolver degrada cada tarjeta a requires-data honesto.
+  // S4: mientras un query carga SIN cache, las tarjetas de su fuente muestran
+  // skeleton — nunca la nota requires-data (afirmación falsa en plena carga).
+  const { history: metricsHistory, isLoading: metricsLoading } = useMetricsHistory();
+  const { history: scoresHistory, isLoading: scoresLoading } = useScoresHistory();
+  // S3: locale activo para números (es-ES coma decimal / en-US punto).
+  const locale = lang === "en" ? "en-US" : "es-ES";
 
   // Cita destacada real (modo sesión) — misma tarjeta, dato del backend.
   const featuredReal =
@@ -137,7 +149,7 @@ export function HomePage() {
     {
       id: "com",
       title: t("Comunidad"),
-      sub: t("10,847 miembros activos"),
+      sub: t("Diagnóstico, grupos y apoyo"),
       icon: people,
     },
     {
@@ -198,16 +210,55 @@ export function HomePage() {
     nextServerTask?.short || nextFallbackTask?.short || "";
   const dayComplete = todayDone === missionTotal;
 
-  // Peso más reciente del backend para recalcular el IMC del indicador.
-  const recentVitals = snapshot?.todayTasks?.find(
-    (task) => task.taskCode === "vitals",
-  )?.content?.recentVitals;
-  const metricValue = (metric: (typeof CARD_METRICS)[number]) => {
-    if (metric.id === "pts") return String(activePointsTotal);
-    if (metric.id === "imc" && recentVitals?.weightKg) {
-      return (recentVitals.weightKg / (1.68 * 1.68)).toFixed(1);
-    }
-    return metric.current;
+  // Serie de adherencia REAL: dimensions.adherence por punto del
+  // scores-history (semana persistida con cómputo). Sin puntos → requires-data.
+  const adherencePoints = useMemo(
+    () =>
+      (scoresHistory?.points ?? [])
+        .map((p) => ({
+          date: p.periodEnd ?? "",
+          value: p.dimensions?.adherence ?? null,
+        }))
+        .filter((p): p is { date: string; value: number } => p.value != null),
+    [scoresHistory],
+  );
+
+  // Las 5 tarjetas resueltas con la verdad del backend (nada fabricado):
+  // imc / hba1c / fat desde metrics-history, adh desde scores-history,
+  // pts desde el balance XP real (sin historial falso).
+  const cards = useMemo(
+    () =>
+      resolveHomeCards({
+        heightCm: metricsHistory?.heightCm ?? null,
+        metrics: metricsHistory?.metrics ?? [],
+        adherence: adherencePoints,
+        xpBalance: activePointsTotal,
+      }),
+    [metricsHistory, adherencePoints, activePointsTotal],
+  );
+
+  // Nota de tendencia honesta: solo con ≥2 puntos reales; 1 punto → valor sin
+  // nota; sin puntos → (no aplica, es requires-data). "↓ desde {first}" es el
+  // cambio real desde el primer registro, nunca un delta fabricado.
+  const trendNote = (
+    card: Extract<HomeMetricCard, { kind: "value" }>,
+  ): string | null => {
+    if (card.points.length < 2 || card.first == null || card.last == null)
+      return null;
+    const first = formatMetricValue(card.first, card.decimals, locale);
+    if (card.last < card.first) return t("↓ desde {first}", { first });
+    if (card.last > card.first) return t("↑ desde {first}", { first });
+    return null;
+  };
+
+  // S4: estado por tarjeta según la fuente que la alimenta. Solo "loading"
+  // cuando su query carga SIN cache (TanStack isLoading); con cache previa o
+  // error ya resuelto → data/requires-data (error 404 = sin mediciones aún).
+  const cardState = (id: MetricId): "loading" | "data" => {
+    const sourceLoading = id === "adh" ? scoresLoading : metricsLoading;
+    return sourceLoading && cards[id].kind === "requires-data"
+      ? "loading"
+      : "data";
   };
 
   return (
@@ -242,7 +293,6 @@ export function HomePage() {
           <div className="hm-date">{today}</div>
 
           <div className="hm-chips">
-            <span className="hm-chip green">{t("Riesgo bajo")}</span>
             <span className="hm-chip navy">
               {t("Semana {cur} de {total}", {
                 cur: String(activeProgramWeek),
@@ -289,25 +339,58 @@ export function HomePage() {
         </button>
 
         <div className="hm-metrics" aria-label={t("Indicadores de salud")}>
-          {CARD_METRICS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className="hm-metric"
-              onClick={() => setMetricId(m.id)}
-              aria-label={t("Ver historial de {label}", { label: t(m.label) })}
-            >
-              <span className="hm-metric-val">{metricValue(m)}</span>
-              <span className="hm-metric-lbl">{t(m.label)}</span>
-              <span className="hm-metric-bar">
-                <i
-                  style={{
-                    width: `${Math.round(metricProgress({ ...m, current: metricValue(m) }) * 100)}%`,
-                  }}
-                />
-              </span>
-            </button>
-          ))}
+          {HOME_METRIC_CARDS.map((meta) => {
+            const card = cards[meta.id];
+            const state = cardState(meta.id);
+            return (
+              <button
+                key={meta.id}
+                type="button"
+                className="hm-metric"
+                onClick={() => setMetricId(meta.id)}
+                disabled={state === "loading"}
+                aria-busy={state === "loading"}
+                aria-label={t("Ver historial de {label}", { label: t(meta.label) })}
+              >
+                {state === "loading" ? (
+                  // S4: skeleton honesto mientras carga la fuente — sin nota
+                  // requires-data (patrón de la tarjeta de cita).
+                  <span className="hm-metric-skeleton">
+                    <IonSkeletonText animated style={{ width: "56%", height: 18 }} />
+                    <IonSkeletonText animated style={{ width: "72%", height: 10 }} />
+                  </span>
+                ) : card.kind === "requires-data" ? (
+                  <>
+                    <span className="hm-metric-val hm-metric-rd">—</span>
+                    <span className="hm-metric-lbl">{t(card.label)}</span>
+                    <span className="hm-metric-sub">{t(card.note)}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hm-metric-val">
+                      {formatMetricValue(card.current, card.decimals, locale)}
+                      {card.unit ? (
+                        <small className="hm-metric-unit">{card.unit}</small>
+                      ) : null}
+                    </span>
+                    <span className="hm-metric-lbl">{t(card.label)}</span>
+                    {trendNote(card) ? (
+                      <span className="hm-metric-sub">{trendNote(card)}</span>
+                    ) : null}
+                    {card.progress !== null ? (
+                      <span className="hm-metric-bar">
+                        <i
+                          style={{
+                            width: `${Math.round(card.progress * 100)}%`,
+                          }}
+                        />
+                      </span>
+                    ) : null}
+                  </>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <div className="hm-duo">
@@ -406,7 +489,9 @@ export function HomePage() {
             {
               id: "nut" as ScreenId,
               title: t("Nutrición"),
-              sub: t("1,650 / 1,800 kcal"),
+              // W5: el sub "1,650 / 1,800 kcal" es fabricación de la demo; en
+              // modo real sin dato agregado del backend → placeholder honesto.
+              sub: realMode ? t("Sin datos") : t("1,650 / 1,800 kcal"),
               icon: leaf,
               bg: "var(--ice-l)",
               color: "var(--teal-d)",
@@ -449,31 +534,37 @@ export function HomePage() {
           ))}
         </div>
 
-        <div className="sec">{t("Progreso semanal")}</div>
-        <div className="card" style={{ margin: "0 16px 20px" }}>
-          {[
-            [t("Hidratación"), "7/8 vasos", 87, "var(--teal)"],
-            [t("Pasos"), "6,240 / 8,000", 78, "var(--blue)"],
-            [t("Calorías"), "1,650 / 1,800", 91, "var(--org)"],
-            [t("Academia"), "Módulo 5", 68, "var(--cyan)"],
-          ].map(([l, r, w, c]) => (
-            <div key={String(l)} className="progress-row">
-              <div className="progress-row-top">
-                <span>{l}</span>
-                <span>{r}</span>
-              </div>
-              <IonProgressBar
-                className="pb"
-                style={{ "--progress-background": String(c) } as CSSProperties}
-                value={Number(w) / 100}
-              />
+        {/* W5: "Progreso semanal" (vasos/pasos/calorías/academia) son cifras fijas
+          de la demo sin fuente real — en modo real la sección se oculta
+          completa (nunca fabricación), en demo se conserva. */}
+        {!realMode && (
+          <>
+            <div className="sec">{t("Progreso semanal")}</div>
+            <div className="card" style={{ margin: "0 16px 20px" }}>
+              {[
+                [t("Hidratación"), "7/8 vasos", 87, "var(--teal)"],
+                [t("Pasos"), "6,240 / 8,000", 78, "var(--blue)"],
+                [t("Calorías"), "1,650 / 1,800", 91, "var(--org)"],
+                [t("Academia"), "Módulo 5", 68, "var(--cyan)"],
+              ].map(([l, r, w, c]) => (
+                <div key={String(l)} className="progress-row">
+                  <div className="progress-row-top">
+                    <span>{l}</span>
+                    <span>{r}</span>
+                  </div>
+                  <IonProgressBar
+                    className="pb"
+                    style={{ "--progress-background": String(c) } as CSSProperties}
+                    value={Number(w) / 100}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </Scroll>
       <MetricHistoryModal
-        metricId={metricId}
-        pointsTotal={activePointsTotal}
+        card={metricId ? cards[metricId] : null}
         onClose={() => setMetricId(null)}
       />
     </Screen>

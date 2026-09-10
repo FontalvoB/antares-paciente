@@ -373,10 +373,47 @@ export interface ScoresHistoryPointDto {
   healthScore: number | null
   healthPrevious: number | null
   transformationScore: number | null
+  /**
+   * Aditivo (R7.1): dimensiones del Health Score de esa semana (wire
+   * `dimensions`); null cuando la semana no tiene cómputo o en payloads
+   * previos. Alimenta la tarjeta Adherencia del Home (dimensions.adherence).
+   */
+  dimensions?: HealthScoreDimensionsDto | null
 }
 
 export interface ScoresHistoryDto {
   points: ScoresHistoryPointDto[]
+}
+
+// --- Metrics history (Home, GET /api/v1/program/me/metrics-history) ---
+// Contrato FROZEN (MetricsHistoryDtos.cs): `{ heightCm, metrics: [{ code,
+// unit, target: {lo,hi}|null, favorableDirection: 'down'|'up'|null, points:
+// [{date,value}] }] }` — SOLO códigos CON filas aparecen; fechas ASC. Puede
+// 404 NO_ACTIVE_ENROLLMENT en backends sin desplegar (degradación honesta).
+
+export type FavorableDirection = 'down' | 'up'
+
+export interface MetricTargetDto {
+  lo: number | null
+  hi: number | null
+}
+
+export interface MetricPointDto {
+  date: string
+  value: number
+}
+
+export interface MetricSeriesDto {
+  code: string
+  unit: string | null
+  target: MetricTargetDto | null
+  favorableDirection: FavorableDirection | null
+  points: MetricPointDto[]
+}
+
+export interface MetricsHistoryDto {
+  heightCm: number | null
+  metrics: MetricSeriesDto[]
 }
 
 // --- Nutrition ---

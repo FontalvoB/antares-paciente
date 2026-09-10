@@ -14,14 +14,25 @@ import { PageHeader } from '../components/PageHeader'
 import { Screen, Scroll } from '../components/Screen'
 import { CameraCapture } from '../components/CameraCapture'
 import { useApp } from '../context/AppContext'
-import { useT } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/I18nContext'
 import { useNutritionLog } from '../hooks/useNutritionLog'
 import { useProgram } from '../hooks/useProgram'
+import { useProgramScores } from '../hooks/useProgramScores'
+import { useMetricsHistory } from '../hooks/useMetricsHistory'
 import type { MealCode, NutritionIntakePayload } from '../services/program/nutrition-service'
 import { ApiError } from '../utils/apiClient'
 import { mealTypeToCode } from '../utils/mealTypeToCode'
 import { buildHydrationIntake, buildPlanTargets, prefillIntakeForm } from '../utils/nutritionForm'
 import { deriveLoggedMeals } from '../utils/nutritionProgress'
+import {
+  deriveIntakeTotals,
+  deriveMealSource,
+  derivePlanTargets,
+  deriveTrend,
+  deriveWaterGlasses,
+} from '../utils/nutritionIntake'
+import { formatMetricTarget, formatMetricValue } from '../data/metrics'
+import { formatDateForDisplay } from '../utils/dates'
 import {
   analyzeFoodImage,
   displayName,
@@ -48,69 +59,25 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
   agua: '💧',
 }
 
-const defaultMeals = [
-  {
-    id: 'des',
-    emoji: '🌅',
-    title: 'Desayuno · 7:00 AM',
-    kcal: 380,
-    items: [
-      ['🥣', 'Avena enrollada (½ taza)', 'β-glucanos · Bajo IG', '31g C', '5g P', ''],
-      ['🍓', 'Frutos rojos mixtos', 'Antioxidantes · Vit. C', '10g C', '', ''],
-      ['🥚', '2 claras de huevo', 'Proteína magra', '', '7g P', ''],
-      ['🍵', 'Té verde sin azúcar', 'EGCG · 0 kcal', '0g', '', ''],
-    ],
-  },
-  {
-    id: 'alm',
-    emoji: '☀️',
-    title: 'Almuerzo · 12:00 PM',
-    kcal: 620,
-    items: [
-      ['🍗', 'Pechuga de pollo 4 oz', 'Proteína magra · sin piel', '', '26g P', '3g G'],
-      ['🍚', 'Arroz integral ½ taza', 'Grano entero · 2g fibra', '22g C', '', ''],
-      ['🥗', 'Ensalada + EVOO y limón', 'Espinaca · Omega-9', '8g C', '', '7g G'],
-    ],
-  },
-  {
-    id: 'mer',
-    emoji: '🍎',
-    title: 'Merienda · 3:30 PM',
-    kcal: 200,
-    items: [
-      ['🍎', 'Manzana mediana', 'Pectina · IG bajo 36', '25g C', '', ''],
-      ['🥜', 'Almendras 1 oz', 'Vit. E · Mg', '', '6g P', '14g G'],
-    ],
-  },
-  {
-    id: 'cen',
-    emoji: '🌙',
-    title: 'Cena · 7:00 PM',
-    kcal: 450,
-    items: [
-      ['🍲', 'Sopa de lentejas 1½ taza', '18g proteína vegetal', '40g C', '18g P', ''],
-      ['🍞', 'Pan integral 1 rebanada', 'Grano entero · 3g fibra', '15g C', '', ''],
-    ],
-  },
-]
-
-const week = [
-  ['Lun', 96, 'var(--teal)'],
-  ['Mar', 88, 'var(--teal)'],
-  ['Mié', 74, 'var(--org)'],
-  ['Jue', 91, 'var(--teal)'],
-  ['Vie', 85, 'var(--teal)'],
-  ['Sáb', 68, 'var(--org)'],
-  ['Dom', 93, 'var(--teal)'],
-]
-
 export function NutritionPage() {
-  const { hydration, setHydration, logMeal, showToast } = useApp()
-  const { snapshot } = useProgram()
-  const t = useT()
+  const { showToast } = useApp()
+  // Sin snapshot → sin contenido fabricado: la pantalla entera deriva de la
+  // verdad del servidor. isLoading distingue carga inicial de estados
+  // terminales honestos; productMessage (estados paused/withdrawn/
+  // no-template/recoverable) se muestra crudo, como en ProgramPage.
+  const { snapshot, isLoading, isMockFallback, productMessage } = useProgram()
+  const { t, lang } = useI18n()
   const nutritionMutation = useNutritionLog()
+  // Verdad del servidor para Semana (dimensions.nutrition) e Historial
+  // (serie weight/bmi/hba1c). Queries compartidas con ProgramPage/Home —
+  // TanStack deduplica por queryKey; errores degradan a estados vacíos
+  // honestos (R5.2), nunca a toasts.
+  const { scores, isLoading: scoresLoading } = useProgramScores()
+  const { history: metricsHistory, isLoading: metricsLoading } = useMetricsHistory()
   const [tab, setTab] = useState<'hoy' | 'semana' | 'indicaciones' | 'historial'>('hoy')
-  const [openDay, setOpenDay] = useState(1)
+
+  // S3: locale activo para números (es-ES coma decimal / en-US punto).
+  const locale = lang === 'en' ? 'en-US' : 'es-ES'
 
   // ── Registro manual prefilled (SPEC nutrition-intake-adherence) ──
   const [registerTarget, setRegisterTarget] = useState<MealCode | null>(null)
@@ -123,12 +90,66 @@ export function NutritionPage() {
   })
 
   const nutContent = snapshot?.todayTasks?.find((t) => t.taskCode === 'nut')?.content
-  const planTitle = nutContent?.nutritionPlanName || t('Ana Torres, RDN · plan asignado')
-  const calorieTarget = nutContent?.dailyCalorieTarget || 1800
-  const carbsTarget = nutContent?.dailyCarbsTarget ? `${nutContent.dailyCarbsTarget}g` : '168g'
-  const proteinTarget = nutContent?.dailyProteinTarget ? `${nutContent.dailyProteinTarget}g` : '90g'
-  const fatTarget = nutContent?.dailyFatTarget ? `${nutContent.dailyFatTarget}g` : '50g'
-  const fiberTarget = nutContent?.dailyFiberTarget ? `${nutContent.dailyFiberTarget}g` : '28g'
+  // Nombre real del plan o estado vacío honesto (sin 'Ana Torres' inventado).
+  const planTitle = nutContent?.nutritionPlanName || t('Sin plan nutricional asignado')
+
+  // El fallback R5.2 (transport error sin cache) NO es verdad de servidor: la
+  // UI puede derivar estados vacíos del snapshot mock, pero las MUTACIONES
+  // (registro manual, foto, hidratación) no deben encolar writes reales sobre
+  // un estado sin verdad — botones deshabilitados, handlers con guard.
+  const canMutate = snapshot != null && !isMockFallback
+
+  // Verdad server-side de los intake totals, targets y fuente por comida
+  // (resolvers puros en src/utils/nutritionIntake.ts — de-mock).
+  const intakeTotals = useMemo(() => deriveIntakeTotals(snapshot), [snapshot])
+  const serverTargets = useMemo(() => derivePlanTargets(snapshot), [snapshot])
+  const serverGlasses = useMemo(() => deriveWaterGlasses(snapshot), [snapshot])
+  const mealSources = useMemo(() => {
+    const map = new Map<MealCode, 'manual' | 'ai_photo' | null>()
+    for (const code of ['des', 'alm', 'mer', 'cen'] as MealCode[]) {
+      map.set(code, deriveMealSource(snapshot, code))
+    }
+    return map
+  }, [snapshot])
+
+  // Hidratación (server): optimismo local de vasos. Al tocar vaso n >
+  // display → pendingGlasses(n) + mutate agua; displayed = max(server, pending).
+  // El useEffect converge el optimismo cuando el refetch trae serverGlasses
+  // >= pendingGlasses; onError NO-409 revierte + toast, 409 revierte silencioso.
+  const [pendingGlasses, setPendingGlasses] = useState<number | null>(null)
+  const displayedGlasses = Math.max(serverGlasses, pendingGlasses ?? 0)
+  useEffect(() => {
+    if (pendingGlasses != null && pendingGlasses <= serverGlasses) {
+      setPendingGlasses(null)
+    }
+  }, [pendingGlasses, serverGlasses])
+
+  // Semana (server): KPIs reales de adherencia nutricional con tendencia.
+  const hs = scores?.health_score ?? scores?.healthScore
+  const weekNutrition = hs?.dimensions?.nutrition ?? null
+  const weekPrevious = hs?.dimensions_previous?.nutrition ?? null
+  const weekTrend = deriveTrend(weekNutrition, weekPrevious)
+  const weekTrendColor =
+    weekTrend === 'up' ? 'var(--teal)' : weekTrend === 'down' ? 'var(--org)' : 'var(--mu)'
+
+  // Historial (server): serie de peso real + subtítulos bmi/hba1c por fecha.
+  const weightSeries = metricsHistory?.metrics.find((m) => m.code.toLowerCase() === 'weight')
+  const bmiSeries = metricsHistory?.metrics.find((m) => m.code.toLowerCase() === 'bmi')
+  const hba1cSeries = metricsHistory?.metrics.find((m) => m.code.toLowerCase() === 'hba1c')
+  const weightUnit = weightSeries?.unit ?? 'kg'
+  const weightTarget = useMemo(
+    () => formatMetricTarget(weightSeries?.target ?? null, weightUnit, 1, locale),
+    [weightSeries, weightUnit, locale],
+  )
+  const bmiByDate = useMemo(
+    () => new Map((bmiSeries?.points ?? []).map((p) => [p.date, p.value])),
+    [bmiSeries],
+  )
+  const hba1cByDate = useMemo(
+    () => new Map((hba1cSeries?.points ?? []).map((p) => [p.date, p.value])),
+    [hba1cSeries],
+  )
+  const hba1cUnit = hba1cSeries?.unit ?? '%'
 
   // Metas del plan por código de comida (D4 vía mealTypeToCode): alimentan el
   // prefill del modal de registro. Sin plan → mapa vacío → formulario en blanco.
@@ -142,7 +163,15 @@ export function NutritionPage() {
   // cache) — agua excluida (hidratación nunca cuenta como comida del plan).
   const loggedSet = useMemo(() => new Set(deriveLoggedMeals(snapshot)), [snapshot])
 
-  const displayMeals = useMemo(() => {
+  interface DisplayMeal {
+    id: string
+    emoji: string
+    title: string
+    kcal: number | null
+    items: string[][]
+  }
+
+  const displayMeals = useMemo<DisplayMeal[]>(() => {
     if (nutContent?.nutritionMeals && nutContent.nutritionMeals.length > 0) {
       return nutContent.nutritionMeals.map((m) => {
         // B3: el id se deriva del mapa canónico mealTypeToCode (D4) — Snack →
@@ -162,8 +191,53 @@ export function NutritionPage() {
         }
       })
     }
-    return defaultMeals
-  }, [nutContent, t])
+    // Con snapshot pero sin comidas del plan: tarjetas estructurales honestas
+    // (4 slots con MEAL_LABELS) — sin tiempos, kcal ni alimentos falsos.
+    return (['des', 'alm', 'mer', 'cen'] as MealCode[]).map((code) => ({
+      id: code,
+      emoji: MEAL_CODE_EMOJI[code],
+      title: MEAL_LABELS[code],
+      kcal: null,
+      items: [],
+    }))
+  }, [nutContent])
+
+  // Filas del tab Plan/indicaciones (server): targets REALES del content,
+  // solo las filas cuyo target exista (sin sodio/azúcar/agua fabricados).
+  const planRows = useMemo(() => {
+    const rows: { emoji: string; label: string; value: string }[] = []
+    if (serverTargets.calories != null) {
+      rows.push({ emoji: '🔥', label: 'Calorías diarias', value: `${formatMetricValue(serverTargets.calories, 0, locale)} kcal` })
+    }
+    if (serverTargets.carbsG != null) {
+      rows.push({ emoji: '🍚', label: 'Carbohidratos', value: `${formatMetricValue(serverTargets.carbsG, 0, locale)}g` })
+    }
+    if (serverTargets.proteinG != null) {
+      rows.push({ emoji: '🥩', label: 'Proteínas', value: `${formatMetricValue(serverTargets.proteinG, 0, locale)}g` })
+    }
+    if (serverTargets.fatG != null) {
+      rows.push({ emoji: '🥑', label: 'Grasas', value: `${formatMetricValue(serverTargets.fatG, 0, locale)}g` })
+    }
+    if (serverTargets.fiberG != null) {
+      rows.push({ emoji: '🥦', label: 'Fibra', value: `${formatMetricValue(serverTargets.fiberG, 0, locale)}g` })
+    }
+    return rows
+  }, [serverTargets, locale])
+
+  // kcal-strip (server): anillo = kcal reales derivadas; ratio vs target real
+  // (clamp 0..1); sin target → suma sin denominador. Barras de macros solo
+  // con target real, progreso = real/target clamp 0..1 (sin % fijos).
+  const kcalRatio =
+    serverTargets.calories != null && serverTargets.calories > 0
+      ? Math.min(1, Math.max(0, intakeTotals.calories / serverTargets.calories))
+      : null
+  const ringOffset = kcalRatio != null ? 239 * (1 - kcalRatio) : 239
+  const macroBars = [
+    { key: 'Carbohidratos', value: intakeTotals.carbsG, target: serverTargets.carbsG, color: '#1B6CA8' },
+    { key: 'Proteínas', value: intakeTotals.proteinG, target: serverTargets.proteinG, color: '#1D9E75' },
+    { key: 'Grasas', value: intakeTotals.fatG, target: serverTargets.fatG, color: '#E87B2B' },
+    { key: 'Fibra', value: intakeTotals.fiberG, target: serverTargets.fiberG, color: '#7C3AED' },
+  ].filter((b) => b.target != null && b.target > 0)
 
   type AnalysisState = 'idle' | 'camera' | 'analyzing' | 'success' | 'error'
   const [analysis, setAnalysis] = useState<AnalysisState>('idle')
@@ -218,13 +292,12 @@ export function NutritionPage() {
     setRegisterTarget(id)
   }
 
-  // Guarda el registro manual (source manual). Sin snapshot (demo) se conserva
-  // el doble write del AppContext como fallback; con snapshot solo la API.
+  // Guarda el registro manual (source manual). Solo API — sin fallback demo.
   // B7: el toast de éxito solo se muestra en onSuccess; errores de negocio
   // (p.ej. 400 intake inválido) se muestran con el mensaje del servidor y el
   // formulario queda abierto para corregir; 409 → silencioso (keep-state).
   const submitRegister = () => {
-    if (!registerTarget) return
+    if (!canMutate || !registerTarget) return
     const num = (s: string): number | undefined => {
       if (s.trim() === '') return undefined
       const value = Number(s)
@@ -238,7 +311,6 @@ export function NutritionPage() {
       fiberG: num(intakeForm.fiberG),
       source: 'manual',
     }
-    if (!snapshot) logMeal(registerTarget)
     nutritionMutation.mutate(
       { mealCode: registerTarget, intake },
       {
@@ -272,6 +344,7 @@ export function NutritionPage() {
   // + analysisId (reemplaza el descarte anterior) y los macros del summary.
   // B7: mismo contrato de toasts que submitRegister.
   const logAnalysis = (id: MealCode) => {
+    if (!canMutate) return
     const summary = result?.summary
     const intake: NutritionIntakePayload = summary
       ? {
@@ -284,7 +357,6 @@ export function NutritionPage() {
           foodAnalysisId: result?.analysisId,
         }
       : { source: 'ai_photo', foodAnalysisId: result?.analysisId }
-    if (!snapshot) logMeal(id)
     nutritionMutation.mutate(
       { mealCode: id, intake },
       {
@@ -316,22 +388,72 @@ export function NutritionPage() {
   // vaso) y actualiza el contador optimista. Error-surfacing B7 (residual del
   // re-gate Batch 1): 409 silencioso (ya logueado), resto → toast err con el
   // mensaje del servidor.
+  // Optimismo local `pendingGlasses` POR ENCIMA de la verdad server-side
+  // (displayed = max(serverGlasses, pending)); el useEffect de convergencia lo
+  // limpia cuando el refetch trae serverGlasses >= pending. Nota wire
+  // (09/2026): repetir AGUA el mismo día ya NO devuelve 409 — el backend hace
+  // upsert acumulativo (200, xp 0) dejando el waterMl MAYOR; el guard
+  // `n <= displayedGlasses` evita que un tap repetido con valor menor rompa
+  // displayed y el refetch reconcilia el upsert. Los 409 de comidas siguen igual.
   const tapGlass = (n: number) => {
-    setHydration(n)
-    if (n > hydration) {
-      nutritionMutation.mutate(
-        {
-          mealCode: 'agua',
-          intake: buildHydrationIntake(n),
+    if (!canMutate || n <= displayedGlasses) return
+    setPendingGlasses(n)
+    nutritionMutation.mutate(
+      {
+        mealCode: 'agua',
+        intake: buildHydrationIntake(n),
+      },
+      {
+        onError: (error) => {
+          // 409 → silencioso (el log ya existe server-side): el refetch
+          // reconciliará; el optimismo se descarta igual.
+          if (error instanceof ApiError && error.status === 409) {
+            setPendingGlasses(null)
+            return
+          }
+          setPendingGlasses(null)
+          showToast(error.message || t('No se pudo registrar la comida'), 'err')
         },
-        {
-          onError: (error) => {
-            if (error instanceof ApiError && error.status === 409) return
-            showToast(error.message || t('No se pudo registrar la comida'), 'err')
-          },
-        },
-      )
-    }
+      },
+    )
+  }
+
+  // ── Estados sin verdad del servidor (de-mock) ──
+  // Carga inicial: placeholder de IonSpinner centrado, sin contenido.
+  if (!snapshot && isLoading) {
+    return (
+      <Screen>
+        <PageHeader title={t('Nutrición')} />
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
+          <IonSpinner name="crescent" style={{ width: 34, height: 34 }} />
+        </div>
+      </Screen>
+    )
+  }
+  // Sin snapshot en estado terminal (paused/withdrawn/no-template/
+  // recoverable): contenido honesto mínimo — encabezado + tarjeta vacía.
+  // productMessage (crudo, como en ProgramPage) aporta el contexto del
+  // estado; el fallback mock del hook es NO-null con todayTasks vacío y cae
+  // en el render normal con estados vacíos derivados (nunca fabricación).
+  if (!snapshot) {
+    return (
+      <Screen>
+        <PageHeader title={t('Nutrición')} sub={t('Sin plan nutricional asignado')} />
+        <div className="card" style={{ margin: '10px 14px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 26 }}>🥗</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{t('Sin programa activo')}</div>
+              {productMessage && (
+                <div style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.5, marginTop: 4 }}>
+                  {productMessage}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Screen>
+    )
   }
 
   return (
@@ -452,30 +574,39 @@ export function NutritionPage() {
         <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
           <svg width="92" height="92" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
             <circle cx="50" cy="50" r="38" fill="none" stroke="#E8EEF4" strokeWidth="10" />
-            <circle cx="50" cy="50" r="38" fill="none" stroke="#1D9E75" strokeWidth="10" strokeDasharray="239" strokeDashoffset="36" strokeLinecap="round" />
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#1D9E75" strokeWidth="10" strokeDasharray="239" strokeDashoffset={ringOffset} strokeLinecap="round" />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div className="display" style={{ fontSize: 16, fontWeight: 800 }}>1,650</div>
-            <div style={{ fontSize: 9, color: 'var(--mu)' }}>/{calorieTarget}</div>
+            <div className="display" style={{ fontSize: 16, fontWeight: 800 }}>
+              {formatMetricValue(intakeTotals.calories, 0, locale)}
+            </div>
+            {kcalRatio != null && (
+              <div style={{ fontSize: 9, color: 'var(--mu)' }}>
+                /{formatMetricValue(serverTargets.calories as number, 0, locale)}
+              </div>
+            )}
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          {[
-            ['Carbohidratos', carbsTarget, 75, '#1B6CA8'],
-            ['Proteínas', proteinTarget, 88, '#1D9E75'],
-            ['Grasas', fatTarget, 60, '#E87B2B'],
-            ['Fibra', fiberTarget, 80, '#7C3AED'],
-          ].map(([n, v, w, c]) => (
-            <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: 10, color: 'var(--mu)', width: 78 }}>{t(String(n))}</span>
-              <IonProgressBar
-                className="pb"
-                style={{ flex: 1, '--progress-background': String(c) } as CSSProperties}
-                value={Number(w) / 100}
-              />
-              <span style={{ fontSize: 11, fontWeight: 700, width: 36, textAlign: 'right' }}>{v}</span>
+          {macroBars.length > 0 ? (
+            macroBars.map((b) => (
+              <div key={b.key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 10, color: 'var(--mu)', width: 78 }}>{t(b.key)}</span>
+                <IonProgressBar
+                  className="pb"
+                  style={{ flex: 1, '--progress-background': b.color } as CSSProperties}
+                  value={Math.min(1, Math.max(0, b.value / (b.target as number)))}
+                />
+                <span style={{ fontSize: 11, fontWeight: 700, width: 36, textAlign: 'right' }}>
+                  {Math.round(b.value)}g
+                </span>
+              </div>
+            ))
+          ) : (
+            <div style={{ fontSize: 11, color: 'var(--mu)', lineHeight: 1.5, paddingTop: 4 }}>
+              {t('Registra tus comidas para ver tu progreso')}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
@@ -494,10 +625,12 @@ export function NutritionPage() {
         {tab === 'hoy' && (
           <>
             <div className="card" style={{ margin: '10px 14px', background: 'var(--blue-l)', borderColor: '#B5D4F4' }}>
-              <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 10, fontSize: 13 }}>{t('💧 Hidratación · 8 vasos (2L)')}</div>
+              <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 10, fontSize: 13 }}>
+                {t('💧 Hidratación · {glasses} vasos · meta 8 vasos (2L)', { glasses: String(displayedGlasses) })}
+              </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <button key={i} className={`hyd-glass ${i < hydration ? 'full' : ''}`} onClick={() => tapGlass(i + 1)}>
+                  <button key={i} className={`hyd-glass ${i < displayedGlasses ? 'full' : ''}`} disabled={!canMutate} onClick={() => tapGlass(i + 1)}>
                     🥛
                   </button>
                 ))}
@@ -508,29 +641,40 @@ export function NutritionPage() {
                 <div className="meal-hdr">
                   <span>{m.emoji}</span>
                   <span style={{ flex: 1, fontWeight: 700 }}>{t(m.title)}</span>
-                  <span style={{ opacity: 0.75, fontSize: 12 }}>{m.kcal} kcal</span>
+                  {m.kcal != null && <span style={{ opacity: 0.75, fontSize: 12 }}>{m.kcal} kcal</span>}
                 </div>
-                {m.items.map((it) => (
-                  <div key={it[1]} className="food-item">
-                    <span>{it[0]}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{t(it[1])}</div>
-                      <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t(it[2])}</div>
+                {m.items.length > 0 ? (
+                  m.items.map((it) => (
+                    <div key={it[1]} className="food-item">
+                      <span>{it[0]}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{t(it[1])}</div>
+                        <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t(it[2])}</div>
+                      </div>
+                      <div>
+                        {it[3] && <span className="fm fm-c">{it[3]}</span>}
+                        {it[4] && <span className="fm fm-p">{it[4]}</span>}
+                        {it[5] && <span className="fm fm-g">{it[5]}</span>}
+                      </div>
                     </div>
-                    <div>
-                      {it[3] && <span className="fm fm-c">{it[3]}</span>}
-                      {it[4] && <span className="fm fm-p">{it[4]}</span>}
-                      {it[5] && <span className="fm fm-g">{it[5]}</span>}
-                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: 12, fontSize: 12, color: 'var(--mu)' }}>
+                    {t('Sin comidas del plan para este momento')}
                   </div>
-                ))}
+                )}
                 {loggedSet.has(m.id) ? (
                   <div style={{ margin: 12, background: 'var(--teal-l)', borderRadius: 12, padding: 12, color: '#0F6E56', fontWeight: 700, fontSize: 13 }}>
-                    {t('✓ Registrado con foto · IA 92% adherencia')}
+                    {mealSources.get(m.id as MealCode) === 'ai_photo'
+                      ? t('✓ Registrado con foto · análisis IA')
+                      : mealSources.get(m.id as MealCode) === 'manual'
+                        ? t('✓ Registrado manualmente')
+                        : t('✓ Registrado')}
                   </div>
                 ) : (
                   <button
                     onClick={() => openRegister(m.id as MealCode)}
+                    disabled={!canMutate}
                     style={{
                       margin: 12,
                       width: 'calc(100% - 24px)',
@@ -561,82 +705,105 @@ export function NutritionPage() {
           <div style={{ padding: '12px 0' }}>
             <div className="card" style={{ margin: '0 14px 12px' }}>
               <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('📊 Adherencia semanal')}</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90 }}>
-                {week.map(([d, h, c]) => (
-                  <div key={String(d)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700 }}>{h}%</span>
-                    <div style={{ width: '100%', height: Number(h) * 0.7, background: String(c), borderRadius: '4px 4px 0 0' }} />
-                    <span style={{ fontSize: 10, color: 'var(--mu)' }}>{t(String(d))}</span>
+              {weekNutrition == null ? (
+                scoresLoading ? null : (
+                  <div style={{ fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                    {t('Sin datos de adherencia esta semana todavía')}
                   </div>
-                ))}
-              </div>
-            </div>
-            {[
-              ['04/08/2026', '1,720 kcal · 96%', 0],
-              ['05/08/2026 · HOY', '1,650 kcal · 88%', 1],
-              ['06/08/2026', 'Plan 1,760 kcal', 2],
-            ].map(([n, k, i]) => (
-              <button
-                key={String(n)}
-                className="card"
-                style={{ margin: '0 14px 8px', textAlign: 'left' }}
-                onClick={() => setOpenDay(Number(i))}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                  {n}
-                  <span className="chip chip-teal">{k}</span>
+                )
+              ) : (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1, background: 'var(--blue-l)', borderRadius: 12, padding: 12 }}>
+                    <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Esta semana')}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--blue)' }}>
+                      {formatMetricValue(weekNutrition, 0, locale)}%
+                      {weekPrevious != null && (
+                        <span style={{ fontSize: 16, marginLeft: 6, color: weekTrendColor }}>
+                          {weekTrend === 'up' ? '↑' : weekTrend === 'down' ? '↓' : '—'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {weekPrevious != null && (
+                    <div style={{ flex: 1, background: 'var(--g0)', borderRadius: 12, padding: 12 }}>
+                      <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Semana anterior')}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800 }}>
+                        {formatMetricValue(weekPrevious, 0, locale)}%
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {openDay === i && (
-                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--mu)', lineHeight: 1.7 }}>
-                    {t('Desayuno · Almuerzo · Merienda · Cena según plan mediterráneo.')}
-                  </div>
-                )}
-              </button>
-            ))}
+              )}
+            </div>
           </div>
         )}
 
         {tab === 'indicaciones' && (
           <div className="card" style={{ margin: 14 }}>
-            {[
-              ['🔥', 'Calorías diarias', '1,800 kcal'],
-              ['🍚', 'Carbohidratos', '≤ 200g/día'],
-              ['🥩', 'Proteínas', '≥ 90g/día'],
-              ['🧂', 'Sodio (AHA)', '≤ 2,300mg'],
-              ['🍬', 'Azúcar añadida', '≤ 25g/día'],
-              ['💧', 'Agua (USDA)', '≥ 2L/día'],
-            ].map(([e, n, v]) => (
-              <div key={String(n)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--g1)' }}>
-                <span>{e}</span>
-                <span style={{ flex: 1, fontWeight: 600 }}>{t(String(n))}</span>
-                <span style={{ fontWeight: 800, color: 'var(--teal)' }}>{t(String(v))}</span>
+            {planRows.length > 0 ? (
+              planRows.map((row) => (
+                <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--g1)' }}>
+                  <span>{row.emoji}</span>
+                  <span style={{ flex: 1, fontWeight: 600 }}>{t(row.label)}</span>
+                  <span style={{ fontWeight: 800, color: 'var(--teal)' }}>{row.value}</span>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '6px 0', fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                {t('Sin plan nutricional asignado')}
               </div>
-            ))}
+            )}
           </div>
         )}
 
         {tab === 'historial' && (
           <div className="card" style={{ margin: 14, padding: 0 }}>
             <div style={{ background: 'var(--navy)', color: '#fff', padding: 12, fontWeight: 700 }}>{t('📉 Evolución de peso')}</div>
-            {[
-              ['1 may', '71.7 kg', 'IMC 27.6 · Inicio', ''],
-              ['01/06/2026', '70.2 kg', 'IMC 27.0', '↓ 1.5 kg'],
-              ['05/08/2026', '68.5 kg', 'IMC 26.4 · HbA1c 5.9%', '↓ 0.8 kg'],
-            ].map(([d, k, s, ch]) => (
-              <div key={d} style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid var(--g1)', alignItems: 'center' }}>
-                <div style={{ width: 48, fontSize: 11, color: 'var(--mu)' }}>{d}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800 }}>{k}</div>
-                  <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t(String(s))}</div>
+            {weightSeries && weightSeries.points.length > 0 ? (
+              <>
+                {[...weightSeries.points].reverse().map((row, i) => {
+                  const prev = weightSeries.points[weightSeries.points.length - 2 - i]
+                  const delta = prev ? row.value - prev.value : 0
+                  const bmiVal = bmiByDate.get(row.date)
+                  const hba1cVal = hba1cByDate.get(row.date)
+                  const subtitle = [
+                    bmiVal != null ? `IMC ${formatMetricValue(bmiVal, 1, locale)}` : '',
+                    hba1cVal != null ? `HbA1c ${formatMetricValue(hba1cVal, 1, locale)} ${hba1cUnit}` : '',
+                  ].filter(Boolean).join(' · ')
+                  return (
+                    <div key={`${row.date}-${i}`} style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid var(--g1)', alignItems: 'center' }}>
+                      <div style={{ width: 48, fontSize: 11, color: 'var(--mu)' }}>{formatDateForDisplay(row.date)}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 800 }}>
+                          {formatMetricValue(row.value, 1, locale)} {weightUnit}
+                        </div>
+                        {subtitle && <div style={{ fontSize: 11, color: 'var(--mu)' }}>{subtitle}</div>}
+                      </div>
+                      {prev ? (
+                        <span style={{ color: delta < 0 ? 'var(--teal)' : delta > 0 ? 'var(--org)' : 'var(--mu)', fontWeight: 700, fontSize: 12 }}>
+                          {delta < 0 ? '↓' : delta > 0 ? '↑' : '—'}{' '}
+                          {delta !== 0 ? `${formatMetricValue(Math.abs(delta), 1, locale)} ${weightUnit}` : ''}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--mu)', fontSize: 12 }}>{t('Inicio')}</span>
+                      )}
+                    </div>
+                  )
+                })}
+                {weightTarget && (
+                  <div style={{ padding: 12, background: '#F8FBF8' }}>
+                    <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Meta')}</div>
+                    <div style={{ fontWeight: 800 }}>{weightTarget}</div>
+                  </div>
+                )}
+              </>
+            ) : (
+              metricsLoading ? null : (
+                <div style={{ padding: 16, fontSize: 13, color: 'var(--mu)', lineHeight: 1.6 }}>
+                  {t('Aún no hay mediciones registradas')}
                 </div>
-                <span style={{ color: 'var(--teal)', fontWeight: 700, fontSize: 12 }}>{ch}</span>
-              </div>
-            ))}
-            <div style={{ padding: 12, background: '#F8FBF8' }}>
-              <div style={{ fontSize: 11, color: 'var(--mu)' }}>{t('Meta semana 24')}</div>
-              <div style={{ fontWeight: 800 }}>{t('65 kg · IMC≤25 · HbA1c<5.7%')}</div>
-              <IonProgressBar className="pb" style={{ marginTop: 8, '--progress-background': 'var(--teal)' } as CSSProperties} value={0.5} />
-            </div>
+              )
+            )}
           </div>
         )}
       </Scroll>
@@ -713,7 +880,7 @@ export function NutritionPage() {
 }
 
 function FoodResultCard({ food }: { food: DetectedFood }) {
-  const t = useT()
+  const { t } = useI18n()
   const name = displayName(food.name)
   const emoji = FOOD_EMOJI[food.name] ?? '🍽️'
   const available = food.nutritionStatus === 'available' && food.nutrition

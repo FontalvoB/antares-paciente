@@ -1444,6 +1444,23 @@ ion-button.onb-back-login {
   border-bottom-left-radius: 4px;
 }
 
+/* CTA de sugerencia dentro del bubble del bot (ej. agendar cita) */
+ion-button.cta-button {
+  --background: var(--blue-l);
+  --color: var(--blue);
+  --border-color: #b5d4f4;
+  --border-width: 1px;
+  --border-style: solid;
+  height: 36px;
+  min-height: 36px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+ion-button.cta-button:active {
+  transform: scale(0.98);
+}
+
 .qrchip {
   white-space: nowrap;
   background: var(--blue-l);
@@ -2788,6 +2805,24 @@ button.hpill:active {
   background: var(--pur-l);
   color: var(--pur-d);
 }
+/* Estado honesto de lección sin contenido del servidor (nada fabricado). */
+.lsn-unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: var(--g0);
+  text-align: center;
+}
+.lsn-unavailable p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--mu);
+}
 .lsn-tips {
   background: var(--g0);
   color: var(--tx);
@@ -2805,6 +2840,11 @@ button.hpill:active {
   font-size: 11px;
   font-weight: 700;
   color: var(--mu);
+}
+/* W1: sin Audio del servidor aún, los chips de capítulo no son accionables. */
+.lsn-chip:disabled {
+  opacity: 0.45;
+  pointer-events: none;
 }
 .lsn-chip.on {
   border-color: var(--pur);
@@ -9856,6 +9896,23 @@ ion-modal.metric-modal ion-content {
 .mh-sheet {
   padding: 8px 16px 28px;
 }
+.mh-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 14px 14px;
+  border-radius: 14px;
+  background: var(--g0);
+  color: var(--mu);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.mh-empty ion-icon {
+  flex: 0 0 auto;
+  color: var(--blue);
+}
 .mh-head {
   display: flex;
   align-items: flex-start;
@@ -16087,6 +16144,36 @@ ion-button.cta-pill.button-disabled {
   margin-top: 1px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.72);
+}
+
+.hm-metric-unit {
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Nota de tendencia honesta (delta real de la serie) o estado requires-data. */
+.hm-metric-sub {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hm-metric-rd {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* S4: skeleton honesto de tarjeta de métrica mientras su fuente carga. */
+.hm-metric-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 5px;
+}
+.hm-metric:disabled {
+  opacity: 0.85;
 }
 
 .hm-metric-bar {

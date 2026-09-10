@@ -142,6 +142,37 @@ describe('useNutritionLog', () => {
     expect(enqueueMock).not.toHaveBeenCalled()
   })
 
+  it('otro 4xx → revierte el marcador optimista (el server rechazó el log)', async () => {
+    const client = newClient()
+    const snapshot = makeSnapshot()
+    client.setQueryData(programKeys.snapshot, snapshot)
+
+    logMealMock.mockRejectedValue(
+      new ApiError({
+        message: 'VALIDATION: payload inválido.',
+        status: 400,
+        code: 'VALIDATION',
+        errorType: 'business',
+      }),
+    )
+
+    const { result } = renderHook(() => useNutritionLog(), {
+      wrapper: makeWrapper(client),
+    })
+
+    await act(async () => {
+      result.current.mutate({ mealCode: 'cen' })
+      await vi.waitFor(() => expect(result.current.isError).toBe(true))
+    })
+
+    // El checkmark NO debe mentir: el server no lo persistió → fuera del marker.
+    const cached = client.getQueryData<ProgramSnapshotDto & { todayNutritionLogged?: string[] }>(
+      programKeys.snapshot,
+    )
+    expect(cached?.todayNutritionLogged ?? []).not.toContain('cen')
+    expect(enqueueMock).not.toHaveBeenCalled()
+  })
+
   it('transport error → enqueues offline replay with intake fields verbatim', async () => {
     const client = newClient()
     const snapshot = makeSnapshot()

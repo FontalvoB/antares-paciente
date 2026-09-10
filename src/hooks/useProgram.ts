@@ -49,6 +49,8 @@ export interface UseProgramResult {
   isLoading: boolean
   /** True when the query ended in an error we did not absorb into a fallback. */
   isError: boolean
+  /** True when `snapshot` is the R5.2 mock fallback (transport failed, no cache) — NOT server truth. Consumers must not treat it as real data (no mutations against it). */
+  isMockFallback: boolean
   /** The underlying ApiError, if any (null otherwise). */
   error: ApiError | null
   /** Human-facing product message for non-active states (already R4/R5 safe, never the raw server detail). */
@@ -209,6 +211,10 @@ export function useProgram(): UseProgramResult {
 
   const { data, isLoading, isError, error, refetch } = query
 
+  // R5.2: el fallback mock se activa exactamente cuando el error es elegible
+  // (transport/5xx sin cache) — mismo predicado que la rama del useMemo.
+  const isMockFallback = !!error && isEligibleFallbackError(error)
+
   // Midnight rollover (R7.1): when the app comes back to the foreground and the
   // device's local date no longer matches the snapshot's server `today`,
   // refetch so the day's tasks roll over. No polling: the check runs only on
@@ -331,6 +337,7 @@ export function useProgram(): UseProgramResult {
     isEnrolling,
     isLoading,
     isError,
+    isMockFallback,
     error,
     productMessage,
     refetch,
