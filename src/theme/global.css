@@ -18741,3 +18741,148 @@ ion-button.nut-cta {
 .nut-reg ion-input {
   margin-bottom: 8px;
 }
+
+/* Captura de comida (CameraCapture): visor + guía de encuadre + estados. */
+.nut-cam {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nut-cam-busy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  font-size: 13px;
+  color: var(--mu);
+}
+
+.nut-cam-view {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--cosmos);
+}
+
+.nut-cam-view video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.nut-cam-guide span {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--wh);
+  opacity: 0.9;
+}
+
+.nut-cam-guide .tl {
+  top: 14px;
+  left: 14px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 10px 0 0 0;
+}
+.nut-cam-guide .tr {
+  top: 14px;
+  right: 14px;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 10px 0 0;
+}
+.nut-cam-guide .bl {
+  bottom: 14px;
+  left: 14px;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 10px;
+}
+.nut-cam-guide .br {
+  bottom: 14px;
+  right: 14px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 10px 0;
+}
+
+.nut-cam-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 28px 20px;
+  border: 1.5px dashed var(--bd);
+  border-radius: 16px;
+  background: var(--g1);
+}
+
+.nut-cam-idle ion-icon {
+  font-size: 44px;
+  color: var(--ice);
+}
+
+.nut-cam-idle strong {
+  font-size: 15px;
+  color: var(--navy);
+}
+
+.nut-cam-idle small {
+  font-size: 13px;
+  color: var(--mu);
+}
+
+.nut-cam-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--org-l);
+  border: 1.5px solid #f2c79b;
+  font-size: 13px;
+  color: var(--org);
+}
+
+.nut-cam-error span {
+  flex: 1;
+}
+
+.nut-cam-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Resultado del análisis (nut-ai-result): columna centrada, tarjeta de
+ * error con icono y botones apilados a ancho completo. */
+.nut-ai-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nut-ai-result .nut-ai-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  margin: 2px 0 4px;
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: var(--org-l);
+  border: 1.5px solid #f2c79b;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--org);
+}
+
+.nut-ai-result .nut-ai-error ion-icon {
+  font-size: 38px;
+}
