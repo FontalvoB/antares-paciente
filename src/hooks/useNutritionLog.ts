@@ -12,6 +12,8 @@
  *   - onSettled → invalidate snapshot + scores ONLY when XP could change
  *     (success path); on 409/transport we skip invalidation so the optimistic
  *     marker (or queued state) survives until reconnect/replay reconciles.
+ *     Cualquier OTRO 4xx revierte el marcador optimista en `onError` (el server
+ *     rechazó el log — el checkmark no debe mentir).
  *
  * Optimism model: we mark the meal as logged immediately via an additive client
  * cache field and add XP only after the server confirms (onSuccess). Because no
@@ -137,8 +139,19 @@ export function useNutritionLog() {
           clientRequestId: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
         })
+        return
       }
-      // Any other 4xx: per R5.6 do NOT enqueue; the UI surfaces it by code.
+      // Any other 4xx: per R5.6 do NOT enqueue AND revert the optimistic
+      // marker — el server rechazó el log, así que el checkmark no debe
+      // sobrevivir (misma honestidad que el rollback de useCompleteTask;
+      // onSettled no invalida en error, por eso se revierte acá).
+      queryClient.setQueryData<CachedSnapshot>(programKeys.snapshot, (old) => {
+        if (!old?.todayNutritionLogged) return old
+        return {
+          ...old,
+          todayNutritionLogged: old.todayNutritionLogged.filter((m) => m !== vars.mealCode),
+        }
+      })
     },
 
     onSuccess: (data, vars) => {

@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { IonAlert, IonButton, IonModal } from "@ionic/react";
 import { PageHeader } from "../components/PageHeader";
 import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard";
@@ -17,10 +17,20 @@ export function AppointmentsPage() {
     appointmentsError,
     cancelAppointmentById,
     openRoom,
+    bookingWizardAutoOpen,
+    clearBookingWizardAutoOpen,
   } = useApp();
   const t = useT();
   const [requestOpen, setRequestOpen] = useState(false);
   const [cancelId, setCancelId] = useState<string | null>(null);
+
+  // Auto-apertura del wizard cuando el CTA del chat lo pide (flag one-shot
+  // seteado por openBookingWizard antes de navegar a esta pantalla).
+  useEffect(() => {
+    if (!bookingWizardAutoOpen) return;
+    setRequestOpen(true);
+    clearBookingWizardAutoOpen();
+  }, [bookingWizardAutoOpen, clearBookingWizardAutoOpen]);
 
   // Modo real (sesión JWT): datos del backend. Demo: mock actual intacto.
   const upcoming = realMode ? (upcomingAppointments ?? []) : INITIAL_UPCOMING;

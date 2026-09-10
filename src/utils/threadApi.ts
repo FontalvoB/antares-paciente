@@ -1,5 +1,6 @@
 import { getAccessToken } from './authApi'
 import { getApiBaseUrl } from './apiBaseUrl'
+import type { ChatSuggestion } from '../types'
 
 /** Resumen del historial de un thread devuelto por el backend .NET (proxy → AI Service). */
 export interface ThreadState {
@@ -36,6 +37,8 @@ export interface ChatResult {
   threadId: string
   executionId?: string
   agent?: string
+  /** Sugerencias de acción del bot (v1: appointment CTA). Ausente = sin sugerencia. */
+  suggestions?: ChatSuggestion[] | null
 }
 
 /**
@@ -70,3 +73,66 @@ export async function sendChatMessage(message: string, threadId: string): Promis
 
   return (await res.json()) as ChatResult
 }
+
+export interface LabExamUploadResult {
+  batchId: string
+  summary: string
+  measurementCount: number
+  detectedMetrics: string[]
+  storageKey?: string | null
+}
+
+/**
+ * Sube un archivo de examen de laboratorio (imagen o PDF) al backend .NET
+ * (POST /api/v1/lab-exams). El backend valida, comprime, almacena en S3,
+ * extrae métricas mediante el AI Service y persiste en clinical_measurements.
+ */
+export async function uploadLabExam(file: File, threadId?: string): Promise<LabExamUploadResult> {
+  const token = getAccessToken()
+  const formData = new FormData()
+  formData.append('file', file)
+  if (threadId) {
+    formData.append('threadId', threadId)
+  }
+
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/lab-exams`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: formData,
+  })
+
+  if (!res.ok) {
+    let errorMsg = `Error al procesar el examen (${res.status})`
+    try {
+      const data = (await res.json()) as Record<string, unknown>
+      if (data) {
+        if (typeof data.error === 'string') {
+          errorMsg = data.error
+        } else if (typeof data.error === 'object' && data.error !== null) {
+          const errObj = data.error as Record<string, unknown>
+          if (typeof errObj.message === 'string') {
+            errorMsg = errObj.message
+          }
+        } else if (typeof data.message === 'string') {
+          errorMsg = data.message
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    if (!errorMsg || errorMsg.startsWith('Error al procesar')) {
+      if (res.status === 422) {
+        errorMsg = 'El archivo no pudo ser procesado o excede el límite permitido.'
+      } else if (res.status === 502) {
+        errorMsg = 'El servicio de IA no pudo procesar el examen de laboratorio.'
+      } else if (res.status === 500) {
+        errorMsg = 'No fue posible procesar la solicitud.'
+      }
+    }
+
+    throw new Error(errorMsg)
+  }
+
+  return (await res.json()) as LabExamUploadResult
+}

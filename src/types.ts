@@ -41,6 +41,17 @@ export interface UserProfile {
   ciudad?: string;
 }
 
+/**
+ * Sugerencia de acción emitida por el backend en la respuesta de chat
+ * (camelCase, ASP.NET default). v1: solo "appointment".
+ */
+export interface ChatSuggestion {
+  type: string;
+  ctaText: string;
+  reason?: string | null;
+  urgency?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "bot" | "user" | "alert";
@@ -48,6 +59,8 @@ export interface ChatMessage {
   time: string;
   /** Thread estable al que pertenece el mensaje (proactive-<id>). */
   threadId?: string;
+  /** CTA adjunto al mensaje del bot (ej. sugerencia de agendar cita). */
+  cta?: ChatSuggestion | null;
 }
 
 export interface Appointment {
