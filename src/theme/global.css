@@ -2217,6 +2217,23 @@ ion-note.bp-note {
   border-bottom-left-radius: 4px;
 }
 
+/* CTA de sugerencia dentro del bubble del bot (ej. agendar cita) */
+ion-button.cta-button {
+  --background: var(--blue-l);
+  --color: var(--blue);
+  --border-color: #b5d4f4;
+  --border-width: 1px;
+  --border-style: solid;
+  height: 36px;
+  min-height: 36px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+ion-button.cta-button:active {
+  transform: scale(0.98);
+}
+
 .qrchip {
   white-space: nowrap;
   background: var(--blue-l);
@@ -3561,6 +3578,24 @@ button.hpill:active {
   background: var(--pur-l);
   color: var(--pur-d);
 }
+/* Estado honesto de lección sin contenido del servidor (nada fabricado). */
+.lsn-unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: var(--g0);
+  text-align: center;
+}
+.lsn-unavailable p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--mu);
+}
 .lsn-tips {
   background: var(--g0);
   color: var(--tx);
@@ -3578,6 +3613,11 @@ button.hpill:active {
   font-size: 11px;
   font-weight: 700;
   color: var(--mu);
+}
+/* W1: sin Audio del servidor aún, los chips de capítulo no son accionables. */
+.lsn-chip:disabled {
+  opacity: 0.45;
+  pointer-events: none;
 }
 .lsn-chip.on {
   border-color: var(--pur);
@@ -10644,6 +10684,23 @@ ion-modal.metric-modal ion-content {
 .mh-sheet {
   padding: 8px 16px 28px;
 }
+.mh-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 14px 14px;
+  border-radius: 14px;
+  background: var(--g0);
+  color: var(--mu);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.mh-empty ion-icon {
+  flex: 0 0 auto;
+  color: var(--blue);
+}
 .mh-head {
   display: flex;
   align-items: flex-start;
@@ -16957,6 +17014,36 @@ ion-button.cta-pill.button-disabled {
   color: rgba(255, 255, 255, 0.72);
 }
 
+.hm-metric-unit {
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Nota de tendencia honesta (delta real de la serie) o estado requires-data. */
+.hm-metric-sub {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hm-metric-rd {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* S4: skeleton honesto de tarjeta de métrica mientras su fuente carga. */
+.hm-metric-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 5px;
+}
+.hm-metric:disabled {
+  opacity: 0.85;
+}
+
 .hm-metric-bar {
   display: block;
   height: 6px;
@@ -18761,6 +18848,151 @@ ion-button.nut-cta {
 
 .nut-reg ion-input {
   margin-bottom: 8px;
+}
+
+/* Captura de comida (CameraCapture): visor + guía de encuadre + estados. */
+.nut-cam {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nut-cam-busy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  font-size: 13px;
+  color: var(--mu);
+}
+
+.nut-cam-view {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--cosmos);
+}
+
+.nut-cam-view video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.nut-cam-guide span {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--wh);
+  opacity: 0.9;
+}
+
+.nut-cam-guide .tl {
+  top: 14px;
+  left: 14px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 10px 0 0 0;
+}
+.nut-cam-guide .tr {
+  top: 14px;
+  right: 14px;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 10px 0 0;
+}
+.nut-cam-guide .bl {
+  bottom: 14px;
+  left: 14px;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 10px;
+}
+.nut-cam-guide .br {
+  bottom: 14px;
+  right: 14px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 10px 0;
+}
+
+.nut-cam-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 28px 20px;
+  border: 1.5px dashed var(--bd);
+  border-radius: 16px;
+  background: var(--g1);
+}
+
+.nut-cam-idle ion-icon {
+  font-size: 44px;
+  color: var(--ice);
+}
+
+.nut-cam-idle strong {
+  font-size: 15px;
+  color: var(--navy);
+}
+
+.nut-cam-idle small {
+  font-size: 13px;
+  color: var(--mu);
+}
+
+.nut-cam-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--org-l);
+  border: 1.5px solid #f2c79b;
+  font-size: 13px;
+  color: var(--org);
+}
+
+.nut-cam-error span {
+  flex: 1;
+}
+
+.nut-cam-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Resultado del análisis (nut-ai-result): columna centrada, tarjeta de
+ * error con icono y botones apilados a ancho completo. */
+.nut-ai-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nut-ai-result .nut-ai-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  margin: 2px 0 4px;
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: var(--org-l);
+  border: 1.5px solid #f2c79b;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--org);
+}
+
+.nut-ai-result .nut-ai-error ion-icon {
+  font-size: 38px;
 }
 
 /* --- iPad / tablet: pantalla completa (sin simulador de teléfono) --- */

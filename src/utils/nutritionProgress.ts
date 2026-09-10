@@ -19,7 +19,11 @@ export function deriveLoggedMeals(snapshot: ProgramSnapshotDto | null | undefine
   const optimistic = (
     snapshot as ProgramSnapshotDto & { todayNutritionLogged?: string[] }
   ).todayNutritionLogged
-  if (optimistic && optimistic.length > 0) return optimistic
+  if (optimistic && optimistic.length > 0) {
+    // Mismo invariante que la rama server-truth: agua (hidratación) nunca
+    // cuenta como comida del plan — el marcador optimista también la excluye.
+    return optimistic.filter((m) => m !== 'agua')
+  }
 
   const nutContent = snapshot.todayTasks?.find((task) => task.taskCode === 'nut')?.content
   return (nutContent?.nutritionIntakeLogs ?? [])

@@ -59,4 +59,14 @@ describe('deriveLoggedMeals (S4 — server truth)', () => {
     } as ProgramSnapshotDto & { todayNutritionLogged?: string[] }
     expect(deriveLoggedMeals(snap)).toEqual(['des', 'alm'])
   })
+
+  it('la capa optimista también excluye agua (mismo invariante que server truth)', () => {
+    const snap = {
+      ...snapshotWith(nutTask({
+        nutritionIntakeLogs: [{ mealCode: 'des', localDate: '2026-08-24', calories: 300, proteinG: 15, carbsG: 30, fatG: 5, fiberG: 3, waterMl: null, source: 'manual', foodAnalysisId: null, createdAt: '2026-08-24T12:00:00Z' }],
+      })),
+      todayNutritionLogged: ['des', 'alm', 'agua'],
+    } as ProgramSnapshotDto & { todayNutritionLogged?: string[] }
+    expect(deriveLoggedMeals(snap)).toEqual(['des', 'alm'])
+  })
 })

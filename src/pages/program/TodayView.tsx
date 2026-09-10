@@ -102,6 +102,7 @@ export function TodayView({
           done: task.status === 'Completed' || Boolean(program[task.taskCode as ProgramTaskId]),
           tone: fallback?.tone ?? 'teal',
           icon: TASK_ICONS[task.taskCode as ProgramTaskId] ?? checkmark,
+          thumbnailUrl: task.content?.thumbnailUrl ?? null,
         }
       })
     }
@@ -113,6 +114,7 @@ export function TodayView({
       done: Boolean(program[pt.id]),
       tone: pt.tone,
       icon: TASK_ICONS[pt.id],
+      thumbnailUrl: null,
     }))
   }, [todayTasks, program])
 
@@ -242,7 +244,7 @@ export function TodayView({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.04 + i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
-              <img className="pcard-photo" src={MISSION_PHOTOS[task.id]} alt="" loading="lazy" />
+              <img className="pcard-photo" src={task.thumbnailUrl || MISSION_PHOTOS[task.id]} alt="" loading="lazy" />
               <span className={`pcard-flag tone-${task.tone}`}>
                 <IonIcon icon={done ? checkmark : task.icon} />
               </span>

@@ -118,8 +118,8 @@ export function BodyMap({
           defaultFill={FILL}
           defaultStroke={STROKE}
           defaultStrokeWidth={1.4}
-          onBodyPartPress={(part) => {
-            const id = part.slug ? REGION_SELECT[part.slug] : undefined
+          onBodyPartPress={(part: { slug?: string }) => {
+            const id = part.slug ? REGION_SELECT[part.slug as BodyRegion] : undefined
             if (id) onSelect(id)
           }}
         />
