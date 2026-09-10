@@ -119,4 +119,38 @@ describe('uploadLabExam', () => {
     const file = new File(['data'], 'exam.pdf', { type: 'application/pdf' })
     await expect(uploadLabExam(file)).rejects.toThrow('No fue posible procesar la solicitud.')
   })
+
+  it('appends the UI language to the multipart form data', async () => {
+    let capturedOptions: RequestInit | undefined
+    globalThis.fetch = vi.fn().mockImplementation(async (_url, options) => {
+      capturedOptions = options
+      return {
+        ok: true,
+        json: async () => ({ batchId: 'b1', summary: 'ok', measurementCount: 0, detectedMetrics: [] }),
+      } as Response
+    })
+
+    const file = new File(['dummy'], 'scan.png', { type: 'image/png' })
+    await uploadLabExam(file, 'thread-xyz', 'en')
+
+    const formData = capturedOptions?.body as FormData
+    expect(formData.get('language')).toBe('en')
+  })
+
+  it('defaults the language to es when omitted', async () => {
+    let capturedOptions: RequestInit | undefined
+    globalThis.fetch = vi.fn().mockImplementation(async (_url, options) => {
+      capturedOptions = options
+      return {
+        ok: true,
+        json: async () => ({ batchId: 'b1', summary: 'ok', measurementCount: 0, detectedMetrics: [] }),
+      } as Response
+    })
+
+    const file = new File(['dummy'], 'scan.png', { type: 'image/png' })
+    await uploadLabExam(file)
+
+    const formData = capturedOptions?.body as FormData
+    expect(formData.get('language')).toBe('es')
+  })
 })
