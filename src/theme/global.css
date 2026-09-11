@@ -1214,6 +1214,7 @@ ion-button.onb-back-login {
   display: grid;
   place-items: center;
   font-size: 22px;
+  position: relative;
   transition:
     background 0.18s var(--ease),
     color 0.18s var(--ease);
@@ -1226,6 +1227,22 @@ ion-button.onb-back-login {
 
 .ni.on .ni-ico::after {
   display: none;
+}
+
+/* Dot de mensajes sin leer en la tab Chat (esquina superior derecha del ícono). */
+.ni-dot {
+  position: absolute;
+  top: 1px;
+  right: 12px;
+  width: 9px;
+  height: 9px;
+  min-width: 9px;
+  padding: 0;
+  border-radius: 50%;
+  --background: var(--red);
+  --color: transparent;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95);
+  pointer-events: none;
 }
 
 .bnav-dark .ni {
