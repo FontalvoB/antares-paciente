@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente
+
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  16:27:04
+   Duration  3.75s (transform 173ms, setup 0ms, import 790ms, tests 918ms, environment 1.64s)
+

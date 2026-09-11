@@ -1,0 +1,527 @@
+[
+  {
+    "asset": "Hair_01_V8",
+    "state": "Basis",
+    "frame": 1,
+    "minGapMm": 0.43682958505542047,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Basis",
+    "frame": 1,
+    "minGapMm": -0.34186988705187105,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Basis",
+    "frame": 1,
+    "minGapMm": -1.6611645187367685,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Basis",
+    "frame": 91,
+    "minGapMm": 0.47857038885013026,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Basis",
+    "frame": 91,
+    "minGapMm": -0.3794323893089313,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Basis",
+    "frame": 91,
+    "minGapMm": -1.7686518549453467,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Basis",
+    "frame": 181,
+    "minGapMm": 0.46821347132208757,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Basis",
+    "frame": 181,
+    "minGapMm": -0.3302621371403802,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Basis",
+    "frame": 181,
+    "minGapMm": -1.6166698769666255,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Basis",
+    "frame": 271,
+    "minGapMm": 0.48161523591261357,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Basis",
+    "frame": 271,
+    "minGapMm": -0.7685794334975071,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Basis",
+    "frame": 271,
+    "minGapMm": -1.628659952302769,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Basis",
+    "frame": 361,
+    "minGapMm": 0.43682958505542047,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Basis",
+    "frame": 361,
+    "minGapMm": -0.34186988705187105,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Basis",
+    "frame": 361,
+    "minGapMm": -1.6611645187367685,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyVolume",
+    "frame": 1,
+    "minGapMm": 2.092666854878189,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyVolume",
+    "frame": 1,
+    "minGapMm": 2.0066680444870144,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyVolume",
+    "frame": 1,
+    "minGapMm": 2.0020832198497374,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyVolume",
+    "frame": 91,
+    "minGapMm": 1.9000002066604793,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyVolume",
+    "frame": 91,
+    "minGapMm": 1.3612982293125242,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyVolume",
+    "frame": 91,
+    "minGapMm": 1.3681865948456107,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyVolume",
+    "frame": 181,
+    "minGapMm": 2.0232168681104667,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyVolume",
+    "frame": 181,
+    "minGapMm": 1.9446318292466458,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyVolume",
+    "frame": 181,
+    "minGapMm": 1.9403827136557084,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyVolume",
+    "frame": 271,
+    "minGapMm": 1.9071963652095292,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyVolume",
+    "frame": 271,
+    "minGapMm": 1.8583575756565551,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyVolume",
+    "frame": 271,
+    "minGapMm": 1.8742235279205488,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyVolume",
+    "frame": 361,
+    "minGapMm": 2.092666854878189,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyVolume",
+    "frame": 361,
+    "minGapMm": 2.0066680444870144,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyVolume",
+    "frame": 361,
+    "minGapMm": 2.0020832198497374,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyLean",
+    "frame": 1,
+    "minGapMm": 2.037209222180536,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyLean",
+    "frame": 1,
+    "minGapMm": 1.997248844418209,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyLean",
+    "frame": 1,
+    "minGapMm": 2.0485050772549585,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyLean",
+    "frame": 91,
+    "minGapMm": 1.953689701622352,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyLean",
+    "frame": 91,
+    "minGapMm": 1.4288198653957807,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyLean",
+    "frame": 91,
+    "minGapMm": 1.484625245211646,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyLean",
+    "frame": 181,
+    "minGapMm": 2.0192304045849596,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyLean",
+    "frame": 181,
+    "minGapMm": 1.931926490215119,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyLean",
+    "frame": 181,
+    "minGapMm": 1.9598153958213516,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyLean",
+    "frame": 271,
+    "minGapMm": 1.850713091698708,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyLean",
+    "frame": 271,
+    "minGapMm": 1.995448365505581,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyLean",
+    "frame": 271,
+    "minGapMm": 1.8905204042312107,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "BodyLean",
+    "frame": 361,
+    "minGapMm": 2.037209222180536,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "BodyLean",
+    "frame": 361,
+    "minGapMm": 1.997248844418209,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "BodyLean",
+    "frame": 361,
+    "minGapMm": 2.0485050772549585,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "FaceVolume",
+    "frame": 1,
+    "minGapMm": 0.7246459250609405,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "FaceVolume",
+    "frame": 1,
+    "minGapMm": -0.2563387479312951,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "FaceVolume",
+    "frame": 1,
+    "minGapMm": -1.204944781420636,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "FaceVolume",
+    "frame": 91,
+    "minGapMm": 0.7062562872306444,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "FaceVolume",
+    "frame": 91,
+    "minGapMm": -0.26052333851112053,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "FaceVolume",
+    "frame": 91,
+    "minGapMm": -1.6152780226548202,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "FaceVolume",
+    "frame": 181,
+    "minGapMm": 0.75352235597137,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "FaceVolume",
+    "frame": 181,
+    "minGapMm": -0.24066862170002423,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "FaceVolume",
+    "frame": 181,
+    "minGapMm": -1.161424863312277,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "FaceVolume",
+    "frame": 271,
+    "minGapMm": 0.6136260963103268,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "FaceVolume",
+    "frame": 271,
+    "minGapMm": -0.7058211631374434,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "FaceVolume",
+    "frame": 271,
+    "minGapMm": -1.4252922919695266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "FaceVolume",
+    "frame": 361,
+    "minGapMm": 0.7246459250609405,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "FaceVolume",
+    "frame": 361,
+    "minGapMm": -0.2563387479312951,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "FaceVolume",
+    "frame": 361,
+    "minGapMm": -1.204944781420636,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Arms",
+    "frame": 1,
+    "minGapMm": 0.43682958505542047,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Arms",
+    "frame": 1,
+    "minGapMm": -0.34186988705187105,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Arms",
+    "frame": 1,
+    "minGapMm": -1.6611645187367685,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Arms",
+    "frame": 91,
+    "minGapMm": 0.47857038885013026,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Arms",
+    "frame": 91,
+    "minGapMm": -0.3794323893089313,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Arms",
+    "frame": 91,
+    "minGapMm": -1.7686518549453467,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Arms",
+    "frame": 181,
+    "minGapMm": 0.46821347132208757,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Arms",
+    "frame": 181,
+    "minGapMm": -0.3302621371403802,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Arms",
+    "frame": 181,
+    "minGapMm": -1.6166698769666255,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Arms",
+    "frame": 271,
+    "minGapMm": 0.48161523591261357,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Arms",
+    "frame": 271,
+    "minGapMm": -0.7685794334975071,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Arms",
+    "frame": 271,
+    "minGapMm": -1.628659952302769,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_01_V8",
+    "state": "Arms",
+    "frame": 361,
+    "minGapMm": 0.43682958505542047,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V8",
+    "state": "Arms",
+    "frame": 361,
+    "minGapMm": -0.34186988705187105,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V8",
+    "state": "Arms",
+    "frame": 361,
+    "minGapMm": -1.6611645187367685,
+    "deeperThan2mm": 0
+  }
+]

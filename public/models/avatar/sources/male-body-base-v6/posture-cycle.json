@@ -1,0 +1,10 @@
+{
+  "Right": {
+    "forearm_tilt_max_deg": 3.2791876943448734,
+    "elbow_behind_min_m": 0.04183820262551308
+  },
+  "Left": {
+    "forearm_tilt_max_deg": 3.3974776061462086,
+    "elbow_behind_min_m": 0.04113251343369484
+  }
+}
