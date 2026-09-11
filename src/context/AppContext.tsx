@@ -1,9 +1,12 @@
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -13,7 +16,11 @@ import {
   onSessionInvalid,
   restoreSession,
 } from "../utils/authApi";
-import { sendChatMessage, streamChatMessage } from "../utils/threadApi";
+import {
+  fetchThreadState,
+  sendChatMessage,
+  streamChatMessage,
+} from "../utils/threadApi";
 import {
   cancelAppointment as cancelAppointmentApi,
   createRequest,
@@ -49,6 +56,8 @@ import { weekdayMondayIndex } from "../utils/dates";
 import { DAY_BONUS_PTS } from "../data/program";
 
 const USER_STORAGE_KEY = "antares_user_profile";
+/** Baseline por usuario del conteo de mensajes ya vistos del chat. */
+const CHAT_LAST_SEEN_PREFIX = "antares:chat-last-seen:";
 
 interface AppState {
   authLoading: boolean;
@@ -92,6 +101,10 @@ interface AppState {
   openVoice: () => void;
   closeVoice: () => void;
   sendChat: (text: string) => void;
+  /** Hay mensajes del bot sin ver en el thread (dot en la tab Chat). */
+  chatUnread: boolean;
+  /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
+  markChatRead: () => void;
   hydrateChat: (messages: { text: string }[]) => void;
   appendChatMessages: (
     messages: Array<{
@@ -321,6 +334,13 @@ export function AppProvider({
     useState<ListedAppointment | null>(null);
   const realMode = hasRealSession();
 
+  // ── Indicador de mensajes no leídos del chat ──
+  const [chatUnread, setChatUnread] = useState(false);
+  /** Último conteo remoto conocido (para persistir al marcar como leído). */
+  const lastRemoteCountRef = useRef<number | null>(null);
+  /** Pantalla anterior: detecta la entrada a "chat" para auto-limpiar. */
+  const prevScreenRef = useRef<Screen>(screen);
+
   const refreshAppointments = useCallback(async () => {
     if (!hasRealSession()) return;
     setAppointmentsLoading(true);
@@ -498,6 +518,102 @@ export function AppProvider({
   );
   const threadId = activeThreadId || computedThreadId;
 
+  /** Identificador estable del paciente para la clave de persistencia. */
+  const chatUserId = useCallback(
+    () => (user.id || user.cedula || user.email || "").trim(),
+    [user.id, user.cedula, user.email],
+  );
+
+  /**
+   * Chequea si hay mensajes del bot sin ver (dot en la tab Chat).
+   * Fail-safe: sin sesión real, sin thread o ante cualquier error de fetch,
+   * chatUnread queda en false — nunca un badge fantasma.
+   */
+  const checkChatUnread = useCallback(async () => {
+    const uid = chatUserId();
+    if (!realMode || !uid || !threadId) {
+      setChatUnread(false);
+      return;
+    }
+    const state = await fetchThreadState(threadId, uid);
+    if (!state) {
+      // Fetch fallido o thread inexistente → no marcar nada.
+      setChatUnread(false);
+      return;
+    }
+    lastRemoteCountRef.current = state.messageCount;
+    const key = `${CHAT_LAST_SEEN_PREFIX}${uid}`;
+    const seenRaw = localStorage.getItem(key);
+    if (seenRaw === null) {
+      // Primera carga del usuario: se siembra el baseline para no marcar
+      // historial viejo como no leído (evita falso positivo en instalación nueva).
+      localStorage.setItem(key, String(state.messageCount));
+      setChatUnread(false);
+      return;
+    }
+    setChatUnread(state.messageCount > Number(seenRaw));
+  }, [chatUserId, realMode, threadId]);
+
+  /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
+  const markChatRead = useCallback(() => {
+    const uid = chatUserId();
+    setChatUnread(false);
+    if (!uid) return;
+    const count = lastRemoteCountRef.current;
+    if (count !== null) {
+      localStorage.setItem(`${CHAT_LAST_SEEN_PREFIX}${uid}`, String(count));
+      return;
+    }
+    // Sin conteo previo (p. ej. se entró al chat antes del primer check):
+    // se toma el conteo remoto para no volver a marcar como no leído.
+    if (threadId) {
+      void fetchThreadState(threadId, uid).then((state) => {
+        if (state) {
+          localStorage.setItem(
+            `${CHAT_LAST_SEEN_PREFIX}${uid}`,
+            String(state.messageCount),
+          );
+        }
+      });
+    }
+  }, [chatUserId, threadId]);
+
+  // Check al entrar a la app (sesión activa) y al volver a primer plano.
+  useEffect(() => {
+    if (flow === "app") void checkChatUnread();
+  }, [flow, checkChatUnread]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && flow === "app") {
+        void checkChatUnread();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [flow, checkChatUnread]);
+
+  // Resume nativo (Capacitor): solo en plataforma nativa; en web/PWA cubre
+  // el visibilitychange.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const handle = App.addListener("resume", () => {
+      void checkChatUnread();
+    });
+    return () => {
+      void handle.then((h) => h.remove());
+    };
+  }, [checkChatUnread]);
+
+  // Al entrar a la pantalla de chat se marca como leído (una vez por entrada).
+  useEffect(() => {
+    const prev = prevScreenRef.current;
+    prevScreenRef.current = screen;
+    if (screen === "chat" && prev !== "chat") {
+      markChatRead();
+    }
+  }, [screen, markChatRead]);
+
   const builtReal =
     appointments && requests
       ? buildRealAppointments(appointments, requests)
@@ -516,6 +632,8 @@ export function AppProvider({
       testsDone,
       chat,
       threadId,
+      chatUnread,
+      markChatRead,
       setActiveThreadId,
       watchConnected,
       watchName,
@@ -803,6 +921,8 @@ export function AppProvider({
       pointsToday,
       pointsTotal,
       threadId,
+      chatUnread,
+      markChatRead,
       onResetCommunityClient,
       t,
       realMode,

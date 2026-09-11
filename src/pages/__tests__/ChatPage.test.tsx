@@ -1,7 +1,8 @@
+import { StrictMode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ChatPage } from "../ChatPage";
-import { uploadLabExam } from "../../utils/threadApi";
+import { fetchThreadState, uploadLabExam } from "../../utils/threadApi";
 
 vi.mock("../../utils/threadApi", () => ({
   fetchThreadState: vi.fn().mockResolvedValue(null),
@@ -229,5 +230,32 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
 
     expect(screen.queryByText("Examen procesado")).toBeNull();
     expect(screen.queryByLabelText("Ver todas las métricas")).toBeNull();
+  });
+});
+
+describe("ChatPage — hidratación del mensaje proactivo (StrictMode)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.lang = "es";
+    mockState.chat = [welcomeMessage];
+  });
+
+  it("hidrata el último mensaje del thread aunque el efecto corra dos veces (StrictMode)", async () => {
+    const proactiveText = "¡Llegaste al día 21! Contanos cómo te sentís con el plan.";
+    vi.mocked(fetchThreadState).mockResolvedValue({
+      threadId: "test-thread-123",
+      messageCount: 84,
+      lastMessage: proactiveText,
+    });
+
+    render(
+      <StrictMode>
+        <ChatPage />
+      </StrictMode>,
+    );
+
+    await waitFor(() => {
+      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: proactiveText }]);
+    });
   });
 });
