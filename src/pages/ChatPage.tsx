@@ -1,6 +1,12 @@
 import { IonBadge, IonButton, IonIcon, IonInput, IonSpinner } from "@ionic/react";
 import { attach, medkit, mic, send as sendIcon } from "ionicons/icons";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { PageHeader } from "../components/PageHeader";
 import { Screen } from "../components/Screen";
 import { ChatRichText } from "../components/ChatRichText";
@@ -15,6 +21,11 @@ const quick = [
   ["Progreso", "¿Cómo va mi progreso esta semana?"],
   ["Meditar", "Quiero meditar y calmar mi ansiedad"],
 ];
+
+/** Mensajes visibles por tramo del historial progresivo. */
+const PAGE_SIZE = 10;
+/** Distancia al tope (px) que dispara la carga del tramo anterior. */
+const SCROLL_TOP_THRESHOLD = 48;
 
 export function ChatPage() {
   const {
@@ -32,8 +43,18 @@ export function ChatPage() {
   } = useApp();
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
+  // Ventana de historial visible: arranca en los últimos 10 y crece de a 10
+  // a medida que el usuario scrollea hacia arriba.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
   const end = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Posición del scroll previa a insertar mensajes por encima: permite
+  // compensar el scrollTop y que el contenido visible no salte.
+  const anchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(
+    null,
+  );
 
   // Al abrir el chat se intenta cargar el historial del thread estable: si el
   // backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
@@ -62,6 +83,8 @@ export function ChatPage() {
       // el ref marcado de antemano el segundo intento se saltaba y el mensaje
       // proactivo nunca aparecía.
       historyLoaded.current = threadId;
+      // Una hidratación fresca siempre abre con la ventana mínima.
+      setVisibleCount(PAGE_SIZE);
       hydrateChat(history);
     });
     return () => {
@@ -72,6 +95,41 @@ export function ChatPage() {
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat.length, uploading]);
+
+  // Un hilo nuevo (o rehidratado) arranca siempre con los últimos 10.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [threadId]);
+
+  const visibleMessages = chat.slice(-visibleCount);
+  const hasOlderMessages = visibleCount < chat.length;
+
+  const handleScroll = () => {
+    const el = listRef.current;
+    if (!el || loadingMore || !hasOlderMessages) return;
+    if (el.scrollTop > SCROLL_TOP_THRESHOLD) return;
+    anchorRef.current = {
+      scrollHeight: el.scrollHeight,
+      scrollTop: el.scrollTop,
+    };
+    setLoadingMore(true);
+    setVisibleCount((count) => Math.min(count + PAGE_SIZE, chat.length));
+  };
+
+  // Scroll anchoring: los mensajes nuevos se insertan por encima del
+  // contenido visible, así que se suma el delta de altura al scrollTop para
+  // que el mensaje que el usuario estaba mirando quede en el mismo lugar.
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    const anchor = anchorRef.current;
+    if (!el || !anchor) return;
+    anchorRef.current = null;
+    const delta = el.scrollHeight - anchor.scrollHeight;
+    if (delta > 0) {
+      el.scrollTop = anchor.scrollTop + delta;
+    }
+    setLoadingMore(false);
+  }, [visibleCount]);
 
   const t = useT();
   const { lang } = useI18n();
@@ -167,7 +225,9 @@ export function ChatPage() {
         ))}
       </div>
       <div
+        ref={listRef}
         className="screen-scroll"
+        onScroll={handleScroll}
         style={{
           padding: "12px 16px",
           display: "flex",
@@ -175,7 +235,26 @@ export function ChatPage() {
           gap: 12,
         }}
       >
-        {chat.map((m) => (
+        {hasOlderMessages ? (
+          <div className="chat-history-hint" role="status">
+            {loadingMore ? (
+              <>
+                <IonSpinner
+                  name="crescent"
+                  style={{ width: 14, height: 14 }}
+                />
+                <span>{t("Cargando mensajes anteriores…")}</span>
+              </>
+            ) : (
+              <span>{t("Desliza hacia arriba para ver mensajes anteriores")}</span>
+            )}
+          </div>
+        ) : chat.length > PAGE_SIZE ? (
+          <div className="chat-history-hint" role="status">
+            <span>{t("Inicio de la conversación")}</span>
+          </div>
+        ) : null}
+        {visibleMessages.map((m) => (
           <div
             key={m.id}
             style={{

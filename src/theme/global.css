@@ -2241,6 +2241,20 @@ ion-note.bp-note {
   border-bottom-left-radius: 4px;
 }
 
+/* Historial progresivo del chat: indicador del tope de la lista */
+.chat-history-hint {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 2px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mu);
+  text-align: center;
+}
+
 /* CTA de sugerencia dentro del bubble del bot (ej. agendar cita) */
 ion-button.cta-button {
   --background: var(--blue-l);
