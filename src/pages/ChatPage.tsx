@@ -44,13 +44,25 @@ export function ChatPage() {
     if (!userId) return;
     let cancelled = false;
     void fetchThreadState(threadId, userId).then((state) => {
-      if (cancelled || !state?.lastMessage) return;
+      if (cancelled) return;
+      // Historial completo cuando el backend lo expone (roles user/bot
+      // mapeados); fallback al último mensaje con backends anteriores.
+      const history = (state?.messages ?? [])
+        .filter((m) => Boolean(m.text && m.text.trim().length > 0))
+        .map((m) => ({
+          text: m.text,
+          role: m.role === "user" ? ("user" as const) : ("bot" as const),
+        }));
+      if (!history.length) {
+        if (!state?.lastMessage) return;
+        history.push({ text: state.lastMessage, role: "bot" as const });
+      }
       // El ref se marca SOLO cuando la hidratación se aplica: en StrictMode
       // (dev) el efecto corre dos veces y el primer fetch queda cancelado; con
       // el ref marcado de antemano el segundo intento se saltaba y el mensaje
       // proactivo nunca aparecía.
       historyLoaded.current = threadId;
-      hydrateChat([{ text: state.lastMessage }]);
+      hydrateChat(history);
     });
     return () => {
       cancelled = true;
