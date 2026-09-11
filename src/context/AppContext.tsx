@@ -106,7 +106,7 @@ interface AppState {
   chatUnread: boolean;
   /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
   markChatRead: () => void;
-  hydrateChat: (messages: { text: string }[]) => void;
+  hydrateChat: (messages: { text: string; role?: "bot" | "user" }[]) => void;
   appendChatMessages: (
     messages: Array<{
       role: "bot" | "user" | "alert";
@@ -821,15 +821,15 @@ export function AppProvider({
         })();
       },
       hydrateChat: (messages) => {
-        // Mensajes del bot ya inyectados en el thread por el backend (push
-        // proactivo). Si el chat solo tiene el mensaje de bienvenida por defecto,
-        // lo reemplazamos con el mensaje real de la sesión.
+        // Historial del thread (conversación completa o, con backends viejos,
+        // el último mensaje inyectado). Si el chat solo tiene el mensaje de
+        // bienvenida por defecto, lo reemplazamos con el historial real.
         if (!messages.length) return;
         setChat((prev) => {
           const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
           const stamped = messages.map((m) => ({
             id: crypto.randomUUID(),
-            role: "bot" as const,
+            role: (m.role ?? "bot") as "bot" | "user",
             text: m.text,
             time: nowLabel(),
             threadId,

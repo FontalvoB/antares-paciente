@@ -255,7 +255,73 @@ describe("ChatPage — hidratación del mensaje proactivo (StrictMode)", () => {
     );
 
     await waitFor(() => {
-      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: proactiveText }]);
+      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: proactiveText, role: "bot" }]);
+    });
+  });
+});
+
+describe("ChatPage — historial completo del thread", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.lang = "es";
+    mockState.chat = [welcomeMessage];
+  });
+
+  it("hidrata la conversación completa en orden con sus roles", async () => {
+    vi.mocked(fetchThreadState).mockResolvedValue({
+      threadId: "test-thread-123",
+      messageCount: 4,
+      lastMessage: "¿Te sentís mejor?",
+      messages: [
+        { role: "user", text: "Hola, me sentí bien esta semana" },
+        { role: "bot", text: "¡Qué bueno escucharlo!" },
+        { role: "user", text: "Gracias" },
+        { role: "bot", text: "¿Te sentís mejor?" },
+      ],
+    });
+
+    render(<ChatPage />);
+
+    await waitFor(() => {
+      expect(hydrateChatMock).toHaveBeenCalledWith([
+        { role: "user", text: "Hola, me sentí bien esta semana" },
+        { role: "bot", text: "¡Qué bueno escucharlo!" },
+        { role: "user", text: "Gracias" },
+        { role: "bot", text: "¿Te sentís mejor?" },
+      ]);
+    });
+  });
+
+  it("cae al lastMessage cuando el backend no expone messages (compat)", async () => {
+    vi.mocked(fetchThreadState).mockResolvedValue({
+      threadId: "test-thread-123",
+      messageCount: 90,
+      lastMessage: "Mensaje suelto",
+      messages: null,
+    });
+
+    render(<ChatPage />);
+
+    await waitFor(() => {
+      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: "Mensaje suelto", role: "bot" }]);
+    });
+  });
+
+  it("descarta entradas sin texto y cae al lastMessage si quedan vacías", async () => {
+    vi.mocked(fetchThreadState).mockResolvedValue({
+      threadId: "test-thread-123",
+      messageCount: 3,
+      lastMessage: "Último real",
+      messages: [
+        { role: "user", text: "   " },
+        { role: "bot", text: "" },
+      ],
+    });
+
+    render(<ChatPage />);
+
+    await waitFor(() => {
+      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: "Último real", role: "bot" }]);
     });
   });
 });

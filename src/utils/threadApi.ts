@@ -2,11 +2,23 @@ import { getAccessToken } from './authApi'
 import { getApiBaseUrl } from './apiBaseUrl'
 import type { ChatSuggestion } from '../types'
 
+/** Mensaje individual del historial del thread (rol user | bot). */
+export interface ThreadMessage {
+  role: string
+  text: string
+}
+
 /** Resumen del historial de un thread devuelto por el backend .NET (proxy → AI Service). */
 export interface ThreadState {
   threadId: string
   messageCount: number
   lastMessage: string | null
+  /**
+   * Historial completo de la conversación (el AI Service lo capa a los
+   * últimos ~100 mensajes visibles). Ausente/null con backends anteriores:
+   * en ese caso el consumidor cae al fallback de `lastMessage`.
+   */
+  messages?: ThreadMessage[] | null
 }
 
 /**
