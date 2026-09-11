@@ -1,4 +1,4 @@
-import { IonIcon } from '@ionic/react'
+import { IonBadge, IonIcon } from '@ionic/react'
 import {
   calendar,
   calendarOutline,
@@ -15,7 +15,7 @@ import { useT } from '../i18n/I18nContext'
 import type { Screen } from '../types'
 
 export function BottomNav({ dark = false }: { dark?: boolean }) {
-  const { screen, navigate, openPanic } = useApp()
+  const { screen, navigate, openPanic, chatUnread } = useApp()
   const t = useT()
 
   const items: { id: Screen; label: string; icon: string; iconOn: string; sos?: boolean }[] = [
@@ -51,6 +51,9 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
           >
             <span className="ni-ico">
               <IonIcon icon={on ? it.iconOn : it.icon} />
+              {it.id === 'chat' && chatUnread && (
+                <IonBadge className="ni-dot" aria-label={t('Nuevos mensajes')} />
+              )}
             </span>
             <span>{it.label}</span>
           </button>
