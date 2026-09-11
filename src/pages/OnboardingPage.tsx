@@ -54,7 +54,7 @@ export function OnboardingPage() {
     nombre: 'María González',
     cedula: '10247381',
     dob: '1988-04-12',
-    seguro: 'BlueCross BlueShield',
+    seguro: '',
     poliza: 'BCB-20247381',
     grupo: 'GRP-5092',
     email: 'maria.gonzalez@email.com',
