@@ -40,12 +40,16 @@ export function ChatPage() {
   const historyLoaded = useRef<string | null>(null);
   useEffect(() => {
     if (historyLoaded.current === threadId) return;
-    historyLoaded.current = threadId;
     const userId = (user.id || user.cedula || user.email || "").trim();
     if (!userId) return;
     let cancelled = false;
     void fetchThreadState(threadId, userId).then((state) => {
       if (cancelled || !state?.lastMessage) return;
+      // El ref se marca SOLO cuando la hidratación se aplica: en StrictMode
+      // (dev) el efecto corre dos veces y el primer fetch queda cancelado; con
+      // el ref marcado de antemano el segundo intento se saltaba y el mensaje
+      // proactivo nunca aparecía.
+      historyLoaded.current = threadId;
       hydrateChat([{ text: state.lastMessage }]);
     });
     return () => {
