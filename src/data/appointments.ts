@@ -349,13 +349,15 @@ function styleForType(
 }
 
 /**
- * Profesional real del catálogo para el tipo de consulta elegido (el primero
- * activo de esa profesión). Con catálogo nulo (demo) devuelve el mock actual.
+ * Primer profesional REAL activo del catálogo para el tipo de consulta; null
+ * si el catálogo no está disponible o no hay profesionales activos de ese tipo.
+ * A diferencia de `realProfessionalByType`, NUNCA cae al mock: el llamador
+ * decide cómo degradar (p. ej. el equipo del perfil oculta la fila).
  */
-export function realProfessionalByType(
+function findRealProfessional(
   typeId: ConsultTypeId,
   catalog: ProfessionalCatalogItem[] | null,
-): TeamProfessional {
+): TeamProfessional | null {
   const candidates = (catalog ?? []).filter((p) => p.status === "Active");
   const medica = typeId === "medica" || typeId === "urgencia";
   const match =
@@ -374,7 +376,7 @@ export function realProfessionalByType(
           (p) => typeFromProfessional(p.professionalTypeName) === "medica",
         )
       : undefined);
-  if (!match) return professionalByType(typeId);
+  if (!match) return null;
 
   const type = typeFromProfessional(match.professionalTypeName);
   return {
@@ -384,6 +386,46 @@ export function realProfessionalByType(
     role: match.professionalTypeName ?? "Profesional COPP-ADRESD",
     ...styleForType(type),
   };
+}
+
+/**
+ * Profesional real del catálogo para el tipo de consulta elegido (el primero
+ * activo de esa profesión). Con catálogo nulo (demo) devuelve el mock actual.
+ */
+export function realProfessionalByType(
+  typeId: ConsultTypeId,
+  catalog: ProfessionalCatalogItem[] | null,
+): TeamProfessional {
+  return findRealProfessional(typeId, catalog) ?? professionalByType(typeId);
+}
+
+/** Roles que la sección "Equipo ANTARES" muestra, en orden. */
+const TEAM_ROLE_TYPES: readonly ConsultTypeId[] = [
+  "medica",
+  "nutricion",
+  "psicologia",
+];
+
+/**
+ * Equipo real del catálogo: un profesional activo por rol disponible, sin
+ * duplicados. `null` = catálogo no disponible (demo/sin sesión) — la UI no
+ * puede afirmar nada; `[]` = catálogo cargado sin profesionales activos.
+ * NUNCA inventa nombres ni rellena con el mock.
+ */
+export function realTeamFromCatalog(
+  catalog: ProfessionalCatalogItem[] | null,
+): TeamProfessional[] | null {
+  if (!catalog) return null;
+  const seen = new Set<string>();
+  const team: TeamProfessional[] = [];
+  for (const typeId of TEAM_ROLE_TYPES) {
+    const pro = findRealProfessional(typeId, catalog);
+    if (pro && !seen.has(pro.id)) {
+      seen.add(pro.id);
+      team.push(pro);
+    }
+  }
+  return team;
 }
 
 /** "Hoy" o dd/mm en hora local. */

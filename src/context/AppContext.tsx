@@ -37,6 +37,7 @@ import {
 import {
   buildRealAppointments,
   realProfessionalByType,
+  realTeamFromCatalog,
   type ListedAppointment,
   type TeamProfessional,
 } from "../data/appointments";
@@ -129,6 +130,12 @@ interface AppState {
   appointmentsError: string | null;
   /** Profesional real del catálogo para el tipo de consulta (o el mock). */
   teamProfessional: (typeId: string) => TeamProfessional;
+  /**
+   * Equipo REAL del catálogo (un activo por rol disponible, sin duplicados).
+   * null = catálogo no disponible (demo/sin sesión); [] = sin profesionales
+   * activos. Nunca contiene nombres inventados.
+   */
+  teamProfessionals: TeamProfessional[] | null;
   refreshAppointments: () => Promise<void>;
   /** Envía la solicitud contra el backend (modo real). Devuelve éxito. */
   submitAppointmentRequest: (input: {
@@ -150,7 +157,7 @@ const defaultUser: UserProfile = {
   nombre: "María González",
   cedula: "10247381",
   dob: "1988-04-12",
-  seguro: "BlueCross BlueShield",
+  seguro: "",
   poliza: "BCB-20247381",
   grupo: "GRP-5092",
   email: "maria.gonzalez@email.com",
@@ -395,6 +402,12 @@ export function AppProvider({
       ).find((t) => t === typeId);
       return realProfessionalByType(typed ?? "medica", catalog);
     },
+    [catalog],
+  );
+
+  // Equipo real del perfil: deriva del catálogo (null = aún no disponible).
+  const teamProfessionals = useMemo(
+    () => realTeamFromCatalog(catalog),
     [catalog],
   );
 
@@ -890,6 +903,7 @@ export function AppProvider({
       appointmentsLoading,
       appointmentsError,
       teamProfessional,
+      teamProfessionals,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
@@ -930,6 +944,7 @@ export function AppProvider({
       appointmentsLoading,
       appointmentsError,
       teamProfessional,
+      teamProfessionals,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,

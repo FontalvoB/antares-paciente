@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonInput, IonSkeletonText, IonToggle } from "@ionic/react";
 import {
   bodyOutline,
@@ -19,6 +19,9 @@ import { useT } from "../i18n/I18nContext";
 import { useI18n } from "../i18n/I18nContext";
 import type { Screen as ScreenId } from "../types";
 import { useLeague } from "../hooks/useLeague";
+import { useMetricsHistory } from "../hooks/useMetricsHistory";
+import { useProgram } from "../hooks/useProgram";
+import { formatMetricValue } from "../data/metrics";
 import { updateLeaguePreferences } from "../services/program/league-service";
 import { programKeys } from "../hooks/queryKeys";
 import { ApiError } from "../utils/apiClient";
@@ -172,18 +175,55 @@ export function ProfilePage() {
     pointsTotal,
     logout,
     openTests,
+    teamProfessionals,
   } = useApp();
-  const t = useT();
-  const { lang, toggleLang } = useI18n();
+  const { snapshot, isMockFallback } = useProgram();
+  const { history: metricsHistory } = useMetricsHistory();
+  const { lang, toggleLang, t } = useI18n();
+  const locale = lang === "en" ? "en-US" : "es-ES";
 
   const go = (s: ScreenId) => navigate(s);
 
+  // Semana del programa SOLO desde el snapshot real; el fallback mock de
+  // useProgram (sin cache) no se pinta como verdad del servidor (patrón
+  // HistoryPage).
+  const programWeek = isMockFallback
+    ? undefined
+    : snapshot?.template?.currentWeekNumber;
+  const totalWeeks = isMockFallback ? undefined : snapshot?.template?.totalWeeks;
+  const weekSub =
+    programWeek != null && totalWeeks != null
+      ? t("Semana {cur} de {total}", {
+          cur: String(programWeek),
+          total: String(totalWeeks),
+        })
+      : undefined;
+
+  // Delta de peso real (metrics-history): primera → última medición. Sin dos
+  // puntos reales no hay tarjeta — nunca un delta inventado.
+  const weightDelta = useMemo(() => {
+    const series = metricsHistory?.metrics.find(
+      (m) => m.code.toLowerCase() === "weight",
+    );
+    const points = series?.points ?? [];
+    if (points.length < 2) return null;
+    const delta = points[points.length - 1].value - points[0].value;
+    const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
+    return `${sign}${formatMetricValue(Math.abs(delta), 1, locale)} ${
+      series?.unit ?? "kg"
+    }`;
+  }, [metricsHistory, locale]);
+
+  // Hero: solo tarjetas con verdad real (semana del snapshot, delta de peso,
+  // puntos del backend). Sin dato → la tarjeta no se renderiza.
+  const heroMetrics: Array<[string, string]> = [];
+  if (programWeek != null) heroMetrics.push([String(programWeek), "Semanas"]);
+  if (weightDelta) heroMetrics.push([weightDelta, "Peso"]);
+  heroMetrics.push([String(pointsTotal), "Puntos"]);
+
   return (
     <Screen>
-      <PageHeader
-        title={t("Perfil")}
-        sub={t("ID COPP-2024-00142 · Semana 12/24")}
-      />
+      <PageHeader title={t("Perfil")} sub={weekSub} />
       <Scroll>
         <IonButton expand="block" fill="outline" style={{ margin: '12px 16px', minHeight: 44 }} onClick={() => go('avatar')}>
           {t('Probar avatar 3D')}
@@ -212,11 +252,7 @@ export function ProfilePage() {
           className="hero-metrics"
           style={{ padding: "0 16px", marginBottom: 8 }}
         >
-          {[
-            ["12", "Semanas"],
-            ["−3.2 kg", "Peso"],
-            [String(pointsTotal), "Puntos"],
-          ].map(([v, l]) => (
+          {heroMetrics.map(([v, l]) => (
             <div
               key={l}
               className="metric-card"
@@ -285,31 +321,41 @@ export function ProfilePage() {
           ))}
         </div>
 
-        <div className="sec">{t("Equipo ANTARES")}</div>
-        <div className="group-list">
-          {[
-            ["🩺", "Dr. Carlos Ramírez, MD", "Médico COPP-ADRESD"],
-            ["🥗", "Nut. Ana Torres, RDN", "Nutricionista · CDR"],
-            ["🧠", "Psi. Luis Mora, PhD", "Psicólogo · CBT"],
-            ["🤝", "Coach Marco Reyes, NBHWC", "Coach de salud"],
-          ].map(([e, name, s]) => (
-            <button
-              key={name}
-              type="button"
-              className="group-row"
-              onClick={() =>
-                showToast(t("Contactando a {name}…", { name }), "info")
-              }
-            >
-              <span className="group-row-ico">{e}</span>
-              <span className="group-row-body">
-                <strong>{t(name!)}</strong>
-                <small>{t(s!)}</small>
-              </span>
-              <span className="group-row-chevron">›</span>
-            </button>
-          ))}
-        </div>
+        {teamProfessionals === null ? null : (
+          <>
+            <div className="sec">{t("Equipo ANTARES")}</div>
+            {teamProfessionals.length > 0 ? (
+              <div className="group-list">
+                {teamProfessionals.map((pro) => (
+                  <button
+                    key={pro.id}
+                    type="button"
+                    className="group-row"
+                    onClick={() =>
+                      showToast(
+                        t("Contactando a {name}…", { name: pro.name }),
+                        "info",
+                      )
+                    }
+                  >
+                    <span className="group-row-ico">{pro.emoji}</span>
+                    <span className="group-row-body">
+                      <strong>{pro.name}</strong>
+                      <small>{pro.role}</small>
+                    </span>
+                    <span className="group-row-chevron">›</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="card" style={{ margin: "0 16px 8px" }}>
+                <small>
+                  {t("Aún no hay profesionales asignados a tu equipo.")}
+                </small>
+              </div>
+            )}
+          </>
+        )}
 
         <div className="sec">{t("Ecosistema")}</div>
         <div className="group-list">
