@@ -1,0 +1,198 @@
+{
+  "mode": "data",
+  "histories": [
+    {
+      "status": 200,
+      "body": {
+        "heightCm": null,
+        "metrics": [
+          {
+            "code": "weight",
+            "unit": "kg",
+            "target": null,
+            "favorableDirection": null,
+            "points": [
+              {
+                "date": "2026-07-13",
+                "value": 90
+              },
+              {
+                "date": "2026-08-12",
+                "value": 94
+              },
+              {
+                "date": "2026-09-11",
+                "value": 86
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "heightCm": null,
+        "metrics": [
+          {
+            "code": "weight",
+            "unit": "kg",
+            "target": null,
+            "favorableDirection": null,
+            "points": [
+              {
+                "date": "2026-07-13",
+                "value": 90
+              },
+              {
+                "date": "2026-08-12",
+                "value": 94
+              },
+              {
+                "date": "2026-09-11",
+                "value": 86
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "heightCm": null,
+        "metrics": [
+          {
+            "code": "weight",
+            "unit": "kg",
+            "target": null,
+            "favorableDirection": null,
+            "points": [
+              {
+                "date": "2026-07-13",
+                "value": 90
+              },
+              {
+                "date": "2026-08-12",
+                "value": 94
+              },
+              {
+                "date": "2026-09-11",
+                "value": 86
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "states": {
+    "latest": {
+      "bodyVolume": 0,
+      "bodyLean": 0.2222222222222222,
+      "abdomen": 0,
+      "waist": 0,
+      "chest": 0,
+      "arms": 0,
+      "thighs": 0,
+      "faceVolume": 0,
+      "muscleDefinition": 0
+    },
+    "initial": {
+      "bodyVolume": 0,
+      "bodyLean": 0,
+      "abdomen": 0,
+      "waist": 0,
+      "chest": 0,
+      "arms": 0,
+      "thighs": 0,
+      "faceVolume": 0,
+      "muscleDefinition": 0
+    },
+    "intermediate": {
+      "bodyVolume": 0.2222222222222222,
+      "bodyLean": 0,
+      "abdomen": 0,
+      "waist": 0,
+      "chest": 0,
+      "arms": 0,
+      "thighs": 0,
+      "faceVolume": 0,
+      "muscleDefinition": 0
+    }
+  },
+  "rendered": {
+    "latest": {
+      "BodyVolume": 0,
+      "BodyLean": 0.22208627956464258,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "initial": {
+      "BodyVolume": 0,
+      "BodyLean": 0.00032357572314547025,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "intermediate": {
+      "BodyVolume": 0.22205657950527227,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    }
+  },
+  "metrics": {
+    "bytes": 4059596,
+    "triangles": 23924,
+    "materials": 1,
+    "textures": 3,
+    "bones": 51,
+    "height": 1.6999996051989676,
+    "loadMs": 105.2999999821186,
+    "firstFrameMs": 513,
+    "fps": 59.99400060029756,
+    "calls": 1,
+    "geometries": 1,
+    "gpuTextures": 6,
+    "idleTime": 8.030999999999986,
+    "loops": 1,
+    "rootPosition": [
+      0,
+      0.9100404381752014,
+      0.019999179989099503
+    ],
+    "headQuaternion": [
+      0.012632563602105176,
+      -0.0047027216908007265,
+      0.004141511149154951,
+      0.9999005703723441
+    ],
+    "morphWeights": {
+      "BodyVolume": 0,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "heapMB": 106.30893516540527
+  }
+}

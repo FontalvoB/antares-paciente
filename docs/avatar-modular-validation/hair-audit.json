@@ -1,0 +1,338 @@
+[
+  {
+    "hair": 1,
+    "key": "Basis",
+    "frame": 1,
+    "min_mm": 0.43682958505542047,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "Basis",
+    "frame": 91,
+    "min_mm": 0.47857038885013026,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "Basis",
+    "frame": 271,
+    "min_mm": 0.48161523591261357,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "Basis",
+    "frame": 361,
+    "min_mm": 0.43682958505542047,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyVolume",
+    "frame": 1,
+    "min_mm": 0.6100727966078523,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyVolume",
+    "frame": 91,
+    "min_mm": 0.6483587045522654,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyVolume",
+    "frame": 271,
+    "min_mm": 0.5610721964330878,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyVolume",
+    "frame": 361,
+    "min_mm": 0.6100727966078523,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyLean",
+    "frame": 1,
+    "min_mm": 0.32066628625671,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyLean",
+    "frame": 91,
+    "min_mm": 0.36465642119765107,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyLean",
+    "frame": 271,
+    "min_mm": 0.3825066812623845,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "BodyLean",
+    "frame": 361,
+    "min_mm": 0.32066628625671,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "FaceVolume",
+    "frame": 1,
+    "min_mm": 0.7246459250609405,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "FaceVolume",
+    "frame": 91,
+    "min_mm": 0.7062562872306444,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "FaceVolume",
+    "frame": 271,
+    "min_mm": 0.6136260963103268,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 1,
+    "key": "FaceVolume",
+    "frame": 361,
+    "min_mm": 0.7246459250609405,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "Basis",
+    "frame": 1,
+    "min_mm": -0.34186988705187105,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "Basis",
+    "frame": 91,
+    "min_mm": -0.3794323893089313,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "Basis",
+    "frame": 271,
+    "min_mm": -0.7685794334975071,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "Basis",
+    "frame": 361,
+    "min_mm": -0.34186988705187105,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyVolume",
+    "frame": 1,
+    "min_mm": -0.2908924507210031,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyVolume",
+    "frame": 91,
+    "min_mm": -0.3083820101892343,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyVolume",
+    "frame": 271,
+    "min_mm": -0.7313680471270345,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyVolume",
+    "frame": 361,
+    "min_mm": -0.2908924507210031,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyLean",
+    "frame": 1,
+    "min_mm": -0.37539605909842066,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyLean",
+    "frame": 91,
+    "min_mm": -0.42621259490260854,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyLean",
+    "frame": 271,
+    "min_mm": -0.7926980179036036,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "BodyLean",
+    "frame": 361,
+    "min_mm": -0.37539605909842066,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "FaceVolume",
+    "frame": 1,
+    "min_mm": -0.2563387479312951,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "FaceVolume",
+    "frame": 91,
+    "min_mm": -0.26052333851112053,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "FaceVolume",
+    "frame": 271,
+    "min_mm": -0.7058211631374434,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 2,
+    "key": "FaceVolume",
+    "frame": 361,
+    "min_mm": -0.2563387479312951,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "Basis",
+    "frame": 1,
+    "min_mm": -1.6611645187367685,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "Basis",
+    "frame": 91,
+    "min_mm": -1.7686518549453467,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "Basis",
+    "frame": 271,
+    "min_mm": -1.628659952302769,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "Basis",
+    "frame": 361,
+    "min_mm": -1.6611645187367685,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "BodyVolume",
+    "frame": 1,
+    "min_mm": -1.3889959191146772,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "BodyVolume",
+    "frame": 91,
+    "min_mm": -1.677187166933436,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "BodyVolume",
+    "frame": 271,
+    "min_mm": -1.4283437722042436,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "BodyVolume",
+    "frame": 361,
+    "min_mm": -1.3889959191146772,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "BodyLean",
+    "frame": 1,
+    "min_mm": -2.0846578356383816,
+    "penetrating2mm": 1
+  },
+  {
+    "hair": 3,
+    "key": "BodyLean",
+    "frame": 91,
+    "min_mm": -2.1171192165638786,
+    "penetrating2mm": 1
+  },
+  {
+    "hair": 3,
+    "key": "BodyLean",
+    "frame": 271,
+    "min_mm": -2.1281097992869036,
+    "penetrating2mm": 1
+  },
+  {
+    "hair": 3,
+    "key": "BodyLean",
+    "frame": 361,
+    "min_mm": -2.0846578356383816,
+    "penetrating2mm": 1
+  },
+  {
+    "hair": 3,
+    "key": "FaceVolume",
+    "frame": 1,
+    "min_mm": -1.204944781420636,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "FaceVolume",
+    "frame": 91,
+    "min_mm": -1.6152780226548202,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "FaceVolume",
+    "frame": 271,
+    "min_mm": -1.4252922919695266,
+    "penetrating2mm": 0
+  },
+  {
+    "hair": 3,
+    "key": "FaceVolume",
+    "frame": 361,
+    "min_mm": -1.204944781420636,
+    "penetrating2mm": 0
+  }
+]

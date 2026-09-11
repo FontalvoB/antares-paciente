@@ -1,0 +1,14 @@
+{
+  "base": "v3",
+  "static_sections_identical_to_v3": true,
+  "static_binary_prefix_identical": true,
+  "duration": 8,
+  "fps": 30,
+  "size": 4286264,
+  "clips": [
+    "Idle",
+    "RigCheck"
+  ],
+  "bones": 51,
+  "source_hash": "7f4c2e3a4582776505d3b6c061f3cccc610e5441f4710bd07483a587702182b8"
+}
