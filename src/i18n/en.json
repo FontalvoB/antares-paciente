@@ -1838,5 +1838,8 @@
   "Sin foto registrada": "No photo saved",
   "Toma una foto o elige una imagen": "Take a photo or choose an image",
   "Tu comida registrada se conserva.": "Your logged meal is kept.",
-  "Ver detalle": "View details"
+  "Ver detalle": "View details",
+  "Desliza hacia arriba para ver mensajes anteriores": "Scroll up to see earlier messages",
+  "Cargando mensajes anteriores…": "Loading earlier messages…",
+  "Inicio de la conversación": "Start of the conversation"
 }
