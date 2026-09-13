@@ -1,0 +1,18 @@
+[
+  {
+    "state": "base",
+    "intersecting_triangle_pairs": 0
+  },
+  {
+    "state": "volume",
+    "intersecting_triangle_pairs": 272
+  },
+  {
+    "state": "mid",
+    "intersecting_triangle_pairs": 53
+  },
+  {
+    "state": "lean",
+    "intersecting_triangle_pairs": 0
+  }
+]
