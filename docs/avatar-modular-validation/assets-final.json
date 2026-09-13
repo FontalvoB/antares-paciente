@@ -1,0 +1,95 @@
+{
+  "assets": [
+    {
+      "file": "bodies/male-body-base-v8.glb",
+      "bytes": 5312372,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "clothing/tops/male-shirt-basic-01-v2.glb",
+      "bytes": 1631704,
+      "triangles": 10770,
+      "materials": 2,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "hair/male-hair-01-v2.glb",
+      "bytes": 179020,
+      "triangles": 949,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "hair/male-hair-02-v2.glb",
+      "bytes": 606056,
+      "triangles": 3796,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "hair/male-hair-03-v2.glb",
+      "bytes": 606052,
+      "triangles": 3796,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "accessories/glasses/unisex-glasses-01.glb",
+      "bytes": 169100,
+      "triangles": 960,
+      "materials": 2,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "accessories/watches/unisex-watch-01.glb",
+      "bytes": 287836,
+      "triangles": 1582,
+      "materials": 4,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "accessories/bracelets/unisex-bracelet-01.glb",
+      "bytes": 211720,
+      "triangles": 1262,
+      "materials": 2,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    }
+  ],
+  "clips": [
+    {
+      "name": "Idle",
+      "duration": 12,
+      "channels": 153,
+      "endpointDifference": 0
+    },
+    {
+      "name": "RigCheck",
+      "duration": 2,
+      "channels": 153,
+      "endpointDifference": 0
+    }
+  ],
+  "protectedDataIdentical": true,
+  "activeCombination": {
+    "bytes": 8218784,
+    "triangles": 42294
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "invariants_hash": "7f4c2e3a4582776505d3b6c061f3cccc610e5441f4710bd07483a587702182b8",
+  "invariants_preserved": true,
+  "max_loop_curve_slope_error": 3.84366871620731e-08,
+  "fps": 30,
+  "frames": [
+    1,
+    241
+  ],
+  "duration_seconds": 8
+}

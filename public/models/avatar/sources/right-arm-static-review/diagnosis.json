@@ -1,0 +1,52 @@
+{
+  "base": "v3 editable",
+  "right_only": true,
+  "pose_approved": false,
+  "joints": {
+    "Arm": [
+      0.18199266493320465,
+      -0.021999098360538483,
+      1.3250234127044678
+    ],
+    "ForeArm": [
+      0.23739178478717804,
+      -0.06732571125030518,
+      1.075223684310913
+    ],
+    "Hand": [
+      0.2423967868089676,
+      -0.05931764468550682,
+      0.8279752731323242
+    ]
+  },
+  "morph_checks": [
+    {
+      "state": "base",
+      "triangle_pairs": 18
+    },
+    {
+      "state": "volume",
+      "triangle_pairs": 141
+    },
+    {
+      "state": "mid",
+      "triangle_pairs": 84
+    },
+    {
+      "state": "lean",
+      "triangle_pairs": 0
+    }
+  ],
+  "base_contact_regions": [
+    [
+      [
+        "RightUpLeg",
+        "RightHandThumb3"
+      ],
+      18
+    ]
+  ],
+  "weights_modified": false,
+  "idle_modified": false,
+  "exported": false
+}

@@ -1,0 +1,13 @@
+{
+  "reference": "codex-clipboard-34a3d71f-a977-4892-a4e7-f5d96eb3f542.png",
+  "changed_bones": [
+    "RightHand",
+    "RightHandThumb1",
+    "RightHandThumb3"
+  ],
+  "approved_arm_unchanged": true,
+  "left_unchanged": true,
+  "idle_unchanged": true,
+  "final_export": false,
+  "awaiting_static_visual_approval": true
+}

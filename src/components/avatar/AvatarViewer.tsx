@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { AnimationMixer, Box3, LoopRepeat, Mesh, SkinnedMesh, Texture, Vector3 } from 'three';
@@ -8,39 +8,28 @@ import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { IonSpinner } from '@ionic/react';
 import { useT } from '../../i18n/I18nContext';
 import { AVATAR_URL } from './avatar-validation';
+import { approachBody } from './avatar-body-state';
 import type { AvatarMetrics, MorphInfo, MorphWeights } from './avatar-validation';
+import { AvatarEquipment } from './AvatarEquipment';
+import { disposeAvatarAsset } from './avatar-resources';
+import { equippedItems } from './avatar-equipment';
+import type { AvatarEquipmentState } from './avatar-equipment';
 
-interface Asset {
+export interface AvatarAsset {
   gltf: GLTF; meshes: SkinnedMesh[]; morphs: MorphInfo[];
   metrics: AvatarMetrics; started: number;
+  equipment: Record<string, { id: string; status: 'loading' | 'ready' | 'error'; bytes: number; loadMs?: number }>;
 }
 interface Props {
   weights: MorphWeights; playing: boolean;
+  enteredAt: number;
+  equipment: AvatarEquipmentState;
   onReady: (morphs: MorphInfo[]) => void;
   onMetrics: (metrics: AvatarMetrics) => void;
 }
 
-function disposeAsset(gltf: GLTF) {
-  const materials = new Set<Material>(), textures = new Set<Texture>();
-  gltf.scene.traverse(object => {
-    if (object instanceof Mesh) {
-      object.geometry.dispose();
-      for (const m of Array.isArray(object.material) ? object.material : [object.material]) materials.add(m);
-    }
-    if (object instanceof SkinnedMesh) object.skeleton.dispose();
-  });
-  materials.forEach(m => {
-    Object.values(m).forEach(v => { if (v instanceof Texture) textures.add(v); });
-    m.dispose();
-  });
-  textures.forEach(texture => {
-    texture.dispose();
-    const bitmap = texture.source.data;
-    if (typeof ImageBitmap !== 'undefined' && bitmap instanceof ImageBitmap) bitmap.close();
-  });
-}
 
-function inspect(gltf: GLTF, bytes: number, started: number): Asset {
+function inspect(gltf: GLTF, bytes: number, started: number): AvatarAsset {
   const meshes: SkinnedMesh[] = [], materials = new Set<Material>(), textures = new Set<Texture>();
   const bones = new Set<string>();
   let triangles = 0;
@@ -59,7 +48,7 @@ function inspect(gltf: GLTF, bytes: number, started: number): Asset {
   if (!gltf.animations.some(a => a.name === 'Idle') || bones.size !== 51) throw new Error('Missing Idle or skeleton');
   const morphs = Object.keys(body.morphTargetDictionary!).map(name => ({ name, min: 0, max: 1 }));
   const height = new Box3().setFromObject(gltf.scene).getSize(new Vector3()).y;
-  return { gltf, meshes, morphs, started, metrics: {
+  return { gltf, meshes, morphs, started, equipment: {}, metrics: {
     bytes, triangles, materials: materials.size, textures: textures.size, bones: bones.size, height,
     loadMs: performance.now() - started, firstFrameMs: 0, fps: 0, calls: 0,
     geometries: 0, gpuTextures: 0, idleTime: 0, loops: 0,
@@ -67,41 +56,76 @@ function inspect(gltf: GLTF, bytes: number, started: number): Asset {
   } };
 }
 
-function AvatarScene({ asset, weights, playing, onMetrics }: Props & { asset: Asset }) {
+function AvatarScene({ asset, weights, playing, onMetrics, onReady, enteredAt, equipment }: Props & { asset: AvatarAsset }) {
   const mixer = useRef<AnimationMixer | null>(null);
   const loops = useRef(0);
+  const initialWeights = useRef(weights);
+  const visualBody = useRef((weights.BodyVolume ?? 0) - (weights.BodyLean ?? 0));
+  const reducedMotion = useRef(false);
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => { reducedMotion.current = media.matches; };
+    sync(); media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
   const sample = useRef({ start: performance.now(), frames: 0, first: true });
   useEffect(() => { sample.current.start = performance.now(); sample.current.frames = 0; }, [playing]);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // La escena nunca dibuja la versión neutral antes de aplicar el estado inicial.
+    asset.meshes.forEach(mesh => {
+      for (const [name, index] of Object.entries(mesh.morphTargetDictionary ?? {})) {
+        mesh.morphTargetInfluences![index] = initialWeights.current[name] ?? 0;
+      }
+    });
     const instance = new AnimationMixer(asset.gltf.scene);
     const clip = asset.gltf.animations.find(a => a.name === 'Idle')!.clone();
     // El exportador empieza en 1/30 s; normalizar el clip a cero en memoria.
     const offset = Math.min(...clip.tracks.map(track => track.times[0]));
     clip.tracks.forEach(track => track.shift(-offset)); clip.resetDuration();
     instance.clipAction(clip).setLoop(LoopRepeat, Infinity).play();
+    instance.update(0);
     const looped = () => { loops.current++; };
     instance.addEventListener('loop', looped); mixer.current = instance;
     return () => {
       instance.removeEventListener('loop', looped);
       instance.stopAllAction(); instance.uncacheRoot(asset.gltf.scene); mixer.current = null;
     };
+    // Los cambios posteriores de pesos se interpolan en useFrame, sin reiniciar Idle.
   }, [asset]);
-  useEffect(() => {
+  useFrame(({ gl, scene, camera }, delta) => {
+    if (!mixer.current) return;
+    const target = (weights.BodyVolume ?? 0) - (weights.BodyLean ?? 0);
+    visualBody.current = reducedMotion.current ? target : approachBody(visualBody.current, target, delta);
     asset.meshes.forEach(mesh => {
       for (const [name, index] of Object.entries(mesh.morphTargetDictionary ?? {})) {
-        mesh.morphTargetInfluences![index] = weights[name] ?? 0;
+        mesh.morphTargetInfluences![index] = name === 'BodyVolume' ? Math.max(0, visualBody.current)
+          : name === 'BodyLean' ? Math.max(0, -visualBody.current) : weights[name] ?? 0;
       }
     });
-  }, [asset, weights]);
-  useFrame(({ gl, scene, camera }, delta) => {
     if (playing) mixer.current?.update(Math.min(delta, 0.1));
     gl.render(scene, camera);
     const now = performance.now(), s = sample.current;
-    if (s.first) { asset.metrics.firstFrameMs = now - asset.started; s.first = false; s.start = now; }
+    const first = s.first;
+    if (first) {
+      asset.metrics.firstFrameMs = now - asset.started;
+      asset.metrics.visibleMs = now - enteredAt;
+      asset.metrics.initialMorphWeights = Object.fromEntries(Object.entries(asset.meshes[0].morphTargetDictionary ?? {})
+        .map(([name, index]) => [name, asset.meshes[0].morphTargetInfluences![index]]));
+      s.first = false; s.start = now; onReady(asset.morphs);
+    }
     s.frames++;
-    if (now - s.start >= 1000) {
+    if (first || now - s.start >= 1000) {
       const memory = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
-      onMetrics({ ...asset.metrics, fps: s.frames * 1000 / (now - s.start), calls: gl.info.render.calls,
+      const materials = new Set<Material>();
+      let triangles = 0;
+      for (const mesh of asset.meshes) {
+        triangles += (mesh.geometry.index?.count ?? mesh.geometry.attributes.position.count) / 3;
+        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+      }
+      onMetrics({ ...asset.metrics, fps: first ? 0 : s.frames * 1000 / (now - s.start), calls: gl.info.render.calls,
+        triangles, materials: materials.size,
+        bytes: asset.metrics.bytes + Object.values(asset.equipment).reduce((sum, item) => sum + item.bytes, 0),
+        equipment: { ...asset.equipment },
         geometries: gl.info.memory.geometries, gpuTextures: gl.info.memory.textures,
         heapMB: memory ? memory.usedJSHeapSize / 1048576 : undefined,
         idleTime: mixer.current?.time ?? 0, loops: loops.current,
@@ -118,6 +142,7 @@ function AvatarScene({ asset, weights, playing, onMetrics }: Props & { asset: As
     <directionalLight position={[-2, 3, -4]} intensity={2.4} />
     <directionalLight position={[2, 2, 1]} intensity={1.2} />
     <primitive object={asset.gltf.scene} dispose={null} />
+    {equippedItems(equipment).map(item => <AvatarEquipment key={item.slot} item={item} asset={asset} />)}
     <OrbitControls target={[0, 0.88, 0]} enablePan={false} minDistance={2.1} maxDistance={4.5}
       minPolarAngle={0.5} maxPolarAngle={2.2} />
   </>;
@@ -125,11 +150,10 @@ function AvatarScene({ asset, weights, playing, onMetrics }: Props & { asset: As
 
 export function AvatarViewer(props: Props) {
   const t = useT();
-  const [asset, setAsset] = useState<Asset | null>(null);
+  const [asset, setAsset] = useState<AvatarAsset | null>(null);
   const [error, setError] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
   const host = useRef<HTMLDivElement>(null);
-  const { onReady } = props;
   useEffect(() => {
     let inView = true;
     const sync = () => setVisible(inView && !document.hidden);
@@ -148,16 +172,16 @@ export function AvatarViewer(props: Props) {
         if (!response.ok) throw new Error(`GLB ${response.status}`);
         const bytes = await response.arrayBuffer();
         const gltf = await new GLTFLoader().parseAsync(bytes, '');
-        if (disposed) { disposeAsset(gltf); return; }
+        if (disposed) { disposeAvatarAsset(gltf); return; }
         owned = gltf;
         const inspected = inspect(gltf, bytes.byteLength, started);
-        setAsset(inspected); onReady(inspected.morphs);
+        setAsset(inspected);
       } catch (e) {
         if (!disposed) { console.error('Avatar load:', e); setError(true); }
       }
     })();
-    return () => { disposed = true; controller.abort(); if (owned) disposeAsset(owned); };
-  }, [onReady]);
+    return () => { disposed = true; controller.abort(); if (owned) disposeAvatarAsset(owned); };
+  }, []);
   if (error) throw new Error('Avatar loading failed');
   return <div ref={host} style={{ height: 'clamp(180px, 40vh, 360px)', background: 'var(--g1)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
     {!asset ? <div role="status" style={{ padding: 24 }}><IonSpinner /> {t('Cargando avatar…')}</div> :

@@ -1,0 +1,105 @@
+{
+  "max_error_mm": 0.0025563445822177305,
+  "samples": [
+    {
+      "state": "base",
+      "frame": 1,
+      "error_mm": 0.002177689492897039
+    },
+    {
+      "state": "base",
+      "frame": 61,
+      "error_mm": 0.0025381258791035716
+    },
+    {
+      "state": "base",
+      "frame": 121,
+      "error_mm": 0.00231121765757392
+    },
+    {
+      "state": "base",
+      "frame": 181,
+      "error_mm": 0.0025422970637118338
+    },
+    {
+      "state": "base",
+      "frame": 241,
+      "error_mm": 0.002177689492897039
+    },
+    {
+      "state": "volume",
+      "frame": 1,
+      "error_mm": 0.0020891971368923396
+    },
+    {
+      "state": "volume",
+      "frame": 61,
+      "error_mm": 0.002546314266071398
+    },
+    {
+      "state": "volume",
+      "frame": 121,
+      "error_mm": 0.0022531817163748504
+    },
+    {
+      "state": "volume",
+      "frame": 181,
+      "error_mm": 0.002451422178826462
+    },
+    {
+      "state": "volume",
+      "frame": 241,
+      "error_mm": 0.0020891971368923396
+    },
+    {
+      "state": "mid",
+      "frame": 1,
+      "error_mm": 0.0021674947817218893
+    },
+    {
+      "state": "mid",
+      "frame": 61,
+      "error_mm": 0.0025563445822177305
+    },
+    {
+      "state": "mid",
+      "frame": 121,
+      "error_mm": 0.0023843836888495385
+    },
+    {
+      "state": "mid",
+      "frame": 181,
+      "error_mm": 0.002546322441279216
+    },
+    {
+      "state": "mid",
+      "frame": 241,
+      "error_mm": 0.0021674947817218893
+    },
+    {
+      "state": "lean",
+      "frame": 1,
+      "error_mm": 0.0021681349557518747
+    },
+    {
+      "state": "lean",
+      "frame": 61,
+      "error_mm": 0.0025508882815826824
+    },
+    {
+      "state": "lean",
+      "frame": 121,
+      "error_mm": 0.0022874162166604587
+    },
+    {
+      "state": "lean",
+      "frame": 181,
+      "error_mm": 0.0024995004531549727
+    },
+    {
+      "state": "lean",
+      "frame": 241,
+      "error_mm": 0.0021681349557518747
+    }
+  ]
+}

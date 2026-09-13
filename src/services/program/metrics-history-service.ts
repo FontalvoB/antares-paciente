@@ -20,6 +20,10 @@
 import type { MetricsHistoryDto } from './types'
 import { apiFetch } from '../../utils/apiClient'
 
+export function recordWeight(weightKg: number, date: string): Promise<{ id: string; weightKg: number; date: string; observedAt: string }> {
+  return apiFetch('/api/v1/program/me/weight', { method: 'POST', body: { weightKg, date } })
+}
+
 const METRICS_HISTORY_PATH = '/api/v1/program/me/metrics-history'
 export const METRICS_HISTORY_DAYS = 180
 /** bmi,hba1c,body_fat (defaults del backend) + weight para el fallback cliente de IMC. */
