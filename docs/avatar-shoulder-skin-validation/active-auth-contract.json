@@ -1,0 +1,46 @@
+{
+  "schema": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "gender": {
+        "type": "string",
+        "nullable": true
+      },
+      "hair": {
+        "type": "string",
+        "nullable": true
+      },
+      "clothing": {
+        "$ref": "#/components/schemas/AvatarClothing"
+      },
+      "accessories": {
+        "$ref": "#/components/schemas/AvatarAccessories"
+      }
+    },
+    "additionalProperties": false
+  },
+  "requestBody": {
+    "content": {
+      "application/json": {
+        "schema": {
+          "$ref": "#/components/schemas/AvatarConfiguration"
+        }
+      },
+      "text/json": {
+        "schema": {
+          "$ref": "#/components/schemas/AvatarConfiguration"
+        }
+      },
+      "application/*+json": {
+        "schema": {
+          "$ref": "#/components/schemas/AvatarConfiguration"
+        }
+      }
+    }
+  },
+  "checkedAt": "2026-09-14T15:46:31.5470507-05:00"
+}

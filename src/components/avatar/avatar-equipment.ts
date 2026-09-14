@@ -13,7 +13,7 @@ export const emptyEquipment: AvatarEquipmentState = {
   clothing: { shirt: null, pants: null, shoes: null }, hair: null,
   accessories: { glasses: null, watch: null, bracelet: null },
 };
-export interface EquipmentItem { id: string; slot: EquipmentSlot; label: string; path: string; color?: string }
+export interface EquipmentItem { category?: EquipmentSlot; gender?: AvatarGender; id: string; slot: EquipmentSlot; label: string; path: string; color?: string }
 export const equipmentCatalog: EquipmentItem[] = [
   { id: 'shirt-basic-01', slot: 'shirt', label: 'Camiseta petróleo', path: 'clothing/tops/male-shirt-basic-01-v3.glb' },
   { id: 'shirt-basic-01-navy', slot: 'shirt', label: 'Camiseta azul marino', path: 'clothing/tops/male-shirt-basic-01-v3.glb', color: '#142855' },
@@ -43,9 +43,17 @@ export function equippedItems(state: AvatarEquipmentState, gender: AvatarGender 
   return compatibleEquipment(gender).filter(item => ids.includes(item.id));
 }
 
-export function compatibleEquipment(gender: AvatarGender) {
-  return gender === 'male' ? equipmentCatalog : femaleCatalog;
-}
+const pantsLabels = ['Deportivo con puño', 'Casual arena', 'Denim recto'];
+const wardrobeCatalog = (gender: AvatarGender): EquipmentItem[] => [
+  ...pantsLabels.map((label, index) => ({ id: `pants-${gender}-0${index + 1}`, category: 'pants' as const,
+    gender, slot: 'pants' as const, label, path: `clothing/pants/pants-${gender}-0${index + 1}.glb` })),
+  { id: `shoes-${gender}-01`, category: 'shoes', gender, slot: 'shoes', label: 'Zapatillas neutras', path: `clothing/shoes/shoes-${gender}-01.glb` },
+];
+const resolvedCatalog = Object.fromEntries((['male', 'female'] as const).map(gender => [gender,
+  [...(gender === 'male' ? equipmentCatalog : femaleCatalog), ...wardrobeCatalog(gender)]
+    .map(item => ({ ...item, category: item.slot, gender })),
+])) as Record<AvatarGender, EquipmentItem[]>;
+export function compatibleEquipment(gender: AvatarGender) { return resolvedCatalog[gender]; }
 export function equipmentForGender(state: AvatarEquipmentState, gender: AvatarGender): AvatarEquipmentState {
   const allowed = new Set(compatibleEquipment(gender).map(item => item.id));
   const keep = (id: string | null, slot: EquipmentSlot) => id && allowed.has(id)

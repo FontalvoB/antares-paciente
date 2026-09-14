@@ -1938,5 +1938,22 @@
   "Ver plan": "View plan",
   "Ver mi cuerpo": "View my body",
   "Abrir expediente": "Open record",
-  "Ver perfil": "View profile"
+  "Ver perfil": "View profile",
+  "Claro": "Light",
+  "Claro medio": "Medium light",
+  "Medio": "Medium",
+  "Medio oscuro": "Medium dark",
+  "Oscuro": "Dark",
+  "Tono de piel": "Skin tone",
+  "Pantalón": "Pants",
+  "Sin pantalón": "No pants",
+  "Zapatos": "Shoes",
+  "Sin zapatos": "No shoes",
+  "Deportivo con puño": "Cuffed joggers",
+  "Casual arena": "Sand casual pants",
+  "Denim recto": "Straight denim",
+  "Zapatillas neutras": "Neutral sneakers",
+  "Acercar": "Zoom in",
+  "Alejar": "Zoom out",
+  "Restablecer vista": "Reset view"
 }

@@ -1,0 +1,130 @@
+[
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/pants/pants-female-01.glb",
+    "bytes": 372136,
+    "triangles": 2144,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/pants/pants-female-02.glb",
+    "bytes": 358748,
+    "triangles": 2144,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/pants/pants-female-03.glb",
+    "bytes": 358808,
+    "triangles": 2144,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/shoes/shoes-female-01.glb",
+    "bytes": 152432,
+    "triangles": 464,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/pants/pants-male-01.glb",
+    "bytes": 644624,
+    "triangles": 4269,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/pants/pants-male-02.glb",
+    "bytes": 626836,
+    "triangles": 4269,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/pants/pants-male-03.glb",
+    "bytes": 690756,
+    "triangles": 4269,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "path": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/clothing/shoes/shoes-male-01.glb",
+    "bytes": 149264,
+    "triangles": 578,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  }
+]

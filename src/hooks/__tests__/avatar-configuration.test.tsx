@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ token: 'a' as string | null, get: vi.fn(), put
 vi.mock('../../utils/authApi', () => ({ getAccessToken: () => mocks.token, onSessionInvalid: () => () => {} }));
 vi.mock('../../services/avatar-configuration-service', () => ({ getAvatarConfiguration: (...args: unknown[]) => mocks.get(...args), putAvatarConfiguration: (...args: unknown[]) => mocks.put(...args) }));
 import { useAvatarConfiguration } from '../useAvatarConfiguration';
-const female: AvatarConfiguration = { version: 1, gender: 'female', hair: 'hair-02', clothing: { shirt: 'shirt-basic-01', pants: null, shoes: null }, accessories: { glasses: null, watch: null, bracelet: null } };
+const female: AvatarConfiguration = { version: 1, skin: 'skin-03', gender: 'female', hair: 'hair-02', clothing: { shirt: 'shirt-basic-01', pants: null, shoes: null }, accessories: { glasses: null, watch: null, bracelet: null } };
 beforeEach(() => { mocks.token='a'; mocks.get.mockReset(); mocks.put.mockReset(); });
 afterEach(cleanup);
 
