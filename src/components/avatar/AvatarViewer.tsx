@@ -1,3 +1,5 @@
+import { prepareSkin } from './avatar-skin';
+import type { SkinId } from './avatar-skin-catalog';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -15,14 +17,16 @@ import { bodyCatalog, equippedItems } from './avatar-equipment';
 import type { AvatarEquipmentState, AvatarGender } from './avatar-equipment';
 
 export interface AvatarAsset {
-  gltf: GLTF; meshes: SkinnedMesh[]; morphs: MorphInfo[];
+  setSkin: (id: SkinId) => void; gltf: GLTF; meshes: SkinnedMesh[]; morphs: MorphInfo[];
   metrics: AvatarMetrics; started: number;
   equipment: Record<string, { id: string; status: 'loading' | 'ready' | 'error'; bytes: number; loadMs?: number }>;
 }
 interface Props {
   gender?: AvatarGender;
+  skin?: SkinId;
   viewpoint?: 'front' | 'side';
   viewRevision?: number;
+  viewDistance?: number;
   weights: MorphWeights; playing: boolean;
   enteredAt: number;
   equipment: AvatarEquipmentState;
@@ -50,7 +54,7 @@ function inspect(gltf: GLTF, bytes: number, started: number): AvatarAsset {
   if (!gltf.animations.some(a => a.name === 'Idle') || bones.size !== 51) throw new Error('Missing Idle or skeleton');
   const morphs = Object.keys(body.morphTargetDictionary!).map(name => ({ name, min: 0, max: 1 }));
   const height = new Box3().setFromObject(gltf.scene).getSize(new Vector3()).y;
-  return { gltf, meshes, morphs, started, equipment: {}, metrics: {
+  return { setSkin: prepareSkin(meshes), gltf, meshes, morphs, started, equipment: {}, metrics: {
     bytes, triangles, materials: materials.size, textures: textures.size, bones: bones.size, height,
     loadMs: performance.now() - started, firstFrameMs: 0, fps: 0, calls: 0,
     geometries: 0, gpuTextures: 0, idleTime: 0, loops: 0,
@@ -58,12 +62,13 @@ function inspect(gltf: GLTF, bytes: number, started: number): AvatarAsset {
   } };
 }
 
-function AvatarScene({ asset, weights, playing, onMetrics, onReady, enteredAt, equipment, gender = 'male', viewpoint = 'front', viewRevision = 0, onFailure }: Props & { asset: AvatarAsset; onFailure: () => void }) {
+function AvatarScene({ asset, weights, playing, onMetrics, onReady, enteredAt, equipment, skin = 'skin-03', gender = 'male', viewpoint = 'front', viewRevision = 0, viewDistance = 3.1, onFailure }: Props & { asset: AvatarAsset; onFailure: () => void }) {
+  useLayoutEffect(() => { asset.setSkin(skin); }, [asset, skin]);
   const camera = useThree(s => s.camera);
   useEffect(() => {
-    camera.position.set(viewpoint === 'side' ? -3.1 : 0, 0.95, viewpoint === 'side' ? 0 : -3.1);
+    camera.position.set(viewpoint === 'side' ? -viewDistance : 0, 0.95, viewpoint === 'side' ? 0 : -viewDistance);
     camera.lookAt(0, 0.88, 0);
-  }, [camera, viewpoint, viewRevision]);
+  }, [camera, viewpoint, viewRevision, viewDistance]);
   const mixer = useRef<AnimationMixer | null>(null);
   const loops = useRef(0);
   const initialWeights = useRef(weights);

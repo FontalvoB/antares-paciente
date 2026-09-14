@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { IonButton, IonCard, IonCardContent, IonLabel, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner } from '@ionic/react';
 import { PageHeader } from '../components/PageHeader';
@@ -13,6 +13,7 @@ import { WeightRecordModal } from '../components/avatar/WeightRecordModal';
 import { AvatarCustomizer } from '../components/avatar/AvatarCustomizer';
 import type { AvatarState } from '../components/avatar/avatar-state';
 import { useAvatarConfiguration } from '../hooks/useAvatarConfiguration';
+import { getAccessToken, getMe } from '../utils/authApi';
 
 const Viewer = lazy(() => import('../components/avatar/AvatarViewer').then(m => ({ default: m.AvatarViewer })));
 
@@ -28,9 +29,20 @@ export function AvatarPage() {
   const [view, setView] = useState('appearance');
   const [viewpoint, setViewpoint] = useState<'front' | 'side'>('front');
   const [viewRevision, setViewRevision] = useState(0);
+  const [viewDistance, setViewDistance] = useState(3.1);
   const [enteredAt] = useState(() => performance.now());
   const customization = useAvatarConfiguration(!authLoading);
   const progress = useAvatarProgress(!authLoading && customization.status === 'ready');
+  const [canRecordWeight, setCanRecordWeight] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const token = getAccessToken();
+    setCanRecordWeight(false);
+    if (!authLoading && token) void getMe().then(me => {
+      if (!cancelled && token === getAccessToken()) setCanRecordWeight(me?.roles.includes('Admin') === true);
+    });
+    return () => { cancelled = true; };
+  }, [authLoading, progress.owner]);
   const configuration = customization.value;
   const gender = configuration?.gender;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -73,7 +85,7 @@ export function AvatarPage() {
           <IonButton onClick={() => { setMetrics(null); setMorphs([]); setAttempt(a => a + 1); }}>{t('Reintentar')}</IonButton>
         </div>}>
           <Suspense fallback={<div role="status"><IonSpinner /> {t('Cargando avatar…')}</div>}>
-            <Viewer gender={gender} weights={weights} equipment={avatar} viewpoint={viewpoint} viewRevision={viewRevision} playing={playing && !dataError} enteredAt={enteredAt} onReady={setMorphs} onMetrics={setMetrics} />
+            <Viewer skin={avatar.skin} gender={gender} weights={weights} equipment={avatar} viewpoint={viewpoint} viewRevision={viewRevision} viewDistance={viewDistance} playing={playing && !dataError} enteredAt={enteredAt} onReady={setMorphs} onMetrics={setMetrics} />
           </Suspense>
         </ViewerBoundary>
         </div>}
@@ -86,6 +98,11 @@ export function AvatarPage() {
         <IonButton disabled={!morphs.length || dataError || !weights} fill="outline" onClick={() => setPlaying(p => !p)}>
           {playing ? t('Pausar movimiento') : t('Reanudar movimiento')}
         </IonButton>
+        </div>
+        <div className="avatar-viewer-actions">
+          <IonButton fill="clear" disabled={!morphs.length || dataError} onClick={() => setViewDistance(d => Math.max(2.1, d - .4))}>{t('Acercar')}</IonButton>
+          <IonButton fill="clear" disabled={!morphs.length || dataError} onClick={() => setViewDistance(d => Math.min(4.5, d + .4))}>{t('Alejar')}</IonButton>
+          <IonButton fill="clear" disabled={!morphs.length || dataError} onClick={() => { setViewDistance(3.1); setViewpoint('front'); setViewRevision(r => r + 1); }}>{t('Restablecer vista')}</IonButton>
         </div>
       </div>
       <div>
@@ -129,8 +146,8 @@ export function AvatarPage() {
           <IonButton fill="outline" disabled={progress.status === 'loading'} onClick={() => {
             setSelectedDate(null); progress.refresh();
           }}>{t('Actualizar historial')}</IonButton>
-          <IonButton fill="outline" disabled={progress.status === 'loading'}
-            onClick={() => setRecordOpen(true)}>{t('Registrar peso')}</IonButton>
+          {canRecordWeight && <IonButton fill="outline" disabled={progress.status === 'loading'}
+            onClick={() => setRecordOpen(true)}>{t('Registrar peso')}</IonButton>}
         </>}
         {progress.status === 'error' && <IonButton fill="clear" onClick={() => progress.refresh()}>{t('Reintentar')}</IonButton>}
         {view === 'appearance' && <IonButton fill="clear" onClick={() => setView('evolution')}>{t('Ver mi evolución')}</IonButton>}
@@ -162,7 +179,7 @@ export function AvatarPage() {
       </div>
       {metrics && <div hidden data-avatar-metrics={JSON.stringify(metrics)} />}
     </Scroll>
-    {recordOpen && <WeightRecordModal onClose={() => setRecordOpen(false)} onSaved={() => {
+    {canRecordWeight && recordOpen && <WeightRecordModal onClose={() => setRecordOpen(false)} onSaved={() => {
       setSelectedDate(null); progress.refresh(); showToast(t('Peso guardado correctamente.'), 'ok');
     }} />}
   </Screen>;

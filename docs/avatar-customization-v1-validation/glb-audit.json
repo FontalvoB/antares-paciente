@@ -1,0 +1,154 @@
+[
+  {
+    "file": "public\\models\\avatar\\clothing\\pants\\pants-male-01.glb",
+    "bytes": 644624,
+    "sha256": "0266bfe9dafdd472cf667eb1ce42f2e8ce821e2674e29b676698da61df074d2a",
+    "bones": 51,
+    "inverseBindMaxError": 7.286667823791504e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "file": "public\\models\\avatar\\clothing\\pants\\pants-male-02.glb",
+    "bytes": 626836,
+    "sha256": "40630baf84f6bca47ec557261b0881c3d45877cd4ce04c2ac0ea79aaccf7a645",
+    "bones": 51,
+    "inverseBindMaxError": 7.286667823791504e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "file": "public\\models\\avatar\\clothing\\pants\\pants-male-03.glb",
+    "bytes": 690756,
+    "sha256": "8703741d72fa2a78d92747dc9a816a399c62249f877b19555b71165acb7f4735",
+    "bones": 51,
+    "inverseBindMaxError": 7.286667823791504e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "file": "public\\models\\avatar\\clothing\\shoes\\shoes-male-01.glb",
+    "bytes": 149264,
+    "sha256": "c91112849118b9a4123d074039de6380ae70b020915c2854b5eaa63f895e8d7a",
+    "bones": 51,
+    "inverseBindMaxError": 7.286667823791504e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "file": "public\\models\\avatar\\clothing\\pants\\pants-female-01.glb",
+    "bytes": 372136,
+    "sha256": "f199853e4ac9717ec7037c39090447571d39e0c871de055fc4aae23a042001a3",
+    "bones": 51,
+    "inverseBindMaxError": 7.927417755126953e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "file": "public\\models\\avatar\\clothing\\pants\\pants-female-02.glb",
+    "bytes": 358748,
+    "sha256": "d3769165640c2119e8eb04ce8193748a9ea9790b1848247f04b785b4cf0641e3",
+    "bones": 51,
+    "inverseBindMaxError": 7.927417755126953e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "file": "public\\models\\avatar\\clothing\\pants\\pants-female-03.glb",
+    "bytes": 358808,
+    "sha256": "9759a74a033de83b06b01e3fe9e6dabbba217d13b777868c172700c2bb336113",
+    "bones": 51,
+    "inverseBindMaxError": 7.927417755126953e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  },
+  {
+    "file": "public\\models\\avatar\\clothing\\shoes\\shoes-female-01.glb",
+    "bytes": 152432,
+    "sha256": "aac1d6809ec49f708b7f19d366c15ba70a1bb05f8958fcc23f13a1f60736de04",
+    "bones": 51,
+    "inverseBindMaxError": 7.927417755126953e-06,
+    "materials": 2,
+    "morphs": [
+      "BodyVolume",
+      "BodyLean",
+      "Abdomen",
+      "Waist",
+      "Chest",
+      "Arms",
+      "Thighs",
+      "FaceVolume",
+      "MuscleDefinition"
+    ]
+  }
+]
