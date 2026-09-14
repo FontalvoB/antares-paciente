@@ -38,10 +38,10 @@ const FALLBACK_UNIT: Record<MetricId, string> = {
 
 /** Nota honesta del estado requires-data (clave t()) por tarjeta. */
 const REQUIRES_DATA_NOTE: Record<MetricId, string> = {
-  imc: 'Se completa con tu primera medición',
-  hba1c: 'Aparece cuando tu equipo registra tu primer análisis/bioimpedancia',
-  fat: 'Aparece cuando tu equipo registra tu primer análisis/bioimpedancia',
-  adh: 'Se completa con tu primera semana de adherencia',
+  imc: 'Sin datos registrados',
+  hba1c: 'Sin datos registrados',
+  fat: 'Sin datos registrados',
+  adh: 'Sin datos registrados',
   // pts nunca cae en requires-data: el balance real siempre existe.
   pts: '',
 }

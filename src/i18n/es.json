@@ -1830,7 +1830,7 @@
   "Ver detalle": "Ver detalle",
   "Desliza hacia arriba para ver mensajes anteriores": "Desliza hacia arriba para ver mensajes anteriores",
   "Cargando mensajes anteriores…": "Cargando mensajes anteriores…",
-  "Inicio de la conversación": "Inicio de la conversación"
+  "Inicio de la conversación": "Inicio de la conversación",
   "Avatar · Mi evolución": "Avatar · Mi evolución",
   "Representación visual de tu progreso registrado": "Representación visual de tu progreso registrado",
   "Vista relativa a tu primer registro válido de los últimos 365 días. No es una simulación médica ni reproduce tu anatomía.": "Vista relativa a tu primer registro válido de los últimos 365 días. No es una simulación médica ni reproduce tu anatomía.",
@@ -1869,5 +1869,16 @@
   "Sin accesorio": "Sin accesorio",
   "Gafas negras": "Gafas negras",
   "Reloj deportivo": "Reloj deportivo",
-  "Pulsera sencilla": "Pulsera sencilla"
+  "Pulsera sencilla": "Pulsera sencilla",
+  "Tus módulos": "Tus módulos",
+  "Agenda y telemedicina": "Agenda y telemedicina",
+  "Plan y registro diario": "Plan y registro diario",
+  "Abrir visualización del perfil": "Abrir visualización del perfil",
+  "Agenda, control y telemedicina": "Agenda, control y telemedicina",
+  "Tu plan y el registro del día": "Tu plan y el registro del día",
+  "Ver agenda": "Ver agenda",
+  "Ver plan": "Ver plan",
+  "Ver mi cuerpo": "Ver mi cuerpo",
+  "Abrir expediente": "Abrir expediente",
+  "Ver perfil": "Ver perfil"
 }
