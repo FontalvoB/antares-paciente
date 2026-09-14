@@ -127,14 +127,14 @@ try {
         const choose = value => shirt.evaluate((el, value) => el.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true })), value);
         await choose('shirt-basic-01');
         await page.waitForFunction(() => JSON.parse(document.querySelector('[data-avatar-metrics]').dataset.avatarMetrics).equipment?.shirt?.status === 'ready');
-        const dressed = await readMetrics(); assert.equal(dressed.calls, 3); assert.equal(dressed.triangles, 34694);
+        const dressed = await readMetrics(); assert.equal(dressed.calls, 2); assert.equal(dressed.triangles, 18287);
         await page.screenshot({ path: path.join(out, 'shirt-equipped.png') });
         if (process.env.AVATAR_HAIR) {
           const hair = page.locator('ion-select[label="Cabello"]');
-          for (const id of ['hair-01', 'hair-02', 'hair-03']) {
+          for (const id of ['hair-02', 'hair-03']) {
             await hair.evaluate((el, value) => el.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true })), id);
             await page.waitForFunction(id => { const m = JSON.parse(document.querySelector('[data-avatar-metrics]').dataset.avatarMetrics); return m.equipment?.hair?.id === id && m.equipment.hair.status === 'ready'; }, id);
-            const m = await readMetrics(); assert.equal(m.calls, 4); assert.equal(m.bones, 51);
+            const m = await readMetrics(); assert.equal(m.calls, 3); assert.equal(m.bones, 51);
             await page.screenshot({ path: path.join(out, `${id}-equipped.png`) });
             reports.push({ scenario: id, metrics: m });
           }
@@ -147,7 +147,7 @@ try {
               return ['glasses','watch','bracelet'].every(slot=>e?.[slot]?.status==='ready');
             });
             await page.waitForTimeout(1500);
-            const combined=await readMetrics(); assert(combined.calls>=12); assert.equal(combined.bones,51);
+            const combined=await readMetrics(); assert(combined.calls===9); assert.equal(combined.bones,51);
             await page.screenshot({path:path.join(out,'all-equipped.png')});
             await page.waitForTimeout(12500);
             const animated=await readMetrics(); assert(animated.loops>0); assert(animated.idleTime>combined.idleTime+10);
@@ -168,7 +168,7 @@ try {
             for(const label of ['Gafas','Reloj','Pulsera']) {
               await page.locator(`ion-select[label="${label}"]`).evaluate(el=>el.dispatchEvent(new CustomEvent('ionChange',{detail:{value:''},bubbles:true})));
             }
-            await page.waitForFunction(()=>JSON.parse(document.querySelector('[data-avatar-metrics]').dataset.avatarMetrics).calls===4);
+            await page.waitForFunction(()=>JSON.parse(document.querySelector('[data-avatar-metrics]').dataset.avatarMetrics).calls===3);
           }
           await hair.evaluate(el => el.dispatchEvent(new CustomEvent('ionChange', { detail: { value: '' }, bubbles: true })));
         }

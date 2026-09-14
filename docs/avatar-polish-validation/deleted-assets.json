@@ -1,0 +1,38 @@
+[
+  {
+    "file": "public/models/avatar/bodies/male-body-base-v5.glb",
+    "bytes": 4470620,
+    "sha256": "0193a0123e7b41bce2156e9337d6983278d44bfa112dc58e745e7de91942e92e",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/hair/male-hair-01.glb",
+    "bytes": 178936,
+    "sha256": "36c102d1ae32ebc4ec3fa17261dbb914f9ecdd8c2387956cebde461b6047b412",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/hair/male-hair-01-v2.glb",
+    "bytes": 179020,
+    "sha256": "935f8ba12443a4667a3b91a07d32d6bd1a2c477a66a874e14ee696f5975e350b",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/hair/male-hair-02.glb",
+    "bytes": 605972,
+    "sha256": "ccebeb91ef0d48e914e3d277f15324bddb5ee026da32be1af70745991da2c5a0",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/hair/male-hair-03.glb",
+    "bytes": 605972,
+    "sha256": "417bd00d17086b03d775d3b3e0a2ebec069054f226103b222106c71347841e2d",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/male-body-base-v4.blend1",
+    "bytes": 3761346,
+    "sha256": "e363c9335b078681d901133af80630fc0c39e5038f0431529f4321bec1b88895",
+    "references": []
+  }
+]

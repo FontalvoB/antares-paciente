@@ -19,13 +19,14 @@
       "inverseBindMaxDifference": 0
     },
     {
-      "file": "hair/male-hair-01-v2.glb",
+      "file": "retired-short-style",
       "bytes": 179020,
       "triangles": 949,
       "materials": 1,
       "textures": 0,
       "bones": 51,
-      "inverseBindMaxDifference": 0
+      "inverseBindMaxDifference": 0,
+      "status": "Historical measurement; export removed in polish v9"
     },
     {
       "file": "hair/male-hair-02-v2.glb",
