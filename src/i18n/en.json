@@ -1859,7 +1859,7 @@
   "Ver detalle": "View details",
   "Desliza hacia arriba para ver mensajes anteriores": "Scroll up to see earlier messages",
   "Cargando mensajes anteriores…": "Loading earlier messages…",
-  "Inicio de la conversación": "Start of the conversation"
+  "Inicio de la conversación": "Start of the conversation",
   "Avatar · Mi evolución": "Avatar · My progress",
   "Representación visual de tu progreso registrado": "Visual representation of your recorded progress",
   "Vista relativa a tu primer registro válido de los últimos 365 días. No es una simulación médica ni reproduce tu anatomía.": "Relative view based on your first valid record in the last 365 days. This is not a medical simulation or a reproduction of your anatomy.",
@@ -1898,5 +1898,16 @@
   "Sin accesorio": "No accessory",
   "Gafas negras": "Black glasses",
   "Reloj deportivo": "Sports watch",
-  "Pulsera sencilla": "Simple bracelet"
+  "Pulsera sencilla": "Simple bracelet",
+  "Tus módulos": "Your modules",
+  "Agenda y telemedicina": "Scheduling and telemedicine",
+  "Plan y registro diario": "Plan and daily log",
+  "Abrir visualización del perfil": "Open body profile view",
+  "Agenda, control y telemedicina": "Scheduling, follow-up and telemedicine",
+  "Tu plan y el registro del día": "Your plan and today's log",
+  "Ver agenda": "View schedule",
+  "Ver plan": "View plan",
+  "Ver mi cuerpo": "View my body",
+  "Abrir expediente": "Open record",
+  "Ver perfil": "View profile"
 }
