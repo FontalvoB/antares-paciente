@@ -1,0 +1,765 @@
+[
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\approved-mirror-idle\\approved-right-checkpoint.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle_ApprovedArms",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v3_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\elbow-diagnosis\\diagnostic-static-NOT-APPROVED.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v3_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\hand-image-static-review\\hand-reference-review.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v3_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-base\\before-avatar-20260910-091301.blend",
+    "externalPaths": [
+      "C:\\Program Files\\Blender Foundation\\Blender 5.2\\5.2\\datafiles\\assets\\brushes\\essentials_brushes-gp_draw.blend"
+    ],
+    "assetProperties": [],
+    "actions": [],
+    "meshes": [
+      "Cube"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-base\\checkpoint-rig.blend",
+    "externalPaths": [
+      "C:\\Program Files\\Blender Foundation\\Blender 5.2\\5.2\\datafiles\\assets\\brushes\\essentials_brushes-gp_draw.blend"
+    ],
+    "assetProperties": [],
+    "actions": [
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-base_FirstReduction",
+      "male-base_Mesh",
+      "male-base_Proxy"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-base\\male-base.blend",
+    "externalPaths": [
+      "C:\\Program Files\\Blender Foundation\\Blender 5.2\\5.2\\datafiles\\assets\\brushes\\essentials_brushes-gp_draw.blend",
+      "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v2\\male-body-base-v2.blend",
+      "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v2\\male-body-base-v2.blend",
+      "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v2\\male-body-base-v2.blend"
+    ],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "Idle.001",
+      "Idle.002",
+      "Idle_v3",
+      "RigCheck",
+      "RigCheck.001",
+      "RigCheck.002"
+    ],
+    "meshes": [
+      "male-body-base-v3_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-base\\male-base.blend1",
+    "externalPaths": [
+      "C:\\Program Files\\Blender Foundation\\Blender 5.2\\5.2\\datafiles\\assets\\brushes\\essentials_brushes-gp_draw.blend"
+    ],
+    "assetProperties": [],
+    "actions": [
+      "RigCheck",
+      "RigCheck.001",
+      "RigCheck.002"
+    ],
+    "meshes": [
+      "male-base_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v2\\before-v2.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-base_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v2\\male-body-base-v2.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v2_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v3\\before-idle-v3.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v2_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v3\\male-body-base-v3.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v3_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\before-v4.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle_v3",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v3_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\male-body-base-v4.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh.001"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\male-body-base-v4.blend1",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\conservative-correction\\before-male-body-base-v4.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\conservative-correction\\checkpoint.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\posture-correction\\editable-staged.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle_Relaxed_v4",
+      "RigCheck.002"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\posture-correction\\live-before-correction.blend",
+    "externalPaths": [
+      "C:\\Program Files\\Blender Foundation\\Blender 5.2\\5.2\\datafiles\\assets\\brushes\\essentials_brushes-gp_draw.blend"
+    ],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "Idle.001",
+      "Idle.002",
+      "Idle.003",
+      "Idle_v3",
+      "Idle_v4",
+      "RigCheck",
+      "RigCheck.001",
+      "RigCheck.002"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\posture-correction\\previous-v4\\male-body-base-v4.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\side-pose-correction\\before-male-body-base-v4.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v4\\side-pose-correction\\checkpoint.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v4_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v5\\male-body-base-v5.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v5_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v6\\male-body-base-v6.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v6_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v7\\male-body-base-v7.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "male-body-base-v8_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01",
+      "Shirt_Basic_02",
+      "Shirt_Basic_02_Seams_PreRange",
+      "Shirt_Basic_02_Seams_PreFinal",
+      "Shirt_Basic_02_Seams",
+      "Hair_01_V8",
+      "Hair_02_V8",
+      "Hair_03_V8"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v7\\male-body-base-v7.blend1",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v8\\male-body-base-v8.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "male-body-base-v8_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01",
+      "Shirt_Basic_02",
+      "Shirt_Basic_02_Seams_PreRange",
+      "Shirt_Basic_02_Seams_PreFinal",
+      "Shirt_Basic_02_Seams",
+      "Hair_01_V8",
+      "Hair_02_V8",
+      "Hair_03_V8"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\male-body-base-v8\\male-body-base-v8.blend1",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "male-body-base-v8_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01",
+      "Shirt_Basic_02",
+      "Shirt_Basic_02_Seams_PreRange",
+      "Shirt_Basic_02_Seams_PreFinal",
+      "Shirt_Basic_02_Seams"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\checkpoint-v7-before-modular.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-hair-01-v2.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "male-body-base-v8_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01",
+      "Shirt_Basic_02",
+      "Shirt_Basic_02_Seams_PreRange",
+      "Shirt_Basic_02_Seams_PreFinal",
+      "Shirt_Basic_02_Seams",
+      "Hair_01_V8",
+      "Hair_02_V8",
+      "Hair_03_V8"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-hair-01.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-hair-02-v2.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "male-body-base-v8_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01",
+      "Shirt_Basic_02",
+      "Shirt_Basic_02_Seams_PreRange",
+      "Shirt_Basic_02_Seams_PreFinal",
+      "Shirt_Basic_02_Seams",
+      "Hair_01_V8",
+      "Hair_02_V8",
+      "Hair_03_V8"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-hair-02.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-hair-03-v2.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "male-body-base-v8_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01",
+      "Shirt_Basic_02",
+      "Shirt_Basic_02_Seams_PreRange",
+      "Shirt_Basic_02_Seams_PreFinal",
+      "Shirt_Basic_02_Seams",
+      "Hair_01_V8",
+      "Hair_02_V8",
+      "Hair_03_V8"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-hair-03.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-shirt-basic-01-v2.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "male-body-base-v8_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01",
+      "Shirt_Basic_02",
+      "Shirt_Basic_02_Seams_PreRange",
+      "Shirt_Basic_02_Seams_PreFinal",
+      "Shirt_Basic_02_Seams"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\male-shirt-basic-01.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\unisex-bracelet-01.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\unisex-glasses-01.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\modular-v1\\unisex-watch-01.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v7_Mesh",
+      "Shirt_Blockout_Rejected",
+      "Shirt_Blockout_HemReview",
+      "Shirt_Basic_01",
+      "Shirt_Seams_BeforeFit",
+      "Shirt_Seams_NormalReview",
+      "Shirt_Seams_RibbonReview",
+      "Shirt_Basic_01_Seams",
+      "Hair_01_HairlineReview",
+      "Hair_01",
+      "Hair_02",
+      "Hair_03",
+      "Glasses_01",
+      "Watch_01",
+      "Bracelet_01"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\polish-v9\\avatar-polished-v9.blend",
+    "externalPaths": [],
+    "assetProperties": [
+      "accessories/bracelets/unisex-bracelet-02.glb",
+      "accessories/glasses/unisex-glasses-02.glb",
+      "hair/male-hair-02-v3.glb",
+      "hair/male-hair-03-v3.glb",
+      "bodies/male-body-base-v9.glb",
+      "clothing/tops/male-shirt-basic-01-v3.glb",
+      "accessories/watches/unisex-watch-02.glb"
+    ],
+    "actions": [
+      "Idle",
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v9_Mesh",
+      "Shirt_Collar_Review",
+      "Hair_02_V9",
+      "Hair_03_V9",
+      "Glasses_02",
+      "Watch_02",
+      "Bracelet_02",
+      "Icosphere",
+      "Icosphere.001",
+      "Icosphere.002",
+      "Icosphere.003",
+      "Icosphere.004",
+      "Icosphere.005",
+      "Icosphere.006"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources\\right-arm-static-review\\right-arm-NOT-APPROVED.blend",
+    "externalPaths": [],
+    "assetProperties": [],
+    "actions": [
+      "RigCheck"
+    ],
+    "meshes": [
+      "male-body-base-v3_Mesh"
+    ]
+  }
+]

@@ -1859,7 +1859,7 @@
   "Ver detalle": "View details",
   "Desliza hacia arriba para ver mensajes anteriores": "Scroll up to see earlier messages",
   "Cargando mensajes anteriores…": "Loading earlier messages…",
-  "Inicio de la conversación": "Start of the conversation"
+  "Inicio de la conversación": "Start of the conversation",
   "Avatar · Mi evolución": "Avatar · My progress",
   "Representación visual de tu progreso registrado": "Visual representation of your recorded progress",
   "Vista relativa a tu primer registro válido de los últimos 365 días. No es una simulación médica ni reproduce tu anatomía.": "Relative view based on your first valid record in the last 365 days. This is not a medical simulation or a reproduction of your anatomy.",
@@ -1890,7 +1890,6 @@
   "No se pudo cargar un elemento. Quítalo y vuelve a seleccionarlo para reintentar.": "An item could not be loaded. Remove it and select it again to retry.",
   "Cabello": "Hair",
   "Sin cabello": "No hair",
-  "Hair 01 · Corto": "Hair 01 · Short",
   "Hair 02 · Peinado lateral": "Hair 02 · Side part",
   "Hair 03 · Rizado": "Hair 03 · Curly",
   "Gafas": "Glasses",

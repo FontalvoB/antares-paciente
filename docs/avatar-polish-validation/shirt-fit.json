@@ -1,0 +1,522 @@
+[
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 1,
+    "minGapMm": -2.822070848196745,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 91,
+    "minGapMm": -2.862014662241563,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 181,
+    "minGapMm": -3.0325212428579107,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 271,
+    "minGapMm": -3.2724622142268345,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 361,
+    "minGapMm": -2.822070848196745,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 1,
+    "minGapMm": -2.6725589923444204,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 91,
+    "minGapMm": -2.741571282967925,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 181,
+    "minGapMm": -2.881937143683899,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 271,
+    "minGapMm": -3.113586346444208,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 361,
+    "minGapMm": -2.6725589923444204,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 1,
+    "minGapMm": -2.5201706375810318,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 91,
+    "minGapMm": -2.6216886180918664,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 181,
+    "minGapMm": -2.728185885644052,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 271,
+    "minGapMm": -2.9514410998672247,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 361,
+    "minGapMm": -2.5201706375810318,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 1,
+    "minGapMm": -2.364487932936754,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 91,
+    "minGapMm": -2.5024780989042483,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 181,
+    "minGapMm": -2.5712178176036105,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 271,
+    "minGapMm": -2.786001074127853,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 361,
+    "minGapMm": -2.364487932936754,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -2.205776545451954,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -2.383655599260237,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -2.411103392660152,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -2.617036778246984,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -2.205776545451954,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -3.007027022249531,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -3.0579943195334636,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -3.214550371922087,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -3.4637789212865755,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -3.007027022249531,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -2.820795212755911,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -2.8554762102430686,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -3.031433720025234,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -3.271101479185745,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -2.820795212755911,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -2.8156111875432543,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -2.838455904566217,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -3.026478814717848,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -3.2654973983881064,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -2.8156111875432543,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -2.6273435141774826,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -2.72920863062609,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -2.8367586855893023,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -3.0676989481435157,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -2.6273435141774826,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -2.370410849835025,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -2.359901547606569,
+    "deeperThan2mm": 1
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -2.587684317404637,
+    "deeperThan2mm": 1
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -2.8098452057747636,
+    "deeperThan2mm": 1
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -2.370410849835025,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -2.821995483827777,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -2.8619890508707613,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -3.0324652179842815,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -3.2723181720939465,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -2.821995483827777,
+    "deeperThan2mm": 4
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -3.2772296253824607,
+    "deeperThan2mm": 5
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -3.321140458865557,
+    "deeperThan2mm": 5
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -3.4862452375818975,
+    "deeperThan2mm": 5
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -3.741773049114272,
+    "deeperThan2mm": 5
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -3.2772296253824607,
+    "deeperThan2mm": 5
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -2.7205082587897778,
+    "deeperThan2mm": 2
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -2.717763440159615,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -2.934355696197599,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -3.1693131750216708,
+    "deeperThan2mm": 3
+  },
+  {
+    "asset": "Shirt_Collar_Review",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -2.7205082587897778,
+    "deeperThan2mm": 2
+  }
+]
