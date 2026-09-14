@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { AnimationMixer, Box3, LoopRepeat, Mesh, SkinnedMesh, Texture, Vector3 } from 'three';
 import type { Material } from 'three';
@@ -7,13 +7,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { IonSpinner } from '@ionic/react';
 import { useT } from '../../i18n/I18nContext';
-import { AVATAR_URL } from './avatar-validation';
 import { approachBody } from './avatar-body-state';
 import type { AvatarMetrics, MorphInfo, MorphWeights } from './avatar-validation';
 import { AvatarEquipment } from './AvatarEquipment';
 import { disposeAvatarAsset } from './avatar-resources';
-import { equippedItems } from './avatar-equipment';
-import type { AvatarEquipmentState } from './avatar-equipment';
+import { bodyCatalog, equippedItems } from './avatar-equipment';
+import type { AvatarEquipmentState, AvatarGender } from './avatar-equipment';
 
 export interface AvatarAsset {
   gltf: GLTF; meshes: SkinnedMesh[]; morphs: MorphInfo[];
@@ -21,6 +20,9 @@ export interface AvatarAsset {
   equipment: Record<string, { id: string; status: 'loading' | 'ready' | 'error'; bytes: number; loadMs?: number }>;
 }
 interface Props {
+  gender?: AvatarGender;
+  viewpoint?: 'front' | 'side';
+  viewRevision?: number;
   weights: MorphWeights; playing: boolean;
   enteredAt: number;
   equipment: AvatarEquipmentState;
@@ -56,7 +58,12 @@ function inspect(gltf: GLTF, bytes: number, started: number): AvatarAsset {
   } };
 }
 
-function AvatarScene({ asset, weights, playing, onMetrics, onReady, enteredAt, equipment }: Props & { asset: AvatarAsset }) {
+function AvatarScene({ asset, weights, playing, onMetrics, onReady, enteredAt, equipment, gender = 'male', viewpoint = 'front', viewRevision = 0, onFailure }: Props & { asset: AvatarAsset; onFailure: () => void }) {
+  const camera = useThree(s => s.camera);
+  useEffect(() => {
+    camera.position.set(viewpoint === 'side' ? -3.1 : 0, 0.95, viewpoint === 'side' ? 0 : -3.1);
+    camera.lookAt(0, 0.88, 0);
+  }, [camera, viewpoint, viewRevision]);
   const mixer = useRef<AnimationMixer | null>(null);
   const loops = useRef(0);
   const initialWeights = useRef(weights);
@@ -94,7 +101,18 @@ function AvatarScene({ asset, weights, playing, onMetrics, onReady, enteredAt, e
   }, [asset]);
   useFrame(({ gl, scene, camera }, delta) => {
     if (!mixer.current) return;
+    if (sample.current.first) {
+      const selected = equippedItems(equipment, gender);
+      if (selected.some(item => asset.equipment[item.slot]?.status === 'error')) { onFailure(); return; }
+      // Primer frame completo: no presentar un cuerpo provisional sin sus elementos.
+      if (selected.some(item => asset.equipment[item.slot]?.id !== item.id || asset.equipment[item.slot]?.status !== 'ready')) {
+        gl.clear(); return;
+      }
+    }
     const target = (weights.BodyVolume ?? 0) - (weights.BodyLean ?? 0);
+    // Si el historial cambió mientras cargaban GLB/módulos, el primer dibujo
+    // debe usar el dato más reciente; interpolar solo después de ser visible.
+    if (sample.current.first) visualBody.current = target;
     visualBody.current = reducedMotion.current ? target : approachBody(visualBody.current, target, delta);
     asset.meshes.forEach(mesh => {
       for (const [name, index] of Object.entries(mesh.morphTargetDictionary ?? {})) {
@@ -142,16 +160,17 @@ function AvatarScene({ asset, weights, playing, onMetrics, onReady, enteredAt, e
     <directionalLight position={[-2, 3, -4]} intensity={2.4} />
     <directionalLight position={[2, 2, 1]} intensity={1.2} />
     <primitive object={asset.gltf.scene} dispose={null} />
-    {equippedItems(equipment).map(item => <AvatarEquipment key={item.slot} item={item} asset={asset} />)}
+    {equippedItems(equipment, gender).map(item => <AvatarEquipment key={item.slot} item={item} asset={asset} />)}
     <OrbitControls target={[0, 0.88, 0]} enablePan={false} minDistance={2.1} maxDistance={4.5}
       minPolarAngle={0.5} maxPolarAngle={2.2} />
   </>;
 }
 
-export function AvatarViewer(props: Props) {
+function AvatarBodyViewer(props: Props) {
   const t = useT();
   const [asset, setAsset] = useState<AvatarAsset | null>(null);
   const [error, setError] = useState(false);
+  const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -168,7 +187,7 @@ export function AvatarViewer(props: Props) {
     const started = performance.now();
     void (async () => {
       try {
-        const response = await fetch(AVATAR_URL, { signal: controller.signal });
+        const response = await fetch(`${import.meta.env.BASE_URL}models/avatar/${bodyCatalog[props.gender ?? 'male'].path}`, { signal: controller.signal });
         if (!response.ok) throw new Error(`GLB ${response.status}`);
         const bytes = await response.arrayBuffer();
         const gltf = await new GLTFLoader().parseAsync(bytes, '');
@@ -181,16 +200,23 @@ export function AvatarViewer(props: Props) {
       }
     })();
     return () => { disposed = true; controller.abort(); if (owned) disposeAvatarAsset(owned); };
-  }, []);
+  }, [props.gender]);
   if (error) throw new Error('Avatar loading failed');
-  return <div ref={host} style={{ height: 'clamp(180px, 40vh, 360px)', background: 'var(--g1)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-    {!asset ? <div role="status" style={{ padding: 24 }}><IonSpinner /> {t('Cargando avatar…')}</div> :
+  return <div ref={host} style={{ position: 'relative', height: 'var(--avatar-view-height, clamp(180px, 40vh, 360px))', background: 'var(--g1)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+    {!ready && <div role="status" style={{ position: 'absolute', padding: 24 }}><IonSpinner /> {t('Cargando avatar…')}</div>}
+    {asset &&
       <Canvas camera={{ position: [0, 0.95, -3.1], fov: 38, near: 0.05, far: 20 }}
         dpr={[1, 1.5]} frameloop={visible ? 'always' : 'never'}
         gl={{ antialias: true, alpha: true }}
         onCreated={({ gl }) => { gl.domElement.addEventListener('webglcontextlost', () => setError(true), { once: true }); }}
         fallback={<p role="alert">{t('WebGL no está disponible en este dispositivo.')}</p>}>
-        <AvatarScene {...props} asset={asset} playing={props.playing && visible} />
+        <AvatarScene {...props} asset={asset} playing={props.playing && visible} onFailure={() => setError(true)}
+          onReady={morphs => { setReady(true); props.onReady(morphs); }} />
       </Canvas>}
   </div>;
+}
+
+/** Cambiar de cuerpo desmonta sus recursos antes de presentar el siguiente. */
+export function AvatarViewer(props: Props) {
+  return <AvatarBodyViewer key={props.gender ?? 'male'} {...props} />;
 }

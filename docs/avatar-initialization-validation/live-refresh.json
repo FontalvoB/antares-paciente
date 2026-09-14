@@ -1,0 +1,16 @@
+{
+  "historyMs": "5787.199999988079",
+  "modalCount": 1,
+  "morphs": {
+    "Abdomen": 0,
+    "Arms": 0,
+    "BodyLean": 0,
+    "BodyVolume": 1,
+    "Chest": 0,
+    "FaceVolume": 0,
+    "MuscleDefinition": 0,
+    "Thighs": 0,
+    "Waist": 0
+  },
+  "phase": "USER_DATA_READY"
+}

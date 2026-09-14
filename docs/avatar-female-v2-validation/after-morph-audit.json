@@ -1,0 +1,63 @@
+{
+  "metrics": [
+    {
+      "morph": "BodyVolume",
+      "p99edgeStretch": 1.3847550595690936,
+      "maxEdgeStretch": 1.6128112856047205
+    },
+    {
+      "morph": "BodyLean",
+      "p99edgeStretch": 1.0342388691291031,
+      "maxEdgeStretch": 1.4733932932783829
+    },
+    {
+      "morph": "Abdomen",
+      "p99edgeStretch": 1.1466010895606185,
+      "maxEdgeStretch": 1.2743261477006596
+    },
+    {
+      "morph": "Waist",
+      "p99edgeStretch": 1.1107214732549495,
+      "maxEdgeStretch": 1.1568738328624497
+    },
+    {
+      "morph": "Chest",
+      "p99edgeStretch": 1.1132912281774492,
+      "maxEdgeStretch": 1.3094676788807875
+    },
+    {
+      "morph": "Arms",
+      "p99edgeStretch": 1.36047559488952,
+      "maxEdgeStretch": 1.75566327208225
+    },
+    {
+      "morph": "Thighs",
+      "p99edgeStretch": 1.202684918169482,
+      "maxEdgeStretch": 1.332352857679486
+    },
+    {
+      "morph": "FaceVolume",
+      "p99edgeStretch": 1.1709735632379963,
+      "maxEdgeStretch": 1.364923669584902
+    },
+    {
+      "morph": "MuscleDefinition",
+      "p99edgeStretch": 1.0834942567110502,
+      "maxEdgeStretch": 1.177505197389951
+    }
+  ],
+  "unchanged": {
+    "Basis": "ffd9c8fdcdc0802bce00b832a01ebd43e05defb1ac2bd437bf08232f18a69a08",
+    "Waist": "ec067c78395aa62dc46d326632bc9bf8cd918e5e59289fb25af66a551412e395",
+    "Chest": "0e4d927f8a220279c5e0a08be88b78e2d260665be330886892de477641578462"
+  },
+  "corrected": [
+    "Arms",
+    "Thighs",
+    "FaceVolume",
+    "MuscleDefinition",
+    "BodyVolume",
+    "BodyLean",
+    "Abdomen"
+  ]
+}
