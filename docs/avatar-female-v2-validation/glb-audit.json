@@ -1,0 +1,65 @@
+{
+  "bodyBasisUnchanged": true,
+  "basisError": 0.0000020794737622916704,
+  "nineMorphNamesUnchanged": true,
+  "clips": [
+    {
+      "name": "Idle",
+      "channels": 153,
+      "unchanged": true
+    },
+    {
+      "name": "RigCheck",
+      "channels": 153,
+      "unchanged": true
+    }
+  ],
+  "bindError": 0,
+  "rows": [
+    {
+      "file": "bodies/female-body-base-v2.glb",
+      "bytes": 4342200,
+      "triangles": 15000,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "sha256": "ef05b6096a1a4ed6910585db78ce0cbf3c4adbab7dfcfdd4ac53c0f4d11f3363"
+    },
+    {
+      "file": "clothing/tops/female-shirt-basic-01-v2.glb",
+      "bytes": 1474752,
+      "triangles": 7344,
+      "materials": 2,
+      "textures": 0,
+      "bones": 51,
+      "sha256": "72c746bd38407b17d0e78a91e60bfcfa232cfd4076c4964f35c7b97de6b91f2d"
+    },
+    {
+      "file": "hair/female-hair-long-01.glb",
+      "bytes": 322976,
+      "triangles": 2816,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "sha256": "ce4cfbb96ddde40453dcce6404faeaa7d2aed3617726a561a835f7d424f94cf0"
+    },
+    {
+      "file": "hair/female-hair-long-02.glb",
+      "bytes": 323556,
+      "triangles": 2816,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "sha256": "c619e88baca8b6d7efb39155cdbd29da8ce6970c23535157e3fef7c7d0866ae4"
+    },
+    {
+      "file": "hair/female-hair-long-03.glb",
+      "bytes": 383116,
+      "triangles": 3536,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "sha256": "52468398d7c9f4aea64b852455ed1f8ae0fe51d93d80a6508068e79d14f99ada"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "triangles": 15000,
+  "bytes": 4268016,
+  "bones": 51,
+  "maxInfluences": 4,
+  "loopDifference": 0.0,
+  "idleMovement": 0.05245726380869159,
+  "fps": 30,
+  "idleSeconds": 12,
+  "morphTests": [
+    {
+      "morph": "BodyVolume",
+      "maxDelta": 0.137561954180743,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "BodyLean",
+      "maxDelta": 0.02312118737561997,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "Abdomen",
+      "maxDelta": 0.031744262748560015,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "Waist",
+      "maxDelta": 0.015166921691490146,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "Chest",
+      "maxDelta": 0.019119043324913283,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "Arms",
+      "maxDelta": 0.018062600817572244,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "Thighs",
+      "maxDelta": 0.02124999872847073,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "FaceVolume",
+      "maxDelta": 0.009562498962958941,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    },
+    {
+      "morph": "MuscleDefinition",
+      "maxDelta": 0.004250103771896251,
+      "frames": [
+        1,
+        91,
+        181,
+        271,
+        361
+      ]
+    }
+  ],
+  "actions": [
+    "Idle",
+    "RigCheck"
+  ]
+}

@@ -19362,3 +19362,47 @@ html.plt-tablet .screen.auth .auth-scroll {
   width: 100%;
   margin-inline: auto;
 }
+
+/* Avatar: vista común, controles Ionic y separación entre apariencia e historial. */
+.avatar-experience .avatar-view-tabs {
+  width: calc(100% - 32px);
+  max-width: 520px;
+  margin: 0 16px 12px;
+  flex-shrink: 0;
+}
+.avatar-experience .avatar-layout { display: grid; gap: 12px; padding: 0 16px 20px; }
+.avatar-experience .avatar-preview { min-width: 0; }
+.avatar-experience .avatar-panel { min-width: 0; }
+.avatar-experience ion-card { margin: 0 0 12px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.avatar-experience ion-card-content { color: var(--tx); padding: 18px; }
+.avatar-experience h2 { font-size: 18px; font-weight: 700; margin: 0 0 12px; }
+.avatar-experience p { line-height: 1.5; margin: 10px 0; }
+.avatar-experience ion-button { min-height: 44px; font-size: 13px; --border-radius: var(--radius-sm); }
+.avatar-experience ion-segment-button { min-height: 44px; min-width: 70px; text-transform: none; letter-spacing: normal; }
+.avatar-experience ion-select { min-height: 56px; margin-block: 10px; }
+.avatar-experience ion-button:focus-within,
+.avatar-experience ion-select:focus-within,
+.avatar-experience ion-segment-button:focus-within { outline: 2px solid var(--teal); outline-offset: 2px; }
+.avatar-experience .avatar-viewer-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.avatar-experience .avatar-save { padding: 0 2px 12px; }
+.avatar-experience .avatar-save p { font-size: 13px; }
+.avatar-experience .avatar-status { min-height: 220px; display: flex; gap: 12px; align-items: center; justify-content: center; padding: 24px; }
+@media (min-width: 768px) {
+  .avatar-experience .avatar-layout { grid-template-columns: minmax(0, 1.15fr) minmax(320px, 1fr); max-width: 1100px; margin-inline: auto; gap: 28px; }
+  .avatar-experience .avatar-preview { position: sticky; top: 0; align-self: start; }
+}
+@media (max-width: 767px) and (min-height: 700px) {
+  .avatar-experience { --avatar-view-height: clamp(180px, 32vh, 280px); }
+  .avatar-experience .avatar-preview { position: sticky; top: 0; z-index: 2; background: var(--g0); padding-bottom: 8px; }
+  .avatar-experience .avatar-viewer-tools p { margin: 4px 0; }
+  .avatar-experience .avatar-viewer-actions ion-button { font-size: 11px; margin: 0; }
+  .avatar-experience .avatar-viewer-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .avatar-experience .avatar-viewer-actions ion-button { min-width: 0; white-space: normal; --padding-start: 4px; --padding-end: 4px; }
+  .avatar-experience .avatar-panel ion-select { scroll-margin-top: calc(32vh + 84px); }
+}
+@media (max-height: 500px) {
+  .avatar-experience .page-head { padding-block: 4px; }
+  .avatar-experience .page-head-title { font-size: 22px; }
+  .avatar-experience .page-head-sub { display: none; }
+  .avatar-experience .avatar-view-tabs { margin-bottom: 6px; }
+}

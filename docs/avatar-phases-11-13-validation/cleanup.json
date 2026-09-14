@@ -1,0 +1,38 @@
+[
+  {
+    "file": "public/models/avatar/sources/female-v1/female-body-base-v1.blend1",
+    "bytes": 70644012,
+    "sha256": "86c81a076e741b4bd264d64397d0390225d6614bee8414979e2f1ef63b5f32e8",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-equipment-review.blend1",
+    "bytes": 72178094,
+    "sha256": "78b3af580c80578181c2f8d4041f524d80b13f68c5c65134161237872b41b663",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-intake.blend",
+    "bytes": 66212857,
+    "sha256": "dd62ac5a8fe8855ea01b41afbc0a139cd44739cd85bc9bce9c9194857a2c22bc",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-reduced.blend",
+    "bytes": 67304801,
+    "sha256": "f51a2d0c3c82c3a35487ef50319f6f4b014a9ccd20fc0a6f852f69f8e6da64bd",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-rig-review.blend1",
+    "bytes": 68242612,
+    "sha256": "7d0ee4c368853d8e3ce6b33d12599345575a22b02d5d370df91aab72594e10aa",
+    "references": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-weld-before-reduction.blend",
+    "bytes": 68958094,
+    "sha256": "04800a50cac477c482c5d0afad76581d0ba6fb9e40a986505bc255f7ecd3b755",
+    "references": []
+  }
+]

@@ -1,0 +1,1125 @@
+{
+  "method": "Evaluated skinned vertex to nearest body triangle signed normal distance; conservative proxy, not exact solid intersection",
+  "samples": [
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 1,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 2.0975733641535044
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 1,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 1,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 1,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 91,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 2.1095776464790106
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 91,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 91,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 91,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 181,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 2.0926035940647125
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 181,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 181,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 181,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 271,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 2.1249028213787824
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 271,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 271,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 271,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 361,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 2.0975733641535044
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 361,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 361,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0,
+      "frame": 361,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 1,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 1,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 1,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 1,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 91,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.9547736155800521
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 91,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 91,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 91,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 181,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.9363414321560413
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 181,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 181,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 181,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 271,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 271,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 271,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 271,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 361,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 361,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 361,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.25,
+      "frame": 361,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.7924466519616544
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.804114319384098
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.7924466519616544
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 1,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.6495246381964535
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 1,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 1,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 1,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 91,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.660847687162459
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 91,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 91,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 91,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 181,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.6440667677670717
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 181,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 181,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 181,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 271,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.6723778389859945
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 271,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 271,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 271,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 361,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.6495246381964535
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 361,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 361,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 0.75,
+      "frame": 361,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.5115423884708434
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.5227616240736097
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.5341908438131213
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Shirt",
+      "negativeSamples": 1,
+      "maxPenetrationMM": 1.5115423884708434
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyVolume",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 1,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 91,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 181,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 271,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 0.5,
+      "frame": 361,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 1,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 91,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 181,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 271,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Shirt",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Hair_Long_01",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Hair_Long_02",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    },
+    {
+      "morph": "BodyLean",
+      "value": 1,
+      "frame": 361,
+      "object": "Female_Hair_Long_03",
+      "negativeSamples": 0,
+      "maxPenetrationMM": 0
+    }
+  ]
+}

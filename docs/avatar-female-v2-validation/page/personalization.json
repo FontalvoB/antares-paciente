@@ -1,0 +1,272 @@
+{
+  "first": {
+    "bytes": 6476592,
+    "triangles": 26063,
+    "materials": 9,
+    "textures": 3,
+    "bones": 51,
+    "height": 1.6002425729039358,
+    "loadMs": 218.60000002384186,
+    "firstFrameMs": 2623.199999988079,
+    "fps": 0,
+    "calls": 10,
+    "geometries": 9,
+    "gpuTextures": 22,
+    "idleTime": 0.015,
+    "loops": 0,
+    "rootPosition": [
+      0,
+      0.9100404381752014,
+      0.019999179989099503
+    ],
+    "headQuaternion": [
+      0.013021012710073996,
+      -0.0057022735539571925,
+      0.005458504159753492,
+      0.9998840642977854
+    ],
+    "morphWeights": {
+      "BodyVolume": 0.5,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "visibleMs": 4301,
+    "initialMorphWeights": {
+      "BodyVolume": 0.5,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "equipment": {
+      "shirt": {
+        "id": "shirt-basic-01",
+        "status": "ready",
+        "bytes": 1474752,
+        "loadMs": 114.60000002384186
+      },
+      "hair": {
+        "id": "hair-02",
+        "status": "ready",
+        "bytes": 266984,
+        "loadMs": 81
+      },
+      "glasses": {
+        "id": "glasses-01",
+        "status": "ready",
+        "bytes": 119964,
+        "loadMs": 68
+      },
+      "watch": {
+        "id": "watch-01",
+        "status": "ready",
+        "bytes": 172748,
+        "loadMs": 73.09999996423721
+      },
+      "bracelet": {
+        "id": "bracelet-01",
+        "status": "ready",
+        "bytes": 99944,
+        "loadMs": 83.80000001192093
+      }
+    },
+    "heapMB": 105.4172306060791
+  },
+  "female": {
+    "bytes": 6476592,
+    "triangles": 26063,
+    "materials": 9,
+    "textures": 3,
+    "bones": 51,
+    "height": 1.6002425729039358,
+    "loadMs": 218.60000002384186,
+    "firstFrameMs": 2623.199999988079,
+    "fps": 60.068931560807485,
+    "calls": 10,
+    "geometries": 9,
+    "gpuTextures": 22,
+    "idleTime": 2.0379999999999976,
+    "loops": 0,
+    "rootPosition": [
+      -0.007676256848630986,
+      0.9093959402848805,
+      0.019999181851744652
+    ],
+    "headQuaternion": [
+      0.018193588282261898,
+      0.0380923295750107,
+      0.005059930352911098,
+      0.9990957736262265
+    ],
+    "morphWeights": {
+      "BodyVolume": 0.5,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "visibleMs": 4301,
+    "initialMorphWeights": {
+      "BodyVolume": 0.5,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "equipment": {
+      "shirt": {
+        "id": "shirt-basic-01",
+        "status": "ready",
+        "bytes": 1474752,
+        "loadMs": 114.60000002384186
+      },
+      "hair": {
+        "id": "hair-02",
+        "status": "ready",
+        "bytes": 266984,
+        "loadMs": 81
+      },
+      "glasses": {
+        "id": "glasses-01",
+        "status": "ready",
+        "bytes": 119964,
+        "loadMs": 68
+      },
+      "watch": {
+        "id": "watch-01",
+        "status": "ready",
+        "bytes": 172748,
+        "loadMs": 73.09999996423721
+      },
+      "bracelet": {
+        "id": "bracelet-01",
+        "status": "ready",
+        "bytes": 99944,
+        "loadMs": 83.80000001192093
+      }
+    },
+    "heapMB": 108.23510360717773
+  },
+  "male": {
+    "bytes": 4002684,
+    "triangles": 22006,
+    "materials": 8,
+    "textures": 3,
+    "bones": 51,
+    "height": 1.6999976978481486,
+    "loadMs": 124,
+    "firstFrameMs": 908.6999999880791,
+    "fps": 60.00393468283434,
+    "calls": 9,
+    "geometries": 8,
+    "gpuTextures": 20,
+    "idleTime": 2.1120999999642356,
+    "loops": 0,
+    "rootPosition": [
+      -0.007868584851313042,
+      0.9093632332505264,
+      0.019999181851744652
+    ],
+    "headQuaternion": [
+      0.018717800320520457,
+      0.05115993283169567,
+      0.004257388588077978,
+      0.9985059738760843
+    ],
+    "morphWeights": {
+      "BodyVolume": 0.5,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "visibleMs": 3159.300000011921,
+    "initialMorphWeights": {
+      "BodyVolume": 0.5,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "equipment": {
+      "shirt": {
+        "id": "shirt-basic-01-navy",
+        "status": "ready",
+        "bytes": 641904,
+        "loadMs": 74.30000001192093
+      },
+      "hair": {
+        "id": "hair-02",
+        "status": "ready",
+        "bytes": 180132,
+        "loadMs": 45.40000003576279
+      },
+      "glasses": {
+        "id": "glasses-01",
+        "status": "ready",
+        "bytes": 69344,
+        "loadMs": 53
+      },
+      "watch": {
+        "id": "watch-01",
+        "status": "ready",
+        "bytes": 106332,
+        "loadMs": 57.5
+      },
+      "bracelet": {
+        "id": "bracelet-01",
+        "status": "ready",
+        "bytes": 64732,
+        "loadMs": 60.89999997615814
+      }
+    },
+    "heapMB": 175.99700355529785
+  },
+  "puts": 2,
+  "restored": {
+    "version": 1,
+    "gender": "female",
+    "clothing": {
+      "shirt": "shirt-basic-01-navy",
+      "pants": null,
+      "shoes": null
+    },
+    "hair": "hair-02",
+    "accessories": {
+      "glasses": "glasses-01",
+      "watch": "watch-01",
+      "bracelet": "bracelet-01"
+    }
+  },
+  "configurationGate": true,
+  "initialEquipmentGate": true,
+  "saveFailureRetained": true,
+  "incompatibleHairRemoved": true,
+  "loadRetry": true
+}
