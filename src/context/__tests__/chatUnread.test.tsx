@@ -90,6 +90,13 @@ describe("AppContext — unread chat indicator", () => {
     await waitFor(() => {
       expect(vi.mocked(fetchThreadState)).toHaveBeenCalled();
     });
+    // El chequeo de no leídos solo pide el conteo (página de 1): no descarga
+    // el historial completo al entrar a la app.
+    expect(vi.mocked(fetchThreadState)).toHaveBeenCalledWith(
+      "proactive-10247381",
+      "10247381",
+      { limit: 1 },
+    );
     expect(screen.queryByLabelText("Nuevos mensajes")).toBeNull();
     expect(screen.getByTestId("unread").textContent).toBe("false");
     expect(localStorage.getItem("antares:chat-last-seen:10247381")).toBe("5");

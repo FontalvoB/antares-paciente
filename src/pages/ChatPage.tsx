@@ -36,6 +36,7 @@ export function ChatPage() {
     threadId,
     user,
     hydrateChat,
+    prependChatMessages,
     openBookingWizard,
     appendChatMessages,
     showToast,
@@ -43,10 +44,14 @@ export function ChatPage() {
   } = useApp();
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
-  // Ventana de historial visible: arranca en los últimos 10 y crece de a 10
-  // a medida que el usuario scrollea hacia arriba.
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Paginación server-driven: `hasMore`/`nextCursor` los define el backend y
+  // `loadingMore` cubre la carga del tramo anterior al llegar al tope.
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Contador que solo dispara el efecto de anclaje tras cada fetch de página
+  // (éxito o error) para compensar el scroll y apagar `loadingMore`.
+  const [pagesLoaded, setPagesLoaded] = useState(0);
   const end = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,68 +60,131 @@ export function ChatPage() {
   const anchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(
     null,
   );
+  // Marca que el próximo cambio de `chat.length` viene de anteponer mensajes:
+  // evita que el efecto de scroll al final salte y anule el anclaje.
+  const prependingRef = useRef(false);
+  // Hilo al que pertenece el fetch en vuelo: si un push cambia de thread a
+  // mitad de la carga, la respuesta vieja se descarta por completo.
+  const threadIdRef = useRef(threadId);
 
-  // Al abrir el chat se intenta cargar el historial del thread estable: si el
-  // backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
+  const userId = (user.id || user.cedula || user.email || "").trim();
+
+  // Al abrir el chat se intenta cargar la última página del thread estable: si
+  // el backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
   const historyLoaded = useRef<string | null>(null);
   useEffect(() => {
     if (historyLoaded.current === threadId) return;
-    const userId = (user.id || user.cedula || user.email || "").trim();
     if (!userId) return;
     let cancelled = false;
-    void fetchThreadState(threadId, userId).then((state) => {
-      if (cancelled) return;
-      // Historial completo cuando el backend lo expone (roles user/bot
-      // mapeados); fallback al último mensaje con backends anteriores.
-      const history = (state?.messages ?? [])
-        .filter((m) => Boolean(m.text && m.text.trim().length > 0))
-        .map((m) => ({
-          text: m.text,
-          role: m.role === "user" ? ("user" as const) : ("bot" as const),
-        }));
-      if (!history.length) {
-        if (!state?.lastMessage) return;
-        history.push({ text: state.lastMessage, role: "bot" as const });
-      }
-      // El ref se marca SOLO cuando la hidratación se aplica: en StrictMode
-      // (dev) el efecto corre dos veces y el primer fetch queda cancelado; con
-      // el ref marcado de antemano el segundo intento se saltaba y el mensaje
-      // proactivo nunca aparecía.
-      historyLoaded.current = threadId;
-      // Una hidratación fresca siempre abre con la ventana mínima.
-      setVisibleCount(PAGE_SIZE);
-      hydrateChat(history);
-    });
+    void fetchThreadState(threadId, userId, { limit: PAGE_SIZE }).then(
+      (state) => {
+        if (cancelled) return;
+        // Página más reciente cuando el backend la expone (roles user/bot
+        // mapeados); fallback al último mensaje con backends anteriores.
+        const history = (state?.messages ?? [])
+          .filter((m) => Boolean(m.text && m.text.trim().length > 0))
+          .map((m) => ({
+            text: m.text,
+            role: m.role === "user" ? ("user" as const) : ("bot" as const),
+          }));
+        let more = Boolean(state?.hasMore);
+        if (!history.length) {
+          if (!state?.lastMessage) return;
+          history.push({ text: state.lastMessage, role: "bot" as const });
+          // El fallback de un único mensaje no deja tramos anteriores.
+          more = false;
+        }
+        // El ref se marca SOLO cuando la hidratación se aplica: en StrictMode
+        // (dev) el efecto corre dos veces y el primer fetch queda cancelado; con
+        // el ref marcado de antemano el segundo intento se saltaba y el mensaje
+        // proactivo nunca aparecía.
+        historyLoaded.current = threadId;
+        setHasMore(more);
+        setNextCursor(state?.nextCursor ?? null);
+        hydrateChat(history);
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [threadId, user.id, user.cedula, user.email, hydrateChat]);
+  }, [threadId, userId, hydrateChat]);
 
   useEffect(() => {
+    if (prependingRef.current) {
+      // El cambio de chat.length viene de anteponer mensajes: el anclaje ya
+      // compensó la posición, no hay que saltar al final.
+      prependingRef.current = false;
+      return;
+    }
     end.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat.length, uploading]);
 
-  // Un hilo nuevo (o rehidratado) arranca siempre con los últimos 10.
+  // Un hilo nuevo arranca siempre con la última página y sin paginación previa.
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
+    threadIdRef.current = threadId;
+    setHasMore(false);
+    setNextCursor(null);
+    setLoadingMore(false);
+    anchorRef.current = null;
+    // Un prepend en vuelo del hilo anterior quedará descartado: se libera la
+    // marca para que el próximo mensaje del hilo nuevo vuelva a scrollear.
+    prependingRef.current = false;
   }, [threadId]);
-
-  const visibleMessages = chat.slice(-visibleCount);
-  const hasOlderMessages = visibleCount < chat.length;
 
   const handleScroll = () => {
     const el = listRef.current;
-    if (!el || loadingMore || !hasOlderMessages) return;
+    if (!el || loadingMore || !hasMore || !userId) return;
     if (el.scrollTop > SCROLL_TOP_THRESHOLD) return;
+    if (nextCursor == null) {
+      // hasMore sin cursor (backend viejo o inconsistente): se apaga la
+      // paginación para no reintentar la misma página en loop.
+      setHasMore(false);
+      return;
+    }
     anchorRef.current = {
       scrollHeight: el.scrollHeight,
       scrollTop: el.scrollTop,
     };
+    prependingRef.current = true;
     setLoadingMore(true);
-    setVisibleCount((count) => Math.min(count + PAGE_SIZE, chat.length));
+    const requestThreadId = threadId;
+    void fetchThreadState(threadId, userId, {
+      limit: PAGE_SIZE,
+      before: nextCursor,
+    }).then((state) => {
+      // El hilo cambió mientras el fetch estaba en vuelo (push): la página
+      // pertenece al hilo anterior y se descarta por completo.
+      if (requestThreadId !== threadIdRef.current) return;
+      // Respuesta degradada (messageCount 0): el backend devolvió 200 con el
+      // historial vacío tras un fallo del AI service. No significa "no hay
+      // más páginas": se conservan hasMore/nextCursor para reintentar.
+      if (state && (state.messageCount ?? 0) === 0) {
+        prependingRef.current = false;
+        setPagesLoaded((n) => n + 1);
+        return;
+      }
+      if (state) {
+        const older = (state.messages ?? [])
+          .filter((m) => Boolean(m.text && m.text.trim().length > 0))
+          .map((m) => ({
+            text: m.text,
+            role: m.role === "user" ? ("user" as const) : ("bot" as const),
+          }));
+        // Sin dedup por texto: un mensaje repetido entre páginas es legítimo.
+        if (older.length) prependChatMessages(older);
+        setHasMore(Boolean(state.hasMore));
+        setNextCursor(state.nextCursor ?? null);
+      } else {
+        // Fetch fallido: no se tocan hasMore/nextCursor para poder reintentar
+        // en el próximo scroll; no hubo prepend, así que se libera la marca.
+        prependingRef.current = false;
+      }
+      // Dispara el efecto de anclaje (y apaga loadingMore) aunque falle.
+      setPagesLoaded((n) => n + 1);
+    });
   };
 
-  // Scroll anchoring: los mensajes nuevos se insertan por encima del
+  // Scroll anchoring: los mensajes viejos se insertan por encima del
   // contenido visible, así que se suma el delta de altura al scrollTop para
   // que el mensaje que el usuario estaba mirando quede en el mismo lugar.
   useLayoutEffect(() => {
@@ -127,9 +195,14 @@ export function ChatPage() {
     const delta = el.scrollHeight - anchor.scrollHeight;
     if (delta > 0) {
       el.scrollTop = anchor.scrollTop + delta;
+    } else {
+      // La página no agregó nodos al DOM (vacía, degradada o filtrada): el
+      // efecto de [chat.length] no corre, así que se libera la marca aquí
+      // para no saltarse el scroll al final del próximo mensaje nuevo.
+      prependingRef.current = false;
     }
     setLoadingMore(false);
-  }, [visibleCount]);
+  }, [pagesLoaded]);
 
   const t = useT();
   const { lang } = useI18n();
@@ -235,7 +308,7 @@ export function ChatPage() {
           gap: 12,
         }}
       >
-        {hasOlderMessages ? (
+        {hasMore ? (
           <div className="chat-history-hint" role="status">
             {loadingMore ? (
               <>
@@ -254,7 +327,7 @@ export function ChatPage() {
             <span>{t("Inicio de la conversación")}</span>
           </div>
         ) : null}
-        {visibleMessages.map((m) => (
+        {chat.map((m) => (
           <div
             key={m.id}
             style={{

@@ -13,10 +13,14 @@ export interface ThreadState {
   threadId: string
   messageCount: number
   lastMessage: string | null
+  /** ¿Quedan páginas más antiguas por cargar? (paginación server-driven). */
+  hasMore?: boolean
+  /** Cursor de la próxima página (offset desde el más nuevo); null = no hay más. */
+  nextCursor?: number | null
   /**
-   * Historial completo de la conversación (el AI Service lo capa a los
-   * últimos ~100 mensajes visibles). Ausente/null con backends anteriores:
-   * en ese caso el consumidor cae al fallback de `lastMessage`.
+   * Página de mensajes solicitada (cronológica, el más antiguo primero; el
+   * backend pagina sobre los mensajes visibles). Ausente/null con backends
+   * anteriores: en ese caso el consumidor cae al fallback de `lastMessage`.
    */
   messages?: ThreadMessage[] | null
 }
@@ -25,13 +29,23 @@ export interface ThreadState {
  * Lee el estado del thread estable del paciente vía el backend .NET
  * (GET /api/v1/threads/{threadId}/messages). El frontend NUNCA llama al
  * AI Service directo: el backend hace de puente (X-Internal-Key vive solo
- * allí). Devuelve null si el thread no existe, el backend falla o la
- * respuesta no es parseable (degradación a chat vacío, nunca romper).
+ * allí). La paginación es server-driven: `limit` (tamaño de página) y
+ * `before` (cursor desde el más nuevo; omitido/null = página más reciente).
+ * Devuelve null si el thread no existe, el backend falla o la respuesta no
+ * es parseable (degradación a chat vacío, nunca romper).
  */
-export async function fetchThreadState(threadId: string, userId: string): Promise<ThreadState | null> {
+export async function fetchThreadState(
+  threadId: string,
+  userId: string,
+  options: { limit?: number; before?: number | null } = {},
+): Promise<ThreadState | null> {
   try {
     const accessToken = getAccessToken()
-    const url = `${getApiBaseUrl()}/api/v1/threads/${encodeURIComponent(threadId)}/messages?userId=${encodeURIComponent(userId)}`
+    const params = new URLSearchParams()
+    params.set('userId', userId)
+    if (options.limit != null) params.set('limit', String(options.limit))
+    if (options.before != null) params.set('before', String(options.before))
+    const url = `${getApiBaseUrl()}/api/v1/threads/${encodeURIComponent(threadId)}/messages?${params.toString()}`
     const res = await fetch(url, {
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     })

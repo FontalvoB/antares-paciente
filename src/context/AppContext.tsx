@@ -107,6 +107,12 @@ interface AppState {
   /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
   markChatRead: () => void;
   hydrateChat: (messages: { text: string; role?: "bot" | "user" }[]) => void;
+  /**
+   * Antepone una página de historial ANTERIOR sin deduplicar por texto: un
+   * mensaje repetido entre tramos es legítimo (p. ej. dos quick-replies
+   * iguales) y no debe perderse.
+   */
+  prependChatMessages: (messages: { text: string; role?: "bot" | "user" }[]) => void;
   appendChatMessages: (
     messages: Array<{
       role: "bot" | "user" | "alert";
@@ -548,7 +554,9 @@ export function AppProvider({
       setChatUnread(false);
       return;
     }
-    const state = await fetchThreadState(threadId, uid);
+    // Solo se necesita el conteo para el dot: se pide una página de 1 para
+    // no descargar el historial completo al entrar a la app.
+    const state = await fetchThreadState(threadId, uid, { limit: 1 });
     if (!state) {
       // Fetch fallido o thread inexistente → no marcar nada.
       setChatUnread(false);
@@ -580,7 +588,7 @@ export function AppProvider({
     // Sin conteo previo (p. ej. se entró al chat antes del primer check):
     // se toma el conteo remoto para no volver a marcar como no leído.
     if (threadId) {
-      void fetchThreadState(threadId, uid).then((state) => {
+      void fetchThreadState(threadId, uid, { limit: 1 }).then((state) => {
         if (state) {
           localStorage.setItem(
             `${CHAT_LAST_SEEN_PREFIX}${uid}`,
@@ -843,6 +851,23 @@ export function AppProvider({
           const fresh = stamped.filter((m) => !existing.has(m.text));
           if (!fresh.length) return prev;
           return [...fresh, ...prev];
+        });
+      },
+      prependChatMessages: (messages) => {
+        // Página anterior del historial: se antepone SIN dedup por texto
+        // (a diferencia de hydrateChat) para no perder mensajes repetidos
+        // entre tramos. Mismo patrón que appendChatMessages.
+        if (!messages.length) return;
+        const stamped: ChatMessage[] = messages.map((m) => ({
+          id: crypto.randomUUID(),
+          role: (m.role ?? "bot") as "bot" | "user",
+          text: m.text,
+          time: nowLabel(),
+          threadId,
+        }));
+        setChat((prev) => {
+          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
+          return isOnlyWelcome ? stamped : [...stamped, ...prev];
         });
       },
       appendChatMessages: (msgs) => {

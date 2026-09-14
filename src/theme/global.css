@@ -17248,156 +17248,260 @@ ion-button.cta-pill.button-disabled {
   color: var(--brand-navy);
 }
 
-/* Accesos y progreso: mismo lenguaje que el resto del inicio — panel gris
-   suave de 24px con el contenido en blanco. Cada fila define su acento en
-   `--a`; el icono lo usa a plena saturación y el fondo en tinte al 10 %, para
-   que la lista se recorra por color en vez de ser un bloque navy uniforme. */
-.hm-access,
-.hm-week {
-  width: calc(100% - 32px);
-  margin: 0 16px;
-  border-radius: 24px;
-  background: #f1f3f6;
+/* ──────────────────────────────────────────────────────────────────────
+   TUS MÓDULOS — carrusel coverflow del inicio.
+
+   Sustituye a la lista de accesos: los seis módulos giran sobre su eje Y
+   dentro de una escena en perspectiva, con la tarjeta central de frente y
+   las vecinas hundidas hacia el fondo. Se arrastra con el dedo, avanza
+   sola y los puntos permiten saltar a cualquier módulo sin recorrer los
+   intermedios (con una sola tarjeta legible a la vez, ese salto es lo que
+   evita que el carrusel cueste más que la lista que sustituye).
+
+   Cada tarjeta declara su acento en `--a` (`--mod-*`): lo usan el halo, la
+   píldora de dato, el botón y el punto de paginación. La ilustración 3D
+   lleva su propia rampa de luz dentro del SVG.
+   ────────────────────────────────────────────────────────────────────── */
+.mcar {
+  padding: 0 16px;
 }
 
-.hm-access {
-  padding: 10px;
-}
-
-.hm-access-grid {
+/* La escena: `perspective` en el contenedor y `preserve-3d` para que el
+   giro de las tarjetas tenga fuga real y no sea un escalado disimulado. */
+.mcar-stage {
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  height: 268px;
+  /* Cámara cerca: con una perspectiva larga (>1000px) el giro de las vecinas
+     se degrada a un simple escalado y el efecto coverflow desaparece. */
+  perspective: 620px;
+  perspective-origin: 50% 42%;
+  transform-style: preserve-3d;
+  touch-action: pan-y;
 }
 
-.hm-access-tile {
+.mcar-card {
+  /* Todas las tarjetas comparten celda: quedan centradas y apiladas, y el
+     desplazamiento en X se mide contra su propio ancho. */
+  grid-area: 1 / 1;
+  place-self: center;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: 13px 13px 12px;
-  border: none;
-  border-radius: 18px;
-  background: #fff;
+  width: min(62%, 244px);
+  height: 100%;
+  padding: 16px 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--a) 16%, var(--g1));
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      124% 70% at 50% -10%,
+      color-mix(in srgb, var(--a) 26%, transparent) 0%,
+      transparent 64%
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 38%,
+      color-mix(in srgb, var(--a) 7%, #ffffff) 100%
+    );
   text-align: left;
-  transition: transform 0.18s var(--ease);
-}
-
-/* Filo de color en el borde superior: identifica el módulo sin gritar. */
-.hm-access-tile::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  border-radius: 18px 18px 0 0;
-  background: var(--a, var(--brand-navy));
-}
-
-.hm-access-tile:active,
-.hm-access-row:active {
-  transform: scale(0.98);
-}
-
-.hm-access-tile-ico {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  margin-bottom: 7px;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
-  color: var(--a, var(--brand-navy));
-  font-size: 19px;
-}
-
-.hm-access-tile strong {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -0.2px;
-  color: var(--brand-navy);
-}
-
-.hm-access-tile small {
-  font-size: 11.5px;
-  color: var(--mu);
-}
-
-.hm-access-tile-chev {
-  position: absolute;
-  top: 15px;
-  right: 12px;
-  font-size: 15px;
-  color: #c2ccda;
-}
-
-.hm-access-rows {
-  margin-top: 8px;
-  border-radius: 18px;
-  background: #fff;
   overflow: hidden;
+  box-shadow:
+    0 2px 6px rgba(20, 40, 85, 0.05),
+    0 26px 46px -26px color-mix(in srgb, var(--a) 78%, transparent);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
 }
 
-.hm-access-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 58px;
-  padding: 11px 13px;
-  border: none;
-  border-top: 1px solid var(--g1);
-  background: #fff;
-  text-align: left;
-  transition: transform 0.18s var(--ease);
+/* Halo de color detrás de la ilustración: la pieza 3D se apoya en una
+   fuente de luz de su propio tono en vez de flotar sobre blanco. */
+.mcar-halo {
+  position: absolute;
+  top: -22%;
+  left: 50%;
+  width: 88%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--a) 26%, transparent) 0%,
+    transparent 62%
+  );
+  pointer-events: none;
 }
 
-.hm-access-row:first-child {
-  border-top: none;
-}
-
-.hm-access-row-ico {
+/* La pieza cede alto en pantallas estrechas: a 375px un título de dos líneas
+   más el subtítulo dejaban el botón pegado al texto. */
+.mcar-art {
+  position: relative;
   display: grid;
   place-items: center;
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--a, var(--brand-navy)) 11%, #fff);
-  color: var(--a, var(--brand-navy));
-  font-size: 18px;
+  width: 100%;
+  height: clamp(94px, 27vw, 118px);
+  margin-bottom: 4px;
 }
 
-.hm-access-row-body {
+.mcar-art .ic3 {
+  display: block;
+  width: clamp(86px, 25vw, 108px);
+  height: auto;
+}
+
+/* La pieza flota levemente: refuerza que es un objeto y no un dibujo
+   pegado a la tarjeta. Solo en la tarjeta activa, para no animar cinco
+   SVG a la vez. */
+.mcar-card.is-active .ic3 {
+  animation: mcar-float 4.2s var(--ease) infinite;
+}
+
+@keyframes mcar-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-1.4deg);
+  }
+}
+
+.mcar-txt {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  gap: 3px;
   min-width: 0;
-  gap: 2px;
+  width: 100%;
 }
 
-.hm-access-row-body strong {
-  font-size: 14px;
-  font-weight: 700;
+.mcar-txt strong {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.4px;
   color: var(--brand-navy);
 }
 
-.hm-access-row-body small {
-  font-size: 12px;
+.mcar-txt small {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.35;
   color: var(--mu);
 }
 
-.hm-access-row-chev {
-  flex-shrink: 0;
-  font-size: 19px;
-  color: #b3bdcc;
+.mcar-data {
+  margin-top: 8px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--a) 13%, #fff);
+  color: color-mix(in srgb, var(--a) 78%, #000);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.mcar-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: var(--a);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+  box-shadow: 0 8px 16px -8px color-mix(in srgb, var(--a) 90%, transparent);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.24s var(--ease),
+    transform 0.24s var(--ease);
+}
+
+/* El botón solo aparece en la tarjeta de frente: en las giradas sería una
+   llamada a la acción que no se puede accionar. */
+.mcar-card.is-active .mcar-cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mcar-cta ion-icon {
+  font-size: 14px;
+}
+
+/* Profundidad de campo: las vecinas se desenfocan como lo harían fuera del
+   plano de foco. Sin esto sus títulos se leen casi tanto como el del centro y
+   el carrusel parece tres tarjetas compitiendo en vez de una al frente. */
+.mcar-card:not(.is-active) {
+  cursor: pointer;
+  filter: blur(1.6px);
+}
+
+.mcar-card.is-active:active {
+  transform: scale(0.985);
+}
+
+.mcar-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 14px 0 2px;
+}
+
+.mcar-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #ccd6e2;
+  transition:
+    width 0.28s var(--ease),
+    background 0.28s var(--ease);
+}
+
+.mcar-dot.on {
+  width: 22px;
+  background: var(--a);
+}
+
+/* Área táctil de 44px sin engordar el punto (WCAG 2.5.5). */
+.mcar-dot::before {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  margin: -11px 0 0 -11px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mcar-card.is-active .ic3 {
+    animation: none;
+  }
+  .mcar-cta,
+  .mcar-dot {
+    transition: none;
+  }
+}
+
+
 .hm-week {
-  margin-bottom: 20px;
+  width: calc(100% - 32px);
+  margin: 0 16px 20px;
   padding: 12px;
+  border-radius: 24px;
+  background: #f1f3f6;
 }
 
 /* Resumen: promedio de los hábitos y cuántos llegan a meta. */
@@ -19405,4 +19509,19 @@ html.plt-tablet .screen.auth .auth-scroll {
   .avatar-experience .page-head-title { font-size: 22px; }
   .avatar-experience .page-head-sub { display: none; }
   .avatar-experience .avatar-view-tabs { margin-bottom: 6px; }
+}
+
+/* A pantalla completa cabe una tarjeta más a cada lado: el carrusel gana
+   profundidad en vez de dejar los costados vacíos. */
+html.is-tablet .mcar-stage,
+html.plt-ipad .mcar-stage,
+html.plt-tablet .mcar-stage {
+  height: 300px;
+  perspective: 900px;
+}
+
+html.is-tablet .mcar-card,
+html.plt-ipad .mcar-card,
+html.plt-tablet .mcar-card {
+  width: min(38%, 280px);
 }
