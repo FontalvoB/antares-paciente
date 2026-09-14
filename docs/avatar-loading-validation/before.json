@@ -1,0 +1,88 @@
+[
+  {
+    "scenario": "data",
+    "historyMs": 2510,
+    "glbStartedAfterHistory": -1997,
+    "observedMetricsMs": 4625,
+    "first": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 110.69999998807907,
+      "firstFrameMs": 425.59999999403954,
+      "fps": 54.41773028497767,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 1.06690000000596,
+      "loops": 0,
+      "rootPosition": [
+        -0.0003390277493316248,
+        0.9100391789692591,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.017856003603084755,
+        0.005257836797011151,
+        0.0069574543501090035,
+        0.9998025365623499
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 1179.7999999821186,
+      "heapMB": 96.92663383483887
+    },
+    "running": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 110.69999998807907,
+      "firstFrameMs": 425.59999999403954,
+      "fps": 40.23497223825512,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 1.9837000000178808,
+      "loops": 0,
+      "rootPosition": [
+        -0.00746430259990672,
+        0.9094309833758267,
+        0.019999181851744652
+      ],
+      "headQuaternion": [
+        0.01788973670468112,
+        0.029801638267960825,
+        0.005562712268561611,
+        0.9993802459071321
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.45980236759591203,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 1179.7999999821186,
+      "heapMB": 99.63048076629639
+    }
+  }
+]

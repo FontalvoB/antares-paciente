@@ -1,0 +1,19 @@
+{
+  "male-body-base-v4.glb": {
+    "bytes": 4328172,
+    "animations": [
+      "Idle",
+      "RigCheck"
+    ],
+    "original_static_data_preserved": true,
+    "duration": 8.0
+  },
+  "idle.glb": {
+    "bytes": 442668,
+    "animations": [
+      "Idle"
+    ],
+    "original_static_data_preserved": true,
+    "duration": 8.0
+  }
+}

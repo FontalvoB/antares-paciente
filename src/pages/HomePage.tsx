@@ -4,23 +4,30 @@ import { useI18n } from "../i18n/I18nContext";
 import {
   add,
   bluetooth,
-  body,
-  calendar,
+  bodyOutline,
   chatbubbleEllipses,
-  chevronForward,
-  clipboard,
   flame,
-  leaf,
   medkit,
   mic,
   notificationsOutline,
-  people,
   person,
   refreshOutline,
   school,
   walk,
   water,
 } from "ionicons/icons";
+import {
+  AppleIcon3D,
+  BodyIcon3D,
+  CalendarIcon3D,
+  CommunityIcon3D,
+  ProfileIcon3D,
+  RecordIcon3D,
+} from "../components/icons3d";
+import {
+  ModuleCarousel,
+  type CarouselModule,
+} from "../components/ModuleCarousel";
 import { ProtocolWheel } from "../components/ProtocolWheel";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
@@ -140,43 +147,64 @@ export function HomePage() {
   }[apptState];
 
   /**
-   * Accesos secundarios. Cada módulo lleva su propio color para que el listado
-   * se recorra por tono y no como un bloque uniforme de iconos navy.
+   * Módulos del carrusel. El dato vivo solo se declara donde hay una verdad
+   * que mostrar; el resto se apoya en su descripción. El acento (`--mod-*`)
+   * identifica al módulo en la tarjeta, el botón y el punto de paginación.
    */
-  const moreModules: {
-    id: ScreenId;
-    title: string;
-    sub: string;
-    icon: string;
-    color: string;
-  }[] = [
+  const modules: (CarouselModule & { id: ScreenId })[] = [
+    {
+      id: "book",
+      title: t("Citas"),
+      sub: t("Agenda, control y telemedicina"),
+      accent: "var(--mod-appt)",
+      icon: <CalendarIcon3D />,
+      cta: t("Ver agenda"),
+      data: featuredReal
+        ? `${featuredReal.time} · ${t(featuredReal.day)}`
+        : realMode
+          ? t("Sin citas")
+          : t("Hoy 3:00 PM"),
+    },
+    {
+      id: "nut",
+      title: t("Nutrición"),
+      sub: t("Tu plan y el registro del día"),
+      accent: "var(--mod-nut)",
+      icon: <AppleIcon3D />,
+      cta: t("Ver plan"),
+      data: realMode ? t("Sin datos") : t("1,650 / 1,800 kcal"),
+    },
     {
       id: "body",
       title: t("Visualización del perfil"),
       sub: t("Índices y mediciones corporales"),
-      icon: body,
-      color: "var(--pur)",
+      accent: "var(--mod-body)",
+      icon: <BodyIcon3D />,
+      cta: t("Ver mi cuerpo"),
     },
     {
       id: "hc",
       title: t("Historia clínica"),
       sub: t("Diagnósticos, lab y medicamentos"),
-      icon: clipboard,
-      color: "var(--brand-blue-mid)",
+      accent: "var(--mod-record)",
+      icon: <RecordIcon3D />,
+      cta: t("Abrir expediente"),
     },
     {
       id: "com",
       title: t("Comunidad"),
       sub: t("Diagnóstico, grupos y apoyo"),
-      icon: people,
-      color: "var(--brand-sky-mid)",
+      accent: "var(--mod-com)",
+      icon: <CommunityIcon3D />,
+      cta: t("Entrar"),
     },
     {
       id: "prof",
       title: t("Mi perfil"),
       sub: t("Seguros, equipo y ajustes"),
-      icon: person,
-      color: "var(--brand-sky-deep)",
+      accent: "var(--mod-profile)",
+      icon: <ProfileIcon3D />,
+      cta: t("Ver perfil"),
     },
   ];
 
@@ -345,6 +373,16 @@ export function HomePage() {
                 aria-label={t("Notificaciones")}
               >
                 <IonIcon icon={notificationsOutline} />
+              </button>
+              {/* Atajo directo al perfil corporal: es el módulo que más se
+                  consulta y estaba a dos toques desde el inicio. */}
+              <button
+                type="button"
+                className="hm-icon-btn"
+                onClick={() => navigate("body")}
+                aria-label={t("Abrir visualización del perfil")}
+              >
+                <IonIcon icon={bodyOutline} />
               </button>
               <img src={logoIcon} alt="COPP-ADRESD" className="hm-brand" />
             </div>
@@ -534,66 +572,12 @@ export function HomePage() {
           </button>
         </div>
 
-        <div className="hm-access">
-          <div className="hm-access-grid">
-            {[
-              {
-                id: "book" as ScreenId,
-                title: t("Citas"),
-                sub: featuredReal
-                  ? `${featuredReal.time} · ${t(featuredReal.day)}`
-                  : realMode
-                    ? t("Sin citas")
-                    : t("Hoy 3:00 PM"),
-                icon: calendar,
-                color: "var(--brand-navy-deep)",
-              },
-              {
-                id: "nut" as ScreenId,
-                title: t("Nutrición"),
-                sub: realMode ? t("Sin datos") : t("1,650 / 1,800 kcal"),
-                icon: leaf,
-                color: "var(--brand-green)",
-              },
-            ].map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className="hm-access-tile"
-                style={{ "--a": m.color } as CSSProperties}
-                onClick={() => navigate(m.id)}
-              >
-                <span className="hm-access-tile-ico">
-                  <IonIcon icon={m.icon} />
-                </span>
-                <strong>{m.title}</strong>
-                <small>{m.sub}</small>
-                <IonIcon className="hm-access-tile-chev" icon={chevronForward} />
-              </button>
-            ))}
-          </div>
-
-          <div className="hm-access-rows">
-            {moreModules.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className="hm-access-row"
-                style={{ "--a": m.color } as CSSProperties}
-                onClick={() => navigate(m.id)}
-              >
-                <span className="hm-access-row-ico">
-                  <IonIcon icon={m.icon} />
-                </span>
-                <span className="hm-access-row-body">
-                  <strong>{m.title}</strong>
-                  <small>{m.sub}</small>
-                </span>
-                <IonIcon className="hm-access-row-chev" icon={chevronForward} />
-              </button>
-            ))}
-          </div>
-        </div>
+        <div className="sec">{t("Tus módulos")}</div>
+        <ModuleCarousel
+          modules={modules}
+          label={t("Tus módulos")}
+          onSelect={(id) => navigate(id as ScreenId)}
+        />
 
         {!realMode && (
           <>

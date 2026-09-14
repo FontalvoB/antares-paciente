@@ -1,0 +1,118 @@
+{
+  "samples": [
+    {
+      "state": "base",
+      "frame": 1,
+      "max_vertex_error_mm": 0.0018989518850593124
+    },
+    {
+      "state": "base",
+      "frame": 61,
+      "max_vertex_error_mm": 0.0023293999249920545
+    },
+    {
+      "state": "base",
+      "frame": 121,
+      "max_vertex_error_mm": 0.002142534251232741
+    },
+    {
+      "state": "base",
+      "frame": 181,
+      "max_vertex_error_mm": 0.002378500856015771
+    },
+    {
+      "state": "base",
+      "frame": 241,
+      "max_vertex_error_mm": 0.0018989518850593124
+    },
+    {
+      "state": "volume",
+      "frame": 1,
+      "max_vertex_error_mm": 0.0018989518850593124
+    },
+    {
+      "state": "volume",
+      "frame": 61,
+      "max_vertex_error_mm": 0.00233171332965261
+    },
+    {
+      "state": "volume",
+      "frame": 121,
+      "max_vertex_error_mm": 0.0021120293431026857
+    },
+    {
+      "state": "volume",
+      "frame": 181,
+      "max_vertex_error_mm": 0.002453631849141224
+    },
+    {
+      "state": "volume",
+      "frame": 241,
+      "max_vertex_error_mm": 0.0018989518850593124
+    },
+    {
+      "state": "mid",
+      "frame": 1,
+      "max_vertex_error_mm": 0.0018989518850593124
+    },
+    {
+      "state": "mid",
+      "frame": 61,
+      "max_vertex_error_mm": 0.002309247330166163
+    },
+    {
+      "state": "mid",
+      "frame": 121,
+      "max_vertex_error_mm": 0.0021835667614147265
+    },
+    {
+      "state": "mid",
+      "frame": 181,
+      "max_vertex_error_mm": 0.0024284578568083445
+    },
+    {
+      "state": "mid",
+      "frame": 241,
+      "max_vertex_error_mm": 0.0018989518850593124
+    },
+    {
+      "state": "lean",
+      "frame": 1,
+      "max_vertex_error_mm": 0.0018989518850593124
+    },
+    {
+      "state": "lean",
+      "frame": 61,
+      "max_vertex_error_mm": 0.00231703473625853
+    },
+    {
+      "state": "lean",
+      "frame": 121,
+      "max_vertex_error_mm": 0.002112554944179207
+    },
+    {
+      "state": "lean",
+      "frame": 181,
+      "max_vertex_error_mm": 0.002416975695155549
+    },
+    {
+      "state": "lean",
+      "frame": 241,
+      "max_vertex_error_mm": 0.0018989518850593124
+    }
+  ],
+  "uv_seam_vertex_mapping_max_error_mm": 0.0028602855763892876,
+  "max_vertex_error_mm": 0.002453631849141224,
+  "bones": 51,
+  "morphs": [
+    "BodyVolume",
+    "BodyLean",
+    "Abdomen",
+    "Waist",
+    "Chest",
+    "Arms",
+    "Thighs",
+    "FaceVolume",
+    "MuscleDefinition"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "base": "v4 with reference to pre-conservative pose",
+  "size_bytes": 4470620,
+  "static_data_identical": true,
+  "duration": 8,
+  "fps": 30,
+  "bones": 51,
+  "clips": [
+    "Idle",
+    "RigCheck"
+  ],
+  "rotation_changes": {
+    "LeftArm0": {
+      "old_deg": -1.9999999845072665,
+      "prior_deg": -7.000000052497138,
+      "new_deg": -4
+    },
+    "LeftArm2": {
+      "old_deg": -18.49999937644454,
+      "prior_deg": -31.00000029347116,
+      "new_deg": -27
+    },
+    "LeftForeArm0": {
+      "old_deg": 13.00000021946235,
+      "prior_deg": 3.999999969014533,
+      "new_deg": 7
+    },
+    "LeftForeArm1": {
+      "old_deg": 71.99999858848795,
+      "prior_deg": 80.00000108783796,
+      "new_deg": 78
+    },
+    "LeftForeArm2": {
+      "old_deg": -15.000000417413029,
+      "prior_deg": 0.0,
+      "new_deg": -3
+    },
+    "LeftHand2": {
+      "old_deg": 5.000000067989872,
+      "prior_deg": 0.0,
+      "new_deg": 3
+    },
+    "RightArm0": {
+      "old_deg": -1.9999999845072665,
+      "prior_deg": -7.000000052497138,
+      "new_deg": -4
+    },
+    "RightArm2": {
+      "old_deg": 18.000000500895634,
+      "prior_deg": 30.99999858592387,
+      "new_deg": 27
+    },
+    "RightForeArm0": {
+      "old_deg": 13.00000021946235,
+      "prior_deg": 3.999999969014533,
+      "new_deg": 7
+    },
+    "RightForeArm1": {
+      "old_deg": -71.99999858848795,
+      "prior_deg": -80.00000108783796,
+      "new_deg": -78
+    },
+    "RightForeArm2": {
+      "old_deg": 15.000000417413029,
+      "prior_deg": -0.0005139717350434595,
+      "new_deg": 3
+    },
+    "RightHand2": {
+      "old_deg": -4.99999985454646,
+      "prior_deg": 0.0,
+      "new_deg": -3
+    }
+  }
+}

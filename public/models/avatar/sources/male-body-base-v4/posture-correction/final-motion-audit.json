@@ -1,0 +1,122 @@
+[
+  {
+    "state": "base",
+    "frames": 241,
+    "body_collision_frames": [],
+    "finger_collision_samples": [],
+    "loop_max_vertex_error_m": 0.0,
+    "feet_max_drift_m": 0,
+    "hand_ranges_mm": {
+      "Left": [
+        11.642485857009888,
+        16.61364734172821,
+        5.6435465812683105
+      ],
+      "Right": [
+        16.46241545677185,
+        24.458646774291992,
+        4.84853982925415
+      ]
+    },
+    "upper_arm_lateral_angle_deg": {
+      "Left": [
+        12.797808277203492,
+        13.307959847738273
+      ],
+      "Right": [
+        12.433422905580262,
+        13.57655161686919
+      ]
+    }
+  },
+  {
+    "state": "volume",
+    "frames": 241,
+    "body_collision_frames": [],
+    "finger_collision_samples": [],
+    "loop_max_vertex_error_m": 0.0,
+    "feet_max_drift_m": 0,
+    "hand_ranges_mm": {
+      "Left": [
+        11.642485857009888,
+        16.61364734172821,
+        5.6435465812683105
+      ],
+      "Right": [
+        16.46241545677185,
+        24.458646774291992,
+        4.84853982925415
+      ]
+    },
+    "upper_arm_lateral_angle_deg": {
+      "Left": [
+        12.797808277203492,
+        13.307959847738273
+      ],
+      "Right": [
+        12.433422905580262,
+        13.57655161686919
+      ]
+    }
+  },
+  {
+    "state": "mid",
+    "frames": 241,
+    "body_collision_frames": [],
+    "finger_collision_samples": [],
+    "loop_max_vertex_error_m": 0.0,
+    "feet_max_drift_m": 0,
+    "hand_ranges_mm": {
+      "Left": [
+        11.642485857009888,
+        16.61364734172821,
+        5.6435465812683105
+      ],
+      "Right": [
+        16.46241545677185,
+        24.458646774291992,
+        4.84853982925415
+      ]
+    },
+    "upper_arm_lateral_angle_deg": {
+      "Left": [
+        12.797808277203492,
+        13.307959847738273
+      ],
+      "Right": [
+        12.433422905580262,
+        13.57655161686919
+      ]
+    }
+  },
+  {
+    "state": "lean",
+    "frames": 241,
+    "body_collision_frames": [],
+    "finger_collision_samples": [],
+    "loop_max_vertex_error_m": 0.0,
+    "feet_max_drift_m": 0,
+    "hand_ranges_mm": {
+      "Left": [
+        11.642485857009888,
+        16.61364734172821,
+        5.6435465812683105
+      ],
+      "Right": [
+        16.46241545677185,
+        24.458646774291992,
+        4.84853982925415
+      ]
+    },
+    "upper_arm_lateral_angle_deg": {
+      "Left": [
+        12.797808277203492,
+        13.307959847738273
+      ],
+      "Right": [
+        12.433422905580262,
+        13.57655161686919
+      ]
+    }
+  }
+]

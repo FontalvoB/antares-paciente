@@ -1,0 +1,19 @@
+[
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\bodies\\male-body-base-v6.glb",
+    "bytes": 4654836,
+    "static_unchanged": true,
+    "clips": [
+      "Idle",
+      "RigCheck"
+    ]
+  },
+  {
+    "file": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\animations\\idle-v6.glb",
+    "bytes": 1179832,
+    "static_unchanged": true,
+    "clips": [
+      "Idle"
+    ]
+  }
+]

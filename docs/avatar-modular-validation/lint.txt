@@ -1,0 +1,14 @@
+src/i18n/I18nContext.tsx:63:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/i18n/I18nContext.tsx:69:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/components/ProtocolWheel.tsx:48:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+scripts/demo-food-e2e.mjs:22:9: warning eslint(no-unused-vars): Variable 'continueBtn' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+scripts/probe-ionic.mjs:51:11: warning eslint(no-unused-vars): Variable 'shadow' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+src/components/community/CommunityProfile.tsx:28:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/components/community/CommunityProfile.tsx:38:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/context/AppContext.tsx:823:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/components/community/community.tsx:8:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/components/community/community.tsx:15:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/components/community/community.tsx:24:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/components/community/community.tsx:36:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+src/components/CameraCapture.tsx:212:12: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'takeNative' help: Either include it or remove the dependency array.
+src/components/community/ClubsSection.tsx:1153:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.

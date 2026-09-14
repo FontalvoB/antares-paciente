@@ -1,0 +1,490 @@
+[
+  {
+    "scenario": "data",
+    "historyMs": 2503,
+    "glbStartedAfterHistory": 669,
+    "observedMetricsMs": 6567,
+    "first": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 131,
+      "firstFrameMs": 422.40000000596046,
+      "fps": 0,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 0,
+      "loops": 0,
+      "rootPosition": [
+        0,
+        0.9100404381752014,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.012923212554657967,
+        -0.0058739696800305784,
+        0.005422914796160549,
+        0.9998845328599592
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 3688.699999988079,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 98.9490556716919
+    },
+    "running": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 131,
+      "firstFrameMs": 422.40000000596046,
+      "fps": 53.827751195212805,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 1.0497000000178809,
+      "loops": 0,
+      "rootPosition": [
+        -0.00028576640028494073,
+        0.9100395202054794,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.017823796580213318,
+        0.005110799108966533,
+        0.0069488347529373445,
+        0.9998039336307452
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 3688.699999988079,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 96.29877281188965
+    }
+  },
+  {
+    "scenario": "weight-update-and-reload",
+    "sameCanvas": true,
+    "postCount": 1,
+    "reload": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 115,
+      "firstFrameMs": 374.40000000596046,
+      "fps": 0,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 0,
+      "loops": 0,
+      "rootPosition": [
+        0,
+        0.9100404381752014,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.012923212554657967,
+        -0.0058739696800305784,
+        0.005422914796160549,
+        0.9998845328599592
+      ],
+      "morphWeights": {
+        "BodyVolume": 0.5,
+        "BodyLean": 0,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 3234.4000000059605,
+      "initialMorphWeights": {
+        "BodyVolume": 0.5,
+        "BodyLean": 0,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 180.09568309783936
+    }
+  },
+  {
+    "scenario": "empty",
+    "historyMs": 2512,
+    "glbStartedAfterHistory": 422,
+    "observedMetricsMs": 5177,
+    "first": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 97.7999999821186,
+      "firstFrameMs": 278,
+      "fps": 0,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 0,
+      "loops": 0,
+      "rootPosition": [
+        0,
+        0.9100404381752014,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.012923212554657967,
+        -0.0058739696800305784,
+        0.005422914796160549,
+        0.9998845328599592
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 3280.800000011921,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 98.15330123901367
+    },
+    "running": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 97.7999999821186,
+      "firstFrameMs": 278,
+      "fps": 60.648240206081745,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 1.0773000000119204,
+      "loops": 0,
+      "rootPosition": [
+        -0.0003780928358721003,
+        0.9100388442292546,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.01787213655035213,
+        0.005345007464024831,
+        0.0069617927358228355,
+        0.9998017558857547
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 3280.800000011921,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 95.5475378036499
+    }
+  },
+  {
+    "scenario": "api-error",
+    "historyMs": 2504,
+    "glbStartedAfterHistory": 440,
+    "observedMetricsMs": 8140,
+    "first": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 83.2000000178814,
+      "firstFrameMs": 246.7000000178814,
+      "fps": 0,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 0,
+      "loops": 0,
+      "rootPosition": [
+        0,
+        0.9100404381752014,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.012923212554657967,
+        -0.0058739696800305784,
+        0.005422914796160549,
+        0.9998845328599592
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 6196.200000017881,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 99.8647403717041
+    },
+    "running": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 83.2000000178814,
+      "firstFrameMs": 246.7000000178814,
+      "fps": 61.343623232147294,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 1.0806999999880786,
+      "loops": 0,
+      "rootPosition": [
+        -0.00039086411406730377,
+        0.9100387347950232,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.017877410752655865,
+        0.005373505558021629,
+        0.00696321104235525,
+        0.999801498956057
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 6196.200000017881,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 96.69078350067139
+    }
+  },
+  {
+    "scenario": "asset-error",
+    "historyMs": 2511,
+    "glbStartedAfterHistory": 985,
+    "observedMetricsMs": 6063,
+    "first": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 115.09999999403954,
+      "firstFrameMs": 356.59999999403954,
+      "fps": 0,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 0,
+      "loops": 0,
+      "rootPosition": [
+        0,
+        0.9100404381752014,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.012923212554657967,
+        -0.0058739696800305784,
+        0.005422914796160549,
+        0.9998845328599592
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 3911.0999999940395,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 98.63805103302002
+    },
+    "running": {
+      "bytes": 4960428,
+      "triangles": 23924,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "height": 1.6999996051989676,
+      "loadMs": 115.09999999403954,
+      "firstFrameMs": 356.59999999403954,
+      "fps": 57.4997521552214,
+      "calls": 1,
+      "geometries": 1,
+      "gpuTextures": 6,
+      "idleTime": 1.0963999999761576,
+      "loops": 0,
+      "rootPosition": [
+        -0.00044983736963156035,
+        0.9100382294663634,
+        0.019999179989099503
+      ],
+      "headQuaternion": [
+        0.017901764962667682,
+        0.0055050996419725145,
+        0.006969760205430452,
+        0.9998003016261958
+      ],
+      "morphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "visibleMs": 3911.0999999940395,
+      "initialMorphWeights": {
+        "BodyVolume": 0,
+        "BodyLean": 0.5,
+        "Abdomen": 0,
+        "Waist": 0,
+        "Chest": 0,
+        "Arms": 0,
+        "Thighs": 0,
+        "FaceVolume": 0,
+        "MuscleDefinition": 0
+      },
+      "heapMB": 101.43367671966553
+    }
+  }
+]

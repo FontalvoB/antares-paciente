@@ -1,0 +1,17 @@
+{
+  "male-body-base-v4.glb": {
+    "bytes": 4513076,
+    "static_data_identical": true,
+    "clips": [
+      "Idle",
+      "RigCheck"
+    ]
+  },
+  "idle.glb": {
+    "bytes": 627428,
+    "static_data_identical": true,
+    "clips": [
+      "Idle"
+    ]
+  }
+}

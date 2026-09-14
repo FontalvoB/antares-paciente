@@ -1,0 +1,79 @@
+{
+  "mode": "empty",
+  "histories": [
+    {
+      "status": 200,
+      "body": {
+        "heightCm": null,
+        "metrics": []
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "heightCm": null,
+        "metrics": []
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "heightCm": null,
+        "metrics": []
+      }
+    }
+  ],
+  "states": {
+    "empty": {
+      "bodyVolume": 0,
+      "bodyLean": 0,
+      "abdomen": 0,
+      "waist": 0,
+      "chest": 0,
+      "arms": 0,
+      "thighs": 0,
+      "faceVolume": 0,
+      "muscleDefinition": 0
+    },
+    "historyPageText": "EXPEDIENTE CLÍNICO\nHistoria clínica\n\nActualizada 05/08/2026\n\nHIPAA protegida\nID: COPP-2024-00142\nNPI verificado\nPACIENTE\nMaría González\nCC 10247381 · 38 años · O+\n26.4\nIMC\n5.9%\nHbA1c\n118/76\nTA\nSecciones del expediente\n👤\nDatos de identificación\nNombre\nMaría González\nDocumento\nCC 10247381\nFecha nac.\n12/04/1988 · 38 años\nSexo\nFemenino\nGrupo sangre\nO+\nSeguro\nBlueCross BlueShield · #BCB-20247381\nNPI médico\nDr. Carlos Ramírez · NPI 1234567890\n🩺\nDiagnósticos activos (ICD-10)\n💊\nMedicamentos activos\n🧪\nResultados de laboratorio\n⚠️\nAlergias y antecedentes\nInicio\nCitas\nChat\nPerfil"
+  },
+  "metrics": {
+    "bytes": 4059596,
+    "triangles": 23924,
+    "materials": 1,
+    "textures": 3,
+    "bones": 51,
+    "height": 1.6999996051989676,
+    "loadMs": 84.19999998807907,
+    "firstFrameMs": 380.69999998807907,
+    "fps": 59.99400060029756,
+    "calls": 1,
+    "geometries": 1,
+    "gpuTextures": 6,
+    "idleTime": 8.087299999982106,
+    "loops": 1,
+    "rootPosition": [
+      0,
+      0.9100404381752014,
+      0.019999179989099503
+    ],
+    "headQuaternion": [
+      0.013044264635567833,
+      -0.003944033726657149,
+      0.004284270610176823,
+      0.9998979631859539
+    ],
+    "morphWeights": {
+      "BodyVolume": 0,
+      "BodyLean": 0,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "heapMB": 100.8653621673584
+  }
+}
