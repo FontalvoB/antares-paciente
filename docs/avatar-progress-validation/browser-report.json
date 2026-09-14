@@ -1,0 +1,97 @@
+{
+  "validation": "HTTP fixtures; real AvatarPage + Ionic + GLB + WebGL; not real patient data",
+  "calls": 4,
+  "current": {
+    "bytes": 4059596,
+    "triangles": 23924,
+    "materials": 1,
+    "textures": 3,
+    "bones": 51,
+    "height": 1.6999996051989676,
+    "loadMs": 112.10000002384186,
+    "firstFrameMs": 407.80000001192093,
+    "fps": 59.99400060029756,
+    "calls": 1,
+    "geometries": 1,
+    "gpuTextures": 6,
+    "idleTime": 2.0828000000119204,
+    "loops": 0,
+    "rootPosition": [
+      0,
+      0.9100404381752014,
+      0.019999179989099503
+    ],
+    "headQuaternion": [
+      0.013442580566667289,
+      0.010299078062001353,
+      0.003055261212917239,
+      0.9998519347371901
+    ],
+    "morphWeights": {
+      "BodyVolume": 0,
+      "BodyLean": 0.5,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "heapMB": 94.6193962097168
+  },
+  "animated": {
+    "bytes": 4059596,
+    "triangles": 23924,
+    "materials": 1,
+    "textures": 3,
+    "bones": 51,
+    "height": 1.6999996051989676,
+    "loadMs": 112.10000002384186,
+    "firstFrameMs": 407.80000001192093,
+    "fps": 59.98200539766566,
+    "calls": 1,
+    "geometries": 1,
+    "gpuTextures": 6,
+    "idleTime": 16.19969999998805,
+    "loops": 2,
+    "rootPosition": [
+      0,
+      0.9100404381752014,
+      0.019999179989099503
+    ],
+    "headQuaternion": [
+      0.01383307253796603,
+      -0.002436041192509744,
+      0.004542886736166045,
+      0.9998910310566697
+    ],
+    "morphWeights": {
+      "BodyVolume": 0,
+      "BodyLean": 0.5,
+      "Abdomen": 0,
+      "Waist": 0,
+      "Chest": 0,
+      "Arms": 0,
+      "Thighs": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0
+    },
+    "heapMB": 89.14171314239502
+  },
+  "checks": [
+    "reference",
+    "latest",
+    "intermediate",
+    "smooth morphs",
+    "Idle",
+    "root fixed",
+    "empty",
+    "error",
+    "retry",
+    "demo has no data",
+    "mobile",
+    "desktop"
+  ],
+  "errors": []
+}

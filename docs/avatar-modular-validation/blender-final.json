@@ -1,0 +1,15 @@
+{
+  "editableSource": "sources/male-body-base-v8/male-body-base-v8.blend",
+  "sameBasis": true,
+  "samePolygons": true,
+  "sameSkinWeights": true,
+  "sameOtherMorphs": true,
+  "sharedOriginalMaterials": true,
+  "bones": 51,
+  "actions": [
+    "Idle",
+    "RigCheck"
+  ],
+  "activeAction": "Idle",
+  "fps": 30
+}

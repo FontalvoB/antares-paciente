@@ -69,6 +69,21 @@
   --safe: #1d9e75;
   --indigo: #3f5fa8;
 
+  /* ---------------------------------------------------------------
+     Acentos de los módulos del inicio (íconos 3D + carrusel).
+     Base de marca subida en luminosidad: los tonos --brand-* son
+     demasiado profundos para que seis módulos se distingan entre sí
+     de un vistazo, y el módulo se reconoce por su color antes que
+     por su etiqueta. El arte de cada ilustración lleva su propia
+     rampa de luz (ver `components/icons3d.tsx`).
+     --------------------------------------------------------------- */
+  --mod-appt: #2f6fd0;
+  --mod-nut: #16a06a;
+  --mod-body: #7b57c4;
+  --mod-record: #1c86b8;
+  --mod-com: #ef8b3c;
+  --mod-profile: #5b83a6;
+
   --radius-sm: 12px;
   --radius-md: 18px;
   --radius-lg: 22px;

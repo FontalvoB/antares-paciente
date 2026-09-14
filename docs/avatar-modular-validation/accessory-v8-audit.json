@@ -1,0 +1,527 @@
+[
+  {
+    "asset": "Glasses_01",
+    "state": "Basis",
+    "frame": 1,
+    "minGapMm": 5.198774204473011,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Basis",
+    "frame": 1,
+    "minGapMm": 2.041994644969236,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Basis",
+    "frame": 1,
+    "minGapMm": 2.0309807266585267,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Basis",
+    "frame": 91,
+    "minGapMm": 5.290601766319014,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Basis",
+    "frame": 91,
+    "minGapMm": 2.073802957056614,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Basis",
+    "frame": 91,
+    "minGapMm": 2.0624074095394462,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Basis",
+    "frame": 181,
+    "minGapMm": 5.198261031182483,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Basis",
+    "frame": 181,
+    "minGapMm": 2.0457069490475988,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Basis",
+    "frame": 181,
+    "minGapMm": 2.021828563101735,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Basis",
+    "frame": 271,
+    "minGapMm": 5.311381035426166,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Basis",
+    "frame": 271,
+    "minGapMm": 2.0839607686866657,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Basis",
+    "frame": 271,
+    "minGapMm": 2.0861586644969066,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Basis",
+    "frame": 361,
+    "minGapMm": 5.198774204473011,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Basis",
+    "frame": 361,
+    "minGapMm": 2.041994644969236,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Basis",
+    "frame": 361,
+    "minGapMm": 2.0309807266585267,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyVolume",
+    "frame": 1,
+    "minGapMm": 3.645571880042553,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyVolume",
+    "frame": 1,
+    "minGapMm": 1.301227959629614,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyVolume",
+    "frame": 1,
+    "minGapMm": 1.3519018684746698,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyVolume",
+    "frame": 91,
+    "minGapMm": 2.4661488132551312,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyVolume",
+    "frame": 91,
+    "minGapMm": 1.2624873052118346,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyVolume",
+    "frame": 91,
+    "minGapMm": 1.385579860652797,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyVolume",
+    "frame": 181,
+    "minGapMm": 3.4644920378923416,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyVolume",
+    "frame": 181,
+    "minGapMm": 1.223811850650236,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyVolume",
+    "frame": 181,
+    "minGapMm": 1.3526454276870936,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyVolume",
+    "frame": 271,
+    "minGapMm": 4.722477577161044,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyVolume",
+    "frame": 271,
+    "minGapMm": 1.2951176177011803,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyVolume",
+    "frame": 271,
+    "minGapMm": 1.3871764676878229,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyVolume",
+    "frame": 361,
+    "minGapMm": 3.645571880042553,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyVolume",
+    "frame": 361,
+    "minGapMm": 1.301227959629614,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyVolume",
+    "frame": 361,
+    "minGapMm": 1.3519018684746698,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyLean",
+    "frame": 1,
+    "minGapMm": 5.819246434839442,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyLean",
+    "frame": 1,
+    "minGapMm": 2.0296356815379113,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyLean",
+    "frame": 1,
+    "minGapMm": 2.1257889675325714,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyLean",
+    "frame": 91,
+    "minGapMm": 5.919514565903228,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyLean",
+    "frame": 91,
+    "minGapMm": 2.0589078922057524,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyLean",
+    "frame": 91,
+    "minGapMm": 2.182324016757775,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyLean",
+    "frame": 181,
+    "minGapMm": 5.820109203341417,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyLean",
+    "frame": 181,
+    "minGapMm": 2.0235805277479813,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyLean",
+    "frame": 181,
+    "minGapMm": 2.132721736415988,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyLean",
+    "frame": 271,
+    "minGapMm": 5.944013857515529,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyLean",
+    "frame": 271,
+    "minGapMm": 2.0843716629315168,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyLean",
+    "frame": 271,
+    "minGapMm": 2.212310253526084,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "BodyLean",
+    "frame": 361,
+    "minGapMm": 5.819246434839442,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "BodyLean",
+    "frame": 361,
+    "minGapMm": 2.0296356815379113,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "BodyLean",
+    "frame": 361,
+    "minGapMm": 2.1257889675325714,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "FaceVolume",
+    "frame": 1,
+    "minGapMm": 4.305963695514947,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "FaceVolume",
+    "frame": 1,
+    "minGapMm": 2.041994644969236,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "FaceVolume",
+    "frame": 1,
+    "minGapMm": 2.0309807266585267,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "FaceVolume",
+    "frame": 91,
+    "minGapMm": 3.3184457570314407,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "FaceVolume",
+    "frame": 91,
+    "minGapMm": 2.073802957056614,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "FaceVolume",
+    "frame": 91,
+    "minGapMm": 2.0624074095394462,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "FaceVolume",
+    "frame": 181,
+    "minGapMm": 4.099829122424126,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "FaceVolume",
+    "frame": 181,
+    "minGapMm": 2.0457069490475988,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "FaceVolume",
+    "frame": 181,
+    "minGapMm": 2.021828563101735,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "FaceVolume",
+    "frame": 271,
+    "minGapMm": 5.318246345268562,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "FaceVolume",
+    "frame": 271,
+    "minGapMm": 2.0839607686866657,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "FaceVolume",
+    "frame": 271,
+    "minGapMm": 2.0861586644969066,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "FaceVolume",
+    "frame": 361,
+    "minGapMm": 4.305963695514947,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "FaceVolume",
+    "frame": 361,
+    "minGapMm": 2.041994644969236,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "FaceVolume",
+    "frame": 361,
+    "minGapMm": 2.0309807266585267,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Arms",
+    "frame": 1,
+    "minGapMm": 5.198774204473011,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Arms",
+    "frame": 1,
+    "minGapMm": 2.0231183589203283,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Arms",
+    "frame": 1,
+    "minGapMm": 2.0271512985345908,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Arms",
+    "frame": 91,
+    "minGapMm": 5.290601766319014,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Arms",
+    "frame": 91,
+    "minGapMm": 2.06026238083723,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Arms",
+    "frame": 91,
+    "minGapMm": 2.061012944977847,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Arms",
+    "frame": 181,
+    "minGapMm": 5.198261031182483,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Arms",
+    "frame": 181,
+    "minGapMm": 2.0023560027766507,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Arms",
+    "frame": 181,
+    "minGapMm": 2.0038385064253816,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Arms",
+    "frame": 271,
+    "minGapMm": 5.311381035426166,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Arms",
+    "frame": 271,
+    "minGapMm": 2.0494745094765676,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Arms",
+    "frame": 271,
+    "minGapMm": 2.0444744241103763,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_01",
+    "state": "Arms",
+    "frame": 361,
+    "minGapMm": 5.198774204473011,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_01",
+    "state": "Arms",
+    "frame": 361,
+    "minGapMm": 2.0231183589203283,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_01",
+    "state": "Arms",
+    "frame": 361,
+    "minGapMm": 2.0271512985345908,
+    "deeperThan2mm": 0
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "body_bytes": 4328172,
+  "blend_bytes": 3761346,
+  "idle_bytes": 442668,
+  "idle_duration_seconds": 8,
+  "fps": 30,
+  "glb_max_channel_seam_error": 0.0,
+  "static_sections_identical": true,
+  "previous_binary_data_unchanged": true,
+  "actions": [
+    "Idle",
+    "RigCheck"
+  ],
+  "bones": 51,
+  "morphs": [
+    "BodyVolume",
+    "BodyLean",
+    "Abdomen",
+    "Waist",
+    "Chest",
+    "Arms",
+    "Thighs",
+    "FaceVolume",
+    "MuscleDefinition"
+  ],
+  "scene": "Avatar_Male_Body_V4"
+}

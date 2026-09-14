@@ -1,0 +1,16 @@
+{
+  "file": "C:/Users/Carlos Cortina/Documents/CoppAddresd/antares-paciente/public/models/avatar/bodies/male-body-base-v8.glb",
+  "bytes": 5312372,
+  "sourceSha256": "0831e32148297cf8f8e934a1249e230e40d6169279252dcee1ef64e9011d894d",
+  "sha256": "bb095cf10c596e7e0aebb97f4457798eae8e2219d324efd1016da3f17bc4940f",
+  "maxVertexMappingErrorM": 0,
+  "changedAccessors": [
+    7,
+    8
+  ],
+  "allOtherBinaryDataIdentical": true,
+  "clips": [
+    "Idle",
+    "RigCheck"
+  ]
+}
