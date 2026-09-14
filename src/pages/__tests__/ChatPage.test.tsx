@@ -30,6 +30,7 @@ const sendChatMock = vi.fn();
 const openPanicMock = vi.fn();
 const openVoiceMock = vi.fn();
 const hydrateChatMock = vi.fn();
+const prependChatMessagesMock = vi.fn();
 const openBookingWizardMock = vi.fn();
 const appendChatMessagesMock = vi.fn();
 const showToastMock = vi.fn();
@@ -44,6 +45,7 @@ vi.mock("../../context/AppContext", () => ({
     threadId: "test-thread-123",
     user: { id: "user-1", nombre: "María" },
     hydrateChat: hydrateChatMock,
+    prependChatMessages: prependChatMessagesMock,
     openBookingWizard: openBookingWizardMock,
     appendChatMessages: appendChatMessagesMock,
     showToast: showToastMock,
