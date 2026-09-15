@@ -3,12 +3,8 @@ import { IonIcon, IonProgressBar, IonSkeletonText } from "@ionic/react";
 import { useI18n } from "../i18n/I18nContext";
 import {
   add,
-  bluetooth,
   bodyOutline,
-  chatbubbleEllipses,
   flame,
-  medkit,
-  mic,
   notificationsOutline,
   person,
   refreshOutline,
@@ -20,9 +16,13 @@ import {
   AppleIcon3D,
   BodyIcon3D,
   CalendarIcon3D,
+  ChatIcon3D,
   CommunityIcon3D,
+  MicIcon3D,
   ProfileIcon3D,
   RecordIcon3D,
+  SosIcon3D,
+  WatchIcon3D,
 } from "../components/icons3d";
 import {
   ModuleCarousel,
@@ -500,20 +500,22 @@ export function HomePage() {
               {
                 id: "chat" as const,
                 label: t("Chat IA"),
-                icon: chatbubbleEllipses,
+                Art: ChatIcon3D,
                 fn: () => navigate("chat"),
               },
-              { id: "voice" as const, label: t("Voz"), icon: mic, fn: openVoice },
+              { id: "voice" as const, label: t("Voz"), Art: MicIcon3D, fn: openVoice },
               {
                 id: "bt" as const,
                 label: watchConnected ? t("Reloj") : t("Conectar"),
-                icon: bluetooth,
+                Art: WatchIcon3D,
                 fn: () => navigate("bt"),
               },
               {
                 id: "sos" as const,
                 label: t("SOS"),
-                icon: medkit,
+                // El botiquín reemplaza la sigla "SOS" dentro del círculo: la
+                // etiqueta ya dice SOS y así las cuatro teclas llevan pieza 3D.
+                Art: SosIcon3D,
                 fn: openPanic,
                 panic: true,
               },
@@ -525,7 +527,7 @@ export function HomePage() {
                 onClick={a.fn}
               >
                 <span className="hm-quick-ico">
-                  {a.panic ? "SOS" : <IonIcon icon={a.icon} />}
+                  <a.Art />
                 </span>
                 <span>{a.label}</span>
               </button>

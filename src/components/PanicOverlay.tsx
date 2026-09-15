@@ -126,6 +126,7 @@ export function PanicOverlay() {
   const imOk = () => {
     closePanic()
     showToast(t('Alerta cancelada. Quédate en observación.'), 'ok')
+    
   }
 
   const ringPct = sosActive ? 1 : count / 5

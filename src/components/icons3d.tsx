@@ -461,6 +461,228 @@ export function ProfileIcon3D({ size = 88 }: IconProps) {
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   Accesos rápidos del inicio.
+
+   Van sobre teclas navy y a ~30 px, así que son versiones más compactas y de
+   silueta más limpia que las de los módulos: menos detalle interno, más
+   contraste de valor. La luz sigue viniendo de arriba-izquierda, igual que en
+   el resto de la pieza.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const BUBBLE =
+  "M31 18 H65 A17 17 0 0 1 82 35 V51 A17 17 0 0 1 65 68 H40 L22 84 L31 68 A17 17 0 0 1 14 51 V35 A17 17 0 0 1 31 18 Z";
+
+/* ───────────────────────────── Chat IA — bocadillo ──────────────────────── */
+export function ChatIcon3D({ size = 30 }: IconProps) {
+  return (
+    <Frame size={size}>
+      <defs>
+        <linearGradient id="cht-edge" x1="14" y1="18" x2="86" y2="84" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#8fc4f8" />
+          <stop offset="0.42" stopColor="#3d7fd2" />
+          <stop offset="1" stopColor="#10386f" />
+        </linearGradient>
+        <linearGradient id="cht-face" x1="18" y1="20" x2="70" y2="76" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.62" stopColor="#eaf3fd" />
+          <stop offset="1" stopColor="#c6dcf3" />
+        </linearGradient>
+        <radialGradient id="cht-floor">
+          <stop offset="0" stopColor="#0b2646" stopOpacity="0.36" />
+          <stop offset="1" stopColor="#0b2646" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <ellipse cx="46" cy="88" rx="30" ry="6" fill="url(#cht-floor)" />
+
+      {extrusion(14, 9, -7, (ox, oy, key) => (
+        <path key={key} d={BUBBLE} transform={`translate(${ox} ${oy})`} fill="url(#cht-edge)" />
+      ))}
+      <path d={BUBBLE} fill="url(#cht-face)" />
+
+      {/* Reflejo del plástico en el cuadrante iluminado. */}
+      <ellipse cx="34" cy="32" rx="19" ry="10" transform="rotate(-26 34 32)" fill="#ffffff" opacity="0.85" />
+
+      {[32, 48, 64].map((cx) => (
+        <circle key={cx} cx={cx} cy="43" r="4.8" fill="#1c4a86" />
+      ))}
+    </Frame>
+  );
+}
+
+/* ─────────────────────────── Voz — micrófono ────────────────────────────── */
+export function MicIcon3D({ size = 30 }: IconProps) {
+  return (
+    <Frame size={size}>
+      <defs>
+        <linearGradient id="mic-edge" x1="34" y1="10" x2="72" y2="58" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#cfe2f4" />
+          <stop offset="0.45" stopColor="#6f92b6" />
+          <stop offset="1" stopColor="#22405f" />
+        </linearGradient>
+        <linearGradient id="mic-body" x1="34" y1="12" x2="62" y2="56" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.44" stopColor="#e2edf8" />
+          <stop offset="1" stopColor="#9db9d4" />
+        </linearGradient>
+        <linearGradient id="mic-metal" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#e9f2fa" />
+          <stop offset="0.5" stopColor="#a6bfd6" />
+          <stop offset="1" stopColor="#4f6d8c" />
+        </linearGradient>
+        <radialGradient id="mic-floor">
+          <stop offset="0" stopColor="#0b2646" stopOpacity="0.36" />
+          <stop offset="1" stopColor="#0b2646" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <ellipse cx="48" cy="88" rx="26" ry="5.5" fill="url(#mic-floor)" />
+
+      {/* Horquilla: pasa por detrás de la cápsula. */}
+      <path
+        d="M27 41 A21 21 0 0 0 69 41"
+        stroke="url(#mic-metal)"
+        strokeWidth="7"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <rect x="44" y="60" width="8" height="15" rx="3" fill="url(#mic-metal)" />
+      <ellipse cx="48" cy="79" rx="17" ry="5.5" fill="url(#mic-metal)" />
+      <ellipse cx="48" cy="77.5" rx="17" ry="5.5" fill="#dceaf6" />
+
+      {extrusion(13, 8, -6, (ox, oy, key) => (
+        <rect key={key} x={34 + ox} y={11 + oy} width="24" height="45" rx="12" fill="url(#mic-edge)" />
+      ))}
+      <rect x="34" y="11" width="24" height="45" rx="12" fill="url(#mic-body)" />
+
+      {/* Rejilla: dos surcos, lo justo para que se lea a 30 px. */}
+      <rect x="39" y="22" width="14" height="2.6" rx="1.3" fill="#8ea9c4" opacity="0.75" />
+      <rect x="39" y="29" width="14" height="2.6" rx="1.3" fill="#8ea9c4" opacity="0.75" />
+      <ellipse cx="41" cy="20" rx="4" ry="8" transform="rotate(-14 41 20)" fill="#ffffff" opacity="0.75" />
+    </Frame>
+  );
+}
+
+/* ──────────────── Conectar / Reloj — pulsera con bluetooth ──────────────── */
+export function WatchIcon3D({ size = 30 }: IconProps) {
+  return (
+    <Frame size={size}>
+      <defs>
+        <linearGradient id="wch-strap" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#c2d5e8" />
+          <stop offset="1" stopColor="#5a7999" />
+        </linearGradient>
+        <linearGradient id="wch-edge" x1="24" y1="24" x2="76" y2="74" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#dbe8f5" />
+          <stop offset="0.44" stopColor="#7695b7" />
+          <stop offset="1" stopColor="#1e3a57" />
+        </linearGradient>
+        <linearGradient id="wch-case" x1="26" y1="26" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.45" stopColor="#dfeaf6" />
+          <stop offset="1" stopColor="#9ab5d0" />
+        </linearGradient>
+        <linearGradient id="wch-glass" x1="32" y1="32" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#27527f" />
+          <stop offset="1" stopColor="#07193a" />
+        </linearGradient>
+        <radialGradient id="wch-floor">
+          <stop offset="0" stopColor="#0b2646" stopOpacity="0.36" />
+          <stop offset="1" stopColor="#0b2646" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <ellipse cx="47" cy="89" rx="24" ry="5" fill="url(#wch-floor)" />
+
+      <rect x="35" y="7" width="25" height="26" rx="7" fill="url(#wch-strap)" />
+      <rect x="35" y="64" width="25" height="26" rx="7" fill="url(#wch-strap)" />
+
+      {/* Corona lateral. */}
+      <rect x="69" y="41" width="7" height="13" rx="3.5" fill="url(#wch-edge)" />
+
+      {extrusion(14, 8, -7, (ox, oy, key) => (
+        <rect key={key} x={24 + ox} y={25 + oy} width="47" height="46" rx="15" fill="url(#wch-edge)" />
+      ))}
+      <rect x="24" y="25" width="47" height="46" rx="15" fill="url(#wch-case)" />
+      <rect x="29.5" y="30.5" width="36" height="35" rx="11" fill="url(#wch-glass)" />
+
+      <path
+        d="M47 37 V59 M47 37 L53.6 43.6 L40.4 52.4 M47 59 L53.6 52.4 L40.4 43.6"
+        stroke="#84e2ff"
+        strokeWidth="3.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      {/* Reflejo del cristal. */}
+      <path d="M29.5 41 L48 30.5 H40 A11 11 0 0 0 29.5 41 Z" fill="#ffffff" opacity="0.3" />
+    </Frame>
+  );
+}
+
+/* ───────────────────────────── SOS — botiquín ───────────────────────────── */
+export function SosIcon3D({ size = 30 }: IconProps) {
+  return (
+    <Frame size={size}>
+      <defs>
+        <linearGradient id="sos-edge" x1="12" y1="30" x2="86" y2="82" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ff9e91" />
+          <stop offset="0.42" stopColor="#d63a3a" />
+          <stop offset="1" stopColor="#6d0f14" />
+        </linearGradient>
+        <linearGradient id="sos-body" x1="16" y1="32" x2="70" y2="78" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ff8f83" />
+          <stop offset="0.46" stopColor="#e8453f" />
+          <stop offset="1" stopColor="#9b1b1e" />
+        </linearGradient>
+        <linearGradient id="sos-lid" x1="16" y1="32" x2="72" y2="46" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffb0a4" />
+          <stop offset="1" stopColor="#c9302f" />
+        </linearGradient>
+        <linearGradient id="sos-handle" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#e7eef6" />
+          <stop offset="1" stopColor="#7e93aa" />
+        </linearGradient>
+        <radialGradient id="sos-floor">
+          <stop offset="0" stopColor="#3d0a0c" stopOpacity="0.4" />
+          <stop offset="1" stopColor="#3d0a0c" stopOpacity="0" />
+        </radialGradient>
+        <clipPath id="sos-clip">
+          <rect x="14" y="32" width="64" height="44" rx="11" />
+        </clipPath>
+      </defs>
+
+      <ellipse cx="45" cy="84" rx="31" ry="6" fill="url(#sos-floor)" />
+
+      {/* Asa: nace por detrás de la caja. */}
+      <path
+        d="M37 34 V27 A7 7 0 0 1 44 20 H52 A7 7 0 0 1 59 27 V34"
+        stroke="url(#sos-handle)"
+        strokeWidth="6"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {extrusion(14, 9, -7, (ox, oy, key) => (
+        <rect key={key} x={14 + ox} y={32 + oy} width="64" height="44" rx="11" fill="url(#sos-edge)" />
+      ))}
+      <rect x="14" y="32" width="64" height="44" rx="11" fill="url(#sos-body)" />
+
+      <g clipPath="url(#sos-clip)">
+        <rect x="14" y="32" width="64" height="12" fill="url(#sos-lid)" />
+        {/* Oclusión bajo la tapa. */}
+        <rect x="14" y="44" width="64" height="3" fill="#7d1417" opacity="0.4" />
+        <ellipse cx="26" cy="38" rx="18" ry="9" transform="rotate(-20 26 38)" fill="#ffffff" opacity="0.34" />
+      </g>
+
+      <rect x="41" y="50" width="10" height="24" rx="3" fill="#ffffff" />
+      <rect x="34" y="57" width="24" height="10" rx="3" fill="#ffffff" />
+      <rect x="41" y="50" width="10" height="3" rx="1.5" fill="#ffe6e2" />
+    </Frame>
+  );
+}
+
 /** Registro de las piezas por módulo del inicio. */
 export const MODULE_ICONS_3D = {
   book: CalendarIcon3D,
