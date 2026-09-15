@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 /**
  * Íconos 3D de los módulos del inicio.
@@ -470,217 +470,69 @@ export function ProfileIcon3D({ size = 88 }: IconProps) {
    el resto de la pieza.
    ══════════════════════════════════════════════════════════════════════════ */
 
-const BUBBLE =
-  "M31 18 H65 A17 17 0 0 1 82 35 V51 A17 17 0 0 1 65 68 H40 L22 84 L31 68 A17 17 0 0 1 14 51 V35 A17 17 0 0 1 31 18 Z";
-
-/* ───────────────────────────── Chat IA — bocadillo ──────────────────────── */
-export function ChatIcon3D({ size = 30 }: IconProps) {
-  return (
-    <Frame size={size}>
-      <defs>
-        <linearGradient id="cht-edge" x1="14" y1="18" x2="86" y2="84" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#8fc4f8" />
-          <stop offset="0.42" stopColor="#3d7fd2" />
-          <stop offset="1" stopColor="#10386f" />
-        </linearGradient>
-        <linearGradient id="cht-face" x1="18" y1="20" x2="70" y2="76" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.62" stopColor="#eaf3fd" />
-          <stop offset="1" stopColor="#c6dcf3" />
-        </linearGradient>
-        <radialGradient id="cht-floor">
-          <stop offset="0" stopColor="#0b2646" stopOpacity="0.36" />
-          <stop offset="1" stopColor="#0b2646" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <ellipse cx="46" cy="88" rx="30" ry="6" fill="url(#cht-floor)" />
-
-      {extrusion(14, 9, -7, (ox, oy, key) => (
-        <path key={key} d={BUBBLE} transform={`translate(${ox} ${oy})`} fill="url(#cht-edge)" />
-      ))}
-      <path d={BUBBLE} fill="url(#cht-face)" />
-
-      {/* Reflejo del plástico en el cuadrante iluminado. */}
-      <ellipse cx="34" cy="32" rx="19" ry="10" transform="rotate(-26 34 32)" fill="#ffffff" opacity="0.85" />
-
-      {[32, 48, 64].map((cx) => (
-        <circle key={cx} cx={cx} cy="43" r="4.8" fill="#1c4a86" />
-      ))}
-    </Frame>
-  );
+/** Ilustraciones vectoriales: volumen suave sin un canvas WebGL por botón.
+ * Los IDs únicos permiten mostrar más de una instancia sin mezclar degradados. */
+function QuickSculpture({ size, tone, children }: IconProps & { tone: string; children: ReactNode }) {
+  const id = useId();
+  return <Frame size={size ?? 48}>
+    <defs>
+      <linearGradient id={id + '-face'} x1="0" y1="0" x2="0.85" y2="1">
+        <stop stopColor="white"/><stop offset="0.24" stopColor={tone}/><stop offset="1" stopColor={tone} stopOpacity="0.78"/>
+      </linearGradient>
+      <linearGradient id={id + '-edge'} x1="0" y1="0" x2="1" y2="1">
+        <stop stopColor={tone}/><stop offset="1" stopColor="var(--brand-navy)"/>
+      </linearGradient>
+      <radialGradient id={id + '-shadow'}><stop stopColor={tone} stopOpacity="0.3"/><stop offset="1" stopColor={tone} stopOpacity="0"/></radialGradient>
+    </defs>
+    <ellipse cx="49" cy="85" rx="34" ry="8" fill={'url(#' + id + '-shadow)'} />
+    <g style={{ '--sculpture-face': 'url(#' + id + '-face)', '--sculpture-edge': 'url(#' + id + '-edge)' } as React.CSSProperties}>
+      {children}
+    </g>
+  </Frame>;
 }
 
-/* ─────────────────────────── Voz — micrófono ────────────────────────────── */
-export function MicIcon3D({ size = 30 }: IconProps) {
-  return (
-    <Frame size={size}>
-      <defs>
-        <linearGradient id="mic-edge" x1="34" y1="10" x2="72" y2="58" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#cfe2f4" />
-          <stop offset="0.45" stopColor="#6f92b6" />
-          <stop offset="1" stopColor="#22405f" />
-        </linearGradient>
-        <linearGradient id="mic-body" x1="34" y1="12" x2="62" y2="56" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.44" stopColor="#e2edf8" />
-          <stop offset="1" stopColor="#9db9d4" />
-        </linearGradient>
-        <linearGradient id="mic-metal" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#e9f2fa" />
-          <stop offset="0.5" stopColor="#a6bfd6" />
-          <stop offset="1" stopColor="#4f6d8c" />
-        </linearGradient>
-        <radialGradient id="mic-floor">
-          <stop offset="0" stopColor="#0b2646" stopOpacity="0.36" />
-          <stop offset="1" stopColor="#0b2646" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <ellipse cx="48" cy="88" rx="26" ry="5.5" fill="url(#mic-floor)" />
-
-      {/* Horquilla: pasa por detrás de la cápsula. */}
-      <path
-        d="M27 41 A21 21 0 0 0 69 41"
-        stroke="url(#mic-metal)"
-        strokeWidth="7"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <rect x="44" y="60" width="8" height="15" rx="3" fill="url(#mic-metal)" />
-      <ellipse cx="48" cy="79" rx="17" ry="5.5" fill="url(#mic-metal)" />
-      <ellipse cx="48" cy="77.5" rx="17" ry="5.5" fill="#dceaf6" />
-
-      {extrusion(13, 8, -6, (ox, oy, key) => (
-        <rect key={key} x={34 + ox} y={11 + oy} width="24" height="45" rx="12" fill="url(#mic-edge)" />
-      ))}
-      <rect x="34" y="11" width="24" height="45" rx="12" fill="url(#mic-body)" />
-
-      {/* Rejilla: dos surcos, lo justo para que se lea a 30 px. */}
-      <rect x="39" y="22" width="14" height="2.6" rx="1.3" fill="#8ea9c4" opacity="0.75" />
-      <rect x="39" y="29" width="14" height="2.6" rx="1.3" fill="#8ea9c4" opacity="0.75" />
-      <ellipse cx="41" cy="20" rx="4" ry="8" transform="rotate(-14 41 20)" fill="#ffffff" opacity="0.75" />
-    </Frame>
-  );
+export function ChatIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--mod-appt)">
+    <path d="M26 22 H69 Q83 22 83 36 V58 Q83 72 69 72 H42 L26 82 V72 Q17 70 17 58 V36 Q17 22 26 22Z" fill="var(--sculpture-edge)"/>
+    <path d="M24 16 H65 Q79 16 79 30 V52 Q79 66 65 66 H39 L22 77 V65 Q12 63 12 52 V30 Q12 16 24 16Z" fill="var(--sculpture-face)"/>
+    <path d="M24 21 H61" stroke="white" strokeOpacity="0.65" strokeWidth="3" strokeLinecap="round"/>
+    {[29,45,61].map(x => <circle key={x} cx={x} cy="42" r="5" fill="white"/>)}
+    <path d="M73 6 L76 13 L83 16 L76 19 L73 26 L70 19 L63 16 L70 13Z" fill="var(--brand-navy)"/>
+  </QuickSculpture>;
 }
 
-/* ──────────────── Conectar / Reloj — pulsera con bluetooth ──────────────── */
-export function WatchIcon3D({ size = 30 }: IconProps) {
-  return (
-    <Frame size={size}>
-      <defs>
-        <linearGradient id="wch-strap" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#c2d5e8" />
-          <stop offset="1" stopColor="#5a7999" />
-        </linearGradient>
-        <linearGradient id="wch-edge" x1="24" y1="24" x2="76" y2="74" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#dbe8f5" />
-          <stop offset="0.44" stopColor="#7695b7" />
-          <stop offset="1" stopColor="#1e3a57" />
-        </linearGradient>
-        <linearGradient id="wch-case" x1="26" y1="26" x2="70" y2="70" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.45" stopColor="#dfeaf6" />
-          <stop offset="1" stopColor="#9ab5d0" />
-        </linearGradient>
-        <linearGradient id="wch-glass" x1="32" y1="32" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#27527f" />
-          <stop offset="1" stopColor="#07193a" />
-        </linearGradient>
-        <radialGradient id="wch-floor">
-          <stop offset="0" stopColor="#0b2646" stopOpacity="0.36" />
-          <stop offset="1" stopColor="#0b2646" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <ellipse cx="47" cy="89" rx="24" ry="5" fill="url(#wch-floor)" />
-
-      <rect x="35" y="7" width="25" height="26" rx="7" fill="url(#wch-strap)" />
-      <rect x="35" y="64" width="25" height="26" rx="7" fill="url(#wch-strap)" />
-
-      {/* Corona lateral. */}
-      <rect x="69" y="41" width="7" height="13" rx="3.5" fill="url(#wch-edge)" />
-
-      {extrusion(14, 8, -7, (ox, oy, key) => (
-        <rect key={key} x={24 + ox} y={25 + oy} width="47" height="46" rx="15" fill="url(#wch-edge)" />
-      ))}
-      <rect x="24" y="25" width="47" height="46" rx="15" fill="url(#wch-case)" />
-      <rect x="29.5" y="30.5" width="36" height="35" rx="11" fill="url(#wch-glass)" />
-
-      <path
-        d="M47 37 V59 M47 37 L53.6 43.6 L40.4 52.4 M47 59 L53.6 52.4 L40.4 43.6"
-        stroke="#84e2ff"
-        strokeWidth="3.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      {/* Reflejo del cristal. */}
-      <path d="M29.5 41 L48 30.5 H40 A11 11 0 0 0 29.5 41 Z" fill="#ffffff" opacity="0.3" />
-    </Frame>
-  );
+export function MicIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--mod-nut)">
+    <path d="M26 42 V48 A23 23 0 0 0 72 48 V42 M49 71 V81 M36 82 H62" fill="none" stroke="var(--sculpture-edge)" strokeWidth="6" strokeLinecap="round"/>
+    <rect x="36" y="12" width="29" height="48" rx="14.5" fill="var(--sculpture-edge)"/>
+    <rect x="31" y="8" width="29" height="48" rx="14.5" fill="var(--sculpture-face)"/>
+    <path d="M40 19 H50 M40 27 H50 M40 35 H50" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M19 26 V39 M79 26 V39" stroke="var(--mod-nut)" strokeOpacity="0.45" strokeWidth="3" strokeLinecap="round"/>
+  </QuickSculpture>;
 }
 
-/* ───────────────────────────── SOS — botiquín ───────────────────────────── */
-export function SosIcon3D({ size = 30 }: IconProps) {
-  return (
-    <Frame size={size}>
-      <defs>
-        <linearGradient id="sos-edge" x1="12" y1="30" x2="86" y2="82" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ff9e91" />
-          <stop offset="0.42" stopColor="#d63a3a" />
-          <stop offset="1" stopColor="#6d0f14" />
-        </linearGradient>
-        <linearGradient id="sos-body" x1="16" y1="32" x2="70" y2="78" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ff8f83" />
-          <stop offset="0.46" stopColor="#e8453f" />
-          <stop offset="1" stopColor="#9b1b1e" />
-        </linearGradient>
-        <linearGradient id="sos-lid" x1="16" y1="32" x2="72" y2="46" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ffb0a4" />
-          <stop offset="1" stopColor="#c9302f" />
-        </linearGradient>
-        <linearGradient id="sos-handle" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#e7eef6" />
-          <stop offset="1" stopColor="#7e93aa" />
-        </linearGradient>
-        <radialGradient id="sos-floor">
-          <stop offset="0" stopColor="#3d0a0c" stopOpacity="0.4" />
-          <stop offset="1" stopColor="#3d0a0c" stopOpacity="0" />
-        </radialGradient>
-        <clipPath id="sos-clip">
-          <rect x="14" y="32" width="64" height="44" rx="11" />
-        </clipPath>
-      </defs>
+export function WatchIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--mod-body)">
+    <g transform="rotate(-10 48 48)">
+      <rect x="34" y="5" width="29" height="85" rx="10" fill="var(--sculpture-edge)"/>
+      <rect x="34" y="5" width="25" height="82" rx="9" fill="var(--sculpture-face)"/>
+      <rect x="23" y="23" width="54" height="54" rx="17" fill="var(--sculpture-edge)"/>
+      <rect x="19" y="19" width="54" height="54" rx="17" fill="var(--sculpture-face)"/>
+      <rect x="25" y="25" width="42" height="42" rx="12" fill="var(--brand-navy)"/>
+      <path d="M46 32 V60 L55 51 L37 39 M46 32 L55 41 L37 53" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M31 29 H47" stroke="white" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round"/>
+    </g>
+  </QuickSculpture>;
+}
 
-      <ellipse cx="45" cy="84" rx="31" ry="6" fill="url(#sos-floor)" />
-
-      {/* Asa: nace por detrás de la caja. */}
-      <path
-        d="M37 34 V27 A7 7 0 0 1 44 20 H52 A7 7 0 0 1 59 27 V34"
-        stroke="url(#sos-handle)"
-        strokeWidth="6"
-        strokeLinecap="round"
-        fill="none"
-      />
-
-      {extrusion(14, 9, -7, (ox, oy, key) => (
-        <rect key={key} x={14 + ox} y={32 + oy} width="64" height="44" rx="11" fill="url(#sos-edge)" />
-      ))}
-      <rect x="14" y="32" width="64" height="44" rx="11" fill="url(#sos-body)" />
-
-      <g clipPath="url(#sos-clip)">
-        <rect x="14" y="32" width="64" height="12" fill="url(#sos-lid)" />
-        {/* Oclusión bajo la tapa. */}
-        <rect x="14" y="44" width="64" height="3" fill="#7d1417" opacity="0.4" />
-        <ellipse cx="26" cy="38" rx="18" ry="9" transform="rotate(-20 26 38)" fill="#ffffff" opacity="0.34" />
-      </g>
-
-      <rect x="41" y="50" width="10" height="24" rx="3" fill="#ffffff" />
-      <rect x="34" y="57" width="24" height="10" rx="3" fill="#ffffff" />
-      <rect x="41" y="50" width="10" height="3" rx="1.5" fill="#ffe6e2" />
-    </Frame>
-  );
+export function SosIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--red)">
+    <path d="M34 32 V24 Q34 17 41 17 H55 Q62 17 62 24 V32" stroke="var(--sculpture-edge)" strokeWidth="7" fill="none"/>
+    <rect x="16" y="32" width="69" height="48" rx="15" fill="var(--sculpture-edge)"/>
+    <rect x="11" y="27" width="69" height="48" rx="15" fill="var(--sculpture-face)"/>
+    <path d="M23 32 H64" stroke="white" strokeOpacity="0.6" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M46 40 V62 M35 51 H57" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+  </QuickSculpture>;
 }
 
 /** Registro de las piezas por módulo del inicio. */
