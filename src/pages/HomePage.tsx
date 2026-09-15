@@ -421,11 +421,15 @@ export function HomePage() {
                 )
           }
         >
+          <svg className="hm-wheel-pulse" viewBox="0 0 400 64" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 34 H16 C22 34 24 29 24 24 C24 12 40 12 44 23 C49 12 64 12 64 24 C64 35 44 46 44 46 C44 46 24 35 24 24 M44 46 C51 38 58 34 70 34 H292 L302 34 L312 23 L322 46 L333 9 L345 55 L356 34 H400" />
+          </svg>
           <span className="hm-wheel-kicker">{t("Protocolo diario")}</span>
           <ProtocolWheel
             program={program}
             chestClaimed={dayComplete}
             title={t("Protocolo diario")}
+            actionLabel={t("Entrar")}
             count={todayDone}
             total={todayTotal}
             caption={
