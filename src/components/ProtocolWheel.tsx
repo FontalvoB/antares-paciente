@@ -1,6 +1,6 @@
 import { IonIcon } from '@ionic/react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { checkmark, gift, trophy } from 'ionicons/icons'
+import { checkmark, gift, play, trophy } from 'ionicons/icons'
 import { PROGRAM_TASKS } from '../data/program'
 import { TASK_ICONS } from '../pages/program/ui'
 import type { ProgramDay, ProgramTaskId } from '../types'
@@ -98,6 +98,7 @@ export function ProtocolWheel({
   count,
   total,
   caption,
+  actionLabel,
 }: {
   program: ProgramDay
   chestClaimed?: boolean
@@ -105,6 +106,7 @@ export function ProtocolWheel({
   count: number
   total: number
   caption: string
+  actionLabel: string
 }) {
   const reduce = useReducedMotion()
 
@@ -115,8 +117,6 @@ export function ProtocolWheel({
     done: key === 'chest' ? chestClaimed : Boolean(program[key]),
     center: i * SLICE,
   }))
-  /** Primera misión pendiente: su icono late para invitar a tocarla. */
-  const nextKey = segments.find((seg) => !seg.done)?.key
   const progress = total > 0 ? count / total : 0
   const complete = count >= total
 
@@ -162,26 +162,14 @@ export function ProtocolWheel({
 
       {segments.map((seg, i) => {
         const { x, y } = point(seg.center, R_MID)
-        const isNext = seg.key === nextKey
         return (
           <motion.span
             key={seg.key}
             className={`wheel-badge${seg.done ? ' done' : ''}`}
             style={{ left: `${(x / VIEW) * 100}%`, top: `${(y / VIEW) * 100}%` }}
-            initial={reduce ? false : { opacity: 0, scale: 0.3 }}
-            animate={
-              isNext && !reduce
-                ? { opacity: 1, scale: [1, 1.14, 1] }
-                : { opacity: 1, scale: 1 }
-            }
-            transition={
-              isNext && !reduce
-                ? {
-                    opacity: { delay: 0.45 + i * 0.06, duration: 0.3 },
-                    scale: { repeat: Infinity, repeatDelay: 1.1, duration: 1.5, ease: 'easeInOut' },
-                  }
-                : { delay: reduce ? 0 : 0.45 + i * 0.06, duration: 0.45, ease: EASE }
-            }
+            initial={false}
+            animate={reduce ? { opacity: 1, scale: 1 } : { opacity: 1, scale: [1, 1.2, 1] }}
+            transition={{ delay: reduce ? 0 : 0.5 + i * 0.4, duration: 0.65, ease: EASE }}
           >
             <IonIcon icon={seg.done ? checkmark : seg.icon} />
           </motion.span>
@@ -195,6 +183,9 @@ export function ProtocolWheel({
           <span>/{total}</span>
         </strong>
         <span className="wheel-core-caption">{caption}</span>
+        {/* El play pertenece al botón contenedor; no anidar controles. */}
+        <span className="wheel-play" aria-hidden="true"><IonIcon icon={play} /></span>
+        <span className="wheel-action-label">{actionLabel}</span>
       </div>
     </div>
   )
