@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 /**
  * Íconos 3D de los módulos del inicio.
@@ -459,6 +459,80 @@ export function ProfileIcon3D({ size = 88 }: IconProps) {
       <rect x="52" y="69" width="17" height="4.4" rx="2.2" fill="#b3c7d8" />
     </Frame>
   );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Accesos rápidos del inicio.
+
+   Van sobre teclas navy y a ~30 px, así que son versiones más compactas y de
+   silueta más limpia que las de los módulos: menos detalle interno, más
+   contraste de valor. La luz sigue viniendo de arriba-izquierda, igual que en
+   el resto de la pieza.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** Ilustraciones vectoriales: volumen suave sin un canvas WebGL por botón.
+ * Los IDs únicos permiten mostrar más de una instancia sin mezclar degradados. */
+function QuickSculpture({ size, tone, children }: IconProps & { tone: string; children: ReactNode }) {
+  const id = useId();
+  return <Frame size={size ?? 48}>
+    <defs>
+      <linearGradient id={id + '-face'} x1="0" y1="0" x2="0.85" y2="1">
+        <stop stopColor="white"/><stop offset="0.24" stopColor={tone}/><stop offset="1" stopColor={tone} stopOpacity="0.78"/>
+      </linearGradient>
+      <linearGradient id={id + '-edge'} x1="0" y1="0" x2="1" y2="1">
+        <stop stopColor={tone}/><stop offset="1" stopColor="var(--brand-navy)"/>
+      </linearGradient>
+      <radialGradient id={id + '-shadow'}><stop stopColor={tone} stopOpacity="0.3"/><stop offset="1" stopColor={tone} stopOpacity="0"/></radialGradient>
+    </defs>
+    <ellipse cx="49" cy="85" rx="34" ry="8" fill={'url(#' + id + '-shadow)'} />
+    <g style={{ '--sculpture-face': 'url(#' + id + '-face)', '--sculpture-edge': 'url(#' + id + '-edge)' } as React.CSSProperties}>
+      {children}
+    </g>
+  </Frame>;
+}
+
+export function ChatIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--mod-appt)">
+    <path d="M26 22 H69 Q83 22 83 36 V58 Q83 72 69 72 H42 L26 82 V72 Q17 70 17 58 V36 Q17 22 26 22Z" fill="var(--sculpture-edge)"/>
+    <path d="M24 16 H65 Q79 16 79 30 V52 Q79 66 65 66 H39 L22 77 V65 Q12 63 12 52 V30 Q12 16 24 16Z" fill="var(--sculpture-face)"/>
+    <path d="M24 21 H61" stroke="white" strokeOpacity="0.65" strokeWidth="3" strokeLinecap="round"/>
+    {[29,45,61].map(x => <circle key={x} cx={x} cy="42" r="5" fill="white"/>)}
+    <path d="M73 6 L76 13 L83 16 L76 19 L73 26 L70 19 L63 16 L70 13Z" fill="var(--brand-navy)"/>
+  </QuickSculpture>;
+}
+
+export function MicIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--mod-nut)">
+    <path d="M26 42 V48 A23 23 0 0 0 72 48 V42 M49 71 V81 M36 82 H62" fill="none" stroke="var(--sculpture-edge)" strokeWidth="6" strokeLinecap="round"/>
+    <rect x="36" y="12" width="29" height="48" rx="14.5" fill="var(--sculpture-edge)"/>
+    <rect x="31" y="8" width="29" height="48" rx="14.5" fill="var(--sculpture-face)"/>
+    <path d="M40 19 H50 M40 27 H50 M40 35 H50" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M19 26 V39 M79 26 V39" stroke="var(--mod-nut)" strokeOpacity="0.45" strokeWidth="3" strokeLinecap="round"/>
+  </QuickSculpture>;
+}
+
+export function WatchIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--mod-body)">
+    <g transform="rotate(-10 48 48)">
+      <rect x="34" y="5" width="29" height="85" rx="10" fill="var(--sculpture-edge)"/>
+      <rect x="34" y="5" width="25" height="82" rx="9" fill="var(--sculpture-face)"/>
+      <rect x="23" y="23" width="54" height="54" rx="17" fill="var(--sculpture-edge)"/>
+      <rect x="19" y="19" width="54" height="54" rx="17" fill="var(--sculpture-face)"/>
+      <rect x="25" y="25" width="42" height="42" rx="12" fill="var(--brand-navy)"/>
+      <path d="M46 32 V60 L55 51 L37 39 M46 32 L55 41 L37 53" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M31 29 H47" stroke="white" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round"/>
+    </g>
+  </QuickSculpture>;
+}
+
+export function SosIcon3D({ size = 48 }: IconProps) {
+  return <QuickSculpture size={size} tone="var(--red)">
+    <path d="M34 32 V24 Q34 17 41 17 H55 Q62 17 62 24 V32" stroke="var(--sculpture-edge)" strokeWidth="7" fill="none"/>
+    <rect x="16" y="32" width="69" height="48" rx="15" fill="var(--sculpture-edge)"/>
+    <rect x="11" y="27" width="69" height="48" rx="15" fill="var(--sculpture-face)"/>
+    <path d="M23 32 H64" stroke="white" strokeOpacity="0.6" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M46 40 V62 M35 51 H57" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+  </QuickSculpture>;
 }
 
 /** Registro de las piezas por módulo del inicio. */

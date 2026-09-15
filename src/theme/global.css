@@ -16601,7 +16601,7 @@ ion-button.cta-pill.button-disabled {
    -------------------------------------------------------------------------- */
 
 .wheel {
-  --wheel-size: 236px;
+  --wheel-size: 280px;
   /* Color del hueco entre segmentos: el fondo de la tarjeta que la contiene. */
   --wheel-gap: #f1f3f6;
   --wheel-badge: calc(var(--wheel-size) * 0.121);
@@ -16613,7 +16613,7 @@ ion-button.cta-pill.button-disabled {
 
 @media (max-width: 379px) {
   .wheel {
-    --wheel-size: 202px;
+    --wheel-size: 248px;
   }
 }
 
@@ -16900,86 +16900,39 @@ ion-button.cta-pill.button-disabled {
   align-items: center;
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  /* Sin recorte: la línea de signos vitales de `::after` cruza de un borde de
+     la pantalla al otro en vez de cortarse en los márgenes de la tarjeta. */
+  overflow: visible;
   width: calc(100% - 32px);
   margin: 14px 16px 0;
   padding: 18px 16px 16px;
   border: none;
   border-radius: 26px;
-  background:
-    radial-gradient(
-      ellipse 70% 62% at 50% 46%,
-      rgba(255, 255, 255, 0.82) 0%,
-      rgba(255, 255, 255, 0) 58%
-    ),
-    radial-gradient(
-      ellipse at 10% 8%,
-      rgba(135, 174, 202, 0.42) 0%,
-      transparent 48%
-    ),
-    radial-gradient(
-      ellipse at 94% 92%,
-      rgba(61, 123, 114, 0.3) 0%,
-      transparent 52%
-    ),
-    radial-gradient(
-      ellipse at 88% 6%,
-      rgba(85, 129, 162, 0.22) 0%,
-      transparent 40%
-    ),
-    linear-gradient(165deg, #eef4f8 0%, #e7eef3 46%, #e8f1ee 100%);
+  /* Sin fondo: la rueda se apoya en el blanco del inicio y lo único que
+     acompaña es la línea de signos vitales de `::after`. */
+  background: none;
 }
 
+/* Los huecos entre segmentos son el fondo detrás de la rueda. */
 .hm-wheel-card .wheel {
-  --wheel-gap: #eef4f8;
+  --wheel-gap: #fff;
 }
 
-.hm-wheel-card::before {
-  content: "";
+.hm-wheel-pulse {
   position: absolute;
-  left: 50%;
-  top: 48%;
-  width: min(320px, 92%);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background:
-    radial-gradient(
-      circle,
-      transparent 38%,
-      rgba(135, 174, 202, 0.22) 39%,
-      transparent 40.4%
-    ),
-    radial-gradient(
-      circle,
-      transparent 52%,
-      rgba(61, 123, 114, 0.16) 53%,
-      transparent 54.4%
-    ),
-    radial-gradient(
-      circle,
-      transparent 66%,
-      rgba(20, 40, 85, 0.08) 67%,
-      transparent 68.4%
-    );
+  left: -16px;
+  bottom: 12%;
+  width: calc(100% + 32px);
+  height: 64px;
   pointer-events: none;
-  z-index: 0;
 }
-
-.hm-wheel-card::after {
-  content: "";
-  position: absolute;
-  left: -8%;
-  right: -8%;
-  bottom: 14%;
-  height: 42px;
-  opacity: 0.28;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 40' preserveAspectRatio='none'%3E%3Cpath d='M0 22 H24 L30 22 L36 8 L42 34 L48 22 H68 L74 14 L80 22 H160' fill='none' stroke='%235581a2' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: repeat-x;
-  background-size: 200px 42px;
-  background-position: center;
-  pointer-events: none;
-  z-index: 0;
+.hm-wheel-pulse path {
+  fill: none;
+  stroke: var(--brand-sky-mid);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
 }
 
 .hm-wheel-card > * {
@@ -17010,17 +16963,21 @@ ion-button.cta-pill.button-disabled {
   bottom: 12px;
 }
 
+/* Indicadores: una tarjeta por métrica en una fila que se desliza. El carril
+   ocupa el ancho completo y mete la sangría de 16px en su propio `padding`,
+   así las tarjetas pueden recorrer hasta el borde de la pantalla en vez de
+   quedar recortadas por un contenedor más estrecho. */
 .hm-metrics {
   display: flex;
-  gap: 0;
+  gap: 10px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline-start: 16px;
   -webkit-overflow-scrolling: touch;
-  width: calc(100% - 32px);
-  margin: 14px 16px 0;
-  padding: 17px 8px 16px;
-  border-radius: 24px;
-  background: var(--brand-navy);
+  width: 100%;
+  margin: 14px 0 0;
+  /* El padding inferior deja sitio a la sombra de las tarjetas. */
+  padding: 2px 16px 10px;
 }
 
 .hm-metrics::-webkit-scrollbar {
@@ -17028,15 +16985,26 @@ ion-button.cta-pill.button-disabled {
 }
 
 .hm-metric {
-  flex: 0 0 33.33%;
+  /* Tres tarjetas por pantalla y un asomo de la cuarta: sin ese asomo nada
+     indica que la fila sigue. */
+  flex: 0 0 clamp(122px, 34%, 156px);
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
-  padding: 0 11px;
+  padding: 14px 13px 13px;
   border: none;
-  background: none;
+  border-radius: 20px;
+  background: linear-gradient(
+    168deg,
+    #26477c 0%,
+    var(--brand-navy) 52%,
+    #0e2450 100%
+  );
   color: #fff;
   text-align: left;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 8px 16px -8px rgba(14, 34, 74, 0.55);
 }
 
 .hm-metric-val {
@@ -17098,11 +17066,21 @@ ion-button.cta-pill.button-disabled {
   background: #cfd8e4;
 }
 
+/* --------------------------------------------------------------------------
+   Accesos rápidos + próxima cita — piezas con volumen real.
+
+   La bandeja `.hm-quick` está hundida (sombras `inset`) y las cuatro teclas
+   sobresalen de ella con canto extruido; al pulsar bajan el mismo espesor que
+   tienen, que es lo que hace que se sientan físicas. La tarjeta de cita es un
+   bloque extruido con brillo que la recorre.
+   -------------------------------------------------------------------------- */
+
 .hm-duo {
   display: grid;
   grid-template-columns: 0.86fr 1.14fr;
   gap: 10px;
   padding: 12px 16px 0;
+  perspective: 780px;
 }
 
 /* FAB de chat: reubicado sobre la barra flotante y con el navy de marca. */
@@ -17115,53 +17093,57 @@ ion-button.cta-pill.button-disabled {
   box-shadow: 0 10px 24px rgba(20, 40, 85, 0.32);
 }
 
+/* Accesos con superficies claras e ilustraciones de volumen suave. */
 .hm-quick {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
-  padding: 10px;
-  border-radius: 24px;
-  background: #f1f3f6;
+  padding: 0;
 }
-
 .hm-quick-btn {
+  --quick-tint: var(--blue-l);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-height: 62px;
-  padding: 8px 2px;
-  border: none;
-  border-radius: 17px;
-  background: var(--brand-navy);
-  color: #fff;
-  font-size: 10px;
+  gap: 3px;
+  min-height: 88px;
+  padding: 7px 2px;
+  border: 1px solid var(--bd);
+  border-radius: 20px;
+  background: linear-gradient(145deg, var(--wh), var(--quick-tint));
+  color: var(--brand-navy);
+  font-size: 11px;
   font-weight: 700;
+  box-shadow: 0 3px 0 var(--g1), var(--shadow-sm);
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+.hm-quick-btn:nth-child(2) { --quick-tint: var(--teal-l); }
+.hm-quick-btn:nth-child(3) { --quick-tint: var(--pur-l); }
+.hm-quick-btn.panic { --quick-tint: var(--red-l); }
+.hm-quick-ico { display: grid; place-items: center; height: 48px; }
+.hm-quick-ico .ic3 {
+  display: block;
+  width: 48px;
+  height: 48px;
+  transition: transform 240ms var(--ease);
+}
+.hm-quick-btn:active { transform: translateY(2px) scale(0.97); box-shadow: var(--shadow-sm); }
+.hm-quick-btn:active .ic3 { transform: scale(0.94); }
+.hm-quick-btn:focus-visible, .hm-wheel-card:focus-visible {
+  outline: 3px solid var(--brand-sky-mid);
+  outline-offset: 4px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hm-quick-btn:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .hm-quick-btn:hover .ic3 { transform: translateY(-2px) rotate(-6deg) scale(1.06); }
 }
 
-.hm-quick-btn:active {
-  transform: scale(0.95);
-}
-
-.hm-quick-ico {
-  font-size: 21px;
-  display: grid;
-  place-items: center;
-}
-
-/* SOS: la sigla dentro del círculo, como en el diseño. */
-.hm-quick-btn.panic .hm-quick-ico {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1.6px solid rgba(255, 255, 255, 0.65);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-}
-
+/* Tarjeta de la próxima cita: bloque extruido, no rectángulo plano. */
 .hm-appt {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -17169,13 +17151,95 @@ ion-button.cta-pill.button-disabled {
   padding: 14px 15px 13px;
   border: none;
   border-radius: 24px;
-  background: var(--brand-navy);
+  background: linear-gradient(
+    156deg,
+    #2f5590 0%,
+    var(--brand-navy) 42%,
+    #0b1f47 100%
+  );
   color: #fff;
   text-align: left;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset -1px 0 0 rgba(0, 0, 0, 0.22),
+    inset 0 -5px 10px -4px rgba(0, 0, 0, 0.45),
+    0 3px 0 #0a1c3e,
+    0 6px 0 #071630,
+    0 13px 20px -8px rgba(7, 20, 46, 0.55);
+  transition:
+    transform 0.16s ease-out,
+    box-shadow 0.16s ease-out;
+  animation: hm-slab-in 0.7s var(--ease) backwards;
+}
+
+@keyframes hm-slab-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) translateZ(-46px) rotateX(-16deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0) rotateX(0deg);
+  }
+}
+
+/* Brillo que recorre la cara: lo que delata una superficie pulida. */
+.hm-appt::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -40%;
+  left: -60%;
+  width: 55%;
+  height: 180%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.11) 45%,
+    rgba(255, 255, 255, 0.16) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  /* Solo `transform`: animar `left` obligaría a recalcular layout en cada
+     fotograma de un bucle infinito. */
+  animation: hm-appt-gloss 7.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes hm-appt-gloss {
+  0%,
+  62%,
+  100% {
+    transform: rotate(18deg) translateX(0);
+  }
+  30% {
+    transform: rotate(18deg) translateX(300%);
+  }
 }
 
 .hm-appt:active {
-  transform: scale(0.99);
+  transform: translateY(6px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -3px 8px -3px rgba(0, 0, 0, 0.5),
+    inset 0 4px 8px -4px rgba(0, 0, 0, 0.4),
+    0 1px 0 #0a1c3e,
+    0 3px 6px -3px rgba(7, 20, 46, 0.5);
+}
+
+/* El volumen (sombras y cantos) se queda; solo desaparece el movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  .hm-quick-btn,
+  .hm-appt {
+    animation: none;
+  }
+  .hm-appt::before {
+    display: none;
+  }
+  .hm-quick-btn,
+  .hm-quick-ico .ic3,
+  .hm-appt {
+    transition: none;
+  }
 }
 
 /* Estado de carga: la tarjeta conserva su sitio en la retícula. */
@@ -17198,11 +17262,16 @@ ion-button.cta-pill.button-disabled {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.4px;
+  /* Relieve: filo de luz arriba y sombra proyectada abajo. */
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22),
+    0 2px 5px rgba(4, 14, 34, 0.5);
 }
 
 .hm-appt-name {
   font-size: 15px;
   font-weight: 600;
+  text-shadow: 0 1px 3px rgba(4, 14, 34, 0.45);
 }
 
 .hm-appt-meta {
@@ -17211,13 +17280,17 @@ ion-button.cta-pill.button-disabled {
   color: rgba(255, 255, 255, 0.72);
 }
 
+/* Píldora grabada en la cara de la tarjeta. */
 .hm-appt-chip {
   margin-top: 7px;
   padding: 3px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
   font-size: 10px;
   font-weight: 700;
+  box-shadow:
+    inset 0 1.5px 2.5px rgba(4, 14, 34, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .hm-appt-people {
@@ -17228,35 +17301,54 @@ ion-button.cta-pill.button-disabled {
   padding-top: 12px;
 }
 
+/* Fichas esféricas apoyadas en la cara: luz arriba-izquierda, oclusión abajo
+   y sombra de contacto. El degradado va sobre `background-color`, así cada una
+   conserva su color propio. */
 .hm-appt-doc,
 .hm-appt-add {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-size: 18px;
+  background-image: radial-gradient(
+    circle at 34% 26%,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.28) 40%,
+    rgba(255, 255, 255, 0) 62%,
+    rgba(11, 28, 61, 0.22) 100%
+  );
+  box-shadow:
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.9),
+    inset 0 -3.5px 6px -2px rgba(11, 28, 61, 0.45),
+    0 5px 9px -3px rgba(3, 12, 30, 0.6);
+}
+
+.hm-appt-doc ion-icon,
+.hm-appt-add ion-icon {
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.7));
 }
 
 .hm-appt-doc {
-  background: var(--brand-sky);
+  background-color: var(--brand-sky);
   color: var(--brand-navy);
 }
 
 .hm-appt-add {
-  background: #fff;
+  background-color: #fff;
   color: var(--brand-navy);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
    TUS MÓDULOS — carrusel coverflow del inicio.
 
-   Sustituye a la lista de accesos: los seis módulos giran sobre su eje Y
-   dentro de una escena en perspectiva, con la tarjeta central de frente y
-   las vecinas hundidas hacia el fondo. Se arrastra con el dedo, avanza
-   sola y los puntos permiten saltar a cualquier módulo sin recorrer los
-   intermedios (con una sola tarjeta legible a la vez, ese salto es lo que
-   evita que el carrusel cueste más que la lista que sustituye).
+   Sustituye a la lista de accesos: los seis módulos se reparten en tres
+   páginas de dos y son las PÁGINAS las que giran sobre su eje Y dentro de una
+   escena en perspectiva, con la de frente recta y las vecinas hundidas hacia
+   el fondo. Se arrastra con el dedo, avanza sola y los puntos permiten saltar
+   a cualquier página sin recorrer las intermedias.
 
    Cada tarjeta declara su acento en `--a` (`--mod-*`): lo usan el halo, la
    píldora de dato, el botón y el punto de paginación. La ilustración 3D
@@ -17268,33 +17360,41 @@ ion-button.cta-pill.button-disabled {
 
 /* La escena: `perspective` en el contenedor y `preserve-3d` para que el
    giro de las tarjetas tenga fuga real y no sea un escalado disimulado. */
+/* Sin alto fijo: las tres páginas comparten la misma celda, así la retícula
+   toma el alto de la más alta y todas las tarjetas se estiran a esa medida.
+   Un alto en píxeles obligaba a adivinar cuántas líneas ocupa cada título y
+   dejaba hueco muerto entre el texto y el botón. */
 .mcar-stage {
   position: relative;
   display: grid;
-  height: 268px;
-  /* Cámara cerca: con una perspectiva larga (>1000px) el giro de las vecinas
+  /* Cámara cerca: con una perspectiva larga (>1400px) el giro de las vecinas
      se degrada a un simple escalado y el efecto coverflow desaparece. */
-  perspective: 620px;
+  perspective: 900px;
   perspective-origin: 50% 42%;
   transform-style: preserve-3d;
   touch-action: pan-y;
 }
 
-.mcar-card {
-  /* Todas las tarjetas comparten celda: quedan centradas y apiladas, y el
-     desplazamiento en X se mide contra su propio ancho. */
+.mcar-page {
   grid-area: 1 / 1;
-  place-self: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.mcar-card {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  width: min(62%, 244px);
-  height: 100%;
-  padding: 16px 18px 16px;
+  width: 100%;
+  padding: 14px 13px 13px;
   border: 1px solid color-mix(in srgb, var(--a) 16%, var(--g1));
-  border-radius: 28px;
+  border-radius: 24px;
   background:
     radial-gradient(
       124% 70% at 50% -10%,
@@ -17310,9 +17410,7 @@ ion-button.cta-pill.button-disabled {
   overflow: hidden;
   box-shadow:
     0 2px 6px rgba(20, 40, 85, 0.05),
-    0 26px 46px -26px color-mix(in srgb, var(--a) 78%, transparent);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
+    0 22px 38px -24px color-mix(in srgb, var(--a) 78%, transparent);
 }
 
 /* Halo de color detrás de la ilustración: la pieza 3D se apoya en una
@@ -17340,20 +17438,20 @@ ion-button.cta-pill.button-disabled {
   display: grid;
   place-items: center;
   width: 100%;
-  height: clamp(94px, 27vw, 118px);
-  margin-bottom: 4px;
+  height: clamp(66px, 19vw, 86px);
+  margin-bottom: 3px;
 }
 
 .mcar-art .ic3 {
   display: block;
-  width: clamp(86px, 25vw, 108px);
+  width: clamp(62px, 18vw, 80px);
   height: auto;
 }
 
 /* La pieza flota levemente: refuerza que es un objeto y no un dibujo
-   pegado a la tarjeta. Solo en la tarjeta activa, para no animar cinco
+   pegado a la tarjeta. Solo en la página de frente, para no animar seis
    SVG a la vez. */
-.mcar-card.is-active .ic3 {
+.mcar-page.is-active .ic3 {
   animation: mcar-float 4.2s var(--ease) infinite;
 }
 
@@ -17376,10 +17474,10 @@ ion-button.cta-pill.button-disabled {
 }
 
 .mcar-txt strong {
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.4px;
+  line-height: 1.18;
+  letter-spacing: -0.3px;
   color: var(--brand-navy);
 }
 
@@ -17389,18 +17487,18 @@ ion-button.cta-pill.button-disabled {
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
-  font-size: 11.5px;
-  line-height: 1.35;
+  font-size: 10.5px;
+  line-height: 1.32;
   color: var(--mu);
 }
 
 .mcar-data {
-  margin-top: 8px;
-  padding: 5px 11px;
+  margin-top: 6px;
+  padding: 4px 9px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--a) 13%, #fff);
   color: color-mix(in srgb, var(--a) 78%, #000);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
   max-width: 100%;
@@ -17411,13 +17509,13 @@ ion-button.cta-pill.button-disabled {
 .mcar-cta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   margin-top: auto;
-  padding: 9px 15px;
+  padding: 8px 12px;
   border-radius: 999px;
   background: var(--a);
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: -0.1px;
   box-shadow: 0 8px 16px -8px color-mix(in srgb, var(--a) 90%, transparent);
@@ -17428,27 +17526,27 @@ ion-button.cta-pill.button-disabled {
     transform 0.24s var(--ease);
 }
 
-/* El botón solo aparece en la tarjeta de frente: en las giradas sería una
+/* El botón solo aparece en la página de frente: en las giradas sería una
    llamada a la acción que no se puede accionar. */
-.mcar-card.is-active .mcar-cta {
+.mcar-page.is-active .mcar-cta {
   opacity: 1;
   transform: translateY(0);
 }
 
 .mcar-cta ion-icon {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Profundidad de campo: las vecinas se desenfocan como lo harían fuera del
-   plano de foco. Sin esto sus títulos se leen casi tanto como el del centro y
-   el carrusel parece tres tarjetas compitiendo en vez de una al frente. */
-.mcar-card:not(.is-active) {
+   plano de foco. Sin esto sus títulos se leen casi tanto como los de la página
+   de frente y el carrusel parece seis tarjetas compitiendo. */
+.mcar-page:not(.is-active) {
   cursor: pointer;
-  filter: blur(1.6px);
+  filter: blur(1.4px);
 }
 
-.mcar-card.is-active:active {
-  transform: scale(0.985);
+.mcar-page.is-active .mcar-card:active {
+  transform: scale(0.975);
 }
 
 .mcar-dots {
@@ -17486,7 +17584,7 @@ ion-button.cta-pill.button-disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mcar-card.is-active .ic3 {
+  .mcar-page.is-active .ic3 {
     animation: none;
   }
   .mcar-cta,
@@ -19513,17 +19611,58 @@ html.plt-tablet .screen.auth .auth-scroll {
 
 /* A pantalla completa cabe una tarjeta más a cada lado: el carrusel gana
    profundidad en vez de dejar los costados vacíos. */
+/* En tablet la página tiene mucho más ancho: las tarjetas crecen solas
+   (ocupan su columna) y el alto lo pone el contenido. */
 html.is-tablet .mcar-stage,
 html.plt-ipad .mcar-stage,
 html.plt-tablet .mcar-stage {
-  height: 300px;
-  perspective: 900px;
+  perspective: 1400px;
 }
 
-html.is-tablet .mcar-card,
-html.plt-ipad .mcar-card,
-html.plt-tablet .mcar-card {
-  width: min(38%, 280px);
+html.is-tablet .mcar-page,
+html.plt-ipad .mcar-page,
+html.plt-tablet .mcar-page {
+  gap: 18px;
+}
+
+/* Play integrado en el núcleo; la tarjeta completa conserva su acción. */
+.hm-wheel-card .wheel-core { width: 55%; height: 55%; gap: 2px; }
+.hm-wheel-card .wheel-core-title { display: none; }
+.hm-wheel-card .wheel-core-count { font-size: calc(var(--wheel-size) * 0.13); }
+.hm-wheel-card .wheel-core-caption { -webkit-line-clamp: 2; line-clamp: 2; }
+.wheel-play {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-top: 3px;
+  border-radius: 50%;
+  color: var(--wh);
+  background: var(--grad-brand-v);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--brand-green) 22%, transparent);
+  animation: wheel-play-in 900ms var(--ease) 700ms backwards;
+  transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
+}
+.wheel-play ion-icon { font-size: 19px; margin-left: 3px; }
+.wheel-action-label { font-size: 10px; line-height: 1.2; font-weight: 700; color: var(--brand-green); }
+.hm-wheel-card:focus-visible .wheel-play { box-shadow: 0 0 0 5px var(--teal-l); }
+.hm-wheel-card:active .wheel-play { transform: scale(0.92); }
+@media (hover: hover) and (pointer: fine) {
+  .hm-wheel-card:hover .wheel-play { transform: scale(1.08); box-shadow: 0 0 0 5px var(--teal-l); }
+  .hm-wheel-card .wheel-badge { transition: filter 200ms ease; }
+  .hm-wheel-card .wheel-badge:hover { filter: brightness(1.15) drop-shadow(0 3px 5px var(--brand-sky)); }
+}
+@keyframes wheel-play-in {
+  from { opacity: 0; transform: scale(0.65); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wheel-play { animation: none; transition: none; }
+  .hm-quick-btn, .hm-quick-ico .ic3, .hm-wheel-card .wheel-badge { transition: none; }
+  .hm-quick-btn:hover, .hm-quick-btn:active, .hm-quick-btn:hover .ic3,
+  .hm-quick-btn:active .ic3, .hm-wheel-card:active, .hm-wheel-card:hover .wheel-play,
+  .hm-wheel-card:active .wheel-play { transform: none; }
 }
 
 /* Categorías con volumen visual; no cargan escenas 3D adicionales. */

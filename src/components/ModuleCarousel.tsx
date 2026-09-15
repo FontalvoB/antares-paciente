@@ -7,12 +7,11 @@ import type { CSSProperties, ReactNode } from "react";
 /**
  * Carrusel coverflow de los módulos del inicio.
  *
- * La tarjeta central va de frente y las vecinas giran sobre su eje Y hacia el
- * fondo, así que las opciones se ven rotar de verdad y no solo desplazarse.
- * Se maneja con el dedo (arrastre con inercia), avanza sola y tiene puntos
- * para saltar a cualquier módulo sin recorrer los intermedios — con una sola
- * tarjeta legible a la vez, ese salto directo es lo que evita que el carrusel
- * cueste más que la lista que sustituye.
+ * La unidad que gira es la PÁGINA, no la tarjeta: cada página muestra dos
+ * módulos y son las páginas las que rotan sobre su eje Y hacia el fondo, así
+ * se ven dos opciones legibles a la vez sin perder el giro. Se maneja con el
+ * dedo (arrastre con inercia), avanza sola y tiene puntos para saltar a
+ * cualquier página sin recorrer las intermedias.
  *
  * No hay componente Ionic equivalente (`IonSlides` se eliminó en Ionic 7 y no
  * hay reemplazo en 8.8), y Framer Motion ya está en el proyecto: no se añade
@@ -32,10 +31,12 @@ export type CarouselModule = {
   cta: string;
 };
 
+/** Módulos visibles a la vez. */
+const PER_PAGE = 2;
 /** Cuánto se espera tras tocar el carrusel antes de que vuelva a girar solo. */
 const RESUME_MS = 9000;
 const AUTOPLAY_MS = 5200;
-/** Arrastre (px) o velocidad (px/s) a partir de los cuales se cambia de tarjeta. */
+/** Arrastre (px) o velocidad (px/s) a partir de los cuales se cambia de página. */
 const SWIPE_DISTANCE = 52;
 const SWIPE_VELOCITY = 420;
 
@@ -47,6 +48,12 @@ function ringOffset(index: number, active: number, count: number): number {
   return off;
 }
 
+function paginate(items: CarouselModule[], size: number): CarouselModule[][] {
+  const out: CarouselModule[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 export function ModuleCarousel({
   modules,
   onSelect,
@@ -56,7 +63,8 @@ export function ModuleCarousel({
   onSelect: (id: string) => void;
   label: string;
 }) {
-  const count = modules.length;
+  const pages = paginate(modules, PER_PAGE);
+  const count = pages.length;
   const reduce = useReducedMotion();
   const [active, setActive] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -115,66 +123,76 @@ export function ModuleCarousel({
         }}
         onDragEnd={onDragEnd}
       >
-        {modules.map((m, i) => {
+        {pages.map((page, i) => {
           const off = ringOffset(i, active, count);
           const abs = Math.abs(off);
-          // Solo el centro y dos vecinas por lado: más allá no aportan
+          // Solo la página de frente y una vecina por lado: más allá no aportan
           // profundidad y sí nodos animándose fuera de vista.
-          if (abs > 2) return null;
-          const center = off === 0;
+          if (abs > 1) return null;
+          const front = off === 0;
           return (
-            <motion.button
-              key={m.id}
-              type="button"
-              className={`mcar-card${center ? " is-active" : ""}`}
-              style={{ "--a": m.accent, zIndex: 10 - abs } as CSSProperties}
-              aria-hidden={!center}
-              tabIndex={center ? 0 : -1}
+            <motion.div
+              className={`mcar-page${front ? " is-active" : ""}`}
+              key={page[0].id}
+              style={{ zIndex: 10 - abs }}
+              aria-hidden={!front}
               animate={{
-                x: `${off * 54}%`,
-                z: -abs * 95,
-                rotateY: off * -34,
-                scale: 1 - abs * 0.07,
-                // Las vecinas se apagan: con dos tarjetas igual de brillantes
+                // Menos del 100%: la vecina asoma por el borde y es lo que
+                // avisa de que la fila sigue (los puntos solos no bastan).
+                x: `${off * 97}%`,
+                z: -abs * 84,
+                rotateY: off * -26,
+                scale: 1 - abs * 0.08,
+                // Las vecinas se apagan: con dos páginas igual de brillantes
                 // el ojo no sabe cuál está al frente.
-                opacity: abs === 0 ? 1 : abs === 1 ? 0.62 : 0.26,
+                opacity: front ? 1 : 0.5,
               }}
               transition={
                 reduce
                   ? { duration: 0 }
                   : { type: "spring", stiffness: 260, damping: 32, mass: 0.9 }
               }
-              onClick={() => {
-                // Arrastrar no debe abrir el módulo que quedó bajo el dedo.
-                if (dragging) return;
-                if (center) onSelect(m.id);
-                else go(i);
-              }}
             >
-              <span className="mcar-halo" />
-              <span className="mcar-art">{m.icon}</span>
-              <span className="mcar-txt">
-                <strong>{m.title}</strong>
-                <small>{m.sub}</small>
-              </span>
-              {m.data ? <span className="mcar-data">{m.data}</span> : null}
-              <span className="mcar-cta">
-                {m.cta}
-                <IonIcon icon={arrowForward} />
-              </span>
-            </motion.button>
+              {page.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="mcar-card"
+                  style={{ "--a": m.accent } as CSSProperties}
+                  tabIndex={front ? 0 : -1}
+                  onClick={() => {
+                    // Arrastrar no debe abrir el módulo que quedó bajo el dedo.
+                    if (dragging) return;
+                    if (front) onSelect(m.id);
+                    else go(i);
+                  }}
+                >
+                  <span className="mcar-halo" />
+                  <span className="mcar-art">{m.icon}</span>
+                  <span className="mcar-txt">
+                    <strong>{m.title}</strong>
+                    <small>{m.sub}</small>
+                  </span>
+                  {m.data ? <span className="mcar-data">{m.data}</span> : null}
+                  <span className="mcar-cta">
+                    {m.cta}
+                    <IonIcon icon={arrowForward} />
+                  </span>
+                </button>
+              ))}
+            </motion.div>
           );
         })}
       </motion.div>
 
       <div className="mcar-dots">
-        {modules.map((m, i) => (
+        {pages.map((page, i) => (
           <button
-            key={m.id}
+            key={page[0].id}
             type="button"
             className={`mcar-dot${i === active ? " on" : ""}`}
-            style={{ "--a": m.accent } as CSSProperties}
-            aria-label={m.title}
+            style={{ "--a": page[0].accent } as CSSProperties}
+            aria-label={page.map((m) => m.title).join(", ")}
             aria-current={i === active}
             onClick={() => go(i)}
           />
