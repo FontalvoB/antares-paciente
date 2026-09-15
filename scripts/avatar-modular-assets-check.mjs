@@ -17,13 +17,12 @@ function binds(asset) {
   const skin=asset.g.skins[0],m=floats(asset,skin.inverseBindMatrices);
   return Object.fromEntries(skin.joints.map((id,i)=>[asset.g.nodes[id].name,m.slice(i*16,i*16+16)]));
 }
-const old=load('bodies/male-body-base-v7.glb'),body=load('bodies/male-body-base-v8.glb');
-assert.deepEqual(old.bin,body.bin.subarray(0,old.bin.length));
-for(const key of ['animations','skins','nodes','materials','images','textures'])assert.deepEqual(body.g[key],old.g[key]);
-for(let i=0;i<old.g.accessors.length;i++)if(![7,8].includes(i))assert.deepEqual(old.g.accessors[i],body.g.accessors[i]);
-const canonical=binds(body),files=['bodies/male-body-base-v8.glb','clothing/tops/male-shirt-basic-01-v2.glb',
-  'hair/male-hair-01-v2.glb','hair/male-hair-02-v2.glb','hair/male-hair-03-v2.glb',
-  'accessories/glasses/unisex-glasses-01.glb','accessories/watches/unisex-watch-01.glb','accessories/bracelets/unisex-bracelet-01.glb'];
+const old=load('bodies/male-body-base-v8.glb'),body=load('bodies/male-body-base-v9.glb');
+assert.deepEqual(binds(body),binds(old));
+for(const a of body.g.animations){const prev=old.g.animations.find(x=>x.name===a.name);assert(prev);a.samplers.forEach((s,i)=>{assert.deepEqual(floats(body,s.input),floats(old,prev.samplers[i].input));assert.deepEqual(floats(body,s.output),floats(old,prev.samplers[i].output));});}
+const canonical=binds(body),files=['bodies/male-body-base-v9.glb','clothing/tops/male-shirt-basic-01-v3.glb',
+  'hair/male-hair-02-v3.glb','hair/male-hair-03-v3.glb',
+  'accessories/glasses/unisex-glasses-02.glb','accessories/watches/unisex-watch-02.glb','accessories/bracelets/unisex-bracelet-02.glb'];
 const rows=files.map(file=>{
   const a=load(file),binding=binds(a);let error=0,triangles=0;
   assert.equal(Object.keys(binding).length,51);
@@ -42,5 +41,5 @@ const clips=body.g.animations.map(a=>{
   if(a.name==='Idle')assert(endpointDifference<1e-5);
   return {name:a.name,duration,channels:a.channels.length,endpointDifference};
 });
-const report={assets:rows,clips,protectedDataIdentical:true,activeCombination:{bytes:rows.filter(r=>!r.file.includes('hair-01')&&!r.file.includes('hair-02')).reduce((s,r)=>s+r.bytes,0),triangles:rows.filter(r=>!r.file.includes('hair-01')&&!r.file.includes('hair-02')).reduce((s,r)=>s+r.triangles,0)}};
-fs.writeFileSync('docs/avatar-modular-validation/assets-final.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+const report={assets:rows,clips,preservedClipsIdentical:true,activeCombination:{bytes:rows.filter(r=>!r.file.includes('hair-01')&&!r.file.includes('hair-02')).reduce((s,r)=>s+r.bytes,0),triangles:rows.filter(r=>!r.file.includes('hair-01')&&!r.file.includes('hair-02')).reduce((s,r)=>s+r.triangles,0)}};
+fs.writeFileSync('docs/avatar-polish-validation/assets-final.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

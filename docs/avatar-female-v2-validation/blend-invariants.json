@@ -1,0 +1,9 @@
+{
+  "basisExact": true,
+  "bodyWeightsExact": true,
+  "restBonesExact": true,
+  "actions": {
+    "Idle": true,
+    "RigCheck": true
+  }
+}

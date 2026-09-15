@@ -59,6 +59,16 @@ describe('Avatar Body State relativo, sin inferencias clínicas', () => {
 });
 
 describe('Historial autenticado aislado, sin datos demo', () => {
+  it('espera las preferencias y consulta automáticamente cuando están listas', async () => {
+    mocks.fetch.mockResolvedValue(history([100, 110]));
+    const { result, rerender }=renderHook(({ready})=>useAvatarProgress(ready),{initialProps:{ready:false}});
+    expect(result.current.status).toBe('loading');expect(result.current.resolved).toBe(false);
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    rerender({ready:true});
+    await waitFor(()=>expect(result.current.status).toBe('ready'));
+    expect(result.current.records.map(r=>r.value)).toEqual([100,110]);
+    expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  });
   it('espera la primera respuesta y conserva el estado validado durante una actualización', async () => {
     let complete!: (value: MetricsHistoryDto) => void;
     mocks.fetch.mockImplementation(() => new Promise(resolve => { complete = resolve; }));
@@ -102,7 +112,7 @@ describe('Historial autenticado aislado, sin datos demo', () => {
     mocks.fetch.mockResolvedValue(history([100, 95]));
     const { result } = renderHook(useAvatarProgress);
     await waitFor(() => expect(result.current.status).toBe('ready'));
-    expect(mocks.fetch).toHaveBeenCalledWith(['weight'], 365);
+    expect(mocks.fetch).toHaveBeenCalledWith(['weight'], 365, { cache: 'no-store' });
     expect(result.current.records.map(r => r.value)).toEqual([100, 95]);
     mocks.fetch.mockResolvedValue(history([100, 95, 94]));
     act(() => result.current.refresh());

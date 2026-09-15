@@ -1,0 +1,2242 @@
+[
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": 3.073,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": 3.073,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": 3.073,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": 3.101,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": 3.101,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": 3.101,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": 3.067,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": 3.067,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": 3.067,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": 3.07,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": 3.07,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": 3.07,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": 3.073,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": 3.073,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": 3.073,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": 0.651,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": 0.651,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": 0.651,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": 0.653,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": -10.262,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": -10.262,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": -10.262,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": -20.267,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": -22.527,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": -10.26,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": -20.365,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": -22.623,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": -13.875,
+    "insideOver2mm": 10
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": -14.324,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": -14.324,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": -14.324,
+    "insideOver2mm": 10
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": -20.365,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": -22.623,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": -13.875,
+    "insideOver2mm": 10
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": -13.876,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": -13.876,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": -13.876,
+    "insideOver2mm": 10
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": -20.365,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": -22.623,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": -13.875,
+    "insideOver2mm": 10
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": -18.605,
+    "insideOver2mm": 11
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": -19.725,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": -21.292,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": -20.462,
+    "insideOver2mm": 11
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": -22.715,
+    "insideOver2mm": 14
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": -21.193,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": -18.604,
+    "insideOver2mm": 11
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": -19.724,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": -21.292,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": -18.406,
+    "insideOver2mm": 11
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": -19.526,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": -21.093,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": -18.605,
+    "insideOver2mm": 11
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": -19.725,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": -21.292,
+    "insideOver2mm": 13
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": 3.175,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": 3.175,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": 3.175,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": 3.177,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": 3.177,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": 3.177,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": 3.172,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": 3.172,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": 3.172,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": 3.161,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": 3.161,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": 3.161,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": 3.175,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": 3.175,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": 3.175,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": 3.031,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": 3.031,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": 3.031,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": -12.051,
+    "insideOver2mm": 1
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": 3.034,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": 3.034,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": 3.034,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": 3.028,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": 3.028,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": 3.028,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": 3.02,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": 3.02,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": 3.02,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": 1.154,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_01",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": 3.031,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_02",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": 3.031,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Pants_female_03",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": 3.031,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "female",
+    "object": "Shoes_female_01",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": -12.051,
+    "insideOver2mm": 1
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": -2.504,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": -2.502,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": -2.51,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0,
+    "frame": 1,
+    "minGapMm": -7.622,
+    "insideOver2mm": 19
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": -2.431,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": -2.429,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": -2.437,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0,
+    "frame": 91,
+    "minGapMm": -7.622,
+    "insideOver2mm": 19
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": -2.504,
+    "insideOver2mm": 3
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": -2.502,
+    "insideOver2mm": 3
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": -2.669,
+    "insideOver2mm": 3
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0,
+    "frame": 181,
+    "minGapMm": -7.622,
+    "insideOver2mm": 19
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": -2.551,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": -2.548,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": -2.557,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0,
+    "frame": 271,
+    "minGapMm": -7.622,
+    "insideOver2mm": 19
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": -2.504,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": -2.502,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": -2.51,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0,
+    "frame": 361,
+    "minGapMm": -7.622,
+    "insideOver2mm": 19
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": -1.392,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": -1.338,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": -1.7,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.25,
+    "frame": 1,
+    "minGapMm": -7.625,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": 1.229,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": 1.228,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": 1.229,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.25,
+    "frame": 91,
+    "minGapMm": -7.625,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": -4.384,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": -4.34,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": -5.04,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.25,
+    "frame": 181,
+    "minGapMm": -7.625,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": -5.115,
+    "insideOver2mm": 1
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": -5.077,
+    "insideOver2mm": 1
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": -5.998,
+    "insideOver2mm": 1
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.25,
+    "frame": 271,
+    "minGapMm": -7.625,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": -1.392,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": -1.338,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": -1.7,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.25,
+    "frame": 361,
+    "minGapMm": -7.625,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": -0.827,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": -0.824,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": -0.631,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.5,
+    "frame": 1,
+    "minGapMm": -7.628,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": -0.673,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": -0.671,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": -0.676,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.5,
+    "frame": 91,
+    "minGapMm": -7.628,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": -4.705,
+    "insideOver2mm": 1
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": -4.66,
+    "insideOver2mm": 1
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": -4.72,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.5,
+    "frame": 181,
+    "minGapMm": -7.628,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": -5.692,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": -5.648,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": -6.095,
+    "insideOver2mm": 2
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.5,
+    "frame": 271,
+    "minGapMm": -7.628,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": -0.827,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": -0.824,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": -0.631,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.5,
+    "frame": 361,
+    "minGapMm": -7.628,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": -4.814,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": -4.807,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": -4.816,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.75,
+    "frame": 1,
+    "minGapMm": -7.889,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": -4.847,
+    "insideOver2mm": 3
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": -4.839,
+    "insideOver2mm": 3
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": -4.849,
+    "insideOver2mm": 3
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.75,
+    "frame": 91,
+    "minGapMm": -7.889,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": -4.814,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": -4.806,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": -4.816,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.75,
+    "frame": 181,
+    "minGapMm": -7.889,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": -6.026,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": -5.952,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": -6.239,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.75,
+    "frame": 271,
+    "minGapMm": -7.889,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": -4.814,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": -4.807,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": -4.816,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 0.75,
+    "frame": 361,
+    "minGapMm": -7.889,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": -9.131,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": -9.138,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": -9.131,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 1,
+    "frame": 1,
+    "minGapMm": -8.191,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": -9.086,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": -9.094,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": -9.086,
+    "insideOver2mm": 4
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 1,
+    "frame": 91,
+    "minGapMm": -8.191,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": -9.131,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": -9.138,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": -9.131,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 1,
+    "frame": 181,
+    "minGapMm": -8.191,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": -9.164,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": -9.171,
+    "insideOver2mm": 5
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": -9.164,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 1,
+    "frame": 271,
+    "minGapMm": -8.191,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": -9.131,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": -9.138,
+    "insideOver2mm": 6
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": -9.131,
+    "insideOver2mm": 7
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": 1,
+    "frame": 361,
+    "minGapMm": -8.191,
+    "insideOver2mm": 21
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": -0.108,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": -0.094,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": 0.056,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -0.5,
+    "frame": 1,
+    "minGapMm": -7.476,
+    "insideOver2mm": 18
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": 3.283,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": 3.284,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": 3.28,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -0.5,
+    "frame": 91,
+    "minGapMm": -7.476,
+    "insideOver2mm": 18
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": 1.549,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": 1.468,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": 0.601,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -0.5,
+    "frame": 181,
+    "minGapMm": -7.476,
+    "insideOver2mm": 18
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": 3.167,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": 3.168,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": 3.163,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -0.5,
+    "frame": 271,
+    "minGapMm": -7.476,
+    "insideOver2mm": 18
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": -0.108,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": -0.094,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": 0.056,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -0.5,
+    "frame": 361,
+    "minGapMm": -7.476,
+    "insideOver2mm": 18
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": -1.92,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": -1.915,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": -1.922,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -1,
+    "frame": 1,
+    "minGapMm": -8.196,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": -1.946,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": -1.941,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": -1.949,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -1,
+    "frame": 91,
+    "minGapMm": -8.196,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": -1.92,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": -1.915,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": -1.922,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -1,
+    "frame": 181,
+    "minGapMm": -8.196,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": -1.882,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": -1.878,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": -1.885,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -1,
+    "frame": 271,
+    "minGapMm": -8.196,
+    "insideOver2mm": 20
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_01",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": -1.92,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_02",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": -1.915,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Pants_male_03",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": -1.922,
+    "insideOver2mm": 0
+  },
+  {
+    "gender": "male",
+    "object": "Shoes_male_01",
+    "body": -1,
+    "frame": 361,
+    "minGapMm": -8.196,
+    "insideOver2mm": 20
+  }
+]

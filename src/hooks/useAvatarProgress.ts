@@ -9,10 +9,16 @@ type Status = 'session-required' | 'loading' | 'ready' | 'empty' | 'unavailable'
 interface HistoryError { status?: number; code?: string; message?: string; correlationId?: string; unit?: string }
 interface Progress { owner: string | null; status: Status; records: WeightRecord[]; error?: HistoryError; resolved?: boolean; historyMs?: number }
 
+/** Misma consulta real para entrada, actualización manual y después de guardar peso. */
+export async function loadUserAvatarData() {
+  return weightRecords(await getMetricsHistory(['weight'], AVATAR_HISTORY_DAYS, { cache: 'no-store' }));
+}
+
 /** Estado efímero por sesión, sin caché compartida ni persistencia de medidas. */
-export function useAvatarProgress() {
+export function useAvatarProgress(configurationReady = true) {
   const token = getAccessToken();
-  const enabled = Boolean(token && token !== 'demo-access-token');
+  const hasSession = Boolean(token && token !== 'demo-access-token');
+  const enabled = hasSession && configurationReady;
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<Progress>({ owner: null, status: 'loading', records: [] });
   useEffect(() => onSessionInvalid(() => setResult({ owner: null, status: 'session-required', records: [] })), []);
@@ -32,8 +38,7 @@ export function useAvatarProgress() {
       });
     };
     publish('loading');
-    void getMetricsHistory(['weight'], AVATAR_HISTORY_DAYS).then(history => {
-      const records = weightRecords(history);
+    void loadUserAvatarData().then(records => {
       publish(records.length ? 'ready' : 'empty', records);
     }).catch(error => {
       const detail: HistoryError = error instanceof ApiError
@@ -45,7 +50,8 @@ export function useAvatarProgress() {
     });
     return () => { active = false; };
   }, [token, enabled, attempt]);
-  const current: Progress = !enabled ? { owner: null, status: 'session-required', records: [] }
+  const current: Progress = !hasSession ? { owner: null, status: 'session-required', records: [] }
+    : !configurationReady ? { owner: token, status: 'loading', records: [] }
     : result.owner !== token ? { owner: token, status: 'loading', records: [] } : result;
   return { status: current.status, records: current.records, error: current.error,
     resolved: Boolean(current.resolved), owner: current.owner, historyMs: current.historyMs,

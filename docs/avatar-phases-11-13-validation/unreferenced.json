@@ -1,0 +1,167 @@
+[
+  {
+    "file": "public/models/avatar/sources/approved-mirror-idle/approved-right-checkpoint.blend",
+    "bytes": 3078156,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-body-base-v1.blend1",
+    "bytes": 70644012,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-equipment-review.blend1",
+    "bytes": 72178094,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-intake.blend",
+    "bytes": 66212857,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-reduced.blend",
+    "bytes": 67304801,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-rig-review.blend1",
+    "bytes": 68242612,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/female-weld-before-reduction.blend",
+    "bytes": 68958094,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/female-v1/higgsfield-raw.glb",
+    "bytes": 41733976,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-base/before-avatar-20260910-091301.blend",
+    "bytes": 112737,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-base/checkpoint-rig.blend",
+    "bytes": 2916241,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-base/higgsfield-raw.glb",
+    "bytes": 41292196,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-base/male-base.blend1",
+    "bytes": 4427238,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v2/before-v2.blend",
+    "bytes": 2290151,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v3/before-idle-v3.blend",
+    "bytes": 3099713,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/conservative-correction/before-idle.glb",
+    "bytes": 627428,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/conservative-correction/before-male-body-base-v4.glb",
+    "bytes": 4513076,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/conservative-correction/idle-export.glb",
+    "bytes": 3810472,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/posture-correction/animation-export.glb",
+    "bytes": 3810572,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/posture-correction/editable-staged.blend",
+    "bytes": 3192326,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/posture-correction/rigcheck-export.glb",
+    "bytes": 3652384,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/side-pose-correction/before-idle.glb",
+    "bytes": 442668,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/side-pose-correction/before-male-body-base-v4.glb",
+    "bytes": 4328172,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v4/side-pose-correction/idle-export.glb",
+    "bytes": 3811128,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v5/idle-export.glb",
+    "bytes": 3810580,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v6/idle-export.glb",
+    "bytes": 3810432,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v7/idle-export.glb",
+    "bytes": 3931812,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v7/male-body-base-v7.blend1",
+    "bytes": 3885384,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/male-body-base-v8/male-body-base-v8.blend1",
+    "bytes": 9205558,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/modular-v1/checkpoint-v7-before-modular.blend",
+    "bytes": 3772073,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/modular-v1/male-hair-01.blend",
+    "bytes": 6066326,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/modular-v1/male-hair-02.blend",
+    "bytes": 6066441,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/modular-v1/male-hair-03.blend",
+    "bytes": 6066492,
+    "duplicates": []
+  },
+  {
+    "file": "public/models/avatar/sources/modular-v1/male-shirt-basic-01.blend",
+    "bytes": 5800655,
+    "duplicates": []
+  }
+]

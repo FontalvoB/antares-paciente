@@ -1,0 +1,50 @@
+{
+  "assets": [
+    {
+      "asset": "clothing/tops/female-shirt-basic-01-v1.glb",
+      "meshes": 1,
+      "bytes": 1221824
+    },
+    {
+      "asset": "hair/female-hair-02-v1.glb",
+      "meshes": 1,
+      "bytes": 266984
+    },
+    {
+      "asset": "accessories/glasses/female-glasses-02-v1.glb",
+      "meshes": 1,
+      "bytes": 119964
+    },
+    {
+      "asset": "accessories/watches/female-watch-02-v1.glb",
+      "meshes": 1,
+      "bytes": 172748
+    },
+    {
+      "asset": "accessories/bracelets/female-bracelet-02-v1.glb",
+      "meshes": 1,
+      "bytes": 99944
+    }
+  ],
+  "canonicalBindMatrices": true,
+  "maxInfluences": 4,
+  "morphs": [
+    "BodyVolume",
+    "BodyLean",
+    "Abdomen",
+    "Waist",
+    "Chest",
+    "Arms",
+    "Thighs",
+    "FaceVolume",
+    "MuscleDefinition"
+  ],
+  "loopDifferenceBelow": 1e-05,
+  "sampleFrames": [
+    1,
+    91,
+    181,
+    271,
+    361
+  ]
+}

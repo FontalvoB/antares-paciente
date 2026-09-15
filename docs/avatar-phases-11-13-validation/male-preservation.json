@@ -1,0 +1,43 @@
+[
+  {
+    "file": "public/models/avatar/bodies/male-body-base-v9.glb",
+    "sha256": "7581a0e836a81c96cf3551ba46b7fa2733ef51a2fbece21cc93710749b0e38e3",
+    "sameAsPriorAudit": true
+  },
+  {
+    "file": "public/models/avatar/clothing/tops/male-shirt-basic-01-v3.glb",
+    "sha256": "ad9733e72bc6cc7e0d006c7b57890e941c47afbc670aaffd142d7a152394a6a2",
+    "sameAsPriorAudit": true
+  },
+  {
+    "file": "public/models/avatar/hair/male-hair-02-v3.glb",
+    "sha256": "a7ee3d965d1b0250c39f29247a3b22c54658fb70eccaf53db01f1c4f25f06dd8",
+    "sameAsPriorAudit": true
+  },
+  {
+    "file": "public/models/avatar/hair/male-hair-03-v3.glb",
+    "sha256": "2eca5f3af769a1c4ac1cee73d74362eaf026dc75f4cc1690a92bdc62fdb6dda4",
+    "sameAsPriorAudit": true
+  },
+  {
+    "file": "public/models/avatar/accessories/glasses/unisex-glasses-02.glb",
+    "sha256": "63f09499e5204c90506eba5af904940ec3fade3872853a8d68bf16098acd57d0",
+    "sameAsPriorAudit": true
+  },
+  {
+    "file": "public/models/avatar/accessories/watches/unisex-watch-02.glb",
+    "sha256": "4311029d29f3625145dcfc57de7def0fcd5cc0745865814a86b957360fca5995",
+    "sameAsPriorAudit": true
+  },
+  {
+    "file": "public/models/avatar/accessories/bracelets/unisex-bracelet-02.glb",
+    "sha256": "33c6a07a015748172d3ebf57d099e8bfb7b8f0fb0b7276e4cdad1163ed434c5e",
+    "sameAsPriorAudit": true
+  },
+  {
+    "file": "public/models/avatar/sources/polish-v9/avatar-polished-v9.blend",
+    "sha256": "1e2a7f87161909f608bd4e94172b1ae2a000ae9d2787aeca5040fdda073b109c",
+    "sameAsPriorAudit": false,
+    "note": "La fuente editable tiene fecha 09:08:17, anterior al checkpoint de esta misión 09:35:37. El inventario previo precede la corrección documentada de FPS de esa fuente; no se modificó en esta misión."
+  }
+]

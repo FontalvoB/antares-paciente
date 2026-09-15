@@ -1,0 +1,26 @@
+{
+  "asset": "public\\models\\avatar\\bodies\\female-body-base-v2.glb",
+  "bytes": 4342200,
+  "sha256": "ef05b6096a1a4ed6910585db78ce0cbf3c4adbab7dfcfdd4ac53c0f4d11f3363",
+  "triangles": 15000,
+  "bones": 51,
+  "animations": [
+    "Idle",
+    "RigCheck"
+  ],
+  "morphs": [
+    "BodyVolume",
+    "BodyLean",
+    "Abdomen",
+    "Waist",
+    "Chest",
+    "Arms",
+    "Thighs",
+    "FaceVolume",
+    "MuscleDefinition"
+  ],
+  "positionCount": 9606,
+  "publishedAssetUnchanged": true,
+  "sourceTransform": "matrix_world scale .9411764740943909, Blender Z-up to GLTF Y-up",
+  "positionsMatchingSourceRounded1e4": 9604
+}

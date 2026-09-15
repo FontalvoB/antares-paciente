@@ -1,4 +1,5 @@
-export const AVATAR_URL = `${import.meta.env.BASE_URL}models/avatar/bodies/male-body-base-v8.glb`;
+import { bodyCatalog } from './avatar-equipment';
+export const AVATAR_URL = `${import.meta.env.BASE_URL}models/avatar/${bodyCatalog.male.path}`;
 export type MorphWeights = Record<string, number>;
 export interface AvatarMetrics {
   loadMs: number; firstFrameMs: number; bytes: number; triangles: number;

@@ -1,6 +1,6 @@
 # Avatar modular — Fases 6 a 10
 
-Resultado validado el 11 de septiembre de 2026. Implementación secuencial sobre el v7 que cargaba la aplicación. La referencia activa ahora es `bodies/male-body-base-v8.glb`.
+Resultado validado el 11 de septiembre de 2026. Implementación secuencial sobre el v7 que cargaba la aplicación. Este informe es histórico. El catálogo activo está documentado en [Pulido v9](avatar-polish-v9.md); v8 y módulos v2 se conservan como referencia de recuperación y comparación.
 
 ## Fase 6 — Primera camiseta
 
@@ -28,7 +28,7 @@ Los controles Ionic temporales están en `AvatarPage`, tarjeta **Prueba de ropa*
 
 ## Fase 8 — Cabello
 
-Tres estilos: corto, peinado lateral y rizado. Geometría y color de vértices, sin nuevas imágenes de textura. Anclaje a Head y morphs para el ajuste. Se validaron cambios de estilo con camiseta e Idle. La fase 10 conserva los estilos y añade revisiones v2 para corregir pequeños contactos de BodyVolume/BodyLean; las primeras versiones permanecen disponibles.
+En esta fase se crearon tres estilos: corto, peinado lateral y rizado. El corto fue retirado posteriormente y ya no está disponible. Geometría y color de vértices, sin nuevas imágenes de textura. Anclaje a Head y morphs para el ajuste. Se validaron cambios de estilo con camiseta e Idle. La fase 10 conserva los estilos y añade revisiones v2 para corregir pequeños contactos de BodyVolume/BodyLean; las primeras exportaciones se revisaron en la limpieza posterior.
 
 ## Fase 9 — Accesorios
 
@@ -58,7 +58,7 @@ Rutas relativas a `public/models/avatar/`. MB decimales; un solo cabello se equi
 |---|---:|---:|---:|---:|
 | `bodies/male-body-base-v8.glb` | 5.312.372 | 23.924 | 1 | 3 |
 | `clothing/tops/male-shirt-basic-01-v2.glb` | 1.631.704 | 10.770 | 2 | 0 |
-| `hair/male-hair-01-v2.glb` | 179.020 | 949 | 1 | 0 |
+| Estilo corto retirado en pulido v9 (export eliminado) | 179.020 | 949 | 1 | 0 |
 | `hair/male-hair-02-v2.glb` | 606.056 | 3.796 | 1 | 0 |
 | `hair/male-hair-03-v2.glb` | 606.052 | 3.796 | 1 | 0 |
 | `accessories/glasses/unisex-glasses-01.glb` | 169.100 | 960 | 2 | 0 |
