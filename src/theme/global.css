@@ -19462,6 +19462,50 @@ html.plt-tablet .screen.auth .auth-scroll {
   margin-inline: auto;
 }
 
+/* Avatar: vista común, controles Ionic y separación entre apariencia e historial. */
+.avatar-experience .avatar-view-tabs {
+  width: calc(100% - 32px);
+  max-width: 520px;
+  margin: 0 16px 12px;
+  flex-shrink: 0;
+}
+.avatar-experience .avatar-layout { display: grid; gap: 12px; padding: 0 16px 20px; }
+.avatar-experience .avatar-preview { min-width: 0; }
+.avatar-experience .avatar-panel { min-width: 0; }
+.avatar-experience ion-card { margin: 0 0 12px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.avatar-experience ion-card-content { color: var(--tx); padding: 18px; }
+.avatar-experience h2 { font-size: 18px; font-weight: 700; margin: 0 0 12px; }
+.avatar-experience p { line-height: 1.5; margin: 10px 0; }
+.avatar-experience ion-button { min-height: 44px; font-size: 13px; --border-radius: var(--radius-sm); }
+.avatar-experience ion-segment-button { min-height: 44px; min-width: 70px; text-transform: none; letter-spacing: normal; }
+.avatar-experience ion-select { min-height: 56px; margin-block: 10px; }
+.avatar-experience ion-button:focus-within,
+.avatar-experience ion-select:focus-within,
+.avatar-experience ion-segment-button:focus-within { outline: 2px solid var(--teal); outline-offset: 2px; }
+.avatar-experience .avatar-viewer-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.avatar-experience .avatar-save { padding: 0 2px 12px; }
+.avatar-experience .avatar-save p { font-size: 13px; }
+.avatar-experience .avatar-status { min-height: 220px; display: flex; gap: 12px; align-items: center; justify-content: center; padding: 24px; }
+@media (min-width: 768px) {
+  .avatar-experience .avatar-layout { grid-template-columns: minmax(0, 1.15fr) minmax(320px, 1fr); max-width: 1100px; margin-inline: auto; gap: 28px; }
+  .avatar-experience .avatar-preview { position: sticky; top: 0; align-self: start; }
+}
+@media (max-width: 767px) and (min-height: 700px) {
+  .avatar-experience { --avatar-view-height: clamp(180px, 32vh, 280px); }
+  .avatar-experience .avatar-preview { position: sticky; top: 0; z-index: 2; background: var(--g0); padding-bottom: 8px; }
+  .avatar-experience .avatar-viewer-tools p { margin: 4px 0; }
+  .avatar-experience .avatar-viewer-actions ion-button { font-size: 11px; margin: 0; }
+  .avatar-experience .avatar-viewer-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .avatar-experience .avatar-viewer-actions ion-button { min-width: 0; white-space: normal; --padding-start: 4px; --padding-end: 4px; }
+  .avatar-experience .avatar-panel ion-select { scroll-margin-top: calc(32vh + 84px); }
+}
+@media (max-height: 500px) {
+  .avatar-experience .page-head { padding-block: 4px; }
+  .avatar-experience .page-head-title { font-size: 22px; }
+  .avatar-experience .page-head-sub { display: none; }
+  .avatar-experience .avatar-view-tabs { margin-bottom: 6px; }
+}
+
 /* A pantalla completa cabe una tarjeta más a cada lado: el carrusel gana
    profundidad en vez de dejar los costados vacíos. */
 /* En tablet la página tiene mucho más ancho: las tarjetas crecen solas
@@ -19516,4 +19560,26 @@ html.plt-tablet .mcar-page {
   .hm-quick-btn:hover, .hm-quick-btn:active, .hm-quick-btn:hover .ic3,
   .hm-quick-btn:active .ic3, .hm-wheel-card:active, .hm-wheel-card:hover .wheel-play,
   .hm-wheel-card:active .wheel-play { transform: none; }
+}
+
+/* Categorías con volumen visual; no cargan escenas 3D adicionales. */
+.avatar-experience .avatar-preview { background: radial-gradient(ellipse at 50% 42%, #eaf5f2, #f4f8f7 55%, #fff 85%); border-radius: 24px; border: 1px solid #e2e9e5; }
+.avatar-experience .avatar-customizer { margin: 0; box-shadow: none; border: 1px solid #e2e9e5; border-radius: 24px; }
+.avatar-experience .avatar-customizer h2 { font-size: 21px; letter-spacing: -.5px; margin: 4px 0 20px; }
+.avatar-experience .avatar-customizer ion-segment { padding: 6px; gap: 2px; border-radius: 18px; background: #f1f5f4; }
+.avatar-experience .avatar-customizer ion-segment-button { min-width: 65px; min-height: 84px; --padding-start: 4px; --padding-end: 4px; --indicator-color: white; --color-checked: var(--ion-color-primary); font-size: 11px; }
+.avatar-experience .avatar-category-icon { display: grid; place-items: center; width: 36px; height: 36px; margin: 4px auto; border-radius: 12px; background: linear-gradient(145deg,#fff,#c3d8d1); box-shadow: inset 1px 1px 1px #fff, inset -2px -3px 3px #a9c5ba, 0 3px 4px #264c3520; transform: rotate(-5deg); }
+.avatar-experience .avatar-category-icon ion-icon { font-size: 24px; color: #326650; filter: drop-shadow(1px 2px 0 #fff9); }
+.avatar-experience .avatar-customizer ion-segment-button.segment-button-checked .avatar-category-icon { background: linear-gradient(145deg,#e2f5da,#8dc171); }
+.avatar-experience .avatar-customizer ion-select { margin-top: 16px; padding: 14px; background: #f7f9f8; border: 1px solid #e2e9e5; border-radius: 14px; }
+.avatar-experience .avatar-skin-options { margin-top: 20px; }
+.avatar-experience .avatar-skin-options h3 { font-size: 14px; margin: 0 0 10px; font-weight: 600; }
+.avatar-experience .avatar-skin-swatches { display: flex; justify-content: space-between; gap: 3px; }
+.avatar-experience .avatar-skin-swatches ion-button { margin: 0; min-height: 52px; flex: 1; --padding-start: 3px; --padding-end: 3px; }
+.avatar-experience .avatar-skin-swatch { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; color: white; text-shadow: 0 1px 3px #000; box-shadow: inset 0 2px 3px #fff6, inset 0 -2px 3px #0002; }
+.avatar-experience .avatar-skin-swatches ion-button[aria-pressed="true"] .avatar-skin-swatch { outline: 2px solid var(--ion-color-primary); outline-offset: 4px; }
+.avatar-experience .avatar-save { padding: 16px 0; }
+.avatar-experience .avatar-save ion-button { --border-radius: 14px; min-height: 48px; }
+@media (max-width: 767px) {
+  .avatar-experience .avatar-viewer-actions { display: none; }
 }

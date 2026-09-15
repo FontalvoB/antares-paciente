@@ -1,0 +1,86 @@
+{
+  "assets": [
+    {
+      "file": "bodies/male-body-base-v9.glb",
+      "bytes": 2940240,
+      "triangles": 14354,
+      "materials": 1,
+      "textures": 3,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "clothing/tops/male-shirt-basic-01-v3.glb",
+      "bytes": 641904,
+      "triangles": 3933,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "hair/male-hair-02-v3.glb",
+      "bytes": 180132,
+      "triangles": 1898,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "hair/male-hair-03-v3.glb",
+      "bytes": 178372,
+      "triangles": 1898,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "accessories/glasses/unisex-glasses-02.glb",
+      "bytes": 69344,
+      "triangles": 527,
+      "materials": 2,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "accessories/watches/unisex-watch-02.glb",
+      "bytes": 106332,
+      "triangles": 791,
+      "materials": 2,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    },
+    {
+      "file": "accessories/bracelets/unisex-bracelet-02.glb",
+      "bytes": 64732,
+      "triangles": 503,
+      "materials": 1,
+      "textures": 0,
+      "bones": 51,
+      "inverseBindMaxDifference": 0
+    }
+  ],
+  "clips": [
+    {
+      "name": "Idle",
+      "duration": 12,
+      "channels": 153,
+      "endpointDifference": 0
+    },
+    {
+      "name": "RigCheck",
+      "duration": 2,
+      "channels": 153,
+      "endpointDifference": 0
+    }
+  ],
+  "preservedClipsIdentical": true,
+  "activeCombination": {
+    "bytes": 4000924,
+    "triangles": 22006
+  }
+}

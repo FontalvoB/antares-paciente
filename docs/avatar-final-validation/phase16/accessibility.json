@@ -1,0 +1,212 @@
+[
+  {
+    "size": {
+      "width": 375,
+      "height": 812
+    },
+    "width": 375,
+    "scrollWidth": 375,
+    "targets": [
+      {
+        "label": "Volver",
+        "height": 48
+      },
+      {
+        "label": "Mi Avatar",
+        "height": 44
+      },
+      {
+        "label": "Mi evolución",
+        "height": 44
+      },
+      {
+        "label": "Ver de frente",
+        "height": 48
+      },
+      {
+        "label": "Ver de perfil",
+        "height": 48
+      },
+      {
+        "label": "Pausar movimiento",
+        "height": 48
+      },
+      {
+        "label": "Cuerpo",
+        "height": 44
+      },
+      {
+        "label": "Ropa",
+        "height": 44
+      },
+      {
+        "label": "Cabello",
+        "height": 44
+      },
+      {
+        "label": "Accesorios",
+        "height": 44
+      },
+      {
+        "label": "Gafas",
+        "height": 56
+      },
+      {
+        "label": "Reloj",
+        "height": 56
+      },
+      {
+        "label": "Pulsera",
+        "height": 56
+      },
+      {
+        "label": "Guardar avatar",
+        "height": 48
+      },
+      {
+        "label": "Ver mi evolución",
+        "height": 48
+      }
+    ]
+  },
+  {
+    "size": {
+      "width": 430,
+      "height": 932
+    },
+    "width": 430,
+    "scrollWidth": 430,
+    "targets": [
+      {
+        "label": "Volver",
+        "height": 48
+      },
+      {
+        "label": "Mi Avatar",
+        "height": 44
+      },
+      {
+        "label": "Mi evolución",
+        "height": 44
+      },
+      {
+        "label": "Ver de frente",
+        "height": 48
+      },
+      {
+        "label": "Ver de perfil",
+        "height": 48
+      },
+      {
+        "label": "Pausar movimiento",
+        "height": 48
+      },
+      {
+        "label": "Cuerpo",
+        "height": 44
+      },
+      {
+        "label": "Ropa",
+        "height": 44
+      },
+      {
+        "label": "Cabello",
+        "height": 44
+      },
+      {
+        "label": "Accesorios",
+        "height": 44
+      },
+      {
+        "label": "Gafas",
+        "height": 56
+      },
+      {
+        "label": "Reloj",
+        "height": 56
+      },
+      {
+        "label": "Pulsera",
+        "height": 56
+      },
+      {
+        "label": "Guardar avatar",
+        "height": 48
+      },
+      {
+        "label": "Ver mi evolución",
+        "height": 48
+      }
+    ]
+  },
+  {
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "width": 844,
+    "scrollWidth": 844,
+    "targets": [
+      {
+        "label": "Volver",
+        "height": 48
+      },
+      {
+        "label": "Mi Avatar",
+        "height": 44
+      },
+      {
+        "label": "Mi evolución",
+        "height": 44
+      },
+      {
+        "label": "Ver de frente",
+        "height": 48
+      },
+      {
+        "label": "Ver de perfil",
+        "height": 48
+      },
+      {
+        "label": "Pausar movimiento",
+        "height": 48
+      },
+      {
+        "label": "Cuerpo",
+        "height": 44
+      },
+      {
+        "label": "Ropa",
+        "height": 44
+      },
+      {
+        "label": "Cabello",
+        "height": 44
+      },
+      {
+        "label": "Accesorios",
+        "height": 44
+      },
+      {
+        "label": "Gafas",
+        "height": 56
+      },
+      {
+        "label": "Reloj",
+        "height": 56
+      },
+      {
+        "label": "Pulsera",
+        "height": 56
+      },
+      {
+        "label": "Guardar avatar",
+        "height": 48
+      },
+      {
+        "label": "Ver mi evolución",
+        "height": 48
+      }
+    ]
+  }
+]

@@ -1,0 +1,343 @@
+{
+  "meshes": [
+    {
+      "object": "male-body-base-v9_Mesh",
+      "weightSumMaxError": 1.1897645890712738e-07,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "object": "Shirt_Collar_Review",
+      "weightSumMaxError": 1.2665987014770508e-07,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "object": "Hair_02_V9",
+      "weightSumMaxError": 0.0,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "object": "Hair_03_V9",
+      "weightSumMaxError": 0.0,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "object": "Glasses_02",
+      "weightSumMaxError": 0.0,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "object": "Watch_02",
+      "weightSumMaxError": 0.0,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "object": "Bracelet_02",
+      "weightSumMaxError": 0.0,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "morph": "BodyVolume",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyVolume",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyVolume",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyVolume",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyVolume",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyLean",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyLean",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyLean",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyLean",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "BodyLean",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Abdomen",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Abdomen",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Abdomen",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Abdomen",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Abdomen",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Waist",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Waist",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Waist",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Waist",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Waist",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Chest",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Chest",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Chest",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Chest",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Chest",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Arms",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Arms",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Arms",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Arms",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Arms",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Thighs",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Thighs",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Thighs",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Thighs",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "Thighs",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "FaceVolume",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "FaceVolume",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "FaceVolume",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "FaceVolume",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "FaceVolume",
+      "frame": 361,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "MuscleDefinition",
+      "frame": 1,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "MuscleDefinition",
+      "frame": 91,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "MuscleDefinition",
+      "frame": 181,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "MuscleDefinition",
+      "frame": 271,
+      "finiteGeometry": true
+    },
+    {
+      "morph": "MuscleDefinition",
+      "frame": 361,
+      "finiteGeometry": true
+    }
+  ],
+  "loopMaxVertexDifference": 0.0,
+  "actions": [
+    "Idle",
+    "RigCheck"
+  ],
+  "bones": 51,
+  "fps": 30
+}

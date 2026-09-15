@@ -1,0 +1,104 @@
+{
+  "normalLogin": true,
+  "existingConfigurationGet": true,
+  "compatibleConfigurationPut": true,
+  "longHairSaveFailedOnActiveService": true,
+  "priorConfiguration": {
+    "accessories": {
+      "bracelet": "bracelet-01",
+      "glasses": "glasses-01",
+      "watch": "watch-01"
+    },
+    "clothing": {
+      "pants": null,
+      "shirt": "shirt-basic-01",
+      "shoes": null
+    },
+    "gender": "female",
+    "hair": "hair-02",
+    "version": 1
+  },
+  "metrics": {
+    "bones": 51,
+    "bytes": 6476592,
+    "calls": 10,
+    "equipment": {
+      "bracelet": {
+        "bytes": 99944,
+        "id": "bracelet-01",
+        "loadMs": 16.80000001192093,
+        "status": "ready"
+      },
+      "glasses": {
+        "bytes": 119964,
+        "id": "glasses-01",
+        "loadMs": 12,
+        "status": "ready"
+      },
+      "hair": {
+        "bytes": 266984,
+        "id": "hair-02",
+        "loadMs": 15.800000011920927,
+        "status": "ready"
+      },
+      "shirt": {
+        "bytes": 1474752,
+        "id": "shirt-basic-01",
+        "loadMs": 34,
+        "status": "ready"
+      },
+      "watch": {
+        "bytes": 172748,
+        "id": "watch-01",
+        "loadMs": 15.900000035762789,
+        "status": "ready"
+      }
+    },
+    "firstFrameMs": 1035,
+    "fps": 60.033461275609646,
+    "geometries": 9,
+    "gpuTextures": 22,
+    "headQuaternion": [
+      0.003725904902727578,
+      0.005870792116691188,
+      -0.006608393871223681,
+      0.9999539892230148
+    ],
+    "heapMB": 117.48759269714355,
+    "height": 1.6002425729039358,
+    "idleTime": 198.7449000000256,
+    "initialMorphWeights": {
+      "Abdomen": 0,
+      "Arms": 0,
+      "BodyLean": 0,
+      "BodyVolume": 1,
+      "Chest": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0,
+      "Thighs": 0,
+      "Waist": 0
+    },
+    "loadMs": 98.19999998807909,
+    "loops": 16,
+    "materials": 9,
+    "morphWeights": {
+      "Abdomen": 0,
+      "Arms": 0,
+      "BodyLean": 0,
+      "BodyVolume": 1,
+      "Chest": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0,
+      "Thighs": 0,
+      "Waist": 0
+    },
+    "rootPosition": [
+      0.0019214077558670035,
+      0.9099999356965772,
+      0.019999179989099503
+    ],
+    "textures": 3,
+    "triangles": 26063,
+    "visibleMs": 7264.699999988079
+  }
+}

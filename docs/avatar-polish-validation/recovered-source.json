@@ -1,0 +1,122 @@
+{
+  "source": "C:\\Users\\Carlos Cortina\\Documents\\CoppAddresd\\antares-paciente\\public\\models\\avatar\\sources/polish-v9/avatar-polished-v9.blend",
+  "meshes": [
+    {
+      "file": "bodies/male-body-base-v9.glb",
+      "object": "male-body-base-v9_Mesh",
+      "vertices": 9244,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "file": "clothing/tops/male-shirt-basic-01-v3.glb",
+      "object": "Shirt_Collar_Review",
+      "vertices": 2255,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "file": "hair/male-hair-02-v3.glb",
+      "object": "Hair_02_V9",
+      "vertices": 1011,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "file": "hair/male-hair-03-v3.glb",
+      "object": "Hair_03_V9",
+      "vertices": 1001,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "file": "accessories/glasses/unisex-glasses-02.glb",
+      "object": "Glasses_02",
+      "vertices": 311,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "file": "accessories/watches/unisex-watch-02.glb",
+      "object": "Watch_02",
+      "vertices": 508,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    },
+    {
+      "file": "accessories/bracelets/unisex-bracelet-02.glb",
+      "object": "Bracelet_02",
+      "vertices": 283,
+      "morphs": [
+        "BodyVolume",
+        "BodyLean",
+        "Abdomen",
+        "Waist",
+        "Chest",
+        "Arms",
+        "Thighs",
+        "FaceVolume",
+        "MuscleDefinition"
+      ]
+    }
+  ],
+  "bones": 51,
+  "actions": [
+    "Idle",
+    "RigCheck"
+  ]
+}

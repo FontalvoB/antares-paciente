@@ -1,0 +1,27 @@
+[
+  {
+    "file": "clothing/tops/female-shirt-basic-01-v1.glb",
+    "bytes": 1221824,
+    "triangles": 7344
+  },
+  {
+    "file": "hair/female-hair-02-v1.glb",
+    "bytes": 266984,
+    "triangles": 1898
+  },
+  {
+    "file": "accessories/glasses/female-glasses-02-v1.glb",
+    "bytes": 119964,
+    "triangles": 527
+  },
+  {
+    "file": "accessories/watches/female-watch-02-v1.glb",
+    "bytes": 172748,
+    "triangles": 791
+  },
+  {
+    "file": "accessories/bracelets/female-bracelet-02-v1.glb",
+    "bytes": 99944,
+    "triangles": 503
+  }
+]

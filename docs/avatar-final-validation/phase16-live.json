@@ -1,0 +1,112 @@
+{
+  "configuration": {
+    "accessories": {
+      "bracelet": "bracelet-01",
+      "glasses": "glasses-01",
+      "watch": "watch-01"
+    },
+    "clothing": {
+      "pants": null,
+      "shirt": "shirt-basic-01",
+      "shoes": null
+    },
+    "gender": "female",
+    "hair": "hair-02",
+    "version": 1
+  },
+  "body": {
+    "abdomen": 0,
+    "arms": 0,
+    "bodyLean": 0,
+    "bodyVolume": 1,
+    "chest": 0,
+    "faceVolume": 0,
+    "muscleDefinition": 0,
+    "thighs": 0,
+    "waist": 0
+  },
+  "metrics": {
+    "bones": 51,
+    "bytes": 6476592,
+    "calls": 10,
+    "equipment": {
+      "bracelet": {
+        "bytes": 99944,
+        "id": "bracelet-01",
+        "loadMs": 23.69999998807907,
+        "status": "ready"
+      },
+      "glasses": {
+        "bytes": 119964,
+        "id": "glasses-01",
+        "loadMs": 19.5,
+        "status": "ready"
+      },
+      "hair": {
+        "bytes": 266984,
+        "id": "hair-02",
+        "loadMs": 29.399999976158146,
+        "status": "ready"
+      },
+      "shirt": {
+        "bytes": 1474752,
+        "id": "shirt-basic-01",
+        "loadMs": 37.59999996423721,
+        "status": "ready"
+      },
+      "watch": {
+        "bytes": 172748,
+        "id": "watch-01",
+        "loadMs": 26.599999964237213,
+        "status": "ready"
+      }
+    },
+    "firstFrameMs": 550.8000000119209,
+    "fps": 60,
+    "geometries": 9,
+    "gpuTextures": 22,
+    "headQuaternion": [
+      0.002685234921457234,
+      0.002612401335240225,
+      -0.006927810198460739,
+      0.999968984678292
+    ],
+    "heapMB": 131.97483921051025,
+    "height": 1.6002425729039358,
+    "idleTime": 391.1823000000207,
+    "initialMorphWeights": {
+      "Abdomen": 0,
+      "Arms": 0,
+      "BodyLean": 0,
+      "BodyVolume": 1,
+      "Chest": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0,
+      "Thighs": 0,
+      "Waist": 0
+    },
+    "loadMs": 64.10000002384186,
+    "loops": 32,
+    "materials": 9,
+    "morphWeights": {
+      "Abdomen": 0,
+      "Arms": 0,
+      "BodyLean": 0,
+      "BodyVolume": 1,
+      "Chest": 0,
+      "FaceVolume": 0,
+      "MuscleDefinition": 0,
+      "Thighs": 0,
+      "Waist": 0
+    },
+    "rootPosition": [
+      0.0050562051882175624,
+      0.9097607019501476,
+      0.019999179989099503
+    ],
+    "textures": 3,
+    "triangles": 26063,
+    "visibleMs": 6365.699999988079
+  },
+  "refreshFromEvolution": true
+}

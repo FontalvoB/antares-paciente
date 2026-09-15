@@ -1,0 +1,264 @@
+{
+  "surface": "Desktop Edge headless; mobile viewport, NOT physical Android/iOS",
+  "soakSeconds": 0,
+  "performanceSamples": [
+    {
+      "scenario": "female-hair-long-01",
+      "metrics": {
+        "bytes": 6532584,
+        "triangles": 26981,
+        "materials": 9,
+        "textures": 3,
+        "bones": 51,
+        "height": 1.6002425729039358,
+        "loadMs": 89,
+        "firstFrameMs": 1142.1000000238419,
+        "fps": 60,
+        "calls": 10,
+        "geometries": 9,
+        "gpuTextures": 22,
+        "idleTime": 8.173800000011909,
+        "loops": 0,
+        "rootPosition": [
+          0.006800000090152025,
+          0.9095346927642821,
+          0.019999178126454353
+        ],
+        "headQuaternion": [
+          0.004292689670233026,
+          -0.008139864982499953,
+          -0.006323848507097566,
+          0.9999376602336373
+        ],
+        "morphWeights": {
+          "BodyVolume": 0.5,
+          "BodyLean": 0,
+          "Abdomen": 0,
+          "Waist": 0,
+          "Chest": 0,
+          "Arms": 0,
+          "Thighs": 0,
+          "FaceVolume": 0,
+          "MuscleDefinition": 0
+        },
+        "visibleMs": 1900.800000011921,
+        "initialMorphWeights": {
+          "BodyVolume": 0.5,
+          "BodyLean": 0,
+          "Abdomen": 0,
+          "Waist": 0,
+          "Chest": 0,
+          "Arms": 0,
+          "Thighs": 0,
+          "FaceVolume": 0,
+          "MuscleDefinition": 0
+        },
+        "equipment": {
+          "shirt": {
+            "id": "shirt-basic-01",
+            "status": "ready",
+            "bytes": 1474752,
+            "loadMs": 36
+          },
+          "glasses": {
+            "id": "glasses-01",
+            "status": "ready",
+            "bytes": 119964,
+            "loadMs": 40.59999996423721
+          },
+          "watch": {
+            "id": "watch-01",
+            "status": "ready",
+            "bytes": 172748,
+            "loadMs": 42.89999997615814
+          },
+          "bracelet": {
+            "id": "bracelet-01",
+            "status": "ready",
+            "bytes": 99944,
+            "loadMs": 44.39999997615814
+          },
+          "hair": {
+            "id": "female-hair-long-01",
+            "status": "ready",
+            "bytes": 322976,
+            "loadMs": 19.80000001192093
+          }
+        },
+        "heapMB": 109.72131729125977
+      }
+    },
+    {
+      "scenario": "female-hair-long-02",
+      "metrics": {
+        "bytes": 6533164,
+        "triangles": 26981,
+        "materials": 9,
+        "textures": 3,
+        "bones": 51,
+        "height": 1.6002425729039358,
+        "loadMs": 89,
+        "firstFrameMs": 1142.1000000238419,
+        "fps": 60,
+        "calls": 10,
+        "geometries": 9,
+        "gpuTextures": 22,
+        "idleTime": 11.206699999988077,
+        "loops": 0,
+        "rootPosition": [
+          0.0001856777396288054,
+          0.9100400568858603,
+          0.019999179989099503
+        ],
+        "headQuaternion": [
+          0.00821968857154178,
+          -0.014340936114776355,
+          0.003074204223696769,
+          0.9998586517801054
+        ],
+        "morphWeights": {
+          "BodyVolume": 0.5,
+          "BodyLean": 0,
+          "Abdomen": 0,
+          "Waist": 0,
+          "Chest": 0,
+          "Arms": 0,
+          "Thighs": 0,
+          "FaceVolume": 0,
+          "MuscleDefinition": 0
+        },
+        "visibleMs": 1900.800000011921,
+        "initialMorphWeights": {
+          "BodyVolume": 0.5,
+          "BodyLean": 0,
+          "Abdomen": 0,
+          "Waist": 0,
+          "Chest": 0,
+          "Arms": 0,
+          "Thighs": 0,
+          "FaceVolume": 0,
+          "MuscleDefinition": 0
+        },
+        "equipment": {
+          "shirt": {
+            "id": "shirt-basic-01",
+            "status": "ready",
+            "bytes": 1474752,
+            "loadMs": 36
+          },
+          "glasses": {
+            "id": "glasses-01",
+            "status": "ready",
+            "bytes": 119964,
+            "loadMs": 40.59999996423721
+          },
+          "watch": {
+            "id": "watch-01",
+            "status": "ready",
+            "bytes": 172748,
+            "loadMs": 42.89999997615814
+          },
+          "bracelet": {
+            "id": "bracelet-01",
+            "status": "ready",
+            "bytes": 99944,
+            "loadMs": 44.39999997615814
+          },
+          "hair": {
+            "id": "female-hair-long-02",
+            "status": "ready",
+            "bytes": 323556,
+            "loadMs": 12.900000035762787
+          }
+        },
+        "heapMB": 100.90506172180176
+      }
+    },
+    {
+      "scenario": "female-hair-long-03",
+      "metrics": {
+        "bytes": 6592724,
+        "triangles": 27701,
+        "materials": 9,
+        "textures": 3,
+        "bones": 51,
+        "height": 1.6002425729039358,
+        "loadMs": 89,
+        "firstFrameMs": 1142.1000000238419,
+        "fps": 59.99400059850978,
+        "calls": 10,
+        "geometries": 9,
+        "gpuTextures": 22,
+        "idleTime": 14.206900000035773,
+        "loops": 1,
+        "rootPosition": [
+          -0.007981673692704614,
+          0.9093436534437065,
+          0.019999181851744652
+        ],
+        "headQuaternion": [
+          0.01950288940343787,
+          0.06939109205608983,
+          0.003107314000472092,
+          0.9973940335934857
+        ],
+        "morphWeights": {
+          "BodyVolume": 0.5,
+          "BodyLean": 0,
+          "Abdomen": 0,
+          "Waist": 0,
+          "Chest": 0,
+          "Arms": 0,
+          "Thighs": 0,
+          "FaceVolume": 0,
+          "MuscleDefinition": 0
+        },
+        "visibleMs": 1900.800000011921,
+        "initialMorphWeights": {
+          "BodyVolume": 0.5,
+          "BodyLean": 0,
+          "Abdomen": 0,
+          "Waist": 0,
+          "Chest": 0,
+          "Arms": 0,
+          "Thighs": 0,
+          "FaceVolume": 0,
+          "MuscleDefinition": 0
+        },
+        "equipment": {
+          "shirt": {
+            "id": "shirt-basic-01",
+            "status": "ready",
+            "bytes": 1474752,
+            "loadMs": 36
+          },
+          "glasses": {
+            "id": "glasses-01",
+            "status": "ready",
+            "bytes": 119964,
+            "loadMs": 40.59999996423721
+          },
+          "watch": {
+            "id": "watch-01",
+            "status": "ready",
+            "bytes": 172748,
+            "loadMs": 42.89999997615814
+          },
+          "bracelet": {
+            "id": "bracelet-01",
+            "status": "ready",
+            "bytes": 99944,
+            "loadMs": 44.39999997615814
+          },
+          "hair": {
+            "id": "female-hair-long-03",
+            "status": "ready",
+            "bytes": 383116,
+            "loadMs": 11.599999964237213
+          }
+        },
+        "heapMB": 104.87484169006348
+      }
+    }
+  ]
+}

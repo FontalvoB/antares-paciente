@@ -1,0 +1,577 @@
+[
+  {
+    "path": "docs\\avatar-modular-phases-6-10.md",
+    "names": [
+      "male-body-base-v8.blend",
+      "male-hair-01-v2.blend",
+      "male-hair-02-v2.blend",
+      "male-hair-02-v2.glb",
+      "male-hair-03-v2.blend",
+      "male-hair-03-v2.glb",
+      "male-shirt-basic-01-v2.blend",
+      "male-shirt-basic-01-v2.glb",
+      "male-shirt-basic-01.glb",
+      "unisex-bracelet-01.blend",
+      "unisex-bracelet-01.glb",
+      "unisex-glasses-01.blend",
+      "unisex-glasses-01.glb",
+      "unisex-watch-01.blend",
+      "unisex-watch-01.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-local-demo.md",
+    "names": [
+      "male-body-base-v3.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-loading-phase-5.md",
+    "names": [
+      "male-body-base-v7.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-female-v2-validation\\README.md",
+    "names": [
+      "before-correction.blend"
+    ]
+  },
+  {
+    "path": "docs\\avatar-progress-phase-4.md",
+    "names": [
+      "male-body-base-v3.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-validation-idle-v3\\README.md",
+    "names": [
+      "idle-v2.glb",
+      "idle-v3.glb",
+      "idle.glb",
+      "male-body-base-v3.blend",
+      "male-body-base-v3.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-validation\\README.md",
+    "names": [
+      "male-body-base-v2.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-polish-validation\\unreferenced-candidates.json",
+    "names": [
+      "animation-export.glb",
+      "approved-right-checkpoint.blend",
+      "before-avatar-20260910-091301.blend",
+      "before-idle-v3.blend",
+      "before-idle.glb",
+      "before-male-body-base-v4.blend",
+      "before-male-body-base-v4.glb",
+      "before-v2.blend",
+      "checkpoint-rig.blend",
+      "checkpoint-v7-before-modular.blend",
+      "editable-staged.blend",
+      "higgsfield-raw.glb",
+      "idle-export.glb",
+      "male-base.blend1",
+      "male-body-base-v7.blend1",
+      "male-body-base-v8.blend1",
+      "male-hair-01.blend",
+      "male-hair-02.blend",
+      "male-hair-03.blend",
+      "male-shirt-basic-01.blend",
+      "rigcheck-export.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-polish-validation\\reference-inventory.json",
+    "names": [
+      "animation-export.glb",
+      "approved-right-checkpoint.blend",
+      "before-avatar-20260910-091301.blend",
+      "before-idle-v3.blend",
+      "before-idle.glb",
+      "before-male-body-base-v4.blend",
+      "before-male-body-base-v4.glb",
+      "before-v2.blend",
+      "before-v4.blend",
+      "checkpoint-rig.blend",
+      "checkpoint-v7-before-modular.blend",
+      "checkpoint.blend",
+      "diagnostic-static-NOT-APPROVED.blend",
+      "editable-staged.blend",
+      "hand-reference-review.blend",
+      "higgsfield-raw.glb",
+      "idle-export.glb",
+      "idle-v2.glb",
+      "idle-v3.glb",
+      "idle-v4.glb",
+      "idle-v5.glb",
+      "idle-v6.glb",
+      "idle-v7.glb",
+      "idle.glb",
+      "live-before-correction.blend",
+      "male-base.blend",
+      "male-base.blend1",
+      "male-base.glb",
+      "male-body-base-v2.blend",
+      "male-body-base-v2.glb",
+      "male-body-base-v3.blend",
+      "male-body-base-v3.glb",
+      "male-body-base-v4.blend",
+      "male-body-base-v4.glb",
+      "male-body-base-v5.blend",
+      "male-body-base-v6.blend",
+      "male-body-base-v6.glb",
+      "male-body-base-v7.blend",
+      "male-body-base-v7.blend1",
+      "male-body-base-v7.glb",
+      "male-body-base-v8.blend",
+      "male-body-base-v8.blend1",
+      "male-hair-01-v2.blend",
+      "male-hair-01.blend",
+      "male-hair-02-v2.blend",
+      "male-hair-02-v2.glb",
+      "male-hair-02.blend",
+      "male-hair-03-v2.blend",
+      "male-hair-03-v2.glb",
+      "male-hair-03.blend",
+      "male-shirt-basic-01-v2.blend",
+      "male-shirt-basic-01-v2.glb",
+      "male-shirt-basic-01.blend",
+      "male-shirt-basic-01.glb",
+      "rig-check.glb",
+      "rigcheck-export.glb",
+      "right-arm-NOT-APPROVED.blend",
+      "unisex-bracelet-01.blend",
+      "unisex-bracelet-01.glb",
+      "unisex-glasses-01.blend",
+      "unisex-glasses-01.glb",
+      "unisex-watch-01.blend",
+      "unisex-watch-01.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-polish-validation\\blender-reference-audit.json",
+    "names": [
+      "approved-right-checkpoint.blend",
+      "before-avatar-20260910-091301.blend",
+      "before-idle-v3.blend",
+      "before-male-body-base-v4.blend",
+      "before-v2.blend",
+      "before-v4.blend",
+      "checkpoint-rig.blend",
+      "checkpoint-v7-before-modular.blend",
+      "checkpoint.blend",
+      "diagnostic-static-NOT-APPROVED.blend",
+      "editable-staged.blend",
+      "hand-reference-review.blend",
+      "live-before-correction.blend",
+      "male-base.blend",
+      "male-base.blend1",
+      "male-body-base-v2.blend",
+      "male-body-base-v3.blend",
+      "male-body-base-v4.blend",
+      "male-body-base-v5.blend",
+      "male-body-base-v6.blend",
+      "male-body-base-v7.blend",
+      "male-body-base-v7.blend1",
+      "male-body-base-v8.blend",
+      "male-body-base-v8.blend1",
+      "male-hair-01-v2.blend",
+      "male-hair-01.blend",
+      "male-hair-02-v2.blend",
+      "male-hair-02.blend",
+      "male-hair-03-v2.blend",
+      "male-hair-03.blend",
+      "male-shirt-basic-01-v2.blend",
+      "male-shirt-basic-01.blend",
+      "right-arm-NOT-APPROVED.blend",
+      "unisex-bracelet-01.blend",
+      "unisex-glasses-01.blend",
+      "unisex-watch-01.blend"
+    ]
+  },
+  {
+    "path": "docs\\avatar-polish-v9.md",
+    "names": [
+      "before-male-body-base-v4.blend"
+    ]
+  },
+  {
+    "path": "docs\\avatar-phases-11-13.md",
+    "names": [
+      "female-body-base-v1.blend",
+      "female-equipment-v1.blend",
+      "female-shirt-basic-01-v1.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\right-arm-static-review\\DIAGNOSTICO.md",
+    "names": [
+      "right-arm-NOT-APPROVED.blend"
+    ]
+  },
+  {
+    "path": "docs\\avatar-phases-11-13-validation\\unreferenced.json",
+    "names": [
+      "animation-export.glb",
+      "approved-right-checkpoint.blend",
+      "before-avatar-20260910-091301.blend",
+      "before-idle-v3.blend",
+      "before-idle.glb",
+      "before-male-body-base-v4.glb",
+      "before-v2.blend",
+      "checkpoint-rig.blend",
+      "checkpoint-v7-before-modular.blend",
+      "editable-staged.blend",
+      "higgsfield-raw.glb",
+      "idle-export.glb",
+      "male-base.blend1",
+      "male-body-base-v7.blend1",
+      "male-body-base-v8.blend1",
+      "male-hair-01.blend",
+      "male-hair-02.blend",
+      "male-hair-03.blend",
+      "male-shirt-basic-01.blend",
+      "rigcheck-export.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-phases-11-13-validation\\reference-inventory.json",
+    "names": [
+      "animation-export.glb",
+      "approved-right-checkpoint.blend",
+      "before-avatar-20260910-091301.blend",
+      "before-female-checkpoint.blend",
+      "before-idle-v3.blend",
+      "before-idle.glb",
+      "before-male-body-base-v4.blend",
+      "before-male-body-base-v4.glb",
+      "before-v2.blend",
+      "before-v4.blend",
+      "checkpoint-rig.blend",
+      "checkpoint-v7-before-modular.blend",
+      "checkpoint.blend",
+      "diagnostic-static-NOT-APPROVED.blend",
+      "editable-staged.blend",
+      "female-body-base-v1.blend",
+      "female-equipment-review.blend",
+      "female-equipment-v1.blend",
+      "female-rig-review.blend",
+      "female-shirt-basic-01-v1.glb",
+      "hand-reference-review.blend",
+      "higgsfield-raw.glb",
+      "idle-export.glb",
+      "idle-v2.glb",
+      "idle-v3.glb",
+      "idle-v4.glb",
+      "idle-v5.glb",
+      "idle-v6.glb",
+      "idle-v7.glb",
+      "idle.glb",
+      "live-before-correction.blend",
+      "male-base.blend",
+      "male-base.blend1",
+      "male-base.glb",
+      "male-body-base-v2.blend",
+      "male-body-base-v2.glb",
+      "male-body-base-v3.blend",
+      "male-body-base-v3.glb",
+      "male-body-base-v4.blend",
+      "male-body-base-v4.glb",
+      "male-body-base-v5.blend",
+      "male-body-base-v6.blend",
+      "male-body-base-v6.glb",
+      "male-body-base-v7.blend",
+      "male-body-base-v7.blend1",
+      "male-body-base-v7.glb",
+      "male-body-base-v8.blend",
+      "male-body-base-v8.blend1",
+      "male-hair-01-v2.blend",
+      "male-hair-01.blend",
+      "male-hair-02-v2.blend",
+      "male-hair-02-v2.glb",
+      "male-hair-02.blend",
+      "male-hair-03-v2.blend",
+      "male-hair-03-v2.glb",
+      "male-hair-03.blend",
+      "male-shirt-basic-01-v2.blend",
+      "male-shirt-basic-01-v2.glb",
+      "male-shirt-basic-01.blend",
+      "male-shirt-basic-01.glb",
+      "rig-check.glb",
+      "rigcheck-export.glb",
+      "right-arm-NOT-APPROVED.blend",
+      "unisex-bracelet-01.blend",
+      "unisex-bracelet-01.glb",
+      "unisex-glasses-01.blend",
+      "unisex-glasses-01.glb",
+      "unisex-watch-01.blend",
+      "unisex-watch-01.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v3\\validation-blender.json",
+    "names": [
+      "idle.glb",
+      "male-body-base-v2.blend",
+      "male-body-base-v2.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-phases-11-13-validation\\female-equipment-checkpoint.json",
+    "names": [
+      "female-shirt-basic-01-v1.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\female-v1\\verify-export.py",
+    "names": [
+      "female-body-base-v1.blend"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\female-v1\\verify-equipment.py",
+    "names": [
+      "female-body-base-v1.blend",
+      "female-equipment-v1.blend",
+      "female-shirt-basic-01-v1.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\female-v1\\SCENE-PASSPORT.md",
+    "names": [
+      "female-body-base-v1.blend",
+      "female-equipment-v1.blend"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\female-v1\\prepare-female.py",
+    "names": [
+      "female-rig-review.blend"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\female-v1\\adapt-equipment.py",
+    "names": [
+      "female-equipment-review.blend",
+      "female-shirt-basic-01-v1.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-phases-11-13-validation\\active-assets.json",
+    "names": [
+      "female-shirt-basic-01-v1.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\modular-v1\\export-body-v8.py",
+    "names": [
+      "male-body-base-v7.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v5\\README.md",
+    "names": [
+      "idle-v5.glb",
+      "idle.glb",
+      "male-body-base-v5.blend"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v2\\validation.json",
+    "names": [
+      "male-base.blend",
+      "male-base.glb",
+      "rig-check.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v2\\README.md",
+    "names": [
+      "idle.glb",
+      "male-body-base-v2.blend",
+      "male-body-base-v2.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\elbow-diagnosis\\DIAGNOSTICO.md",
+    "names": [
+      "diagnostic-static-NOT-APPROVED.blend",
+      "male-body-base-v3.blend"
+    ]
+  },
+  {
+    "path": "docs\\avatar-phases-11-13-validation\\female-equipment.json",
+    "names": [
+      "female-shirt-basic-01-v1.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-phases-11-13-validation\\mission-status.md",
+    "names": [
+      "before-female-checkpoint.blend"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\validation.json",
+    "names": [
+      "idle.glb",
+      "male-body-base-v3.blend",
+      "male-body-base-v3.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v7\\README.md",
+    "names": [
+      "idle-v7.glb",
+      "idle.glb",
+      "male-body-base-v7.blend",
+      "male-body-base-v7.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v8\\README.md",
+    "names": [
+      "male-body-base-v8.blend"
+    ]
+  },
+  {
+    "path": "docs\\avatar-modular-validation\\assets-final.json",
+    "names": [
+      "male-hair-02-v2.glb",
+      "male-hair-03-v2.glb",
+      "male-shirt-basic-01-v2.glb",
+      "unisex-bracelet-01.glb",
+      "unisex-glasses-01.glb",
+      "unisex-watch-01.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v6\\README.md",
+    "names": [
+      "hand-reference-review.blend",
+      "idle-v6.glb",
+      "idle.glb",
+      "male-body-base-v6.blend",
+      "male-body-base-v6.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v6\\export-audit.json",
+    "names": [
+      "idle-v6.glb",
+      "male-body-base-v6.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v7\\export-audit.json",
+    "names": [
+      "idle-v7.glb",
+      "male-body-base-v7.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v2\\passport.json",
+    "names": [
+      "idle.glb",
+      "male-base.blend",
+      "male-base.glb",
+      "male-body-base-v2.blend",
+      "male-body-base-v2.glb",
+      "rig-check.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\side-pose-correction\\previous-README.md",
+    "names": [
+      "idle-v4.glb",
+      "idle.glb",
+      "live-before-correction.blend",
+      "male-body-base-v4.blend",
+      "male-body-base-v4.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\side-pose-correction\\export-audit.json",
+    "names": [
+      "idle.glb",
+      "male-body-base-v4.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\README.md",
+    "names": [
+      "checkpoint.blend",
+      "idle-v4.glb",
+      "idle.glb",
+      "live-before-correction.blend",
+      "male-body-base-v4.blend",
+      "male-body-base-v4.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-base\\validation.json",
+    "names": [
+      "male-base.glb",
+      "rig-check.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-base\\README.md",
+    "names": [
+      "male-base.blend",
+      "male-base.glb",
+      "rig-check.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-base\\generation.json",
+    "names": [
+      "male-base.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\posture-correction\\export-audit.json",
+    "names": [
+      "idle.glb",
+      "male-body-base-v4.glb"
+    ]
+  },
+  {
+    "path": "docs\\avatar-modular-validation\\blender-final.json",
+    "names": [
+      "male-body-base-v8.blend"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\posture-correction\\previous-v4\\README.md",
+    "names": [
+      "before-v4.blend",
+      "idle-v3.glb",
+      "idle-v4.glb",
+      "idle.glb",
+      "male-body-base-v4.blend",
+      "male-body-base-v4.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\conservative-correction\\previous-README.md",
+    "names": [
+      "idle-v4.glb",
+      "idle.glb",
+      "live-before-correction.blend",
+      "male-body-base-v4.blend",
+      "male-body-base-v4.glb"
+    ]
+  },
+  {
+    "path": "public\\models\\avatar\\sources\\male-body-base-v4\\conservative-correction\\README.md",
+    "names": [
+      "checkpoint.blend"
+    ]
+  }
+]

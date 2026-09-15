@@ -1,0 +1,134 @@
+public/models/avatar/sources\male-body-base-v2\README.md:1:# male-body-base-v2
+public/models/avatar/sources\male-body-base-v2\README.md:7:- ../../bodies/male-body-base-v2.glb: cuerpo, morphs, skeleton, materiales y acción Idle.
+public/models/avatar/sources\male-body-base-v2\README.md:8:- male-body-base-v2.blend: fuente editable autocontenida; incluye Idle, RigCheck y MORPH_TARGETS_V2.md.
+src\components\avatar\avatar-validation.ts:1:export const AVATAR_URL = `${import.meta.env.BASE_URL}models/avatar/bodies/male-body-base-v8.glb`;
+src\components\avatar\avatar-equipment.ts:13:  { id: 'shirt-basic-01', slot: 'shirt', label: 'Camiseta petróleo', path: 'clothing/tops/male-shirt-basic-01-v2.glb' },
+src\components\avatar\avatar-equipment.ts:14:  { id: 'shirt-basic-01-navy', slot: 'shirt', label: 'Camiseta azul marino', path: 'clothing/tops/male-shirt-basic-01-v2.glb', color: '#142855' },
+src\components\avatar\avatar-equipment.ts:15:  { id: 'hair-01', slot: 'hair', label: 'Hair 01 · Corto', path: 'hair/male-hair-01-v2.glb' },
+src\components\avatar\avatar-equipment.ts:16:  { id: 'hair-02', slot: 'hair', label: 'Hair 02 · Peinado lateral', path: 'hair/male-hair-02-v2.glb' },
+src\components\avatar\avatar-equipment.ts:17:  { id: 'hair-03', slot: 'hair', label: 'Hair 03 · Rizado', path: 'hair/male-hair-03-v2.glb' },
+src\components\avatar\avatar-equipment.ts:18:  { id: 'glasses-01', slot: 'glasses', label: 'Gafas negras', path: 'accessories/glasses/unisex-glasses-01.glb' },
+src\components\avatar\avatar-equipment.ts:19:  { id: 'watch-01', slot: 'watch', label: 'Reloj deportivo', path: 'accessories/watches/unisex-watch-01.glb' },
+src\components\avatar\avatar-equipment.ts:20:  { id: 'bracelet-01', slot: 'bracelet', label: 'Pulsera sencilla', path: 'accessories/bracelets/unisex-bracelet-01.glb' },
+scripts\avatar-smoke.mjs:114:    if (blockAsset && /male-body-base-v\d+\.glb$/.test(request.url())) void request.abort();
+scripts\avatar-modular-assets-check.mjs:20:const old=load('bodies/male-body-base-v7.glb'),body=load('bodies/male-body-base-v8.glb');
+scripts\avatar-modular-assets-check.mjs:24:const canonical=binds(body),files=['bodies/male-body-base-v8.glb','clothing/tops/male-shirt-basic-01-v2.glb',
+scripts\avatar-modular-assets-check.mjs:25:  'hair/male-hair-01-v2.glb','hair/male-hair-02-v2.glb','hair/male-hair-03-v2.glb',
+scripts\avatar-modular-assets-check.mjs:26:  'accessories/glasses/unisex-glasses-01.glb','accessories/watches/unisex-watch-01.glb','accessories/bracelets/unisex-bracelet-01.glb'];
+scripts\avatar-loading-check.mjs:75:    await page.route(/\/male-body-base-v\d+\.glb$/, async route => {
+public/models/avatar/sources\elbow-diagnosis\DIAGNOSTICO.md:3:Base abierta: sources/male-body-base-v3/male-body-base-v3.blend. Archivos originales v3, v4 y v5 intactos. Sin cambios en aplicación.
+public/models/avatar/sources\polish-v9\polish-shirt.py:4:cloth=bpy.data.objects['Shirt_Basic_03'];body=bpy.data.objects['male-body-base-v9_Mesh']
+public/models/avatar/sources\polish-v9\polish-body.py:3:body=bpy.data.objects['male-body-base-v9_Mesh'];keys=body.data.shape_keys.key_blocks
+public/models/avatar/sources\modular-v1\build-shirt.py:5:body = bpy.data.objects['male-body-base-v7_Mesh']
+public/models/avatar/sources\modular-v1\build-shirt.py:6:rig = bpy.data.objects['male-body-base-v7_Armature']
+public/models/avatar/sources\modular-v1\build-shirt.py:71:obj['source_body']='male-body-base-v7'
+public/models/avatar/sources\polish-v9\fit-surfaces.py:4:body=bpy.data.objects['male-body-base-v9_Mesh'];obj=bpy.data.objects['Shirt_Collar_Review'];rig=body.parent;s=bpy.context.scene
+public/models/avatar/sources\polish-v9\crew-neck.py:4:obj=bpy.data.objects['Shirt_Basic_03'];body=bpy.data.objects['male-body-base-v9_Mesh']
+public/models/avatar/sources\modular-v1\build-hair.py:4:body=bpy.data.objects['male-body-base-v7_Mesh'];rig=body.parent;keys=body.data.shape_keys.key_blocks
+public/models/avatar/sources\polish-v9\audit-fit.py:3:body=bpy.data.objects['male-body-base-v9_Mesh'];objects=[bpy.data.objects[n] for n in AUDIT_OBJECTS];s=bpy.context.scene;rows=[]
+public/models/avatar/sources\modular-v1\build-accessory.py:3:body=bpy.data.objects['male-body-base-v7_Mesh'];rig=body.parent
+docs\avatar-progress-phase-4.md:63:- Se mantiene el GLB que ya cargaba la app (`male-body-base-v3.glb`), su rig, Idle y morphs. No se modificaron assets ni animaciones en esta fase. Los cambios v4 anteriores se conservaron.
+public/models/avatar/sources\modular-v1\audit-shirt.py:3:body=bpy.data.objects['male-body-base-v7_Mesh'];cloth=bpy.data.objects['Shirt_Basic_01'];seams=bpy.data.objects['Shirt_Basic_01_Seams']
+public/models/avatar/sources\modular-v1\audit-accessories.py:4:body=bpy.data.objects['male-body-base-v7_Mesh'];s=bpy.context.scene
+public/models/avatar/sources\modular-v1\adapt-shirt-v8.py:3:old=bpy.data.objects['male-body-base-v7_Mesh'];body=bpy.data.objects['male-body-base-v8_Mesh']
+public/models/avatar/sources\modular-v1\adapt-shirt-v8.py:12:shirt['source_body']='male-body-base-v8';shirt['revision']='BodyVolume adapted; all other shapes unchanged'
+public/models/avatar/sources\modular-v1\adapt-shirt-v8.py:15:exec(compile(src.replace('male-body-base-v7_Mesh','male-body-base-v8_Mesh').replace('Shirt_Basic_01','Shirt_Basic_02'),'fit-shirt-v8','exec'))
+public/models/avatar/sources\modular-v1\SCENE-PASSPORT.md:16:- A01 male-body-base-v7 | [EXISTING] | detailed | altura 1.7 m | origen pies | armature actual | referencia protegida.
+public/models/avatar/sources\modular-v1\refine-body-v8.py:4:old=bpy.data.objects['male-body-base-v7_Mesh'];rig=old.parent
+public/models/avatar/sources\modular-v1\refine-body-v8.py:5:assert not bpy.data.objects.get('male-body-base-v8_Mesh')
+public/models/avatar/sources\modular-v1\refine-body-v8.py:6:body=old.copy();body.data=old.data.copy();body.name='male-body-base-v8_Mesh';old.users_collection[0].objects.link(body)
+public/models/avatar/sources\modular-v1\refine-body-v8.py:47:body['avatar_version']=8;body['source_body']='male-body-base-v7';body['morph_range']='0..1'
+public/models/avatar/sources\modular-v1\fit-volume-range.py:5:body=bpy.data.objects['male-body-base-v8_Mesh'];rig=body.parent;s=bpy.context.scene
+public/models/avatar/sources\modular-v1\fit-shirt-pose.py:5:body=bpy.data.objects['male-body-base-v7_Mesh'];rig=body.parent;s=bpy.context.scene
+public/models/avatar/sources\modular-v1\export-body-v8.py:6:source=root+'/public/models/avatar/bodies/male-body-base-v7.glb';out=root+'/public/models/avatar/bodies/male-body-base-v8.glb'
+public/models/avatar/sources\modular-v1\export-body-v8.py:9:body=bpy.data.objects['male-body-base-v8_Mesh'];basis=body.data.shape_keys.key_blocks[0];volume=body.data.shape_keys.key_blocks['BodyVolume']
+public/models/avatar/sources\modular-v1\export-body-v8.py:41:g.setdefault('asset',{}).setdefault('extras',{}).update({'bodyVersion':8,'source':'male-body-base-v7','revision':'BodyVolume distributed adiposity; all other attributes and animations preserved'})
+public/models/avatar/sources\male-body-base-v8\README.md:1:# male-body-base-v8
+public/models/avatar/sources\male-body-base-v8\README.md:3:Revisión de BodyVolume sobre v7. Cuerpo neutro, otros ocho morphs, materiales, skeleton, skinning y Actions originales conservados. Fuente editable: `male-body-base-v8.blend`; export usado por la app: `../../bodies/male-body-base-v8.glb`.
+public/models/avatar/sources\male-body-base-v8\README.md:7:La escena contiene revisiones anteriores ocultas. El objeto corporal actual es `male-body-base-v8_Mesh`, con el armature canónico original `male-body-base-v7_Armature`. Las versiones anteriores no se eliminaron.
+public/models/avatar/sources\male-body-base-v7\README.md:15:Entrega: bodies/male-body-base-v7.glb (4,960,428 bytes), sources/male-body-base-v7/male-body-base-v7.blend, animations/idle-v7.glb. Idle es la única animación funcional editada; RigCheck técnico conservado. No se modificó el alias idle.glb ni la URL del visor de la app. RigCheck en Blender usa quaternion e Idle Euler XYZ; ambas animaciones funcionan normalmente en GLB.
+docs\avatar-validation-idle-v3\README.md:7:- `public/models/avatar/bodies/male-body-base-v3.glb` (4.059.596 bytes).
+docs\avatar-validation-idle-v3\README.md:8:- `public/models/avatar/sources/male-body-base-v3/male-body-base-v3.blend` (Action Idle editable y RigCheck técnico).
+docs\avatar-validation-idle-v3\README.md:32:Los detalles numéricos de Blender se guardan en `public/models/avatar/sources/male-body-base-v3/validation-blender.json`, `roundtrip.json` y `motion-comparison.json`. La auditoría extensa superó el timeout del Bridge; se comprobó su finalización antes de continuar, sin repetirla.
+docs\avatar-polish-validation\reference-audit.txt:1:public/models/avatar/sources\male-body-base-v2\README.md:1:# male-body-base-v2
+docs\avatar-polish-validation\reference-audit.txt:2:public/models/avatar/sources\male-body-base-v2\README.md:7:- ../../bodies/male-body-base-v2.glb: cuerpo, morphs, skeleton, materiales y acción Idle.
+docs\avatar-polish-validation\reference-audit.txt:3:public/models/avatar/sources\male-body-base-v2\README.md:8:- male-body-base-v2.blend: fuente editable autocontenida; incluye Idle, RigCheck y MORPH_TARGETS_V2.md.
+docs\avatar-polish-validation\reference-audit.txt:4:src\components\avatar\avatar-validation.ts:1:export const AVATAR_URL = `${import.meta.env.BASE_URL}models/avatar/bodies/male-body-base-v8.glb`;
+docs\avatar-polish-validation\reference-audit.txt:5:src\components\avatar\avatar-equipment.ts:13:  { id: 'shirt-basic-01', slot: 'shirt', label: 'Camiseta petróleo', path: 'clothing/tops/male-shirt-basic-01-v2.glb' },
+docs\avatar-polish-validation\reference-audit.txt:6:src\components\avatar\avatar-equipment.ts:14:  { id: 'shirt-basic-01-navy', slot: 'shirt', label: 'Camiseta azul marino', path: 'clothing/tops/male-shirt-basic-01-v2.glb', color: '#142855' },
+docs\avatar-polish-validation\reference-audit.txt:7:src\components\avatar\avatar-equipment.ts:15:  { id: 'hair-01', slot: 'hair', label: 'Hair 01 · Corto', path: 'hair/male-hair-01-v2.glb' },
+docs\avatar-polish-validation\reference-audit.txt:8:src\components\avatar\avatar-equipment.ts:16:  { id: 'hair-02', slot: 'hair', label: 'Hair 02 · Peinado lateral', path: 'hair/male-hair-02-v2.glb' },
+docs\avatar-polish-validation\reference-audit.txt:9:src\components\avatar\avatar-equipment.ts:17:  { id: 'hair-03', slot: 'hair', label: 'Hair 03 · Rizado', path: 'hair/male-hair-03-v2.glb' },
+docs\avatar-polish-validation\reference-audit.txt:10:src\components\avatar\avatar-equipment.ts:18:  { id: 'glasses-01', slot: 'glasses', label: 'Gafas negras', path: 'accessories/glasses/unisex-glasses-01.glb' },
+docs\avatar-polish-validation\reference-audit.txt:11:src\components\avatar\avatar-equipment.ts:19:  { id: 'watch-01', slot: 'watch', label: 'Reloj deportivo', path: 'accessories/watches/unisex-watch-01.glb' },
+docs\avatar-polish-validation\reference-audit.txt:12:src\components\avatar\avatar-equipment.ts:20:  { id: 'bracelet-01', slot: 'bracelet', label: 'Pulsera sencilla', path: 'accessories/bracelets/unisex-bracelet-01.glb' },
+docs\avatar-polish-validation\reference-audit.txt:13:scripts\avatar-smoke.mjs:114:    if (blockAsset && /male-body-base-v\d+\.glb$/.test(request.url())) void request.abort();
+docs\avatar-polish-validation\reference-audit.txt:14:scripts\avatar-modular-assets-check.mjs:20:const old=load('bodies/male-body-base-v7.glb'),body=load('bodies/male-body-base-v8.glb');
+docs\avatar-polish-validation\reference-audit.txt:15:scripts\avatar-modular-assets-check.mjs:24:const canonical=binds(body),files=['bodies/male-body-base-v8.glb','clothing/tops/male-shirt-basic-01-v2.glb',
+docs\avatar-polish-validation\reference-audit.txt:16:scripts\avatar-modular-assets-check.mjs:25:  'hair/male-hair-01-v2.glb','hair/male-hair-02-v2.glb','hair/male-hair-03-v2.glb',
+docs\avatar-polish-validation\reference-audit.txt:17:scripts\avatar-modular-assets-check.mjs:26:  'accessories/glasses/unisex-glasses-01.glb','accessories/watches/unisex-watch-01.glb','accessories/bracelets/unisex-bracelet-01.glb'];
+docs\avatar-polish-validation\reference-audit.txt:18:scripts\avatar-loading-check.mjs:75:    await page.route(/\/male-body-base-v\d+\.glb$/, async route => {
+docs\avatar-polish-validation\reference-audit.txt:19:public/models/avatar/sources\elbow-diagnosis\DIAGNOSTICO.md:3:Base abierta: sources/male-body-base-v3/male-body-base-v3.blend. Archivos originales v3, v4 y v5 intactos. Sin cambios en aplicación.
+docs\avatar-polish-validation\reference-audit.txt:20:public/models/avatar/sources\polish-v9\polish-shirt.py:4:cloth=bpy.data.objects['Shirt_Basic_03'];body=bpy.data.objects['male-body-base-v9_Mesh']
+docs\avatar-polish-validation\reference-audit.txt:21:public/models/avatar/sources\polish-v9\polish-body.py:3:body=bpy.data.objects['male-body-base-v9_Mesh'];keys=body.data.shape_keys.key_blocks
+docs\avatar-polish-validation\reference-audit.txt:22:public/models/avatar/sources\modular-v1\build-shirt.py:5:body = bpy.data.objects['male-body-base-v7_Mesh']
+docs\avatar-polish-validation\reference-audit.txt:23:public/models/avatar/sources\modular-v1\build-shirt.py:6:rig = bpy.data.objects['male-body-base-v7_Armature']
+docs\avatar-polish-validation\reference-audit.txt:24:public/models/avatar/sources\modular-v1\build-shirt.py:71:obj['source_body']='male-body-base-v7'
+docs\avatar-polish-validation\reference-audit.txt:25:public/models/avatar/sources\polish-v9\fit-surfaces.py:4:body=bpy.data.objects['male-body-base-v9_Mesh'];obj=bpy.data.objects['Shirt_Collar_Review'];rig=body.parent;s=bpy.context.scene
+docs\avatar-polish-validation\reference-audit.txt:26:public/models/avatar/sources\polish-v9\crew-neck.py:4:obj=bpy.data.objects['Shirt_Basic_03'];body=bpy.data.objects['male-body-base-v9_Mesh']
+docs\avatar-polish-validation\reference-audit.txt:27:public/models/avatar/sources\modular-v1\build-hair.py:4:body=bpy.data.objects['male-body-base-v7_Mesh'];rig=body.parent;keys=body.data.shape_keys.key_blocks
+docs\avatar-polish-validation\reference-audit.txt:28:public/models/avatar/sources\polish-v9\audit-fit.py:3:body=bpy.data.objects['male-body-base-v9_Mesh'];objects=[bpy.data.objects[n] for n in AUDIT_OBJECTS];s=bpy.context.scene;rows=[]
+docs\avatar-polish-validation\reference-audit.txt:29:public/models/avatar/sources\modular-v1\build-accessory.py:3:body=bpy.data.objects['male-body-base-v7_Mesh'];rig=body.parent
+docs\avatar-polish-validation\reference-audit.txt:30:docs\avatar-progress-phase-4.md:63:- Se mantiene el GLB que ya cargaba la app (`male-body-base-v3.glb`), su rig, Idle y morphs. No se modificaron assets ni animaciones en esta fase. Los cambios v4 anteriores se conservaron.
+docs\avatar-polish-validation\reference-audit.txt:31:public/models/avatar/sources\modular-v1\audit-shirt.py:3:body=bpy.data.objects['male-body-base-v7_Mesh'];cloth=bpy.data.objects['Shirt_Basic_01'];seams=bpy.data.objects['Shirt_Basic_01_Seams']
+docs\avatar-polish-validation\reference-audit.txt:32:public/models/avatar/sources\modular-v1\audit-accessories.py:4:body=bpy.data.objects['male-body-base-v7_Mesh'];s=bpy.context.scene
+docs\avatar-polish-validation\reference-audit.txt:33:public/models/avatar/sources\modular-v1\adapt-shirt-v8.py:3:old=bpy.data.objects['male-body-base-v7_Mesh'];body=bpy.data.objects['male-body-base-v8_Mesh']
+docs\avatar-polish-validation\reference-audit.txt:34:public/models/avatar/sources\modular-v1\adapt-shirt-v8.py:12:shirt['source_body']='male-body-base-v8';shirt['revision']='BodyVolume adapted; all other shapes unchanged'
+docs\avatar-polish-validation\reference-audit.txt:35:public/models/avatar/sources\modular-v1\adapt-shirt-v8.py:15:exec(compile(src.replace('male-body-base-v7_Mesh','male-body-base-v8_Mesh').replace('Shirt_Basic_01','Shirt_Basic_02'),'fit-shirt-v8','exec'))
+docs\avatar-polish-validation\reference-audit.txt:36:public/models/avatar/sources\modular-v1\SCENE-PASSPORT.md:16:- A01 male-body-base-v7 | [EXISTING] | detailed | altura 1.7 m | origen pies | armature actual | referencia protegida.
+docs\avatar-polish-validation\reference-audit.txt:37:public/models/avatar/sources\modular-v1\refine-body-v8.py:4:old=bpy.data.objects['male-body-base-v7_Mesh'];rig=old.parent
+docs\avatar-polish-validation\reference-audit.txt:38:public/models/avatar/sources\modular-v1\refine-body-v8.py:5:assert not bpy.data.objects.get('male-body-base-v8_Mesh')
+docs\avatar-polish-validation\reference-audit.txt:39:public/models/avatar/sources\modular-v1\refine-body-v8.py:6:body=old.copy();body.data=old.data.copy();body.name='male-body-base-v8_Mesh';old.users_collection[0].objects.link(body)
+docs\avatar-polish-validation\reference-audit.txt:40:public/models/avatar/sources\modular-v1\refine-body-v8.py:47:body['avatar_version']=8;body['source_body']='male-body-base-v7';body['morph_range']='0..1'
+docs\avatar-polish-validation\reference-audit.txt:41:public/models/avatar/sources\modular-v1\fit-volume-range.py:5:body=bpy.data.objects['male-body-base-v8_Mesh'];rig=body.parent;s=bpy.context.scene
+docs\avatar-polish-validation\reference-audit.txt:42:public/models/avatar/sources\modular-v1\fit-shirt-pose.py:5:body=bpy.data.objects['male-body-base-v7_Mesh'];rig=body.parent;s=bpy.context.scene
+docs\avatar-polish-validation\reference-audit.txt:43:public/models/avatar/sources\modular-v1\export-body-v8.py:6:source=root+'/public/models/avatar/bodies/male-body-base-v7.glb';out=root+'/public/models/avatar/bodies/male-body-base-v8.glb'
+docs\avatar-polish-validation\reference-audit.txt:44:public/models/avatar/sources\modular-v1\export-body-v8.py:9:body=bpy.data.objects['male-body-base-v8_Mesh'];basis=body.data.shape_keys.key_blocks[0];volume=body.data.shape_keys.key_blocks['BodyVolume']
+docs\avatar-polish-validation\reference-audit.txt:45:public/models/avatar/sources\modular-v1\export-body-v8.py:41:g.setdefault('asset',{}).setdefault('extras',{}).update({'bodyVersion':8,'source':'male-body-base-v7','revision':'BodyVolume distributed adiposity; all other attributes and animations preserved'})
+docs\avatar-polish-validation\reference-audit.txt:46:public/models/avatar/sources\male-body-base-v8\README.md:1:# male-body-base-v8
+docs\avatar-polish-validation\reference-audit.txt:47:public/models/avatar/sources\male-body-base-v8\README.md:3:Revisión de BodyVolume sobre v7. Cuerpo neutro, otros ocho morphs, materiales, skeleton, skinning y Actions originales conservados. Fuente editable: `male-body-base-v8.blend`; export usado por la app: `../../bodies/male-body-base-v8.glb`.
+docs\avatar-polish-validation\reference-audit.txt:48:public/models/avatar/sources\male-body-base-v8\README.md:7:La escena contiene revisiones anteriores ocultas. El objeto corporal actual es `male-body-base-v8_Mesh`, con el armature canónico original `male-body-base-v7_Armature`. Las versiones anteriores no se eliminaron.
+docs\avatar-polish-validation\reference-audit.txt:49:public/models/avatar/sources\male-body-base-v7\README.md:15:Entrega: bodies/male-body-base-v7.glb (4,960,428 bytes), sources/male-body-base-v7/male-body-base-v7.blend, animations/idle-v7.glb. Idle es la única animación funcional editada; RigCheck técnico conservado. No se modificó el alias idle.glb ni la URL del visor de la app. RigCheck en Blender usa quaternion e Idle Euler XYZ; ambas animaciones funcionan normalmente en GLB.
+docs\avatar-polish-validation\reference-audit.txt:50:docs\avatar-validation-idle-v3\README.md:7:- `public/models/avatar/bodies/male-body-base-v3.glb` (4.059.596 byt
+public/models/avatar/sources\male-body-base-v5\README.md:11:GLB: 4,470,620 bytes. Datos estáticos idénticos a v4/v3. Editable: male-body-base-v5.blend. Clip separado: animations/idle-v5.glb. V3, V4 e idle.glb no sobrescritos. No se cambió código ni URL del visor de la aplicación. Abrir v5 para revisar esta versión.
+public/models/avatar/sources\male-body-base-v6\README.md:13:Archivos: bodies/male-body-base-v6.glb (4,654,836 bytes); sources/male-body-base-v6/male-body-base-v6.blend; animations/idle-v6.glb. No se cambió el alias idle.glb ni el asset configurado en el visor de la app.
+docs\avatar-validation\README.md:27:`public/models/avatar/bodies/male-body-base-v2.glb` — SHA256 `299368cbb15d77bac094b0817e5d6a09460203cfedccf0b223d654b2cf5da12f`.
+public/models/avatar/sources\male-body-base-v4\side-pose-correction\previous-README.md:7:- `bodies/male-body-base-v4.glb`: 4.328.172 bytes (4,33 MB), clips Idle y RigCheck.
+public/models/avatar/sources\male-body-base-v4\side-pose-correction\previous-README.md:8:- `sources/male-body-base-v4/male-body-base-v4.blend`: editable con Actions Idle y RigCheck, abierto en Blender con Idle activo.
+docs\avatar-modular-validation\frontend-diff.txt:203:-export const AVATAR_URL = `${import.meta.env.BASE_URL}models/avatar/bodies/male-body-base-v3.glb`;
+docs\avatar-modular-validation\frontend-diff.txt:204:+export const AVATAR_URL = `${import.meta.env.BASE_URL}models/avatar/bodies/male-body-base-v8.glb`;
+public/models/avatar/sources\male-body-base-v4\README.md:3:Base editable y geometría GLB: male-body-base-v3. V3 permanece intacta. Copias anteriores en conservative-correction/before-* y checkpoint.blend.
+public/models/avatar/sources\male-body-base-v4\README.md:20:- Editable actual: `male-body-base-v4.blend`, Idle activo, 8 segundos / 30 FPS.
+public/models/avatar/sources\male-body-base-v4\README.md:40:- `bodies/male-body-base-v4.glb`: 4.328.172 bytes (4,33 MB), clips Idle y RigCheck.
+public/models/avatar/sources\male-body-base-v4\README.md:41:- `sources/male-body-base-v4/male-body-base-v4.blend`: editable con Actions Idle y RigCheck, abierto en Blender con Idle activo.
+public/models/avatar/sources\male-body-base-v4\conservative-correction\README.md:3:Base editable y geometría GLB: male-body-base-v3. V3 permanece intacta. Copias anteriores en conservative-correction/before-* y checkpoint.blend.
+public/models/avatar/sources\male-body-base-v4\conservative-correction\previous-README.md:6:- Editable actual: `male-body-base-v4.blend`, Idle activo, 8 segundos / 30 FPS.
+public/models/avatar/sources\male-body-base-v4\conservative-correction\previous-README.md:26:- `bodies/male-body-base-v4.glb`: 4.328.172 bytes (4,33 MB), clips Idle y RigCheck.
+public/models/avatar/sources\male-body-base-v4\conservative-correction\previous-README.md:27:- `sources/male-body-base-v4/male-body-base-v4.blend`: editable con Actions Idle y RigCheck, abierto en Blender con Idle activo.
+public/models/avatar/sources\male-body-base-v4\posture-correction\previous-v4\README.md:3:Entrega exclusiva de animación: `bodies/male-body-base-v4.glb` y este directorio `male-body-base-v4.blend`. El editable contiene las Actions Idle y RigCheck. Se conservan GLB y .blend v3 y el clip animations/idle-v3.glb. animations/idle-v4.glb contiene el nuevo clip y animations/idle.glb se actualizó después de verificarlo.
+docs\avatar-local-demo.md:55:Métricas orientativas de Edge en este equipo: ~60 FPS, un draw call, carga GLB ~105 ms y primer frame ~513 ms; heap de página ~106 MB. Asset vigente `male-body-base-v3.glb`: 4.059.596 bytes, 23.924 triángulos, 51 huesos, un material, tres texturas. No equivalen a una medición móvil o de memoria GPU.
+docs\avatar-loading-phase-5.md:11:El hook distingue un historial aún desconocido de una respuesta válida vacía mediante `resolved`, siempre limitado a su sesión. AvatarPage solo calcula el estado corporal y monta el visor después de resolver los datos. Se mantienen las fórmulas existentes y el asset male-body-base-v7.glb.
+docs\avatar-modular-phases-6-10.md:3:Resultado validado el 11 de septiembre de 2026. Implementación secuencial sobre el v7 que cargaba la aplicación. La referencia activa ahora es `bodies/male-body-base-v8.glb`.
+docs\avatar-modular-phases-6-10.md:9:La primera exportación fue `clothing/tops/male-shirt-basic-01.glb`; se conserva junto a su Blender. Se verificaron frontal, perfil, 3/4, cuerpo base, volumen máximo, intermedio y BodyLean, en cinco momentos de Idle. Se corrigieron penetraciones en axilas mediante la inversa del skinning. Después de la fase 10, la aplicación utiliza su revisión `male-shirt-basic-01-v2.glb`.
+docs\avatar-modular-phases-6-10.md:59:| `bodies/male-body-base-v8.glb` | 5.312.372 | 23.924 | 1 | 3 |
+docs\avatar-modular-phases-6-10.md:60:| `clothing/tops/male-shirt-basic-01-v2.glb` | 1.631.704 | 10.770 | 2 | 0 |
+docs\avatar-modular-phases-6-10.md:61:| `hair/male-hair-01-v2.glb` | 179.020 | 949 | 1 | 0 |
+docs\avatar-modular-phases-6-10.md:62:| `hair/male-hair-02-v2.glb` | 606.056 | 3.796 | 1 | 0 |
+docs\avatar-modular-phases-6-10.md:63:| `hair/male-hair-03-v2.glb` | 606.052 | 3.796 | 1 | 0 |
+docs\avatar-modular-phases-6-10.md:64:| `accessories/glasses/unisex-glasses-01.glb` | 169.100 | 960 | 2 | 0 |
+docs\avatar-modular-phases-6-10.md:65:| `accessories/watches/unisex-watch-01.glb` | 287.836 | 1.582 | 4 | 0 |
+docs\avatar-modular-phases-6-10.md:66:| `accessories/bracelets/unisex-bracelet-01.glb` | 211.720 | 1.262 | 2 | 0 |
+docs\avatar-modular-phases-6-10.md:72:- `sources/male-body-base-v8/male-body-base-v8.blend`: escena actual con cuerpo y módulos; Idle activa, 30 FPS.
+docs\avatar-modular-phases-6-10.md:73:- `sources/modular-v1/male-shirt-basic-01-v2.blend`.
+docs\avatar-modular-phases-6-10.md:74:- `sources/modular-v1/male-hair-01-v2.blend`, `male-hair-02-v2.blend`, `male-hair-03-v2.blend`.
+docs\avatar-modular-phases-6-10.md:75:- `sources/modular-v1/unisex-glasses-01.blend`, `unisex-watch-01.blend`, `unisex-bracelet-01.blend`.

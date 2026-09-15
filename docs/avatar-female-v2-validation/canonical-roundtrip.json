@@ -1,0 +1,22 @@
+[
+  {
+    "file": "bodies/female-body-base-v2.glb",
+    "removedFloatDrift": 0.000007927417755126953
+  },
+  {
+    "file": "clothing/tops/female-shirt-basic-01-v2.glb",
+    "removedFloatDrift": 0.000007927417755126953
+  },
+  {
+    "file": "hair/female-hair-long-01.glb",
+    "removedFloatDrift": 0.000007927417755126953
+  },
+  {
+    "file": "hair/female-hair-long-02.glb",
+    "removedFloatDrift": 0.000007927417755126953
+  },
+  {
+    "file": "hair/female-hair-long-03.glb",
+    "removedFloatDrift": 0.000007927417755126953
+  }
+]

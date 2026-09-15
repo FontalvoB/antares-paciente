@@ -19,6 +19,7 @@
 
 import type { MetricsHistoryDto } from './types'
 import { apiFetch } from '../../utils/apiClient'
+import type { ApiFetchOptions } from '../../utils/apiClient'
 
 export function recordWeight(weightKg: number, date: string): Promise<{ id: string; weightKg: number; date: string; observedAt: string }> {
   return apiFetch('/api/v1/program/me/weight', { method: 'POST', body: { weightKg, date } })
@@ -41,9 +42,10 @@ export const METRICS_HISTORY_CODES = ['bmi', 'hba1c', 'body_fat', 'weight'] as c
 export function getMetricsHistory(
   codes: readonly string[] = METRICS_HISTORY_CODES,
   days = METRICS_HISTORY_DAYS,
+  options: Pick<ApiFetchOptions, 'cache'> = {},
 ): Promise<MetricsHistoryDto> {
   return apiFetch<MetricsHistoryDto>(
     `${METRICS_HISTORY_PATH}?codes=${encodeURIComponent(codes.join(','))}&days=${days}`,
-    { method: 'GET' },
+    { ...options, method: 'GET' },
   )
 }

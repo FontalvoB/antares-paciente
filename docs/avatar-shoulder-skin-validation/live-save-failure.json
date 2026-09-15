@@ -1,0 +1,19 @@
+{
+  "configuration": {
+    "accessories": {
+      "bracelet": "bracelet-01",
+      "glasses": "glasses-01",
+      "watch": "watch-01"
+    },
+    "clothing": {
+      "pants": null,
+      "shirt": "shirt-basic-01",
+      "shoes": null
+    },
+    "gender": "female",
+    "hair": "hair-02",
+    "skin": "skin-01",
+    "version": 1
+  },
+  "screen": "- banner:\n  - heading \"Mi Avatar\" [level=1]\n  - button \"Volver\":\n    - generic: Volver\n  - paragraph: Tu estilo, tu evolución.\n- tablist \"Vista del avatar\":\n  - tab \"Mi Avatar\" [selected]:\n    - generic: Mi Avatar\n  - tab \"Mi evolución\":\n    - generic: Mi evolución\n- paragraph: Arrastra para girar; pellizca para acercar.\n- button \"Ver de frente\":\n  - generic: Ver de frente\n- button \"Ver de perfil\":\n  - generic: Ver de perfil\n- button \"Pausar movimiento\":\n  - generic: Pausar movimiento\n- button \"Acercar\":\n  - generic: Acercar\n- button \"Alejar\":\n  - generic: Alejar\n- button \"Restablecer vista\":\n  - generic: Restablecer vista\n- region \"Personalización del avatar\":\n  - heading \"Personaliza tu avatar\" [level=2]\n  - tablist \"Personalización del avatar\":\n    - tab \"Cuerpo\" [selected]:\n      - generic: Cuerpo\n    - tab \"Ropa\":\n      - generic: Ropa\n    - tab \"Cabello\":\n      - generic: Cabello\n    - tab \"Accesorios\":\n      - generic: Accesorios\n  - generic: Género del avatar\n  - generic: Femenino\n  - button \"Género del avatar, Femenino\"\n  - group \"Tono de piel\":\n    - heading \"Tono de piel\" [level=3]\n    - generic \"Claro\":\n      - button \"Claro\":\n        - generic: ✓\n    - generic \"Claro medio\":\n      - button \"Claro medio\"\n    - generic \"Medio\":\n      - button \"Medio\"\n    - generic \"Medio oscuro\":\n      - button \"Medio oscuro\"\n    - generic \"Oscuro\":\n      - button \"Oscuro\"\n  - paragraph: La evolución corporal se obtiene de tu historial de peso. Aquí eliges la apariencia de tu avatar.\n  - button \"Reintentar guardado\":\n    - generic: Reintentar guardado\n  - alert: No se pudo guardar. Tu selección se conserva; vuelve a intentarlo.\n- heading \"Tu cuerpo y tu progreso\" [level=2]\n- paragraph: El estado corporal se calcula a partir de tu historial clínico. La personalización no cambia tus mediciones.\n- paragraph: \"Último registro disponible: 14/09/2026 · 150 kg\"\n- button \"Ver mi evolución\":\n  - generic: Ver mi evolución\n- navigation:\n  - button \"Inicio\":\n    - generic: Inicio\n  - button \"Citas\":\n    - generic: Citas\n  - button \"Botón de pánico\":\n  - button \"Chat\":\n    - generic: Chat\n  - button \"Perfil\":\n    - generic: Perfil"
+}

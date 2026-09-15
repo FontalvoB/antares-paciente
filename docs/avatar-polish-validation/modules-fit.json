@@ -1,0 +1,2602 @@
+[
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 1,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 1,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 1,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 1,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 1,
+    "minGapMm": 2.1043773467681604,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 91,
+    "minGapMm": -0.22234384232433513,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 91,
+    "minGapMm": -1.56041031004861,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 91,
+    "minGapMm": 5.4089035220385995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 91,
+    "minGapMm": 1.9228337769163772,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 91,
+    "minGapMm": 2.159144101824495,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 181,
+    "minGapMm": -0.06813604977651266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 181,
+    "minGapMm": -1.5435223927511288,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 181,
+    "minGapMm": 5.307336978148669,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 181,
+    "minGapMm": 1.8853340807254426,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 181,
+    "minGapMm": 2.110046452798997,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 271,
+    "minGapMm": -0.47763299153302796,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 271,
+    "minGapMm": -1.788832585361888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 271,
+    "minGapMm": 5.420586348918732,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 271,
+    "minGapMm": 1.9542271002137568,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 271,
+    "minGapMm": 2.1879809955862584,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 361,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 361,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 361,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 361,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0,
+    "frame": 361,
+    "minGapMm": 2.1043773467681604,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 1,
+    "minGapMm": 0.48408959264634177,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 1,
+    "minGapMm": -0.4364535529575164,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 1,
+    "minGapMm": 5.610712629277259,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 1,
+    "minGapMm": 2.3237248533405364,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 1,
+    "minGapMm": 2.14613545267639,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 91,
+    "minGapMm": 0.35688792922883295,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 91,
+    "minGapMm": -0.4316874188816655,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 91,
+    "minGapMm": 5.3869212861172855,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 91,
+    "minGapMm": 2.34245351748541,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 91,
+    "minGapMm": 2.19692305472563,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 181,
+    "minGapMm": 0.5028189334552735,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 181,
+    "minGapMm": -0.4300851419998253,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 181,
+    "minGapMm": 5.609631207335042,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 181,
+    "minGapMm": 2.3080974933691323,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 181,
+    "minGapMm": 1.9092873371846508,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 271,
+    "minGapMm": 0.10320884075554204,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 271,
+    "minGapMm": -0.7813089584232102,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 271,
+    "minGapMm": 5.728968026232906,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 271,
+    "minGapMm": 2.361544466111809,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 271,
+    "minGapMm": 2.2060565306674107,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 361,
+    "minGapMm": 0.48408959264634177,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 361,
+    "minGapMm": -0.4364535529575164,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 361,
+    "minGapMm": 5.610712629277259,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 361,
+    "minGapMm": 2.3237248533405364,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.25,
+    "frame": 361,
+    "minGapMm": 2.14613545267639,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 1,
+    "minGapMm": 1.0533073073020205,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 1,
+    "minGapMm": 0.6765380588831249,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 1,
+    "minGapMm": 5.748756404500455,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 1,
+    "minGapMm": 2.003639587201178,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 1,
+    "minGapMm": 2.2065844568714965,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 91,
+    "minGapMm": 0.8621492743259296,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 91,
+    "minGapMm": 0.671819682338537,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 91,
+    "minGapMm": 4.531133628915995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 91,
+    "minGapMm": 1.9800939335254952,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 91,
+    "minGapMm": 2.262711015646346,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 181,
+    "minGapMm": 1.0743212915258482,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 181,
+    "minGapMm": 0.6848614101784278,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 181,
+    "minGapMm": 5.547894688788801,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 181,
+    "minGapMm": 1.9268100004410371,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 181,
+    "minGapMm": 2.20935912875575,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 271,
+    "minGapMm": 0.6848121738585178,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 271,
+    "minGapMm": 0.23220991155577242,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 271,
+    "minGapMm": 6.036068283719942,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 271,
+    "minGapMm": 2.0264687191229314,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 271,
+    "minGapMm": 2.488251999238855,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 361,
+    "minGapMm": 1.0533073073020205,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 361,
+    "minGapMm": 0.6765380588831249,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 361,
+    "minGapMm": 5.748756404500455,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 361,
+    "minGapMm": 2.003639587201178,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.5,
+    "frame": 361,
+    "minGapMm": 2.2065844568714965,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 1,
+    "minGapMm": 1.622860669158399,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 1,
+    "minGapMm": 1.7516619845991954,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 1,
+    "minGapMm": 4.846287309192121,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 1,
+    "minGapMm": 1.440187799744308,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 1,
+    "minGapMm": 2.6452199163031764,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 91,
+    "minGapMm": 1.370667334413156,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 91,
+    "minGapMm": 0.8726269365979533,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 91,
+    "minGapMm": 3.67600005120039,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 91,
+    "minGapMm": 1.3944956444902346,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 91,
+    "minGapMm": 2.7451964779174887,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 181,
+    "minGapMm": 1.6461921040900052,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 181,
+    "minGapMm": 1.728723058477044,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 181,
+    "minGapMm": 4.6565550728701055,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 181,
+    "minGapMm": 1.351018130662851,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 181,
+    "minGapMm": 2.657495493622264,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 271,
+    "minGapMm": 1.2671560907620005,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 271,
+    "minGapMm": 1.2508082132569598,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 271,
+    "minGapMm": 5.961093702353537,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 271,
+    "minGapMm": 1.4328983816085383,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 271,
+    "minGapMm": 2.751746207650285,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 361,
+    "minGapMm": 1.622860669158399,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 361,
+    "minGapMm": 1.7516619845991954,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 361,
+    "minGapMm": 4.846287309192121,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 361,
+    "minGapMm": 1.440187799744308,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 0.75,
+    "frame": 361,
+    "minGapMm": 2.6452199163031764,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.9076693970419,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.9452720262052026,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 3.9525750908069313,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 0.8522456337232143,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 2.750746183664887,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.2949879674124531,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.0746475859377824,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.829124277923256,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 0.800823800091166,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.8184445491206134,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.7049188536475413,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.8873650042223744,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 3.773965174332261,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 0.7679006084799767,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.722506589634577,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.77069274650421,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.5671077326260274,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.016093258745968,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 0.830703713290859,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.808021674354677,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.9076693970419,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.9452720262052026,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 3.9525750908069313,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 0.8522456337232143,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 2.750746183664887,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.7212890888913535,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 2.0420078362803906,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 5.894620131584816,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 2.1895933023188263,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 2.40903117810376,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.4918541128281504,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.1480936373118311,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 6.000873683660757,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.2080275375628844,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.46249906194862,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.7895366909215227,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.9883372006006539,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 5.893624598684255,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.0952553932147566,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.4280647630803287,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.3461780617944896,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.003750572384888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 6.018194675561972,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.1763744080089964,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.5043502973858267,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.7212890888913535,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 2.0420078362803906,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 5.894620131584816,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 2.1895933023188263,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "BodyLean",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 2.40903117810376,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.22234384232433513,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -1.56041031004861,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 5.4089035220385995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.9228337769163772,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.159144101824495,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.06813604977651266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -1.5435223927511288,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 5.307336978148669,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.8853340807254426,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.9389145804780128,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.47763299153302796,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -1.788832585361888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.420586348918732,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.9542271002137568,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.1879809955862584,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Abdomen",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.22234384232433513,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -1.56041031004861,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 5.4089035220385995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.9228337769163772,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.159144101824495,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.06813604977651266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -1.5435223927511288,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 5.307336978148669,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.8853340807254426,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.110046452798997,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.47763299153302796,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -1.788832585361888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.420586348918732,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.9542271002137568,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.1879809955862584,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Waist",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 2.1043773467681604,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.22234384232433513,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -1.56041031004861,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 5.4089035220385995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.9228337769163772,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.159144101824495,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.06813604977651266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -1.5435223927511288,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 5.307336978148669,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.8853340807254426,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.110046452798997,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.47763299153302796,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -1.788832585361888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.420586348918732,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.9542271002137568,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.1879809955862584,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Chest",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 2.1043773467681604,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.953866973053664,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 2.0290631509851664,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.22234384232433513,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -1.56041031004861,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 5.4089035220385995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.9249235920142382,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.0815754105569795,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.06813604977651266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -1.5435223927511288,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 5.307336978148669,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.8458636841387488,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.0409598510013893,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.47763299153302796,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -1.788832585361888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.420586348918732,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.9540209614206105,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.10497880470939,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.953866973053664,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Arms",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 2.0290631509851664,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.22234384232433513,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -1.56041031004861,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 5.4089035220385995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.9228337769163772,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.9853274770866847,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.06813604977651266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -1.5435223927511288,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 5.307336978148669,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.8853340807254426,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.110046452798997,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.47763299153302796,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -1.788832585361888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.420586348918732,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.138990387066997,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.1879809955862584,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "Thighs",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.004280039433979255,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.7889496165205401,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 4.871582088526338,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 0.06336672640827601,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.19260464670622923,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 3.892405133228749,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 1.9228337769163772,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 2.159144101824495,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 0.013479202152666403,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.6490122121931563,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 4.741442215163261,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 1.8853340807254426,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 2.110046452798997,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.41245368993259035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -1.6713911707881834,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.4791786715213675,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 1.9542271002137568,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 2.1879809955862584,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.004280039433979255,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.7889496165205401,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 4.871582088526338,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.8995013560925145,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "FaceVolume",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 1.9416572799855203,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.49464298103885085,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 1,
+    "minGapMm": -0.3824579675892892,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.22234384232433513,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -1.56041031004861,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": 5.4089035220385995,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.50558044108584,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 91,
+    "minGapMm": -0.3864314637667121,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.06813604977651266,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -1.5435223927511288,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": 5.307336978148669,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.5033668321630103,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 181,
+    "minGapMm": -0.39448183997592423,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.47763299153302796,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -1.788832585361888,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": 5.420586348918732,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.5077957384855836,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 271,
+    "minGapMm": -0.3998703473371279,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_02_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.08467739371553762,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Hair_03_V9",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -1.547982710381035,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Glasses_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": 5.309240521455649,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Watch_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.49464298103885085,
+    "deeperThan2mm": 0
+  },
+  {
+    "asset": "Bracelet_02",
+    "morph": "MuscleDefinition",
+    "value": 1,
+    "frame": 361,
+    "minGapMm": -0.3824579675892892,
+    "deeperThan2mm": 0
+  }
+]
