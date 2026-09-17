@@ -16994,19 +16994,15 @@ ion-button.cta-pill.button-disabled {
   display: flex;
   flex-direction: column;
   padding: 14px 13px 13px;
-  border: none;
+  border: 1px solid var(--bd);
   border-radius: 20px;
-  background: linear-gradient(
-    168deg,
-    #26477c 0%,
-    var(--brand-navy) 52%,
-    #0e2450 100%
-  );
-  color: #fff;
+  background: #fff;
+  color: var(--brand-navy);
   text-align: left;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 8px 16px -8px rgba(14, 34, 74, 0.55);
+}
+
+.hm-metric:active {
+  transform: scale(0.985);
 }
 
 .hm-metric-val {
@@ -17014,19 +17010,20 @@ ion-button.cta-pill.button-disabled {
   font-size: 23px;
   font-weight: 700;
   letter-spacing: -0.8px;
+  color: var(--brand-navy);
 }
 
 .hm-metric-lbl {
   margin-top: 1px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--mu);
 }
 
 .hm-metric-unit {
   margin-left: 2px;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--mu);
 }
 
 /* Nota de tendencia honesta (delta real de la serie) o estado requires-data. */
@@ -17034,11 +17031,11 @@ ion-button.cta-pill.button-disabled {
   margin-top: 4px;
   font-size: 10px;
   line-height: 1.35;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--mu);
 }
 
 .hm-metric-rd {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--mu);
 }
 
 /* S4: skeleton honesto de tarjeta de métrica mientras su fuente carga. */
@@ -17057,7 +17054,7 @@ ion-button.cta-pill.button-disabled {
   height: 6px;
   margin-top: 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--g1);
   overflow: hidden;
 }
 
@@ -17065,7 +17062,7 @@ ion-button.cta-pill.button-disabled {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: #cfd8e4;
+  background: var(--brand-sky);
 }
 
 /* --------------------------------------------------------------------------
@@ -17141,7 +17138,7 @@ ion-button.cta-pill.button-disabled {
   .hm-quick-btn:hover .ic3 { transform: translateY(-2px) rotate(-6deg) scale(1.06); }
 }
 
-/* Tarjeta de la próxima cita: bloque extruido, no rectángulo plano. */
+/* Tarjeta de la próxima cita: misma receta que las métricas. */
 .hm-appt {
   position: relative;
   isolation: isolate;
@@ -17151,95 +17148,21 @@ ion-button.cta-pill.button-disabled {
   align-items: flex-start;
   gap: 2px;
   padding: 14px 15px 13px;
-  border: none;
+  border: 1px solid var(--bd);
   border-radius: 24px;
-  background: linear-gradient(
-    156deg,
-    #2f5590 0%,
-    var(--brand-navy) 42%,
-    #0b1f47 100%
-  );
-  color: #fff;
+  background: #fff;
+  color: var(--brand-navy);
   text-align: left;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    inset -1px 0 0 rgba(0, 0, 0, 0.22),
-    inset 0 -5px 10px -4px rgba(0, 0, 0, 0.45),
-    0 3px 0 #0a1c3e,
-    0 6px 0 #071630,
-    0 13px 20px -8px rgba(7, 20, 46, 0.55);
-  transition:
-    transform 0.16s ease-out,
-    box-shadow 0.16s ease-out;
-  animation: hm-slab-in 0.7s var(--ease) backwards;
-}
-
-@keyframes hm-slab-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px) translateZ(-46px) rotateX(-16deg);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) translateZ(0) rotateX(0deg);
-  }
-}
-
-/* Brillo que recorre la cara: lo que delata una superficie pulida. */
-.hm-appt::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  top: -40%;
-  left: -60%;
-  width: 55%;
-  height: 180%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.11) 45%,
-    rgba(255, 255, 255, 0.16) 55%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  /* Solo `transform`: animar `left` obligaría a recalcular layout en cada
-     fotograma de un bucle infinito. */
-  animation: hm-appt-gloss 7.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes hm-appt-gloss {
-  0%,
-  62%,
-  100% {
-    transform: rotate(18deg) translateX(0);
-  }
-  30% {
-    transform: rotate(18deg) translateX(300%);
-  }
 }
 
 .hm-appt:active {
-  transform: translateY(6px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -3px 8px -3px rgba(0, 0, 0, 0.5),
-    inset 0 4px 8px -4px rgba(0, 0, 0, 0.4),
-    0 1px 0 #0a1c3e,
-    0 3px 6px -3px rgba(7, 20, 46, 0.5);
+  transform: scale(0.985);
 }
 
-/* El volumen (sombras y cantos) se queda; solo desaparece el movimiento. */
 @media (prefers-reduced-motion: reduce) {
   .hm-quick-btn,
-  .hm-appt {
-    animation: none;
-  }
-  .hm-appt::before {
-    display: none;
-  }
-  .hm-quick-btn,
-  .hm-quick-ico .ic3,
-  .hm-appt {
+  .hm-appt,
+  .hm-quick-ico .ic3 {
     transition: none;
   }
 }
@@ -17253,10 +17176,9 @@ ion-button.cta-pill.button-disabled {
 }
 
 .hm-appt-skeleton ion-skeleton-text {
-  --background-rgb: 255, 255, 255;
+  --background: var(--g1);
   margin: 0;
   border-radius: 6px;
-  opacity: 0.55;
 }
 
 .hm-appt-time {
@@ -17264,35 +17186,29 @@ ion-button.cta-pill.button-disabled {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.4px;
-  /* Relieve: filo de luz arriba y sombra proyectada abajo. */
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.22),
-    0 2px 5px rgba(4, 14, 34, 0.5);
+  color: var(--brand-navy);
 }
 
 .hm-appt-name {
   font-size: 15px;
   font-weight: 600;
-  text-shadow: 0 1px 3px rgba(4, 14, 34, 0.45);
+  color: var(--brand-navy);
 }
 
 .hm-appt-meta {
   font-size: 10.5px;
   line-height: 1.3;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--mu);
 }
 
-/* Píldora grabada en la cara de la tarjeta. */
 .hm-appt-chip {
   margin-top: 7px;
   padding: 3px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--g0);
+  color: var(--brand-navy);
   font-size: 10px;
   font-weight: 700;
-  box-shadow:
-    inset 0 1.5px 2.5px rgba(4, 14, 34, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .hm-appt-people {
@@ -17303,9 +17219,6 @@ ion-button.cta-pill.button-disabled {
   padding-top: 12px;
 }
 
-/* Fichas esféricas apoyadas en la cara: luz arriba-izquierda, oclusión abajo
-   y sombra de contacto. El degradado va sobre `background-color`, así cada una
-   conserva su color propio. */
 .hm-appt-doc,
 .hm-appt-add {
   position: relative;
@@ -17315,22 +17228,6 @@ ion-button.cta-pill.button-disabled {
   display: grid;
   place-items: center;
   font-size: 18px;
-  background-image: radial-gradient(
-    circle at 34% 26%,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 255, 255, 0.28) 40%,
-    rgba(255, 255, 255, 0) 62%,
-    rgba(11, 28, 61, 0.22) 100%
-  );
-  box-shadow:
-    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.9),
-    inset 0 -3.5px 6px -2px rgba(11, 28, 61, 0.45),
-    0 5px 9px -3px rgba(3, 12, 30, 0.6);
-}
-
-.hm-appt-doc ion-icon,
-.hm-appt-add ion-icon {
-  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.7));
 }
 
 .hm-appt-doc {
@@ -17339,8 +17236,8 @@ ion-button.cta-pill.button-disabled {
 }
 
 .hm-appt-add {
-  background-color: #fff;
-  color: var(--brand-navy);
+  background-color: var(--brand-navy);
+  color: #fff;
 }
 
 /* ──────────────────────────────────────────────────────────────────────

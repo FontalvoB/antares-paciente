@@ -11,7 +11,7 @@ export function AcademyPage() {
     <Screen>
       <Scroll>
         <div className="hero hero-cosmos">
-          <div className="kicker">ANTARES BIOHACKING</div>
+          <div className="kicker">COPP ADRESD BIOHACKING</div>
           <div className="h1">🎓 Academia BIO</div>
           <div className="sub">{t('Formación y certificación profesional · COPP-ADRESD')}</div>
           <div className="chips">

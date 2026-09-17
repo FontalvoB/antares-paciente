@@ -264,7 +264,7 @@ export function profileName(
   profile: { displayName: string; isSystem?: boolean },
   t: (key: string) => string,
 ): string {
-  return profile.isSystem ? t('Equipo ANTARES') : profile.displayName
+  return profile.isSystem ? t('Equipo Copp Adresd') : profile.displayName
 }
 
 // ---------- Fragmentos ----------

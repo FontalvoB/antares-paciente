@@ -195,7 +195,7 @@ function createWelcomeMessage(name = "María"): ChatMessage {
   return {
     id: "welcome",
     role: "bot",
-    text: `Hola ${firstName} 👋 Soy tu agente de salud ANTARES. ¿En qué te puedo ayudar hoy?`,
+    text: `Hola ${firstName} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
     time: nowLabel(),
   };
 }
@@ -300,7 +300,7 @@ export function AppProvider({
     createWelcomeMessage(loadSavedUser().nombre),
   ]);
   const [watchConnected, setWatchConnected] = useState(false);
-  const [watchName, setWatchName] = useState("ANTARES Watch Pro");
+  const [watchName, setWatchName] = useState("Copp Adresd Watch Pro");
   // TODO: Remove after full migration — legacy in-memory program state
   const [program, setProgram] = useState<ProgramDay>({
     podcast: false,

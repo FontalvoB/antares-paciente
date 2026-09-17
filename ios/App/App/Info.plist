@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>ANTARES</string>
+	<string>Copp Adresd</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -25,13 +25,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>ANTARES usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
+	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>ANTARES usa el micrófono para las consultas de telemedicina.</string>
+	<string>Copp Adresd usa el micrófono para las consultas de telemedicina.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>ANTARES accede a tus fotos para analizar tus comidas.</string>
+	<string>Copp Adresd accede a tus fotos para analizar tus comidas.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>ANTARES guarda las fotos de tus comidas para tu registro nutricional.</string>
+	<string>Copp Adresd guarda las fotos de tus comidas para tu registro nutricional.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -80,7 +80,7 @@ export function ComSidebar({
               <Avatar name={me?.displayName ?? 'MG'} seedId={me?.id ?? 'me'} size={44} src={me?.avatarUrl} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="com-side-name">{me?.displayName ?? 'Mi perfil'}</div>
-                <div className="com-side-sub">ANTARES Paciente</div>
+                <div className="com-side-sub">Copp Adresd Paciente</div>
               </div>
               <button
                 type="button"

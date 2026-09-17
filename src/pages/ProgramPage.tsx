@@ -665,7 +665,7 @@ export function ProgramPage() {
                   recentVitals={serverActiveTask?.content?.recentVitals}
                   watchConnected={watchConnected}
                   onConnectWatch={() => {
-                    connectWatch('ANTARES Watch Pro')
+                    connectWatch('Copp Adresd Watch Pro')
                     showToast(t('Reloj listo para sincronizar'), 'ok')
                   }}
                   onComplete={(vitals) => finish('vitals', taskPts, t('+{pts} pts por signos vitales', { pts: String(taskPts) }), { vitals })}
