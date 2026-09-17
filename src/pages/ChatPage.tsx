@@ -268,7 +268,7 @@ export function ChatPage() {
     <Screen className="chat-kb">
       <PageHeader
         title={t("Chat")}
-        sub={t("ANTARES AI · en línea 24/7")}
+        sub={t("Copp Adresd AI · en línea 24/7")}
         trailing={
           <IonButton
             className="bt bt-round"

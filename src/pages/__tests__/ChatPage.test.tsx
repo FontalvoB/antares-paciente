@@ -61,7 +61,7 @@ vi.mock("../../i18n/I18nContext", () => ({
 const welcomeMessage = {
   id: "msg-1",
   role: "bot" as const,
-  text: "Hola María 👋 Soy tu agente de salud ANTARES.",
+  text: "Hola María 👋 Soy tu agente de salud Copp Adresd.",
   time: "10:00 AM",
 };
 

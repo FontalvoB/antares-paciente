@@ -20,7 +20,7 @@ import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 
 const devices = [
-  { name: 'ANTARES Watch Pro', kind: 'ANTARES', signal: 4, rssi: 'Señal alta' },
+  { name: 'Copp Adresd Watch Pro', kind: 'Copp Adresd', signal: 4, rssi: 'Señal alta' },
   { name: 'Apple Watch Series 10', kind: 'Apple', signal: 3, rssi: 'Señal media' },
   { name: 'Samsung Galaxy Watch', kind: 'Samsung', signal: 2, rssi: 'Señal baja' },
 ]

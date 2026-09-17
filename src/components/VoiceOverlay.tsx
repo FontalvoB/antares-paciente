@@ -17,7 +17,7 @@ export function VoiceOverlay() {
           <IonIcon icon={mic} style={{ fontSize: 56, color: 'var(--ice)' }} />
         </div>
         <div className="display" style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
-          {t('Agente de voz ANTARES')}
+          {t('Agente de voz Copp Adresd')}
         </div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', textAlign: 'center', maxWidth: 280, lineHeight: 1.6 }}>
           {t('Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.')}
@@ -44,7 +44,7 @@ export function VoiceOverlay() {
             lineHeight: 1.65,
           }}
         >
-          {t('Hola María, soy tu agente de salud ANTARES. ¿Cómo te sientes hoy? Puedes preguntarme sobre síntomas, tu plan nutricional o agendar una cita.')}
+          {t('Hola María, soy tu agente de salud Copp Adresd. ¿Cómo te sientes hoy? Puedes preguntarme sobre síntomas, tu plan nutricional o agendar una cita.')}
         </div>
         <div style={{ display: 'flex', gap: 14 }}>
           <IonButton

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.antares.paciente",
-  appName: "ANTARES",
+  appName: "Copp Adresd",
   webDir: "dist",
   server: {
     // Dev: sin server.url → Capacitor carga el bundle local (webDir). En
@@ -17,13 +17,13 @@ const config: CapacitorConfig = {
   ios: {
     infoPlist: {
       NSCameraUsageDescription:
-        "ANTARES usa la cámara para las consultas de telemedicina y el análisis de comidas.",
+        "Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.",
       NSMicrophoneUsageDescription:
-        "ANTARES usa el micrófono para las consultas de telemedicina.",
+        "Copp Adresd usa el micrófono para las consultas de telemedicina.",
       NSPhotoLibraryUsageDescription:
-        "ANTARES accede a tus fotos para analizar tus comidas.",
+        "Copp Adresd accede a tus fotos para analizar tus comidas.",
       NSPhotoLibraryAddUsageDescription:
-        "ANTARES guarda las fotos de tus comidas para tu registro nutricional.",
+        "Copp Adresd guarda las fotos de tus comidas para tu registro nutricional.",
     },
   },
   android: {
