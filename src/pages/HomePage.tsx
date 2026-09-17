@@ -29,6 +29,7 @@ import {
   type CarouselModule,
 } from "../components/ModuleCarousel";
 import { ProtocolWheel } from "../components/ProtocolWheel";
+import { Mascot } from "../components/Mascot";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { PROGRAM_TASKS } from "../data/program";
@@ -356,6 +357,7 @@ export function HomePage() {
     <Screen>
       <Scroll className="home">
         <header className="hm-head">
+          <Mascot pose="success" className="mascot-home" />
           <div className="hm-head-top">
             <button
               type="button"

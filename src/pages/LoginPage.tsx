@@ -22,6 +22,7 @@ import {
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import { LanguageToggle } from "../components/LanguageToggle";
+import { Mascot } from "../components/Mascot";
 import {
   DEMO_LOGIN,
   loginUser,
@@ -264,6 +265,10 @@ export function LoginPage() {
 
       <div className="auth-scroll">
         <img className="auth-logo" src={logoLetras} alt="COPP-ADRESD" />
+
+        {/* La mascota solo en el panel de acceso; el flujo de activación
+            (primera vez) es más denso y no necesita ilustración. */}
+        {mode === "login" && <Mascot pose="welcome" className="mascot-auth" />}
 
         <AnimatePresence mode="wait" initial={false}>
           {mode === "login" ? (

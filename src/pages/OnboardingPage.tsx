@@ -27,6 +27,7 @@ import {
 } from 'ionicons/icons'
 import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
+import { Mascot } from '../components/Mascot'
 import { formatDateForDisplay } from '../utils/dates'
 import type { UserProfile } from '../types'
 
@@ -169,6 +170,7 @@ export function OnboardingPage() {
         <div className="onb-stack" key={done ? 'done' : `${step}`}>
           {done ? (
             <div className="onb-done">
+              <Mascot pose="success" className="mascot-onb" />
               <div className="onb-done-badge" aria-hidden="true">
                 <IonIcon icon={checkmarkCircle} />
               </div>
