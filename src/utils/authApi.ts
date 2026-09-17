@@ -38,6 +38,20 @@ export interface SendOtpResult {
 }
 
 /**
+ * Error HTTP del Auth service con status numérico. Permite distinguir una
+ * sesión muerta (401) de un fallo de red al decidir si se cierra la sesión.
+ */
+export class HttpStatusError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'HttpStatusError'
+    this.status = status
+  }
+}
+
+/**
  * Cliente del Auth service (COPP-ADRESD). En desarrollo se consume a través
  * del proxy de Vite (mismo origen → la cookie HttpOnly de refresh funciona
  * sin CORS). El application es el código de la app móvil: "app".
@@ -61,7 +75,7 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
     } catch {
       /* el cuerpo no es JSON */
     }
-    throw new Error(message)
+    throw new HttpStatusError(message, res.status)
   }
 
   return res.json() as Promise<T>
@@ -76,7 +90,7 @@ export interface CurrentUser {
   permissions: string[]
 }
 
-function persistAccessToken(token: string): void {
+export function persistAccessToken(token: string): void {
   sessionStorage.setItem(ACCESS_TOKEN_KEY, token)
   localStorage.setItem(ACCESS_TOKEN_KEY, token)
 }
@@ -141,8 +155,12 @@ export async function verifyOtp(documentNumber: string, otp: string, rememberMe:
 
 /**
  * Intenta restaurar la sesión del usuario al cargar la app mediante el refresh
- * token (cookie HttpOnly copp_refresh_token). Si el backend no está disponible o
- * hay un token demo/local previo, preserva la sesión sin expulsar al usuario.
+ * token (cookie HttpOnly copp_refresh_token).
+ *
+ * - 401 en el refresh = cookie ausente/inválida → la sesión ya NO es
+ *   recuperable: se limpia el token y se notifica (vuelta al login).
+ * - Fallo de red / backend caído con token local previo → se conserva la
+ *   sesión (modo offline), el watcher de expiración la revalidará después.
  */
 export async function restoreSession(): Promise<LoginResult | null> {
   const existingToken = getAccessToken()
@@ -158,7 +176,11 @@ export async function restoreSession(): Promise<LoginResult | null> {
     const result = await postJson<LoginResult>(`${getAuthBaseUrl()}/api/auth/refresh`)
     persistAccessToken(result.accessToken)
     return result
-  } catch {
+  } catch (err) {
+    if (err instanceof HttpStatusError && err.status === 401) {
+      clearSessionAndNotify()
+      return null
+    }
     if (existingToken) {
       return {
         accessToken: existingToken,
@@ -206,6 +228,33 @@ export function getAccessToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY)
 }
 
+/**
+ * `exp` del JWT en milisegundos (epoch). `null` si el token no es un JWT
+ * decodificable (p. ej. el token demo de acceso local).
+ */
+export function getTokenExpiry(token: string | null = getAccessToken()): number | null {
+  if (!token) return null
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  try {
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')
+    const payload = JSON.parse(atob(padded)) as { exp?: unknown }
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * ¿El access token actual ya venció? Margen por defecto de 30 s para evitar
+ * usarlo justo cuando expira. Token demo o ilegible → `false` (no participa).
+ */
+export function isAccessTokenExpired(skewMs = 30_000): boolean {
+  const expiry = getTokenExpiry()
+  return expiry !== null && Date.now() >= expiry - skewMs
+}
+
 type SessionInvalidListener = () => void
 const sessionInvalidListeners = new Set<SessionInvalidListener>()
 
@@ -227,7 +276,7 @@ export function clearSessionAndNotify(): void {
 
 export async function ensureFreshAccessToken(): Promise<string | null> {
   const token = getAccessToken()
-  if (token) return token
+  if (token && !isAccessTokenExpired()) return token
   const restored = await restoreSession()
   return restored?.accessToken ?? null
 }

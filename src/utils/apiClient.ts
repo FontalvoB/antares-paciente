@@ -11,7 +11,7 @@
  * - No logging of tokens, cookies, or PHI
  */
 
-import { getAccessToken, clearSessionAndNotify } from './authApi'
+import { getAccessToken, persistAccessToken, clearSessionAndNotify } from './authApi'
 import { getApiBaseUrl, getAuthBaseUrl } from './apiBaseUrl'
 
 // --- Base URL resolution (DESIGN §Capacitor native) ---
@@ -71,21 +71,39 @@ function doRefresh(): Promise<boolean> {
       // No Bearer token — refresh uses HttpOnly cookie only
     })
       .then(async (res) => {
-        // Check for invalid session
-        const refreshStatus = res.headers.get('X-Refresh-Status')
-        if (refreshStatus === 'invalid') {
-          // Notify session bridge — clears token + notifies AppContext listeners
+        // 401 (cookie ausente o inválida) = la sesión ya no es recuperable:
+        // se limpia el token y se notifica (el listener de AppContext
+        // devuelve al login). No se espera al próximo 401.
+        if (res.status === 401) {
           clearSessionAndNotify()
           return false
         }
-        return res.ok
+        if (!res.ok) return false
+        // Rotación: el access token nuevo viene en el body. Sin persistirlo,
+        // el retry de apiFetch seguiría mandando el token vencido.
+        const body = (await res.json().catch(() => null)) as {
+          accessToken?: string
+        } | null
+        if (!body?.accessToken) return false
+        persistAccessToken(body.accessToken)
+        return true
       })
+      // Fallo de red: la sesión se conserva (modo offline); el watcher de
+      // expiración reintentará cuando haya conectividad.
       .catch(() => false)
       .finally(() => {
         refreshPromise = null
       })
   }
   return refreshPromise
+}
+
+/**
+ * Refresh single-flight para chequeos proactivos de expiración (watcher de
+ * AppContext). Comparte la misma promesa que el refresh disparado por un 401.
+ */
+export function refreshAccessToken(): Promise<boolean> {
+  return doRefresh()
 }
 
 // --- Parser helpers ---

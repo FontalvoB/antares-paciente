@@ -21,6 +21,8 @@ vi.mock("../../utils/authApi", () => ({
     firstName: "María",
     lastName: "González",
   }),
+  getAccessToken: vi.fn(() => "demo-access-token"),
+  isAccessTokenExpired: vi.fn(() => false),
   logoutUser: vi.fn(),
   onSessionInvalid: vi.fn(() => () => {}),
 }));

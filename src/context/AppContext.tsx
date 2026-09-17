@@ -11,11 +11,14 @@ import {
   type ReactNode,
 } from "react";
 import {
+  getAccessToken,
   getMe,
+  isAccessTokenExpired,
   logoutUser,
   onSessionInvalid,
   restoreSession,
 } from "../utils/authApi";
+import { refreshAccessToken } from "../utils/apiClient";
 import {
   fetchThreadState,
   sendChatMessage,
@@ -479,6 +482,35 @@ export function AppProvider({
       setScreen("home");
       localStorage.removeItem(USER_STORAGE_KEY);
     });
+  }, []);
+
+  // Vigilancia proactiva de expiración del access token: si venció, se
+  // intenta renovar por la cookie de refresh (single-flight compartido con
+  // apiFetch). Un refresh rechazado con 401 dispara clearSessionAndNotify()
+  // → listener de arriba → vuelta al login. Así la sesión se cierra aunque el
+  // usuario navegue sin disparar llamadas a la API. El token demo no expira.
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (cancelled) return;
+      const token = getAccessToken();
+      if (!token || token === "demo-access-token") return;
+      if (!isAccessTokenExpired()) return;
+      await refreshAccessToken();
+    };
+    const timer = window.setInterval(() => void check(), 30_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    void check();
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, []);
 
   // Restauración automática de sesión al inicio
