@@ -323,7 +323,7 @@ export function ProfilePage() {
 
         {teamProfessionals === null ? null : (
           <>
-            <div className="sec">{t("Equipo ANTARES")}</div>
+            <div className="sec">{t("Equipo Copp Adresd")}</div>
             {teamProfessionals.length > 0 ? (
               <div className="group-list">
                 {teamProfessionals.map((pro) => (

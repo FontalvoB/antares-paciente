@@ -230,13 +230,13 @@ const BRAND_ICONS = {
 const REDES: { icon: string; name: string; sub: string; bg: string }[] = [
   {
     icon: BRAND_ICONS.tiktok,
-    name: "TikTok ANTARES",
+    name: "TikTok Copp Adresd",
     sub: "@antaresbiohacking · 48.2K",
     bg: "linear-gradient(135deg,#010101,#232028)",
   },
   {
     icon: BRAND_ICONS.instagram,
-    name: "Instagram ANTARES",
+    name: "Instagram Copp Adresd",
     sub: "@antares.biohacking · 23.7K",
     bg: "linear-gradient(135deg,#F58529,#DD2A7B 52%,#8134AF 78%,#515BD4)",
   },
@@ -248,7 +248,7 @@ const REDES: { icon: string; name: string; sub: string; bg: string }[] = [
   },
   {
     icon: BRAND_ICONS.youtube,
-    name: "YouTube ANTARES",
+    name: "YouTube Copp Adresd",
     sub: "SUMMITs · Clases · 8.1K",
     bg: "linear-gradient(135deg,#FF0000,#C4302B)",
   },
@@ -1008,7 +1008,7 @@ export function CommunityPage() {
                           tone="pur"
                           title={t("La comunidad está en silencio por ahora")}
                           hint={t(
-                            "Sé la primera persona en compartir algo con ANTARES.",
+                            "Sé la primera persona en compartir algo con Copp Adresd.",
                           )}
                         />
                       ) : (
@@ -1282,7 +1282,7 @@ export function CommunityPage() {
                       <div className="chat-hero-main">
                         <div className="chat-title">
                           <IonIcon icon={globeOutline} className="chat-globe" />{" "}
-                          {t("Chat ANTARES")}
+                          {t("Chat Copp Adresd")}
                         </div>
                         <div className="chat-sub">
                           <IonIcon icon={peopleOutline} />{" "}
@@ -1503,7 +1503,7 @@ export function CommunityPage() {
                     <div className="com-banner anim-in">
                       <div className="com-banner-main">
                         <div className="com-banner-title">
-                          <IonIcon icon={peopleOutline} /> {t("Amigos ANTARES")}
+                          <IonIcon icon={peopleOutline} /> {t("Amigos Copp Adresd")}
                         </div>
                         <div className="com-banner-sub">
                           <IonIcon icon={sparklesOutline} />{" "}
@@ -1515,7 +1515,7 @@ export function CommunityPage() {
                       <IonSearchbar
                         className="sbar"
                         value={q}
-                        placeholder={t("Buscar amigos en ANTARES…")}
+                        placeholder={t("Buscar amigos en Copp Adresd…")}
                         onIonInput={(e) => {
                           const v = e.detail.value ?? "";
                           setQ(v);
@@ -1764,7 +1764,7 @@ export function CommunityPage() {
                       <div className="com-banner-main">
                         <div className="com-banner-title">
                           <IonIcon icon={shareSocialOutline} />{" "}
-                          {t("Redes ANTARES")}
+                          {t("Redes Copp Adresd")}
                         </div>
                         <div className="com-banner-sub">
                           <IonIcon icon={globeOutline} />{" "}
@@ -1814,7 +1814,7 @@ export function CommunityPage() {
           <div className={`com-topbar ${topbarOn ? "on" : ""}`} aria-hidden>
             <div className="com-topbar-title">
               <IonIcon icon={globeOutline} style={{ fontSize: 16 }} />
-              {t("Comunidad ANTARES")}
+              {t("Comunidad Copp Adresd")}
             </div>
           </div>
 

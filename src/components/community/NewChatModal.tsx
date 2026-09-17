@@ -97,7 +97,7 @@ export function NewChatModal({
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="com-row-name">{f.displayName}</div>
-                    <div className="com-row-sub">{f.bio?.trim() || t('Miembro ANTARES')}</div>
+                    <div className="com-row-sub">{f.bio?.trim() || t('Miembro Copp Adresd')}</div>
                   </div>
                 </div>
               </div>

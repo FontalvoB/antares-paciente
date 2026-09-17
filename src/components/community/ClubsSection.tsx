@@ -804,7 +804,7 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                       >
                         {live.status === "ACTIVO"
                           ? t("EN VIVO")
-                          : t("LIVE ANTARES")}
+                          : t("LIVE COPP ADRESD")}
                       </span>
                     </div>
                     <p
