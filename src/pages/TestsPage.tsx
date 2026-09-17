@@ -393,7 +393,7 @@ export function TestsPage() {
               </IonButton>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="kicker">{t("ANTARES · PERFIL DE SALUD")}</div>
+              <div className="kicker">{t("COPP ADRESD · PERFIL DE SALUD")}</div>
               <div className="h2">
                 {openId !== null
                   ? t(openTitle || theme.kicker)
@@ -506,7 +506,7 @@ export function TestsPage() {
                 style={{ marginTop: 12 }}
                 onClick={openIA}
               >
-                {t("Ver mi perfil de salud ANTARES · IA")}
+                {t("Ver mi perfil de salud Copp Adresd · IA")}
                 <IonIcon icon={sparkles} slot="end" />
               </IonButton>
               {completed < totalTests && (
@@ -621,7 +621,7 @@ function HealthResult({
             <small>/100</small>
           </RingProgress>
           <div className="htp-hero-info">
-            <div className="htp-hero-kicker">{t("Mi Perfil ANTARES")}</div>
+            <div className="htp-hero-kicker">{t("Mi Perfil Copp Adresd")}</div>
             <div className="htp-hero-badges">
               <span className="htp-hero-cond">🫀 {t(p.condition)}</span>
               <span className="htp-hero-ahs">
@@ -849,7 +849,7 @@ function HealthResult({
         style={{ marginTop: 14 }}
         onClick={onEnter}
       >
-        {t("Entrar a mi programa ANTARES")}
+        {t("Entrar a mi programa Copp Adresd")}
       </IonButton>
     </div>
   );

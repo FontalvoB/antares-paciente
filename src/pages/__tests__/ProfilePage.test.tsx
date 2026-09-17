@@ -162,10 +162,10 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     }
   });
 
-  it("renderiza el profesional real del catálogo en Equipo ANTARES", () => {
+  it("renderiza el profesional real del catálogo en Equipo Copp Adresd", () => {
     renderPage();
 
-    expect(screen.getByText("Equipo ANTARES")).toBeTruthy();
+    expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
     expect(screen.getByText("Dra. Sofía Vargas")).toBeTruthy();
     expect(screen.getByText("Physician")).toBeTruthy();
   });
@@ -193,7 +193,7 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
 
     renderPage();
 
-    expect(screen.queryByText("Equipo ANTARES")).toBeNull();
+    expect(screen.queryByText("Equipo Copp Adresd")).toBeNull();
     expect(screen.queryByText("Dra. Sofía Vargas")).toBeNull();
   });
 

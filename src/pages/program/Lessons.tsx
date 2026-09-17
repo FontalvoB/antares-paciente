@@ -370,7 +370,7 @@ export function VitalsLesson({
             {syncing ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}
           </span>
           <span className="vt-sync-copy">
-            <strong>{syncing ? t('Leyendo el reloj…') : t('Sincronizar ANTARES Watch')}</strong>
+            <strong>{syncing ? t('Leyendo el reloj…') : t('Sincronizar Copp Adresd Watch')}</strong>
             <small>{syncing ? t('FC, SpO2, presión y más') : t('Autollenar con la última medición')}</small>
           </span>
         </button>

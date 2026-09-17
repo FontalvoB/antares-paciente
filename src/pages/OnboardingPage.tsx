@@ -141,7 +141,7 @@ export function OnboardingPage() {
     <div className="screen onb-page" style={{ background: 'var(--g0)' }}>
       <header className="onb-head">
         <div className="onb-head-top">
-          <div className="onb-head-brand">ANTARES</div>
+          <div className="onb-head-brand">Copp Adresd</div>
           {!done && <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--mu)' }}>{step} / {TOTAL_STEPS}</span>}
         </div>
         {!done && (
@@ -192,7 +192,7 @@ export function OnboardingPage() {
                 ))}
               </div>
               <IonButton expand="block" className="bt bt-primary" onClick={() => finishOnboarding(form)}>
-                {t('Entrar a ANTARES')}
+                {t('Entrar a Copp Adresd')}
               </IonButton>
             </div>
           ) : (
