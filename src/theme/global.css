@@ -14225,6 +14225,66 @@ ion-button.com-input-send.bt-pur {
   margin: 0;
 }
 
+.room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  text-align: left;
+}
+
+.room-info > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.room-info b {
+  flex: 0 0 auto;
+  color: var(--mu);
+  font-weight: 600;
+}
+
+.room-info > span > span {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.room-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--org);
+  font-size: 13px;
+}
+
+.room-notice span {
+  color: var(--mu);
+  font-size: 12px;
+}
+
+.room-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.room-toggle {
+  --background: rgba(255, 255, 255, 0.12) !important;
+  --color: #fff !important;
+}
+
+.room-toggle.off {
+  --background: #374151 !important;
+  --color: var(--mu) !important;
+}
+
 .room-video {
   position: relative;
   width: 100%;
