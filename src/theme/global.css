@@ -16603,65 +16603,16 @@ ion-button.cta-pill.button-disabled {
    -------------------------------------------------------------------------- */
 
 .wheel {
-  --wheel-size: 280px;
-  /* Color del hueco entre segmentos: el fondo de la tarjeta que la contiene. */
-  --wheel-gap: #f1f3f6;
-  --wheel-badge: calc(var(--wheel-size) * 0.121);
+  --wheel-size: clamp(280px, calc(100vw - 32px), 440px);
+  --wheel-badge: clamp(42px, calc(var(--wheel-size) * 0.125), 54px);
   position: relative;
   flex-shrink: 0;
   width: var(--wheel-size);
   height: var(--wheel-size);
+  background: radial-gradient(circle, var(--ice-l), transparent 69%);
 }
 
-@media (max-width: 379px) {
-  .wheel {
-    --wheel-size: 248px;
-  }
-}
 
-/* El aro es un degradado cónico recortado con máscara: se mantiene nítido a
-   cualquier densidad de pantalla y da un espectro continuo, en vez de los
-   siete arcos planos de la versión anterior. */
-.wheel-ring-wrap {
-  position: absolute;
-  inset: 0;
-  filter: drop-shadow(0 10px 18px rgba(20, 40, 85, 0.18));
-}
-
-.wheel-ring {
-  position: absolute;
-  /* Radio exterior 112 de 120 unidades del viewBox. */
-  inset: 3.33%;
-  border-radius: 50%;
-  -webkit-mask: radial-gradient(
-    circle closest-side,
-    #0000 0 65.8%,
-    #000 66.4% 99.2%,
-    #0000 99.8%
-  );
-  mask: radial-gradient(
-    circle closest-side,
-    #0000 0 65.8%,
-    #000 66.4% 99.2%,
-    #0000 99.8%
-  );
-}
-
-/* Brillo de la banda: luz hacia el canto interior y sombra en el exterior,
-   para el acabado con volumen del diseño de referencia. */
-.wheel-ring::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle closest-side,
-    rgba(255, 255, 255, 0) 66%,
-    rgba(255, 255, 255, 0.2) 77%,
-    rgba(255, 255, 255, 0) 91%,
-    rgba(20, 40, 85, 0.13) 100%
-  );
-}
 
 .wheel-svg {
   position: absolute;
@@ -16671,60 +16622,53 @@ ion-button.cta-pill.button-disabled {
   height: 100%;
 }
 
-.wheel-gap {
-  fill: var(--wheel-gap);
-}
-
-/* Bisel: luz en el canto interior, sombra en el exterior. */
-.wheel-edge-in {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.35);
-  stroke-width: 1.6;
-}
-
-.wheel-edge-out {
-  fill: none;
-  stroke: rgba(20, 40, 85, 0.1);
-  stroke-width: 2.8;
-}
-
-/* Anillo de puntos: progreso fino alrededor del núcleo. */
-.wheel-dots {
-  z-index: 2;
-}
-
-.wheel-dot {
-  fill: #bcc9d8;
-}
-
-.wheel-dot.on {
-  fill: var(--brand-green);
-}
+.wheel-orbit { fill: none; stroke: var(--bd); stroke-width: 0.8; }
+.wheel-orbit-dashed { stroke-dasharray: 2 5; }
+.wheel-spoke { stroke: currentColor; stroke-width: 1; opacity: 0.18; transition: opacity 400ms ease; }
+.wheel-spoke.done { opacity: 0.65; }
+.wheel-progress-arc { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
 
 .wheel-badge {
   position: absolute;
   z-index: 3;
-  /* Centrado por margen: el transform queda libre para la animación. */
   width: var(--wheel-badge);
   height: var(--wheel-badge);
   margin: calc(var(--wheel-badge) / -2) 0 0 calc(var(--wheel-badge) / -2);
-  border-radius: 50%;
+  border-radius: 30%;
   display: grid;
   place-items: center;
-  font-size: calc(var(--wheel-size) * 0.062);
-  color: #fff;
-  border: 1.6px solid rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.14);
+  font-size: clamp(21px, calc(var(--wheel-size) * 0.06), 26px);
+  color: var(--wheel-accent);
+  border: 1px solid color-mix(in srgb, var(--wheel-accent) 18%, var(--wh));
+  background: color-mix(in srgb, var(--wheel-accent) 8%, var(--wh));
+  box-shadow: var(--shadow-sm);
+  transition: background 450ms ease, color 450ms ease, box-shadow 450ms ease;
 }
 
 .wheel-badge.done {
-  background: #fff;
-  border-color: #fff;
-  color: var(--brand-navy);
-  box-shadow:
-    0 3px 9px rgba(20, 40, 85, 0.3),
-    0 0 0 3px rgba(255, 255, 255, 0.32);
+  background: var(--wheel-accent);
+  border-color: var(--wheel-accent);
+  color: var(--wh);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--wheel-accent) 12%, transparent),
+    0 5px 16px color-mix(in srgb, var(--wheel-accent) 20%, transparent);
 }
+
+.wheel-number {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--mu);
+  background: var(--wh);
+  box-shadow: var(--shadow-sm);
+}
+.wheel-badge.done .wheel-number { color: var(--brand-green); font-size: 13px; }
 
 .wheel-core {
   position: absolute;
@@ -16732,62 +16676,47 @@ ion-button.cta-pill.button-disabled {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 55%;
-  height: 55%;
+  width: 36%;
+  height: 36%;
   border-radius: 50%;
-  background: #fff;
-  box-shadow:
-    0 8px 18px rgba(20, 40, 85, 0.1),
-    inset 0 0 0 1px rgba(20, 40, 85, 0.04);
+  background: radial-gradient(ellipse at 25% 20%, var(--wh), var(--ice-l));
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--bd);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 3% 4%;
-  gap: 1px;
+  gap: 2px;
 }
-
-.wheel-core-title {
-  font-size: calc(var(--wheel-size) * 0.048);
-  font-weight: 800;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-  color: var(--brand-navy);
-  line-height: 1.1;
-}
-
+.wheel-core-title { font-size: 12px; font-weight: 800; color: var(--brand-navy); }
 .wheel-core-count {
   display: inline-flex;
   align-items: baseline;
   font-family: "Space Grotesk", sans-serif;
-  font-size: calc(var(--wheel-size) * 0.18);
+  font-size: calc(var(--wheel-size) * 0.13);
   font-weight: 700;
   line-height: 1;
   letter-spacing: -2px;
-  color: #8da5c4;
+  color: var(--brand-navy);
 }
-
-.wheel-core-count span {
-  font-size: inherit;
-}
-
-.wheel-core.complete .wheel-core-count {
-  color: var(--brand-green);
-}
-
+.wheel-core-count span { font-size: 0.65em; color: var(--mu); letter-spacing: -1px; }
+.wheel-core.complete .wheel-core-count { color: var(--brand-green); }
 .wheel-core-caption {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: calc(var(--wheel-size) * 0.037);
+  font-size: 11px;
   line-height: 1.25;
   color: var(--mu);
-  /* Estrecho para no cruzar el anillo de puntos que lo rodea. */
-  max-width: 76%;
+  max-width: 90%;
 }
+@media (prefers-reduced-motion: reduce) {
+  .wheel-badge, .wheel-spoke { transition: none; }
+}
+
 
 /* --------------------------------------------------------------------------
    Inicio
@@ -16902,45 +16831,17 @@ ion-button.cta-pill.button-disabled {
   align-items: center;
   position: relative;
   isolation: isolate;
-  /* Sin recorte: la línea de signos vitales de `::after` cruza de un borde de
-     la pantalla al otro en vez de cortarse en los márgenes de la tarjeta. */
+  /* Espacio para la órbita ampliada y su fondo decorativo. */
   overflow: visible;
   width: calc(100% - 32px);
   margin: 14px 16px 0;
   padding: 18px 16px 16px;
   border: none;
   border-radius: 26px;
-  /* Sin fondo: la rueda se apoya en el blanco del inicio y lo único que
-     acompaña es la línea de signos vitales de `::after`. */
   background: none;
 }
 
-/* Los huecos entre segmentos son el fondo detrás de la rueda. */
-.hm-wheel-card .wheel {
-  --wheel-gap: #fff;
-}
-
-.hm-wheel-pulse {
-  position: absolute;
-  left: -16px;
-  bottom: 12%;
-  width: calc(100% + 32px);
-  height: 64px;
-  pointer-events: none;
-}
-.hm-wheel-pulse path {
-  fill: none;
-  stroke: var(--brand-sky-mid);
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.55;
-}
-
-.hm-wheel-card > * {
-  z-index: 1;
-}
-
+.hm-wheel-card > * { z-index: 1; }
 .hm-wheel-card:active {
   transform: scale(0.99);
 }
@@ -16987,8 +16888,11 @@ ion-button.cta-pill.button-disabled {
 }
 
 .hm-metric {
+  --metric-tint: var(--blue-l);
   /* Tres tarjetas por pantalla y un asomo de la cuarta: sin ese asomo nada
      indica que la fila sigue. */
+  position: relative;
+  overflow: hidden;
   flex: 0 0 clamp(122px, 34%, 156px);
   scroll-snap-align: start;
   display: flex;
@@ -16996,13 +16900,20 @@ ion-button.cta-pill.button-disabled {
   padding: 14px 13px 13px;
   border: 1px solid var(--bd);
   border-radius: 20px;
-  background: #fff;
+  background: linear-gradient(145deg, var(--wh), var(--metric-tint));
   color: var(--brand-navy);
   text-align: left;
+  box-shadow: 0 3px 0 var(--g1), var(--shadow-sm);
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
 }
 
+.hm-metric:nth-child(2) { --metric-tint: var(--teal-l); }
+.hm-metric:nth-child(3) { --metric-tint: var(--pur-l); }
+.hm-metric:nth-child(4) { --metric-tint: var(--red-l); }
+
 .hm-metric:active {
-  transform: scale(0.985);
+  transform: translateY(2px) scale(0.97);
+  box-shadow: var(--shadow-sm);
 }
 
 .hm-metric-val {
@@ -17134,12 +17045,14 @@ ion-button.cta-pill.button-disabled {
   outline-offset: 4px;
 }
 @media (hover: hover) and (pointer: fine) {
+  .hm-metric:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
   .hm-quick-btn:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
   .hm-quick-btn:hover .ic3 { transform: translateY(-2px) rotate(-6deg) scale(1.06); }
 }
 
-/* Tarjeta de la próxima cita: misma receta que las métricas. */
+/* Tarjeta de la próxima cita: misma receta física que los accesos rápidos. */
 .hm-appt {
+  --appt-tint: var(--blue-l);
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -17147,20 +17060,44 @@ ion-button.cta-pill.button-disabled {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: 14px 15px 13px;
+  padding: 14px 48px 13px 15px;
   border: 1px solid var(--bd);
   border-radius: 24px;
-  background: #fff;
+  background: linear-gradient(145deg, var(--wh), var(--appt-tint));
   color: var(--brand-navy);
   text-align: left;
+  box-shadow: 0 3px 0 var(--g1), var(--shadow-sm);
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+
+.hm-appt-tele {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--brand-navy);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: inset 0 0 0 1px rgba(20, 40, 85, 0.06), var(--shadow-sm);
+  backdrop-filter: blur(6px);
+}
+
+.hm-appt-tele ion-icon {
+  font-size: 18px;
 }
 
 .hm-appt:active {
-  transform: scale(0.985);
+  transform: translateY(2px) scale(0.97);
+  box-shadow: var(--shadow-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hm-quick-btn,
+  .hm-metric,
   .hm-appt,
   .hm-quick-ico .ic3 {
     transition: none;
@@ -19525,17 +19462,17 @@ html.plt-tablet .mcar-page {
 }
 
 /* Play integrado en el núcleo; la tarjeta completa conserva su acción. */
-.hm-wheel-card .wheel-core { width: 55%; height: 55%; gap: 2px; }
-.hm-wheel-card .wheel-core-title { display: none; }
-.hm-wheel-card .wheel-core-count { font-size: calc(var(--wheel-size) * 0.13); }
-.hm-wheel-card .wheel-core-caption { -webkit-line-clamp: 2; line-clamp: 2; }
+.hm-wheel-card .wheel-core { width: 36%; height: 36%; gap: 5px; min-width: 112px; min-height: 112px; }
+.hm-wheel-card .wheel-core-title { font-size: 10px; font-weight: 500; color: var(--mu); }
+.hm-wheel-card .wheel-core-count { font-size: clamp(28px, calc(var(--wheel-size) * 0.085), 38px); }
+.hm-wheel-card .wheel-core-caption { -webkit-line-clamp: 2; line-clamp: 2; max-width: 100%; font-size: 12px; line-height: 1.4; }
 .wheel-play {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  margin-top: 3px;
+  width: 32px;
+  height: 32px;
+  margin-top: 1px;
   border-radius: 50%;
   color: var(--wh);
   background: var(--grad-brand-v);
@@ -19544,12 +19481,12 @@ html.plt-tablet .mcar-page {
   transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
 }
 .wheel-play ion-icon { font-size: 19px; margin-left: 3px; }
-.wheel-action-label { font-size: 10px; line-height: 1.2; font-weight: 700; color: var(--brand-green); }
+.wheel-action-label { font-size: 11px; line-height: 1.2; font-weight: 700; color: var(--brand-green); }
 .hm-wheel-card:focus-visible .wheel-play { box-shadow: 0 0 0 5px var(--teal-l); }
 .hm-wheel-card:active .wheel-play { transform: scale(0.92); }
 @media (hover: hover) and (pointer: fine) {
   .hm-wheel-card:hover .wheel-play { transform: scale(1.08); box-shadow: 0 0 0 5px var(--teal-l); }
-  .hm-wheel-card .wheel-badge { transition: filter 200ms ease; }
+  .hm-wheel-card .wheel-badge { transition: background 450ms ease, color 450ms ease, box-shadow 450ms ease, filter 200ms ease; }
   .hm-wheel-card .wheel-badge:hover { filter: brightness(1.15) drop-shadow(0 3px 5px var(--brand-sky)); }
 }
 @keyframes wheel-play-in {
@@ -19623,8 +19560,8 @@ html.plt-tablet .mcar-page {
 .mascot-auth {
   width: 120px;
   height: 162px;
-  align-self: center;
   margin: -6px 0 8px;
+  align-self: center;
 }
 .kb-open .mascot-auth { display: none; }
 
@@ -19657,3 +19594,27 @@ html.plt-tablet .mcar-page {
 @media (prefers-reduced-motion: reduce) {
   .mascot-character { animation: none; }
 }
+
+/* Órbita del home: proporciones del ecosistema web, con tareas del paciente. */
+.hm-wheel-card { padding: 38px 0 34px; }
+.wheel-layout { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.wheel-logo { width: clamp(25px, calc(var(--wheel-size) * 0.08), 35px); height: auto; }
+.wheel-core-dots { display: flex; gap: 5px; margin-top: 1px; }
+.wheel-core-dots i { width: 3px; height: 3px; border-radius: 50%; background: var(--brand-sky); }
+.wheel-speck { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--brand-sky); opacity: 0.6; }
+.wheel-speck-one { left: 23%; top: 32%; }
+.wheel-speck-two { right: 25%; bottom: 29%; width: 3px; height: 3px; background: var(--brand-green-soft); }
+.wheel-selection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(280px, calc(100vw - 64px));
+  padding: 12px 16px;
+  border: 1px solid var(--bd);
+  border-radius: 18px;
+  background: var(--wh);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+.wheel-selection-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.wheel-selection .wheel-play { width: 40px; height: 40px; margin: 0; }

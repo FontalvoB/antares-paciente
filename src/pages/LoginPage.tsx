@@ -386,12 +386,6 @@ export function LoginPage() {
                   </span>
                 </IonButton>
 
-                <p className="auth-demo">
-                  {t("Acceso demo: ID")}{" "}
-                  <strong>{DEMO_LOGIN.documentNumber}</strong>
-                  {" · "}
-                  {t("Contraseña")} <strong>{DEMO_LOGIN.password}</strong>
-                </p>
               </form>
 
               <div className="auth-alt">
@@ -680,10 +674,6 @@ export function LoginPage() {
           )}
         </AnimatePresence>
 
-        <footer className="auth-footer">
-          <IonIcon icon={keyOutline} />
-          {t("Conexión segura con cifrado de extremo a extremo")}
-        </footer>
       </div>
     </div>
   );
