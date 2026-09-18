@@ -10,9 +10,14 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "urql";
 import { createCommunityClient } from "./graphql/client";
-import { registerForPush } from "./utils/pushNotifications";
+import {
+  consumePendingRoomAppointmentId,
+  registerForPush,
+} from "./utils/pushNotifications";
+import { fetchMyAppointments } from "./utils/appointmentsApi";
+import { mapAppointmentToListed } from "./data/appointments";
 import { AppProvider, useApp } from "./context/AppContext";
-import { I18nProvider } from "./i18n/I18nContext";
+import { I18nProvider, useT } from "./i18n/I18nContext";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { useTabletLayout } from "./hooks/useTabletLayout";
 import { PanicOverlay } from "./components/PanicOverlay";
@@ -139,15 +144,52 @@ function Router() {
 }
 
 function Shell() {
-  const { flow, navigate, setActiveThreadId } = useApp();
+  const {
+    flow,
+    navigate,
+    setActiveThreadId,
+    openRoom,
+    showToast,
+    upcomingAppointments,
+  } = useApp();
+  const t = useT();
   const pushStarted = useRef(false);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();
   useTabletLayout();
 
+  // Abre la sala pedida por una notificación push. Resuelve la cita por id
+  // contra la lista real del paciente (en cold start el contexto aún puede no
+  // tenerla) y solo navega si sigue activa (Confirmed/InProgress); si no está
+  // o fue cancelada, avisa con un toast.
+  const openRoomFromPush = useCallback(
+    async (appointmentId: string) => {
+      const isActive = (status?: string) =>
+        status === "Confirmed" || status === "InProgress";
+      const loaded = upcomingAppointments?.find((a) => a.id === appointmentId);
+      try {
+        const { items } = await fetchMyAppointments({ pageSize: 100 });
+        const appointment = items.find((a) => a.id === appointmentId);
+        if (appointment && isActive(appointment.status)) {
+          openRoom(mapAppointmentToListed(appointment));
+          return;
+        }
+        showToast(t("La cita ya no está disponible"));
+      } catch {
+        // Sin red/sesión: si la cita ya estaba cargada y activa, se entra igual.
+        if (loaded && isActive(loaded.status)) {
+          openRoom(loaded);
+          return;
+        }
+        showToast(t("No se pudo verificar la cita. Inténtalo de nuevo."));
+      }
+    },
+    [upcomingAppointments, openRoom, showToast, t],
+  );
+
   // Al entrar a la app (flow === 'app') se registra el dispositivo para push.
-  // Al tocar una notificación se navega al chat para ver el mensaje inyectado.
+  // Al tocar una notificación se navega al chat o a la sala según su carga.
   useEffect(() => {
     if (flow !== "app" || pushStarted.current) return;
     pushStarted.current = true;
@@ -158,8 +200,19 @@ function Shell() {
         }
         navigate("chat");
       },
+      onOpenRoom: (appointmentId) => {
+        void openRoomFromPush(appointmentId);
+      },
     });
-  }, [flow, navigate, setActiveThreadId]);
+  }, [flow, navigate, setActiveThreadId, openRoomFromPush]);
+
+  // Cold start: la notificación pudo tocarse antes de que este contexto
+  // montara; el id encolado se consume una sola vez aquí.
+  useEffect(() => {
+    if (flow !== "app") return;
+    const pendingRoomId = consumePendingRoomAppointmentId();
+    if (pendingRoomId) void openRoomFromPush(pendingRoomId);
+  }, [flow, openRoomFromPush]);
 
   return (
     <div className="app-stage">

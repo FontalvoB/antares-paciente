@@ -13,6 +13,8 @@ import { getApiBaseUrl } from './apiBaseUrl'
  *   con un log sin romper la app.
  * - Al tocar una notificación navega al chat para que el paciente vea el
  *   mensaje del bot inyectado en su thread estable.
+ * - Si la carga pide la sala (data.screen === "room" o data.appointmentId),
+ *   delega en onOpenRoom con el id de la cita.
  *
  * Requiere (trabajo del usuario, fuera del alcance de código):
  *   - Android: android/app/google-services.json (proyecto Firebase + FCM)
@@ -22,11 +24,37 @@ import { getApiBaseUrl } from './apiBaseUrl'
 interface PushRegistrationOptions {
   /** Se invoca al tocar una notificación (navegar al chat con el threadId si viene en la carga). */
   onOpenChat?: (threadId?: string) => void
+  /** Se invoca al tocar una notificación de sala (quien navega resuelve la cita). */
+  onOpenRoom?: (appointmentId: string) => void
 }
 
 // Los listeners del plugin se registran una sola vez por sesión; el guard evita
 // duplicarlos si registerForPush se llama más de una vez.
 let started = false
+
+// Callbacks vigentes: el listener se registra una sola vez, pero los handlers
+// pueden llegar después (el contexto de navegación monta más tarde que el
+// listener en un arranque en frío), por lo que cada llamada los refresca.
+let currentOptions: PushRegistrationOptions = {}
+
+// ── Cola de arranque en frío ───────────────────────────────────────────────
+// Al abrir la app tocando una notificación, pushNotificationActionPerformed
+// puede llegar antes de que exista quién navegue. En ese caso el appointmentId
+// se guarda aquí y Shell lo consume una sola vez al montar el contexto
+// (si llegan varios taps fríos, el último gana: es la intención más reciente).
+let pendingRoomAppointmentId: string | null = null
+
+/** Encola la sala a abrir cuando todavía no hay contexto de navegación. */
+export function queuePendingRoomAppointmentId(appointmentId: string): void {
+  pendingRoomAppointmentId = appointmentId
+}
+
+/** Devuelve y limpia la sala pendiente de abrir (null si no hay ninguna). */
+export function consumePendingRoomAppointmentId(): string | null {
+  const appointmentId = pendingRoomAppointmentId
+  pendingRoomAppointmentId = null
+  return appointmentId
+}
 
 export async function registerForPush(options: PushRegistrationOptions = {}): Promise<void> {
   const platform = Capacitor.getPlatform()
@@ -35,6 +63,11 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
     console.log(`[push] Plataforma "${platform}" no soportada — se omite el registro`)
     return
   }
+
+  // Refresca los handlers en cada llamada: el listener es único por sesión,
+  // pero el contexto que navega puede montar después (cold start).
+  currentOptions = { ...currentOptions, ...options }
+
   if (started) return
   started = true
 
@@ -50,8 +83,25 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
   })
   void PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
     const data = notification.notification?.data as Record<string, unknown> | undefined
+    const rawAppointmentId = data?.appointmentId ?? data?.appointment_id
+    const appointmentId =
+      typeof rawAppointmentId === 'string' && rawAppointmentId ? rawAppointmentId : undefined
+    // Notificación de sala: screen === "room" (y/o appointmentId en la carga).
+    if (data?.screen === 'room' || appointmentId) {
+      if (!appointmentId) {
+        console.warn('[push] Notificación de sala sin appointmentId; se ignora')
+        return
+      }
+      if (currentOptions.onOpenRoom) {
+        currentOptions.onOpenRoom(appointmentId)
+      } else {
+        // Sin contexto de navegación todavía (cold start): se encola.
+        queuePendingRoomAppointmentId(appointmentId)
+      }
+      return
+    }
     const threadId = (data?.thread_id ?? data?.threadId) as string | undefined
-    options.onOpenChat?.(threadId)
+    currentOptions.onOpenChat?.(threadId)
   })
 
   try {
