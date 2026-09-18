@@ -1970,5 +1970,7 @@
   "Zapatillas neutras": "Neutral sneakers",
   "Acercar": "Zoom in",
   "Alejar": "Zoom out",
-  "Restablecer vista": "Reset view"
+  "Restablecer vista": "Reset view",
+  "La cita ya no está disponible": "The appointment is no longer available",
+  "No se pudo verificar la cita. Inténtalo de nuevo.": "Couldn't verify the appointment. Try again."
 }
