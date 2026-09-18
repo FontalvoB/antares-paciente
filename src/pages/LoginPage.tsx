@@ -13,7 +13,6 @@ import {
   chevronForwardOutline,
   eye,
   eyeOff,
-  keyOutline,
   lockClosedOutline,
   mailOutline,
   phonePortraitOutline,
@@ -24,7 +23,6 @@ import { useT } from "../i18n/I18nContext";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { Mascot } from "../components/Mascot";
 import {
-  DEMO_LOGIN,
   loginUser,
   lookupId,
   sendOtp,
@@ -287,7 +285,7 @@ export function LoginPage() {
                 }}
               >
                 <div className="auth-field">
-                  <label htmlFor="login-id">
+                  <label htmlFor="login-id">1
                     {t("Número de identificación")}
                   </label>
                   <IonInput
