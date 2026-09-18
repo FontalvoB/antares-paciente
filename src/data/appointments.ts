@@ -47,6 +47,11 @@ export interface ListedAppointment {
   color: string;
   featured?: boolean;
   pending?: boolean;
+  /** Estado real de la cita (ausente en mocks/solicitudes). */
+  status?: AppointmentDto["status"];
+  /** Ventana de la sala virtual (opcional hasta el despliegue del backend). */
+  roomOpensAt?: string | null;
+  roomClosesAt?: string | null;
 }
 
 export const CONSULT_TYPES: ConsultType[] = [
@@ -470,22 +475,27 @@ export function mapRequestToListed(
   };
 }
 
+/** Etiqueta del estado de la cita (clave i18n en es/en.json). */
+export const APPOINTMENT_STATUS_LABELS: Record<
+  AppointmentDto["status"],
+  string
+> = {
+  Requested: "SOLICITADA",
+  Confirmed: "CONFIRMADA",
+  InProgress: "EN CURSO",
+  Completed: "COMPLETADA",
+  Cancelled: "CANCELADA",
+  NoShow: "NO SHOW",
+};
+
 /** Cita del backend → fila de la lista. */
 export function mapAppointmentToListed(
   appt: AppointmentDto,
 ): ListedAppointment {
   const style = styleForType("medica");
-  const statusLabel: Record<AppointmentDto["status"], string> = {
-    Requested: "SOLICITADA",
-    Confirmed: "CONFIRMADA",
-    InProgress: "EN CURSO",
-    Completed: "COMPLETADA",
-    Cancelled: "CANCELADA",
-    NoShow: "NO SHOW",
-  };
   return {
     id: appt.id,
-    when: statusLabel[appt.status],
+    when: APPOINTMENT_STATUS_LABELS[appt.status],
     mode: "Telemedicina",
     accent: style.accent,
     emoji: "🩺",
@@ -495,6 +505,9 @@ export function mapAppointmentToListed(
     day: dayLabelFor(appt.scheduledStart),
     motivo: appt.specialtyName ?? "Consulta",
     color: style.color,
+    status: appt.status,
+    roomOpensAt: appt.roomOpensAt ?? null,
+    roomClosesAt: appt.roomClosesAt ?? null,
   };
 }
 

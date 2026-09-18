@@ -41,6 +41,51 @@ export interface AppointmentDto {
   rescheduleCount: number;
   cancellationReason: string | null;
   createdAt: string;
+  /**
+   * Ventana de acceso a la sala virtual y cierre real. El backend los está
+   * enriqueciendo en paralelo → opcionales hasta su despliegue (la sala NO usa
+   * GET /appointments/{id}, que da 403 al paciente: la ventana viene de aquí).
+   */
+  completedAt?: string | null;
+  roomOpensAt?: string | null;
+  roomClosesAt?: string | null;
+}
+
+export type VirtualRoomStatus =
+  | "Created"
+  | "Waiting"
+  | "Active"
+  | "Ended"
+  | "Expired"
+  | "Failed";
+
+export type TelemedicineSessionStatus =
+  | "Created"
+  | "Waiting"
+  | "Active"
+  | "Ended"
+  | "Expired"
+  | "Failed";
+
+export interface RoomParticipantDto {
+  participantSid: string;
+  identity: string;
+  isConnected: boolean;
+  connectedAt: string | null;
+  disconnectedAt: string | null;
+}
+
+/** Sala virtual de la cita (GET /appointments/{id}/room, participante). */
+export interface AppointmentRoomDto {
+  id: string;
+  provider: string;
+  providerRoomName: string;
+  status: VirtualRoomStatus;
+  scheduledOpenAt: string;
+  scheduledCloseAt: string;
+  activeSessionId: string | null;
+  activeSessionStatus: TelemedicineSessionStatus | null;
+  participants: RoomParticipantDto[];
 }
 
 export interface AppointmentRequestDto {
@@ -228,6 +273,17 @@ export function fetchJoinToken(
       method: "POST",
     },
   );
+}
+
+/**
+ * Sala virtual de una cita (estado y participantes en vivo). Autorizado al
+ * participante por identidad del JWT; 404 mientras la sala no exista (se crea
+ * perezosamente en el primer join-token).
+ */
+export function fetchAppointmentRoom(
+  appointmentId: string,
+): Promise<AppointmentRoomDto> {
+  return api<AppointmentRoomDto>(`/api/v1/appointments/${appointmentId}/room`);
 }
 
 /** Catálogo de profesionales clínicos del backend (público-autenticado, sin PHI). */
