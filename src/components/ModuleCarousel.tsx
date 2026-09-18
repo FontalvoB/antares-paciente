@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { IonIcon } from "@ionic/react";
 import { arrowForward } from "ionicons/icons";
 import { motion, useReducedMotion, type PanInfo } from "framer-motion";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 
 /**
  * Carrusel coverflow de los módulos del inicio.
@@ -26,7 +26,8 @@ export type CarouselModule = {
   data?: string;
   /** Token `--mod-*` del acento del módulo. */
   accent: string;
-  icon: ReactNode;
+  /** Ilustración del módulo; va arriba del texto. */
+  cover: string;
   /** Texto del botón de la tarjeta activa. */
   cta: string;
 };
@@ -167,8 +168,7 @@ export function ModuleCarousel({
                     else go(i);
                   }}
                 >
-                  <span className="mcar-halo" />
-                  <span className="mcar-art">{m.icon}</span>
+                  <img className="mcar-cover" src={m.cover} alt="" aria-hidden="true" />
                   <span className="mcar-txt">
                     <strong>{m.title}</strong>
                     <small>{m.sub}</small>

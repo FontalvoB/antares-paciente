@@ -16702,17 +16702,6 @@ ion-button.cta-pill.button-disabled {
 }
 .wheel-core-count span { font-size: 0.65em; color: var(--mu); letter-spacing: -1px; }
 .wheel-core.complete .wheel-core-count { color: var(--brand-green); }
-.wheel-core-caption {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: 11px;
-  line-height: 1.25;
-  color: var(--mu);
-  max-width: 90%;
-}
 @media (prefers-reduced-motion: reduce) {
   .wheel-badge, .wheel-spoke { transition: none; }
 }
@@ -17186,9 +17175,9 @@ ion-button.cta-pill.button-disabled {
    el fondo. Se arrastra con el dedo, avanza sola y los puntos permiten saltar
    a cualquier página sin recorrer las intermedias.
 
-   Cada tarjeta declara su acento en `--a` (`--mod-*`): lo usan el halo, la
-   píldora de dato, el botón y el punto de paginación. La ilustración 3D
-   lleva su propia rampa de luz dentro del SVG.
+   Cada tarjeta declara su acento en `--a` (`--mod-*`): lo usan el borde, la
+   píldora de dato, el botón y el punto de paginación. La ilustración del
+   módulo va arriba y el texto debajo.
    ────────────────────────────────────────────────────────────────────── */
 .mcar {
   padding: 0 16px;
@@ -17223,25 +17212,15 @@ ion-button.cta-pill.button-disabled {
 
 .mcar-card {
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: stretch;
   width: 100%;
-  padding: 14px 13px 13px;
+  padding: 0 0 12px;
   border: 1px solid color-mix(in srgb, var(--a) 16%, var(--g1));
   border-radius: 24px;
-  background:
-    radial-gradient(
-      124% 70% at 50% -10%,
-      color-mix(in srgb, var(--a) 26%, transparent) 0%,
-      transparent 64%
-    ),
-    linear-gradient(
-      180deg,
-      #ffffff 38%,
-      color-mix(in srgb, var(--a) 7%, #ffffff) 100%
-    );
+  background: #fff;
   text-align: left;
   overflow: hidden;
   box-shadow:
@@ -17249,56 +17228,15 @@ ion-button.cta-pill.button-disabled {
     0 22px 38px -24px color-mix(in srgb, var(--a) 78%, transparent);
 }
 
-/* Halo de color detrás de la ilustración: la pieza 3D se apoya en una
-   fuente de luz de su propio tono en vez de flotar sobre blanco. */
-.mcar-halo {
-  position: absolute;
-  top: -22%;
-  left: 50%;
-  width: 88%;
-  aspect-ratio: 1;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--a) 26%, transparent) 0%,
-    transparent 62%
-  );
-  pointer-events: none;
-}
-
-/* La pieza cede alto en pantallas estrechas: a 375px un título de dos líneas
-   más el subtítulo dejaban el botón pegado al texto. */
-.mcar-art {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: clamp(66px, 19vw, 86px);
-  margin-bottom: 3px;
-}
-
-.mcar-art .ic3 {
+/* Ilustración del módulo: recorte 4:3 arriba; el texto vive debajo. */
+.mcar-cover {
   display: block;
-  width: clamp(62px, 18vw, 80px);
-  height: auto;
-}
-
-/* La pieza flota levemente: refuerza que es un objeto y no un dibujo
-   pegado a la tarjeta. Solo en la página de frente, para no animar seis
-   SVG a la vez. */
-.mcar-page.is-active .ic3 {
-  animation: mcar-float 4.2s var(--ease) infinite;
-}
-
-@keyframes mcar-float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-6px) rotate(-1.4deg);
-  }
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  background: var(--g1);
 }
 
 .mcar-txt {
@@ -17307,6 +17245,7 @@ ion-button.cta-pill.button-disabled {
   gap: 3px;
   min-width: 0;
   width: 100%;
+  padding: 10px 12px 0;
 }
 
 .mcar-txt strong {
@@ -17329,7 +17268,8 @@ ion-button.cta-pill.button-disabled {
 }
 
 .mcar-data {
-  margin-top: 6px;
+  align-self: flex-start;
+  margin: 8px 12px 0;
   padding: 4px 9px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--a) 13%, #fff);
@@ -17337,7 +17277,7 @@ ion-button.cta-pill.button-disabled {
   font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
-  max-width: 100%;
+  max-width: calc(100% - 24px);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -17345,8 +17285,9 @@ ion-button.cta-pill.button-disabled {
 .mcar-cta {
   display: flex;
   align-items: center;
+  align-self: flex-start;
   gap: 5px;
-  margin-top: auto;
+  margin: 10px 12px 0;
   padding: 8px 12px;
   border-radius: 999px;
   background: var(--a);
@@ -17420,9 +17361,6 @@ ion-button.cta-pill.button-disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mcar-page.is-active .ic3 {
-    animation: none;
-  }
   .mcar-cta,
   .mcar-dot {
     transition: none;
@@ -19465,40 +19403,14 @@ html.plt-tablet .mcar-page {
 .hm-wheel-card .wheel-core { width: 36%; height: 36%; gap: 5px; min-width: 112px; min-height: 112px; }
 .hm-wheel-card .wheel-core-title { font-size: 10px; font-weight: 500; color: var(--mu); }
 .hm-wheel-card .wheel-core-count { font-size: clamp(28px, calc(var(--wheel-size) * 0.085), 38px); }
-.hm-wheel-card .wheel-core-caption { -webkit-line-clamp: 2; line-clamp: 2; max-width: 100%; font-size: 12px; line-height: 1.4; }
-.wheel-play {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  margin-top: 1px;
-  border-radius: 50%;
-  color: var(--wh);
-  background: var(--grad-brand-v);
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--brand-green) 22%, transparent);
-  animation: wheel-play-in 900ms var(--ease) 700ms backwards;
-  transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
-}
-.wheel-play ion-icon { font-size: 19px; margin-left: 3px; }
-.wheel-action-label { font-size: 11px; line-height: 1.2; font-weight: 700; color: var(--brand-green); }
-.hm-wheel-card:focus-visible .wheel-play { box-shadow: 0 0 0 5px var(--teal-l); }
-.hm-wheel-card:active .wheel-play { transform: scale(0.92); }
 @media (hover: hover) and (pointer: fine) {
-  .hm-wheel-card:hover .wheel-play { transform: scale(1.08); box-shadow: 0 0 0 5px var(--teal-l); }
   .hm-wheel-card .wheel-badge { transition: background 450ms ease, color 450ms ease, box-shadow 450ms ease, filter 200ms ease; }
   .hm-wheel-card .wheel-badge:hover { filter: brightness(1.15) drop-shadow(0 3px 5px var(--brand-sky)); }
 }
-@keyframes wheel-play-in {
-  from { opacity: 0; transform: scale(0.65); }
-  to { opacity: 1; transform: scale(1); }
-}
 @media (prefers-reduced-motion: reduce) {
-  .wheel-play { animation: none; transition: none; }
   .hm-quick-btn, .hm-quick-ico .ic3, .hm-wheel-card .wheel-badge { transition: none; }
   .hm-quick-btn:hover, .hm-quick-btn:active, .hm-quick-btn:hover .ic3,
-  .hm-quick-btn:active .ic3, .hm-wheel-card:active, .hm-wheel-card:hover .wheel-play,
-  .hm-wheel-card:active .wheel-play { transform: none; }
+  .hm-quick-btn:active .ic3, .hm-wheel-card:active { transform: none; }
 }
 
 /* Categorías con volumen visual; no cargan escenas 3D adicionales. */
@@ -19595,26 +19507,13 @@ html.plt-tablet .mcar-page {
   .mascot-character { animation: none; }
 }
 
-/* Órbita del home: proporciones del ecosistema web, con tareas del paciente. */
-.hm-wheel-card { padding: 38px 0 34px; }
-.wheel-layout { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+/* Órbita del home: proporciones del ecosistema web, con tareas del paciente.
+   El recuadro de la siguiente misión se retiró para dejar ver los indicadores.
+   --wheel-size no se toca. */
+.hm-wheel-card { padding: 32px 0 20px; }
 .wheel-logo { width: clamp(25px, calc(var(--wheel-size) * 0.08), 35px); height: auto; }
 .wheel-core-dots { display: flex; gap: 5px; margin-top: 1px; }
 .wheel-core-dots i { width: 3px; height: 3px; border-radius: 50%; background: var(--brand-sky); }
 .wheel-speck { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--brand-sky); opacity: 0.6; }
 .wheel-speck-one { left: 23%; top: 32%; }
 .wheel-speck-two { right: 25%; bottom: 29%; width: 3px; height: 3px; background: var(--brand-green-soft); }
-.wheel-selection {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: min(280px, calc(100vw - 64px));
-  padding: 12px 16px;
-  border: 1px solid var(--bd);
-  border-radius: 18px;
-  background: var(--wh);
-  box-shadow: var(--shadow-sm);
-  text-align: left;
-}
-.wheel-selection-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.wheel-selection .wheel-play { width: 40px; height: 40px; margin: 0; }

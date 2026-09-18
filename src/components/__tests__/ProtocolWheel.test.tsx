@@ -8,7 +8,7 @@ const pending: ProgramDay = {
   podcast: false, vitals: false, nut: false, ejercicio: false,
   nutraceutico: false, emocional: false,
 }
-const labels = { title: 'Protocolo diario', total: 7, caption: 'Siguiente misión', actionLabel: 'Entrar' }
+const labels = { title: 'Protocolo diario', total: 7 }
 
 describe('ProtocolWheel', () => {
   it.each(Object.keys(pending) as ProgramTaskId[])('rellena únicamente %s al recibir su finalización', (task) => {

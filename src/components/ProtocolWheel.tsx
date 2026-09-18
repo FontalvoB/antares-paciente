@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import logoIcon from '../assets/LogoIndividual.png'
 import { IonIcon } from '@ionic/react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { checkmark, gift, play, trophy } from 'ionicons/icons'
+import { checkmark, gift, trophy } from 'ionicons/icons'
 import { PROGRAM_TASKS } from '../data/program'
 import { TASK_ICONS } from '../pages/program/ui'
 import type { ProgramDay, ProgramTaskId } from '../types'
@@ -43,15 +43,13 @@ function arc(center: number) {
  * El estado proviene del protocolo, nunca de una animación ni de estado local.
  */
 export function ProtocolWheel({
-  program, chestClaimed = false, title, count, total, caption, actionLabel,
+  program, chestClaimed = false, title, count, total,
 }: {
   program: ProgramDay
   chestClaimed?: boolean
   title: string
   count: number
   total: number
-  caption: string
-  actionLabel: string
 }) {
   const reduce = useReducedMotion()
   const segments = SEGMENT_KEYS.map((key, i) => ({
@@ -64,7 +62,7 @@ export function ProtocolWheel({
   const complete = total > 0 && count >= total
 
   return (
-    <div className="wheel-layout"><div className="wheel">
+    <div className="wheel">
       <svg className="wheel-svg" viewBox={`0 0 ${VIEW} ${VIEW}`} aria-hidden="true">
         <circle cx={C} cy={C} r={R_ORBIT} className="wheel-orbit" />
         <circle cx={C} cy={C} r={77} className="wheel-orbit wheel-orbit-dashed" />
@@ -106,14 +104,6 @@ export function ProtocolWheel({
       </div>
       <span className="wheel-speck wheel-speck-one" aria-hidden="true" />
       <span className="wheel-speck wheel-speck-two" aria-hidden="true" />
-      </div>
-      <div className="wheel-selection">
-        <span className="wheel-play" aria-hidden="true"><IonIcon icon={play} /></span>
-        <span className="wheel-selection-copy">
-          <span className="wheel-core-caption">{caption}</span>
-          <span className="wheel-action-label">{actionLabel}</span>
-        </span>
-      </div>
     </div>
   )
 }
