@@ -88,6 +88,27 @@ export interface AppointmentRoomDto {
   participants: RoomParticipantDto[];
 }
 
+/** Pre-consulta de la cita (F4): una fila por cita, escrita por el paciente. */
+export interface PreVisitIntakeDto {
+  id: string;
+  appointmentId: string;
+  patientId: string;
+  reason: string;
+  symptoms: string | null;
+  allergies: string | null;
+  medications: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+/** Body del PUT de la pre-consulta (textos opcionales vacíos viajan como null). */
+export interface PreVisitIntakeInput {
+  reason: string;
+  symptoms: string | null;
+  allergies: string | null;
+  medications: string | null;
+}
+
 export type ChatSenderRole = "Professional" | "Patient" | "Supervisor";
 
 /** Mensaje del chat de la consulta (sender_user_id/role derivados del JWT). */
@@ -296,6 +317,38 @@ export function fetchAppointmentRoom(
   appointmentId: string,
 ): Promise<AppointmentRoomDto> {
   return api<AppointmentRoomDto>(`/api/v1/appointments/${appointmentId}/room`);
+}
+
+/**
+ * Pre-consulta del paciente para una cita (paciente escribe/lee; profesional y
+ * supervisor leen). El backend responde 200 con null cuando aún no existe; un
+ * 404 se trata igual para no romper la UI si la cita no está disponible.
+ */
+export async function fetchPreVisitIntake(
+  appointmentId: string,
+): Promise<PreVisitIntakeDto | null> {
+  try {
+    return await api<PreVisitIntakeDto | null>(
+      `/api/v1/appointments/${appointmentId}/pre-visit-intake`,
+    );
+  } catch (err) {
+    if (err instanceof ApiClientError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/**
+ * Guarda/actualiza la pre-consulta de una cita (solo el paciente; el backend
+ * responde 409 cuando la sesión ya inició).
+ */
+export function savePreVisitIntake(
+  appointmentId: string,
+  input: PreVisitIntakeInput,
+): Promise<PreVisitIntakeDto> {
+  return api<PreVisitIntakeDto>(
+    `/api/v1/appointments/${appointmentId}/pre-visit-intake`,
+    { method: "PUT", body: JSON.stringify(input) },
+  );
 }
 
 /**
