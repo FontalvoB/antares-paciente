@@ -88,6 +88,18 @@ export interface AppointmentRoomDto {
   participants: RoomParticipantDto[];
 }
 
+export type ChatSenderRole = "Professional" | "Patient" | "Supervisor";
+
+/** Mensaje del chat de la consulta (sender_user_id/role derivados del JWT). */
+export interface ChatMessageDto {
+  id: string;
+  appointmentId: string;
+  senderUserId: string;
+  senderRole: ChatSenderRole;
+  body: string;
+  createdAt: string;
+}
+
 export interface AppointmentRequestDto {
   id: string;
   patientId: string;
@@ -286,8 +298,37 @@ export function fetchAppointmentRoom(
   return api<AppointmentRoomDto>(`/api/v1/appointments/${appointmentId}/room`);
 }
 
-/** Catálogo de profesionales clínicos del backend (público-autenticado, sin PHI). */
-export function fetchProfessionalsCatalog(): Promise<{
+/**
+ * Mensajes del chat de la consulta (participante por identidad, mismo
+ * contrato que la sala). El cursor incremental `after`/`afterId` viaja como
+ * query string; sin cursor devuelve el historial desde el inicio.
+ */
+export function fetchRoomChatMessages(
+  appointmentId: string,
+  params?: { after?: string; afterId?: string; limit?: number },
+): Promise<ChatMessageDto[]> {
+  const qs = new URLSearchParams();
+  if (params?.after) qs.set("after", params.after);
+  if (params?.afterId) qs.set("afterId", params.afterId);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return api<ChatMessageDto[]>(
+    `/api/v1/appointments/${appointmentId}/chat/messages${suffix}`,
+  );
+}
+
+/** Envía un mensaje al chat de la consulta (sender derivado server-side). */
+export function sendRoomChatMessage(
+  appointmentId: string,
+  body: string,
+): Promise<ChatMessageDto> {
+  return api<ChatMessageDto>(
+    `/api/v1/appointments/${appointmentId}/chat/messages`,
+    { method: "POST", body: JSON.stringify({ body }) },
+  );
+}
+
+/** Catálogo de profesionales clínicos del backend (público-autenticado, sin PHI). */export function fetchProfessionalsCatalog(): Promise<{
   data: ProfessionalCatalogItem[];
   total: number;
   page: number;

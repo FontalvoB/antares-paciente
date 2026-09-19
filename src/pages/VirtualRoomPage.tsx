@@ -7,6 +7,8 @@ import {
   micOutline,
   micOffOutline,
   close,
+  chatbubbleEllipsesOutline,
+  refreshOutline,
 } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
 import {
@@ -16,6 +18,23 @@ import {
 } from "../utils/appointmentsApi";
 import { APPOINTMENT_STATUS_LABELS } from "../data/appointments";
 import { formatRoomMoment, roomWindowState } from "../utils/roomWindow";
+import {
+  classifyRoomEnd,
+  roomEndTitleKey,
+  twilioErrorMessageKey,
+  type RoomEndCause,
+} from "../utils/roomEnd";
+import {
+  canJoinWithMedia,
+  initialMediaProbe,
+  mediaPlan,
+  mediaStatusLabelKey,
+  probeRoomMedia,
+  type MediaProbeResult,
+  type MediaProbeStatus,
+} from "../utils/roomMedia";
+import { isRoomChatEnabled } from "../utils/roomChat";
+import { RoomChatPanel } from "../components/RoomChatPanel";
 import { useI18n, useT } from "../i18n/I18nContext";
 
 /**
@@ -140,7 +159,16 @@ export function VirtualRoomPage() {
   const [seconds, setSeconds] = useState(0);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
-  const [roomEnded, setRoomEnded] = useState(false);
+  /** Tracks locales realmente publicados (en audio-only no hay cámara). */
+  const [hasLocalAudio, setHasLocalAudio] = useState(true);
+  const [hasLocalVideo, setHasLocalVideo] = useState(true);
+  /** Causa del fin cuando la sala se cierra (red vs consulta vs ventana). */
+  const [endCause, setEndCause] = useState<RoomEndCause>("network");
+  /** Sonda de cámara/micrófono del prejoin; null = comprobando. */
+  const [mediaProbe, setMediaProbe] = useState<MediaProbeResult | null>(() =>
+    initialMediaProbe(),
+  );
+  const [chatOpen, setChatOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const roomRef = useRef<TwilioRoom | null>(null);
   const localRef = useRef<HTMLDivElement>(null);
@@ -193,10 +221,57 @@ export function VirtualRoomPage() {
     roomRef.current = null;
     detachAll(localRef.current);
     detachAll(remoteRef.current);
+    setChatOpen(false);
     setPhase("ended");
     setSeconds(0);
     closeRoom();
   }, [detachAll, closeRoom]);
+
+  /**
+   * Cierra la sala con la causa clasificada (red / consulta finalizada /
+   * ventana cerrada). GET /room + la cita son la autoridad; si no se pueden
+   * consultar se conserva el fallback (red).
+   */
+  const finalizeEnd = useCallback(
+    async (fallback: RoomEndCause = "network") => {
+      let cause = fallback;
+      if (apptId) {
+        const windowState = roomWindowState(
+          Date.now(),
+          roomAppointment?.roomOpensAt,
+          roomAppointment?.roomClosesAt,
+        );
+        try {
+          const room = await fetchAppointmentRoom(apptId);
+          cause = classifyRoomEnd({
+            windowState,
+            appointmentStatus: roomAppointment?.status,
+            roomStatus: room.status,
+            activeSessionStatus: room.activeSessionStatus,
+          });
+        } catch (err) {
+          if (err instanceof ApiClientError && err.status === 404) {
+            // Sala inexistente: la cita decide (Completed → finalizada).
+            cause = classifyRoomEnd({
+              windowState,
+              appointmentStatus: roomAppointment?.status,
+            });
+          }
+        }
+      }
+      if (!mountedRef.current) return;
+      intentionalRef.current = true;
+      stopLocalTracks(roomRef.current);
+      roomRef.current?.disconnect();
+      roomRef.current = null;
+      detachAll(localRef.current);
+      detachAll(remoteRef.current);
+      setEndCause(cause);
+      setChatOpen(false);
+      setPhase("ended");
+    },
+    [apptId, roomAppointment, detachAll],
+  );
 
   const attachParticipant = useCallback(
     (participant: TwilioParticipant, container: HTMLElement | null) => {
@@ -249,11 +324,13 @@ export function VirtualRoomPage() {
 
   /** Conecta la sala ya negociada: pinta participantes y engancha eventos. */
   const wireRoom = useCallback(
-    (room: TwilioRoom) => {
+    (room: TwilioRoom, plan: { audio: boolean; video: boolean }) => {
       roomRef.current = room;
       reconnectAttemptedRef.current = false;
-      setMicOn(true);
-      setCamOn(true);
+      setMicOn(plan.audio);
+      setCamOn(plan.video);
+      setHasLocalAudio(plan.audio);
+      setHasLocalVideo(plan.video);
 
       // Local: los tracks de cámara/mic llegan vía trackSubscribed tras connect.
       setupParticipant(room.localParticipant, localRef.current);
@@ -311,17 +388,18 @@ export function VirtualRoomPage() {
           return;
         }
         // Corte inesperado: una reconexión con token fresco; si ya se intentó,
-        // la consulta se cierra.
+        // la sala se cierra con la causa clasificada (red vs consulta
+        // finalizada vs ventana cerrada).
         if (!reconnectAttemptedRef.current) {
           reconnectAttemptedRef.current = true;
           console.warn("[room] Conexión perdida; reconectando con token nuevo…");
           void connectRef.current?.(true);
           return;
         }
-        setPhase("ended");
+        void finalizeEnd("network");
       });
     },
-    [detachAll, setupParticipant],
+    [detachAll, setupParticipant, finalizeEnd],
   );
 
   const connect = useCallback(
@@ -329,9 +407,11 @@ export function VirtualRoomPage() {
       if (!apptId || !roomAppointment) return;
       setPhase("connecting");
       setError(null);
+      intentionalRef.current = false;
       if (!reconnect) {
         reconnectAttemptedRef.current = false;
-        setRoomEnded(false);
+        setEndCause("network");
+        setChatOpen(false);
       }
       try {
         const join = await fetchJoinToken(apptId);
@@ -339,39 +419,46 @@ export function VirtualRoomPage() {
           ? new Date(join.expiresAt).getTime()
           : Date.now() + TOKEN_TTL_FALLBACK_MS;
         const sdk = await loadTwilioVideo();
-        const room = await sdk.connect(join.token, { audio: true, video: true });
+        // Entra solo con los tracks que el preflight dio por listos (si la
+        // cámara no está disponible, la conexión se degrada a audio).
+        const plan = mediaPlan(mediaProbe);
+        const room = await sdk.connect(join.token, {
+          audio: plan.audio,
+          video: plan.video,
+        });
         if (!mountedRef.current) {
           room.disconnect();
           return;
         }
-        wireRoom(room);
+        wireRoom(room, plan);
       } catch (err) {
         if (!mountedRef.current) return;
         console.warn("[room] No se pudo entrar a la sala:", err);
         setNow(Date.now());
-        const status = err instanceof ApiClientError ? err.status : 0;
-        // 409 = el backend rechaza la ventana/estado de la cita. En una
-        // reconexión significa que la consulta ya terminó.
-        if (reconnect && (status === 409 || windowState === "after")) {
-          setRoomEnded(true);
-          setPhase("ended");
+        // Reconexión fallida: se cierra con la causa real (red, consulta
+        // finalizada o ventana cerrada), sin pantalla de error intermedia.
+        if (reconnect) {
+          void finalizeEnd("network");
           return;
         }
+        const status = err instanceof ApiClientError ? err.status : 0;
         const message =
-          status === 409
+          twilioErrorMessageKey(err) ??
+          (status === 409
             ? t(
                 "La sala no está disponible en este momento. Actualiza tus citas e inténtalo más tarde.",
               )
-            : err instanceof Error && /No se pudo cargar el SDK/.test(err.message)
+            : err instanceof Error &&
+                /No se pudo cargar el SDK/.test(err.message)
               ? t("No se pudo cargar el video. Verifica tu conexión.")
               : err instanceof Error && err.message
                 ? err.message
-                : t("No se pudo entrar a la sala");
+                : t("No se pudo entrar a la sala"));
         setError(message);
         setPhase("error");
       }
     },
-    [apptId, roomAppointment, wireRoom, windowState, t],
+    [apptId, roomAppointment, wireRoom, mediaProbe, t, finalizeEnd],
   );
 
   useEffect(() => {
@@ -390,6 +477,23 @@ export function VirtualRoomPage() {
       roomRef.current = null;
     };
   }, []);
+
+  // Preflight (fase ready): sonda real de dispositivos/permisos con parada
+  // inmediata de los tracks (el estado inicial ya resuelve unsupported/
+  // insecure sin asincronía). OJO: en iOS el WKWebView no entrega frames de
+  // cámara a getUserMedia (riesgo documentado en CameraCapture.tsx:13-22);
+  // si no hay cámara se entra solo con audio.
+  useEffect(() => {
+    if (phase !== "ready" || mediaProbe !== null) return;
+    let cancelled = false;
+    void (async () => {
+      const result = await probeRoomMedia();
+      if (!cancelled && mountedRef.current) setMediaProbe(result);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, mediaProbe]);
 
   // TTL del token (900 s): la conexión se renueva con un token fresco antes
   // de que el SDK quede con credenciales vencidas.
@@ -432,7 +536,8 @@ export function VirtualRoomPage() {
         if (!ended) return;
         console.warn("[room] La sala terminó según el backend.");
         intentionalRef.current = true;
-        setRoomEnded(true);
+        setEndCause("session-ended");
+        setChatOpen(false);
         stopLocalTracks(roomRef.current);
         roomRef.current?.disconnect();
         roomRef.current = null;
@@ -486,6 +591,17 @@ export function VirtualRoomPage() {
   const statusLabel = roomAppointment.status
     ? APPOINTMENT_STATUS_LABELS[roomAppointment.status]
     : roomAppointment.when;
+
+  const cameraStatus: MediaProbeStatus = mediaProbe?.camera ?? "checking";
+  const microphoneStatus: MediaProbeStatus =
+    mediaProbe?.microphone ?? "checking";
+  const cameraReady = cameraStatus === "ready";
+  const microphoneReady = microphoneStatus === "ready";
+  const devicesReady = cameraReady && microphoneReady;
+  // Si la cámara no está pero el micrófono sí, la entrada se degrada a audio.
+  const audioOnly = mediaProbe !== null && !cameraReady && microphoneReady;
+  const joinAllowed = windowOpen && canJoinWithMedia(mediaProbe);
+  const mediaBlocked = mediaProbe !== null && !canJoinWithMedia(mediaProbe);
 
   return (
     <div className="room-screen">
@@ -596,21 +712,68 @@ export function VirtualRoomPage() {
                 )}
               </p>
             )}
+            <div className="room-devices" aria-live="polite">
+              <span className={`room-device${cameraReady ? " ok" : ""}`}>
+                <IonIcon
+                  icon={cameraReady ? videocamOutline : videocamOffOutline}
+                />
+                <span>{t(mediaStatusLabelKey(cameraStatus, "camera"))}</span>
+              </span>
+              <span className={`room-device${microphoneReady ? " ok" : ""}`}>
+                <IonIcon icon={microphoneReady ? micOutline : micOffOutline} />
+                <span>
+                  {t(mediaStatusLabelKey(microphoneStatus, "microphone"))}
+                </span>
+              </span>
+            </div>
+            {mediaBlocked ? (
+              <p className="room-device-hint">
+                {t(
+                  "Revisa los permisos de cámara y micrófono en los ajustes del sistema.",
+                )}
+              </p>
+            ) : null}
             <IonButton
               className="bt bt-teal"
-              disabled={!windowOpen}
+              disabled={!joinAllowed}
               onClick={() => void connect()}
             >
               <IonIcon icon={callOutline} slot="start" />
-              {t("Entrar a la consulta")}
+              {audioOnly ? t("Unirme solo con audio") : t("Entrar a la consulta")}
             </IonButton>
+            {mediaProbe && !devicesReady ? (
+              <IonButton
+                fill="clear"
+                className="room-device-retry"
+                onClick={() => setMediaProbe(null)}
+              >
+                <IonIcon icon={refreshOutline} slot="start" />
+                {t("Volver a comprobar")}
+              </IonButton>
+            ) : null}
           </div>
         ) : phase === "ended" ? (
           <div className="room-empty">
-            <IonIcon icon={callOutline} />
-            <strong>
-              {roomEnded ? t("La consulta finalizó") : t("Consulta finalizada")}
-            </strong>
+            <IonIcon
+              icon={endCause === "session-ended" ? callOutline : videocamOffOutline}
+            />
+            <strong>{t(roomEndTitleKey(endCause))}</strong>
+            <p>
+              {endCause === "network"
+                ? t("No pudimos restablecer la conexión.")
+                : endCause === "session-ended"
+                  ? t("El profesional finalizó la consulta.")
+                  : t("La sala ya no está disponible.")}
+            </p>
+            {endCause === "network" && windowOpen ? (
+              <IonButton
+                className="bt bt-teal"
+                onClick={() => void connect()}
+              >
+                <IonIcon icon={refreshOutline} slot="start" />
+                {t("Reintentar conexión")}
+              </IonButton>
+            ) : null}
             <IonButton
               className="bt bt-primary"
               onClick={() => navigate("book")}
@@ -655,6 +818,7 @@ export function VirtualRoomPage() {
           <div className="room-ctrls">
             <IonButton
               className={`bt bt-round room-toggle${micOn ? "" : " off"}`}
+              disabled={!hasLocalAudio}
               aria-label={
                 micOn ? t("Silenciar micrófono") : t("Activar micrófono")
               }
@@ -667,6 +831,7 @@ export function VirtualRoomPage() {
             </IonButton>
             <IonButton
               className={`bt bt-round room-toggle${camOn ? "" : " off"}`}
+              disabled={!hasLocalVideo}
               aria-label={camOn ? t("Apagar cámara") : t("Encender cámara")}
               onClick={toggleCam}
             >
@@ -674,6 +839,13 @@ export function VirtualRoomPage() {
                 slot="icon-only"
                 icon={camOn ? videocamOutline : videocamOffOutline}
               />
+            </IonButton>
+            <IonButton
+              className="bt bt-round room-toggle"
+              aria-label={t("Chat de la consulta")}
+              onClick={() => setChatOpen(true)}
+            >
+              <IonIcon slot="icon-only" icon={chatbubbleEllipsesOutline} />
             </IonButton>
             <IonButton
               className="bt bt-round room-hang"
@@ -687,6 +859,14 @@ export function VirtualRoomPage() {
             {t("La sesión la inicia y finaliza el profesional")}
           </span>
         </footer>
+      ) : null}
+
+      {chatOpen && apptId ? (
+        <RoomChatPanel
+          appointmentId={apptId}
+          enabled={isRoomChatEnabled(roomAppointment.status)}
+          onClose={() => setChatOpen(false)}
+        />
       ) : null}
     </div>
   );
