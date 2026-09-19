@@ -51,8 +51,9 @@ function setMediaDevices(value: unknown) {
   });
 }
 
+/** Botón "Entrar a la consulta" (bt-teal); el CTA de pre-consulta va antes. */
 function joinButton(container: HTMLElement) {
-  return container.querySelector(".room-empty ion-button") as
+  return container.querySelector(".room-empty ion-button.bt-teal") as
     | (HTMLElement & { disabled?: boolean })
     | null;
 }

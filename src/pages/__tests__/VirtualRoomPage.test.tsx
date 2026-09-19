@@ -40,9 +40,13 @@ function listed(overrides: Partial<ListedAppointment> = {}): ListedAppointment {
   };
 }
 
-/** Estado del botón "Entrar a la consulta" (custom element ion-button). */
+/**
+ * Estado del botón "Entrar a la consulta" (IonButton bt-teal). El prejoin
+ * puede renderizar antes el CTA de pre-consulta, por eso se selecciona por
+ * clase y no como primer ion-button del bloque.
+ */
 function joinButton(container: HTMLElement) {
-  return container.querySelector(".room-empty ion-button") as
+  return container.querySelector(".room-empty ion-button.bt-teal") as
     | (HTMLElement & { disabled?: boolean })
     | null;
 }

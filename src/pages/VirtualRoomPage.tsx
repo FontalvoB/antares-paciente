@@ -35,6 +35,11 @@ import {
 } from "../utils/roomMedia";
 import { isRoomChatEnabled } from "../utils/roomChat";
 import { RoomChatPanel } from "../components/RoomChatPanel";
+import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
+import {
+  isPreVisitIntakeEditable,
+  preVisitIntakeVisible,
+} from "../utils/preVisitIntake";
 import { useI18n, useT } from "../i18n/I18nContext";
 
 /**
@@ -169,6 +174,8 @@ export function VirtualRoomPage() {
     initialMediaProbe(),
   );
   const [chatOpen, setChatOpen] = useState(false);
+  /** Pre-consulta de la cita (F4) desde el prejoin: editable solo Confirmed. */
+  const [intakeOpen, setIntakeOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const roomRef = useRef<TwilioRoom | null>(null);
   const localRef = useRef<HTMLDivElement>(null);
@@ -198,6 +205,11 @@ export function VirtualRoomPage() {
     [now, roomAppointment?.roomOpensAt, roomAppointment?.roomClosesAt],
   );
   const windowOpen = windowState !== "before" && windowState !== "after";
+  // Pre-consulta visible con la cita vigente (Confirmed, editable) o en curso
+  // (InProgress, solo lectura); el guardado real vive en el backend (409 al
+  // iniciar la sesión).
+  const intakeVisible = preVisitIntakeVisible(roomAppointment?.status);
+  const intakeEditable = isPreVisitIntakeEditable(roomAppointment?.status);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -733,6 +745,17 @@ export function VirtualRoomPage() {
                 )}
               </p>
             ) : null}
+            {intakeVisible ? (
+              <IonButton
+                fill="clear"
+                className="room-intake"
+                onClick={() => setIntakeOpen(true)}
+              >
+                {intakeEditable
+                  ? t("Completar mi pre-consulta")
+                  : t("Ver mi pre-consulta")}
+              </IonButton>
+            ) : null}
             <IonButton
               className="bt bt-teal"
               disabled={!joinAllowed}
@@ -866,6 +889,14 @@ export function VirtualRoomPage() {
           appointmentId={apptId}
           enabled={isRoomChatEnabled(roomAppointment.status)}
           onClose={() => setChatOpen(false)}
+        />
+      ) : null}
+
+      {intakeOpen && apptId ? (
+        <PreVisitIntakeSheet
+          appointmentId={apptId}
+          editable={intakeEditable}
+          onClose={() => setIntakeOpen(false)}
         />
       ) : null}
     </div>

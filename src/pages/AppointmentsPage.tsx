@@ -1,11 +1,16 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { IonAlert, IonButton, IonModal } from "@ionic/react";
 import { PageHeader } from "../components/PageHeader";
+import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
 import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { INITIAL_UPCOMING } from "../data/appointments";
 import { useT } from "../i18n/I18nContext";
+import {
+  isPreVisitIntakeEditable,
+  preVisitIntakeVisible,
+} from "../utils/preVisitIntake";
 
 export function AppointmentsPage() {
   const {
@@ -23,6 +28,8 @@ export function AppointmentsPage() {
   const t = useT();
   const [requestOpen, setRequestOpen] = useState(false);
   const [cancelId, setCancelId] = useState<string | null>(null);
+  /** Pre-consulta de la cita destacada (F4): editable mientras Confirmed. */
+  const [intakeOpen, setIntakeOpen] = useState(false);
 
   // Auto-apertura del wizard cuando el CTA del chat lo pide (flag one-shot
   // seteado por openBookingWizard antes de navegar a esta pantalla).
@@ -37,6 +44,11 @@ export function AppointmentsPage() {
   const past = realMode ? (pastAppointments ?? []) : [];
   const featured = upcoming.find((a) => a.featured);
   const rest = upcoming.filter((a) => a.id !== featured?.id);
+  // CTA de pre-consulta: visible con cita vigente/en curso; editable solo con
+  // la cita Confirmed (la sesión aún no inició). En demo no hay status → no se
+  // ofrece (no hay backend contra el que guardar).
+  const intakeVisible = preVisitIntakeVisible(featured?.status);
+  const intakeEditable = isPreVisitIntakeEditable(featured?.status);
 
   const handleCancel = async (id: string) => {
     if (realMode) {
@@ -150,6 +162,18 @@ export function AppointmentsPage() {
                   ✕
                 </IonButton>
               </div>
+              {intakeVisible ? (
+                <IonButton
+                  expand="block"
+                  className="bt bt-sm bt-ghost"
+                  style={{ marginTop: 10 }}
+                  onClick={() => setIntakeOpen(true)}
+                >
+                  {intakeEditable
+                    ? t("Completar mi pre-consulta")
+                    : t("Ver mi pre-consulta")}
+                </IonButton>
+              ) : null}
             </div>
           </article>
         ) : null}
@@ -238,6 +262,14 @@ export function AppointmentsPage() {
           />
         ) : null}
       </IonModal>
+
+      {intakeOpen && featured ? (
+        <PreVisitIntakeSheet
+          appointmentId={featured.id}
+          editable={intakeEditable}
+          onClose={() => setIntakeOpen(false)}
+        />
+      ) : null}
 
       <IonAlert
         isOpen={!!cancelId}

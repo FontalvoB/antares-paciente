@@ -19682,10 +19682,13 @@ html.plt-tablet .app-shell.app-shell-login {
 
 html.is-tablet ion-modal.voice-modal,
 html.is-tablet ion-modal.request-modal,
+html.is-tablet ion-modal.previsit-modal,
 html.plt-ipad ion-modal.voice-modal,
 html.plt-ipad ion-modal.request-modal,
+html.plt-ipad ion-modal.previsit-modal,
 html.plt-tablet ion-modal.voice-modal,
-html.plt-tablet ion-modal.request-modal {
+html.plt-tablet ion-modal.request-modal,
+html.plt-tablet ion-modal.previsit-modal {
   --max-width: 100%;
 }
 
@@ -19898,4 +19901,120 @@ html.plt-tablet .mcar-page {
 /* Respeto de motions reducidos (misma regla que el resto de la app). */
 @media (prefers-reduced-motion: reduce) {
   .mascot-character { animation: none; }
+}
+
+/* ============================================================
+   Pre-consulta del paciente (F4) — hoja de formulario (IonModal)
+   Reutiliza .field/.fld del design system; contador y errores en línea.
+   ============================================================ */
+
+ion-modal.previsit-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 430px;
+  --border-radius: 0;
+  --background: var(--g0);
+}
+ion-modal.previsit-modal::part(content) {
+  display: flex;
+  flex-direction: column;
+}
+
+.previsit {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--g0);
+}
+
+.previsit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 8px 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--bd);
+}
+.previsit-head strong {
+  font-size: 15px;
+}
+.previsit-close {
+  --color: var(--tx) !important;
+}
+
+.previsit-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+}
+
+.previsit-note {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--mu);
+}
+
+.previsit-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 32px;
+  color: var(--mu);
+  font-size: 13px;
+  text-align: center;
+}
+
+.previsit-empty {
+  margin: 24px 0;
+  font-size: 13px;
+  color: var(--mu);
+  text-align: center;
+}
+
+.previsit-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--mu);
+}
+.previsit-hint.error {
+  color: var(--red);
+}
+
+.previsit-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1px solid var(--bd);
+}
+
+.previsit-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--teal);
+}
+.previsit-saved ion-icon {
+  font-size: 16px;
+}
+
+.previsit-error {
+  font-size: 12px;
+  color: var(--red);
+}
+
+/* Enlace de pre-consulta en el prejoin de la sala virtual. */
+.room-intake {
+  --color: var(--teal) !important;
+  font-size: 13px;
+  margin-top: -4px;
 }
