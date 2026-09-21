@@ -9,18 +9,13 @@ import {
   person,
   refreshOutline,
   school,
+  videocamOutline,
   walk,
   water,
 } from "ionicons/icons";
 import {
-  AppleIcon3D,
-  BodyIcon3D,
-  CalendarIcon3D,
   ChatIcon3D,
-  CommunityIcon3D,
   MicIcon3D,
-  ProfileIcon3D,
-  RecordIcon3D,
   SosIcon3D,
   WatchIcon3D,
 } from "../components/icons3d";
@@ -46,6 +41,12 @@ import { useProgram } from "../hooks/useProgram";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useScoresHistory } from "../hooks/useScoresHistory";
 import logoIcon from "../assets/LogoIndividual.png";
+import coverCitas from "../assets/modules/citas.png";
+import coverComunidad from "../assets/modules/comunidad.png";
+import coverCuerpo from "../assets/modules/cuerpo.png";
+import coverHistoria from "../assets/modules/historia.png";
+import coverNutricion from "../assets/modules/nutricion.png";
+import coverPerfil from "../assets/modules/perfil.png";
 import type { CSSProperties } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
 
@@ -158,7 +159,7 @@ export function HomePage() {
       title: t("Citas"),
       sub: t("Agenda, control y telemedicina"),
       accent: "var(--mod-appt)",
-      icon: <CalendarIcon3D />,
+      cover: coverCitas,
       cta: t("Ver agenda"),
       data: featuredReal
         ? `${featuredReal.time} · ${t(featuredReal.day)}`
@@ -171,7 +172,7 @@ export function HomePage() {
       title: t("Nutrición"),
       sub: t("Tu plan y el registro del día"),
       accent: "var(--mod-nut)",
-      icon: <AppleIcon3D />,
+      cover: coverNutricion,
       cta: t("Ver plan"),
       data: realMode ? t("Sin datos") : t("1,650 / 1,800 kcal"),
     },
@@ -180,7 +181,7 @@ export function HomePage() {
       title: t("Visualización del perfil"),
       sub: t("Índices y mediciones corporales"),
       accent: "var(--mod-body)",
-      icon: <BodyIcon3D />,
+      cover: coverCuerpo,
       cta: t("Ver mi cuerpo"),
     },
     {
@@ -188,7 +189,7 @@ export function HomePage() {
       title: t("Historia clínica"),
       sub: t("Diagnósticos, lab y medicamentos"),
       accent: "var(--mod-record)",
-      icon: <RecordIcon3D />,
+      cover: coverHistoria,
       cta: t("Abrir expediente"),
     },
     {
@@ -196,7 +197,7 @@ export function HomePage() {
       title: t("Comunidad"),
       sub: t("Diagnóstico, grupos y apoyo"),
       accent: "var(--mod-com)",
-      icon: <CommunityIcon3D />,
+      cover: coverComunidad,
       cta: t("Entrar"),
     },
     {
@@ -204,7 +205,7 @@ export function HomePage() {
       title: t("Mi perfil"),
       sub: t("Seguros, equipo y ajustes"),
       accent: "var(--mod-profile)",
-      icon: <ProfileIcon3D />,
+      cover: coverPerfil,
       cta: t("Ver perfil"),
     },
   ];
@@ -298,8 +299,6 @@ export function HomePage() {
   const nextFallbackTask = PROGRAM_TASKS.find((task) => !program[task.id]);
   const nextTaskTitle =
     nextServerTask?.title || nextFallbackTask?.title || "";
-  const nextTaskShort =
-    nextServerTask?.short || nextFallbackTask?.short || "";
   const dayComplete = todayDone === missionTotal;
 
   // Serie de adherencia REAL: dimensions.adherence por punto del
@@ -423,22 +422,13 @@ export function HomePage() {
                 )
           }
         >
-          <svg className="hm-wheel-pulse" viewBox="0 0 400 64" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 34 H16 C22 34 24 29 24 24 C24 12 40 12 44 23 C49 12 64 12 64 24 C64 35 44 46 44 46 C44 46 24 35 24 24 M44 46 C51 38 58 34 70 34 H292 L302 34 L312 23 L322 46 L333 9 L345 55 L356 34 H400" />
-          </svg>
           <span className="hm-wheel-kicker">{t("Protocolo diario")}</span>
           <ProtocolWheel
             program={program}
             chestClaimed={dayComplete}
             title={t("Protocolo diario")}
-            actionLabel={t("Entrar")}
             count={todayDone}
             total={todayTotal}
-            caption={
-              dayComplete
-                ? t("Día completado · cofre listo")
-                : t(nextTaskShort) || t("Toca para continuar")
-            }
           />
           <span className="hm-wheel-foot">
             {activeStreak} {t("días")}/{t("Semana")} {activeProgramWeek}
@@ -547,6 +537,9 @@ export function HomePage() {
             aria-label={apptCopy.label}
             aria-busy={apptState === "loading"}
           >
+            <span className="hm-appt-tele" aria-hidden="true">
+              <IonIcon icon={videocamOutline} />
+            </span>
             {apptState === "loading" ? (
               <span className="hm-appt-skeleton">
                 <IonSkeletonText animated style={{ width: "64%", height: 17 }} />

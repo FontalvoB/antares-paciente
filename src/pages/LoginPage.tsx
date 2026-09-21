@@ -13,7 +13,6 @@ import {
   chevronForwardOutline,
   eye,
   eyeOff,
-  keyOutline,
   lockClosedOutline,
   mailOutline,
   phonePortraitOutline,
@@ -24,7 +23,6 @@ import { useT } from "../i18n/I18nContext";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { Mascot } from "../components/Mascot";
 import {
-  DEMO_LOGIN,
   loginUser,
   lookupId,
   sendOtp,
@@ -287,7 +285,7 @@ export function LoginPage() {
                 }}
               >
                 <div className="auth-field">
-                  <label htmlFor="login-id">
+                  <label htmlFor="login-id">1
                     {t("Número de identificación")}
                   </label>
                   <IonInput
@@ -386,12 +384,6 @@ export function LoginPage() {
                   </span>
                 </IonButton>
 
-                <p className="auth-demo">
-                  {t("Acceso demo: ID")}{" "}
-                  <strong>{DEMO_LOGIN.documentNumber}</strong>
-                  {" · "}
-                  {t("Contraseña")} <strong>{DEMO_LOGIN.password}</strong>
-                </p>
               </form>
 
               <div className="auth-alt">
@@ -680,10 +672,6 @@ export function LoginPage() {
           )}
         </AnimatePresence>
 
-        <footer className="auth-footer">
-          <IonIcon icon={keyOutline} />
-          {t("Conexión segura con cifrado de extremo a extremo")}
-        </footer>
       </div>
     </div>
   );
