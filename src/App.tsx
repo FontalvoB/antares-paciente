@@ -17,6 +17,7 @@ import {
 import { fetchMyAppointments } from "./utils/appointmentsApi";
 import { mapAppointmentToListed } from "./data/appointments";
 import { AppProvider, useApp } from "./context/AppContext";
+import { WearableProvider } from "./context/WearableContext";
 import { I18nProvider, useT } from "./i18n/I18nContext";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { useTabletLayout } from "./hooks/useTabletLayout";
@@ -245,9 +246,11 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <I18nProvider>
           <AppProvider onResetCommunityClient={resetCommunityClient}>
-            <IonApp>
-              <Shell />
-            </IonApp>
+            <WearableProvider>
+              <IonApp>
+                <Shell />
+              </IonApp>
+            </WearableProvider>
           </AppProvider>
         </I18nProvider>
       </QueryClientProvider>

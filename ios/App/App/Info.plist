@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Copp Adresd usa Bluetooth para conectarse a tu anillo inteligente y recibir tus datos de salud.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Copp Adresd usa Bluetooth para conectarse a tu anillo inteligente y recibir tus datos de salud.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
 	<key>NSMicrophoneUsageDescription</key>

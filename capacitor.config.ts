@@ -16,6 +16,10 @@ const config: CapacitorConfig = {
   // Se aplican en `npm run sync`.
   ios: {
     infoPlist: {
+      NSBluetoothAlwaysUsageDescription:
+        "Copp Adresd usa Bluetooth para conectarse a tu anillo o banda y recibir tus datos de salud.",
+      NSBluetoothPeripheralUsageDescription:
+        "Copp Adresd usa Bluetooth para conectarse a tu anillo o banda y recibir tus datos de salud.",
       NSCameraUsageDescription:
         "Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.",
       NSMicrophoneUsageDescription:
