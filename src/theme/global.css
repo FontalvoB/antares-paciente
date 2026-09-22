@@ -677,14 +677,33 @@ ion-button.onb-back-login {
   pointer-events: none;
 }
 
+/* Pie del onboarding: la acción primaria usa el lenguaje del login
+   (píldora navy con pulgar/chevrons) y el botón secundario queda como
+   ghost táctil; la barra flota con sombra suave como el resto de la app. */
 .onb-foot-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   pointer-events: auto;
 }
 
 .onb-foot-row ion-button.bt {
   flex: 1;
+}
+
+.onb-foot-row ion-button.bt-primary {
+  border-radius: 999px;
+  min-height: 54px;
+  font-weight: 600;
+  box-shadow: 0 14px 30px rgba(20, 40, 85, 0.3);
+}
+
+.onb-foot-row ion-button.bt.ghost,
+.onb-foot-row ion-button.bt-ghost {
+  flex: 0 0 auto;
+  min-height: 54px;
+  border-radius: 999px;
+  color: var(--mu);
+  background: transparent;
 }
 
 .onb-done {
@@ -16694,6 +16713,27 @@ ion-button.cta-pill.button-disabled {
   font-size: 15px;
   font-weight: 800;
   color: var(--brand-green);
+}
+
+/* iPhone SE/mini y móviles bajos: compacta el bloque superior para que el
+   CTA y "Activa tu cuenta" entren en el primer viewport (sin ocultar nada:
+   auth-scroll ya permite el scroll como red de seguridad). */
+@media (max-height: 780px) {
+  .auth-scroll {
+    padding-top: calc(18px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  }
+  .auth-logo {
+    width: min(148px, 38%);
+    margin-bottom: 12px;
+  }
+  .auth-title {
+    margin-bottom: 16px;
+    font-size: 26px;
+  }
+  .auth-alt {
+    margin-top: 14px;
+  }
 }
 
 .auth-note {
