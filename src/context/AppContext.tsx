@@ -115,7 +115,9 @@ interface AppState {
    * mensaje repetido entre tramos es legítimo (p. ej. dos quick-replies
    * iguales) y no debe perderse.
    */
-  prependChatMessages: (messages: { text: string; role?: "bot" | "user" }[]) => void;
+  prependChatMessages: (
+    messages: { text: string; role?: "bot" | "user" }[],
+  ) => void;
   appendChatMessages: (
     messages: Array<{
       role: "bot" | "user" | "alert";
@@ -494,7 +496,7 @@ export function AppProvider({
     const check = async () => {
       if (cancelled) return;
       const token = getAccessToken();
-      if (!token || token === "demo-access-token") return;
+      if (!token) return;
       if (!isAccessTokenExpired()) return;
       await refreshAccessToken();
     };

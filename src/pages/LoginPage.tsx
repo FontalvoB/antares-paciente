@@ -22,6 +22,7 @@ import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { Mascot } from "../components/Mascot";
+import { SlideCtaButton } from "../components/SlideCtaButton";
 import {
   loginUser,
   lookupId,
@@ -285,8 +286,8 @@ export function LoginPage() {
                 }}
               >
                 <div className="auth-field">
-                  <label htmlFor="login-id">1
-                    {t("Número de identificación")}
+                  <label htmlFor="login-id">
+                    1{t("Número de identificación")}
                   </label>
                   <IonInput
                     id="login-id"
@@ -358,32 +359,14 @@ export function LoginPage() {
 
                 {busyBar}
 
-                <IonButton
-                  expand="block"
-                  className="cta-pill"
-                  type="submit"
+                <SlideCtaButton
+                  label={t("Comencemos")}
+                  busyLabel={t("Verificando…")}
+                  busy={busy}
                   disabled={busy}
-                >
-                  <span className="cta-pill-ico">
-                    {busy ? (
-                      <IonSpinner
-                        name="crescent"
-                        style={{ width: 18, height: 18 }}
-                      />
-                    ) : (
-                      <IonIcon icon={chevronForwardOutline} />
-                    )}
-                  </span>
-                  <span className="cta-pill-label">
-                    {busy ? t("Verificando…") : t("Comencemos")}
-                  </span>
-                  <span className="cta-pill-chevrons" aria-hidden="true">
-                    <IonIcon icon={chevronForwardOutline} />
-                    <IonIcon icon={chevronForwardOutline} />
-                    <IonIcon icon={chevronForwardOutline} />
-                  </span>
-                </IonButton>
-
+                  icon={chevronForwardOutline}
+                  onAct={submit}
+                />
               </form>
 
               <div className="auth-alt">
@@ -466,31 +449,14 @@ export function LoginPage() {
 
                       {busyBar}
 
-                      <IonButton
-                        expand="block"
-                        className="cta-pill"
-                        type="submit"
+                      <SlideCtaButton
+                        label={t("Confirmar identidad")}
+                        busyLabel={t("Buscando…")}
+                        busy={busy}
                         disabled={busy}
-                      >
-                        <span className="cta-pill-ico">
-                          {busy ? (
-                            <IonSpinner
-                              name="crescent"
-                              style={{ width: 18, height: 18 }}
-                            />
-                          ) : (
-                            <IonIcon icon={shieldCheckmarkOutline} />
-                          )}
-                        </span>
-                        <span className="cta-pill-label">
-                          {busy ? t("Buscando…") : t("Confirmar identidad")}
-                        </span>
-                        <span className="cta-pill-chevrons" aria-hidden="true">
-                          <IonIcon icon={chevronForwardOutline} />
-                          <IonIcon icon={chevronForwardOutline} />
-                          <IonIcon icon={chevronForwardOutline} />
-                        </span>
-                      </IonButton>
+                        icon={shieldCheckmarkOutline}
+                        onAct={confirmId}
+                      />
                     </form>
                   )}
 
@@ -627,32 +593,14 @@ export function LoginPage() {
 
                       {busyBar}
 
-                      <IonButton
-                        expand="block"
-                        className="cta-pill"
-                        type="button"
+                      <SlideCtaButton
+                        label={t("Verificar y entrar")}
+                        busyLabel={t("Verificando…")}
+                        busy={busy}
                         disabled={busy || otp.join("").length !== 6}
-                        onClick={submitOtp}
-                      >
-                        <span className="cta-pill-ico">
-                          {busy ? (
-                            <IonSpinner
-                              name="crescent"
-                              style={{ width: 18, height: 18 }}
-                            />
-                          ) : (
-                            <IonIcon icon={lockClosedOutline} />
-                          )}
-                        </span>
-                        <span className="cta-pill-label">
-                          {busy ? t("Verificando…") : t("Verificar y entrar")}
-                        </span>
-                        <span className="cta-pill-chevrons" aria-hidden="true">
-                          <IonIcon icon={chevronForwardOutline} />
-                          <IonIcon icon={chevronForwardOutline} />
-                          <IonIcon icon={chevronForwardOutline} />
-                        </span>
-                      </IonButton>
+                        icon={lockClosedOutline}
+                        onAct={submitOtp}
+                      />
                     </div>
                   )}
                 </motion.div>
@@ -671,7 +619,6 @@ export function LoginPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
     </div>
   );
