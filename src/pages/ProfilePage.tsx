@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IonButton, IonIcon, IonInput, IonSkeletonText, IonToggle } from "@ionic/react";
+import {
+  IonButton,
+  IonIcon,
+  IonInput,
+  IonSkeletonText,
+  IonToggle,
+} from "@ionic/react";
 import {
   bodyOutline,
   calendarOutline,
@@ -25,8 +31,104 @@ import { formatMetricValue } from "../data/metrics";
 import { updateLeaguePreferences } from "../services/program/league-service";
 import { programKeys } from "../hooks/queryKeys";
 import { ApiError } from "../utils/apiClient";
+import { updateMyPatientProfile } from "../utils/patientProfileApi";
 import { isValidNickname } from "../utils/league";
 import type { LeagueResponseDto } from "../services/program/types";
+
+/**
+ * Tarjeta de contacto editable del paciente (FASE 2): email + celular con
+ * guardado vía PUT /me/patient-profile (anti-IDOR por JWT). Al fallar se
+ * revierten los inputs al snapshot pre-guardado (rollback, spec FASE 2).
+ */
+function ContactSection() {
+  const { user, showToast } = useApp();
+  const t = useT();
+  const [email, setEmail] = useState(user.email);
+  const [cel, setCel] = useState(user.celular);
+  const [saving, setSaving] = useState(false);
+  const preSaveRef = useRef({ email: user.email, cel: user.celular });
+
+  useEffect(() => {
+    setEmail(user.email);
+    setCel(user.celular);
+  }, [user.email, user.celular]);
+
+  const save = async () => {
+    if (saving) return;
+    preSaveRef.current = { email, cel };
+    setSaving(true);
+    try {
+      await updateMyPatientProfile({
+        dateOfBirth: user.dob || null,
+        email,
+        phone: cel,
+        emergencyName: user.fam1Nombre,
+        emergencyRelationship: user.fam1Parentesco,
+        emergencyPhone: user.fam1Cel,
+        emergencyEmail: user.fam1Email,
+        insurerId: user.seguro || null,
+        memberId: user.poliza,
+      });
+      showToast(t("Datos actualizados"), "ok");
+    } catch (err) {
+      // Rollback a los valores previos si el backend rechaza el cambio.
+      setEmail(preSaveRef.current.email);
+      setCel(preSaveRef.current.cel);
+      showToast(
+        err instanceof Error
+          ? err.message
+          : t("No se pudo actualizar tu contacto"),
+        "err",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const dirty = email !== user.email || cel !== user.celular;
+
+  return (
+    <div style={{ padding: "0 16px", marginBottom: 8 }}>
+      <div className="group-card" style={{ padding: 14 }}>
+        <div className="h3" style={{ margin: "0 0 10px" }}>
+          {t("Datos de contacto")}
+        </div>
+        <div className="field" style={{ marginBottom: 10 }}>
+          <label htmlFor="pf-email">{t("Correo")}</label>
+          <IonInput
+            id="pf-email"
+            className="fld"
+            type="email"
+            value={email}
+            inputmode="email"
+            enterkeyhint="next"
+            onIonInput={(e) => setEmail(String(e.detail.value ?? ""))}
+          />
+        </div>
+        <div className="field" style={{ marginBottom: 12 }}>
+          <label htmlFor="pf-cel">{t("Celular")}</label>
+          <IonInput
+            id="pf-cel"
+            className="fld"
+            type="tel"
+            value={cel}
+            inputmode="tel"
+            enterkeyhint="done"
+            onIonInput={(e) => setCel(String(e.detail.value ?? ""))}
+          />
+        </div>
+        <IonButton
+          expand="block"
+          className="bt bt-primary"
+          disabled={saving || !dirty}
+          onClick={() => void save()}
+        >
+          {saving ? t("Guardando…") : t("Guardar contacto")}
+        </IonButton>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Sección "Liga" del perfil: opt-in + apodo (LEAGUE v1). La verdad de las
@@ -80,7 +182,9 @@ function LeagueSection() {
       // el refetch traiga entries/isMe/myRank frescos — un paciente recién
       // opt-in debe aparecer en SU ranking sin esperar el staleTime.
       queryClient.setQueryData<LeagueResponseDto>(programKeys.league, (old) =>
-        old ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } } : old,
+        old
+          ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } }
+          : old,
       );
       void queryClient.invalidateQueries({ queryKey: programKeys.league });
       showToast(t("Preferencias guardadas"), "ok");
@@ -129,7 +233,11 @@ function LeagueSection() {
       <div className="league-prefs-row">
         <div>
           <strong>{t("Aparecer en la Liga")}</strong>
-          <small>{t("Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.")}</small>
+          <small>
+            {t(
+              "Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.",
+            )}
+          </small>
         </div>
         <IonToggle
           checked={optedIn}
@@ -154,10 +262,17 @@ function LeagueSection() {
           />
           {nickname && !nicknameValid && (
             <small className="league-prefs-err">
-              {t("El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.")}
+              {t(
+                "El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.",
+              )}
             </small>
           )}
-          <IonButton expand="block" className="bt bt-teal" disabled={!canSave} onClick={() => void save()}>
+          <IonButton
+            expand="block"
+            className="bt bt-teal"
+            disabled={!canSave}
+            onClick={() => void save()}
+          >
             {saving ? t("Guardando…") : t("Guardar")}
           </IonButton>
         </div>
@@ -190,7 +305,9 @@ export function ProfilePage() {
   const programWeek = isMockFallback
     ? undefined
     : snapshot?.template?.currentWeekNumber;
-  const totalWeeks = isMockFallback ? undefined : snapshot?.template?.totalWeeks;
+  const totalWeeks = isMockFallback
+    ? undefined
+    : snapshot?.template?.totalWeeks;
   const weekSub =
     programWeek != null && totalWeeks != null
       ? t("Semana {cur} de {total}", {
@@ -225,8 +342,13 @@ export function ProfilePage() {
     <Screen>
       <PageHeader title={t("Perfil")} sub={weekSub} />
       <Scroll>
-        <IonButton expand="block" fill="outline" style={{ margin: '12px 16px', minHeight: 44 }} onClick={() => go('avatar')}>
-          {t('Mi Avatar')}
+        <IonButton
+          expand="block"
+          fill="outline"
+          style={{ margin: "12px 16px", minHeight: 44 }}
+          onClick={() => go("avatar")}
+        >
+          {t("Mi Avatar")}
         </IonButton>
         <div className="profile-hero-card">
           <div
@@ -386,6 +508,7 @@ export function ProfilePage() {
         </div>
 
         <div className="sec">{t("Cuenta")}</div>
+        <ContactSection />
         <LeagueSection />
         <div className="group-list" style={{ marginBottom: 20 }}>
           <button type="button" className="group-row" onClick={toggleLang}>

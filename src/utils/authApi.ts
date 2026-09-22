@@ -1,4 +1,5 @@
 import { getAuthBaseUrl, getApplicationCode } from "./apiBaseUrl";
+import { ApiError } from "./apiClient";
 
 const ACCESS_TOKEN_KEY = "copp_access_token";
 
@@ -131,6 +132,34 @@ export async function sendOtp(
     documentNumber,
     contactId,
   });
+}
+
+/**
+ * Define la PRIMERA contraseña de una cuenta OTP (POST /api/auth/set-first-password).
+ * Requiere sesión activa (Bearer) y falla si la cuenta ya tiene contraseña.
+ */
+export async function setFirstPassword(newPassword: string): Promise<void> {
+  const token = getAccessToken();
+  const res = await fetch(`${getAuthBaseUrl()}/api/auth/set-first-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+    body: JSON.stringify({ newPassword }),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) {
+    let message = `No se pudo establecer la contraseña (${res.status})`;
+    try {
+      const body = (await res.json()) as { message?: string };
+      if (body?.message) message = body.message;
+    } catch {
+      /* respuesta sin JSON: se usa el mensaje por defecto */
+    }
+    throw new ApiError({ status: res.status, message });
+  }
 }
 
 /** Verifica el OTP, aprovisiona la cuenta (si es la primera vez) y completa el login. */
