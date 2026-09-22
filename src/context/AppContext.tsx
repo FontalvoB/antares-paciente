@@ -59,7 +59,6 @@ import type {
 import { weekdayMondayIndex } from "../utils/dates";
 import { DAY_BONUS_PTS } from "../data/program";
 
-const USER_STORAGE_KEY = "antares_user_profile";
 /** Baseline por usuario del conteo de mensajes ya vistos del chat. */
 const CHAT_LAST_SEEN_PREFIX = "antares:chat-last-seen:";
 
@@ -179,19 +178,6 @@ const defaultUser: UserProfile = {
   fam1Email: "pedro.gonzalez@email.com",
 };
 
-function loadSavedUser(): UserProfile {
-  try {
-    const raw = localStorage.getItem(USER_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<UserProfile>;
-      return { ...defaultUser, ...parsed };
-    }
-  } catch {
-    /* fallback a defaultUser */
-  }
-  return defaultUser;
-}
-
 function createWelcomeMessage(name = "María"): ChatMessage {
   const firstName = name.trim().split(" ")[0] || "María";
   return {
@@ -295,11 +281,11 @@ export function AppProvider({
   const [panicOpen, setPanicOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [sosActive, setSosActive] = useState(false);
-  const [user, setUser] = useState<UserProfile>(loadSavedUser);
+  const [user, setUser] = useState<UserProfile>(defaultUser);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>(() => [
-    createWelcomeMessage(loadSavedUser().nombre),
+    createWelcomeMessage(defaultUser.nombre),
   ]);
   const [watchConnected, setWatchConnected] = useState(false);
   const [watchName, setWatchName] = useState("Copp Adresd Watch Pro");
@@ -482,7 +468,6 @@ export function AppProvider({
     return onSessionInvalid(() => {
       setFlow("login");
       setScreen("home");
-      localStorage.removeItem(USER_STORAGE_KEY);
     });
   }, []);
 
@@ -534,7 +519,6 @@ export function AppProvider({
                   nombre:
                     `${me.firstName} ${me.lastName}`.trim() || prev.nombre,
                 };
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
                 return updated;
               });
             }
@@ -722,7 +706,8 @@ export function AppProvider({
               ...(seed || {}),
               ...(meId ? { id: meId } : {}),
             };
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+            // La identidad vive en el backend (getMe + JWT); no se persiste
+            // localmente para no desincronizar APP ↔ ERP (FASE 1, task 2.1).
             return updated;
           });
         })();
@@ -736,7 +721,6 @@ export function AppProvider({
       },
       finishOnboarding: (u) => {
         setUser(u);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(u));
         setFlow("tests");
       },
       finishTests: () => setFlow("app"),
@@ -951,7 +935,6 @@ export function AppProvider({
         setActiveThreadId(null);
         setUser(defaultUser);
         setChat([createWelcomeMessage(defaultUser.nombre)]);
-        localStorage.removeItem(USER_STORAGE_KEY);
         // Cierra sesión en el servidor y luego recrea el cliente urql (cache
         // limpia + WS nuevo) para no servir datos del usuario anterior.
         void logoutUser().then(() => onResetCommunityClient?.());
