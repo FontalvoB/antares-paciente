@@ -33,6 +33,14 @@ const config: CapacitorConfig = {
     ],
   },
   plugins: {
+    // CapacitorHttp: en nativo, fetch pasa por HTTP nativo con el cookie jar
+    // del SO — la cookie HttpOnly copp_refresh_token viaja sin importar el
+    // SameSite=Lax de Development (WebView: origen http://localhost → gateway
+    // LAN = cross-site). Las llamadas SSE (chat/stream, salas) hacen bypass
+    // usando el fetch original del WebView (ver utils/threadApi.ts).
+    CapacitorHttp: {
+      enabled: true,
+    },
     Keyboard: {
       // "none": el inset lo gestiona useKeyboardInset (variable --kb).
       // "body" duplicaba el desplazamiento y dejaba un hueco sobre el teclado.
