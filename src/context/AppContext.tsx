@@ -34,7 +34,6 @@ import {
   fetchMyAppointments,
   fetchMyContext,
   fetchMyRequests,
-  fetchOrganizationsTree,
   fetchProfessionalsCatalog,
   hasRealSession,
   type AppointmentDto,
@@ -357,17 +356,19 @@ export function AppProvider({
     setAppointmentsLoading(true);
     setAppointmentsError(null);
     try {
-      const [me, appts, reqs, catalogData, orgs] = await Promise.all([
+      // Sin organizations/tree: el org id REAL del paciente viene del
+      // /telemedicine/me (resuelto por el backend desde su clínica ERP).
+      // Llamar al árbol ERP con aud=app daba 403 en cada arranque.
+      const [me, appts, reqs, catalogData] = await Promise.all([
         fetchMyContext(),
         fetchMyAppointments({ pageSize: 100 }),
         fetchMyRequests(),
         fetchProfessionalsCatalog(),
-        fetchOrganizationsTree().catch(() => null),
       ]);
       setCatalog(catalogData.data);
       setPatientCtx({
         patientId: me.patient?.id ?? null,
-        orgId: (orgs?.[0]?.id ?? "") || "5fde219a-89ea-4cf9-be48-379e8b1042cb",
+        orgId: me.patient?.organizationId ?? "",
       });
       setAppointments(appts.items);
       setRequests(reqs);
