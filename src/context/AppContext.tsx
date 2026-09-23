@@ -319,7 +319,10 @@ export function AppProvider({
   // TODO: Remove after full migration
   const [pointsToday, setPointsToday] = useState(0);
   // TODO: Remove after full migration
-  const [pointsTotal, setPointsTotal] = useState(4820);
+  // Inicia en 0 (honesto): el hero del Perfil prefiere snapshot.xp.balance;
+  // los incrementos locales de completeStep son continuidad demo tras la
+  // confirmación del servidor. El 4820 hardcodeado mostraba XP fabricado.
+  const [pointsTotal, setPointsTotal] = useState(0);
 
   const [catalog, setCatalog] = useState<ProfessionalCatalogItem[] | null>(
     null,

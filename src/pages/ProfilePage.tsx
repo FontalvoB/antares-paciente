@@ -332,11 +332,13 @@ export function ProfilePage() {
   }, [metricsHistory, locale]);
 
   // Hero: solo tarjetas con verdad real (semana del snapshot, delta de peso,
-  // puntos del backend). Sin dato → la tarjeta no se renderiza.
+  // puntos del backend). Sin dato → la tarjeta no se renderiza. El XP manda
+  // del snapshot (mismo patrón que Home); el local es continuidad demo.
+  const heroPoints = snapshot?.xp?.balance ?? pointsTotal;
   const heroMetrics: Array<[string, string]> = [];
   if (programWeek != null) heroMetrics.push([String(programWeek), "Semanas"]);
   if (weightDelta) heroMetrics.push([weightDelta, "Peso"]);
-  heroMetrics.push([String(pointsTotal), "Puntos"]);
+  heroMetrics.push([String(heroPoints), "Puntos"]);
 
   return (
     <Screen>
