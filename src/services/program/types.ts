@@ -95,6 +95,10 @@ export interface VitalsPayload {
   glucose?: number | null
   weightKg?: number | null
   temperatureC?: number | null
+  /** Pasos del día (métrica `step_count`). */
+  steps?: number | null
+  /** Sueño de la última noche en minutos (métrica `sleep_minutes`). */
+  sleepMinutes?: number | null
   measuredAt?: string | null
 }
 
