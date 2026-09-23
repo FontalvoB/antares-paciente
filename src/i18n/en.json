@@ -2109,5 +2109,11 @@
   "{h} h": "{h} h",
   "Meta alcanzada": "Goal reached",
   "En progreso": "In progress",
-  "Registra al menos 4 signos ({filled}/{total})": "Log at least 4 signs ({filled}/{total})"
+  "Registra al menos 4 signos ({filled}/{total})": "Log at least 4 signs ({filled}/{total})",
+  "Datos de contacto": "Contact details",
+  "Correo": "Email",
+  "Guardar contacto": "Save contact",
+  "Datos actualizados": "Details updated",
+  "No se pudo actualizar tu contacto": "Could not update your contact details",
+  "No se pudo guardar tu perfil": "Could not save your profile"
 }

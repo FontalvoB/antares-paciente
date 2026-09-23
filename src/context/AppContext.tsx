@@ -18,6 +18,10 @@ import {
   onSessionInvalid,
   restoreSession,
 } from "../utils/authApi";
+import {
+  fetchMyPatientProfile,
+  toUserProfile,
+} from "../utils/patientProfileApi";
 import { refreshAccessToken } from "../utils/apiClient";
 import {
   fetchThreadState,
@@ -59,7 +63,6 @@ import type {
 import { weekdayMondayIndex } from "../utils/dates";
 import { DAY_BONUS_PTS } from "../data/program";
 
-const USER_STORAGE_KEY = "antares_user_profile";
 /** Baseline por usuario del conteo de mensajes ya vistos del chat. */
 const CHAT_LAST_SEEN_PREFIX = "antares:chat-last-seen:";
 
@@ -115,7 +118,9 @@ interface AppState {
    * mensaje repetido entre tramos es legítimo (p. ej. dos quick-replies
    * iguales) y no debe perderse.
    */
-  prependChatMessages: (messages: { text: string; role?: "bot" | "user" }[]) => void;
+  prependChatMessages: (
+    messages: { text: string; role?: "bot" | "user" }[],
+  ) => void;
   appendChatMessages: (
     messages: Array<{
       role: "bot" | "user" | "alert";
@@ -176,19 +181,6 @@ const defaultUser: UserProfile = {
   fam1Cel: "+1 (786) 555-0192",
   fam1Email: "pedro.gonzalez@email.com",
 };
-
-function loadSavedUser(): UserProfile {
-  try {
-    const raw = localStorage.getItem(USER_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<UserProfile>;
-      return { ...defaultUser, ...parsed };
-    }
-  } catch {
-    /* fallback a defaultUser */
-  }
-  return defaultUser;
-}
 
 function createWelcomeMessage(name = "María"): ChatMessage {
   const firstName = name.trim().split(" ")[0] || "María";
@@ -293,11 +285,11 @@ export function AppProvider({
   const [panicOpen, setPanicOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [sosActive, setSosActive] = useState(false);
-  const [user, setUser] = useState<UserProfile>(loadSavedUser);
+  const [user, setUser] = useState<UserProfile>(defaultUser);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>(() => [
-    createWelcomeMessage(loadSavedUser().nombre),
+    createWelcomeMessage(defaultUser.nombre),
   ]);
   const [wearableConnected, setWatchConnected] = useState(false);
   const [wearableName, setWatchName] = useState("Copp Adresd Wearable");
@@ -404,6 +396,39 @@ export function AppProvider({
     return () => window.removeEventListener("focus", onFocus);
   }, [realMode, screen, refreshAppointments]);
 
+  // Hidrata el perfil REAL del paciente (contacto, aseguradora, emergencia)
+  // en el user del contexto. Sin esto, un paciente sin teléfono en BD veía el
+  // mock del defaultUser en el ContactSection y "Guardar contacto" lo
+  // persistía como dato real. Best-effort: sin perfil (no provisionado /
+  // cuenta sin patient_profiles) se conserva el estado actual. El id/nombre
+  // de sesión (auth) no se toca: el perfil trae patient_id, otro dominio.
+  const hydratePatientProfile = useCallback(
+    async (activeCheck: () => boolean) => {
+      try {
+        const profile = await fetchMyPatientProfile();
+        if (!activeCheck()) return;
+        const real = toUserProfile(profile);
+        setUser((prev) => ({
+          ...prev,
+          email: real.email || prev.email,
+          cedula: real.cedula,
+          dob: real.dob,
+          seguro: real.seguro,
+          poliza: real.poliza,
+          grupo: real.grupo,
+          celular: real.celular,
+          fam1Nombre: real.fam1Nombre,
+          fam1Parentesco: real.fam1Parentesco,
+          fam1Cel: real.fam1Cel,
+          fam1Email: real.fam1Email,
+        }));
+      } catch {
+        /* no bloqueante: el perfil aún no existe (paciente sin provisionar) */
+      }
+    },
+    [],
+  );
+
   const teamProfessional = useCallback(
     (typeId: string): TeamProfessional => {
       const typed = (
@@ -480,7 +505,6 @@ export function AppProvider({
     return onSessionInvalid(() => {
       setFlow("login");
       setScreen("home");
-      localStorage.removeItem(USER_STORAGE_KEY);
     });
   }, []);
 
@@ -494,7 +518,7 @@ export function AppProvider({
     const check = async () => {
       if (cancelled) return;
       const token = getAccessToken();
-      if (!token || token === "demo-access-token") return;
+      if (!token) return;
       if (!isAccessTokenExpired()) return;
       await refreshAccessToken();
     };
@@ -532,13 +556,17 @@ export function AppProvider({
                   nombre:
                     `${me.firstName} ${me.lastName}`.trim() || prev.nombre,
                 };
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
                 return updated;
               });
             }
           } catch {
             /* no bloqueante */
           }
+
+          // Perfil real del paciente (contacto/aseguradora/emergencia) en
+          // segundo término: la pantalla de Perfil y el onboarding muestran
+          // la verdad de la BD, nunca el mock del defaultUser.
+          void hydratePatientProfile(() => active);
 
           setFlow("app");
           onResetCommunityClient?.();
@@ -557,7 +585,7 @@ export function AppProvider({
     return () => {
       active = false;
     };
-  }, [onResetCommunityClient]);
+  }, [onResetCommunityClient, hydratePatientProfile]);
 
   // Thread estable del paciente: `proactive-<id>`. Se prioriza el id (UUID real)
   // devuelto por el backend/JWT para que coincida con el checkpointer del AI Service.
@@ -708,9 +736,16 @@ export function AppProvider({
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         void (async () => {
           let meId: string | undefined;
+          let meName: string | undefined;
           try {
             const me = await getMe();
             if (me?.id) meId = me.id;
+            // El nombre también viene del backend (FASE 3: el login por
+            // password solo traía el id y el Home saludaba con el mock
+            // "María González" — misma corrección que la restauración de
+            // sesión de arriba).
+            const name = `${me?.firstName ?? ""} ${me?.lastName ?? ""}`.trim();
+            if (name) meName = name;
           } catch {
             /* no bloqueante */
           }
@@ -719,10 +754,16 @@ export function AppProvider({
               ...u,
               ...(seed || {}),
               ...(meId ? { id: meId } : {}),
+              ...(meName ? { nombre: meName } : {}),
             };
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+            // La identidad vive en el backend (getMe + JWT); no se persiste
+            // localmente para no desincronizar APP ↔ ERP (FASE 1, task 2.1).
             return updated;
           });
+          // Contacto/perfil real también tras el login directo: sin esto el
+          // ContactSection prefillaba el mock del defaultUser (celular fake)
+          // y "Guardar contacto" lo habría persistido como dato del paciente.
+          await hydratePatientProfile(() => true);
         })();
         setFlow(next);
         // Recrea el cliente urql para usar la cache y el WS con el token nuevo.
@@ -734,7 +775,6 @@ export function AppProvider({
       },
       finishOnboarding: (u) => {
         setUser(u);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(u));
         setFlow("tests");
       },
       finishTests: () => setFlow("app"),
@@ -949,7 +989,6 @@ export function AppProvider({
         setActiveThreadId(null);
         setUser(defaultUser);
         setChat([createWelcomeMessage(defaultUser.nombre)]);
-        localStorage.removeItem(USER_STORAGE_KEY);
         // Cierra sesión en el servidor y luego recrea el cliente urql (cache
         // limpia + WS nuevo) para no servir datos del usuario anterior.
         void logoutUser().then(() => onResetCommunityClient?.());

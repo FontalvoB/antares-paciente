@@ -11,52 +11,56 @@
  * - No logging of tokens, cookies, or PHI
  */
 
-import { getAccessToken, persistAccessToken, clearSessionAndNotify } from './authApi'
-import { getApiBaseUrl, getAuthBaseUrl } from './apiBaseUrl'
+import {
+  getAccessToken,
+  persistAccessToken,
+  clearSessionAndNotify,
+} from "./authApi";
+import { getApiBaseUrl, getAuthBaseUrl } from "./apiBaseUrl";
 
 // --- Base URL resolution (DESIGN §Capacitor native) ---
 // Todo el tráfico pasa por el gateway (YARP): los helpers resuelven
 // env → Capacitor (10.0.2.2:5080) → ruta relativa (proxy de Vite).
 
-const API_BASE = getApiBaseUrl()
-const AUTH_BASE = getAuthBaseUrl()
+const API_BASE = getApiBaseUrl();
+const AUTH_BASE = getAuthBaseUrl();
 
 // --- ApiError (RFC 7807 compatible) ---
 
 export class ApiError extends Error {
-  readonly status: number
-  readonly title?: string
-  readonly detail?: string
-  readonly code?: string
-  readonly correlationId?: string
-  readonly errors?: Record<string, string[]>
-  readonly errorType: 'TIMEOUT' | 'network' | 'server' | 'business'
+  readonly status: number;
+  readonly title?: string;
+  readonly detail?: string;
+  readonly code?: string;
+  readonly correlationId?: string;
+  readonly errors?: Record<string, string[]>;
+  readonly errorType: "TIMEOUT" | "network" | "server" | "business";
 
   constructor(opts: {
-    message: string
-    status?: number
-    title?: string
-    detail?: string
-    code?: string
-    correlationId?: string
-    errors?: Record<string, string[]>
-    errorType?: ApiError['errorType']
+    message: string;
+    status?: number;
+    title?: string;
+    detail?: string;
+    code?: string;
+    correlationId?: string;
+    errors?: Record<string, string[]>;
+    errorType?: ApiError["errorType"];
   }) {
-    super(opts.message)
-    this.name = 'ApiError'
-    this.status = opts.status ?? 0
-    this.title = opts.title
-    this.detail = opts.detail
-    this.code = opts.code
-    this.correlationId = opts.correlationId
-    this.errors = opts.errors
-    this.errorType = opts.errorType ?? 'server'
+    super(opts.message);
+    this.name = "ApiError";
+    this.status = opts.status ?? 0;
+    this.title = opts.title;
+    this.detail = opts.detail;
+    this.code = opts.code;
+    this.correlationId = opts.correlationId;
+    this.errors = opts.errors;
+    this.errorType = opts.errorType ?? "server";
   }
 }
 
 // --- Single-flight refresh (DESIGN §apiClient) ---
 
-let refreshPromise: Promise<boolean> | null = null
+let refreshPromise: Promise<boolean> | null = null;
 
 /**
  * Perform a single refresh attempt.
@@ -65,9 +69,9 @@ let refreshPromise: Promise<boolean> | null = null
  */
 function doRefresh(): Promise<boolean> {
   if (!refreshPromise) {
-    refreshPromise = fetch(resolveUrl('/api/auth/refresh'), {
-      method: 'POST',
-      credentials: 'include',
+    refreshPromise = fetch(resolveUrl("/api/auth/refresh"), {
+      method: "POST",
+      credentials: "include",
       // No Bearer token — refresh uses HttpOnly cookie only
     })
       .then(async (res) => {
@@ -75,27 +79,27 @@ function doRefresh(): Promise<boolean> {
         // se limpia el token y se notifica (el listener de AppContext
         // devuelve al login). No se espera al próximo 401.
         if (res.status === 401) {
-          clearSessionAndNotify()
-          return false
+          clearSessionAndNotify();
+          return false;
         }
-        if (!res.ok) return false
+        if (!res.ok) return false;
         // Rotación: el access token nuevo viene en el body. Sin persistirlo,
         // el retry de apiFetch seguiría mandando el token vencido.
         const body = (await res.json().catch(() => null)) as {
-          accessToken?: string
-        } | null
-        if (!body?.accessToken) return false
-        persistAccessToken(body.accessToken)
-        return true
+          accessToken?: string;
+        } | null;
+        if (!body?.accessToken) return false;
+        persistAccessToken(body.accessToken);
+        return true;
       })
       // Fallo de red: la sesión se conserva (modo offline); el watcher de
       // expiración reintentará cuando haya conectividad.
       .catch(() => false)
       .finally(() => {
-        refreshPromise = null
-      })
+        refreshPromise = null;
+      });
   }
-  return refreshPromise
+  return refreshPromise;
 }
 
 /**
@@ -103,33 +107,33 @@ function doRefresh(): Promise<boolean> {
  * AppContext). Comparte la misma promesa que el refresh disparado por un 401.
  */
 export function refreshAccessToken(): Promise<boolean> {
-  return doRefresh()
+  return doRefresh();
 }
 
 // --- Parser helpers ---
 
 function isProblemDetails(body: unknown): body is {
-  status?: number
-  title?: string
-  detail?: string
-  code?: string
-  correlationId?: string
-  errors?: Record<string, string[]>
+  status?: number;
+  title?: string;
+  detail?: string;
+  code?: string;
+  correlationId?: string;
+  errors?: Record<string, string[]>;
 } {
-  return typeof body === 'object' && body !== null && 'detail' in body
+  return typeof body === "object" && body !== null && "detail" in body;
 }
 
 function extractCodeFromDetail(detail: string | undefined): string | undefined {
-  if (!detail) return undefined
+  if (!detail) return undefined;
   // Pattern: "NO_ACTIVE_ENROLLMENT: ..." or "CODE:" prefix
-  const match = detail.match(/^([A-Z_]+):/)
-  return match?.[1]
+  const match = detail.match(/^([A-Z_]+):/);
+  return match?.[1];
 }
 
 function parseApiError(
   status: number,
   body: unknown,
-  errorType: ApiError['errorType'] = 'server',
+  errorType: ApiError["errorType"] = "server",
 ): ApiError {
   // RFC 7807 / ProblemDetails
   if (isProblemDetails(body)) {
@@ -142,25 +146,25 @@ function parseApiError(
       correlationId: body.correlationId,
       errors: body.errors,
       errorType,
-    })
+    });
   }
 
   // Fallback: { message } or raw body
   const message =
-    typeof body === 'object' && body !== null && 'message' in body
+    typeof body === "object" && body !== null && "message" in body
       ? String((body as { message: unknown }).message)
-      : `HTTP ${status}`
+      : `HTTP ${status}`;
 
-  return new ApiError({ message, status, errorType })
+  return new ApiError({ message, status, errorType });
 }
 
 // --- Main fetch wrapper ---
 
-export interface ApiFetchOptions extends Omit<RequestInit, 'method' | 'body'> {
-  method?: string
-  body?: unknown
+export interface ApiFetchOptions extends Omit<RequestInit, "method" | "body"> {
+  method?: string;
+  body?: unknown;
   /** Override timeout (default 15s) */
-  timeoutMs?: number
+  timeoutMs?: number;
 }
 
 /**
@@ -169,10 +173,10 @@ export interface ApiFetchOptions extends Omit<RequestInit, 'method' | 'body'> {
  * In Capacitor native, the gateway base (10.0.2.2:5080 o VITE_GATEWAY_BASE_URL) applies.
  */
 function resolveUrl(path: string): string {
-  if (path.startsWith('/api/auth')) {
-    return AUTH_BASE ? `${AUTH_BASE}${path}` : path
+  if (path.startsWith("/api/auth")) {
+    return AUTH_BASE ? `${AUTH_BASE}${path}` : path;
   }
-  return API_BASE ? `${API_BASE}${path}` : path
+  return API_BASE ? `${API_BASE}${path}` : path;
 }
 
 /**
@@ -187,138 +191,145 @@ export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { timeoutMs = 15_000, body, headers: customHeaders, ...rest } = options
-  const url = resolveUrl(path)
+  const { timeoutMs = 15_000, body, headers: customHeaders, ...rest } = options;
+  const url = resolveUrl(path);
 
-  const headers = new Headers(customHeaders)
-  const token = getAccessToken()
+  const headers = new Headers(customHeaders);
+  const token = getAccessToken();
   if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
+    headers.set("Authorization", `Bearer ${token}`);
   }
   if (body !== undefined) {
-    headers.set('Content-Type', 'application/json')
+    headers.set("Content-Type", "application/json");
   }
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, {
       ...rest,
-      method: rest.method ?? (body !== undefined ? 'POST' : 'GET'),
+      method: rest.method ?? (body !== undefined ? "POST" : "GET"),
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-      credentials: 'include',
+      credentials: "include",
       signal: controller.signal,
-    })
+    });
 
-    clearTimeout(timeoutId)
+    clearTimeout(timeoutId);
 
     // 204 No Content
     if (res.status === 204) {
-      return undefined as T
+      return undefined as T;
     }
 
     // Parse response body
-    let parsed: unknown = null
-    const contentType = res.headers.get('content-type') ?? ''
-    if (contentType.includes('application/json')) {
-      parsed = await res.json()
+    let parsed: unknown = null;
+    const contentType = res.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      parsed = await res.json();
     } else {
-      const text = await res.text()
+      const text = await res.text();
       try {
-        parsed = JSON.parse(text)
+        parsed = JSON.parse(text);
       } catch {
-        parsed = { message: text }
+        parsed = { message: text };
       }
     }
 
     // 401 → attempt single-flight refresh + retry once
     if (res.status === 401) {
-      // Demo mode bypass: do not clear session on API 401 errors when using demo token
-      if (token === 'demo-access-token' || path.includes('/api/auth/refresh')) {
-        throw parseApiError(401, parsed)
+      // El refresh usa cookie HttpOnly: sin Bearer, no tiene sentido reintentar.
+      if (path.includes("/api/auth/refresh")) {
+        throw parseApiError(401, parsed);
       }
 
-      const refreshed = await doRefresh()
+      const refreshed = await doRefresh();
       if (!refreshed) {
         // Refresh failed — session bridge will handle redirect
-        throw parseApiError(401, parsed)
+        throw parseApiError(401, parsed);
       }
 
       // Retry original request ONCE with new token
-      const retryToken = getAccessToken()
-      const retryHeaders = new Headers(customHeaders)
+      const retryToken = getAccessToken();
+      const retryHeaders = new Headers(customHeaders);
       if (retryToken) {
-        retryHeaders.set('Authorization', `Bearer ${retryToken}`)
+        retryHeaders.set("Authorization", `Bearer ${retryToken}`);
       }
       if (body !== undefined) {
-        retryHeaders.set('Content-Type', 'application/json')
+        retryHeaders.set("Content-Type", "application/json");
       }
 
-      const retryController = new AbortController()
-      const retryTimeout = setTimeout(() => retryController.abort(), timeoutMs)
+      const retryController = new AbortController();
+      const retryTimeout = setTimeout(() => retryController.abort(), timeoutMs);
 
       const retryRes = await fetch(url, {
         ...rest,
-        method: rest.method ?? (body !== undefined ? 'POST' : 'GET'),
+        method: rest.method ?? (body !== undefined ? "POST" : "GET"),
         headers: retryHeaders,
         body: body !== undefined ? JSON.stringify(body) : undefined,
-        credentials: 'include',
+        credentials: "include",
         signal: retryController.signal,
-      })
+      });
 
-      clearTimeout(retryTimeout)
+      clearTimeout(retryTimeout);
 
-      if (retryRes.status === 204) return undefined as T
+      if (retryRes.status === 204) return undefined as T;
       if (!retryRes.ok) {
-        let retryParsed: unknown = null
-        const retryContentType = retryRes.headers.get('content-type') ?? ''
-        if (retryContentType.includes('application/json')) {
-          retryParsed = await retryRes.json()
+        let retryParsed: unknown = null;
+        const retryContentType = retryRes.headers.get("content-type") ?? "";
+        if (retryContentType.includes("application/json")) {
+          retryParsed = await retryRes.json();
         }
-        throw parseApiError(retryRes.status, retryParsed)
+        throw parseApiError(retryRes.status, retryParsed);
       }
 
-      return (await retryRes.json()) as T
+      return (await retryRes.json()) as T;
     }
 
     // Non-2xx error
     if (!res.ok) {
-      throw parseApiError(res.status, parsed)
+      throw parseApiError(res.status, parsed);
     }
 
-    return parsed as T
+    return parsed as T;
   } catch (err) {
-    clearTimeout(timeoutId)
+    clearTimeout(timeoutId);
 
     // Already an ApiError from our logic
-    if (err instanceof ApiError) throw err
+    if (err instanceof ApiError) throw err;
 
     // AbortError = timeout
-    if (err instanceof DOMException && err.name === 'AbortError') {
+    if (err instanceof DOMException && err.name === "AbortError") {
       throw new ApiError({
-        message: 'Request timed out',
-        errorType: 'TIMEOUT',
+        message: "Request timed out",
+        errorType: "TIMEOUT",
         status: 0,
-      })
+      });
     }
 
     // Network failure
     throw new ApiError({
-      message: err instanceof Error ? err.message : 'Network error',
-      errorType: 'network',
+      message: err instanceof Error ? err.message : "Network error",
+      errorType: "network",
       status: 0,
-    })
+    });
   }
 }
 
 // --- Convenience methods ---
 
-export function apiGet<T>(path: string, opts?: Omit<ApiFetchOptions, 'method'>): Promise<T> {
-  return apiFetch<T>(path, { ...opts, method: 'GET' })
+export function apiGet<T>(
+  path: string,
+  opts?: Omit<ApiFetchOptions, "method">,
+): Promise<T> {
+  return apiFetch<T>(path, { ...opts, method: "GET" });
 }
 
-export function apiPost<T>(path: string, body?: unknown, opts?: Omit<ApiFetchOptions, 'method' | 'body'>): Promise<T> {
-  return apiFetch<T>(path, { ...opts, method: 'POST', body })
+export function apiPost<T>(
+  path: string,
+  body?: unknown,
+  opts?: Omit<ApiFetchOptions, "method" | "body">,
+): Promise<T> {
+  return apiFetch<T>(path, { ...opts, method: "POST", body });
 }

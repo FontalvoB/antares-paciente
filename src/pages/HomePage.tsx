@@ -1,12 +1,16 @@
 import { useMemo, useState } from "react";
-import { IonIcon, IonProgressBar, IonSkeletonText } from "@ionic/react";
+import {
+  IonAvatar,
+  IonIcon,
+  IonProgressBar,
+  IonSkeletonText,
+} from "@ionic/react";
 import { useI18n } from "../i18n/I18nContext";
 import {
   add,
   bodyOutline,
   flame,
   notificationsOutline,
-  person,
   refreshOutline,
   school,
   videocamOutline,
@@ -49,6 +53,7 @@ import coverCuerpo from "../assets/modules/cuerpo.png";
 import coverHistoria from "../assets/modules/historia.png";
 import coverNutricion from "../assets/modules/nutricion.png";
 import coverPerfil from "../assets/modules/perfil.png";
+import doctorAvatar from "../assets/home/doctor-avatar.png";
 import type { CSSProperties } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
 
@@ -578,7 +583,7 @@ export function HomePage() {
                 className={`hm-quick-btn${a.panic ? " panic" : ""}`}
                 onClick={a.fn}
               >
-                <span className="hm-quick-ico">
+                <span className="hm-quick-ico" aria-hidden="true">
                   <a.Art />
                 </span>
                 <span>{a.label}</span>
@@ -622,11 +627,9 @@ export function HomePage() {
                 <span className="hm-appt-meta">{apptCopy.meta}</span>
                 <span className="hm-appt-chip">{apptCopy.chip}</span>
                 <span className="hm-appt-people">
-                  {apptState === "demo" || apptState === "ready" ? (
-                    <span className="hm-appt-doc">
-                      <IonIcon icon={person} />
-                    </span>
-                  ) : null}
+                  <IonAvatar className="hm-appt-doc" aria-hidden="true">
+                    <img src={doctorAvatar} alt="" />
+                  </IonAvatar>
                   <span className="hm-appt-add">
                     <IonIcon
                       icon={apptState === "error" ? refreshOutline : add}

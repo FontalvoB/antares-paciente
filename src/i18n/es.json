@@ -2080,5 +2080,11 @@
   "{h} h": "{h} h",
   "Meta alcanzada": "Meta alcanzada",
   "En progreso": "En progreso",
-  "Registra al menos 4 signos ({filled}/{total})": "Registra al menos 4 signos ({filled}/{total})"
+  "Registra al menos 4 signos ({filled}/{total})": "Registra al menos 4 signos ({filled}/{total})",
+  "Datos de contacto": "Datos de contacto",
+  "Correo": "Correo",
+  "Guardar contacto": "Guardar contacto",
+  "Datos actualizados": "Datos actualizados",
+  "No se pudo actualizar tu contacto": "No se pudo actualizar tu contacto",
+  "No se pudo guardar tu perfil": "No se pudo guardar tu perfil"
 }

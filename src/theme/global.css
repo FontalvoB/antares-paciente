@@ -677,14 +677,33 @@ ion-button.onb-back-login {
   pointer-events: none;
 }
 
+/* Pie del onboarding: la acción primaria usa el lenguaje del login
+   (píldora navy con pulgar/chevrons) y el botón secundario queda como
+   ghost táctil; la barra flota con sombra suave como el resto de la app. */
 .onb-foot-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   pointer-events: auto;
 }
 
 .onb-foot-row ion-button.bt {
   flex: 1;
+}
+
+.onb-foot-row ion-button.bt-primary {
+  border-radius: 999px;
+  min-height: 54px;
+  font-weight: 600;
+  box-shadow: 0 14px 30px rgba(20, 40, 85, 0.3);
+}
+
+.onb-foot-row ion-button.bt.ghost,
+.onb-foot-row ion-button.bt-ghost {
+  flex: 0 0 auto;
+  min-height: 54px;
+  border-radius: 999px;
+  color: var(--mu);
+  background: transparent;
 }
 
 .onb-done {
@@ -16538,6 +16557,178 @@ ion-button.cta-pill.button-disabled {
   color: rgba(255, 255, 255, 0.35);
 }
 
+/* Botón deslizable para confirmar (SlideCtaButton) ------------------------
+   Reemplaza el clic puro de .cta-pill en la autenticación: el pulgar se
+   arrastra a la derecha para ejecutar la acción; el clic en el track y el
+   teclado siguen funcionando (el gesto es mejora, no requisito). */
+
+.slide-cta {
+  position: relative;
+  height: 62px;
+  margin: 4px 0 0;
+}
+
+.slide-cta-track {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  background: var(--brand-navy);
+  box-shadow: 0 14px 30px rgba(20, 40, 85, 0.3);
+  overflow: hidden;
+  text-align: left;
+}
+
+.slide-cta-track:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.slide-cta-fill {
+  position: absolute;
+  inset: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(61, 123, 114, 0) 0%,
+    rgba(61, 123, 114, 0.45) 100%
+  );
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.slide-cta-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 62px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.slide-cta-chevrons {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  translate: 0 -50%;
+  display: flex;
+  gap: 1px;
+  font-size: 14px;
+  color: #fff;
+  pointer-events: none;
+}
+
+.slide-cta-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 56px;
+  height: 56px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  color: #fff;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #3d7b72 0%, #0f4a44 100%);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  /* El pulgar respeta el scroll vertical de la página (framer drag="x"
+     usa pan-y internamente; esto lo documenta y garantiza en CSS). */
+  touch-action: pan-y;
+}
+
+/* Botón deslizable para confirmar (SlideCtaButton) ------------------------
+   Reemplaza el clic puro de .cta-pill en la autenticación: el pulgar se
+   arrastra a la derecha para ejecutar la acción; el clic en el track y el
+   teclado siguen funcionando (el gesto es mejora, no requisito). */
+
+.slide-cta {
+  position: relative;
+  height: 62px;
+  margin: 4px 0 0;
+}
+
+.slide-cta-track {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  background: var(--brand-navy);
+  box-shadow: 0 14px 30px rgba(20, 40, 85, 0.3);
+  overflow: hidden;
+  text-align: left;
+}
+
+.slide-cta-track:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.slide-cta-fill {
+  position: absolute;
+  inset: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(61, 123, 114, 0) 0%,
+    rgba(61, 123, 114, 0.45) 100%
+  );
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.slide-cta-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 62px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.slide-cta-chevrons {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  translate: 0 -50%;
+  display: flex;
+  gap: 1px;
+  font-size: 14px;
+  color: #fff;
+  pointer-events: none;
+}
+
+.slide-cta-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 56px;
+  height: 56px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  color: #fff;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #3d7b72 0%, #0f4a44 100%);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  /* El pulgar respeta el scroll vertical de la página (framer drag="x"
+     usa pan-y internamente; esto lo documenta y garantiza en CSS). */
+  touch-action: pan-y;
+}
+
 .auth-demo {
   margin: 14px 0 0;
   text-align: center;
@@ -16566,6 +16757,27 @@ ion-button.cta-pill.button-disabled {
   font-size: 15px;
   font-weight: 800;
   color: var(--brand-green);
+}
+
+/* iPhone SE/mini y móviles bajos: compacta el bloque superior para que el
+   CTA y "Activa tu cuenta" entren en el primer viewport (sin ocultar nada:
+   auth-scroll ya permite el scroll como red de seguridad). */
+@media (max-height: 780px) {
+  .auth-scroll {
+    padding-top: calc(18px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  }
+  .auth-logo {
+    width: min(148px, 38%);
+    margin-bottom: 12px;
+  }
+  .auth-title {
+    margin-bottom: 16px;
+    font-size: 26px;
+  }
+  .auth-alt {
+    margin-top: 14px;
+  }
 }
 
 .auth-note {
@@ -17202,7 +17414,6 @@ ion-button.cta-pill.button-disabled {
 }
 
 .hm-metric {
-  --metric-tint: var(--blue-l);
   /* Tres tarjetas por pantalla y un asomo de la cuarta: sin ese asomo nada
      indica que la fila sigue. */
   position: relative;
@@ -17212,10 +17423,10 @@ ion-button.cta-pill.button-disabled {
   display: flex;
   flex-direction: column;
   padding: 14px 13px 13px;
-  border: 1px solid var(--bd);
+  border: 2px solid var(--wh);
   border-radius: 20px;
-  background: linear-gradient(145deg, var(--wh), var(--metric-tint));
-  color: var(--brand-navy);
+  background: var(--brand-navy);
+  color: var(--wh);
   text-align: left;
   box-shadow:
     0 3px 0 var(--g1),
@@ -17237,7 +17448,13 @@ ion-button.cta-pill.button-disabled {
 
 .hm-metric:active {
   transform: translateY(2px) scale(0.97);
-  box-shadow: var(--shadow-sm);
+}
+
+/* Foco visible de las tarjetas del Home (dev + diseño propio). */
+.hm-metric:focus-visible,
+.hm-appt:focus-visible {
+  outline: 3px solid var(--brand-sky-mid);
+  outline-offset: 4px;
 }
 
 .hm-metric-val {
@@ -17245,20 +17462,20 @@ ion-button.cta-pill.button-disabled {
   font-size: 23px;
   font-weight: 700;
   letter-spacing: -0.8px;
-  color: var(--brand-navy);
+  color: var(--wh);
 }
 
 .hm-metric-lbl {
   margin-top: 1px;
   font-size: 12px;
-  color: var(--mu);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .hm-metric-unit {
   margin-left: 2px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--mu);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 /* Nota de tendencia honesta (delta real de la serie) o estado requires-data. */
@@ -17266,11 +17483,11 @@ ion-button.cta-pill.button-disabled {
   margin-top: 4px;
   font-size: 10px;
   line-height: 1.35;
-  color: var(--mu);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .hm-metric-rd {
-  color: var(--mu);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 /* S4: skeleton honesto de tarjeta de métrica mientras su fuente carga. */
@@ -17279,6 +17496,13 @@ ion-button.cta-pill.button-disabled {
   flex-direction: column;
   gap: 7px;
   padding-top: 5px;
+}
+.hm-metric-skeleton ion-skeleton-text,
+.hm-appt-skeleton ion-skeleton-text {
+  --background: rgba(255, 255, 255, 0.38);
+  --background-rgb: 255, 255, 255;
+  margin: 0;
+  border-radius: 6px;
 }
 .hm-metric:disabled {
   opacity: 0.85;
@@ -17289,7 +17513,7 @@ ion-button.cta-pill.button-disabled {
   height: 6px;
   margin-top: 12px;
   border-radius: 999px;
-  background: var(--g1);
+  background: rgba(255, 255, 255, 0.16);
   overflow: hidden;
 }
 
@@ -17297,16 +17521,14 @@ ion-button.cta-pill.button-disabled {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--brand-sky);
+  background: #cfd8e4;
 }
 
 /* --------------------------------------------------------------------------
-   Accesos rápidos + próxima cita — piezas con volumen real.
+   Accesos rápidos + próxima cita.
 
-   La bandeja `.hm-quick` está hundida (sombras `inset`) y las cuatro teclas
-   sobresalen de ella con canto extruido; al pulsar bajan el mismo espesor que
-   tienen, que es lo que hace que se sientan físicas. La tarjeta de cita es un
-   bloque extruido con brillo que la recorre.
+   Superficie navy de marca (`--brand-navy` = #142855) y borde blanco.
+   Los íconos son IonIcon (no las ilustraciones 3D).
    -------------------------------------------------------------------------- */
 
 .hm-duo {
@@ -17314,7 +17536,6 @@ ion-button.cta-pill.button-disabled {
   grid-template-columns: 0.86fr 1.14fr;
   gap: 10px;
   padding: 12px 16px 0;
-  perspective: 780px;
 }
 
 /* FAB de chat: reubicado sobre la barra flotante y con el navy de marca. */
@@ -17327,7 +17548,6 @@ ion-button.cta-pill.button-disabled {
   box-shadow: 0 10px 24px rgba(20, 40, 85, 0.32);
 }
 
-/* Accesos con superficies claras e ilustraciones de volumen suave. */
 .hm-quick {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -17335,18 +17555,17 @@ ion-button.cta-pill.button-disabled {
   padding: 0;
 }
 .hm-quick-btn {
-  --quick-tint: var(--blue-l);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   min-height: 88px;
   padding: 7px 2px;
-  border: 1px solid var(--bd);
+  border: 2px solid var(--wh);
   border-radius: 20px;
-  background: linear-gradient(145deg, var(--wh), var(--quick-tint));
-  color: var(--brand-navy);
+  background: var(--brand-navy);
+  color: var(--wh);
   font-size: 11px;
   font-weight: 700;
   box-shadow:
@@ -17402,9 +17621,8 @@ ion-button.cta-pill.button-disabled {
   }
 }
 
-/* Tarjeta de la próxima cita: misma receta física que los accesos rápidos. */
+/* Tarjeta de la próxima cita: misma receta que métricas y accesos. */
 .hm-appt {
-  --appt-tint: var(--blue-l);
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -17413,10 +17631,10 @@ ion-button.cta-pill.button-disabled {
   align-items: flex-start;
   gap: 2px;
   padding: 14px 48px 13px 15px;
-  border: 1px solid var(--bd);
+  border: 2px solid var(--wh);
   border-radius: 24px;
-  background: linear-gradient(145deg, var(--wh), var(--appt-tint));
-  color: var(--brand-navy);
+  background: var(--brand-navy);
+  color: var(--wh);
   text-align: left;
   box-shadow:
     0 3px 0 var(--g1),
@@ -17435,6 +17653,7 @@ ion-button.cta-pill.button-disabled {
   place-items: center;
   width: 34px;
   height: 34px;
+  border: 2px solid var(--wh);
   border-radius: 50%;
   color: var(--brand-navy);
   background: rgba(255, 255, 255, 0.76);
@@ -17450,14 +17669,12 @@ ion-button.cta-pill.button-disabled {
 
 .hm-appt:active {
   transform: translateY(2px) scale(0.97);
-  box-shadow: var(--shadow-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hm-quick-btn,
   .hm-metric,
-  .hm-appt,
-  .hm-quick-ico .ic3 {
+  .hm-appt {
     transition: none;
   }
 }
@@ -17470,38 +17687,32 @@ ion-button.cta-pill.button-disabled {
   width: 100%;
 }
 
-.hm-appt-skeleton ion-skeleton-text {
-  --background: var(--g1);
-  margin: 0;
-  border-radius: 6px;
-}
-
 .hm-appt-time {
   font-family: "Space Grotesk", sans-serif;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.4px;
-  color: var(--brand-navy);
+  color: var(--wh);
 }
 
 .hm-appt-name {
   font-size: 15px;
   font-weight: 600;
-  color: var(--brand-navy);
+  color: var(--wh);
 }
 
 .hm-appt-meta {
   font-size: 10.5px;
   line-height: 1.3;
-  color: var(--mu);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .hm-appt-chip {
   margin-top: 7px;
   padding: 3px 11px;
   border-radius: 999px;
-  background: var(--g0);
-  color: var(--brand-navy);
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--wh);
   font-size: 10px;
   font-weight: 700;
 }
@@ -17516,23 +17727,30 @@ ion-button.cta-pill.button-disabled {
 
 .hm-appt-doc,
 .hm-appt-add {
-  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 18px;
+  flex-shrink: 0;
 }
 
-.hm-appt-doc {
-  background-color: var(--brand-sky);
-  color: var(--brand-navy);
+ion-avatar.hm-appt-doc {
+  --border-radius: 50%;
+  border: 2px solid var(--wh);
+  overflow: hidden;
+}
+ion-avatar.hm-appt-doc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .hm-appt-add {
-  background-color: var(--brand-navy);
-  color: #fff;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--wh);
+  background: transparent;
+  color: var(--wh);
+  font-size: 18px;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
