@@ -76,8 +76,8 @@ interface AppState {
   chat: ChatMessage[];
   threadId: string;
   setActiveThreadId: (id: string | null) => void;
-  watchConnected: boolean;
-  watchName: string;
+  wearableConnected: boolean;
+  wearableName: string;
   program: ProgramDay;
   programWeek: number;
   streak: number;
@@ -124,8 +124,8 @@ interface AppState {
       kind?: ChatMessage["kind"];
     }>,
   ) => void;
-  connectWatch: (name: string) => void;
-  disconnectWatch: () => void;
+  connectWearable: (name: string) => void;
+  disconnectWearable: () => void;
   completeStep: (id: ProgramTaskId, pts: number) => void;
   logout: () => void;
   // ── Citas/telemedicina reales (modo sesión) ──
@@ -299,8 +299,8 @@ export function AppProvider({
   const [chat, setChat] = useState<ChatMessage[]>(() => [
     createWelcomeMessage(loadSavedUser().nombre),
   ]);
-  const [watchConnected, setWatchConnected] = useState(false);
-  const [watchName, setWatchName] = useState("Copp Adresd Watch Pro");
+  const [wearableConnected, setWatchConnected] = useState(false);
+  const [wearableName, setWatchName] = useState("Copp Adresd Wearable");
   // TODO: Remove after full migration — legacy in-memory program state
   const [program, setProgram] = useState<ProgramDay>({
     podcast: false,
@@ -688,8 +688,8 @@ export function AppProvider({
       chatUnread,
       markChatRead,
       setActiveThreadId,
-      watchConnected,
-      watchName,
+      wearableConnected,
+      wearableName,
       program,
       programWeek,
       streak,
@@ -918,11 +918,11 @@ export function AppProvider({
           return isOnlyWelcome ? newMsgs : [...prev, ...newMsgs];
         });
       },
-      connectWatch: (name) => {
+      connectWearable: (name) => {
         setWatchConnected(true);
         setWatchName(name);
       },
-      disconnectWatch: () => setWatchConnected(false),
+      disconnectWearable: () => setWatchConnected(false),
       completeStep: (id, pts) => {
         setProgram((p) => {
           if (p[id]) return p;
@@ -983,8 +983,8 @@ export function AppProvider({
       user,
       testsDone,
       chat,
-      watchConnected,
-      watchName,
+      wearableConnected,
+      wearableName,
       program,
       programWeek,
       streak,

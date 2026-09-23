@@ -1,0 +1,75 @@
+import { describe, expect, it } from "vitest";
+import {
+  FALLBACK_MEASURE_WINDOW_MS,
+  measurePhase,
+  measurePhaseLabel,
+} from "../measure";
+
+// `t` de prueba: identidad con interpolación mínima de {param}.
+const t = (source: string, params?: Record<string, string>) => {
+  if (!params) return source;
+  return Object.entries(params).reduce(
+    (text, [key, value]) => text.replace(`{${key}}`, value),
+    source,
+  );
+};
+
+describe("measurePhase", () => {
+  const policy = { windowMs: 60_000, retryMs: 15_000 };
+
+  it("al inicio está en fase 'measuring' con toda la cuenta por delante", () => {
+    const phase = measurePhase(0, policy);
+    expect(phase.phase).toBe("measuring");
+    expect(phase.remainingMs).toBe(15_000);
+    expect(phase.progress).toBe(0);
+    expect(phase.windowMs).toBe(60_000);
+  });
+
+  it("cruza a 'adjusting' justo en el umbral de reintento", () => {
+    expect(measurePhase(14_999, policy).phase).toBe("measuring");
+    const adjusting = measurePhase(15_000, policy);
+    expect(adjusting.phase).toBe("adjusting");
+    expect(adjusting.remainingMs).toBe(45_000);
+  });
+
+  it("el progreso se acota a 1 y el restante nunca es negativo", () => {
+    const phase = measurePhase(90_000, policy);
+    expect(phase.progress).toBe(1);
+    expect(phase.remainingMs).toBe(0);
+    expect(phase.phase).toBe("adjusting");
+  });
+
+  it("sin política usa los valores de respaldo (umbral al 40 %)", () => {
+    const phase = measurePhase(0);
+    expect(phase.windowMs).toBe(FALLBACK_MEASURE_WINDOW_MS);
+    expect(phase.remainingMs).toBeCloseTo(FALLBACK_MEASURE_WINDOW_MS * 0.4, 0);
+    expect(measurePhase(FALLBACK_MEASURE_WINDOW_MS * 0.5).phase).toBe(
+      "adjusting",
+    );
+  });
+
+  it("una política sin umbral propio también usa el 40 %", () => {
+    const phase = measurePhase(0, { windowMs: 30_000 });
+    expect(phase.remainingMs).toBe(12_000);
+  });
+
+  it("ignora tiempos negativos", () => {
+    const phase = measurePhase(-500, policy);
+    expect(phase.progress).toBe(0);
+    expect(phase.remainingMs).toBe(15_000);
+  });
+});
+
+describe("measurePhaseLabel", () => {
+  const policy = { windowMs: 60_000, retryMs: 15_000 };
+
+  it("nombra la métrica y cuenta los segundos restantes en la fase de medida", () => {
+    const label = measurePhaseLabel("blood_pressure", measurePhase(0, policy), 0, t);
+    expect(label).toBe("Midiendo Presión… 15s");
+  });
+
+  it("pasa a 'Ajustando el sensor' con el transcurrido", () => {
+    const label = measurePhaseLabel("blood_pressure", measurePhase(20_000, policy), 20, t);
+    expect(label).toBe("Ajustando el sensor… (20s)");
+  });
+});

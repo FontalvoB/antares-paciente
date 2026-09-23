@@ -4,11 +4,11 @@
 // En las respuestas, el bit alto del comando (cmd | 0x80) indica error.
 // Referencia: notas de ingeniería inversa de OpenH59 (H59_V2.0, nRF52832).
 
-export const COLMI_SERVICE = '6e40fff0-b5a3-f393-e0a9-e50e24dcca9e';
+export const COLMI_SERVICE = "6e40fff0-b5a3-f393-e0a9-e50e24dcca9e";
 /** App → banda (comandos). */
-export const COLMI_CHAR_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+export const COLMI_CHAR_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 /** Banda → app (notificaciones). */
-export const COLMI_CHAR_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+export const COLMI_CHAR_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
 export const COLMI_FRAME_SIZE = 16;
 export const COLMI_PAYLOAD_SIZE = 14;
@@ -16,13 +16,83 @@ export const COLMI_PAYLOAD_SIZE = 14;
 export const CMD = {
   SET_TIME: 1,
   BATTERY: 3,
+  /** Historial de sueño por UART (segmentos crudos). */
+  SLEEP_HISTORY: 13,
+  /** Curva de FC del día, 1 punto cada 5 min (288 puntos). */
+  HR_HISTORY: 21,
   HR_LOG: 22,
+  /** Curvas por slot: estrés y HRV (1 valor cada 30 min). */
+  STRESS_HISTORY: 55,
+  HRV_HISTORY: 57,
+  /** Pasos/calorías/distancia por slot de 15 min. */
+  STEPS: 67,
   START_REALTIME: 105,
   STOP_REALTIME: 106,
 } as const;
 
-/** Respuesta a una medida en vivo (cmd 105). */
-export const CMD_REALTIME_RESPONSE = 69;
+/** Comandos cuyo `cmd` de respuesta es el mismo (grupo histórico). */
+export const COLMI_HISTORY_CMDS: readonly number[] = [
+  CMD.STEPS,
+  CMD.HR_HISTORY,
+  CMD.STRESS_HISTORY,
+  CMD.HRV_HISTORY,
+  CMD.SLEEP_HISTORY,
+];
+
+// ─── Canal "rico" (bc) ─────────────────────────────────────────────────────
+// Segunda característica de la banda: históricos detallados (sueño por fases y
+// SpO2 por hora) con protocolo propio de tramas variables:
+//   bc | type(1) | len(2 LE) | crc16-modbus(2 LE) | body
+// La banda solo entrega estos datos tras un login/init en el mismo canal.
+// Referencia: implementación OpenH59 (band.py), verificada byte a byte contra
+// la app oficial.
+
+export const COLMI_BC_SERVICE = "de5bf728-d711-4e47-af26-65e3012a5dc7";
+export const COLMI_BC_WRITE = "de5bf72a-d711-4e47-af26-65e3012a5dc7";
+export const COLMI_BC_NOTIFY = "de5bf729-d711-4e47-af26-65e3012a5dc7";
+
+export const BC_MAGIC = 0xbc;
+export const BC_LOGIN = 0x4a;
+export const BC_INIT = 0x30;
+export const BC_SLEEP = 0x27;
+export const BC_SPO2 = 0x2a;
+
+/** CRC-16/MODBUS (poly 0xA001 reflejado, init 0xFFFF), como el canal bc. */
+export function crc16Modbus(data: Uint8Array): number {
+  let crc = 0xffff;
+  for (const byte of data) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) {
+      crc = crc & 1 ? (crc >> 1) ^ 0xa001 : crc >> 1;
+    }
+  }
+  return crc & 0xffff;
+}
+
+/** Trama del canal bc: cabecera + CRC del body. */
+export function bcFrame(
+  type: number,
+  body: number[] | Uint8Array = [],
+): Uint8Array {
+  const bytes = Uint8Array.from(body);
+  const frame = new Uint8Array(6 + bytes.length);
+  frame[0] = BC_MAGIC;
+  frame[1] = type & 0xff;
+  frame[2] = bytes.length & 0xff;
+  frame[3] = (bytes.length >> 8) & 0xff;
+  const crc = crc16Modbus(bytes);
+  frame[4] = crc & 0xff;
+  frame[5] = (crc >> 8) & 0xff;
+  frame.set(bytes, 6);
+  return frame;
+}
+
+/**
+ * Respuesta a una medida en vivo: la banda responde con el MISMO cmd 105 (0x69)
+ * que usa la petición (el bit 0x80 marca error). Estaba como 69 (0x45) por un
+ * error de transcripción y por eso ninguna medida en vivo se decodificaba.
+ */
+export const CMD_REALTIME_RESPONSE = 105;
 
 /** Tipos de medida del comando 105. */
 export const MEASURE_TYPE = {
@@ -33,8 +103,7 @@ export const MEASURE_TYPE = {
   hrv: 10,
 } as const;
 
-export type ColmiMeasureType =
-  (typeof MEASURE_TYPE)[keyof typeof MEASURE_TYPE];
+export type ColmiMeasureType = (typeof MEASURE_TYPE)[keyof typeof MEASURE_TYPE];
 
 export interface ColmiFrame {
   /** Comando sin el bit de error. */

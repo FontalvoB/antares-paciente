@@ -58,8 +58,8 @@ export function ProgramPage() {
     programWeek: appProgramWeek,
     weekCheckins,
     user,
-    watchConnected,
-    connectWatch,
+    wearableConnected,
+    connectWearable,
   } = useApp()
 
   const t = useT()
@@ -663,10 +663,10 @@ export function ProgramPage() {
                   done={program.vitals}
                   pts={taskPts}
                   recentVitals={serverActiveTask?.content?.recentVitals}
-                  watchConnected={watchConnected}
+                  wearableConnected={wearableConnected}
                   onConnectWatch={() => {
-                    connectWatch('Copp Adresd Watch Pro')
-                    showToast(t('Reloj listo para sincronizar'), 'ok')
+                    connectWearable('Copp Adresd Wearable')
+                    showToast(t('Wearable listo para sincronizar'), 'ok')
                   }}
                   onComplete={(vitals) => finish('vitals', taskPts, t('+{pts} pts por signos vitales', { pts: String(taskPts) }), { vitals })}
                 />

@@ -16,6 +16,7 @@ import { Screen, Scroll } from "../components/Screen";
 import { MealFoodFlow } from "../components/MealFoodFlow";
 import { MealIntakeForm } from "../components/MealIntakeForm";
 import { useApp } from "../context/AppContext";
+import { useWearable } from "../context/WearableContext";
 import { useI18n } from "../i18n/I18nContext";
 import { useNutritionLog } from "../hooks/useNutritionLog";
 import { useProgram } from "../hooks/useProgram";
@@ -79,12 +80,21 @@ export function NutritionPage() {
   const { scores, isLoading: scoresLoading } = useProgramScores();
   const { history: metricsHistory, isLoading: metricsLoading } =
     useMetricsHistory();
+  const { today: deviceToday } = useWearable();
   const [tab, setTab] = useState<
     "hoy" | "semana" | "indicaciones" | "historial"
   >("hoy");
 
   // S3: locale activo para números (es-ES coma decimal / en-US punto).
   const locale = lang === "en" ? "en-US" : "es-ES";
+
+  // Gasto activo del día: anillo en vivo o la serie persistida de
+  // activity_kcal (device-metrics). Sin dato no se muestra la línea.
+  const kcalSeries = metricsHistory?.metrics.find(
+    (m) => m.code.toLowerCase() === "activity_kcal",
+  );
+  const persistedKcal = kcalSeries?.points.at(-1)?.value ?? null;
+  const activeKcal = deviceToday.activityKcal ?? persistedKcal;
 
   // ── Registro manual (formulario vacío; el plan es REFERENCIA, no consumo) ──
   const [registerTarget, setRegisterTarget] = useState<MealCode | null>(null);
@@ -662,6 +672,21 @@ export function NutritionPage() {
             )}
           </div>
         </div>
+
+        {activeKcal != null && (
+          <div
+            style={{
+              padding: "0 16px",
+              marginTop: -4,
+              fontSize: 12,
+              color: "var(--mu)",
+            }}
+          >
+            {t("Gasto activo del día: {kcal} kcal", {
+              kcal: formatMetricValue(activeKcal, 0, locale),
+            })}
+          </div>
+        )}
 
         {tab === "hoy" && (
           <>

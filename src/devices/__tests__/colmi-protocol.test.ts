@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   CMD,
+  CMD_REALTIME_RESPONSE,
   COLMI_FRAME_SIZE,
   FrameStream,
   MEASURE_TYPE,
@@ -104,17 +105,17 @@ describe('colmi protocol', () => {
 
 describe('colmi realtime', () => {
   it('traduce el pulso (tipo 1) y el SpO2 (tipo 3)', () => {
-    const hr = parseRealtimeFrame(frameOf(69, [MEASURE_TYPE.heart_rate, 0, 72]), DEVICE);
+    const hr = parseRealtimeFrame(frameOf(CMD_REALTIME_RESPONSE, [MEASURE_TYPE.heart_rate, 0, 72]), DEVICE);
     expect(hr).toHaveLength(1);
     expect(hr[0]).toMatchObject({ metric: 'heart_rate', value: 72, unit: 'bpm', deviceId: DEVICE });
 
-    const spo2 = parseRealtimeFrame(frameOf(69, [MEASURE_TYPE.spo2, 0, 98]), DEVICE);
+    const spo2 = parseRealtimeFrame(frameOf(CMD_REALTIME_RESPONSE, [MEASURE_TYPE.spo2, 0, 98]), DEVICE);
     expect(spo2[0]).toMatchObject({ metric: 'spo2', value: 98, unit: '%' });
   });
 
   it('traduce la presión (tipo 2) con sistólica, diastólica y pulso', () => {
     const samples = parseRealtimeFrame(
-      frameOf(69, [MEASURE_TYPE.blood_pressure, 0, 70, 120, 80]),
+      frameOf(CMD_REALTIME_RESPONSE, [MEASURE_TYPE.blood_pressure, 0, 70, 120, 80]),
       DEVICE,
     );
     expect(samples).toHaveLength(2);
@@ -128,10 +129,10 @@ describe('colmi realtime', () => {
   });
 
   it('descarta lecturas inválidas y tipos fuera de alcance', () => {
-    expect(parseRealtimeFrame(frameOf(69, [MEASURE_TYPE.blood_pressure, 0, 70, 0, 0]), DEVICE)).toEqual([]);
-    expect(parseRealtimeFrame(frameOf(69, [MEASURE_TYPE.heart_rate, 0, 0]), DEVICE)).toEqual([]);
-    expect(parseRealtimeFrame(frameOf(69, [MEASURE_TYPE.heart_rate, 1, 72]), DEVICE)).toEqual([]);
-    expect(parseRealtimeFrame(frameOf(69, [MEASURE_TYPE.stress, 0, 45]), DEVICE)).toEqual([]);
+    expect(parseRealtimeFrame(frameOf(CMD_REALTIME_RESPONSE, [MEASURE_TYPE.blood_pressure, 0, 70, 0, 0]), DEVICE)).toEqual([]);
+    expect(parseRealtimeFrame(frameOf(CMD_REALTIME_RESPONSE, [MEASURE_TYPE.heart_rate, 0, 0]), DEVICE)).toEqual([]);
+    expect(parseRealtimeFrame(frameOf(CMD_REALTIME_RESPONSE, [MEASURE_TYPE.heart_rate, 1, 72]), DEVICE)).toEqual([]);
+    expect(parseRealtimeFrame(frameOf(CMD_REALTIME_RESPONSE, [MEASURE_TYPE.stress, 0, 45]), DEVICE)).toEqual([]);
     expect(parseRealtimeFrame(frameOf(CMD.BATTERY, [87, 0]), DEVICE)).toEqual([]);
   });
 });

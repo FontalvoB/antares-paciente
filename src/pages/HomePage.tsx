@@ -40,6 +40,8 @@ import {
 import { useProgram } from "../hooks/useProgram";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useScoresHistory } from "../hooks/useScoresHistory";
+import { useWearable } from "../context/WearableContext";
+import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import logoIcon from "../assets/LogoIndividual.png";
 import coverCitas from "../assets/modules/citas.png";
 import coverComunidad from "../assets/modules/comunidad.png";
@@ -57,7 +59,7 @@ export function HomePage() {
     openPanic,
     openVoice,
     pointsTotal: appPointsTotal,
-    watchConnected,
+    wearableConnected,
     program: appProgram,
     streak: appStreak,
     programWeek: appProgramWeek,
@@ -77,10 +79,30 @@ export function HomePage() {
   // esté desplegado → el resolver degrada cada tarjeta a requires-data honesto.
   // S4: mientras un query carga SIN cache, las tarjetas de su fuente muestran
   // skeleton — nunca la nota requires-data (afirmación falsa en plena carga).
-  const { history: metricsHistory, isLoading: metricsLoading } = useMetricsHistory();
-  const { history: scoresHistory, isLoading: scoresLoading } = useScoresHistory();
+  const { history: metricsHistory, isLoading: metricsLoading } =
+    useMetricsHistory();
+  const { history: scoresHistory, isLoading: scoresLoading } =
+    useScoresHistory();
   // S3: locale activo para números (es-ES coma decimal / en-US punto).
   const locale = lang === "en" ? "en-US" : "es-ES";
+
+  // Hábitos con verdad real: pasos del anillo (en vivo o serie persistida) y
+  // calorías de ingesta del snapshot vs la meta del plan. Sin dato → "Sin
+  // datos" en modo real; en demo se conservan las cifras de demostración.
+  const { today: deviceToday } = useWearable();
+  const intake = useMemo(() => deriveIntakeTotals(snapshot), [snapshot]);
+  const stepSeries = metricsHistory?.metrics.find(
+    (m) => m.code.toLowerCase() === "step_count",
+  );
+  const persistedSteps = stepSeries?.points.at(-1)?.value ?? null;
+  const stepsValue =
+    deviceToday.steps ??
+    (persistedSteps != null ? Math.round(persistedSteps) : null);
+  const stepsTarget = 8000;
+  const kcalTarget =
+    snapshot?.todayTasks?.find((task) => task.taskCode === "nut")?.content
+      ?.dailyCalorieTarget ?? null;
+  const kcalValue = snapshot ? intake.calories : null;
 
   // Cita destacada real (modo sesión) — misma tarjeta, dato del backend.
   const featuredReal =
@@ -226,16 +248,36 @@ export function HomePage() {
     {
       id: "steps",
       label: t("Pasos"),
-      value: "6,240 / 8,000",
-      pct: 78,
+      value:
+        stepsValue != null
+          ? `${formatMetricValue(stepsValue, 0, locale)} / ${formatMetricValue(stepsTarget, 0, locale)}`
+          : realMode
+            ? t("Sin datos")
+            : "6,240 / 8,000",
+      pct:
+        stepsValue != null
+          ? Math.min(100, Math.round((stepsValue / stepsTarget) * 100))
+          : realMode
+            ? 0
+            : 78,
       color: "var(--brand-green)",
       icon: walk,
     },
     {
       id: "kcal",
       label: t("Calorías"),
-      value: "1,650 / 1,800 kcal",
-      pct: 91,
+      value:
+        kcalValue != null && kcalTarget != null
+          ? `${formatMetricValue(kcalValue, 0, locale)} / ${formatMetricValue(kcalTarget, 0, locale)} kcal`
+          : realMode
+            ? t("Sin datos")
+            : "1,650 / 1,800 kcal",
+      pct:
+        kcalValue != null && kcalTarget
+          ? Math.min(100, Math.round((kcalValue / kcalTarget) * 100))
+          : realMode
+            ? 0
+            : 91,
       color: "var(--org)",
       icon: flame,
     },
@@ -297,8 +339,7 @@ export function HomePage() {
     (task) => task.status !== "Completed",
   );
   const nextFallbackTask = PROGRAM_TASKS.find((task) => !program[task.id]);
-  const nextTaskTitle =
-    nextServerTask?.title || nextFallbackTask?.title || "";
+  const nextTaskTitle = nextServerTask?.title || nextFallbackTask?.title || "";
   const dayComplete = todayDone === missionTotal;
 
   // Serie de adherencia REAL: dimensions.adherence por punto del
@@ -370,7 +411,9 @@ export function HomePage() {
               <button
                 type="button"
                 className="hm-icon-btn"
-                onClick={() => showToast(t("No tienes notificaciones nuevas"), "info")}
+                onClick={() =>
+                  showToast(t("No tienes notificaciones nuevas"), "info")
+                }
                 aria-label={t("Notificaciones")}
               >
                 <IonIcon icon={notificationsOutline} />
@@ -447,14 +490,22 @@ export function HomePage() {
                 onClick={() => setMetricId(meta.id)}
                 disabled={state === "loading"}
                 aria-busy={state === "loading"}
-                aria-label={t("Ver historial de {label}", { label: t(meta.label) })}
+                aria-label={t("Ver historial de {label}", {
+                  label: t(meta.label),
+                })}
               >
                 {state === "loading" ? (
                   // S4: skeleton honesto mientras carga la fuente — sin nota
                   // requires-data (patrón de la tarjeta de cita).
                   <span className="hm-metric-skeleton">
-                    <IonSkeletonText animated style={{ width: "56%", height: 18 }} />
-                    <IonSkeletonText animated style={{ width: "72%", height: 10 }} />
+                    <IonSkeletonText
+                      animated
+                      style={{ width: "56%", height: 18 }}
+                    />
+                    <IonSkeletonText
+                      animated
+                      style={{ width: "72%", height: 10 }}
+                    />
                   </span>
                 ) : card.kind === "requires-data" ? (
                   <>
@@ -499,10 +550,15 @@ export function HomePage() {
                 Art: ChatIcon3D,
                 fn: () => navigate("chat"),
               },
-              { id: "voice" as const, label: t("Voz"), Art: MicIcon3D, fn: openVoice },
+              {
+                id: "voice" as const,
+                label: t("Voz"),
+                Art: MicIcon3D,
+                fn: openVoice,
+              },
               {
                 id: "bt" as const,
-                label: watchConnected ? t("Reloj") : t("Conectar"),
+                label: wearableConnected ? t("Wearable") : t("Conectar"),
                 Art: WatchIcon3D,
                 fn: () => navigate("bt"),
               },
@@ -542,9 +598,18 @@ export function HomePage() {
             </span>
             {apptState === "loading" ? (
               <span className="hm-appt-skeleton">
-                <IonSkeletonText animated style={{ width: "64%", height: 17 }} />
-                <IonSkeletonText animated style={{ width: "88%", height: 13 }} />
-                <IonSkeletonText animated style={{ width: "76%", height: 10 }} />
+                <IonSkeletonText
+                  animated
+                  style={{ width: "64%", height: 17 }}
+                />
+                <IonSkeletonText
+                  animated
+                  style={{ width: "88%", height: 13 }}
+                />
+                <IonSkeletonText
+                  animated
+                  style={{ width: "76%", height: 10 }}
+                />
                 <IonSkeletonText
                   animated
                   style={{ width: 58, height: 18, borderRadius: 999 }}
@@ -614,7 +679,9 @@ export function HomePage() {
                     </div>
                     <IonProgressBar
                       className="hm-week-bar"
-                      style={{ "--progress-background": g.color } as CSSProperties}
+                      style={
+                        { "--progress-background": g.color } as CSSProperties
+                      }
                       value={g.pct / 100}
                     />
                   </div>
