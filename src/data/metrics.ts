@@ -3,7 +3,7 @@ import type {
   MetricPointDto,
   MetricSeriesDto,
   MetricTargetDto,
-} from '../services/program/types'
+} from "../services/program/types";
 
 /**
  * Tarjetas de métricas del Home. Este archivo ya NO contiene datos clínicos
@@ -11,40 +11,41 @@ import type {
  * snapshot): solo metadatos de presentación + resolvers puros.
  */
 
-export type MetricId = 'imc' | 'hba1c' | 'fat' | 'adh' | 'pts'
+export type MetricId = "imc" | "hba1c" | "fat" | "adh" | "pts";
 
 /** Metadatos de presentación de cada tarjeta (sin datos clínicos). */
 export const HOME_METRIC_CARDS: ReadonlyArray<{
-  id: MetricId
-  label: string
-  color: string
-  decimals: number
+  id: MetricId;
+  label: string;
+  color: string;
+  decimals: number;
 }> = [
-  { id: 'imc', label: 'IMC', color: 'var(--teal)', decimals: 1 },
-  { id: 'hba1c', label: 'HbA1c', color: 'var(--blue)', decimals: 1 },
-  { id: 'fat', label: '% de grasa', color: 'var(--teal)', decimals: 1 },
-  { id: 'adh', label: 'Adherencia', color: 'var(--cyan)', decimals: 0 },
-  { id: 'pts', label: 'Puntos', color: 'var(--org)', decimals: 0 },
-]
+  { id: "imc", label: "IMC", color: "var(--teal)", decimals: 1 },
+  { id: "hba1c", label: "HbA1c", color: "var(--blue)", decimals: 1 },
+  { id: "fat", label: "% de grasa", color: "var(--teal)", decimals: 1 },
+  { id: "adh", label: "Adherencia", color: "var(--cyan)", decimals: 0 },
+  { id: "pts", label: "Puntos", color: "var(--org)", decimals: 0 },
+];
 
 /** Unidad local cuando el wire no la trae (adh/pts no salen de metrics-history). */
 const FALLBACK_UNIT: Record<MetricId, string> = {
-  imc: 'kg/m²',
-  hba1c: '%',
-  fat: '%',
-  adh: '%',
-  pts: 'XP',
-}
+  imc: "kg/m²",
+  hba1c: "%",
+  fat: "%",
+  adh: "%",
+  pts: "XP",
+};
 
-/** Nota honesta del estado requires-data (clave t()) por tarjeta. */
+/** Nota honesta del estado requires-data (clave t()) por tarjeta: cada una
+ *  explica QUÉ completará el dato — jamás un genérico que suene a error.
+ *  pts nunca cae en requires-data: el balance real siempre existe. */
 const REQUIRES_DATA_NOTE: Record<MetricId, string> = {
-  imc: 'Sin datos registrados',
-  hba1c: 'Sin datos registrados',
-  fat: 'Sin datos registrados',
-  adh: 'Sin datos registrados',
-  // pts nunca cae en requires-data: el balance real siempre existe.
-  pts: '',
-}
+  imc: "Se completa con tu primera medición",
+  hba1c: "Aparece cuando tu equipo registra tu primer análisis/bioimpedancia",
+  fat: "Aparece cuando tu equipo registra tu primer análisis/bioimpedancia",
+  adh: "Se completa con tu primera semana de adherencia",
+  pts: "",
+};
 
 /**
  * Estado resuelto de una tarjeta del Home: `requires-data` (sin verdad del
@@ -53,39 +54,39 @@ const REQUIRES_DATA_NOTE: Record<MetricId, string> = {
  */
 export type HomeMetricCard =
   | {
-      id: MetricId
-      label: string
-      color: string
-      decimals: number
-      unit: string
-      kind: 'requires-data'
-      note: string
+      id: MetricId;
+      label: string;
+      color: string;
+      decimals: number;
+      unit: string;
+      kind: "requires-data";
+      note: string;
     }
   | {
-      id: MetricId
-      label: string
-      color: string
-      decimals: number
-      unit: string
-      kind: 'value'
-      current: number
+      id: MetricId;
+      label: string;
+      color: string;
+      decimals: number;
+      unit: string;
+      kind: "value";
+      current: number;
       /** Progreso 0..1 hacia el borde del target; null = sin barra (sin target real). */
-      progress: number | null
+      progress: number | null;
       /** Rango de referencia REAL del endpoint (null = sin rango activo). */
-      target: MetricTargetDto | null
+      target: MetricTargetDto | null;
       /** Serie REAL (fechas ASC). Vacía solo si no hay historial real (ej. pts). */
-      points: MetricPointDto[]
-      first: number | null
-      last: number | null
-    }
+      points: MetricPointDto[];
+      first: number | null;
+      last: number | null;
+    };
 
 /** Inputs reales del resolver: DTO de metrics-history + adherencia por semana + balance XP. */
 export interface HomeMetricsInput {
-  heightCm: number | null
-  metrics: MetricSeriesDto[]
+  heightCm: number | null;
+  metrics: MetricSeriesDto[];
   /** Puntos de adherencia (dimensions.adherence del scores-history), ASC. */
-  adherence: MetricPointDto[]
-  xpBalance: number
+  adherence: MetricPointDto[];
+  xpBalance: number;
 }
 
 /**
@@ -95,23 +96,25 @@ export interface HomeMetricsInput {
  * favorable decide el borde: 'down' → hi (menor es mejor), 'up' → lo.
  */
 export function metricProgress(opts: {
-  series: number[]
-  target: MetricTargetDto
-  favorableDirection: FavorableDirection | null
+  series: number[];
+  target: MetricTargetDto;
+  favorableDirection: FavorableDirection | null;
 }): number | null {
-  const { series, target, favorableDirection } = opts
-  if (series.length < 1) return null
-  if (!favorableDirection) return null
-  const first = series[0]
-  const current = series[series.length - 1]
-  const edge = favorableDirection === 'down' ? target.hi : target.lo
-  if (edge == null || !Number.isFinite(edge)) return null
+  const { series, target, favorableDirection } = opts;
+  if (series.length < 1) return null;
+  if (!favorableDirection) return null;
+  const first = series[0];
+  const current = series[series.length - 1];
+  const edge = favorableDirection === "down" ? target.hi : target.lo;
+  if (edge == null || !Number.isFinite(edge)) return null;
   // Ya dentro/mejor que el borde → objetivo alcanzado.
-  if (favorableDirection === 'down' ? current <= edge : current >= edge) return 1
-  const span = favorableDirection === 'down' ? first - edge : edge - first
-  if (span <= 0) return 1
-  const advance = favorableDirection === 'down' ? first - current : current - first
-  return Math.min(1, Math.max(0, advance / span))
+  if (favorableDirection === "down" ? current <= edge : current >= edge)
+    return 1;
+  const span = favorableDirection === "down" ? first - edge : edge - first;
+  if (span <= 0) return 1;
+  const advance =
+    favorableDirection === "down" ? first - current : current - first;
+  return Math.min(1, Math.max(0, advance / span));
 }
 
 /**
@@ -122,12 +125,12 @@ export function metricProgress(opts: {
 export function formatMetricValue(
   value: number,
   decimals: number,
-  locale = 'es-ES',
+  locale = "es-ES",
 ): string {
   return value.toLocaleString(locale, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
-  })
+  });
 }
 
 /**
@@ -140,17 +143,19 @@ export function formatMetricTarget(
   target: MetricTargetDto | null,
   unit: string,
   decimals: number,
-  locale = 'es-ES',
+  locale = "es-ES",
 ): string | null {
-  if (!target) return null
-  const lo = target.lo
-  const hi = target.hi
+  if (!target) return null;
+  const lo = target.lo;
+  const hi = target.hi;
   if (lo != null && hi != null) {
-    return `${formatMetricValue(lo, decimals, locale)}–${formatMetricValue(hi, decimals, locale)}${unit ? ` ${unit}` : ''}`
+    return `${formatMetricValue(lo, decimals, locale)}–${formatMetricValue(hi, decimals, locale)}${unit ? ` ${unit}` : ""}`;
   }
-  if (hi != null) return `≤ ${formatMetricValue(hi, decimals, locale)}${unit ? ` ${unit}` : ''}`
-  if (lo != null) return `≥ ${formatMetricValue(lo, decimals, locale)}${unit ? ` ${unit}` : ''}`
-  return null
+  if (hi != null)
+    return `≤ ${formatMetricValue(hi, decimals, locale)}${unit ? ` ${unit}` : ""}`;
+  if (lo != null)
+    return `≥ ${formatMetricValue(lo, decimals, locale)}${unit ? ` ${unit}` : ""}`;
+  return null;
 }
 
 /**
@@ -161,27 +166,51 @@ export function formatMetricTarget(
  * - adh: serie de dimensions.adherence (scores-history); sin puntos → requires-data.
  * - pts: balance XP real; SIN historial falso (series vacías, sin sparkline).
  */
-export function resolveHomeCards(input: HomeMetricsInput): Record<MetricId, HomeMetricCard> {
-  const byCode = new Map(input.metrics.map((m) => [m.code.toLowerCase(), m]))
+export function resolveHomeCards(
+  input: HomeMetricsInput,
+): Record<MetricId, HomeMetricCard> {
+  const byCode = new Map(input.metrics.map((m) => [m.code.toLowerCase(), m]));
   const seriesOf = (code: string): MetricSeriesDto | undefined =>
-    byCode.get(code.toLowerCase())
+    byCode.get(code.toLowerCase());
 
-  const imc = resolveImcSeries(input.heightCm, seriesOf('bmi'), seriesOf('weight'))
-  const hba1c = seriesOf('hba1c')
-  const fat = seriesOf('body_fat')
+  const imc = resolveImcSeries(
+    input.heightCm,
+    seriesOf("bmi"),
+    seriesOf("weight"),
+  );
+  const hba1c = seriesOf("hba1c");
+  const fat = seriesOf("body_fat");
 
   return {
-    imc: toCard('imc', imc?.unit ?? null, imc?.target ?? null, imc?.favorableDirection ?? null, imc?.points ?? []),
-    hba1c: toCard('hba1c', hba1c?.unit ?? null, hba1c?.target ?? null, hba1c?.favorableDirection ?? null, hba1c?.points ?? []),
-    fat: toCard('fat', fat?.unit ?? null, fat?.target ?? null, fat?.favorableDirection ?? null, fat?.points ?? []),
-    adh: toCard('adh', null, null, null, input.adherence),
+    imc: toCard(
+      "imc",
+      imc?.unit ?? null,
+      imc?.target ?? null,
+      imc?.favorableDirection ?? null,
+      imc?.points ?? [],
+    ),
+    hba1c: toCard(
+      "hba1c",
+      hba1c?.unit ?? null,
+      hba1c?.target ?? null,
+      hba1c?.favorableDirection ?? null,
+      hba1c?.points ?? [],
+    ),
+    fat: toCard(
+      "fat",
+      fat?.unit ?? null,
+      fat?.target ?? null,
+      fat?.favorableDirection ?? null,
+      fat?.points ?? [],
+    ),
+    adh: toCard("adh", null, null, null, input.adherence),
     pts: {
-      id: 'pts',
-      label: 'Puntos',
-      color: 'var(--org)',
+      id: "pts",
+      label: "Puntos",
+      color: "var(--org)",
       decimals: 0,
-      unit: 'XP',
-      kind: 'value',
+      unit: "XP",
+      kind: "value",
       current: input.xpBalance,
       progress: null,
       target: null,
@@ -189,7 +218,7 @@ export function resolveHomeCards(input: HomeMetricsInput): Record<MetricId, Home
       first: null,
       last: null,
     },
-  }
+  };
 }
 
 function toCard(
@@ -199,7 +228,7 @@ function toCard(
   favorableDirection: FavorableDirection | null,
   points: MetricPointDto[],
 ): HomeMetricCard {
-  const meta = HOME_METRIC_CARDS.find((c) => c.id === id)!
+  const meta = HOME_METRIC_CARDS.find((c) => c.id === id)!;
   if (points.length === 0) {
     return {
       id,
@@ -207,11 +236,11 @@ function toCard(
       color: meta.color,
       decimals: meta.decimals,
       unit: unit ?? FALLBACK_UNIT[id],
-      kind: 'requires-data',
+      kind: "requires-data",
       note: REQUIRES_DATA_NOTE[id],
-    }
+    };
   }
-  const current = points[points.length - 1].value
+  const current = points[points.length - 1].value;
   const progress =
     target != null
       ? metricProgress({
@@ -219,21 +248,21 @@ function toCard(
           target,
           favorableDirection,
         })
-      : null
+      : null;
   return {
     id,
     label: meta.label,
     color: meta.color,
     decimals: meta.decimals,
     unit: unit ?? FALLBACK_UNIT[id],
-    kind: 'value',
+    kind: "value",
     current,
     progress,
     target,
     points,
     first: points[0].value,
     last: current,
-  }
+  };
 }
 
 /**
@@ -248,23 +277,28 @@ function resolveImcSeries(
   bmi: MetricSeriesDto | undefined,
   weight: MetricSeriesDto | undefined,
 ): MetricSeriesDto | undefined {
-  if (bmi && bmi.points.length > 0) return bmi
-  if (!weight || weight.points.length === 0 || heightCm == null || heightCm <= 0) {
-    return undefined
+  if (bmi && bmi.points.length > 0) return bmi;
+  if (
+    !weight ||
+    weight.points.length === 0 ||
+    heightCm == null ||
+    heightCm <= 0
+  ) {
+    return undefined;
   }
-  const heightM = heightCm / 100
+  const heightM = heightCm / 100;
   const points = weight.points
     .filter((p) => p.value > 0)
     .map((p) => ({
       date: p.date,
       value: Math.round((p.value / (heightM * heightM)) * 100) / 100,
-    }))
-  if (points.length === 0) return undefined
+    }));
+  if (points.length === 0) return undefined;
   return {
-    code: 'bmi',
-    unit: bmi?.unit ?? 'kg/m²',
+    code: "bmi",
+    unit: bmi?.unit ?? "kg/m²",
     target: null,
     favorableDirection: null,
     points,
-  }
+  };
 }

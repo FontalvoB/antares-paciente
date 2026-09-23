@@ -291,6 +291,7 @@ export function ProfilePage() {
     logout,
     openTests,
     teamProfessionals,
+    upcomingAppointments,
   } = useApp();
   const { snapshot, isMockFallback } = useProgram();
   const { history: metricsHistory } = useMetricsHistory();
@@ -332,11 +333,25 @@ export function ProfilePage() {
   }, [metricsHistory, locale]);
 
   // Hero: solo tarjetas con verdad real (semana del snapshot, delta de peso,
-  // puntos del backend). Sin dato → la tarjeta no se renderiza.
+  // puntos del backend). Sin dato → la tarjeta no se renderiza. El XP manda
+  // del snapshot (mismo patrón que Home); el local es continuidad demo.
+  const heroPoints = snapshot?.xp?.balance ?? pointsTotal;
   const heroMetrics: Array<[string, string]> = [];
   if (programWeek != null) heroMetrics.push([String(programWeek), "Semanas"]);
   if (weightDelta) heroMetrics.push([weightDelta, "Peso"]);
-  heroMetrics.push([String(pointsTotal), "Puntos"]);
+  heroMetrics.push([String(heroPoints), "Puntos"]);
+
+  // Próxima cita REAL (upcomingAppointments del contexto, backend truth):
+  // sin cita → descripción honesta; nunca "Dr. Ramírez" fabricado.
+  const nextAppt = upcomingAppointments?.[0];
+  const apptSub = nextAppt
+    ? `${nextAppt.time} · ${t(nextAppt.day)} · ${nextAppt.name}`
+    : t("Sin próximas citas · Agenda desde Citas");
+
+  // Plan nutricional REAL del snapshot (tarea 'nut' del día): el texto
+  // hardcodeado podía no coincidir con el plan real del paciente.
+  const nutTask = snapshot?.todayTasks?.find((tk) => tk.taskCode === "nut");
+  const planSub = nutTask?.short ?? t("Ver plan");
 
   return (
     <Screen>
@@ -422,13 +437,13 @@ export function ProfilePage() {
             {
               ico: calendarOutline,
               t: "Calendario de citas",
-              s: "Próxima: Dr. Ramírez hoy 15:00",
+              s: apptSub,
               fn: () => go("book"),
             },
             {
               ico: leafOutline,
               t: "Plan nutricional",
-              s: "1,800 kcal · Mediterránea",
+              s: planSub,
               fn: () => go("nut"),
             },
           ].map((r) => (

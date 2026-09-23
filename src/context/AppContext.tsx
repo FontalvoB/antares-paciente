@@ -34,7 +34,6 @@ import {
   fetchMyAppointments,
   fetchMyContext,
   fetchMyRequests,
-  fetchOrganizationsTree,
   fetchProfessionalsCatalog,
   hasRealSession,
   type AppointmentDto,
@@ -319,7 +318,10 @@ export function AppProvider({
   // TODO: Remove after full migration
   const [pointsToday, setPointsToday] = useState(0);
   // TODO: Remove after full migration
-  const [pointsTotal, setPointsTotal] = useState(4820);
+  // Inicia en 0 (honesto): el hero del Perfil prefiere snapshot.xp.balance;
+  // los incrementos locales de completeStep son continuidad demo tras la
+  // confirmación del servidor. El 4820 hardcodeado mostraba XP fabricado.
+  const [pointsTotal, setPointsTotal] = useState(0);
 
   const [catalog, setCatalog] = useState<ProfessionalCatalogItem[] | null>(
     null,
@@ -354,17 +356,19 @@ export function AppProvider({
     setAppointmentsLoading(true);
     setAppointmentsError(null);
     try {
-      const [me, appts, reqs, catalogData, orgs] = await Promise.all([
+      // Sin organizations/tree: el org id REAL del paciente viene del
+      // /telemedicine/me (resuelto por el backend desde su clínica ERP).
+      // Llamar al árbol ERP con aud=app daba 403 en cada arranque.
+      const [me, appts, reqs, catalogData] = await Promise.all([
         fetchMyContext(),
         fetchMyAppointments({ pageSize: 100 }),
         fetchMyRequests(),
         fetchProfessionalsCatalog(),
-        fetchOrganizationsTree().catch(() => null),
       ]);
       setCatalog(catalogData.data);
       setPatientCtx({
         patientId: me.patient?.id ?? null,
-        orgId: (orgs?.[0]?.id ?? "") || "5fde219a-89ea-4cf9-be48-379e8b1042cb",
+        orgId: me.patient?.organizationId ?? "",
       });
       setAppointments(appts.items);
       setRequests(reqs);
