@@ -7,65 +7,57 @@
     "../LEARNINGS.md",
     "../.agents/rules/*.md",
   ],
-  "skills": {
-    "paths": ["./.agents/skills", "../.agents/skills"],
-  },
-  "permission": {
-    "skill": {
-      "*": "allow",
-    },
-    "bash": {
-      "npm run lint*": "allow",
-      "npm run build*": "allow",
-      "npm test*": "allow",
-      "npm run dev*": "allow",
-      "npm run i18n:check": "allow",
-      "npx cap*": "allow",
-    },
-    "lsp": "allow",
-  },
-  "agent": {
+  "skills": ["./.agents/skills", "../.agents/skills"],
+  "permissions": [
+    { "action": "skill", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "npm run lint*", "effect": "allow" },
+    { "action": "shell", "resource": "npm run build*", "effect": "allow" },
+    { "action": "shell", "resource": "npm test*", "effect": "allow" },
+    { "action": "shell", "resource": "npm run dev*", "effect": "allow" },
+    { "action": "shell", "resource": "npm run i18n:check", "effect": "allow" },
+    { "action": "shell", "resource": "npx cap*", "effect": "allow" },
+  ],
+  "agents": {
     "coppaddresd": {
       "description": "Agente principal ANTARES: Ionic-first, skills-first, memoria LEARNINGS",
       "mode": "primary",
-      "prompt": "Eres el agente principal de ANTARES Paciente (Ionic 8 + React 19 + Capacitor). Aplica .agents/rules/*.md: carga ionic-rules + ionic-architecture con skill() SIEMPRE antes de codificar e ionic-components antes de crear cualquier visual (Ionic-first, nada de HTML raw con equivalente Ionic); x ionic-forms/navigation/overlays/responsive/theme según toque; diseño con design-taste-frontend + impeccable; t() + i18n:check para strings; verifica con npm run lint && npm run build. Responde en el idioma del usuario; docs en español.",
-      "permission": {
-        "skill": {
-          "*": "allow",
-        },
-      },
+      "system": "Eres el agente principal de ANTARES Paciente (Ionic 8 + React 19 + Capacitor). Aplica .agents/rules/*.md: carga ionic-rules + ionic-architecture con skill() SIEMPRE antes de codificar e ionic-components antes de crear cualquier visual (Ionic-first, nada de HTML raw con equivalente Ionic); x ionic-forms/navigation/overlays/responsive/theme según toque; diseño con design-taste-frontend + impeccable; t() + i18n:check para strings; verifica con npm run lint && npm run build. Responde en el idioma del usuario; docs en español.",
+      "permissions": [
+        { "action": "skill", "resource": "*", "effect": "allow" },
+      ],
     },
     "design-expert": {
       "description": "Diseñador UX/UI senior mobile-first con Ionic",
       "mode": "subagent",
-      "prompt": "Diseñador UX/UI senior mobile-first. Carga impeccable + design-taste-frontend + ionic-components/theme/responsive antes de codificar. Componente Ionic siempre que exista equivalente; safe areas, gestos, dark-mode-ready, estados empty/error. Verifica con Playwright MCP.",
+      "system": "Diseñador UX/UI senior mobile-first. Carga impeccable + design-taste-frontend + ionic-components/theme/responsive antes de codificar. Componente Ionic siempre que exista equivalente; safe areas, gestos, dark-mode-ready, estados empty/error. Verifica con Playwright MCP.",
     },
     "reviewer": {
       "description": "Revisor Ionic/React sin editar",
       "mode": "subagent",
-      "prompt": "Revisor Ionic/React senior. Analiza sin editar: uso Ionic-first, composición, hooks, accesibilidad, i18n completo, rendimiento. Cita archivo:línea.",
-      "permission": {
-        "edit": "deny",
-      },
+      "system": "Revisor Ionic/React senior. Analiza sin editar: uso Ionic-first, composición, hooks, accesibilidad, i18n completo, rendimiento. Cita archivo:línea.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+      ],
     },
   },
-  "subagent_depth": 2,
+  "experimental": {
+    "subagent_depth": 2,
+  },
   "compaction": {
     "auto": true,
-    "prune": true,
-    "reserved": 15000,
+    "buffer": 15000,
   },
   "lsp": true,
   "mcp": {
-    "codegraph": {
-      "type": "local",
-      "command": ["codegraph", "serve", "--mcp"],
-      "enabled": true,
-    },
-    "playwright": {
-      "type": "local",
-      "command": ["npx", "@playwright/mcp@latest"],
-      "enabled": true,
+    "servers": {
+      "codegraph": {
+        "type": "local",
+        "command": ["codegraph", "serve", "--mcp"],
+      },
+      "playwright": {
+        "type": "local",
+        "command": ["npx", "@playwright/mcp@latest"],
+      },
     },
   },
 }
