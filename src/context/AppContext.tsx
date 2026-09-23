@@ -18,6 +18,10 @@ import {
   onSessionInvalid,
   restoreSession,
 } from "../utils/authApi";
+import {
+  fetchMyPatientProfile,
+  toUserProfile,
+} from "../utils/patientProfileApi";
 import { refreshAccessToken } from "../utils/apiClient";
 import {
   fetchThreadState,
@@ -392,6 +396,39 @@ export function AppProvider({
     return () => window.removeEventListener("focus", onFocus);
   }, [realMode, screen, refreshAppointments]);
 
+  // Hidrata el perfil REAL del paciente (contacto, aseguradora, emergencia)
+  // en el user del contexto. Sin esto, un paciente sin teléfono en BD veía el
+  // mock del defaultUser en el ContactSection y "Guardar contacto" lo
+  // persistía como dato real. Best-effort: sin perfil (no provisionado /
+  // cuenta sin patient_profiles) se conserva el estado actual. El id/nombre
+  // de sesión (auth) no se toca: el perfil trae patient_id, otro dominio.
+  const hydratePatientProfile = useCallback(
+    async (activeCheck: () => boolean) => {
+      try {
+        const profile = await fetchMyPatientProfile();
+        if (!activeCheck()) return;
+        const real = toUserProfile(profile);
+        setUser((prev) => ({
+          ...prev,
+          email: real.email || prev.email,
+          cedula: real.cedula,
+          dob: real.dob,
+          seguro: real.seguro,
+          poliza: real.poliza,
+          grupo: real.grupo,
+          celular: real.celular,
+          fam1Nombre: real.fam1Nombre,
+          fam1Parentesco: real.fam1Parentesco,
+          fam1Cel: real.fam1Cel,
+          fam1Email: real.fam1Email,
+        }));
+      } catch {
+        /* no bloqueante: el perfil aún no existe (paciente sin provisionar) */
+      }
+    },
+    [],
+  );
+
   const teamProfessional = useCallback(
     (typeId: string): TeamProfessional => {
       const typed = (
@@ -526,6 +563,11 @@ export function AppProvider({
             /* no bloqueante */
           }
 
+          // Perfil real del paciente (contacto/aseguradora/emergencia) en
+          // segundo término: la pantalla de Perfil y el onboarding muestran
+          // la verdad de la BD, nunca el mock del defaultUser.
+          void hydratePatientProfile(() => active);
+
           setFlow("app");
           onResetCommunityClient?.();
         }
@@ -543,7 +585,7 @@ export function AppProvider({
     return () => {
       active = false;
     };
-  }, [onResetCommunityClient]);
+  }, [onResetCommunityClient, hydratePatientProfile]);
 
   // Thread estable del paciente: `proactive-<id>`. Se prioriza el id (UUID real)
   // devuelto por el backend/JWT para que coincida con el checkpointer del AI Service.
@@ -718,6 +760,10 @@ export function AppProvider({
             // localmente para no desincronizar APP ↔ ERP (FASE 1, task 2.1).
             return updated;
           });
+          // Contacto/perfil real también tras el login directo: sin esto el
+          // ContactSection prefillaba el mock del defaultUser (celular fake)
+          // y "Guardar contacto" lo habría persistido como dato del paciente.
+          await hydratePatientProfile(() => true);
         })();
         setFlow(next);
         // Recrea el cliente urql para usar la cache y el WS con el token nuevo.

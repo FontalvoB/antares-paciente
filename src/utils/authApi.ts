@@ -190,7 +190,22 @@ export async function verifyOtp(
  * - Fallo de red / backend caído con token local previo → se conserva la
  *   sesión (modo offline), el watcher de expiración la revalidará después.
  */
+/** Promesa de restauración en vuelo: coalesce a todos los llamadores
+ *  concurrentes del boot (AppContext.checkSession + cliente GraphQL vía
+ *  ensureFreshAccessToken). Sin esto, dos refresh simultáneos con la misma
+ *  cookie rotan y compiten: el perdedor activa la detección de reuso del
+ *  backend (401 "invalid") y la sesión se mata a sí misma. */
+let restoreInFlight: Promise<LoginResult | null> | null = null;
+
 export async function restoreSession(): Promise<LoginResult | null> {
+  if (restoreInFlight) return restoreInFlight;
+  restoreInFlight = restoreSessionOnce().finally(() => {
+    restoreInFlight = null;
+  });
+  return restoreInFlight;
+}
+
+async function restoreSessionOnce(): Promise<LoginResult | null> {
   // Token local previo: si el refresh falla por red caída, la sesión se
   // conserva (modo offline) con este token hasta que el watcher la revalide.
   const existingToken = getAccessToken();
