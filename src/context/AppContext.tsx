@@ -694,9 +694,16 @@ export function AppProvider({
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         void (async () => {
           let meId: string | undefined;
+          let meName: string | undefined;
           try {
             const me = await getMe();
             if (me?.id) meId = me.id;
+            // El nombre también viene del backend (FASE 3: el login por
+            // password solo traía el id y el Home saludaba con el mock
+            // "María González" — misma corrección que la restauración de
+            // sesión de arriba).
+            const name = `${me?.firstName ?? ""} ${me?.lastName ?? ""}`.trim();
+            if (name) meName = name;
           } catch {
             /* no bloqueante */
           }
@@ -705,6 +712,7 @@ export function AppProvider({
               ...u,
               ...(seed || {}),
               ...(meId ? { id: meId } : {}),
+              ...(meName ? { nombre: meName } : {}),
             };
             // La identidad vive en el backend (getMe + JWT); no se persiste
             // localmente para no desincronizar APP ↔ ERP (FASE 1, task 2.1).
