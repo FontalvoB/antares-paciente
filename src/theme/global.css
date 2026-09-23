@@ -17428,33 +17428,14 @@ ion-button.cta-pill.button-disabled {
   background: var(--brand-navy);
   color: var(--wh);
   text-align: left;
-  box-shadow:
-    0 3px 0 var(--g1),
-    var(--shadow-sm);
+  box-shadow: 0 8px 18px rgba(20, 40, 85, 0.18);
   transition:
     transform 180ms var(--ease),
     box-shadow 180ms var(--ease);
 }
 
-.hm-metric:nth-child(2) {
-  --metric-tint: var(--teal-l);
-}
-.hm-metric:nth-child(3) {
-  --metric-tint: var(--pur-l);
-}
-.hm-metric:nth-child(4) {
-  --metric-tint: var(--red-l);
-}
-
 .hm-metric:active {
   transform: translateY(2px) scale(0.97);
-}
-
-/* Foco visible de las tarjetas del Home (dev + diseño propio). */
-.hm-metric:focus-visible,
-.hm-appt:focus-visible {
-  outline: 3px solid var(--brand-sky-mid);
-  outline-offset: 4px;
 }
 
 .hm-metric-val {
@@ -17568,42 +17549,28 @@ ion-button.cta-pill.button-disabled {
   color: var(--wh);
   font-size: 11px;
   font-weight: 700;
-  box-shadow:
-    0 3px 0 var(--g1),
-    var(--shadow-sm);
+  box-shadow: 0 8px 18px rgba(20, 40, 85, 0.18);
   transition:
     transform 180ms var(--ease),
     box-shadow 180ms var(--ease);
 }
-.hm-quick-btn:nth-child(2) {
-  --quick-tint: var(--teal-l);
-}
-.hm-quick-btn:nth-child(3) {
-  --quick-tint: var(--pur-l);
-}
-.hm-quick-btn.panic {
-  --quick-tint: var(--red-l);
-}
 .hm-quick-ico {
   display: grid;
   place-items: center;
-  height: 48px;
+  width: 36px;
+  height: 36px;
 }
-.hm-quick-ico .ic3 {
-  display: block;
-  width: 48px;
-  height: 48px;
-  transition: transform 240ms var(--ease);
+.hm-quick-ico ion-icon {
+  font-size: 26px;
+  color: var(--wh);
 }
 .hm-quick-btn:active {
   transform: translateY(2px) scale(0.97);
-  box-shadow: var(--shadow-sm);
-}
-.hm-quick-btn:active .ic3 {
-  transform: scale(0.94);
 }
 .hm-quick-btn:focus-visible,
-.hm-wheel-card:focus-visible {
+.hm-wheel-card:focus-visible,
+.hm-metric:focus-visible,
+.hm-appt:focus-visible {
   outline: 3px solid var(--brand-sky-mid);
   outline-offset: 4px;
 }
@@ -17615,9 +17582,6 @@ ion-button.cta-pill.button-disabled {
   .hm-quick-btn:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
-  }
-  .hm-quick-btn:hover .ic3 {
-    transform: translateY(-2px) rotate(-6deg) scale(1.06);
   }
 }
 
@@ -17636,9 +17600,7 @@ ion-button.cta-pill.button-disabled {
   background: var(--brand-navy);
   color: var(--wh);
   text-align: left;
-  box-shadow:
-    0 3px 0 var(--g1),
-    var(--shadow-sm);
+  box-shadow: 0 8px 18px rgba(20, 40, 85, 0.18);
   transition:
     transform 180ms var(--ease),
     box-shadow 180ms var(--ease);
@@ -17655,12 +17617,8 @@ ion-button.cta-pill.button-disabled {
   height: 34px;
   border: 2px solid var(--wh);
   border-radius: 50%;
-  color: var(--brand-navy);
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow:
-    inset 0 0 0 1px rgba(20, 40, 85, 0.06),
-    var(--shadow-sm);
-  backdrop-filter: blur(6px);
+  color: var(--wh);
+  background: transparent;
 }
 
 .hm-appt-tele ion-icon {
@@ -20110,14 +20068,11 @@ html.plt-tablet .mcar-page {
 }
 @media (prefers-reduced-motion: reduce) {
   .hm-quick-btn,
-  .hm-quick-ico .ic3,
   .hm-wheel-card .wheel-badge {
     transition: none;
   }
   .hm-quick-btn:hover,
   .hm-quick-btn:active,
-  .hm-quick-btn:hover .ic3,
-  .hm-quick-btn:active .ic3,
   .hm-wheel-card:active {
     transform: none;
   }

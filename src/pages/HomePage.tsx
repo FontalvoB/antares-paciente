@@ -9,20 +9,18 @@ import { useI18n } from "../i18n/I18nContext";
 import {
   add,
   bodyOutline,
+  chatbubbleEllipsesOutline,
   flame,
+  medkitOutline,
+  micOutline,
   notificationsOutline,
   refreshOutline,
   school,
   videocamOutline,
   walk,
+  watchOutline,
   water,
 } from "ionicons/icons";
-import {
-  ChatIcon3D,
-  MicIcon3D,
-  SosIcon3D,
-  WatchIcon3D,
-} from "../components/icons3d";
 import {
   ModuleCarousel,
   type CarouselModule,
@@ -552,27 +550,25 @@ export function HomePage() {
               {
                 id: "chat" as const,
                 label: t("Chat IA"),
-                Art: ChatIcon3D,
+                icon: chatbubbleEllipsesOutline,
                 fn: () => navigate("chat"),
               },
               {
                 id: "voice" as const,
                 label: t("Voz"),
-                Art: MicIcon3D,
+                icon: micOutline,
                 fn: openVoice,
               },
               {
                 id: "bt" as const,
                 label: wearableConnected ? t("Wearable") : t("Conectar"),
-                Art: WatchIcon3D,
+                icon: watchOutline,
                 fn: () => navigate("bt"),
               },
               {
                 id: "sos" as const,
                 label: t("SOS"),
-                // El botiquín reemplaza la sigla "SOS" dentro del círculo: la
-                // etiqueta ya dice SOS y así las cuatro teclas llevan pieza 3D.
-                Art: SosIcon3D,
+                icon: medkitOutline,
                 fn: openPanic,
                 panic: true,
               },
@@ -584,7 +580,7 @@ export function HomePage() {
                 onClick={a.fn}
               >
                 <span className="hm-quick-ico" aria-hidden="true">
-                  <a.Art />
+                  <IonIcon icon={a.icon} />
                 </span>
                 <span>{a.label}</span>
               </button>
