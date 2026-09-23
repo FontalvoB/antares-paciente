@@ -360,7 +360,14 @@ export function ProfilePage() {
               background: "linear-gradient(145deg,#1a6ad8,#20c8ff)",
             }}
           >
-            MG
+            {/* Iniciales reales del paciente (identidad 100% backend); el
+                "MG" hardcodeado mostraba a otro usuario con nombre real. */}
+            {user.nombre
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part.charAt(0).toUpperCase())
+              .join("") || "ME"}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="h2" style={{ margin: 0 }}>
