@@ -5,13 +5,10 @@ import {
   IonIcon,
   IonRadio,
   IonRadioGroup,
-  IonSegment,
-  IonSegmentButton,
   IonTextarea,
 } from "@ionic/react";
 import {
   calendarOutline,
-  checkmark,
   checkmarkCircle,
   chevronBack,
   chevronForward,
@@ -21,7 +18,6 @@ import {
   locationOutline,
   medkit,
   sparkles,
-  timeOutline,
   videocamOutline,
   warningOutline,
 } from "ionicons/icons";
@@ -39,6 +35,7 @@ import {
   type ListedAppointment,
 } from "../data/appointments";
 import { useApp } from "../context/AppContext";
+import { useT } from "../i18n/I18nContext";
 import {
   formatDateForDisplay,
   formatLongDateEs,
@@ -85,6 +82,13 @@ const TYPE_FG: Record<ConsultTypeId, string> = {
   urgencia: "var(--org)",
 };
 
+const TYPE_KICKER: Record<ConsultTypeId, string> = {
+  medica: "Consulta",
+  psicologia: "Acompañamiento",
+  nutricion: "Nutrición",
+  urgencia: "Prioritaria",
+};
+
 export function RequestAppointmentWizard({
   onCancel,
   onSubmitted,
@@ -94,6 +98,7 @@ export function RequestAppointmentWizard({
 }) {
   const { teamProfessional, realMode, submitAppointmentRequest, showToast } =
     useApp();
+  const t = useT();
   const today = toLocalISODate();
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
@@ -102,7 +107,6 @@ export function RequestAppointmentWizard({
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
   const [mode, setMode] = useState<AppointmentMode | "">("");
-  const [period, setPeriod] = useState<"all" | "am" | "pm">("all");
   const [{ year, month }, setCursor] = useState(() => isoYearMonth(today));
   const dir = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -112,8 +116,6 @@ export function RequestAppointmentWizard({
   const consultType = typeId ? consultTypeById(typeId) : null;
   const slots = typeId && date ? getAvailableSlots(typeId, date) : [];
   const { morning, afternoon } = splitSlots(slots);
-  const visibleSlots =
-    period === "am" ? morning : period === "pm" ? afternoon : slots;
   const nextSlot = typeId ? firstOpenSlot(typeId) : null;
   const cells = monthGrid(year, month);
   const meta = STEPS[step - 1] ?? STEPS[0];
@@ -140,7 +142,6 @@ export function RequestAppointmentWizard({
   const pickType = (id: ConsultTypeId) => {
     setTypeId(id);
     setTime("");
-    setPeriod("all");
     const open = firstOpenSlot(id);
     if (open) {
       setDate(open.date);
@@ -154,7 +155,6 @@ export function RequestAppointmentWizard({
     if (!typeId || !isSelectableBookingDate(iso, typeId)) return;
     setDate(iso);
     setTime("");
-    setPeriod("all");
   };
 
   const jumpNext = () => {
@@ -162,7 +162,6 @@ export function RequestAppointmentWizard({
     setDate(nextSlot.date);
     setTime(nextSlot.time);
     setCursor(isoYearMonth(nextSlot.date));
-    setPeriod("all");
   };
 
   const go = (n: number) => {
@@ -366,138 +365,106 @@ export function RequestAppointmentWizard({
           ) : (
             <motion.div
               key={step}
+              className={step === 1 ? "req-step req-step-types" : "req-step"}
               initial={{ opacity: 0, x: 22 * dir.current }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -16 * dir.current }}
               transition={{ duration: 0.28, ease: EASE }}
             >
               {step === 1 && (
-                <>
-                  <IonRadioGroup
-                    className="req-types"
-                    value={typeId || undefined}
-                    onIonChange={(e) =>
-                      pickType(e.detail.value as ConsultTypeId)
-                    }
-                  >
-                    {CONSULT_TYPES.map((t) => (
+                <IonRadioGroup
+                  className="req-types"
+                  value={typeId || undefined}
+                  onIonChange={(e) =>
+                    pickType(e.detail.value as ConsultTypeId)
+                  }
+                >
+                  {CONSULT_TYPES.map((kind) => {
+                    const pro = teamProfessional(kind.id);
+                    const selected = typeId === kind.id;
+                    return (
                       <IonRadio
-                        key={t.id}
-                        value={t.id}
-                        className={`req-type-card card card-accent ac-${t.tone} ${typeId === t.id ? "sel" : ""}`}
+                        key={kind.id}
+                        value={kind.id}
+                        className={`req-type-card ac-${kind.tone} ${selected ? "sel" : ""}`}
                         justify="start"
                         labelPlacement="end"
+                        aria-label={t(kind.label)}
                       >
                         <span className="req-type-inner">
-                          <span
-                            className="ico"
-                            style={{
-                              background: TYPE_BG[t.id],
-                              color: TYPE_FG[t.id],
-                              marginBottom: 0,
-                            }}
-                          >
-                            <IonIcon icon={TYPE_ICONS[t.id]} />
+                          <span className="req-type-top">
+                            <span
+                              className="req-type-ico"
+                              style={{
+                                background: TYPE_BG[kind.id],
+                                color: TYPE_FG[kind.id],
+                              }}
+                            >
+                              <IonIcon icon={TYPE_ICONS[kind.id]} />
+                            </span>
+                            <span className="req-type-kicker">
+                              {t(TYPE_KICKER[kind.id])}
+                            </span>
+                            {selected ? (
+                              <IonIcon
+                                className="req-type-check"
+                                icon={checkmarkCircle}
+                              />
+                            ) : null}
                           </span>
                           <span className="req-type-copy">
-                            <span className="ct">{t.label}</span>
-                            <span className="cs">{t.short}</span>
+                            <span className="ct">{t(kind.label)}</span>
+                            <span className="cs">{t(kind.short)}</span>
                           </span>
-                          {typeId === t.id ? (
-                            <IonIcon
-                              className="req-type-check"
-                              icon={checkmark}
-                            />
+                          <span className="req-type-pro">
+                            <span
+                              className="req-type-avatar"
+                              aria-hidden="true"
+                            >
+                              {pro.emoji}
+                            </span>
+                            <span>
+                              <strong>{pro.name}</strong>
+                              <small>{t(pro.role)}</small>
+                            </span>
+                          </span>
+                          {kind.id === "urgencia" ? (
+                            <span className="req-type-note">
+                              <IonIcon icon={warningOutline} />
+                              {t(
+                                "Si es una emergencia en curso, usa SOS.",
+                              )}
+                            </span>
                           ) : null}
                         </span>
                       </IonRadio>
-                    ))}
-                  </IonRadioGroup>
-
-                  <AnimatePresence>
-                    {professional && (
-                      <motion.article
-                        className="appt-featured"
-                        style={{ margin: "12px 0 0" }}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.28, ease: EASE }}
-                      >
-                        <div
-                          className="appt-featured-band"
-                          style={{ background: professional.accent }}
-                        >
-                          <span>PROFESIONAL A CARGO</span>
-                          <span
-                            className="chip chip-glass"
-                            style={{ padding: "2px 8px" }}
-                          >
-                            <span className="dot" /> Disponible
-                          </span>
-                        </div>
-                        <div
-                          className="appt-featured-body"
-                          style={{ paddingBottom: 16 }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 12,
-                              alignItems: "center",
-                            }}
-                          >
-                            <div
-                              className="avatar"
-                              style={{
-                                width: 56,
-                                height: 56,
-                                background: professional.colorSoft,
-                                fontSize: 26,
-                              }}
-                            >
-                              {professional.emoji}
-                            </div>
-                            <div>
-                              <div
-                                className="display"
-                                style={{ fontSize: 18, fontWeight: 700 }}
-                              >
-                                {professional.name}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 13,
-                                  color: "var(--mu)",
-                                  marginTop: 2,
-                                }}
-                              >
-                                {professional.role}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.article>
-                    )}
-                  </AnimatePresence>
-
-                  {typeId === "urgencia" && (
-                    <div
-                      className="onb-trust onb-trust-warn"
-                      style={{ marginTop: 12 }}
-                    >
-                      <IonIcon icon={warningOutline} />
-                      <span>
-                        Para una emergencia en curso usa SOS. Aquí pides una
-                        cita prioritaria con la médica de guardia.
-                      </span>
-                    </div>
-                  )}
-                </>
+                    );
+                  })}
+                </IonRadioGroup>
               )}
 
               {step === 2 && typeId && (
-                <>
+                <div className="req-agenda">
+                  {nextSlot &&
+                    !(nextSlot.date === date && nextSlot.time === time) && (
+                      <IonButton
+                        expand="block"
+                        className="req-soon"
+                        onClick={jumpNext}
+                      >
+                        <span className="req-soon-copy">
+                          <span className="req-soon-kicker">{t("Más pronto")}</span>
+                          <span className="req-soon-when">
+                            {isTodayISO(nextSlot.date)
+                              ? t("Hoy")
+                              : formatDateForDisplay(nextSlot.date)}
+                            <strong>{nextSlot.time}</strong>
+                          </span>
+                        </span>
+                        <IonIcon icon={chevronForward} aria-hidden="true" />
+                      </IonButton>
+                    )}
+
                   <section className="req-cal card">
                     <div className="req-cal-nav">
                       <IonButton
@@ -557,115 +524,114 @@ export function RequestAppointmentWizard({
                     </div>
                     <div className="req-cal-legend">
                       <span>
-                        <i className="req-cal-dot" /> Con cupo
+                        <i className="req-cal-dot" /> {t("Con cupo")}
                       </span>
-                      <span>Citas de {DURATION}</span>
+                      <span>{t("Citas de {mins}", { mins: "30" })}</span>
                     </div>
                   </section>
 
-                  {nextSlot &&
-                    !(nextSlot.date === date && nextSlot.time === time) && (
-                      <IonButton
-                        expand="block"
-                        className="bt bt-ghost req-next-open"
-                        onClick={jumpNext}
+                  <section className="req-hours">
+                    <div className="req-times-head">
+                      <div>
+                        <div className="req-times-title">
+                          {date ? formatLongDateEs(date) : t("Elige un día")}
+                        </div>
+                        <div className="req-times-sub">
+                          {date
+                            ? slots.length
+                              ? t("{count} horarios · {name}", {
+                                  count: String(slots.length),
+                                  name: proShort,
+                                })
+                              : t("Sin cupo este día")
+                            : t("Agenda de {name}", { name: proShort })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={date || "none"}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2, ease: EASE }}
                       >
-                        <IonIcon icon={timeOutline} slot="start" />
-                        Próximo disponible ·{" "}
-                        {isTodayISO(nextSlot.date)
-                          ? "Hoy"
-                          : formatDateForDisplay(nextSlot.date)}{" "}
-                        {nextSlot.time}
-                      </IonButton>
+                        {!date ? (
+                          <div className="req-empty">
+                            <strong>{t("Elige un día en el calendario")}</strong>
+                            <p>
+                              {t("Los días marcados tienen horarios libres.")}
+                            </p>
+                          </div>
+                        ) : slots.length === 0 ? (
+                          <div className="req-empty">
+                            <strong>{t("Sin horarios este día")}</strong>
+                            <p>
+                              {t(
+                                "Prueba un día marcado o usa el horario más pronto.",
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            {morning.length > 0 && (
+                              <div className="req-slot-group">
+                                <div className="req-slot-label">
+                                  {t("Mañana")}
+                                </div>
+                                <div className="req-slots">
+                                  {morning.map((slot) => (
+                                    <IonButton
+                                      key={slot}
+                                      className={`bt req-slot ${time === slot ? "sel" : ""}`}
+                                      aria-pressed={time === slot}
+                                      onClick={() => setTime(slot)}
+                                    >
+                                      <span className="req-slot-time">
+                                        {slot}
+                                      </span>
+                                    </IonButton>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {afternoon.length > 0 && (
+                              <div className="req-slot-group">
+                                <div className="req-slot-label">
+                                  {t("Tarde")}
+                                </div>
+                                <div className="req-slots">
+                                  {afternoon.map((slot) => (
+                                    <IonButton
+                                      key={slot}
+                                      className={`bt req-slot ${time === slot ? "sel" : ""}`}
+                                      aria-pressed={time === slot}
+                                      onClick={() => setTime(slot)}
+                                    >
+                                      <span className="req-slot-time">
+                                        {slot}
+                                      </span>
+                                    </IonButton>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {date && time && (
+                      <div className="req-pick">
+                        <IonIcon icon={calendarOutline} />
+                        <span>{formatLongDateEs(date)}</span>
+                        <strong>{time}</strong>
+                        <em>{DURATION}</em>
+                      </div>
                     )}
-
-                  <div className="req-times-head">
-                    <div>
-                      <div className="req-times-title">
-                        {date ? formatLongDateEs(date) : "Elige un día"}
-                      </div>
-                      <div className="req-times-sub">
-                        {date
-                          ? slots.length
-                            ? `${slots.length} horarios · ${proShort}`
-                            : "Sin cupo este día"
-                          : `Agenda de ${proShort}`}
-                      </div>
-                    </div>
-                  </div>
-
-                  {date && slots.length > 0 && (
-                    <IonSegment
-                      className="req-seg"
-                      value={period}
-                      onIonChange={(e) =>
-                        setPeriod(
-                          (e.detail.value as "all" | "am" | "pm") || "all",
-                        )
-                      }
-                    >
-                      <IonSegmentButton value="all">Todos</IonSegmentButton>
-                      <IonSegmentButton value="am">Mañana</IonSegmentButton>
-                      <IonSegmentButton value="pm">Tarde</IonSegmentButton>
-                    </IonSegment>
-                  )}
-
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={`${date}-${period}`}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2, ease: EASE }}
-                    >
-                      {!date ? (
-                        <div className="req-empty">
-                          <strong>Elige un día en el calendario</strong>
-                          <p>
-                            Los puntos indican los días con horarios libres.
-                          </p>
-                        </div>
-                      ) : visibleSlots.length === 0 ? (
-                        <div className="req-empty">
-                          <strong>
-                            {slots.length === 0
-                              ? "Sin horarios este día"
-                              : "No hay huecos en este periodo"}
-                          </strong>
-                          <p>
-                            {slots.length === 0
-                              ? "Prueba un día con punto verde o usa el próximo disponible."
-                              : "Cambia a Todos o al otro periodo del día."}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="req-slots">
-                          {visibleSlots.map((slot) => (
-                            <IonButton
-                              key={slot}
-                              className={`bt req-slot ${time === slot ? "sel" : ""}`}
-                              onClick={() => setTime(slot)}
-                            >
-                              <span className="req-slot-time">{slot}</span>
-                              <span className="req-slot-dur">
-                                {time === slot ? "Elegida" : DURATION}
-                              </span>
-                            </IonButton>
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {date && time && (
-                    <div className="req-pick">
-                      <IonIcon icon={calendarOutline} />
-                      <span>{formatLongDateEs(date)}</span>
-                      <strong>{time}</strong>
-                      <em>{DURATION}</em>
-                    </div>
-                  )}
-                </>
+                  </section>
+                </div>
               )}
 
               {step === 3 && professional && consultType && (

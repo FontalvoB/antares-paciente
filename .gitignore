@@ -52,3 +52,6 @@ PROMPT-CONTEXT.md
 .codegraph/
 
 
+
+# --- Artefactos locales de validación (no publicar) ---
+.artifacts/

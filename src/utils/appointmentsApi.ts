@@ -52,20 +52,10 @@ export interface AppointmentDto {
 }
 
 export type VirtualRoomStatus =
-  | "Created"
-  | "Waiting"
-  | "Active"
-  | "Ended"
-  | "Expired"
-  | "Failed";
+  "Created" | "Waiting" | "Active" | "Ended" | "Expired" | "Failed";
 
 export type TelemedicineSessionStatus =
-  | "Created"
-  | "Waiting"
-  | "Active"
-  | "Ended"
-  | "Expired"
-  | "Failed";
+  "Created" | "Waiting" | "Active" | "Ended" | "Expired" | "Failed";
 
 export interface RoomParticipantDto {
   participantSid: string;
@@ -174,6 +164,8 @@ export interface PatientContextDto {
     email: string | null;
     clinicId: string | null;
     locationId: string | null;
+    /** Organización ERP de la clínica del paciente (FASE 6, resuelta backend). */
+    organizationId?: string | null;
   } | null;
 }
 
@@ -381,7 +373,7 @@ export function sendRoomChatMessage(
   );
 }
 
-/** Catálogo de profesionales clínicos del backend (público-autenticado, sin PHI). */export function fetchProfessionalsCatalog(): Promise<{
+/** Catálogo de profesionales clínicos del backend (público-autenticado, sin PHI). */ export function fetchProfessionalsCatalog(): Promise<{
   data: ProfessionalCatalogItem[];
   total: number;
   page: number;
@@ -389,11 +381,4 @@ export function sendRoomChatMessage(
   totalPages: number;
 }> {
   return api("/api/v1/professionals-catalog?page=1&pageSize=100");
-}
-
-/** Árbol de organizaciones del backend (para la org de la solicitud). */
-export function fetchOrganizationsTree(): Promise<
-  Array<{ id: string; name: string }>
-> {
-  return api<Array<{ id: string; name: string }>>("/api/v1/organizations/tree");
 }
