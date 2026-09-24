@@ -614,89 +614,50 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                   hint={t("Próximamente habrá actividades del club")}
                 />
               ) : (
-                events.map((event) => (
+                events.map((event, i) => (
                   <div
                     key={event.id}
+                    className="club-event-card"
                     style={{
-                      display: "flex",
-                      gap: 12,
-                      padding: 12,
-                      borderRadius: 16,
-                      border: "1px solid var(--ion-color-light-shade)",
-                      background: "var(--ion-background-color)",
+                      animationDelay: `${Math.min(i * 60, 240)}ms`,
                     }}
                   >
                     <DatePill iso={event.startsAt} type={event.type} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 800,
-                          margin: "0 0 4px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <span style={{ flex: 1, minWidth: 0 }}>
-                          {event.title}
-                        </span>
+                    <div className="club-event-main">
+                      <p className="club-event-title">
+                        <span className="club-event-name">{event.title}</span>
                         {event.status === "LLENO" && (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 900,
-                              color: "#fff",
-                              background: "var(--ion-color-warning)",
-                              padding: "2px 8px",
-                              borderRadius: 99,
-                            }}
-                          >
-                            {t("Lleno")}
-                          </span>
+                          <span className="club-event-full">{t("Lleno")}</span>
                         )}
                       </p>
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: "var(--ion-color-medium)",
-                          margin: "0 0 6px",
-                          lineHeight: 1.45,
-                        }}
-                      >
+                      <p className="club-event-meta">
                         {event.type === "PRESENCIAL"
                           ? (event.location ?? t("Sin ubicación"))
                           : t("Virtual")}
                       </p>
                       <div
-                        style={{
-                          height: 5,
-                          borderRadius: 99,
-                          background: "var(--ion-color-light)",
-                          overflow: "hidden",
-                          margin: "0 0 6px",
-                        }}
+                        className="club-event-track"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={event.maxAttendees ?? 100}
+                        aria-valuenow={Math.min(
+                          event.confirmedCount,
+                          event.maxAttendees ?? event.confirmedCount,
+                        )}
                       >
                         <div
+                          className={
+                            event.maxAttendees &&
+                            event.confirmedCount >= event.maxAttendees
+                              ? "club-event-fill full"
+                              : "club-event-fill"
+                          }
                           style={{
-                            height: "100%",
                             width: `${event.maxAttendees ? Math.min(100, Math.round((event.confirmedCount / event.maxAttendees) * 100)) : Math.min(100, event.confirmedCount * 4)}%`,
-                            borderRadius: 99,
-                            background:
-                              event.maxAttendees &&
-                              event.confirmedCount >= event.maxAttendees
-                                ? "var(--ion-color-warning)"
-                                : "var(--ion-color-primary)",
                           }}
                         />
                       </div>
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: "var(--ion-color-medium)",
-                          margin: "0 0 8px",
-                        }}
-                      >
+                      <p className="club-event-counts">
                         {event.confirmedCount}
                         {event.maxAttendees
                           ? `/${event.maxAttendees}`
@@ -708,6 +669,7 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                       {event.myAttendance === null && (
                         <IonButton
                           size="small"
+                          className="club-event-btn"
                           onClick={() => void attend(event)}
                         >
                           {event.status === "LLENO"
@@ -719,28 +681,19 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                         <IonButton
                           size="small"
                           fill="outline"
+                          className="club-event-btn"
                           onClick={() => void doCheckIn(event)}
                         >
                           {t("Check-in")}
                         </IonButton>
                       )}
                       {event.myAttendance === "LISTA_ESPERA" && (
-                        <span
-                          style={{
-                            fontSize: 12.5,
-                            color: "var(--ion-color-warning)",
-                          }}
-                        >
+                        <span className="club-event-status warn">
                           {t("En lista de espera")}
                         </span>
                       )}
                       {event.myAttendance === "CHECKIN" && (
-                        <span
-                          style={{
-                            fontSize: 12.5,
-                            color: "var(--ion-color-success)",
-                          }}
-                        >
+                        <span className="club-event-status ok">
                           {t("Check-in registrado")}
                         </span>
                       )}
@@ -761,93 +714,38 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                 />
               ) : (
                 lives.map((live) => (
-                  <div
-                    key={live.id}
-                    style={{
-                      padding: 12,
-                      borderRadius: 14,
-                      border: "1px solid var(--ion-color-light-shade)",
-                      background: "var(--ion-background-color)",
-                    }}
-                  >
+                  <div key={live.id} className="club-live-card">
                     <div
-                      style={{
-                        height: 100,
-                        borderRadius: 10,
-                        marginBottom: 8,
-                        background:
-                          live.status === "ACTIVO"
-                            ? "linear-gradient(135deg, rgba(255,59,48,0.18), rgba(255,59,48,0.04))"
-                            : "linear-gradient(135deg, rgba(124,58,237,0.14), var(--ion-color-light))",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        position: "relative",
-                      }}
+                      className={
+                        live.status === "ACTIVO"
+                          ? "club-live-thumb live"
+                          : "club-live-thumb"
+                      }
                     >
                       {live.status === "ACTIVO" && (
-                        <span
-                          className="live-pulse"
-                          style={{
-                            position: "absolute",
-                            top: 10,
-                            right: 10,
-                            background: "var(--ion-color-danger)",
-                            color: "#fff",
-                            fontSize: 9.5,
-                            fontWeight: 900,
-                            letterSpacing: 1,
-                            padding: "3px 9px",
-                            borderRadius: 99,
-                          }}
-                        >
+                        <span className="live-pulse club-live-badge">
                           {t("EN VIVO")}
                         </span>
                       )}
-                      <IonIcon
-                        icon={radioOutline}
-                        style={{
-                          fontSize: 24,
-                          color:
-                            live.status === "ACTIVO"
-                              ? "var(--ion-color-danger)"
-                              : "var(--ion-color-primary)",
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 900,
-                          letterSpacing: 1,
-                          color: "var(--ion-color-danger)",
-                        }}
-                      >
+                      <span className="club-live-ico" aria-hidden="true">
+                        <IonIcon icon={radioOutline} />
+                      </span>
+                      <span className="club-live-kicker">
                         {live.status === "ACTIVO"
                           ? t("EN VIVO")
                           : t("LIVE COPP ADRESD")}
                       </span>
                     </div>
-                    <p
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 800,
-                        margin: "0 0 4px",
-                      }}
-                    >
-                      {live.title}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "var(--ion-color-medium)",
-                        margin: "0 0 8px",
-                      }}
-                    >
+                    <p className="club-live-title">{live.title}</p>
+                    <p className="club-live-date">
                       {formatDateTime(live.scheduledStartAt)}
                     </p>
                     {live.status === "ACTIVO" && (
-                      <IonButton size="small" onClick={() => setLiveChat(live)}>
+                      <IonButton
+                        size="small"
+                        className="club-event-btn"
+                        onClick={() => setLiveChat(live)}
+                      >
                         {t("Entrar al live")}
                       </IonButton>
                     )}
@@ -1266,38 +1164,18 @@ function DatePill({ iso, type }: { iso: string; type: ClubEvent["type"] }) {
   const d = new Date(iso);
   return (
     <span
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 58,
-        height: 64,
-        borderRadius: 16,
-        background:
-          type === "PRESENCIAL"
-            ? "linear-gradient(160deg, var(--ion-color-primary), #5b21b6)"
-            : "linear-gradient(160deg, #0891b2, #0e7490)",
-        color: "#fff",
-        flexShrink: 0,
-      }}
+      className={
+        type === "PRESENCIAL" ? "club-date-pill" : "club-date-pill virtual"
+      }
+      aria-hidden="true"
     >
-      <span style={{ fontSize: 20, fontWeight: 900, lineHeight: 1 }}>
-        {d.getDate()}
-      </span>
-      <span
-        style={{
-          fontSize: 9.5,
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-        }}
-      >
+      <span className="club-date-day">{d.getDate()}</span>
+      <span className="club-date-month">
         {d.toLocaleDateString("es-CO", { month: "short" }).replace(".", "")}
       </span>
       <IonIcon
         icon={type === "PRESENCIAL" ? calendarOutline : radioOutline}
-        style={{ fontSize: 11, marginTop: 3 }}
+        className="club-date-ico"
       />
     </span>
   );

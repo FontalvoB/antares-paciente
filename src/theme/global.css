@@ -17643,8 +17643,8 @@ ion-button.cta-pill.button-disabled {
 }
 
 .hm-icon-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: none;
   color: var(--brand-navy);
@@ -24126,7 +24126,10 @@ ion-segment.plan-seg ion-segment-button {
   .com-post,
   button.com-act-btn,
   .com-thread-like,
-  .com-thread-report {
+  .com-thread-report,
+  .club-event-card,
+  .club-live-card,
+  .live-pulse {
     transition: none;
     animation: none;
   }
@@ -24273,4 +24276,230 @@ ion-button.chat-fb-btn {
   flex-shrink: 0;
   font-size: 16px;
   color: var(--teal);
+}
+
+/* ============================================================
+   Clubes premium â€” tarjetas de eventos y lives (Fase 11)
+   Solo presentaciÃ³n: bento cards blancas, iconografÃ­a temÃ¡tica
+   con tints suaves, Space Grotesk en tiempos e insignias y
+   targets tÃ¡ctiles â‰¥44px. Sin cambios de lÃ³gica ni datos.
+   ============================================================ */
+
+/* Tarjeta de evento: DatePill + detalle + capacidad + acciÃ³n. */
+.club-event-card {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--bd);
+  border-radius: 22px;
+  box-shadow: var(--shadow-sm);
+  animation: comFadeUp 0.35s var(--ease) both;
+}
+.club-event-main {
+  flex: 1;
+  min-width: 0;
+}
+.club-event-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+  color: var(--tx);
+}
+.club-event-name {
+  flex: 1;
+  min-width: 0;
+}
+.club-event-full {
+  flex-shrink: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--org);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.club-event-meta {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: var(--mu);
+  line-height: 1.5;
+}
+.club-event-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--g1);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.club-event-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  transition: width 0.4s var(--ease);
+}
+.club-event-fill.full {
+  background: var(--org);
+}
+.club-event-counts {
+  margin: 0 0 10px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mu);
+}
+ion-button.club-event-btn {
+  min-height: 44px;
+  --border-radius: 14px;
+  margin: 0;
+  font-size: 13.5px;
+}
+.club-event-status {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 6px 14px;
+  min-height: 44px;
+  line-height: 32px;
+}
+.club-event-status.warn {
+  color: var(--org-d);
+  background: var(--org-l);
+}
+.club-event-status.ok {
+  color: var(--teal-d);
+  background: var(--teal-l);
+}
+
+/* Pastilla de fecha del evento: dÃ­a protagonista + mes + icono. */
+.club-date-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 68px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--brand-navy), var(--pur));
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(20, 40, 85, 0.22);
+}
+.club-date-pill.virtual {
+  background: linear-gradient(160deg, var(--cyan), var(--teal));
+  box-shadow: 0 8px 18px rgba(3, 93, 77, 0.22);
+}
+.club-date-day {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+.club-date-month {
+  margin-top: 2px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.85;
+}
+.club-date-pill .club-date-ico {
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
+/* Tarjeta de live: miniatura con estado + tÃ­tulo + fecha + acceso. */
+.club-live-card {
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--bd);
+  border-radius: 22px;
+  box-shadow: var(--shadow-sm);
+  animation: comFadeUp 0.35s var(--ease) both;
+}
+.club-live-thumb {
+  position: relative;
+  height: 120px;
+  border-radius: 16px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, rgba(109, 79, 168, 0.14), var(--g1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+}
+.club-live-thumb.live {
+  background: linear-gradient(
+    135deg,
+    rgba(217, 83, 79, 0.16),
+    rgba(217, 83, 79, 0.04)
+  );
+}
+.club-live-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--red);
+  color: #fff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(217, 83, 79, 0.45);
+}
+.club-live-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: var(--shadow-sm);
+  font-size: 24px;
+  color: var(--pur);
+}
+.club-live-thumb.live .club-live-ico {
+  color: var(--red);
+}
+.club-live-kicker {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--pur);
+}
+.club-live-thumb.live .club-live-kicker {
+  color: var(--red);
+}
+.club-live-title {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+  color: var(--tx);
+}
+.club-live-date {
+  margin: 0 0 10px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mu);
 }
