@@ -24,7 +24,7 @@ describe("MealLoggedPanel — estado registrado de la comida", () => {
       />,
     );
 
-    expect(screen.getByText("✓ Registrado manualmente")).toBeTruthy();
+    expect(screen.getByText("Registrado manualmente")).toBeTruthy();
     expect(screen.getByText(/\d{1,2}:\d{2}/)).toBeTruthy();
     fireEvent.click(screen.getByText("Ver detalle"));
     fireEvent.click(screen.getByText("Editar comida"));
@@ -42,9 +42,7 @@ describe("MealLoggedPanel — estado registrado de la comida", () => {
       />,
     );
 
-    expect(
-      screen.getByText("✓ Registrado con foto · análisis IA"),
-    ).toBeTruthy();
+    expect(screen.getByText("Registrado con foto · análisis IA")).toBeTruthy();
   });
 
   it("sin fuente muestra el registrado genérico", () => {
@@ -57,7 +55,7 @@ describe("MealLoggedPanel — estado registrado de la comida", () => {
       />,
     );
 
-    expect(screen.getByText("✓ Registrado")).toBeTruthy();
+    expect(screen.getByText("Registrado")).toBeTruthy();
     // Fecha inválida → sin hora inventada.
     expect(screen.queryByText(/\d{1,2}:\d{2}/)).toBeNull();
   });

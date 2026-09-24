@@ -1,4 +1,5 @@
-import { IonButton } from "@ionic/react";
+import { IonButton, IonIcon } from "@ionic/react";
+import { checkmarkCircle } from "ionicons/icons";
 import { useI18n } from "../../i18n/I18nContext";
 
 export interface MealLoggedPanelProps {
@@ -25,8 +26,9 @@ function formatLogTime(
 }
 
 /**
- * Estado registrado de una tarjeta de comida: check verde, fuente del
- * registro y hora real del log, más accesos a detalle y edición.
+ * Estado registrado de una tarjeta de comida: icono de verificación,
+ * fuente del registro y hora real del log, más accesos a detalle y edición.
+ * (Solo presentación: el check vive en el IonIcon, no en el texto.)
  */
 export function MealLoggedPanel({
   source,
@@ -39,67 +41,36 @@ export function MealLoggedPanel({
   const time = formatLogTime(createdAt, locale);
   const status =
     source === "ai_photo"
-      ? t("✓ Registrado con foto · análisis IA")
+      ? t("Registrado con foto · análisis IA")
       : source === "manual"
-        ? t("✓ Registrado manualmente")
-        : t("✓ Registrado");
+        ? t("Registrado manualmente")
+        : t("Registrado");
 
   return (
-    <div
-      style={{
-        margin: 12,
-        background: "var(--teal-l)",
-        borderRadius: 12,
-        padding: 12,
-        color: "#0F6E56",
-        fontWeight: 700,
-        fontSize: 13,
-      }}
-    >
-      <div
-        style={{
-          marginBottom: 8,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-        }}
-      >
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 22,
-            height: 22,
-            borderRadius: 999,
-            background: "var(--teal)",
-            color: "#fff",
-            fontSize: 13,
-          }}
+    <div className="meal-logged">
+      <div className="meal-logged-status">
+        <IonIcon
+          icon={checkmarkCircle}
+          className="meal-logged-ico"
           aria-hidden="true"
-        >
-          ✓
-        </span>
-        <span style={{ flex: 1 }}>
+        />
+        <span className="meal-logged-label">
           {status}
-          {time && (
-            <span style={{ fontWeight: 400, opacity: 0.8 }}> · {time}</span>
-          )}
+          {time && <span className="meal-logged-time"> · {time}</span>}
         </span>
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="meal-logged-actions">
         <IonButton
           size="small"
           fill="outline"
-          style={{ flex: 1, minHeight: 44 }}
+          className="meal-logged-btn"
           onClick={onDetail}
         >
           {t("Ver detalle")}
         </IonButton>
         <IonButton
           size="small"
-          fill="outline"
-          style={{ flex: 1, minHeight: 44 }}
+          className="meal-logged-btn meal-logged-btn-solid"
           onClick={onEdit}
         >
           {t("Editar comida")}

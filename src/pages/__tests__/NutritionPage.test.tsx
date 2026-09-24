@@ -198,7 +198,7 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     mockState.snapshot = snapshotWithLog;
     render(<NutritionPage />);
 
-    expect(screen.getByText("✓ Registrado manualmente")).toBeTruthy();
+    expect(screen.getByText("Registrado manualmente")).toBeTruthy();
     expect(screen.getByText("400 kcal")).toBeTruthy();
     // Hora real del log (formato HH:mm del locale, sin fecha inventada).
     expect(screen.getByText(/\d{1,2}:\d{2}/)).toBeTruthy();

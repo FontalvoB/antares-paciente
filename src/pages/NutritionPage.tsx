@@ -319,7 +319,7 @@ export function NutritionPage() {
     return rows;
   }, [serverTargets, locale]);
 
-  // kcal-strip (server): anillo = kcal reales derivadas; ratio vs la
+  // Anillo de metas (server): anillo = kcal reales derivadas; ratio vs la
   // referencia del plan asignado (fallback al snapshot); sin target → suma
   // sin denominador. Barras de macros solo con target real, progreso =
   // real/target clamp 0..1 (sin % fijos).
@@ -578,224 +578,168 @@ export function NutritionPage() {
           )}
         </div>
 
-        <div className="kcal-strip">
-          <div
-            style={{
-              position: "relative",
-              width: 92,
-              height: 92,
-              flexShrink: 0,
-            }}
-          >
-            <svg
-              width="92"
-              height="92"
-              viewBox="0 0 100 100"
-              style={{ transform: "rotate(-90deg)" }}
-            >
-              <circle
-                cx="50"
-                cy="50"
-                r="38"
-                fill="none"
-                stroke="#E8EEF4"
-                strokeWidth="10"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="38"
-                fill="none"
-                stroke="#1D9E75"
-                strokeWidth="10"
-                strokeDasharray="239"
-                strokeDashoffset={ringOffset}
-                strokeLinecap="round"
-              />
-            </svg>
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <div
-                className="display"
-                style={{ fontSize: 16, fontWeight: 800 }}
+        <div className="nut-goals-card">
+          <div className="nut-goals-head">
+            <div className="nut-kicker">{t("Tu progreso de hoy")}</div>
+            {kcalRatio != null && (
+              <span className="nut-goals-pct">
+                {Math.round(kcalRatio * 100)} %
+              </span>
+            )}
+          </div>
+          <div className="nut-goals-body">
+            <div className="nut-ring">
+              <svg
+                width="104"
+                height="104"
+                viewBox="0 0 100 100"
+                style={{ transform: "rotate(-90deg)" }}
+                aria-hidden="true"
               >
-                {formatMetricValue(intakeTotals.calories, 0, locale)}
-              </div>
-              {kcalRatio != null && calorieTarget != null && (
-                <div style={{ fontSize: 9, color: "var(--mu)" }}>
-                  /{formatMetricValue(calorieTarget, 0, locale)}
+                <defs>
+                  <linearGradient id="nutRingGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" style={{ stopColor: "var(--teal)" }} />
+                    <stop offset="1" style={{ stopColor: "var(--blue)" }} />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="var(--g1)"
+                  strokeWidth="10"
+                />
+                <motion.circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="url(#nutRingGrad)"
+                  strokeWidth="10"
+                  strokeDasharray="239"
+                  strokeLinecap="round"
+                  initial={{ strokeDashoffset: 239 }}
+                  animate={{ strokeDashoffset: ringOffset }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </svg>
+              <div className="nut-ring-center">
+                <div className="display nut-ring-value">
+                  {formatMetricValue(intakeTotals.calories, 0, locale)}
                 </div>
-              )}
-              {kcalRatio != null && (
-                <span
-                  style={{
-                    marginTop: 3,
-                    fontSize: 10,
-                    fontWeight: 800,
-                    color: "var(--teal-d)",
-                    background: "var(--teal-l)",
-                    borderRadius: 999,
-                    padding: "1px 8px",
-                  }}
-                >
-                  {Math.round(kcalRatio * 100)} %
-                </span>
+                {kcalRatio != null && calorieTarget != null && (
+                  <div className="nut-ring-target">
+                    /{formatMetricValue(calorieTarget, 0, locale)}
+                  </div>
+                )}
+                <div className="nut-ring-unit">kcal</div>
+              </div>
+            </div>
+            <div className="nut-macro-list">
+              {macroBars.length > 0 ? (
+                macroBars.map((b, i) => (
+                  <div
+                    key={b.key}
+                    className="nut-macro-row"
+                    style={{ animationDelay: `${i * 70}ms` }}
+                  >
+                    <div className="nut-macro-top">
+                      <span className="nut-macro-label">{t(b.key)}</span>
+                      <span className="nut-macro-val">
+                        {formatMetricValue(b.value, 0, locale)}/
+                        {formatMetricValue(b.target as number, 0, locale)}g
+                      </span>
+                    </div>
+                    <IonProgressBar
+                      className="pb nut-macro-bar"
+                      style={
+                        {
+                          "--background": "var(--g1)",
+                          "--progress-background": b.color,
+                        } as CSSProperties
+                      }
+                      value={Math.min(
+                        1,
+                        Math.max(0, b.value / (b.target as number)),
+                      )}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="nut-macro-empty">
+                  <span style={{ fontSize: 18 }}>🍽️</span>
+                  <span>{t("Registra tus comidas para ver tu progreso")}</span>
+                </div>
               )}
             </div>
           </div>
-          <div style={{ flex: 1 }}>
-            {macroBars.length > 0 ? (
-              macroBars.map((b) => (
-                <div
-                  key={b.key}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "var(--tx)",
-                      width: 86,
-                    }}
-                  >
-                    {t(b.key)}
-                  </span>
-                  <IonProgressBar
-                    className="pb"
-                    style={
-                      {
-                        flex: 1,
-                        height: 8,
-                        borderRadius: 999,
-                        "--background": "var(--g1)",
-                        "--progress-background": b.color,
-                      } as CSSProperties
-                    }
-                    value={Math.min(
-                      1,
-                      Math.max(0, b.value / (b.target as number)),
-                    )}
-                  />
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      minWidth: 62,
-                      textAlign: "right",
-                      color: "var(--tx)",
-                    }}
-                  >
-                    {formatMetricValue(b.value, 0, locale)}/
-                    {formatMetricValue(b.target as number, 0, locale)}g
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--mu)",
-                  lineHeight: 1.5,
-                  paddingTop: 6,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <span style={{ fontSize: 18 }}>🍽️</span>
-                <span>{t("Registra tus comidas para ver tu progreso")}</span>
-              </div>
-            )}
-          </div>
+          {activeKcal != null && (
+            <div className="nut-spent">
+              <span aria-hidden="true" className="nut-spent-ico">
+                🔥
+              </span>
+              <span>
+                {t("Gasto activo del día: {kcal} kcal", {
+                  kcal: formatMetricValue(activeKcal, 0, locale),
+                })}
+              </span>
+            </div>
+          )}
         </div>
-
-        {activeKcal != null && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 16px 12px",
-              background: "#fff",
-              borderBottom: "1px solid var(--g1)",
-              fontSize: 12,
-              color: "var(--mu)",
-            }}
-          >
-            <span style={{ fontSize: 15 }}>🔥</span>
-            <span>
-              {t("Gasto activo del día: {kcal} kcal", {
-                kcal: formatMetricValue(activeKcal, 0, locale),
-              })}
-            </span>
-          </div>
-        )}
 
         {tab === "hoy" && (
           <>
             <div
-              className="card"
+              className="card nut-hyd-card"
               style={{
-                margin: "10px 14px",
                 background: "var(--blue-l)",
                 borderColor: "#B5D4F4",
               }}
             >
-              <div
-                style={{
-                  fontWeight: 700,
-                  color: "var(--blue)",
-                  marginBottom: 4,
-                  fontSize: 13,
-                }}
-              >
-                {planWaterMl != null && planWaterMl !== 2000
-                  ? t(
-                      "💧 Hidratación · {glasses} vasos · meta {goal} vasos ({liters} L)",
-                      {
-                        glasses: String(displayedGlasses),
-                        goal: String(waterGoalGlasses),
-                        liters: formatMetricValue(
-                          planWaterMl / 1000,
-                          1,
-                          locale,
-                        ),
-                      },
-                    )
-                  : t("💧 Hidratación · {glasses} vasos · meta 8 vasos (2L)", {
-                      glasses: String(displayedGlasses),
-                    })}
+              <div className="nut-hyd-head">
+                <div className="nut-hyd-title">
+                  {planWaterMl != null && planWaterMl !== 2000
+                    ? t(
+                        "💧 Hidratación · {glasses} vasos · meta {goal} vasos ({liters} L)",
+                        {
+                          glasses: String(displayedGlasses),
+                          goal: String(waterGoalGlasses),
+                          liters: formatMetricValue(
+                            planWaterMl / 1000,
+                            1,
+                            locale,
+                          ),
+                        },
+                      )
+                    : t(
+                        "💧 Hidratación · {glasses} vasos · meta 8 vasos (2L)",
+                        {
+                          glasses: String(displayedGlasses),
+                        },
+                      )}
+                </div>
+                <span className="nut-hyd-badge" aria-hidden="true">
+                  {displayedGlasses}/{waterGoalGlasses}
+                </span>
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "var(--blue)",
-                  opacity: 0.75,
-                  marginBottom: 10,
-                }}
-              >
+              <div className="nut-hyd-sub">
                 {t("{current} / {goal} ml", {
                   current: formatMetricValue(displayedGlasses * 250, 0, locale),
                   goal: formatMetricValue(waterGoalGlasses * 250, 0, locale),
                 })}
               </div>
-              <div style={{ display: "flex", gap: 6 }}>
+              <IonProgressBar
+                className="nut-hyd-bar"
+                aria-hidden="true"
+                value={Math.min(
+                  1,
+                  Math.max(0, displayedGlasses / waterGoalGlasses),
+                )}
+              />
+              <div className="nut-hyd-grid">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <button
+                  <motion.button
                     key={i}
                     type="button"
                     className={`hyd-glass ${i < displayedGlasses ? "full" : ""}`}
@@ -806,36 +750,46 @@ export function NutritionPage() {
                       goal: String(8),
                     })}
                     onClick={() => tapGlass(i + 1)}
+                    whileTap={canMutate ? { scale: 0.9 } : undefined}
                   >
                     {i < displayedGlasses ? "💧" : "🥛"}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
-            {displayMeals.map((m) => (
-              <div key={m.id} className="meal-card">
+            {displayMeals.map((m, idx) => (
+              <motion.article
+                key={m.id}
+                className="meal-card"
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-32px" }}
+                transition={{
+                  duration: 0.38,
+                  delay: Math.min(idx * 0.06, 0.18),
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
                 <div className="meal-hdr">
-                  <span>{m.emoji}</span>
-                  <span style={{ flex: 1, fontWeight: 700 }}>{t(m.title)}</span>
+                  <span className="meal-ico" aria-hidden="true">
+                    {m.emoji}
+                  </span>
+                  <span className="meal-title">{t(m.title)}</span>
                   {m.kcal != null && (
-                    <span style={{ opacity: 0.75, fontSize: 12 }}>
-                      {m.kcal} kcal
-                    </span>
+                    <span className="meal-kcal">{m.kcal} kcal</span>
                   )}
                 </div>
                 {m.items.length > 0 ? (
                   m.items.map((it) => (
                     <div key={it[1]} className="food-item">
-                      <span>{it[0]}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>
-                          {t(it[1])}
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--mu)" }}>
-                          {t(it[2])}
-                        </div>
+                      <span className="food-ico" aria-hidden="true">
+                        {it[0]}
+                      </span>
+                      <div className="food-main">
+                        <div className="food-name">{t(it[1])}</div>
+                        <div className="food-desc">{t(it[2])}</div>
                       </div>
-                      <div>
+                      <div className="food-macros">
                         {it[3] && <span className="fm fm-c">{it[3]}</span>}
                         {it[4] && <span className="fm fm-p">{it[4]}</span>}
                         {it[5] && <span className="fm fm-g">{it[5]}</span>}
@@ -843,10 +797,11 @@ export function NutritionPage() {
                     </div>
                   ))
                 ) : (
-                  <div
-                    style={{ padding: 12, fontSize: 12, color: "var(--mu)" }}
-                  >
-                    {t("Sin comidas del plan para este momento")}
+                  <div className="meal-empty">
+                    <span aria-hidden="true" className="meal-empty-ico">
+                      🍽️
+                    </span>
+                    <span>{t("Sin comidas del plan para este momento")}</span>
                   </div>
                 )}
                 {loggedSet.has(m.id) ? (
@@ -871,30 +826,22 @@ export function NutritionPage() {
                     }
                   />
                 ) : (
-                  <div style={{ display: "flex", gap: 8, margin: 12 }}>
-                    <button
+                  <div className="meal-actions">
+                    <motion.button
                       type="button"
+                      className="meal-btn meal-btn-reg"
                       onClick={() =>
                         canMutate &&
                         openRegister(m.id as Exclude<MealCode, "agua">)
                       }
                       disabled={!canMutate}
-                      style={{
-                        flex: 1,
-                        minHeight: 44,
-                        background: "linear-gradient(145deg,#102a50,#173c73)",
-                        border: "1.5px solid transparent",
-                        borderRadius: 12,
-                        padding: "10px 12px",
-                        color: "#fff",
-                        fontWeight: 700,
-                        fontSize: 13,
-                      }}
+                      whileTap={canMutate ? { scale: 0.97 } : undefined}
                     >
                       {t("Registrar")}
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                       type="button"
+                      className="meal-btn meal-btn-ia"
                       onClick={() =>
                         canMutate &&
                         setFlow({
@@ -904,23 +851,13 @@ export function NutritionPage() {
                         })
                       }
                       disabled={!canMutate}
-                      style={{
-                        flex: 1,
-                        minHeight: 44,
-                        background: "transparent",
-                        border: "1.5px solid var(--teal)",
-                        borderRadius: 12,
-                        padding: "10px 12px",
-                        color: "var(--teal-d)",
-                        fontWeight: 700,
-                        fontSize: 13,
-                      }}
+                      whileTap={canMutate ? { scale: 0.97 } : undefined}
                     >
                       📸 {t("Foto IA")}
-                    </button>
+                    </motion.button>
                   </div>
                 )}
-              </div>
+              </motion.article>
             ))}
           </>
         )}
