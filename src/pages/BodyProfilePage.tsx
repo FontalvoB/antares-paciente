@@ -14,16 +14,19 @@ import {
 } from "@ionic/react";
 import {
   accessibilityOutline,
-  bluetoothOutline,
+  alertCircleOutline,
   bodyOutline,
-  flaskOutline,
+  checkmarkCircleOutline,
   manOutline,
-  medkitOutline,
-  personOutline,
   pulseOutline,
   scaleOutline,
   speedometerOutline,
 } from "ionicons/icons";
+import {
+  normalizeSource,
+  SOURCE_LABEL_KEYS,
+  SOURCE_META,
+} from "../utils/measurement-source";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
@@ -62,26 +65,11 @@ const BODY_LABELS: Record<string, string> = {
 };
 
 /**
- * Etiqueta legible del origen (clave t(); el crudo viaja tal cual si aparece
- * un origen desconocido). Mismo mapa que Historia.
+ * Etiqueta legible del origen: mapa compartido (`utils/measurement-source`;
+ * alias clínicos como `seed-hist` → "Consulta médica"). Mismo mapa que
+ * Historia.
  */
-const SOURCE_LABELS: Record<string, string> = {
-  device: "Dispositivo",
-  lab: "Laboratorio",
-  patient: "Autorreporte",
-  professional: "Profesional",
-};
-
-/**
- * Chip médico por origen (mismo sistema pastel que Historia; tokens
- * --hc-src-* en variables.css). Solo presentación.
- */
-const SOURCE_META: Record<string, { className: string; icon: string }> = {
-  device: { className: "hc-src-device", icon: bluetoothOutline },
-  lab: { className: "hc-src-lab", icon: flaskOutline },
-  patient: { className: "hc-src-patient", icon: personOutline },
-  professional: { className: "hc-src-prof", icon: medkitOutline },
-};
+const SOURCE_LABELS = SOURCE_LABEL_KEYS;
 
 /** Icono temático por código corporal (presentación; el valor es del backend). */
 const BODY_ICONS: Record<string, string> = {
@@ -310,45 +298,51 @@ export function BodyProfilePage() {
           </IonSegmentButton>
         </IonSegment>
 
+        {/*
+          Escenario 3D persistente en las 3 vistas: la personalización y la
+          evolución se ven en vivo sobre el mismo modelo (sin desmontar el
+          visor al cambiar de pestaña: también evita recargar el bundle 3D y
+          preserva la pose).
+        */}
+        <div className="avatar-preview">
+          <AvatarStage
+            avatar={avatar}
+            weights={weights}
+            ownerKey={ownerKey}
+            disabled={dataError}
+            dataPhase={dataPhase}
+            historyMs={progress.historyMs}
+            bodyState={state ?? (isEmptyWeight ? neutralBody : null)}
+            isPersonalizationLoading={
+              authLoading || customization.status === "loading"
+            }
+            onMetrics={setMetrics}
+          />
+          {customization.status === "error" && (
+            <div role="alert">
+              <p>{t("No se pudo cargar tu personalización.")}</p>
+              <IonButton
+                style={{ minHeight: 44 }}
+                onClick={customization.retry}
+              >
+                {t("Reintentar personalización")}
+              </IonButton>
+            </div>
+          )}
+        </div>
+        <p className="bp-avatar-note">
+          {t("El avatar refleja solo tu evolución de peso.")}
+        </p>
+        {isEmptyWeight && (
+          <p role="status" className="bp-avatar-empty">
+            {t(
+              "No hay registros de peso suficientes para mostrar tu evolución.",
+            )}
+          </p>
+        )}
+
         {view === "composition" && (
           <>
-            <div className="avatar-preview">
-              <AvatarStage
-                avatar={avatar}
-                weights={weights}
-                ownerKey={ownerKey}
-                disabled={dataError}
-                dataPhase={dataPhase}
-                historyMs={progress.historyMs}
-                bodyState={state ?? (isEmptyWeight ? neutralBody : null)}
-                isPersonalizationLoading={
-                  authLoading || customization.status === "loading"
-                }
-                onMetrics={setMetrics}
-              />
-              {customization.status === "error" && (
-                <div role="alert">
-                  <p>{t("No se pudo cargar tu personalización.")}</p>
-                  <IonButton
-                    style={{ minHeight: 44 }}
-                    onClick={customization.retry}
-                  >
-                    {t("Reintentar personalización")}
-                  </IonButton>
-                </div>
-              )}
-            </div>
-            <p className="bp-avatar-note">
-              {t("El avatar refleja solo tu evolución de peso.")}
-            </p>
-            {isEmptyWeight && (
-              <p role="status">
-                {t(
-                  "No hay registros de peso suficientes para mostrar tu evolución.",
-                )}
-              </p>
-            )}
-
             <div className="sec">{t("Mediciones corporales")}</div>
             {mLoading && (
               <div aria-busy="true" role="status">
@@ -380,7 +374,8 @@ export function BodyProfilePage() {
                 <IonList className="bp-list" lines="none">
                   {ordered.map((m) => {
                     const code = m.metricCode.trim().toLowerCase();
-                    const meta = SOURCE_META[m.source];
+                    const sourceKey = normalizeSource(m.source);
+                    const meta = SOURCE_META[sourceKey];
                     return (
                       <IonItem key={m.id} lines="none" className="bp-meas">
                         <span className="bp-meas-ico" aria-hidden="true">
@@ -395,8 +390,8 @@ export function BodyProfilePage() {
                               {meta ? (
                                 <IonIcon icon={meta.icon} aria-hidden="true" />
                               ) : null}
-                              {SOURCE_LABELS[m.source]
-                                ? t(SOURCE_LABELS[m.source])
+                              {SOURCE_LABELS[sourceKey]
+                                ? t(SOURCE_LABELS[sourceKey])
                                 : m.source}
                             </IonBadge>
                           </p>
@@ -496,12 +491,39 @@ export function BodyProfilePage() {
             )}
             {configuration && (
               <div
-                className="avatar-save"
+                className="avatar-save-card"
                 data-avatar-configuration={JSON.stringify(configuration)}
               >
+                <p
+                  className={`avatar-save-status${customization.saveError ? " err" : ""}`}
+                  role={customization.saveError ? "alert" : "status"}
+                >
+                  {customization.saving ? (
+                    <IonSpinner name="crescent" aria-hidden="true" />
+                  ) : (
+                    <IonIcon
+                      icon={
+                        customization.saveError
+                          ? alertCircleOutline
+                          : checkmarkCircleOutline
+                      }
+                      aria-hidden="true"
+                    />
+                  )}
+                  {customization.saving
+                    ? t("Guardando…")
+                    : customization.saveError
+                      ? t(
+                          "No se pudo guardar. Tu selección se conserva; vuelve a intentarlo.",
+                        )
+                      : customization.dirty
+                        ? t("Tienes cambios sin guardar.")
+                        : t("Personalización sincronizada.")}
+                </p>
                 <IonButton
                   expand="block"
-                  style={{ minHeight: 44 }}
+                  className="avatar-save-btn"
+                  style={{ minHeight: 52 }}
                   disabled={
                     !customization.dirty || customization.saving || dataError
                   }
@@ -513,15 +535,6 @@ export function BodyProfilePage() {
                       ? t("Reintentar guardado")
                       : t("Guardar avatar")}
                 </IonButton>
-                <p role={customization.saveError ? "alert" : "status"}>
-                  {customization.saveError
-                    ? t(
-                        "No se pudo guardar. Tu selección se conserva; vuelve a intentarlo.",
-                      )
-                    : customization.dirty
-                      ? t("Tienes cambios sin guardar.")
-                      : t("Personalización sincronizada.")}
-                </p>
               </div>
             )}
           </section>

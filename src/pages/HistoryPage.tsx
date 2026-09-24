@@ -14,15 +14,11 @@ import {
 } from "@ionic/react";
 import {
   accessibilityOutline,
-  bluetoothOutline,
   bodyOutline,
   clipboardOutline,
-  flaskOutline,
   heartOutline,
   manOutline,
-  medkitOutline,
   nutritionOutline,
-  personOutline,
   pulseOutline,
   scaleOutline,
   shieldCheckmarkOutline,
@@ -31,7 +27,14 @@ import {
   trendingUpOutline,
   walkOutline,
   waterOutline,
+  flaskOutline,
+  personOutline,
 } from "ionicons/icons";
+import {
+  normalizeSource,
+  SOURCE_LABEL_KEYS,
+  SOURCE_META,
+} from "../utils/measurement-source";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
@@ -92,27 +95,11 @@ function formatMeasurementValue(
 }
 
 /**
- * Etiqueta legible del origen de la medición (clave t(); el crudo del backend
- * viaja tal cual si aparece un origen desconocido).
+ * Etiqueta legible del origen: mapa compartido (`utils/measurement-source`;
+ * alias clínicos como `seed-hist` → "Consulta médica"). El crudo viaja tal
+ * cual si aparece un origen desconocido.
  */
-const SOURCE_LABELS: Record<string, string> = {
-  device: "Dispositivo",
-  lab: "Laboratorio",
-  patient: "Autorreporte",
-  professional: "Profesional",
-};
-
-/**
- * Chip médico por origen: pastel sutil + mini-ícono (tokens --hc-src-* en
- * variables.css). El label sigue siendo clave t(); el crudo viaja tal cual
- * si aparece un origen desconocido.
- */
-const SOURCE_META: Record<string, { className: string; icon: string }> = {
-  device: { className: "hc-src-device", icon: bluetoothOutline },
-  lab: { className: "hc-src-lab", icon: flaskOutline },
-  patient: { className: "hc-src-patient", icon: personOutline },
-  professional: { className: "hc-src-prof", icon: medkitOutline },
-};
+const SOURCE_LABELS = SOURCE_LABEL_KEYS;
 
 /**
  * Icono temático por métrica (coincidencia por subcadena sobre código +
@@ -476,7 +463,8 @@ export function HistoryPage() {
                 <>
                   <IonList className="hc-meas-list" lines="none">
                     {measurements.map((m) => {
-                      const meta = SOURCE_META[m.source];
+                      const sourceKey = normalizeSource(m.source);
+                      const meta = SOURCE_META[sourceKey];
                       return (
                         <IonItem key={m.id} lines="none" className="hc-meas">
                           <span className="hc-meas-ico" aria-hidden="true">
@@ -506,8 +494,8 @@ export function HistoryPage() {
                             {meta ? (
                               <IonIcon icon={meta.icon} aria-hidden="true" />
                             ) : null}
-                            {SOURCE_LABELS[m.source]
-                              ? t(SOURCE_LABELS[m.source])
+                            {SOURCE_LABELS[sourceKey]
+                              ? t(SOURCE_LABELS[sourceKey])
                               : m.source}
                           </IonBadge>
                         </IonItem>

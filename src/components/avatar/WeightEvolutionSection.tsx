@@ -3,11 +3,13 @@ import {
   IonButton,
   IonCard,
   IonCardContent,
+  IonIcon,
   IonSelect,
   IonSelectOption,
   IonSpinner,
 } from "@ionic/react";
-import { useT } from "../../i18n/I18nContext";
+import { chevronBackOutline, chevronForwardOutline } from "ionicons/icons";
+import { useI18n, useT } from "../../i18n/I18nContext";
 import { useApp } from "../../context/AppContext";
 import { formatDateForDisplay } from "../../utils/dates";
 import { WeightRecordModal } from "./WeightRecordModal";
@@ -54,16 +56,42 @@ export function WeightEvolutionSection({
   onSeeEvolution,
 }: WeightEvolutionSectionProps) {
   const t = useT();
+  const { lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "es-ES";
   const { navigate } = useApp();
   const [recordOpen, setRecordOpen] = useState(false);
   const reference = records[0];
   const latest = records.at(-1);
   const selected = records.find((r) => r.date === selectedDate) ?? latest;
   const loading = status === "loading";
+  // Índice del registro mostrado para el paso cronológico (el avatar 3D de
+  // arriba reacciona en vivo a cada cambio vía onSelectDate).
+  const selectedIndex = Math.max(
+    0,
+    selected ? records.findIndex((r) => r.date === selected.date) : 0,
+  );
+  const goRecord = (delta: -1 | 1) => {
+    const next = records[selectedIndex + delta];
+    if (next) onSelectDate(next.date);
+    else if (delta === 1) onSelectDate(null);
+  };
+  // Insignias de delta neutras (sin juicio clínico: bajar de peso no siempre
+  // es bueno). Mismo cómputo de siempre, solo presentación con el locale.
+  const formatSigned = (v: number) =>
+    `${v < 0 ? "−" : v > 0 ? "+" : ""}${Math.abs(v).toLocaleString(locale, {
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 1,
+    })}`;
+  const deltaKg =
+    reference && selected ? selected.value - reference.value : null;
+  const deltaPct =
+    reference && selected && reference.value !== 0
+      ? (selected.value / reference.value - 1) * 100
+      : null;
 
   return (
     <>
-      <IonCard>
+      <IonCard className="evo-intro">
         <IonCardContent>
           <h2>{t("Tu cuerpo y tu progreso")}</h2>
           <p>
@@ -186,53 +214,103 @@ export function WeightEvolutionSection({
         reference &&
         selected &&
         latest && (
-          <IonCard>
+          <IonCard className="evo-card">
             <IonCardContent>
-              <h2>{t("Evolución del peso registrado")}</h2>
-              <p>
+              <div className="evo-head">
+                <h2>{t("Evolución del peso registrado")}</h2>
+                <span className="evo-count" aria-hidden="true">
+                  {records.length}
+                </span>
+              </div>
+              <p className="evo-sub">
                 {t(
                   "Vista relativa a tu primer registro válido de los últimos 365 días. No es una simulación médica ni reproduce tu anatomía.",
                 )}
               </p>
-              <p>
+              {deltaKg != null && deltaPct != null && (
+                <div
+                  className="evo-deltas"
+                  aria-label={t("Cambio respecto a la referencia")}
+                >
+                  <span className="evo-delta evo-delta-kg">
+                    {formatSigned(deltaKg)} kg
+                  </span>
+                  <span className="evo-delta evo-delta-pct">
+                    {formatSigned(deltaPct)} %
+                  </span>
+                </div>
+              )}
+              <dl className="evo-refs">
+                <div>
+                  <dt>{t("Referencia del período")}</dt>
+                  <dd>
+                    {formatDateForDisplay(reference.date)} · {reference.value}{" "}
+                    kg
+                  </dd>
+                </div>
+                <div>
+                  <dt>{t("Último registro disponible")}</dt>
+                  <dd>
+                    {formatDateForDisplay(latest.date)} · {latest.value} kg
+                  </dd>
+                </div>
+              </dl>
+              <p className="evo-records">
                 {t("Registros válidos")}: {records.length}
               </p>
-              <p>
-                {t("Referencia del período")}:{" "}
-                {formatDateForDisplay(reference.date)} · {reference.value} kg
-              </p>
-              <p>
-                {t("Último registro disponible")}:{" "}
-                {formatDateForDisplay(latest.date)} · {latest.value} kg
-              </p>
-              <IonButton
-                style={{ minHeight: 44 }}
-                fill="outline"
-                onClick={() => onSelectDate(reference.date)}
-              >
-                {t("Ver inicial del período")}
-              </IonButton>
-              <IonButton
-                style={{ minHeight: 44 }}
-                fill="outline"
-                onClick={() => onSelectDate(null)}
-              >
-                {t("Ver último registro")}
-              </IonButton>
-              <IonSelect
-                label={t("Registro mostrado")}
-                labelPlacement="stacked"
-                interface="popover"
-                value={selected.date}
-                onIonChange={(e) => onSelectDate(String(e.detail.value))}
-              >
-                {records.map((r) => (
-                  <IonSelectOption key={r.date} value={r.date}>
-                    {formatDateForDisplay(r.date)} · {r.value} kg
-                  </IonSelectOption>
-                ))}
-              </IonSelect>
-              <p aria-live="polite">
+              <div className="evo-stepper">
+                <IonButton
+                  fill="clear"
+                  shape="round"
+                  className="evo-step-btn"
+                  aria-label={t("Registro anterior")}
+                  disabled={loading || selectedIndex <= 0}
+                  onClick={() => goRecord(-1)}
+                >
+                  <IonIcon slot="icon-only" icon={chevronBackOutline} />
+                </IonButton>
+                <IonSelect
+                  className="evo-select"
+                  label={t("Registro mostrado")}
+                  labelPlacement="stacked"
+                  interface="popover"
+                  value={selected.date}
+                  onIonChange={(e) => onSelectDate(String(e.detail.value))}
+                >
+                  {records.map((r) => (
+                    <IonSelectOption key={r.date} value={r.date}>
+                      {formatDateForDisplay(r.date)} · {r.value} kg
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+                <IonButton
+                  fill="clear"
+                  shape="round"
+                  className="evo-step-btn"
+                  aria-label={t("Registro siguiente")}
+                  disabled={loading || selectedIndex >= records.length - 1}
+                  onClick={() => goRecord(1)}
+                >
+                  <IonIcon slot="icon-only" icon={chevronForwardOutline} />
+                </IonButton>
+              </div>
+              <div className="evo-jumps">
+                <IonButton
+                  style={{ minHeight: 44 }}
+                  fill="outline"
+                  onClick={() => onSelectDate(reference.date)}
+                >
+                  {t("Ver inicial del período")}
+                </IonButton>
+                <IonButton
+                  style={{ minHeight: 44 }}
+                  fill="outline"
+                  onClick={() => onSelectDate(null)}
+                >
+                  {t("Ver último registro")}
+                </IonButton>
+              </div>
+              <p aria-live="polite" className="evo-live">
                 {t("Cambio respecto a la referencia")}:{" "}
                 {(selected.value - reference.value).toFixed(2)} kg{" "}
                 {((selected.value / reference.value - 1) * 100).toFixed(2)} %

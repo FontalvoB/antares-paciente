@@ -19,7 +19,9 @@ export interface MeasurementItemDto {
   unitSymbol: string;
   /** ISO-8601 con offset (DateTimeOffset del backend). */
   observedAt: string;
-  /** Origen: `device` | `patient` | `professional` | `lab`. */
+  /** Origen: `device` | `patient` | `professional` | `lab` (más alias
+   * clínicos como `seed-hist`/`provider`/`clinic`, que la UI agrupa como
+   * consulta médica). */
   source: string;
 }
 

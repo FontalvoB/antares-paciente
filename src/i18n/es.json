@@ -71,6 +71,7 @@
   "Entrar a la consulta": "Entrar a la consulta",
   "Entrando a la sala…": "Entrando a la sala…",
   "Consulta finalizada": "Consulta finalizada",
+  "Consulta médica": "Consulta médica",
   "Secciones del expediente": "Secciones del expediente",
   "TA": "TA",
   "Volver a mis citas": "Volver a mis citas",
@@ -1881,6 +1882,8 @@
   "Ver inicial del período": "Ver inicial del período",
   "Ver último registro": "Ver último registro",
   "Registro mostrado": "Registro mostrado",
+  "Registro anterior": "Registro anterior",
+  "Registro siguiente": "Registro siguiente",
   "Cambio respecto a la referencia": "Cambio respecto a la referencia",
   "Solo hay un registro: se muestra la referencia neutral hasta disponer de otra medición.": "Solo hay un registro: se muestra la referencia neutral hasta disponer de otra medición.",
   "La transición entre registros es visual; no crea mediciones intermedias. El peso no determina cambios regionales ni musculatura.": "La transición entre registros es visual; no crea mediciones intermedias. El peso no determina cambios regionales ni musculatura.",
@@ -1952,6 +1955,7 @@
   "Medio oscuro": "Medio oscuro",
   "Oscuro": "Oscuro",
   "Tono de piel": "Tono de piel",
+  "Tono seleccionado": "Tono seleccionado",
   "Pantalón": "Pantalón",
   "Sin pantalón": "Sin pantalón",
   "Zapatos": "Zapatos",
@@ -2185,5 +2189,9 @@
   "Acceso al protocolo de emergencia": "Acceso al protocolo de emergencia",
   "Tu bienestar empieza contigo.": "Tu bienestar empieza contigo.",
   "Batería de evaluación": "Batería de evaluación",
-  "Tests de salud pendientes": "Tests de salud pendientes"
+  "Tests de salud pendientes": "Tests de salud pendientes",
+  "Registrar": "Registrar",
+  "Foto IA": "Foto IA",
+  "{current} / {goal} ml": "{current} / {goal} ml",
+  "Vaso {n} de {goal}": "Vaso {n} de {goal}"
 }

@@ -15,6 +15,7 @@ import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
 import { MealFoodFlow } from "../components/MealFoodFlow";
 import { MealIntakeForm } from "../components/MealIntakeForm";
+import { MealLoggedPanel } from "../components/nutrition/MealLoggedPanel";
 import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import { useI18n } from "../i18n/I18nContext";
@@ -119,10 +120,6 @@ export function NutritionPage() {
     autoSource?: "camera" | "gallery";
   }
   const [flow, setFlow] = useState<MealFlow | null>(null);
-  // Hoja de opciones al pedir registrar (foto/galería/manual).
-  const [sheetMeal, setSheetMeal] = useState<Exclude<MealCode, "agua"> | null>(
-    null,
-  );
   // La tarjeta IA global pide primero la comida y luego abre el flujo.
   const [mealPickerSource, setMealPickerSource] = useState<
     "camera" | "gallery" | null
@@ -361,7 +358,6 @@ export function NutritionPage() {
   // Abre el modal de registro manual con el formulario VACÍO. Los valores
   // del plan se muestran como referencia ("Objetivo"), nunca como consumo.
   const openRegister = (id: MealCode) => {
-    setSheetMeal(null);
     setRegisterTarget(id);
   };
 
@@ -638,6 +634,21 @@ export function NutritionPage() {
                   /{formatMetricValue(calorieTarget, 0, locale)}
                 </div>
               )}
+              {kcalRatio != null && (
+                <span
+                  style={{
+                    marginTop: 3,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: "var(--teal-d)",
+                    background: "var(--teal-l)",
+                    borderRadius: 999,
+                    padding: "1px 8px",
+                  }}
+                >
+                  {Math.round(kcalRatio * 100)} %
+                </span>
+              )}
             </div>
           </div>
           <div style={{ flex: 1 }}>
@@ -648,11 +659,18 @@ export function NutritionPage() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 6,
-                    marginBottom: 6,
+                    gap: 8,
+                    marginBottom: 8,
                   }}
                 >
-                  <span style={{ fontSize: 10, color: "var(--mu)", width: 78 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "var(--tx)",
+                      width: 86,
+                    }}
+                  >
                     {t(b.key)}
                   </span>
                   <IonProgressBar
@@ -660,6 +678,9 @@ export function NutritionPage() {
                     style={
                       {
                         flex: 1,
+                        height: 8,
+                        borderRadius: 999,
+                        "--background": "var(--g1)",
                         "--progress-background": b.color,
                       } as CSSProperties
                     }
@@ -672,24 +693,30 @@ export function NutritionPage() {
                     style={{
                       fontSize: 11,
                       fontWeight: 700,
-                      width: 36,
+                      minWidth: 62,
                       textAlign: "right",
+                      color: "var(--tx)",
                     }}
                   >
-                    {Math.round(b.value)}g
+                    {formatMetricValue(b.value, 0, locale)}/
+                    {formatMetricValue(b.target as number, 0, locale)}g
                   </span>
                 </div>
               ))
             ) : (
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   color: "var(--mu)",
                   lineHeight: 1.5,
-                  paddingTop: 4,
+                  paddingTop: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
                 }}
               >
-                {t("Registra tus comidas para ver tu progreso")}
+                <span style={{ fontSize: 18 }}>🍽️</span>
+                <span>{t("Registra tus comidas para ver tu progreso")}</span>
               </div>
             )}
           </div>
@@ -698,15 +725,22 @@ export function NutritionPage() {
         {activeKcal != null && (
           <div
             style={{
-              padding: "0 16px",
-              marginTop: -4,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 16px 12px",
+              background: "#fff",
+              borderBottom: "1px solid var(--g1)",
               fontSize: 12,
               color: "var(--mu)",
             }}
           >
-            {t("Gasto activo del día: {kcal} kcal", {
-              kcal: formatMetricValue(activeKcal, 0, locale),
-            })}
+            <span style={{ fontSize: 15 }}>🔥</span>
+            <span>
+              {t("Gasto activo del día: {kcal} kcal", {
+                kcal: formatMetricValue(activeKcal, 0, locale),
+              })}
+            </span>
           </div>
         )}
 
@@ -724,7 +758,7 @@ export function NutritionPage() {
                 style={{
                   fontWeight: 700,
                   color: "var(--blue)",
-                  marginBottom: 10,
+                  marginBottom: 4,
                   fontSize: 13,
                 }}
               >
@@ -745,15 +779,35 @@ export function NutritionPage() {
                       glasses: String(displayedGlasses),
                     })}
               </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "var(--blue)",
+                  opacity: 0.75,
+                  marginBottom: 10,
+                }}
+              >
+                {t("{current} / {goal} ml", {
+                  current: formatMetricValue(displayedGlasses * 250, 0, locale),
+                  goal: formatMetricValue(waterGoalGlasses * 250, 0, locale),
+                })}
+              </div>
               <div style={{ display: "flex", gap: 6 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <button
                     key={i}
+                    type="button"
                     className={`hyd-glass ${i < displayedGlasses ? "full" : ""}`}
                     disabled={!canMutate}
+                    aria-pressed={i < displayedGlasses}
+                    aria-label={t("Vaso {n} de {goal}", {
+                      n: String(i + 1),
+                      goal: String(8),
+                    })}
                     onClick={() => tapGlass(i + 1)}
                   >
-                    🥛
+                    {i < displayedGlasses ? "💧" : "🥛"}
                   </button>
                 ))}
               </div>
@@ -796,86 +850,75 @@ export function NutritionPage() {
                   </div>
                 )}
                 {loggedSet.has(m.id) ? (
-                  <div
-                    style={{
-                      margin: 12,
-                      background: "var(--teal-l)",
-                      borderRadius: 12,
-                      padding: 12,
-                      color: "#0F6E56",
-                      fontWeight: 700,
-                      fontSize: 13,
-                    }}
-                  >
-                    <div style={{ marginBottom: 8 }}>
-                      {mealSources.get(m.id as MealCode) === "ai_photo"
-                        ? t("✓ Registrado con foto · análisis IA")
-                        : mealSources.get(m.id as MealCode) === "manual"
-                          ? t("✓ Registrado manualmente")
-                          : t("✓ Registrado")}
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <IonButton
-                        size="small"
-                        fill="outline"
-                        style={{ flex: 1 }}
-                        onClick={() =>
-                          setFlow({
-                            meal: m.id as Exclude<MealCode, "agua">,
-                            mode: "detail",
-                            startAt: "detail",
-                          })
-                        }
-                      >
-                        {t("Ver detalle")}
-                      </IonButton>
-                      <IonButton
-                        size="small"
-                        fill="outline"
-                        style={{ flex: 1 }}
-                        onClick={() =>
-                          setFlow({
-                            meal: m.id as Exclude<MealCode, "agua">,
-                            mode: "detail",
-                            startAt: "edit",
-                          })
-                        }
-                      >
-                        {t("Editar comida")}
-                      </IonButton>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() =>
-                      canMutate &&
-                      setSheetMeal(m.id as Exclude<MealCode, "agua">)
+                  <MealLoggedPanel
+                    source={mealSources.get(m.id as MealCode) ?? null}
+                    createdAt={
+                      findMealLog(snapshot, m.id as MealCode)?.createdAt ?? null
                     }
-                    disabled={!canMutate}
-                    style={{
-                      margin: 12,
-                      width: "calc(100% - 24px)",
-                      background: "linear-gradient(145deg,#102a50,#173c73)",
-                      border: "1.5px dashed rgba(32,200,255,.4)",
-                      borderRadius: 12,
-                      padding: 12,
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      textAlign: "left",
-                    }}
-                  >
-                    <span style={{ fontSize: 20 }}>📸</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>
-                        {t("Registrar lo que comí")}
-                      </div>
-                      <div style={{ fontSize: 11, opacity: 0.6 }}>
-                        {t("IA analiza gramos · kcal · adherencia")}
-                      </div>
-                    </div>
-                  </button>
+                    onDetail={() =>
+                      setFlow({
+                        meal: m.id as Exclude<MealCode, "agua">,
+                        mode: "detail",
+                        startAt: "detail",
+                      })
+                    }
+                    onEdit={() =>
+                      setFlow({
+                        meal: m.id as Exclude<MealCode, "agua">,
+                        mode: "detail",
+                        startAt: "edit",
+                      })
+                    }
+                  />
+                ) : (
+                  <div style={{ display: "flex", gap: 8, margin: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        canMutate &&
+                        openRegister(m.id as Exclude<MealCode, "agua">)
+                      }
+                      disabled={!canMutate}
+                      style={{
+                        flex: 1,
+                        minHeight: 44,
+                        background: "linear-gradient(145deg,#102a50,#173c73)",
+                        border: "1.5px solid transparent",
+                        borderRadius: 12,
+                        padding: "10px 12px",
+                        color: "#fff",
+                        fontWeight: 700,
+                        fontSize: 13,
+                      }}
+                    >
+                      {t("Registrar")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        canMutate &&
+                        setFlow({
+                          meal: m.id as Exclude<MealCode, "agua">,
+                          mode: "register",
+                          autoSource: "camera",
+                        })
+                      }
+                      disabled={!canMutate}
+                      style={{
+                        flex: 1,
+                        minHeight: 44,
+                        background: "transparent",
+                        border: "1.5px solid var(--teal)",
+                        borderRadius: 12,
+                        padding: "10px 12px",
+                        color: "var(--teal-d)",
+                        fontWeight: 700,
+                        fontSize: 13,
+                      }}
+                    >
+                      📸 {t("Foto IA")}
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -914,6 +957,7 @@ export function NutritionPage() {
                       {t("Esta semana")}
                     </div>
                     <div
+                      className="display"
                       style={{
                         fontSize: 22,
                         fontWeight: 800,
@@ -950,7 +994,10 @@ export function NutritionPage() {
                       <div style={{ fontSize: 11, color: "var(--mu)" }}>
                         {t("Semana anterior")}
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800 }}>
+                      <div
+                        className="display"
+                        style={{ fontSize: 22, fontWeight: 800 }}
+                      >
                         {formatMetricValue(weekPrevious, 0, locale)}%
                       </div>
                     </div>
@@ -1109,48 +1156,6 @@ export function NutritionPage() {
           </IonButton>
         </motion.div>
       </IonModal>
-
-      {/* ── Hoja por comida: foto / galería / manual (contexto preservado) ── */}
-      <IonActionSheet
-        isOpen={sheetMeal !== null}
-        onDidDismiss={() => setSheetMeal(null)}
-        header={
-          sheetMeal
-            ? t("Registrar {meal}", { meal: t(MEAL_LABELS[sheetMeal]) })
-            : ""
-        }
-        buttons={[
-          {
-            text: t("Tomar foto"),
-            handler: () => {
-              if (sheetMeal)
-                setFlow({
-                  meal: sheetMeal,
-                  mode: "register",
-                  autoSource: "camera",
-                });
-            },
-          },
-          {
-            text: t("Seleccionar imagen"),
-            handler: () => {
-              if (sheetMeal)
-                setFlow({
-                  meal: sheetMeal,
-                  mode: "register",
-                  autoSource: "gallery",
-                });
-            },
-          },
-          {
-            text: t("Registro manual"),
-            handler: () => {
-              if (sheetMeal) openRegister(sheetMeal);
-            },
-          },
-          { text: t("Cancelar"), role: "cancel" },
-        ]}
-      />
 
       {/* ── La tarjeta IA global pide primero la comida ── */}
       <IonActionSheet

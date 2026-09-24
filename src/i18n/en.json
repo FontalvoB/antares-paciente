@@ -71,6 +71,7 @@
   "Entrar a la consulta": "Join consultation",
   "Entrando a la sala…": "Joining the room…",
   "Consulta finalizada": "Consultation ended",
+  "Consulta médica": "Medical visit",
   "Secciones del expediente": "Record sections",
   "TA": "BP",
   "Volver a mis citas": "Back to my appointments",
@@ -1911,6 +1912,8 @@
   "Ver inicial del período": "View first record in period",
   "Ver último registro": "View latest record",
   "Registro mostrado": "Displayed record",
+  "Registro anterior": "Previous record",
+  "Registro siguiente": "Next record",
   "Cambio respecto a la referencia": "Change from reference",
   "Solo hay un registro: se muestra la referencia neutral hasta disponer de otra medición.": "There is only one record: the neutral reference is shown until another measurement is available.",
   "La transición entre registros es visual; no crea mediciones intermedias. El peso no determina cambios regionales ni musculatura.": "Transitions between records are visual; no intermediate measurements are created. Weight does not determine regional changes or musculature.",
@@ -1982,6 +1985,7 @@
   "Medio oscuro": "Medium dark",
   "Oscuro": "Dark",
   "Tono de piel": "Skin tone",
+  "Tono seleccionado": "Selected tone",
   "Pantalón": "Pants",
   "Sin pantalón": "No pants",
   "Zapatos": "Shoes",
@@ -2215,5 +2219,9 @@
   "Acceso al protocolo de emergencia": "Access the emergency protocol",
   "Tu bienestar empieza contigo.": "Your wellbeing starts with you.",
   "Batería de evaluación": "Health assessments",
-  "Tests de salud pendientes": "Pending health assessments"
+  "Tests de salud pendientes": "Pending health assessments",
+  "Registrar": "Log",
+  "Foto IA": "AI photo",
+  "{current} / {goal} ml": "{current} / {goal} ml",
+  "Vaso {n} de {goal}": "Glass {n} of {goal}"
 }

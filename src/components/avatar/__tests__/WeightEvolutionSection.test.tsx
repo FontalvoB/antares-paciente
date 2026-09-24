@@ -12,6 +12,7 @@ vi.mock("../../../i18n/I18nContext", () => ({
     }
     return out;
   },
+  useI18n: () => ({ lang: "es" }),
 }));
 
 vi.mock("../../../context/AppContext", () => ({
