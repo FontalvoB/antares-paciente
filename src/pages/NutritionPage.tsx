@@ -19,6 +19,8 @@ import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import { useI18n } from "../i18n/I18nContext";
 import { useNutritionLog } from "../hooks/useNutritionLog";
+import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
+import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { useProgram } from "../hooks/useProgram";
 import { useProgramScores } from "../hooks/useProgramScores";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
@@ -81,6 +83,15 @@ export function NutritionPage() {
   const { history: metricsHistory, isLoading: metricsLoading } =
     useMetricsHistory();
   const { today: deviceToday } = useWearable();
+  // Plan alimentario asignado (self-service, sin inscripción): metas clínicas
+  // reales del profesional. 404 sin plan → null (vacío honesto en Indicaciones)
+  // y las tarjetas del día conservan la referencia del snapshot del programa.
+  const {
+    plan: nutritionPlan,
+    isLoading: planLoading,
+    error: planError,
+    refetch: refetchPlan,
+  } = useMyNutritionPlan();
   const [tab, setTab] = useState<
     "hoy" | "semana" | "indicaciones" | "historial"
   >("hoy");
@@ -135,6 +146,21 @@ export function NutritionPage() {
   const intakeTotals = useMemo(() => deriveIntakeTotals(snapshot), [snapshot]);
   const serverTargets = useMemo(() => derivePlanTargets(snapshot), [snapshot]);
   const serverGlasses = useMemo(() => deriveWaterGlasses(snapshot), [snapshot]);
+  // Referencia diaria del plan asignado: manda sobre el snapshot del programa
+  // en el anillo de kcal y la meta de hidratación de «Hoy».
+  const calorieTarget =
+    nutritionPlan?.dailyCalorieTarget ?? serverTargets.calories;
+  const planWaterMl = useMemo(() => {
+    if (!nutritionPlan) return null;
+    if (nutritionPlan.dailyWaterMl != null) return nutritionPlan.dailyWaterMl;
+    for (const day of nutritionPlan.days ?? []) {
+      if (day.dailyWaterMl != null) return day.dailyWaterMl;
+    }
+    return null;
+  }, [nutritionPlan]);
+  // Vasos de 250 ml; sin plan rige el estándar histórico 8 vasos (2 L).
+  const waterGoalGlasses =
+    planWaterMl != null ? Math.max(1, Math.round(planWaterMl / 250)) : 8;
   const mealSources = useMemo(() => {
     const map = new Map<MealCode, "manual" | "ai_photo" | null>();
     for (const code of ["des", "alm", "mer", "cen"] as MealCode[]) {
@@ -296,12 +322,13 @@ export function NutritionPage() {
     return rows;
   }, [serverTargets, locale]);
 
-  // kcal-strip (server): anillo = kcal reales derivadas; ratio vs target real
-  // (clamp 0..1); sin target → suma sin denominador. Barras de macros solo
-  // con target real, progreso = real/target clamp 0..1 (sin % fijos).
+  // kcal-strip (server): anillo = kcal reales derivadas; ratio vs la
+  // referencia del plan asignado (fallback al snapshot); sin target → suma
+  // sin denominador. Barras de macros solo con target real, progreso =
+  // real/target clamp 0..1 (sin % fijos).
   const kcalRatio =
-    serverTargets.calories != null && serverTargets.calories > 0
-      ? Math.min(1, Math.max(0, intakeTotals.calories / serverTargets.calories))
+    calorieTarget != null && calorieTarget > 0
+      ? Math.min(1, Math.max(0, intakeTotals.calories / calorieTarget))
       : null;
   const ringOffset = kcalRatio != null ? 239 * (1 - kcalRatio) : 239;
   const macroBars = [
@@ -606,14 +633,9 @@ export function NutritionPage() {
               >
                 {formatMetricValue(intakeTotals.calories, 0, locale)}
               </div>
-              {kcalRatio != null && (
+              {kcalRatio != null && calorieTarget != null && (
                 <div style={{ fontSize: 9, color: "var(--mu)" }}>
-                  /
-                  {formatMetricValue(
-                    serverTargets.calories as number,
-                    0,
-                    locale,
-                  )}
+                  /{formatMetricValue(calorieTarget, 0, locale)}
                 </div>
               )}
             </div>
@@ -706,9 +728,22 @@ export function NutritionPage() {
                   fontSize: 13,
                 }}
               >
-                {t("💧 Hidratación · {glasses} vasos · meta 8 vasos (2L)", {
-                  glasses: String(displayedGlasses),
-                })}
+                {planWaterMl != null && planWaterMl !== 2000
+                  ? t(
+                      "💧 Hidratación · {glasses} vasos · meta {goal} vasos ({liters} L)",
+                      {
+                        glasses: String(displayedGlasses),
+                        goal: String(waterGoalGlasses),
+                        liters: formatMetricValue(
+                          planWaterMl / 1000,
+                          1,
+                          locale,
+                        ),
+                      },
+                    )
+                  : t("💧 Hidratación · {glasses} vasos · meta 8 vasos (2L)", {
+                      glasses: String(displayedGlasses),
+                    })}
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -927,41 +962,14 @@ export function NutritionPage() {
         )}
 
         {tab === "indicaciones" && (
-          <div className="card" style={{ margin: 14 }}>
-            {planRows.length > 0 ? (
-              planRows.map((row) => (
-                <div
-                  key={row.label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 0",
-                    borderBottom: "1px solid var(--g1)",
-                  }}
-                >
-                  <span>{row.emoji}</span>
-                  <span style={{ flex: 1, fontWeight: 600 }}>
-                    {t(row.label)}
-                  </span>
-                  <span style={{ fontWeight: 800, color: "var(--teal)" }}>
-                    {row.value}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div
-                style={{
-                  padding: "6px 0",
-                  fontSize: 13,
-                  color: "var(--mu)",
-                  lineHeight: 1.6,
-                }}
-              >
-                {t("Sin plan nutricional asignado")}
-              </div>
-            )}
-          </div>
+          <NutritionPlanTab
+            plan={nutritionPlan}
+            isLoading={planLoading}
+            error={planError}
+            fallbackRows={planRows}
+            locale={locale}
+            onRetry={() => void refetchPlan()}
+          />
         )}
 
         {tab === "historial" && (

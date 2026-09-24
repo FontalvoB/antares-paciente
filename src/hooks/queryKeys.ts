@@ -3,32 +3,45 @@
  * All keys are scoped under ['program', ...] for easy invalidation.
  */
 
+export const measurementsKeys = {
+  /** GET /api/v1/me/measurements?pageSize=&cursor=&codes= (Historia clínica) */
+  myMeasurements: ["measurements", "my"] as const,
+
+  /** GET /api/v1/me/metrics-history?codes=...&days=... (serie abierta) */
+  myMetricsHistory: ["measurements", "my-metrics-history"] as const,
+} as const;
+
+export const nutritionKeys = {
+  /** GET /api/v1/me/nutrition-plan (plan alimentario asignado, Fase 8) */
+  myNutritionPlan: ["me", "nutrition-plan"] as const,
+} as const;
+
 export const programKeys = {
   /** GET /api/v1/program/me/snapshot */
-  snapshot: ['program', 'snapshot'] as const,
+  snapshot: ["program", "snapshot"] as const,
 
   /** GET /api/v1/program/calendar?from=&to= */
   calendar: (from: string, to: string) =>
-    ['program', 'calendar', from, to] as const,
+    ["program", "calendar", from, to] as const,
 
   /** GET /api/v1/program/path */
-  path: ['program', 'path'] as const,
+  path: ["program", "path"] as const,
 
   /** GET /api/v1/program/scores */
-  scores: ['program', 'scores'] as const,
+  scores: ["program", "scores"] as const,
 
   /** GET /api/v1/program/me/league */
-  league: ['program', 'league'] as const,
+  league: ["program", "league"] as const,
 
   /** GET /api/v1/program/me/scores-history?weeks=12 (tab Evo, trend card) */
-  scoresHistory: ['program', 'scores-history'] as const,
+  scoresHistory: ["program", "scores-history"] as const,
 
   /** GET /api/v1/program/me/metrics-history?codes=...&days=180 (Home metric cards) */
-  metricsHistory: ['program', 'metrics-history'] as const,
+  metricsHistory: ["program", "metrics-history"] as const,
 
   /** All program queries — use for enrollment-level invalidation */
-  all: ['program'] as const,
-} as const
+  all: ["program"] as const,
+} as const;
 
 /**
  * Invalidation matrix (DESIGN §Query keys):
@@ -41,7 +54,11 @@ export const programKeys = {
  */
 export const programInvalidation = {
   /** After completing a task or registering nutrition */
-  afterMutation: (queryClient: { invalidateQueries: (opts: { queryKey: readonly unknown[] }) => Promise<void> }) =>
+  afterMutation: (queryClient: {
+    invalidateQueries: (opts: {
+      queryKey: readonly unknown[];
+    }) => Promise<void>;
+  }) =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: programKeys.snapshot }),
       queryClient.invalidateQueries({ queryKey: programKeys.path }),
@@ -51,13 +68,20 @@ export const programInvalidation = {
     ]),
 
   /** After enrollment (creates or re-activates) */
-  afterEnrollment: (queryClient: { invalidateQueries: (opts: { queryKey: readonly unknown[] }) => Promise<void> }) =>
-    queryClient.invalidateQueries({ queryKey: programKeys.all }),
+  afterEnrollment: (queryClient: {
+    invalidateQueries: (opts: {
+      queryKey: readonly unknown[];
+    }) => Promise<void>;
+  }) => queryClient.invalidateQueries({ queryKey: programKeys.all }),
 
   /** After nutrition log (meal/hydration) */
-  afterNutritionLog: (queryClient: { invalidateQueries: (opts: { queryKey: readonly unknown[] }) => Promise<void> }) =>
+  afterNutritionLog: (queryClient: {
+    invalidateQueries: (opts: {
+      queryKey: readonly unknown[];
+    }) => Promise<void>;
+  }) =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: programKeys.snapshot }),
       queryClient.invalidateQueries({ queryKey: programKeys.scores }),
     ]),
-} as const
+} as const;

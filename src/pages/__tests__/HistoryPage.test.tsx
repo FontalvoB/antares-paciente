@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { HistoryPage } from "../HistoryPage";
+import type { MeasurementItemDto } from "../../services/measurements/types";
 import type {
   MetricsHistoryDto,
   ScoresHistoryDto,
@@ -20,6 +21,13 @@ const mockState = vi.hoisted(() => ({
   metricsLoading: false,
   scoresLoading: false,
   snapshot: null as unknown,
+  measurements: [] as unknown[],
+  measurementsLoading: false,
+  measurementsFetchingMore: false,
+  measurementsError: null as null | { message: string },
+  measurementsHasMore: false,
+  loadMoreMeasurements: vi.fn(),
+  reloadMeasurements: vi.fn(),
 }));
 
 vi.mock("../../context/AppContext", () => ({
@@ -52,6 +60,18 @@ vi.mock("../../hooks/useScoresHistory", () => ({
     history: mockState.scores,
     isLoading: mockState.scoresLoading,
     isError: false,
+  }),
+}));
+
+vi.mock("../../hooks/useMyMeasurements", () => ({
+  useMyMeasurements: () => ({
+    items: mockState.measurements as MeasurementItemDto[],
+    isLoading: mockState.measurementsLoading,
+    isFetchingMore: mockState.measurementsFetchingMore,
+    error: mockState.measurementsError,
+    hasNextPage: mockState.measurementsHasMore,
+    loadMore: (...args: unknown[]) => mockState.loadMoreMeasurements(...args),
+    reload: (...args: unknown[]) => mockState.reloadMeasurements(...args),
   }),
 }));
 
@@ -126,6 +146,29 @@ const snapshotFixture = {
   template: { currentWeekNumber: 12, totalWeeks: 24 },
 };
 
+const measurementsFixture: MeasurementItemDto[] = [
+  {
+    id: "m-1",
+    metricCode: "weight",
+    metricName: "Peso",
+    value: 70.5,
+    unitCode: "kg",
+    unitSymbol: "kg",
+    observedAt: "2026-08-14T10:00:00.000+00:00",
+    source: "device",
+  },
+  {
+    id: "m-2",
+    metricCode: "glucose_fasting",
+    metricName: "Glucosa en ayunas",
+    value: 95,
+    unitCode: "mg_dl",
+    unitSymbol: "mg/dL",
+    observedAt: "2026-08-15T08:00:00.000+00:00",
+    source: "lab",
+  },
+];
+
 /** Escapa un literal para usarlo dentro de una RegExp. */
 function escapeRe(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -139,6 +182,13 @@ describe("HistoryPage — datos reales (sin contenido clínico fabricado)", () =
     mockState.metricsLoading = false;
     mockState.scoresLoading = false;
     mockState.snapshot = snapshotFixture;
+    mockState.measurements = [];
+    mockState.measurementsLoading = false;
+    mockState.measurementsFetchingMore = false;
+    mockState.measurementsError = null;
+    mockState.measurementsHasMore = false;
+    mockState.loadMoreMeasurements.mockClear();
+    mockState.reloadMeasurements.mockClear();
   });
 
   it("renderiza nombre, documento y email reales del AppContext", () => {
@@ -209,5 +259,102 @@ describe("HistoryPage — datos reales (sin contenido clínico fabricado)", () =
     expect(
       screen.queryByText("Aún no hay resultados de laboratorio registrados"),
     ).toBeNull();
+  });
+});
+
+describe("HistoryPage — historial de mediciones persistidas (sin inscripción)", () => {
+  beforeEach(() => {
+    mockState.lang = "es";
+    mockState.metrics = metricsFixture;
+    mockState.scores = scoresFixture;
+    mockState.metricsLoading = false;
+    mockState.scoresLoading = false;
+    mockState.snapshot = snapshotFixture;
+    mockState.measurements = [];
+    mockState.measurementsLoading = false;
+    mockState.measurementsFetchingMore = false;
+    mockState.measurementsError = null;
+    mockState.measurementsHasMore = false;
+    mockState.loadMoreMeasurements.mockClear();
+    mockState.reloadMeasurements.mockClear();
+  });
+
+  it("renderiza nombre, valor+unidad, fecha y origen de cada medición", () => {
+    mockState.measurements = measurementsFixture;
+
+    render(<HistoryPage />);
+
+    expect(screen.getByText("Peso")).toBeTruthy();
+    // Valor y fecha en nodos propios (jerarquía tarjeta: strong + fecha).
+    expect(screen.getByText("70,5 kg")).toBeTruthy();
+    expect(screen.getAllByText("14/08/2026").length).toBeGreaterThan(0);
+    expect(screen.getByText("Dispositivo")).toBeTruthy();
+    expect(screen.getByText("Glucosa en ayunas")).toBeTruthy();
+    expect(screen.getByText("95 mg/dL")).toBeTruthy();
+    expect(screen.getAllByText("15/08/2026").length).toBeGreaterThan(0);
+    expect(screen.getByText("Laboratorio")).toBeTruthy();
+  });
+
+  it("muestra estado vacío amigable sin mediciones", () => {
+    render(<HistoryPage />);
+
+    expect(
+      screen.getByText(
+        "Aún no hay mediciones registradas en tu historial clínico",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("Cargar mediciones anteriores")).toBeNull();
+  });
+
+  it("muestra skeleton inicial mientras cargan las mediciones", () => {
+    mockState.measurementsLoading = true;
+
+    const { container } = render(<HistoryPage />);
+
+    expect(container.querySelector('[aria-busy="true"]')).toBeTruthy();
+    expect(
+      screen.queryByText(
+        "Aún no hay mediciones registradas en tu historial clínico",
+      ),
+    ).toBeNull();
+  });
+
+  it("muestra error con reintento que llama a reload", () => {
+    mockState.measurementsError = { message: "boom" };
+
+    render(<HistoryPage />);
+
+    expect(
+      screen.getByText("No se pudieron cargar las mediciones"),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Reintentar"));
+    expect(mockState.reloadMeasurements).toHaveBeenCalledTimes(1);
+  });
+
+  it("ofrece cargar anteriores con hasNextPage y llama a loadMore", () => {
+    mockState.measurements = measurementsFixture;
+    mockState.measurementsHasMore = true;
+
+    render(<HistoryPage />);
+
+    fireEvent.click(screen.getByText("Cargar mediciones anteriores"));
+    expect(mockState.loadMoreMeasurements).toHaveBeenCalledTimes(1);
+  });
+
+  it("no oculta las mediciones sin inscripción activa al programa", () => {
+    // Sin enrollment: el programa 404 (series indefinidas) pero el historial
+    // clínico propio se sigue mostrando.
+    mockState.metrics = undefined;
+    mockState.scores = undefined;
+    mockState.snapshot = null;
+    mockState.measurements = measurementsFixture;
+
+    render(<HistoryPage />);
+
+    expect(screen.getByText("Peso")).toBeTruthy();
+    // Valor y fecha en nodos propios (jerarquía tarjeta: strong + fecha).
+    expect(screen.getByText("95 mg/dL")).toBeTruthy();
+    expect(screen.getAllByText("15/08/2026").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Seguimiento del programa")).toBeNull();
   });
 });

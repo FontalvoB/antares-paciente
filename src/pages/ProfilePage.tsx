@@ -361,7 +361,7 @@ export function ProfilePage() {
           expand="block"
           fill="outline"
           style={{ margin: "12px 16px", minHeight: 44 }}
-          onClick={() => go("avatar")}
+          onClick={() => go("body")}
         >
           {t("Mi Avatar")}
         </IonButton>

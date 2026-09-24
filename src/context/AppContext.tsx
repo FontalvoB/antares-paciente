@@ -728,7 +728,10 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
-      navigate: (s) => setScreen(s),
+      // Destino unificado: «Mi Avatar» abre Perfil corporal (screen='body').
+      // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
+      // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
+      navigate: (s) => setScreen(s === "avatar" ? "body" : s),
       openBookingWizard: () => {
         setBookingWizardAutoOpen(true);
         setScreen("book");

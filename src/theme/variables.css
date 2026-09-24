@@ -1,5 +1,5 @@
 :root {
-  --ion-font-family: 'Inter', system-ui, sans-serif;
+  --ion-font-family: "Inter", system-ui, sans-serif;
   --ion-color-primary: #142855;
   --ion-color-primary-rgb: 20, 40, 85;
   --ion-color-primary-contrast: #ffffff;
@@ -32,7 +32,12 @@
   --brand-sky-mid: #5581a2;
   --brand-sky-deep: #4b7086;
   --grad-brand: linear-gradient(90deg, #0c4c6b 0%, #3d7b72 32%, #023467 100%);
-  --grad-brand-v: linear-gradient(160deg, #023467 0%, #0c4c6b 58%, #3d7b72 100%);
+  --grad-brand-v: linear-gradient(
+    160deg,
+    #023467 0%,
+    #0c4c6b 58%,
+    #3d7b72 100%
+  );
   --grad-sky: linear-gradient(90deg, #87aeca 0%, #5581a2 62%, #4b7086 100%);
 
   --cosmos: #04203f;
@@ -69,6 +74,20 @@
   --safe: #1d9e75;
   --indigo: #3f5fa8;
 
+  /* Chips clínicos de origen (Historia / Perfil corporal): pastel médico.
+     Viven aquí (no hex sueltos en pantallas ni en global.css). */
+  --hc-src-device-bg: #e0f2fe;
+  --hc-src-device-tx: #0369a1;
+  --hc-src-lab-bg: #f3e8ff;
+  --hc-src-lab-tx: #6b21a8;
+  --hc-src-patient-bg: #fef3c7;
+  --hc-src-patient-tx: #b45309;
+  --hc-src-prof-bg: #e0efe9;
+  --hc-src-prof-tx: #024036;
+  /* Tarjeta de paciente (Historia): navy corporativo con micro-relieve. */
+  --hc-patient-1: #0f2b48;
+  --hc-patient-2: #163b63;
+
   /* ---------------------------------------------------------------
      Acentos de los módulos del inicio (íconos 3D + carrusel).
      Base de marca subida en luminosidad: los tonos --brand-* son
@@ -104,7 +123,7 @@ body,
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   background: var(--cosmos);
   color: var(--tx);
   -webkit-font-smoothing: antialiased;
@@ -128,7 +147,7 @@ img {
 }
 
 .display {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
 }
 
 ion-app {

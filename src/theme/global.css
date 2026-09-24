@@ -20446,3 +20446,461 @@ ion-modal.previsit-modal::part(content) {
   height: 3px;
   background: var(--brand-green-soft);
 }
+
+/* ============================================================
+   Rediseño premium Historia clínica + Perfil corporal (2026-09).
+   Va al final para ganar a las reglas heredadas (patrón Acceso/Inicio).
+   Tokens nuevos en variables.css (--hc-*); aquí no hay hex sueltos.
+   Justificación Ionic-first: IonAccordionGroup, IonAccordion, IonItem,
+   IonBadge, IonButton, IonSegment e IonIcon siguen siendo Ionic; el CSS
+   solo viste identidad (chips, tarjetas, dock de vidrio sobre canvas 3D
+   y halo del escenario, sin equivalente Ionic).
+   ============================================================ */
+
+/* Tarjeta de paciente: relieve navy corporativo con halo luminoso. */
+.hc-patient {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 18px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    150deg,
+    var(--hc-patient-1) 0%,
+    var(--hc-patient-2) 62%,
+    var(--brand-navy-deep) 100%
+  );
+  box-shadow:
+    0 18px 40px rgba(15, 43, 72, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.hc-patient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 120% 90% at 85% -10%,
+    rgba(135, 174, 202, 0.28),
+    transparent 55%
+  );
+}
+.hc-patient > * {
+  position: relative;
+}
+.hc-stat b i {
+  font-style: normal;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 3px;
+}
+.hc-stat b i:empty {
+  display: none;
+}
+
+/* Icono del encabezado de acordeón cuando es IonIcon (no emoji). */
+.hc-acc-ico ion-icon {
+  font-size: 19px;
+  color: var(--brand-navy);
+}
+
+/* Chips médicos de origen: pastel sutil sobre IonBadge (sigue Ionic). */
+ion-badge.hc-src {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  max-width: 46%;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+ion-badge.hc-src ion-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+ion-badge.hc-src-device {
+  --background: var(--hc-src-device-bg);
+  --color: var(--hc-src-device-tx);
+  border-color: rgba(3, 105, 161, 0.2);
+}
+ion-badge.hc-src-lab {
+  --background: var(--hc-src-lab-bg);
+  --color: var(--hc-src-lab-tx);
+  border-color: rgba(107, 33, 168, 0.2);
+}
+ion-badge.hc-src-patient {
+  --background: var(--hc-src-patient-bg);
+  --color: var(--hc-src-patient-tx);
+  border-color: rgba(180, 83, 9, 0.22);
+}
+ion-badge.hc-src-prof {
+  --background: var(--hc-src-prof-bg);
+  --color: var(--hc-src-prof-tx);
+  border-color: rgba(2, 64, 54, 0.2);
+}
+
+/* Mediciones de Historia: tarjetas limpias con micro-interacción. */
+ion-list.hc-meas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+  padding: 4px 0 6px;
+}
+ion-list.hc-meas-list ion-item.hc-meas {
+  --background: #fff;
+  --border-radius: 16px;
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  --min-height: 68px;
+  border: 1px solid rgba(20, 40, 85, 0.08);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
+}
+ion-list.hc-meas-list ion-item.hc-meas:active {
+  transform: scale(0.99);
+  box-shadow: var(--shadow-md);
+}
+.hc-meas-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+  border-radius: 14px;
+  background: var(--ice-l);
+  color: var(--blue);
+  font-size: 20px;
+}
+.hc-meas ion-label h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-navy);
+}
+.hc-meas ion-label p {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mu);
+}
+.hc-meas ion-label p strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--brand-navy);
+}
+.hc-meas-date {
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+/* Paginación táctil con estado de carga integrado. */
+ion-button.hc-more {
+  --border-radius: 999px;
+  --border-color: var(--brand-navy);
+  --color: var(--brand-navy);
+  margin: 8px 0 6px;
+  font-weight: 700;
+}
+ion-button.hc-more ion-spinner {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+/* Segmento del Perfil corporal: píldora que nunca trunca en 390px. */
+ion-segment.bp-seg {
+  width: calc(100% - 32px);
+  margin: 6px 16px 12px;
+  padding: 4px;
+  border-radius: 999px;
+  --background: #eef2f6;
+}
+ion-segment.bp-seg ion-segment-button {
+  min-width: 0;
+  flex: 1;
+  --padding-start: 2px;
+  --padding-end: 2px;
+}
+ion-segment.bp-seg ion-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+@media (max-width: 360px) {
+  ion-segment.bp-seg ion-label {
+    font-size: 11px;
+  }
+}
+
+/* Escenario 3D: halo de profundidad para la figura médica. */
+.avatar-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.avatar-canvas {
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+  border-radius: 24px;
+  border: 1px solid rgba(20, 40, 85, 0.09);
+  background:
+    radial-gradient(
+      ellipse 90% 62% at 50% 38%,
+      rgba(135, 174, 202, 0.32),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 70% 45% at 50% 88%,
+      rgba(61, 123, 114, 0.16),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #f4f8f7 0%, #eef4f9 58%, #fff 100%);
+  box-shadow: var(--shadow-sm);
+}
+.avatar-canvas canvas {
+  display: block;
+  border-radius: 24px;
+}
+.avatar-stage .avatar-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 300px;
+  padding: 24px;
+  font-size: 13px;
+  color: var(--mu);
+}
+
+/* Barra flotante de vidrio con botones táctiles circulares. */
+.avatar-dock {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(20, 40, 85, 0.1);
+  box-shadow: 0 12px 32px rgba(20, 40, 85, 0.16);
+}
+ion-button.avatar-dock-btn {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 50%;
+  --color: var(--brand-navy);
+}
+ion-button.avatar-dock-btn::part(native) {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+ion-button.avatar-dock-btn ion-icon {
+  font-size: 21px;
+}
+ion-button.avatar-dock-btn.on {
+  --background: var(--brand-navy);
+  --color: #fff;
+}
+.avatar-dock-sep {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: rgba(20, 40, 85, 0.12);
+}
+.avatar-hint {
+  margin: 0;
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--mu);
+}
+
+/* Mediciones corporales: tarjetas con icono temático + chip de origen. */
+ion-list.bp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+  padding: 2px 0;
+}
+.bp-list ion-item.bp-meas {
+  --background: #fff;
+  --border-radius: 18px;
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  --min-height: 68px;
+  border: 1px solid rgba(20, 40, 85, 0.08);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
+}
+.bp-list ion-item.bp-meas:active {
+  transform: scale(0.99);
+  box-shadow: var(--shadow-md);
+}
+.bp-meas-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+  border-radius: 14px;
+  background: var(--pur-l);
+  color: var(--pur);
+  font-size: 20px;
+}
+.bp-meas ion-label h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-navy);
+}
+.bp-meas ion-label p {
+  margin-top: 4px;
+}
+.bp-avatar-note {
+  margin: 10px 20px 0;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--mu);
+}
+
+/* Tarjeta de IMC: héroe navy con banda de referencia estándar (OMS). */
+.bp-bmi {
+  width: calc(100% - 32px);
+  margin: 10px 16px 0;
+  padding: 16px;
+  border-radius: 22px;
+  color: #fff;
+  background: linear-gradient(
+    150deg,
+    var(--hc-patient-1) 0%,
+    var(--hc-patient-2) 65%,
+    var(--brand-navy-deep) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 18px 40px rgba(15, 43, 72, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.bp-bmi-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bp-bmi-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 23px;
+}
+.bp-bmi-id {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.bp-bmi-id small {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.bp-bmi-id strong {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.bp-bmi-id strong i {
+  font-style: normal;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+.bp-bmi-scale {
+  margin-top: 14px;
+}
+.bp-bmi-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.bp-bmi-healthy {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.bp-bmi-pin {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--hc-patient-2);
+  transform: translateY(-50%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.bp-bmi-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ion-list.hc-meas-list ion-item.hc-meas,
+  .bp-list ion-item.bp-meas {
+    transition: none;
+  }
+  ion-list.hc-meas-list ion-item.hc-meas:active,
+  .bp-list ion-item.bp-meas:active {
+    transform: none;
+  }
+}
