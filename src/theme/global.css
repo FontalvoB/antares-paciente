@@ -12246,18 +12246,17 @@ ion-button.composer-send:not(.bt-pur)[disabled] {
   }
 }
 
+/* Tarjetas de publicación premium (Fase 10 front-artisan): fondo blanco,
+ * borde ultra-sutil, sombra ligera y radius 22 coherente con Home (.hm-*).
+ * Sin cambios de lógica: solo jerarquía, espaciado y tactilidad. */
 .com-post {
   position: relative;
   margin: 0 14px 12px;
   padding: 16px 0 12px;
-  background: rgba(255, 255, 255, 0.5);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: #fff;
+  border: 1px solid var(--bd);
   border-radius: var(--radius-lg);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 8px 26px rgba(16, 42, 80, 0.15);
+  box-shadow: var(--shadow-sm);
   animation: comFadeUp 0.4s var(--ease) both;
   transition:
     transform 0.16s var(--ease),
@@ -12297,14 +12296,15 @@ ion-button.composer-send:not(.bt-pur)[disabled] {
 }
 
 .com-post-time {
-  font-size: 11px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11.5px;
   color: var(--mu);
   font-weight: 600;
 }
 
 .com-post-body {
   font-size: 14.5px;
-  line-height: 1.68;
+  line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
   margin-bottom: 12px;
@@ -12329,7 +12329,7 @@ ion-button.composer-send:not(.bt-pur)[disabled] {
 
 .com-post-media {
   position: relative;
-  margin: 0 0 12px;
+  margin: 0 12px 12px;
 }
 
 .com-post-media img.com-post-image,
@@ -12337,7 +12337,7 @@ ion-button.composer-send:not(.bt-pur)[disabled] {
   width: 100%;
   height: auto;
   margin: 0;
-  border-radius: 0;
+  border-radius: 16px;
   object-fit: contain;
   object-position: center;
 }
@@ -12447,37 +12447,43 @@ ion-button.mbl-close {
   color: rgba(255, 255, 255, 0.55);
 }
 
+/* Barra de acciones táctiles (Fase 10 front-artisan): cada botón es un
+ * target ≥44px con padding propio, iconos contenidos a 24px y contadores
+ * Space Grotesk legibles. Micro-interacción scale(0.92) al pulsar. */
 .com-post-actions {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 0 16px 2px;
+  gap: 4px;
+  padding: 2px 8px 4px;
 }
 
 button.com-act-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 11px;
+  gap: 8px;
   border: none;
   background: none;
-  padding: 0;
+  padding: 7px 12px;
+  min-height: 44px;
   margin: 0;
-  font-size: 14.5px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--tx);
   cursor: pointer;
   transition:
     transform 0.14s var(--ease),
-    color 0.15s ease;
+    color 0.15s ease,
+    background 0.15s ease;
 }
 
 button.com-act-btn .ionicon {
-  font-size: 31px;
+  font-size: 24px;
 }
 
 button.com-act-btn:active {
-  transform: scale(0.86);
+  transform: scale(0.92);
 }
 
 button.com-act-btn.on {
@@ -12501,9 +12507,12 @@ button.com-act-btn.on .com-react-count {
 }
 
 .com-react-count {
-  min-width: 16px;
-  text-align: center;
+  min-width: 20px;
+  text-align: left;
   display: inline-block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
 }
 
 .poll-block {
@@ -12735,7 +12744,8 @@ button.poll-opt:active {
   display: block;
   border: none;
   background: none;
-  padding: 2px 0 0;
+  padding: 10px 0;
+  min-height: 44px;
   font-size: 12.5px;
   font-weight: 700;
   color: var(--blue);
@@ -12745,6 +12755,35 @@ button.poll-opt:active {
 
 .com-thread-more:active {
   opacity: 0.7;
+}
+
+/* Acciones en línea del hilo (compactas para filas densas): 32px con la
+ * misma micro-interacción de la barra principal. */
+.com-thread-like,
+.com-thread-report {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  color: var(--mu);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease);
+}
+
+.com-thread-like:active,
+.com-thread-report:active {
+  transform: scale(0.92);
+}
+
+.com-thread-like.on {
+  color: var(--red);
 }
 
 .com-react-ring {
@@ -24083,8 +24122,17 @@ ion-segment.plan-seg ion-segment-button {
   .meal-btn,
   .hyd-glass,
   .qrchip,
-  .chat-row {
+  .chat-row,
+  .com-post,
+  button.com-act-btn,
+  .com-thread-like,
+  .com-thread-report {
     transition: none;
+    animation: none;
+  }
+  .com-react-burst i,
+  .com-react-ring,
+  .com-dbl-heart {
     animation: none;
   }
 }
