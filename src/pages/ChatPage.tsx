@@ -12,6 +12,7 @@ import {
   mic,
   send as sendIcon,
 } from "ionicons/icons";
+import { motion } from "framer-motion";
 import {
   useEffect,
   useLayoutEffect,
@@ -220,6 +221,10 @@ export function ChatPage() {
   const t = useT();
   const { lang } = useI18n();
 
+  // Inicial del microavatar del usuario (solo presentación).
+  const userInitial =
+    (user.nombre || "?").trim().charAt(0).toUpperCase() || "?";
+
   const send = (msg = text) => {
     if (uploading) return;
     const v = msg.trim();
@@ -326,11 +331,11 @@ export function ChatPage() {
         {/* Disclaimer clínico preventivo (Fase 9): no invasivo, siempre
             visible al inicio del listado. No sustituye atención de urgencia:
             ante síntomas de alarma el chat sugiere activar SOS. */}
-        <div className="chat-history-hint" role="note">
+        <div className="chat-disclaimer" role="note">
           <IonIcon
             icon={informationCircle}
             aria-hidden="true"
-            style={{ fontSize: 14, flexShrink: 0 }}
+            className="chat-disclaimer-ico"
           />
           <span>
             {t(
@@ -359,32 +364,23 @@ export function ChatPage() {
         {chat.map((m) => (
           <div
             key={m.id}
-            style={{
-              display: "flex",
-              gap: 8,
-              flexDirection: m.role === "user" ? "row-reverse" : "row",
-            }}
+            className={`chat-row${m.role === "user" ? " chat-row-user" : ""}`}
           >
-            {m.role !== "user" && (
+            {m.role !== "user" ? (
               <div
-                className="avatar"
-                style={{
-                  width: 28,
-                  height: 28,
-                  fontSize: 11,
-                  background:
-                    m.role === "alert"
-                      ? "var(--panic)"
-                      : "linear-gradient(145deg,#1a6ad8,#20c8ff)",
-                }}
+                className={`chat-avatar${m.role === "alert" ? " chat-avatar-alert" : ""}`}
+                aria-hidden="true"
               >
                 {m.role === "alert" ? "!" : "AI"}
               </div>
+            ) : (
+              <div className="chat-avatar chat-avatar-user" aria-hidden="true">
+                {userInitial}
+              </div>
             )}
-            <div>
+            <div className="chat-msg">
               <div
                 className={`bub ${m.role === "user" ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
-                style={{ whiteSpace: "pre-wrap" }}
               >
                 {m.role === "user" ? m.text : <ChatRichText text={m.text} />}
                 {m.role === "alert" && (
@@ -436,16 +432,7 @@ export function ChatPage() {
                   <ChatFeedbackAction executionId={m.executionId} />
                 )}
               </div>
-              <div
-                style={{
-                  fontSize: 10,
-                  color: "var(--mu)",
-                  marginTop: 4,
-                  textAlign: m.role === "user" ? "right" : "left",
-                }}
-              >
-                {m.time}
-              </div>
+              <div className="chat-time">{m.time}</div>
             </div>
           </div>
         ))}
@@ -457,15 +444,7 @@ export function ChatPage() {
               flexDirection: "row",
             }}
           >
-            <div
-              className="avatar"
-              style={{
-                width: 28,
-                height: 28,
-                fontSize: 11,
-                background: "linear-gradient(145deg,#1a6ad8,#20c8ff)",
-              }}
-            >
+            <div className="chat-avatar" aria-hidden="true">
               AI
             </div>
             <div>
@@ -529,20 +508,26 @@ export function ChatPage() {
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder={t("Escribe un mensaje…")}
         />
-        <IonButton
-          className="bt bt-round"
-          style={
-            {
-              "--background": "var(--navy)",
-              "--color": "#fff",
-            } as CSSProperties
-          }
-          aria-label={t("Enviar")}
-          disabled={uploading}
-          onClick={() => send()}
+        <motion.span
+          className="chat-send-wrap"
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.15 }}
         >
-          <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
-        </IonButton>
+          <IonButton
+            className="bt bt-round"
+            style={
+              {
+                "--background": "var(--navy)",
+                "--color": "#fff",
+              } as CSSProperties
+            }
+            aria-label={t("Enviar")}
+            disabled={uploading}
+            onClick={() => send()}
+          >
+            <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
+          </IonButton>
+        </motion.span>
       </div>
     </Screen>
   );

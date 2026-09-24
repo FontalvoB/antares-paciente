@@ -14,7 +14,7 @@
 
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import { checkmarkCircle, thumbsDown, thumbsUp } from "ionicons/icons";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { useT } from "../../i18n/I18nContext";
 import { sendChatFeedback } from "../../services/chat/chat-service";
 
@@ -29,15 +29,6 @@ type Status = "idle" | "sending" | "sent";
 
 const RATING_UP = 5;
 const RATING_DOWN = 1;
-
-/** Botón táctil mínimo 44px (WCAG 2.5.8 / Ionic-first). */
-const touchStyle: CSSProperties = {
-  minWidth: 44,
-  minHeight: 44,
-  margin: 0,
-  "--padding-start": "10px",
-  "--padding-end": "10px",
-} as CSSProperties;
 
 export function ChatFeedbackAction({
   executionId,
@@ -68,21 +59,11 @@ export function ChatFeedbackAction({
 
   if (status === "sent") {
     return (
-      <div
-        role="status"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          marginTop: 6,
-          fontSize: 12,
-          color: "var(--mu)",
-        }}
-      >
+      <div role="status" className="chat-fb chat-fb-sent">
         <IonIcon
           icon={checkmarkCircle}
           aria-hidden="true"
-          style={{ fontSize: 16, color: "var(--teal, #0e9f6e)" }}
+          className="chat-fb-sent-ico"
         />
         <span>{t("¡Gracias por tu calificación!")}</span>
       </div>
@@ -90,18 +71,8 @@ export function ChatFeedbackAction({
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 4,
-        marginTop: 6,
-        opacity: sending ? 0.7 : 1,
-      }}
-    >
-      <span style={{ fontSize: 12, color: "var(--mu)" }}>
-        {t("¿Te resultó útil esta respuesta?")}
-      </span>
+    <div className="chat-fb" style={sending ? { opacity: 0.7 } : undefined}>
+      <span className="chat-fb-q">{t("¿Te resultó útil esta respuesta?")}</span>
       {sending && sentRating == null ? (
         <IonSpinner
           name="crescent"
@@ -112,7 +83,7 @@ export function ChatFeedbackAction({
       <IonButton
         fill="clear"
         size="small"
-        style={touchStyle}
+        className="chat-fb-btn"
         aria-label={t("Calificar respuesta como útil")}
         disabled={sending}
         onClick={() => void rate(RATING_UP)}
@@ -122,7 +93,7 @@ export function ChatFeedbackAction({
       <IonButton
         fill="clear"
         size="small"
-        style={touchStyle}
+        className="chat-fb-btn"
         aria-label={t("Calificar respuesta como no útil")}
         disabled={sending}
         onClick={() => void rate(RATING_DOWN)}

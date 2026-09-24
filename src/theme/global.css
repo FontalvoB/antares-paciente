@@ -2314,28 +2314,37 @@ ion-note.bp-note {
   outline-offset: 2px;
 }
 
+/* Burbujas de chat premium (Fase 9 front-artisan): radius 20, padding
+ * generoso 12px 16px y sombras sutiles. El bot usa tarjeta blanca con
+ * borde (sobre fondo blanco) y el usuario navy de identidad. */
 .bub {
   max-width: 82%;
-  padding: 10px 12px;
-  border-radius: 16px;
-  font-size: 13px;
-  line-height: 1.5;
+  padding: 12px 16px;
+  border-radius: 20px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .bub-bot {
-  background: var(--g0);
+  background: #fff;
   color: var(--tx);
-  border-bottom-left-radius: 4px;
+  border: 1px solid var(--bd);
+  border-bottom-left-radius: 6px;
+  box-shadow: var(--shadow-sm);
 }
 .bub-usr {
   background: var(--navy);
   color: #fff;
-  border-bottom-right-radius: 4px;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 8px 18px rgba(20, 40, 85, 0.22);
 }
 .bub-alert {
   background: var(--red-l);
   border: 1px solid var(--panic);
   color: var(--tx);
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 6px;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Historial progresivo del chat: indicador del tope de la lista */
@@ -2359,8 +2368,8 @@ ion-button.cta-button {
   --border-color: #b5d4f4;
   --border-width: 1px;
   --border-style: solid;
-  height: 36px;
-  min-height: 36px;
+  height: 44px;
+  min-height: 44px;
   margin-top: 8px;
   font-size: 12px;
   font-weight: 700;
@@ -2374,10 +2383,20 @@ ion-button.cta-button:active {
   background: var(--blue-l);
   color: var(--blue);
   border: 1px solid #b5d4f4;
-  border-radius: 16px;
-  padding: 7px 11px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 999px;
+  padding: 9px 16px;
+  min-height: 40px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.16s var(--ease);
+}
+.qrchip:active {
+  transform: scale(0.96);
+}
+.qrchip:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
 }
 
 .prow {
@@ -5270,11 +5289,23 @@ ion-item.group-item p {
 .composer {
   display: flex;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
   background: #fff;
   border-top: 1px solid var(--bd);
   margin-bottom: var(--nav-h);
   align-items: center;
+}
+
+/* Botones redondos del composer a 44px (targets táctiles iOS). */
+.composer ion-button.bt-round {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+.chat-send-wrap {
+  display: inline-flex;
+  flex-shrink: 0;
 }
 
 .chip-scroll {
@@ -5546,7 +5577,7 @@ ion-input.chat-inp {
   border-radius: 22px;
   background: #fff;
   box-sizing: border-box;
-  min-height: 0;
+  min-height: 44px;
   flex: 1;
 }
 ion-input.chat-inp.has-focus {
@@ -24050,7 +24081,148 @@ ion-segment.plan-seg ion-segment-button {
     animation: none;
   }
   .meal-btn,
-  .hyd-glass {
+  .hyd-glass,
+  .qrchip,
+  .chat-row {
     transition: none;
+    animation: none;
   }
+}
+
+/* ============================================================
+   Chat premium — burbujas, disclaimer y feedback (Fase 9)
+   Solo presentación: jerarquía, espaciado, tipografía Space
+   Grotesk en timestamps, microavatares y micro-interacciones
+   framer-motion. Sin cambios de lógica, datos ni servicios API.
+   Coherencia: gradiente de marca como Home (.hm-avatar) y
+   radios/sombras del design system.
+   ============================================================ */
+
+/* Fila de mensaje: avatar + burbuja + hora. */
+.chat-row {
+  display: flex;
+  gap: 8px;
+  flex-direction: row;
+  align-items: flex-start;
+  animation: chat-fade-up 0.25s var(--ease) both;
+}
+@keyframes chat-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.chat-row-user {
+  flex-direction: row-reverse;
+}
+.chat-msg {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.chat-row-user .chat-msg {
+  align-items: flex-end;
+}
+.chat-msg .bub {
+  max-width: 92%;
+}
+.chat-time {
+  margin-top: 4px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  color: var(--mu);
+  opacity: 0.85;
+}
+.chat-row-user .chat-time {
+  text-align: right;
+}
+
+/* Microavatares: bot con gradiente de marca, usuario limpio. */
+.chat-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--grad-brand-v);
+  box-shadow: 0 4px 10px rgba(20, 40, 85, 0.22);
+}
+.chat-avatar-alert {
+  background: var(--panic);
+}
+.chat-avatar-user {
+  background: var(--blue-l);
+  color: var(--blue);
+  border: 1px solid #b5d4f4;
+  box-shadow: none;
+}
+
+/* Disclaimer clínico preventivo: tint médico suave, serio y sereno. */
+.chat-disclaimer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 0 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--blue-l);
+  border: 1px solid #b5d4f4;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--blue);
+  text-align: left;
+}
+.chat-disclaimer-ico {
+  flex-shrink: 0;
+  font-size: 16px;
+  margin-top: 1px;
+  color: var(--teal);
+}
+
+/* Feedback clínico al pie de la burbuja del bot. */
+.chat-fb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--bd);
+}
+.chat-fb-q {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--mu);
+  line-height: 1.45;
+}
+ion-button.chat-fb-btn {
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  --padding-start: 10px;
+  --padding-end: 10px;
+  --color: var(--blue);
+}
+.chat-fb-sent {
+  align-items: center;
+}
+.chat-fb-sent-ico {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--teal);
 }
