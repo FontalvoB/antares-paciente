@@ -21,6 +21,17 @@ const NOTIFICATIONS_PATH = "/api/v1/program/notifications";
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 
+interface RawNotificationsResponse {
+  data?: InAppNotification[];
+  items?: InAppNotification[];
+  total?: number;
+  totalCount?: number;
+  unreadCount?: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
+}
+
 /**
  * GET /api/v1/program/notifications?page=&pageSize=
  * Página de avisos del paciente autenticado + conteo de no leídos.
@@ -36,10 +47,27 @@ export async function fetchNotifications(
     page: String(safePage),
     pageSize: String(safeSize),
   }).toString();
-  return apiFetch<PaginatedNotificationsResult>(
+  const raw = await apiFetch<RawNotificationsResponse>(
     `${NOTIFICATIONS_PATH}?${query}`,
     { method: "GET" },
   );
+  return {
+    items: Array.isArray(raw.data)
+      ? raw.data
+      : Array.isArray(raw.items)
+        ? raw.items
+        : [],
+    totalCount:
+      typeof raw.total === "number"
+        ? raw.total
+        : typeof raw.totalCount === "number"
+          ? raw.totalCount
+          : 0,
+    unreadCount: typeof raw.unreadCount === "number" ? raw.unreadCount : 0,
+    page: typeof raw.page === "number" ? raw.page : safePage,
+    pageSize: typeof raw.pageSize === "number" ? raw.pageSize : safeSize,
+    totalPages: typeof raw.totalPages === "number" ? raw.totalPages : 1,
+  };
 }
 
 /**
