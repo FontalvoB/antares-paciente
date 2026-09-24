@@ -10,6 +10,7 @@ import {
   qrCodeOutline,
   radioOutline,
   sendOutline,
+  sparklesOutline,
 } from "ionicons/icons";
 import type {
   Profile,
@@ -52,6 +53,8 @@ import {
   formatDateTime,
   initials,
 } from "../../utils/clubs-helpers";
+import { recommendClubForCondition } from "../../utils/club-recommendations";
+import { getMyNutritionPlan } from "../../services/nutrition/my-nutrition-plan-service";
 import { EmptyState } from "./community";
 import { PostCard } from "./PostCard";
 
@@ -69,6 +72,9 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [myClubs, setMyClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
+  /* Condición objetivo del plan clínico (Fase 10, Task 2.3): alimenta el
+     recomendador de clubes. null = sin plan o fallo → sin insignia. */
+  const [condition, setCondition] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [onlyMine, setOnlyMine] = useState(false);
@@ -125,6 +131,14 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
     setClubs(all);
     setMyClubs(mine);
     setLoading(false);
+    // Plan clínico para la recomendación: 404 sin plan → null (el servicio
+    // lo absorbe); cualquier otro fallo degrada a sin insignia, nunca rompe.
+    try {
+      const plan = await getMyNutritionPlan();
+      setCondition(plan?.targetCondition ?? null);
+    } catch {
+      setCondition(null);
+    }
   };
 
   useEffect(() => {
@@ -176,6 +190,13 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
   }, [clubs, q, category, onlyMine]);
 
   const isMember = selected?.myMembership !== null;
+
+  /* Club destacado por afinidad clínica (Fase 10, Task 2.3): solo resalta,
+     la unión sigue siendo voluntaria. */
+  const recommendedId = useMemo(
+    () => recommendClubForCondition(clubs, condition)?.id ?? null,
+    [clubs, condition],
+  );
 
   const join = async () => {
     if (!selected) return;
@@ -313,16 +334,16 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
           }}
         >
           {!selected.coverUrl && (
-          <span
-            style={{
-              fontSize: 52,
-              fontWeight: 900,
-              color: "rgba(255,255,255,0.9)",
-              letterSpacing: 2,
-            }}
-          >
-            {initials(selected.name)}
-          </span>
+            <span
+              style={{
+                fontSize: 52,
+                fontWeight: 900,
+                color: "rgba(255,255,255,0.9)",
+                letterSpacing: 2,
+              }}
+            >
+              {initials(selected.name)}
+            </span>
           )}
           <span
             style={{
@@ -1064,16 +1085,16 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                 }}
               >
                 {!club.coverUrl && (
-                <span
-                  style={{
-                    fontSize: 30,
-                    fontWeight: 900,
-                    color: "rgba(255,255,255,0.9)",
-                    letterSpacing: 1,
-                  }}
-                >
-                  {initials(club.name)}
-                </span>
+                  <span
+                    style={{
+                      fontSize: 30,
+                      fontWeight: 900,
+                      color: "rgba(255,255,255,0.9)",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    {initials(club.name)}
+                  </span>
                 )}
                 <span
                   style={{
@@ -1091,6 +1112,27 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                 >
                   {t(club.category)}
                 </span>
+                {club.id === recommendedId && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 10,
+                      left: 10,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
+                      color: "#fff",
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      padding: "4px 10px",
+                      borderRadius: 99,
+                    }}
+                  >
+                    <IonIcon icon={sparklesOutline} style={{ fontSize: 12 }} />
+                    {t("Recomendado para ti")}
+                  </span>
+                )}
                 {club.myMembership && (
                   <span
                     style={{
