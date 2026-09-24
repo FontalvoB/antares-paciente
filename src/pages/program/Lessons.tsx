@@ -21,12 +21,19 @@ import {
 import {
   bluetooth,
   checkmark,
-  checkmarkCircle,
   heart,
+  heartOutline,
+  footstepsOutline,
+  medkitOutline,
+  moonOutline,
   pause,
   play,
   playBack,
   playForward,
+  pulseOutline,
+  scaleOutline,
+  thermometerOutline,
+  waterOutline,
 } from "ionicons/icons";
 import {
   EMOTION_FACES,
@@ -34,10 +41,12 @@ import {
   WEEK_BARRIERS,
   WEEK_LABELS,
 } from "../../data/program";
+import { MISSION_PHOTOS } from "../../data/missionPhotos";
 import { EcgTrace } from "../../components/EcgTrace";
+import type { MetricKind } from "../../devices/types";
 import { useElapsed } from "../../hooks/useElapsed";
 import { useWearable } from "../../context/WearableContext";
-import { measurePhase, measurePhaseLabel } from "../../utils/measure";
+import { measurePhase } from "../../utils/measure";
 import {
   hoursFromMinutes,
   minutesFromHours,
@@ -85,6 +94,7 @@ export function PodcastLesson({
   description,
   durationSecs,
   mediaUrl,
+  coverUrl,
   audioError,
   chapters,
   takeaways,
@@ -103,6 +113,7 @@ export function PodcastLesson({
   description?: string | null;
   durationSecs?: number | null;
   mediaUrl?: string | null;
+  coverUrl?: string | null;
   audioError?: string | null;
   chapters?: PodcastChapterDto[] | null;
   takeaways?: string[] | null;
@@ -124,6 +135,10 @@ export function PodcastLesson({
   // deshabilitan (sin no-op silencioso); el play es la puerta de entrada.
   const seekDisabled = done || !audioReady;
 
+  // Portada: la del servidor si existe; si falla o no hay, la foto de la
+  // misión empaquetada — la lección nunca queda sin imagen.
+  const coverSrc = coverUrl || MISSION_PHOTOS.podcast;
+
   const duration = durationSecs || 0;
   const podTitle = title || "";
   const podHost = author || "";
@@ -143,6 +158,19 @@ export function PodcastLesson({
 
   return (
     <div className="lsn-stack">
+      <div className="pod-cover">
+        <img
+          src={coverSrc}
+          alt=""
+          loading="lazy"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.dataset.fallback) return;
+            img.dataset.fallback = "1";
+            img.src = MISSION_PHOTOS.podcast;
+          }}
+        />
+      </div>
       <div className="pod-stage">
         <div className="pod-wave" aria-hidden="true">
           {Array.from({ length: 22 }, (_, i) => (
@@ -269,26 +297,62 @@ export function VitalsLesson({
   onComplete: (vitals: VitalsPayload) => void;
 }) {
   const { t, lang } = useI18n();
-  const { samples, today, syncAll, syncStage, measurePolicy } = useWearable();
+  const {
+    samples,
+    today,
+    syncAll,
+    syncStage,
+    measurePolicy,
+    measure,
+    measureKinds,
+    canMeasure,
+    isMock,
+    mockVitalValues,
+  } = useWearable();
   const [vals, setVals] = useState<Record<string, string>>({});
   const [syncing, setSyncing] = useState(false);
   const syncRef = useRef<number | null>(null);
+  const valuesBeforeMockRef = useRef<Record<string, string> | null>(null);
+  /** Instante de inicio del sync: solo cuentan las muestras posteriores. */
+  const syncStartedAtRef = useRef(0);
+  /** Última etapa de medida vista: al cambiar, se vuelca su métrica. */
+  const lastStageKindRef = useRef<MetricKind | null>(null);
   // Cronómetro del sync: refleja la medida puntual en curso (si la hay).
   const syncElapsed = useElapsed(syncStage?.startedAt);
   const syncProgress = measurePhase(
     syncElapsed * 1000,
     syncStage ? measurePolicy(syncStage.kind) : undefined,
   );
+  /** Medida lanzada desde la tarjeta (doble clic en su icono). */
+  const [cardMeasure, setCardMeasure] = useState<{
+    kind: MetricKind;
+    since: number;
+  } | null>(null);
+  const cardElapsed = useElapsed(cardMeasure?.since);
+  const cardProgress = measurePhase(
+    cardElapsed * 1000,
+    cardMeasure ? measurePolicy(cardMeasure.kind) : undefined,
+  );
+  // La tarjeta de la métrica en curso muestra la carga en su lugar.
+  const measuringFieldId = cardMeasure
+    ? MEASURE_FIELD_BY_KIND[cardMeasure.kind]
+    : syncStage
+      ? MEASURE_FIELD_BY_KIND[syncStage.kind]
+      : null;
+  // El cronómetro visible sale de la medida en curso (tarjeta o sync).
+  const activeProgress = cardMeasure ? cardProgress : syncProgress;
+  const activeElapsed = cardMeasure ? cardElapsed : syncElapsed;
   // Espejos: tras `await syncAll()` el autollenado debe leer los valores
   // frescos (el cierre del intervalo capturaría los del render anterior).
   const wearableValuesRef = useRef<Record<string, string>>({});
 
   /**
-   * Valores REALES del wearable conectado (sesión BLE viva), única fuente del
-   * autollenado: nunca se rellena con la última medición persistida (podría
-   * ser de una medición vieja) ni con constantes de demostración.
+   * El autollenado usa la sesión BLE activa o los datos semilla del demo.
+   * Nunca toma mediciones antiguas del historial como si fueran actuales.
    */
   const wearableValues = useMemo<Record<string, string>>(() => {
+    if (isMock) return { ...mockVitalValues };
+
     const res: Record<string, string> = {};
     const hr = samples.heart_rate?.value;
     if (hr) res.fc = String(Math.round(hr));
@@ -304,8 +368,62 @@ export function VitalsLesson({
     if (today.sleepMinutes)
       res.sueno = String(hoursFromMinutes(today.sleepMinutes));
     return res;
-  }, [samples, today]);
+  }, [isMock, mockVitalValues, samples, today]);
   wearableValuesRef.current = wearableValues;
+
+  // Values filled from the demo stay local to demo mode. If the mock wearable
+  // disconnects while this lesson remains mounted, restore the prior form.
+  useEffect(() => {
+    if (isMock) {
+      if (valuesBeforeMockRef.current === null) {
+        valuesBeforeMockRef.current = { ...vals };
+      }
+      return;
+    }
+
+    const previous = valuesBeforeMockRef.current;
+    if (previous === null) return;
+    valuesBeforeMockRef.current = null;
+    if (syncRef.current !== null) {
+      window.clearInterval(syncRef.current);
+      syncRef.current = null;
+    }
+    setSyncing(false);
+    setVals(previous);
+  }, [isMock, vals]);
+
+  // Cada tarjeta muestra su número cuando SU medida termina (animación primero,
+  // número después): al cambiar de etapa se vuelca solo la métrica completada, y
+  // únicamente si su muestra nació en este sync (nunca una lectura vieja).
+  useEffect(() => {
+    const previous = lastStageKindRef.current;
+    lastStageKindRef.current = syncStage?.kind ?? null;
+    if (!previous || previous === syncStage?.kind) return;
+    const fieldId = MEASURE_FIELD_BY_KIND[previous];
+    const sample = samples[previous];
+    if (!fieldId || !sample || sample.ts < syncStartedAtRef.current) return;
+    const value = wearableValuesRef.current[fieldId];
+    if (!value) return;
+    setVals((prev) =>
+      prev[fieldId] === value ? prev : { ...prev, [fieldId]: value },
+    );
+  }, [syncStage, samples]);
+
+  // La medida de una tarjeta termina con SU muestra fresca: el número entra
+  // en ese momento y la tarjeta deja de cargar.
+  useEffect(() => {
+    if (!cardMeasure) return;
+    const sample = samples[cardMeasure.kind];
+    if (!sample || sample.ts < cardMeasure.since) return;
+    const fieldId = MEASURE_FIELD_BY_KIND[cardMeasure.kind];
+    const value = fieldId ? wearableValuesRef.current[fieldId] : undefined;
+    if (fieldId && value) {
+      setVals((prev) =>
+        prev[fieldId] === value ? prev : { ...prev, [fieldId]: value },
+      );
+    }
+    setCardMeasure(null);
+  }, [cardMeasure, samples]);
 
   /**
    * Valor mostrado en la tarjeta: SOLO lo capturado en esta sesión (lo que
@@ -391,8 +509,29 @@ export function VitalsLesson({
     [],
   );
 
+  /** Vuelve a medir una métrica desde su tarjeta (doble clic en el icono). */
+  const startCardMeasure = (kind: MetricKind) => {
+    if (
+      done ||
+      !wearableConnected ||
+      !canMeasure ||
+      !measureKinds.includes(kind) ||
+      cardMeasure !== null ||
+      syncStage !== null ||
+      syncing
+    ) {
+      return;
+    }
+    setCardMeasure({ kind, since: Date.now() });
+    measure(kind, (ok) => {
+      if (!ok) setCardMeasure(null);
+    });
+  };
+
   const sync = async () => {
     if (done || syncing) return;
+    syncStartedAtRef.current = Date.now();
+    lastStageKindRef.current = null;
     setSyncing(true);
     try {
       // 1) Sincroniza DE VERDAD con el anillo: volcado de historial + medidas
@@ -416,6 +555,19 @@ export function VitalsLesson({
     }
   };
 
+  const pulseAge = hrSample ? agoLabel(hrSample.ts, t) : "";
+  const pulseSummary = hrSample
+    ? `${t("Pulso en vivo · {bpm} lpm", {
+        bpm: String(Math.round(hrSample.value)),
+      })} · ${
+        pulseAge === t("En vivo")
+          ? pulseAge
+          : t("Actualizado {when}", {
+              when: `${pulseAge.charAt(0).toLowerCase()}${pulseAge.slice(1)}`,
+            })
+      }`
+    : t("Conecta el wearable para ver tu pulso en vivo");
+
   return (
     <div className="lsn-stack vt-lesson">
       <section className="vt-hero">
@@ -427,18 +579,16 @@ export function VitalsLesson({
             <div className="vt-kicker">{t("Check-in clínico")}</div>
             <strong>{t("Signos de ahora")}</strong>
           </div>
-          {!done && (
-            <div className="vt-count">
-              <b>{filled}</b>
-              <small>/{VITAL_FIELDS.length}</small>
-            </div>
-          )}
+          <div className="vt-count">
+            <b>{filled}</b>
+            <small>/{VITAL_FIELDS.length}</small>
+          </div>
         </div>
-        <EcgTrace bpm={hrSample?.value} height={56} />
-        <p className="vt-ecg-live">
-          {hrSample
-            ? `${t("Pulso en vivo")} · ${Math.round(hrSample.value)} ${t("lpm")} · ${agoLabel(hrSample.ts, t)}`
-            : t("Conecta el wearable para ver tu pulso en vivo")}
+        <div className="vt-ecg-frame" aria-hidden="true">
+          <EcgTrace bpm={hrSample?.value} height={168} />
+        </div>
+        <p className={`vt-ecg-live ${hrSample ? "is-live" : ""}`}>
+          {pulseSummary}
         </p>
         <p>
           {t(
@@ -446,6 +596,18 @@ export function VitalsLesson({
           )}
         </p>
       </section>
+
+      {isMock && (
+        <div className="vt-demo-note" role="note">
+          <span className="vt-demo-orb">
+            <IonIcon icon={pulseOutline} />
+          </span>
+          <span>
+            <strong>{t("Modo demo")}</strong>
+            <small>{t("Lecturas simuladas · no enviadas al servidor")}</small>
+          </span>
+        </div>
+      )}
 
       {wearableConnected ? (
         <button
@@ -481,23 +643,9 @@ export function VitalsLesson({
           </span>
           <span className="vt-sync-copy">
             <strong>{t("Conectar wearable")}</strong>
-            <small>{t("Autollenar FC, SpO2, presión y peso")}</small>
+            <small>{t("Autollenar FC, SpO2, presión y más")}</small>
           </span>
         </button>
-      )}
-
-      {syncStage && (
-        <>
-          <div style={{ padding: "8px 0 2px" }}>
-            <IonProgressBar
-              value={syncProgress.progress}
-              aria-label={t("Progreso de la medición")}
-            />
-          </div>
-          <p className="watch-pair-copy">
-            {measurePhaseLabel(syncStage.kind, syncProgress, syncElapsed, t)}
-          </p>
-        </>
       )}
 
       <div className="vt-grid">
@@ -507,59 +655,115 @@ export function VitalsLesson({
           // barra y payload; el input conserva la unidad del usuario.
           const n = vitalNumber(v) * (f.scale ?? 1);
           const st = vitalStatus(n, f.lo, f.hi, t, f.goal);
-          const bar = Number.isNaN(n) ? null : vitalBar(n, f);
+          const hasReading = v.trim() !== "" && !Number.isNaN(n);
+          const bar = vitalBar(n, f);
+          const isMeasuring = measuringFieldId === f.id;
+          const measureKind = VITAL_MEASURE_KIND[f.id];
           return (
             <article
               key={f.id}
-              className={`vt-tile ${st.cls} ${v ? "has" : ""}`}
+              className={`vt-tile vt-${f.id} ${st.cls} ${v ? "has" : ""} ${
+                isMeasuring ? "is-measuring" : ""
+              }`}
             >
-              <header>
-                <span className="vt-emoji">{f.emoji}</span>
-                <span className="vt-label">{t(f.label)}</span>
-                {st.cls === "ok" && (
-                  <IonIcon icon={checkmarkCircle} className="vt-ok-ico" />
-                )}
-              </header>
-              <div className="vt-value">
-                <IonInput
-                  className="vt-input"
-                  placeholder="—"
-                  inputmode="decimal"
-                  value={v}
-                  disabled={done}
-                  aria-label={t(f.label)}
-                  onIonInput={(e) =>
-                    setVals((prev) => ({
-                      ...prev,
-                      [f.id]: e.detail.value ?? "",
-                    }))
+              <div className="vt-row-main">
+                <span
+                  className={`vt-icon ${measureKind ? "is-measurable" : ""}`}
+                  aria-hidden="true"
+                  onDoubleClick={
+                    measureKind
+                      ? () => startCardMeasure(measureKind)
+                      : undefined
                   }
-                />
-                <em>{t(f.unit)}</em>
+                >
+                  <IonIcon icon={vitalIconFor(f.id)} />
+                </span>
+                <div className="vt-reading">
+                  <header className="vt-card-head">
+                    <span className="vt-label" title={t(f.label)}>
+                      {t(VITAL_SHORT_LABEL[f.id] ?? f.label)}
+                    </span>
+                    <span
+                      className={`vt-status ${
+                        isMeasuring ? "is-live" : st.cls || ""
+                      }`}
+                    >
+                      {isMeasuring
+                        ? t("{seconds} s", {
+                            seconds: String(
+                              Math.max(
+                                0,
+                                Math.ceil(
+                                  activeProgress.windowMs / 1000 -
+                                    activeElapsed,
+                                ),
+                              ),
+                            ),
+                          })
+                        : st.label}
+                    </span>
+                  </header>
+                  <div className="vt-value">
+                    <IonInput
+                      className="vt-input"
+                      placeholder="—"
+                      inputmode="decimal"
+                      value={v}
+                      disabled={done}
+                      style={{ width: `${Math.max(2, v.length)}ch` }}
+                      aria-label={t(f.label)}
+                      onIonInput={(e) =>
+                        setVals((prev) => ({
+                          ...prev,
+                          [f.id]: e.detail.value ?? "",
+                        }))
+                      }
+                    />
+                    <em>{t(f.unit)}</em>
+                  </div>
+                  {f.scale && !Number.isNaN(n) && (
+                    <span className="vt-sub">{formatSleep(n, t)}</span>
+                  )}
+                </div>
               </div>
-              {f.scale && !Number.isNaN(n) && (
-                <span className="vt-sub">{formatSleep(n, t)}</span>
-              )}
-              <div className="vt-range" aria-hidden="true">
-                {bar && (
-                  <b
-                    style={{
-                      left: `${bar.bandLeft}%`,
-                      width: `${bar.bandWidth}%`,
-                    }}
-                  />
+              <div className="vt-row-detail">
+                {isMeasuring ? (
+                  <div
+                    className="vt-measure"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(activeProgress.progress * 100)}
+                    aria-label={t("Progreso de la medición")}
+                  >
+                    <i
+                      style={{
+                        width: `${Math.round(activeProgress.progress * 100)}%`,
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className={`vt-range ${f.kind === "goal" ? "is-goal" : ""}`}
+                    aria-hidden="true"
+                  >
+                    {(f.kind !== "goal" || hasReading) && (
+                      <b
+                        style={{
+                          left: `${bar.bandLeft}%`,
+                          width: `${bar.bandWidth}%`,
+                        }}
+                      />
+                    )}
+                    <i
+                      style={{
+                        left: hasReading ? `${bar.pct}%` : "-8px",
+                        opacity: hasReading ? 1 : 0,
+                      }}
+                    />
+                  </div>
                 )}
-                <i
-                  style={{
-                    left: bar ? `${bar.pct}%` : "-8px",
-                    opacity: bar ? 1 : 0,
-                  }}
-                />
               </div>
-              <footer>
-                <span className={st.cls || undefined}>{st.label}</span>
-                <span className="vt-hint">{t(f.hint)}</span>
-              </footer>
             </article>
           );
         })}
@@ -568,22 +772,73 @@ export function VitalsLesson({
       {recordedStamp && <div className="vt-stamp">{recordedStamp}</div>}
 
       {!done && (
-        <IonButton
-          expand="block"
-          className="bt bt-primary"
-          disabled={filled < 4}
-          onClick={() => onComplete(buildVitalsPayload())}
-        >
-          {filled < 4
-            ? t("Registra al menos 4 signos ({filled}/{total})", {
-                filled: String(filled),
-                total: String(VITAL_FIELDS.length),
-              })
-            : t("Guardar signos · +{pts} pts", { pts: String(pts) })}
-        </IonButton>
+        <>
+          {isMock && (
+            <p className="vt-demo-save-note">
+              {t("Las lecturas demo no se guardan en el expediente clínico.")}
+            </p>
+          )}
+          <IonButton
+            expand="block"
+            className="bt bt-primary"
+            disabled={isMock || filled < 4}
+            onClick={() => onComplete(buildVitalsPayload())}
+          >
+            {isMock
+              ? t("Solo lectura en modo demo")
+              : filled < 4
+                ? t("Registra al menos 4 signos ({filled}/{total})", {
+                    filled: String(filled),
+                    total: String(VITAL_FIELDS.length),
+                  })
+                : t("Guardar signos · +{pts} pts", { pts: String(pts) })}
+          </IonButton>
+        </>
       )}
     </div>
   );
+}
+
+/** Medida puntual del wearable → tarjeta de signos que se pone "en carga". */
+const MEASURE_FIELD_BY_KIND: Partial<Record<MetricKind, string>> = {
+  heart_rate: "fc",
+  spo2: "spo2",
+  blood_pressure: "pa",
+};
+
+/** Métricas remedibles desde la tarjeta (doble clic en su icono). */
+const VITAL_MEASURE_KIND: Partial<Record<string, MetricKind>> = {
+  fc: "heart_rate",
+  pa: "blood_pressure",
+  spo2: "spo2",
+};
+
+/** Nombre compacto en la tarjeta; el completo queda en `title` (accesible). */
+const VITAL_SHORT_LABEL: Partial<Record<string, string>> = {
+  fc: "FC",
+  pa: "Presión",
+};
+
+function vitalIconFor(id: string) {
+  switch (id) {
+    case "fc":
+      return heartOutline;
+    case "pa":
+      return medkitOutline;
+    case "spo2":
+    case "glu":
+      return waterOutline;
+    case "pasos":
+      return footstepsOutline;
+    case "sueno":
+      return moonOutline;
+    case "peso":
+      return scaleOutline;
+    case "temp":
+      return thermometerOutline;
+    default:
+      return pulseOutline;
+  }
 }
 
 export function NutritionLesson({

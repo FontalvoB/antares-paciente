@@ -244,7 +244,18 @@ export function TodayView({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.04 + i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
-              <img className="pcard-photo" src={task.thumbnailUrl || MISSION_PHOTOS[task.id]} alt="" loading="lazy" />
+              <img
+                className="pcard-photo"
+                src={task.thumbnailUrl || MISSION_PHOTOS[task.id]}
+                alt=""
+                loading="lazy"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (img.dataset.fallback) return;
+                  img.dataset.fallback = "1";
+                  img.src = MISSION_PHOTOS[task.id];
+                }}
+              />
               <span className={`pcard-flag tone-${task.tone}`}>
                 <IonIcon icon={done ? checkmark : task.icon} />
               </span>

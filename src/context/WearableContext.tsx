@@ -55,6 +55,8 @@ export type { DeviceDayTotals } from "../devices/day-totals";
 export type WearablePhase =
   "idle" | "scanning" | "connecting" | "connected" | "error";
 
+type WearableOperation = "sync" | "measure";
+
 /** Ingreso periódico de métricas: agrupa cambios y evita un POST por muestra. */
 const INGEST_INTERVAL_MS = 60_000;
 /** Espera mínima entre reintentos automáticos (arranque/segundo plano). */
@@ -68,6 +70,13 @@ const AUTO_RECONNECT_DELAYS_MS = [0, 5_000, 15_000, 30_000, 60_000];
 
 export interface WearableState {
   phase: WearablePhase;
+  /** true when the connected session is the local, non-persistent demo. */
+  isMock: boolean;
+  /**
+   * Valores sembrados del demo para el formulario de signos vitales. Solo se
+   * llena con la sesión simulada de DEV; en producción queda vacío.
+   */
+  mockVitalValues: Record<string, string>;
   /** Dispositivos encontrados en la búsqueda actual. */
   devices: DeviceDescriptor[];
   /** true cuando la última búsqueda terminó (para el estado vacío). */
@@ -109,6 +118,8 @@ export interface WearableState {
   savedDevice: SavedDevice | null;
   /** Intenta reconectar al último dispositivo guardado. */
   reconnect(): void;
+  /** Opens seeded sample data in development without touching Bluetooth. */
+  connectMock(): void;
   /**
    * Herramienta de diagnóstico: inyecta una muestra como si la hubiera enviado
    * el anillo, para ver el efecto en tarjetas/agregados sin esperar hardware.
@@ -141,6 +152,17 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const [phase, setPhase] = useState<WearablePhase>("idle");
+  const [isMock, setIsMock] = useState(false);
+  const [mockVitalValues, setMockVitalValues] = useState<
+    Record<string, string>
+  >({});
+  /**
+   * Módulo del wearable simulado: se carga con `import()` dentro del guard de
+   * DEV, así el demo nunca entra al bundle de producción.
+   */
+  const mockApiRef = useRef<
+    typeof import("../devices/mock-wearable") | null
+  >(null);
   const [devices, setDevices] = useState<DeviceDescriptor[]>([]);
   const [hasScanned, setHasScanned] = useState(false);
   const [device, setDevice] = useState<DeviceDescriptor | null>(null);
@@ -155,6 +177,9 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const [log, setLog] = useState<DiagEntry[]>([]);
   const [canMeasure, setCanMeasure] = useState(false);
   const [measureKinds, setMeasureKinds] = useState<MetricKind[]>([]);
+  /** Espejo de `isMock` para los temporizadores del demo. */
+  const isMockRef = useRef(false);
+  isMockRef.current = isMock;
   const [syncing, setSyncing] = useState(false);
   const [syncStage, setSyncStage] = useState<{
     kind: MetricKind;
@@ -166,6 +191,13 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   );
 
   const sessionRef = useRef<DeviceSession | null>(null);
+  const syncHistoryRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  /** Evita que historia, medidas manuales y sync compitan por el mismo sensor. */
+  const operationRef = useRef<WearableOperation | null>(null);
+  const queuedSyncRef = useRef(false);
+  const appActiveRef = useRef(true);
+  /** Invalida callbacks de una conexión anterior que llegue tarde. */
+  const sessionGenerationRef = useRef(0);
   const scanTimer = useRef<number | undefined>(undefined);
   const intentionalDisconnect = useRef(false);
   const dayStore = useRef<DayStore>(newDayStore(toLocalISODate()));
@@ -197,8 +229,13 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetSessionState = useCallback(() => {
+    sessionGenerationRef.current += 1;
+    operationRef.current = null;
+    queuedSyncRef.current = false;
     resetDayAggregate();
     sessionRef.current = null;
+    setIsMock(false);
+    setMockVitalValues({});
     setDevice(null);
     setInfo({});
     setSamples({});
@@ -232,6 +269,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const flushIngest = useCallback(
     async (force = false) => {
       if (!ingestDirty.current || ingestInFlight.current) return;
+      if (!force && !appActiveRef.current) return;
       const now = Date.now();
       if (!force && now - lastIngestAt.current < INGEST_INTERVAL_MS) return;
 
@@ -355,6 +393,17 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   /** Volcado del historial (sin estado: lo gobiernan syncHistory/syncAll). */
   const runSync = useCallback(async () => {
+    if (isMock) {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 420));
+      const now = Date.now();
+      const api = mockApiRef.current;
+      if (api) {
+        setSamples(api.createMockWearableSamples(now));
+        setToday(api.MOCK_TODAY_TOTALS);
+      }
+      setLastSyncAt(now);
+      return;
+    }
     const session = sessionRef.current;
     if (!session?.syncHistory) return;
     try {
@@ -365,17 +414,48 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     } catch {
       // El driver ya aísla sus fallos; sin volcado no hay nada que reportar.
     }
-  }, [flushIngest]);
+  }, [flushIngest, isMock]);
 
   /** Volcado del historial del anillo, con estado para la UI. */
   const syncHistory = useCallback(async () => {
+    if (operationRef.current === "measure") {
+      queuedSyncRef.current = true;
+      return;
+    }
+    if (operationRef.current === "sync") return;
+    operationRef.current = "sync";
     setSyncing(true);
     try {
       await runSync();
     } finally {
       setSyncing(false);
+      operationRef.current = null;
+      if (queuedSyncRef.current) {
+        queuedSyncRef.current = false;
+        void syncHistoryRef.current();
+      }
     }
   }, [runSync]);
+  syncHistoryRef.current = syncHistory;
+
+  /**
+   * Medida simulada del demo: espera la ventana acortada de la métrica e
+   * inyecta una muestra semilla. Nunca marca el acumulado como pendiente ni
+   * se persiste en el backend.
+   */
+  const simulateMeasure = useCallback((kind: MetricKind) => {
+    const api = mockApiRef.current;
+    const windowMs = api?.MOCK_MEASURE_WINDOWS[kind] ?? 8_000;
+    return new Promise<void>((resolve) => {
+      window.setTimeout(() => {
+        if (isMockRef.current) {
+          const sample = api?.mockMeasureSample(kind);
+          if (sample) setSamples((prev) => ({ ...prev, [kind]: sample }));
+        }
+        resolve();
+      }, windowMs);
+    });
+  }, []);
 
   /**
    * Sincronización completa, compartida por Reloj y Programa: volcado del
@@ -384,9 +464,23 @@ export function WearableProvider({ children }: { children: ReactNode }) {
    * todas las métricas al día sin depender de la app oficial.
    */
   const syncAll = useCallback(async () => {
+    if (operationRef.current !== null) {
+      if (operationRef.current === "measure") queuedSyncRef.current = true;
+      return;
+    }
+    operationRef.current = "sync";
     setSyncing(true);
     try {
       await runSync();
+      // Demo: se miden siempre las tres métricas (ventanas acortadas) para
+      // poder ver la secuencia completa; nunca se persiste.
+      if (isMock) {
+        for (const kind of mockApiRef.current?.MOCK_MEASURE_KINDS ?? []) {
+          setSyncStage({ kind, startedAt: Date.now() });
+          await simulateMeasure(kind);
+        }
+        return;
+      }
       const session = sessionRef.current;
       if (!session?.measure) return;
       const stale = staleMeasureKinds(
@@ -403,12 +497,20 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncStage(null);
       setSyncing(false);
+      operationRef.current = null;
+      if (queuedSyncRef.current) {
+        queuedSyncRef.current = false;
+        void syncHistoryRef.current();
+      }
     }
-  }, [measureKinds, runSync]);
+  }, [isMock, measureKinds, runSync, simulateMeasure]);
 
   const connect = useCallback(
     (target: DeviceDescriptor, options?: { silent?: boolean }) => {
       const silent = options?.silent === true;
+      if (!silent) intentionalDisconnect.current = false;
+      const generation = ++sessionGenerationRef.current;
+      let connectedId = target.deviceId;
       clearScanTimer();
       void ble.stopScan();
       setError(null);
@@ -424,9 +526,16 @@ export function WearableProvider({ children }: { children: ReactNode }) {
             canonicalId && canonicalId !== target.deviceId
               ? { ...target, deviceId: canonicalId }
               : target;
+          connectedId = resolved.deviceId;
           await ble.connectDevice(
             resolved.deviceId,
-            handleUnexpectedDisconnect,
+            () => {
+              if (sessionGenerationRef.current === generation) {
+                handleUnexpectedDisconnect();
+              } else if (intentionalDisconnect.current) {
+                intentionalDisconnect.current = false;
+              }
+            },
             {
               silent,
               timeoutMs: silent ? 30_000 : undefined,
@@ -435,8 +544,24 @@ export function WearableProvider({ children }: { children: ReactNode }) {
           const session = await openSession(resolved);
           // Dispositivo nuevo: los pasos/sueño en memoria eran del anterior.
           resetDayAggregate();
-          await session.start(handleSample, handleInfo);
+          await session.start(
+            (sample) => {
+              if (sessionGenerationRef.current === generation) {
+                handleSample(sample);
+              }
+            },
+            (delta) => {
+              if (sessionGenerationRef.current === generation) {
+                handleInfo(delta);
+              }
+            },
+          );
+          if (sessionGenerationRef.current !== generation) {
+            await session.stop().catch(() => undefined);
+            return;
+          }
           sessionRef.current = session;
+          session.setAppActive?.(appActiveRef.current);
           setCanMeasure(session.supportsMeasure === true);
           setMeasureKinds(
             session.measureKinds ??
@@ -467,14 +592,26 @@ export function WearableProvider({ children }: { children: ReactNode }) {
             app.showToast(t("{name} conectado", { name: label }), "ok");
           }
           // Primer volcado: sueño, pasos y vitales guardados en el anillo.
-          void runSync();
+          void syncHistoryRef.current();
         } catch (err) {
-          await ble.disconnectDevice(target.deviceId);
+          await ble.disconnectDevice(connectedId);
+          if (sessionGenerationRef.current !== generation) return;
           resetSessionState();
           // Una reconexión automática fallida no invade la pantalla con un
           // error: queda la tarjeta de "Último dispositivo" para reintentar.
+          const wearableError = toWearableError(err, "connection-failed");
+          if (
+            silent &&
+            (wearableError.code === "unsupported-device" ||
+              /not found|unknown device|invalid.*device|no device/i.test(
+                wearableError.message,
+              ))
+          ) {
+            clearSavedDevice();
+            setSavedDevice(null);
+          }
           if (silent) return;
-          setError(toWearableError(err, "connection-failed").code);
+          setError(wearableError.code);
           setPhase("error");
         }
       })();
@@ -488,12 +625,17 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       handleUnexpectedDisconnect,
       resetDayAggregate,
       resetSessionState,
-      runSync,
+      syncHistoryRef,
       t,
     ],
   );
 
   const disconnect = useCallback(() => {
+    if (isMock) {
+      resetSessionState();
+      app.disconnectWearable();
+      return;
+    }
     const session = sessionRef.current;
     const deviceId = device?.deviceId;
     intentionalDisconnect.current = true;
@@ -508,7 +650,38 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       if (session) await session.stop().catch(() => undefined);
       if (deviceId) await ble.disconnectDevice(deviceId);
     })();
-  }, [app, device, flushIngest, resetSessionState]);
+  }, [app, device, flushIngest, isMock, resetSessionState]);
+
+  const connectMock = useCallback(() => {
+    if (import.meta.env.DEV) {
+      // Carga diferida: el módulo del demo queda fuera del bundle de producción.
+      void (async () => {
+        const api = await import("../devices/mock-wearable");
+        mockApiRef.current = api;
+        clearScanTimer();
+        void ble.stopScan();
+        resetSessionState();
+
+        const now = Date.now();
+        const name = t("Wearable de prueba");
+        setDevices([]);
+        setHasScanned(false);
+        setError(null);
+        setIsMock(true);
+        setInfo({ name, battery: 92, firmware: "DEMO" });
+        setSamples(api.createMockWearableSamples(now));
+        setToday(api.MOCK_TODAY_TOTALS);
+        setMockVitalValues(api.MOCK_VITAL_VALUES);
+        setLastSyncAt(now);
+        // El demo permite medir: las ventanas son simuladas (sin BLE).
+        setCanMeasure(true);
+        setMeasureKinds(api.MOCK_MEASURE_KINDS);
+        setPhase("connected");
+        app.connectWearable(name);
+        app.showToast(t("Modo demo activado"), "ok");
+      })();
+    }
+  }, [app, clearScanTimer, resetSessionState, t]);
 
   /** Reconexión al último dispositivo guardado (una sola pasada, sin ruido). */
   const reconnect = useCallback(() => {
@@ -516,6 +689,10 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     if (!target || phase === "connecting" || phase === "connected") return;
     connect(target, { silent: true });
   }, [connect, phase, savedDevice]);
+
+  useEffect(() => {
+    if (app.flow !== "app" && isMock) disconnect();
+  }, [app.flow, disconnect, isMock]);
 
   const cancelScan = useCallback(() => finishScan(), [finishScan]);
 
@@ -535,13 +712,52 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   const clearLog = useCallback(() => setLog([]), []);
 
-  const measure = useCallback((kind: MetricKind, onDone?: MeasureCallback) => {
-    sessionRef.current?.measure?.(kind, onDone);
-  }, []);
+
+  const measure = useCallback(
+    (kind: MetricKind, onDone?: MeasureCallback) => {
+      if (operationRef.current === "sync") {
+        onDone?.(false, "replaced");
+        return;
+      }
+      if (operationRef.current === "measure") {
+        onDone?.(false, "replaced");
+        return;
+      }
+      operationRef.current = "measure";
+      let completed = false;
+      const finish = (ok: boolean, reason: Parameters<MeasureCallback>[1]) => {
+        if (completed) return;
+        completed = true;
+        operationRef.current = null;
+        onDone?.(ok, reason);
+        if (queuedSyncRef.current) {
+          queuedSyncRef.current = false;
+          void syncHistoryRef.current();
+        }
+      };
+      if (isMock) {
+        void simulateMeasure(kind).then(() => finish(true, "completed"));
+        return;
+      }
+      const session = sessionRef.current;
+      if (!session?.measure) {
+        finish(false, "refused");
+        return;
+      }
+      session.measure(kind, finish);
+    },
+    [isMock, simulateMeasure],
+  );
 
   const measurePolicy = useCallback(
-    (kind: MetricKind) => sessionRef.current?.measurePolicy?.(kind),
-    [],
+    (kind: MetricKind) => {
+      if (isMock) {
+        const windowMs = mockApiRef.current?.MOCK_MEASURE_WINDOWS[kind];
+        return windowMs ? { windowMs } : undefined;
+      }
+      return sessionRef.current?.measurePolicy?.(kind);
+    },
+    [isMock],
   );
 
   const refreshInfo = useCallback(() => {
@@ -626,9 +842,17 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     }
     startAutoReconnect();
     if (!Capacitor.isNativePlatform()) return;
-    const handle = App.addListener("resume", () => {
-      // iOS suspende el enlace en segundo plano: se reintenta desde cero.
-      if (phaseRef.current !== "connected") startAutoReconnect();
+    const handle = App.addListener("appStateChange", ({ isActive }) => {
+      appActiveRef.current = isActive;
+      sessionRef.current?.setAppActive?.(isActive);
+      if (!isActive) return;
+      // El foreground hace una sola actualización controlada. Si el enlace se
+      // perdió, la escalera silenciosa se encarga de reconectar.
+      if (phaseRef.current !== "connected") {
+        startAutoReconnect();
+      } else if (operationRef.current === null) {
+        void syncHistoryRef.current();
+      }
     });
     return () => {
       void handle.then((h) => h.remove());
@@ -647,7 +871,9 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (phase !== "connected") return;
     const timer = window.setInterval(
-      () => void flushIngest(),
+      () => {
+        if (appActiveRef.current) void flushIngest();
+      },
       INGEST_INTERVAL_MS,
     );
     return () => window.clearInterval(timer);
@@ -680,6 +906,9 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return () => {
+      appActiveRef.current = false;
+      sessionGenerationRef.current += 1;
+      operationRef.current = null;
       clearScanTimer();
       void ble.stopScan();
       void sessionRef.current?.stop();
@@ -690,6 +919,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const value = useMemo<WearableState>(
     () => ({
       phase,
+      isMock,
+      mockVitalValues,
       devices,
       hasScanned,
       device,
@@ -714,6 +945,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       refreshInfo,
       savedDevice,
       reconnect,
+      connectMock,
       injectDebugSample,
       scan,
       cancelScan,
@@ -723,6 +955,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     }),
     [
       phase,
+      isMock,
+      mockVitalValues,
       devices,
       hasScanned,
       device,
@@ -747,6 +981,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       refreshInfo,
       savedDevice,
       reconnect,
+      connectMock,
       injectDebugSample,
       scan,
       cancelScan,
