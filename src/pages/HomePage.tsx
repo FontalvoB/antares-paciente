@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   IonAvatar,
+  IonBadge,
   IonIcon,
   IonProgressBar,
   IonSkeletonText,
@@ -40,6 +41,8 @@ import {
   type MetricId,
 } from "../data/metrics";
 import { useProgram } from "../hooks/useProgram";
+import { useNotifications } from "../hooks/useNotifications";
+import { NotificationsModal } from "../components/notifications/NotificationsModal";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useScoresHistory } from "../hooks/useScoresHistory";
 import { useWearable } from "../context/WearableContext";
@@ -72,9 +75,10 @@ export function HomePage() {
     appointmentsError,
     refreshAppointments,
     openRoom,
-    showToast,
   } = useApp();
   const { snapshot } = useProgram();
+  const { unreadCount } = useNotifications();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { lang, t } = useI18n();
 
   // Verdad clínica de las tarjetas: metrics-history (bmi/hba1c/fat) +
@@ -413,13 +417,22 @@ export function HomePage() {
             <div className="hm-head-actions">
               <button
                 type="button"
-                className="hm-icon-btn"
-                onClick={() =>
-                  showToast(t("No tienes notificaciones nuevas"), "info")
+                className="hm-icon-btn hm-bell"
+                onClick={() => setNotificationsOpen(true)}
+                aria-label={
+                  unreadCount > 0
+                    ? t("Notificaciones sin leer: {count}", {
+                        count: String(unreadCount),
+                      })
+                    : t("Notificaciones")
                 }
-                aria-label={t("Notificaciones")}
               >
                 <IonIcon icon={notificationsOutline} />
+                {unreadCount > 0 && (
+                  <IonBadge className="hm-bell-badge" aria-hidden="true">
+                    {unreadCount > 99 ? "99+" : String(unreadCount)}
+                  </IonBadge>
+                )}
               </button>
               {/* Atajo directo al perfil corporal: es el módulo que más se
                   consulta y estaba a dos toques desde el inicio. */}
@@ -693,6 +706,10 @@ export function HomePage() {
       <MetricHistoryModal
         card={metricId ? cards[metricId] : null}
         onClose={() => setMetricId(null)}
+      />
+      <NotificationsModal
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
       />
     </Screen>
   );

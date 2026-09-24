@@ -11290,6 +11290,229 @@ ion-modal.metric-modal ion-content {
   color: var(--red);
 }
 
+/* ============================================================
+   NOTIFICACIONES — centro de avisos de salud in-app (Fase 11).
+   Bento: fondo blanco, borde sutil, punto de no leído, iconos
+   temáticos en pastel suave. Touch targets ≥44px, tiempos con
+   Space Grotesk. Sin desbordes a 390px (min-width: 0 en flex).
+   ============================================================ */
+ion-modal.notifications-modal {
+  --width: 100%;
+  --max-width: 430px;
+  --height: min(88vh, 740px);
+  --border-radius: 22px 22px 0 0;
+  --background: var(--wh);
+}
+ion-modal.notifications-modal ion-content {
+  --background: var(--g0);
+}
+.nt-sheet {
+  padding: 8px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+}
+.nt-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.nt-head-titles {
+  flex: 1;
+  min-width: 0;
+}
+.nt-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+.nt-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 4px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--tx);
+}
+.nt-count {
+  --background: var(--red);
+  --color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.nt-close {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  flex-shrink: 0;
+}
+.nt-mark-all {
+  min-height: 44px;
+  margin: 0 0 8px;
+  --padding-start: 0;
+  font-weight: 700;
+}
+.nt-section {
+  margin: 14px 0 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--mu);
+}
+.nt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nt-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px;
+  border: 1px solid var(--bd);
+  border-radius: 18px;
+  background: var(--wh);
+  box-shadow: var(--shadow-sm);
+  text-align: start;
+  cursor: pointer;
+}
+.nt-card.unread {
+  border-color: color-mix(in srgb, var(--blue) 38%, var(--bd));
+  background: color-mix(in srgb, var(--ice-l) 55%, var(--wh));
+}
+.nt-ico {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  font-size: 22px;
+}
+.nt-ico-appt {
+  background: var(--blue-l);
+  color: var(--blue);
+}
+.nt-ico-hyd {
+  background: var(--hc-src-device-bg);
+  color: var(--hc-src-device-tx);
+}
+.nt-ico-nut {
+  background: var(--org-l);
+  color: var(--org-d);
+}
+.nt-ico-streak {
+  background: var(--gold-l);
+  color: var(--gold-d);
+}
+.nt-ico-chat {
+  background: var(--pur-l);
+  color: var(--pur-d);
+}
+.nt-ico-com {
+  background: var(--teal-l);
+  color: var(--teal-d);
+}
+.nt-ico-alert {
+  background: var(--red-l);
+  color: var(--red);
+}
+.nt-ico-default {
+  background: var(--g1);
+  color: var(--mu);
+}
+.nt-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.nt-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.nt-title-row strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--tx);
+  overflow-wrap: break-word;
+}
+.nt-dot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--blue);
+}
+.nt-msg {
+  display: block;
+  font-size: 13px;
+  color: var(--mu);
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+.nt-time {
+  display: block;
+  margin-top: 2px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+}
+.nt-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 28px 18px;
+  border-radius: 18px;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  color: var(--mu);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+.nt-empty ion-icon {
+  font-size: 34px;
+  color: var(--brand-sky-mid);
+}
+.nt-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.nt-card.nt-skeleton {
+  align-items: center;
+  cursor: default;
+}
+.nt-skeleton-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tx-aurora,
   .tx-dock-pulse,
@@ -17655,6 +17878,23 @@ ion-button.cta-pill.button-disabled {
 
 .hm-icon-btn:active {
   transform: scale(0.92);
+}
+
+/* Campana con badge de no leídas (Fase 11): el botón es el posicionador. */
+.hm-bell {
+  position: relative;
+}
+.hm-bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  --background: var(--red);
+  --color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 6px;
+  pointer-events: none;
 }
 
 .hm-brand {
@@ -24279,13 +24519,13 @@ ion-button.chat-fb-btn {
 }
 
 /* ============================================================
-   Clubes premium â€” tarjetas de eventos y lives (Fase 11)
-   Solo presentaciÃ³n: bento cards blancas, iconografÃ­a temÃ¡tica
+   Clubes premium — tarjetas de eventos y lives (Fase 11)
+   Solo presentación: bento cards blancas, iconografía temática
    con tints suaves, Space Grotesk en tiempos e insignias y
-   targets tÃ¡ctiles â‰¥44px. Sin cambios de lÃ³gica ni datos.
+   targets táctiles ≥44px. Sin cambios de lógica ni datos.
    ============================================================ */
 
-/* Tarjeta de evento: DatePill + detalle + capacidad + acciÃ³n. */
+/* Tarjeta de evento: DatePill + detalle + capacidad + acción. */
 .club-event-card {
   display: flex;
   gap: 12px;
@@ -24381,7 +24621,7 @@ ion-button.club-event-btn {
   background: var(--teal-l);
 }
 
-/* Pastilla de fecha del evento: dÃ­a protagonista + mes + icono. */
+/* Pastilla de fecha del evento: día protagonista + mes + icono. */
 .club-date-pill {
   display: flex;
   flex-direction: column;
@@ -24421,7 +24661,7 @@ ion-button.club-event-btn {
   opacity: 0.9;
 }
 
-/* Tarjeta de live: miniatura con estado + tÃ­tulo + fecha + acceso. */
+/* Tarjeta de live: miniatura con estado + título + fecha + acceso. */
 .club-live-card {
   padding: 14px;
   background: #fff;

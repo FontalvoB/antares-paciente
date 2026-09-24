@@ -2254,5 +2254,11 @@
   "Enviando calificación": "Sending rating",
   "¡Gracias por tu calificación!": "Thanks for your rating!",
   "Cuida tu privacidad: recuerda no compartir datos de historia clínica, números de identificación ni resultados médicos confidenciales.": "Protect your privacy: remember not to share clinical history data, ID numbers, or confidential medical results.",
-  "Recomendado para ti": "Recommended for you"
+  "Recomendado para ti": "Recommended for you",
+  "Marcar todas como leídas": "Mark all as read",
+  "No pudimos cargar tus notificaciones": "Couldn't load your notifications",
+  "Tus avisos de salud": "Your health updates",
+  "hace un momento": "Just now",
+  "Sin leer": "Unread",
+  "Notificaciones sin leer: {count}": "Unread notifications: {count}"
 }

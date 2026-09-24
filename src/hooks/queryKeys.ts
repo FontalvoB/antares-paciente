@@ -16,6 +16,15 @@ export const nutritionKeys = {
   myNutritionPlan: ["me", "nutrition-plan"] as const,
 } as const;
 
+export const notificationsKeys = {
+  /** GET /api/v1/program/notifications (centro de avisos in-app, Fase 11) */
+  all: ["notifications"] as const,
+
+  /** Página de avisos del paciente */
+  list: (page: number, pageSize: number) =>
+    ["notifications", "list", page, pageSize] as const,
+} as const;
+
 export const programKeys = {
   /** GET /api/v1/program/me/snapshot */
   snapshot: ["program", "snapshot"] as const,

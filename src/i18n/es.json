@@ -2224,5 +2224,11 @@
   "Enviando calificación": "Enviando calificación",
   "¡Gracias por tu calificación!": "¡Gracias por tu calificación!",
   "Cuida tu privacidad: recuerda no compartir datos de historia clínica, números de identificación ni resultados médicos confidenciales.": "Cuida tu privacidad: recuerda no compartir datos de historia clínica, números de identificación ni resultados médicos confidenciales.",
-  "Recomendado para ti": "Recomendado para ti"
+  "Recomendado para ti": "Recomendado para ti",
+  "Marcar todas como leídas": "Marcar todas como leídas",
+  "No pudimos cargar tus notificaciones": "No pudimos cargar tus notificaciones",
+  "Tus avisos de salud": "Tus avisos de salud",
+  "hace un momento": "hace un momento",
+  "Sin leer": "Sin leer",
+  "Notificaciones sin leer: {count}": "Notificaciones sin leer: {count}"
 }
