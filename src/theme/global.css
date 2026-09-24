@@ -5732,10 +5732,19 @@ ion-button.req-hero-btn {
   flex: 1;
 }
 
+.req-step-types {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 ion-radio-group.req-types {
+  flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  min-height: 420px;
 }
 
 ion-radio-group.req-modes {
@@ -5765,20 +5774,42 @@ ion-radio.req-type-card::part(label),
 ion-radio.req-mode-card::part(label) {
   margin: 0;
   width: 100%;
+  height: 100%;
 }
 
 ion-radio.req-type-card {
-  padding: 14px 13px;
+  height: 100%;
+  min-height: 188px;
+  padding: 18px 18px 16px;
   position: relative;
+  background: var(--wh);
+  border: 1.5px solid color-mix(in srgb, var(--navy) 10%, var(--bd));
+  border-radius: 24px;
+  box-shadow: var(--shadow-sm);
 }
 
-ion-radio.req-type-card.sel,
 ion-radio.req-mode-card.sel {
   border-color: var(--teal);
   box-shadow:
     0 0 0 2px rgba(29, 158, 117, 0.18),
     var(--shadow-md);
   transform: translateY(-1px);
+}
+
+ion-radio.req-type-card.sel {
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--navy) 22%, transparent);
+  transform: none;
+}
+
+ion-radio.req-type-card.ac-teal.sel {
+  background: var(--brand-navy);
+}
+
+ion-radio.req-type-card.ac-org.sel {
+  background: linear-gradient(160deg, #7a3410 0%, var(--org) 100%);
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--org) 28%, transparent);
 }
 
 ion-radio.req-type-card.ac-pur.sel {
@@ -5795,13 +5826,6 @@ ion-radio.req-type-card.ac-blue.sel {
     var(--shadow-md);
 }
 
-ion-radio.req-type-card.ac-org.sel {
-  border-color: var(--org);
-  box-shadow:
-    0 0 0 2px rgba(232, 123, 43, 0.18),
-    var(--shadow-md);
-}
-
 .req-type-inner,
 .req-mode-inner {
   display: flex;
@@ -5812,8 +5836,121 @@ ion-radio.req-type-card.ac-org.sel {
 
 ion-radio.req-type-card .req-type-inner {
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 14px;
+  height: 100%;
+  min-height: 154px;
+}
+
+.req-type-top {
+  display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.req-type-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
+}
+
+.req-type-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--mu);
+}
+
+ion-radio.req-type-card.sel .req-type-kicker,
+ion-radio.req-type-card.sel .ct,
+ion-radio.req-type-card.sel .req-type-pro strong {
+  color: #fff;
+}
+
+ion-radio.req-type-card.sel .cs,
+ion-radio.req-type-card.sel .req-type-pro small,
+ion-radio.req-type-card.sel .req-type-note {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+ion-radio.req-type-card.sel .req-type-ico {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #fff !important;
+}
+
+.req-type-pro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--navy) 8%, var(--bd));
+}
+
+ion-radio.req-type-card.sel .req-type-pro {
+  border-top-color: rgba(255, 255, 255, 0.16);
+}
+
+.req-type-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--g1);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.req-type-pro strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+.req-type-pro small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--mu);
+}
+
+.req-type-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--org-d, var(--org));
+}
+
+.req-type-note ion-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+ion-radio.req-type-card .ct {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: var(--navy);
+}
+
+ion-radio.req-type-card .cs {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .req-type-copy {
@@ -5823,26 +5960,90 @@ ion-radio.req-type-card .req-type-inner {
 }
 
 .req-type-check {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 16px;
-  color: var(--teal);
+  margin-left: auto;
+  font-size: 22px;
+  color: #fff;
 }
 
-ion-radio.req-type-card.ac-pur .req-type-check {
-  color: var(--pur);
+.req-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-ion-radio.req-type-card.ac-blue .req-type-check {
-  color: var(--blue);
+
+ion-button.req-soon {
+  margin: 0;
+  height: 64px;
+  min-height: 64px;
+  --background: var(--brand-navy);
+  --color: #fff;
+  --border-radius: 18px;
+  --box-shadow: 0 10px 22px color-mix(in srgb, var(--brand-navy) 24%, transparent);
+  --padding-start: 16px;
+  --padding-end: 14px;
 }
-ion-radio.req-type-card.ac-org .req-type-check {
-  color: var(--org);
+
+ion-button.req-soon::part(native) {
+  justify-content: space-between;
+}
+
+.req-soon-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.req-soon-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.req-soon-when {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.req-soon-when strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  letter-spacing: -0.4px;
 }
 
 .req-cal {
-  padding: 12px 10px 10px;
-  margin-bottom: 10px;
+  padding: 14px 10px 12px;
+  margin: 0;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--navy) 8%, var(--bd));
+  box-shadow: var(--shadow-sm);
+}
+
+.req-hours {
+  background: var(--wh);
+  border: 1px solid color-mix(in srgb, var(--navy) 8%, var(--bd));
+  border-radius: 24px;
+  box-shadow: var(--shadow-sm);
+  padding: 14px 12px 12px;
+}
+
+.req-slot-group + .req-slot-group {
+  margin-top: 12px;
+}
+
+.req-slot-label {
+  margin: 0 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--mu);
 }
 
 .req-cal-nav {
@@ -5855,7 +6056,7 @@ ion-radio.req-type-card.ac-org .req-type-check {
 
 .req-cal-month {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.3px;
   color: var(--tx);
@@ -5905,15 +6106,15 @@ ion-button.req-cal-nav-btn[disabled] {
 }
 
 ion-button.req-cal-day {
-  width: 44px;
+  width: 42px;
   height: 44px;
-  min-width: 44px;
+  min-width: 42px;
   min-height: 44px;
-  margin: 1px auto;
+  margin: 2px auto;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  --border-radius: 50%;
+  --border-radius: 14px;
   --background: transparent;
   --color: var(--tx);
   --padding-start: 0;
@@ -5923,34 +6124,40 @@ ion-button.req-cal-day {
 }
 
 ion-button.req-cal-day.today {
-  --color: var(--teal-d);
-  box-shadow: inset 0 0 0 1.5px var(--teal);
+  --color: var(--navy);
+  box-shadow: inset 0 0 0 1.5px var(--brand-sky);
+}
+
+ion-button.req-cal-day.open {
+  --background: color-mix(in srgb, var(--teal) 16%, var(--wh));
+  --color: var(--navy);
 }
 
 ion-button.req-cal-day.sel {
-  --background: linear-gradient(145deg, #0c3d2c, var(--teal));
+  --background: var(--brand-navy);
   --color: #fff;
-  box-shadow: 0 6px 14px rgba(29, 158, 117, 0.28);
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--brand-navy) 28%, transparent);
 }
 
 ion-button.req-cal-day.off {
   --color: #c5d0dc;
+  --background: transparent;
 }
 
 ion-button.req-cal-day.open::after {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 5px;
-  width: 5px;
-  height: 5px;
-  margin-left: -2.5px;
-  border-radius: 50%;
+  bottom: 6px;
+  width: 14px;
+  height: 3px;
+  margin-left: -7px;
+  border-radius: 99px;
   background: var(--teal);
 }
 
 ion-button.req-cal-day.sel.open::after {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .req-cal-legend {
@@ -6017,24 +6224,23 @@ ion-segment.req-seg {
 
 .req-slots {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 8px;
 }
 
 ion-button.req-slot {
   margin: 0;
-  height: 56px;
-  min-height: 56px;
-  --border-radius: 16px;
+  height: 48px;
+  min-height: 48px;
+  --border-radius: 14px;
   --border-width: 1.5px;
   --border-style: solid;
   --border-color: var(--bd);
-  --background: #fff;
-  --color: var(--tx);
-  --box-shadow: var(--shadow-sm);
-  --padding-start: 8px;
-  --padding-end: 8px;
+  --background: var(--g0);
+  --color: var(--navy);
+  --box-shadow: none;
+  --padding-start: 4px;
+  --padding-end: 4px;
 }
 
 ion-button.req-slot::part(native) {
@@ -6057,9 +6263,10 @@ ion-button.req-slot::part(native) {
 }
 
 ion-button.req-slot.sel {
-  --background: linear-gradient(135deg, #0c3d2c, var(--teal));
+  --background: var(--brand-navy);
   --color: #fff;
   --border-color: transparent;
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--brand-navy) 22%, transparent);
 }
 
 ion-button.req-slot.sel .req-slot-dur {

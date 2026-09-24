@@ -63,20 +63,6 @@ export const CONSULT_TYPES: ConsultType[] = [
     tone: "teal",
   },
   {
-    id: "psicologia",
-    label: "Psicología",
-    short: "Bienestar emocional",
-    emoji: "🧠",
-    tone: "pur",
-  },
-  {
-    id: "nutricion",
-    label: "Nutrición",
-    short: "Plan alimentario",
-    emoji: "🥗",
-    tone: "blue",
-  },
-  {
     id: "urgencia",
     label: "Urgencia",
     short: "Atención prioritaria",
