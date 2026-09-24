@@ -1,5 +1,17 @@
-import { IonBadge, IonButton, IonIcon, IonInput, IonSpinner } from "@ionic/react";
-import { attach, medkit, mic, send as sendIcon } from "ionicons/icons";
+import {
+  IonBadge,
+  IonButton,
+  IonIcon,
+  IonInput,
+  IonSpinner,
+} from "@ionic/react";
+import {
+  attach,
+  informationCircle,
+  medkit,
+  mic,
+  send as sendIcon,
+} from "ionicons/icons";
 import {
   useEffect,
   useLayoutEffect,
@@ -10,6 +22,7 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import { Screen } from "../components/Screen";
 import { ChatRichText } from "../components/ChatRichText";
+import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
@@ -230,7 +243,11 @@ export function ChatPage() {
     const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
     const type = file.type ? file.type.split(";")[0].trim().toLowerCase() : "";
     const isAllowedExt = [".jpg", ".jpeg", ".png", ".pdf"].includes(ext);
-    const isAllowedType = ["image/jpeg", "image/png", "application/pdf"].includes(type);
+    const isAllowedType = [
+      "image/jpeg",
+      "image/png",
+      "application/pdf",
+    ].includes(type);
     if (!isAllowedExt && !isAllowedType) {
       showToast(
         t("Tipo de archivo no permitido. Solo se aceptan JPEG, PNG o PDF."),
@@ -255,9 +272,7 @@ export function ChatPage() {
       ]);
     } catch (err: unknown) {
       const errorMsg =
-        err instanceof Error
-          ? err.message
-          : t("Error al procesar el examen.");
+        err instanceof Error ? err.message : t("Error al procesar el examen.");
       showToast(errorMsg, "err");
     } finally {
       setUploading(false);
@@ -308,18 +323,32 @@ export function ChatPage() {
           gap: 12,
         }}
       >
+        {/* Disclaimer clínico preventivo (Fase 9): no invasivo, siempre
+            visible al inicio del listado. No sustituye atención de urgencia:
+            ante síntomas de alarma el chat sugiere activar SOS. */}
+        <div className="chat-history-hint" role="note">
+          <IonIcon
+            icon={informationCircle}
+            aria-hidden="true"
+            style={{ fontSize: 14, flexShrink: 0 }}
+          />
+          <span>
+            {t(
+              "Asistente clínico inteligente (no sustituye una consulta médica de urgencia)",
+            )}
+          </span>
+        </div>
         {hasMore ? (
           <div className="chat-history-hint" role="status">
             {loadingMore ? (
               <>
-                <IonSpinner
-                  name="crescent"
-                  style={{ width: 14, height: 14 }}
-                />
+                <IonSpinner name="crescent" style={{ width: 14, height: 14 }} />
                 <span>{t("Cargando mensajes anteriores…")}</span>
               </>
             ) : (
-              <span>{t("Desliza hacia arriba para ver mensajes anteriores")}</span>
+              <span>
+                {t("Desliza hacia arriba para ver mensajes anteriores")}
+              </span>
             )}
           </div>
         ) : chat.length > PAGE_SIZE ? (
@@ -358,6 +387,17 @@ export function ChatPage() {
                 style={{ whiteSpace: "pre-wrap" }}
               >
                 {m.role === "user" ? m.text : <ChatRichText text={m.text} />}
+                {m.role === "alert" && (
+                  <IonButton
+                    expand="block"
+                    size="small"
+                    className="cta-button"
+                    aria-label={t("Activar protocolo de emergencia")}
+                    onClick={openPanic}
+                  >
+                    {t("Activar protocolo de emergencia")}
+                  </IonButton>
+                )}
                 {m.role === "bot" && m.cta && (
                   <IonButton
                     expand="block"
@@ -389,6 +429,11 @@ export function ChatPage() {
                       {t("Ver todas las métricas")}
                     </IonButton>
                   </div>
+                )}
+                {/* Feedback clínico (Fase 9): solo en respuestas reales del
+                    backend con executionId; fallbacks locales no se califican. */}
+                {m.role === "bot" && m.executionId && (
+                  <ChatFeedbackAction executionId={m.executionId} />
                 )}
               </div>
               <div
@@ -432,10 +477,7 @@ export function ChatPage() {
                   gap: 8,
                 }}
               >
-                <IonSpinner
-                  name="crescent"
-                  style={{ width: 16, height: 16 }}
-                />
+                <IonSpinner name="crescent" style={{ width: 16, height: 16 }} />
                 <span>{t("Analizando examen de laboratorio…")}</span>
               </div>
             </div>

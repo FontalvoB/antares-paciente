@@ -2245,5 +2245,12 @@
   "Elige un día en el calendario": "Pick a day on the calendar",
   "Los días marcados tienen horarios libres.": "Marked days have open times.",
   "Sin horarios este día": "No times this day",
-  "Prueba un día marcado o usa el horario más pronto.": "Try a marked day or use the soonest time."
+  "Prueba un día marcado o usa el horario más pronto.": "Try a marked day or use the soonest time.",
+  "Asistente clínico inteligente (no sustituye una consulta médica de urgencia)": "Intelligent clinical assistant (does not replace emergency medical care)",
+  "Activar protocolo de emergencia": "Activate emergency protocol",
+  "¿Te resultó útil esta respuesta?": "Was this response helpful?",
+  "Calificar respuesta como útil": "Rate response as helpful",
+  "Calificar respuesta como no útil": "Rate response as not helpful",
+  "Enviando calificación": "Sending rating",
+  "¡Gracias por tu calificación!": "Thanks for your rating!"
 }

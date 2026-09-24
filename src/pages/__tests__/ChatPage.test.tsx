@@ -3,15 +3,24 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ChatPage } from "../ChatPage";
 import { fetchThreadState, uploadLabExam } from "../../utils/threadApi";
+import { sendChatFeedback } from "../../services/chat/chat-service";
 
 vi.mock("../../utils/threadApi", () => ({
   fetchThreadState: vi.fn().mockResolvedValue(null),
   uploadLabExam: vi.fn(),
 }));
 
+vi.mock("../../services/chat/chat-service", () => ({
+  sendChatFeedback: vi.fn().mockResolvedValue({ ok: true }),
+}));
+
 vi.mock("../../components/Screen", () => ({
-  Screen: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Scroll: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Screen: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  Scroll: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 // Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
@@ -23,6 +32,7 @@ const mockState = vi.hoisted(() => ({
     text: string;
     time: string;
     kind?: "lab-exam";
+    executionId?: string;
   }>,
 }));
 
@@ -243,7 +253,8 @@ describe("ChatPage — hidratación del mensaje proactivo (StrictMode)", () => {
   });
 
   it("hidrata el último mensaje del thread aunque el efecto corra dos veces (StrictMode)", async () => {
-    const proactiveText = "¡Llegaste al día 21! Contanos cómo te sentís con el plan.";
+    const proactiveText =
+      "¡Llegaste al día 21! Contanos cómo te sentís con el plan.";
     vi.mocked(fetchThreadState).mockResolvedValue({
       threadId: "test-thread-123",
       messageCount: 84,
@@ -257,7 +268,9 @@ describe("ChatPage — hidratación del mensaje proactivo (StrictMode)", () => {
     );
 
     await waitFor(() => {
-      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: proactiveText, role: "bot" }]);
+      expect(hydrateChatMock).toHaveBeenCalledWith([
+        { text: proactiveText, role: "bot" },
+      ]);
     });
   });
 });
@@ -305,7 +318,9 @@ describe("ChatPage — historial completo del thread", () => {
     render(<ChatPage />);
 
     await waitFor(() => {
-      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: "Mensaje suelto", role: "bot" }]);
+      expect(hydrateChatMock).toHaveBeenCalledWith([
+        { text: "Mensaje suelto", role: "bot" },
+      ]);
     });
   });
 
@@ -323,7 +338,81 @@ describe("ChatPage — historial completo del thread", () => {
     render(<ChatPage />);
 
     await waitFor(() => {
-      expect(hydrateChatMock).toHaveBeenCalledWith([{ text: "Último real", role: "bot" }]);
+      expect(hydrateChatMock).toHaveBeenCalledWith([
+        { text: "Último real", role: "bot" },
+      ]);
     });
+  });
+});
+
+describe("ChatPage — disclaimer clínico y feedback (Fase 9)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.lang = "es";
+    mockState.chat = [welcomeMessage];
+  });
+
+  it("muestra el banner de disclaimer clínico al inicio del listado", () => {
+    render(<ChatPage />);
+
+    expect(
+      screen.getByText(
+        "Asistente clínico inteligente (no sustituye una consulta médica de urgencia)",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("monta el feedback en respuestas del bot con executionId y lo envía al calificar", async () => {
+    mockState.chat = [
+      {
+        id: "msg-bot-1",
+        role: "bot",
+        text: "Tu plan es dieta mediterránea.",
+        time: "10:05 AM",
+        executionId: "exec-1",
+      },
+    ];
+
+    render(<ChatPage />);
+
+    expect(screen.getByLabelText("Calificar respuesta como útil")).toBeTruthy();
+    expect(screen.getByText("¿Te resultó útil esta respuesta?")).toBeTruthy();
+
+    fireEvent.click(screen.getByLabelText("Calificar respuesta como útil"));
+
+    await waitFor(() => {
+      expect(sendChatFeedback).toHaveBeenCalledWith({
+        executionId: "exec-1",
+        rating: 5,
+      });
+    });
+    expect(screen.getByText("¡Gracias por tu calificación!")).toBeTruthy();
+  });
+
+  it("no monta el feedback en respuestas sin executionId (fallbacks locales)", () => {
+    render(<ChatPage />);
+
+    expect(screen.queryByLabelText("Calificar respuesta como útil")).toBeNull();
+    expect(
+      screen.queryByLabelText("Calificar respuesta como no útil"),
+    ).toBeNull();
+  });
+
+  it("la alerta crítica sugiere activar el protocolo de emergencia vía openPanic", () => {
+    mockState.chat = [
+      {
+        id: "msg-alert-1",
+        role: "alert",
+        text: "Detecté un posible síntoma de alarma.",
+        time: "10:06 AM",
+      },
+    ];
+
+    render(<ChatPage />);
+
+    const panicCta = screen.getByLabelText("Activar protocolo de emergencia");
+    expect(panicCta).toBeTruthy();
+    fireEvent.click(panicCta);
+    expect(openPanicMock).toHaveBeenCalled();
   });
 });

@@ -61,6 +61,12 @@ export interface ChatMessage {
   time: string;
   /** Thread estable al que pertenece el mensaje (proactive-<id>). */
   threadId?: string;
+  /**
+   * Id de ejecución del AI Service devuelto con la respuesta del bot.
+   * Enlaza el feedback del paciente (Fase 9: `ChatFeedbackAction`).
+   * Solo presente en respuestas reales del backend, nunca en fallbacks.
+   */
+  executionId?: string;
   /** CTA adjunto al mensaje del bot (ej. sugerencia de agendar cita). */
   cta?: ChatSuggestion | null;
   /** Marcador local: el bot respondió a un examen de laboratorio procesado. */

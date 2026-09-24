@@ -9,13 +9,13 @@
  * - Micro-feedback visual: spinner al enviar, check + agradecimiento sutil al
  *   confirmar, sin recargar ni navegar.
  * - Accesibilidad: aria-label descriptivo y touch targets ≥44px.
- * - Textos en español directos: en este paso no se tocan `es.json`/`en.json`
- *   (contrato Fase 9, sin colisiones con front-artisan).
+ * - Textos visibles vía `t()` + `es.json`/`en.json` (skill `i18n-translations`).
  */
 
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import { checkmarkCircle, thumbsDown, thumbsUp } from "ionicons/icons";
 import { useState, type CSSProperties } from "react";
+import { useT } from "../../i18n/I18nContext";
 import { sendChatFeedback } from "../../services/chat/chat-service";
 
 interface ChatFeedbackActionProps {
@@ -43,8 +43,26 @@ export function ChatFeedbackAction({
   executionId,
   onSent,
 }: ChatFeedbackActionProps) {
+  const t = useT();
   const [status, setStatus] = useState<Status>("idle");
   const [sentRating, setSentRating] = useState<number | null>(null);
+
+  const sending = status === "sending";
+
+  const rate = async (rating: number) => {
+    if (!executionId || sending) return;
+    setStatus("sending");
+    try {
+      await sendChatFeedback({ executionId, rating });
+      setSentRating(rating);
+      setStatus("sent");
+      onSent?.(rating);
+    } catch {
+      // Fallo de red/backend: se vuelve a idle para permitir reintento
+      // sin romper la conversación.
+      setStatus("idle");
+    }
+  };
 
   if (!executionId) return null;
 
@@ -66,27 +84,10 @@ export function ChatFeedbackAction({
           aria-hidden="true"
           style={{ fontSize: 16, color: "var(--teal, #0e9f6e)" }}
         />
-        <span>¡Gracias por tu calificación!</span>
+        <span>{t("¡Gracias por tu calificación!")}</span>
       </div>
     );
   }
-
-  const sending = status === "sending";
-
-  const rate = async (rating: number) => {
-    if (sending) return;
-    setStatus("sending");
-    try {
-      await sendChatFeedback({ executionId, rating });
-      setSentRating(rating);
-      setStatus("sent");
-      onSent?.(rating);
-    } catch {
-      // Fallo de red/backend: se vuelve a idle para permitir reintento
-      // sin romper la conversación.
-      setStatus("idle");
-    }
-  };
 
   return (
     <div
@@ -98,10 +99,13 @@ export function ChatFeedbackAction({
         opacity: sending ? 0.7 : 1,
       }}
     >
-      {sending && !sentRating ? (
+      <span style={{ fontSize: 12, color: "var(--mu)" }}>
+        {t("¿Te resultó útil esta respuesta?")}
+      </span>
+      {sending && sentRating == null ? (
         <IonSpinner
           name="crescent"
-          aria-label="Enviando calificación"
+          aria-label={t("Enviando calificación")}
           style={{ width: 16, height: 16 }}
         />
       ) : null}
@@ -109,7 +113,7 @@ export function ChatFeedbackAction({
         fill="clear"
         size="small"
         style={touchStyle}
-        aria-label="Calificar respuesta como útil"
+        aria-label={t("Calificar respuesta como útil")}
         disabled={sending}
         onClick={() => void rate(RATING_UP)}
       >
@@ -119,7 +123,7 @@ export function ChatFeedbackAction({
         fill="clear"
         size="small"
         style={touchStyle}
-        aria-label="Calificar respuesta como no útil"
+        aria-label={t("Calificar respuesta como no útil")}
         disabled={sending}
         onClick={() => void rate(RATING_DOWN)}
       >
