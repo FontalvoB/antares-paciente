@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  IonButton,
-  IonIcon,
-  IonInput,
-  IonSkeletonText,
-  IonToggle,
-} from "@ionic/react";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonButton, IonIcon, IonInput, IonItem, IonLabel, IonList, IonSkeletonText, IonToggle } from "@ionic/react";
+import { MotionConfig, motion, useReducedMotion } from "framer-motion";
 import {
   bodyOutline,
   calendarOutline,
@@ -16,9 +11,17 @@ import {
   logOutOutline,
   medkit,
   schoolOutline,
+  arrowForward,
+  chevronForward,
+  optionsOutline,
+  trophyOutline,
+  shieldCheckmarkOutline,
+  sparklesOutline,
+  locationOutline,
 } from "ionicons/icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { PageHeader } from "../components/PageHeader";
+import { BodyIcon3D } from "../components/icons3d";
+import profileCover from "../assets/modules/perfil.png";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
@@ -71,7 +74,6 @@ function ContactSection() {
       });
       showToast(t("Datos actualizados"), "ok");
     } catch (err) {
-      // Rollback a los valores previos si el backend rechaza el cambio.
       setEmail(preSaveRef.current.email);
       setCel(preSaveRef.current.cel);
       showToast(
@@ -88,44 +90,42 @@ function ContactSection() {
   const dirty = email !== user.email || cel !== user.celular;
 
   return (
-    <div style={{ padding: "0 16px", marginBottom: 8 }}>
-      <div className="group-card" style={{ padding: 14 }}>
-        <div className="h3" style={{ margin: "0 0 10px" }}>
-          {t("Datos de contacto")}
-        </div>
-        <div className="field" style={{ marginBottom: 10 }}>
-          <label htmlFor="pf-email">{t("Correo")}</label>
-          <IonInput
-            id="pf-email"
-            className="fld"
-            type="email"
-            value={email}
-            inputmode="email"
-            enterkeyhint="next"
-            onIonInput={(e) => setEmail(String(e.detail.value ?? ""))}
-          />
-        </div>
-        <div className="field" style={{ marginBottom: 12 }}>
-          <label htmlFor="pf-cel">{t("Celular")}</label>
-          <IonInput
-            id="pf-cel"
-            className="fld"
-            type="tel"
-            value={cel}
-            inputmode="tel"
-            enterkeyhint="done"
-            onIonInput={(e) => setCel(String(e.detail.value ?? ""))}
-          />
-        </div>
-        <IonButton
-          expand="block"
-          className="bt bt-primary"
-          disabled={saving || !dirty}
-          onClick={() => void save()}
-        >
-          {saving ? t("Guardando…") : t("Guardar contacto")}
-        </IonButton>
+    <div className="pf-contact">
+      <div className="h3" style={{ margin: "0 0 10px" }}>
+        {t("Datos de contacto")}
       </div>
+      <div className="field" style={{ marginBottom: 10 }}>
+        <label htmlFor="pf-email">{t("Correo")}</label>
+        <IonInput
+          id="pf-email"
+          className="fld"
+          type="email"
+          value={email}
+          inputmode="email"
+          enterkeyhint="next"
+          onIonInput={(e) => setEmail(String(e.detail.value ?? ""))}
+        />
+      </div>
+      <div className="field" style={{ marginBottom: 12 }}>
+        <label htmlFor="pf-cel">{t("Celular")}</label>
+        <IonInput
+          id="pf-cel"
+          className="fld"
+          type="tel"
+          value={cel}
+          inputmode="tel"
+          enterkeyhint="done"
+          onIonInput={(e) => setCel(String(e.detail.value ?? ""))}
+        />
+      </div>
+      <IonButton
+        expand="block"
+        className="bt bt-primary"
+        disabled={saving || !dirty}
+        onClick={() => void save()}
+      >
+        {saving ? t("Guardando…") : t("Guardar contacto")}
+      </IonButton>
     </div>
   );
 }
@@ -182,9 +182,7 @@ function LeagueSection() {
       // el refetch traiga entries/isMe/myRank frescos — un paciente recién
       // opt-in debe aparecer en SU ranking sin esperar el staleTime.
       queryClient.setQueryData<LeagueResponseDto>(programKeys.league, (old) =>
-        old
-          ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } }
-          : old,
+        old ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } } : old,
       );
       void queryClient.invalidateQueries({ queryKey: programKeys.league });
       showToast(t("Preferencias guardadas"), "ok");
@@ -233,11 +231,7 @@ function LeagueSection() {
       <div className="league-prefs-row">
         <div>
           <strong>{t("Aparecer en la Liga")}</strong>
-          <small>
-            {t(
-              "Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.",
-            )}
-          </small>
+          <small>{t("Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.")}</small>
         </div>
         <IonToggle
           checked={optedIn}
@@ -262,17 +256,10 @@ function LeagueSection() {
           />
           {nickname && !nicknameValid && (
             <small className="league-prefs-err">
-              {t(
-                "El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.",
-              )}
+              {t("El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.")}
             </small>
           )}
-          <IonButton
-            expand="block"
-            className="bt bt-teal"
-            disabled={!canSave}
-            onClick={() => void save()}
-          >
+          <IonButton expand="block" className="bt bt-teal" disabled={!canSave} onClick={() => void save()}>
             {saving ? t("Guardando…") : t("Guardar")}
           </IonButton>
         </div>
@@ -291,12 +278,14 @@ export function ProfilePage() {
     logout,
     openTests,
     teamProfessionals,
-    upcomingAppointments,
   } = useApp();
   const { snapshot, isMockFallback } = useProgram();
   const { history: metricsHistory } = useMetricsHistory();
   const { lang, toggleLang, t } = useI18n();
   const locale = lang === "en" ? "en-US" : "es-ES";
+  const reduce = useReducedMotion();
+  const accountRef = useRef<HTMLElement>(null);
+  const initials = user.nombre.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toLocaleUpperCase(locale);
 
   const go = (s: ScreenId) => navigate(s);
 
@@ -306,9 +295,7 @@ export function ProfilePage() {
   const programWeek = isMockFallback
     ? undefined
     : snapshot?.template?.currentWeekNumber;
-  const totalWeeks = isMockFallback
-    ? undefined
-    : snapshot?.template?.totalWeeks;
+  const totalWeeks = isMockFallback ? undefined : snapshot?.template?.totalWeeks;
   const weekSub =
     programWeek != null && totalWeeks != null
       ? t("Semana {cur} de {total}", {
@@ -333,252 +320,177 @@ export function ProfilePage() {
   }, [metricsHistory, locale]);
 
   // Hero: solo tarjetas con verdad real (semana del snapshot, delta de peso,
-  // puntos del backend). Sin dato → la tarjeta no se renderiza. El XP manda
-  // del snapshot (mismo patrón que Home); el local es continuidad demo.
-  const heroPoints = snapshot?.xp?.balance ?? pointsTotal;
+  // puntos del backend). Sin dato → la tarjeta no se renderiza.
   const heroMetrics: Array<[string, string]> = [];
   if (programWeek != null) heroMetrics.push([String(programWeek), "Semanas"]);
   if (weightDelta) heroMetrics.push([weightDelta, "Peso"]);
-  heroMetrics.push([String(heroPoints), "Puntos"]);
-
-  // Próxima cita REAL (upcomingAppointments del contexto, backend truth):
-  // sin cita → descripción honesta; nunca "Dr. Ramírez" fabricado.
-  const nextAppt = upcomingAppointments?.[0];
-  const apptSub = nextAppt
-    ? `${nextAppt.time} · ${t(nextAppt.day)} · ${nextAppt.name}`
-    : t("Sin próximas citas · Agenda desde Citas");
-
-  // Plan nutricional REAL del snapshot (tarea 'nut' del día): el texto
-  // hardcodeado podía no coincidir con el plan real del paciente.
-  const nutTask = snapshot?.todayTasks?.find((tk) => tk.taskCode === "nut");
-  const planSub = nutTask?.short ?? t("Ver plan");
+  heroMetrics.push([String(pointsTotal), "Puntos"]);
 
   return (
-    <Screen>
-      <PageHeader title={t("Perfil")} sub={weekSub} />
-      <Scroll>
-        <IonButton
-          expand="block"
-          fill="outline"
-          style={{ margin: "12px 16px", minHeight: 44 }}
-          onClick={() => go("avatar")}
-        >
-          {t("Mi Avatar")}
-        </IonButton>
-        <div className="profile-hero-card">
-          <div
-            className="avatar"
-            style={{
-              width: 64,
-              height: 64,
-              fontSize: 22,
-              background: "linear-gradient(145deg,#1a6ad8,#20c8ff)",
-            }}
-          >
-            {/* Iniciales reales del paciente (identidad 100% backend); el
-                "MG" hardcodeado mostraba a otro usuario con nombre real. */}
-            {user.nombre
-              .split(" ")
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((part) => part.charAt(0).toUpperCase())
-              .join("") || "ME"}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="h2" style={{ margin: 0 }}>
-              {user.nombre}
+    <MotionConfig reducedMotion="user">
+      <Screen className="pf-screen">
+        <Scroll className="pf-scroll">
+          <div className="pf-layout">
+            <div className="pf-overview">
+              <header className="pf-heading">
+                <div>
+                  <span className="pf-eyebrow">{t("TU ESPACIO PERSONAL")}</span>
+                  <h1>{t("Mi perfil")}<span aria-hidden="true">.</span></h1>
+                  <p>{t("Todo lo que te hace avanzar.")}</p>
+                </div>
+                <IonButton fill="clear" className="pf-settings" aria-label={t("Ir a ajustes de cuenta")}
+                  onClick={() => {
+                    accountRef.current?.scrollIntoView({ behavior: reduce ? "instant" : "smooth", block: "start" });
+                    accountRef.current?.focus({ preventScroll: true });
+                  }}>
+                  <IonIcon icon={optionsOutline} slot="icon-only" />
+                </IonButton>
+              </header>
+
+              {/* Tarjeta de identidad: composición editorial de dominio, sin equivalente Ionic. */}
+              <motion.section className="pf-identity" aria-label={t("Tu perfil")}
+                initial={{ opacity: 0, y: reduce ? 0 : 16 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: reduce ? 0 : 0.55 }}>
+                <div className="pf-identity-cover">
+                  <img src={profileCover} alt="" className="pf-cover-photo" />
+                  <div className="pf-cover-shade" aria-hidden="true" />
+                  <div className="pf-card-brand"><span>COPP<span className="pf-brand-divider"> / </span>ADRESD</span><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" /></div>
+                  <div className="pf-person">
+                    <IonAvatar className="pf-monogram" aria-hidden="true">{initials || <IonIcon icon={bodyOutline} />}</IonAvatar>
+                    <span className="pf-card-caption">{t("MI PERFIL DE SALUD")}</span>
+                    <h2>{user.nombre}</h2>
+                    {user.ciudad && <p className="pf-city"><IonIcon icon={locationOutline} aria-hidden="true" />{user.ciudad}</p>}
+                  </div>
+                  {weekSub && <div className="pf-membership"><span aria-hidden="true" />{weekSub}</div>}
+                </div>
+                <div className="pf-metrics" aria-label={t("Tu recorrido")}>
+                  {heroMetrics.map(([value, label]) => (
+                    <div className="pf-metric" key={label}>
+                      <strong>{value}</strong><span>{t(label)}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.section>
+
+              <motion.div initial={{ opacity: 0, y: reduce ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: reduce ? 0 : 0.12, duration: reduce ? 0 : 0.45 }}>
+                <IonButton className="pf-avatar-feature" fill="clear" expand="block" onClick={() => go("avatar")}>
+                  <span className="pf-avatar-copy">
+                    <span className="pf-feature-kicker"><IonIcon icon={sparklesOutline} aria-hidden="true" />{t("TU VERSIÓN DIGITAL")}</span>
+                    <strong>{t("Mi Avatar")}</strong>
+                    <span className="pf-feature-description">{t("Una nueva forma de conocerte.")}</span>
+                    <span className="pf-text-link">{t("Explorar mi avatar")}<IonIcon icon={arrowForward} aria-hidden="true" /></span>
+                  </span>
+                  <span className="pf-avatar-art" aria-hidden="true"><span className="pf-art-orbit" /><BodyIcon3D size={126} /></span>
+                </IonButton>
+              </motion.div>
             </div>
-            <div className="cs">{t("Miembro BIO activo")}</div>
-          </div>
-        </div>
 
-        <div
-          className="hero-metrics"
-          style={{ padding: "0 16px", marginBottom: 8 }}
-        >
-          {heroMetrics.map(([v, l]) => (
-            <div
-              key={l}
-              className="metric-card"
-              style={{ flex: 1, textAlign: "center", padding: "12px 8px" }}
-            >
-              <div
-                className="metric-card-val"
-                style={{ fontSize: 20, margin: "0 0 2px", color: "var(--tx)" }}
-              >
-                {v}
-              </div>
-              <div className="metric-card-lbl">{t(l)}</div>
-            </div>
-          ))}
-        </div>
+            <div className="pf-content">
+              <section className="pf-care" aria-labelledby="pf-care-title">
+                <div className="pf-section-title"><div><span className="pf-eyebrow">{t("MI CUIDADO")}</span><h2 id="pf-care-title">{t("Tu plan de salud")}</h2></div><span className="pf-section-mark" aria-hidden="true">01</span></div>
+                <div className="pf-quick-grid">
+                  {[
+                    { icon: calendarOutline, title: "Calendario de citas", caption: "Tu próxima conexión", short: "Mis citas", screen: "book" as ScreenId, tone: "sky" },
+                    { icon: clipboardOutline, title: "Historia clínica", caption: "Tu salud, en contexto", short: "Mi historia", screen: "hc" as ScreenId, tone: "mint" },
+                  ].map(item => (
+                    <IonButton key={item.screen} fill="clear" className={"pf-quick pf-quick-" + item.tone} onClick={() => go(item.screen)} aria-label={t(item.title)}>
+                      <span className="pf-quick-inner">
+                        <span className="pf-quick-top"><span className="pf-quick-icon"><IonIcon icon={item.icon} aria-hidden="true" /></span><IonIcon icon={arrowForward} aria-hidden="true" /></span>
+                        <strong>{t(item.short)}</strong><small>{t(item.caption)}</small>
+                      </span>
+                    </IonButton>
+                  ))}
+                </div>
+                <IonList className="pf-menu" lines="none">
+                  {[
+                    { icon: bodyOutline, title: "Visualización del perfil", sub: "Índices y mediciones corporales", tone: "lilac", action: () => go("body") },
+                    { icon: clipboardOutline, title: "Batería de evaluación", sub: "Tests de salud pendientes", tone: "sky", action: () => openTests() },
+                    { icon: leafOutline, title: "Plan nutricional", sub: "Alimentación que te acompaña", tone: "mint", action: () => go("nut") },
+                  ].map(item => (
+                    <IonItem button detail={false} key={item.title} onClick={item.action} className="pf-menu-row">
+                      <span slot="start" className={"pf-menu-icon " + item.tone}><IonIcon icon={item.icon} aria-hidden="true" /></span>
+                      <IonLabel><h3>{t(item.title)}</h3><p>{t(item.sub)}</p></IonLabel>
+                      <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                    </IonItem>
+                  ))}
+                </IonList>
+              </section>
 
-        <div className="sec">{t("Mi plan")}</div>
-        <div className="group-list">
-          {[
-            {
-              ico: clipboardOutline,
-              t: "Historia clínica",
-              s: "Diagnósticos · Lab · Medicamentos",
-              fn: () => go("hc"),
-            },
-            {
-              ico: bodyOutline,
-              t: "Visualización del perfil",
-              s: "Índices y mediciones corporales",
-              fn: () => go("body"),
-            },
-            {
-              ico: clipboardOutline,
-              t: "Batería de evaluación",
-              s: "Tests de salud pendientes",
-              fn: () => openTests(),
-            },
-            {
-              ico: calendarOutline,
-              t: "Calendario de citas",
-              s: apptSub,
-              fn: () => go("book"),
-            },
-            {
-              ico: leafOutline,
-              t: "Plan nutricional",
-              s: planSub,
-              fn: () => go("nut"),
-            },
-          ].map((r) => (
-            <button
-              key={r.t}
-              type="button"
-              className="group-row"
-              onClick={r.fn}
-            >
-              <span className="group-row-ico">
-                <IonIcon icon={r.ico} />
-              </span>
-              <span className="group-row-body">
-                <strong>{t(r.t)}</strong>
-                <small>{t(r.s)}</small>
-              </span>
-              <span className="group-row-chevron">›</span>
-            </button>
-          ))}
-        </div>
+              {teamProfessionals !== null && (
+                <section className="pf-team" aria-labelledby="pf-team-title">
+                  <div className="pf-section-title"><div><span className="pf-eyebrow">{t("CERCA DE TI")}</span><h2 id="pf-team-title">{t("Equipo Copp Adresd")}</h2></div><span className="pf-section-mark" aria-hidden="true">02</span></div>
+                  {teamProfessionals.length > 0 ? (
+                    <div className="pf-team-grid">
+                      {teamProfessionals.map(pro => (
+                        <IonButton fill="clear" key={pro.id} className="pf-team-card" onClick={() => showToast(t("Contactando a {name}…", { name: pro.name }), "info")}>
+                          <span className="pf-team-inner">
+                            <span className="pf-team-top"><IonAvatar className="pf-pro-avatar" aria-hidden="true">{pro.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("")}</IonAvatar><IonIcon icon={arrowForward} aria-hidden="true" /></span>
+                            <strong>{pro.name}</strong><small>{pro.role}</small>
+                          </span>
+                        </IonButton>
+                      ))}
+                    </div>
+                  ) : <p className="pf-empty">{t("Aún no hay profesionales asignados a tu equipo.")}</p>}
+                </section>
+              )}
 
-        {teamProfessionals === null ? null : (
-          <>
-            <div className="sec">{t("Equipo Copp Adresd")}</div>
-            {teamProfessionals.length > 0 ? (
-              <div className="group-list">
-                {teamProfessionals.map((pro) => (
-                  <button
-                    key={pro.id}
-                    type="button"
-                    className="group-row"
-                    onClick={() =>
-                      showToast(
-                        t("Contactando a {name}…", { name: pro.name }),
-                        "info",
-                      )
-                    }
-                  >
-                    <span className="group-row-ico">{pro.emoji}</span>
-                    <span className="group-row-body">
-                      <strong>{pro.name}</strong>
-                      <small>{pro.role}</small>
+              <section className="pf-discover" aria-labelledby="pf-discover-title">
+                <div className="pf-section-title"><div><span className="pf-eyebrow">{t("MÁS PARA TI")}</span><h2 id="pf-discover-title">{t("Crece a tu ritmo")}</h2></div><span className="pf-section-mark" aria-hidden="true">{teamProfessionals !== null ? '03' : '02'}</span></div>
+                <div className="pf-discover-grid">
+                  <IonButton fill="clear" className="pf-discover-card pf-academy" onClick={() => go("edu")}>
+                    <span className="pf-discover-content">
+                      <IonIcon className="pf-discover-symbol" icon={schoolOutline} aria-hidden="true" />
+                      <span className="pf-discover-kicker">{t("APRENDE")}</span>
+                      <strong>{t("Academia BIO")}</strong><small>{t("Conocimiento para cuidarte.")}</small>
+                      <span className="pf-discover-arrow"><IonIcon icon={arrowForward} aria-hidden="true" /></span>
                     </span>
-                    <span className="group-row-chevron">›</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="card" style={{ margin: "0 16px 8px" }}>
-                <small>
-                  {t("Aún no hay profesionales asignados a tu equipo.")}
-                </small>
-              </div>
-            )}
-          </>
-        )}
+                  </IonButton>
+                  <IonButton fill="clear" className="pf-discover-card pf-infinito" onClick={() => go("infinito")}>
+                    <span className="pf-discover-content">
+                      <IonIcon className="pf-discover-symbol" icon={infinite} aria-hidden="true" />
+                      <span className="pf-discover-kicker">{t("CONECTA")}</span>
+                      <strong>INFINITO</strong><small>{t("Consciencia · Bienestar")}</small>
+                      <span className="pf-discover-arrow"><IonIcon icon={arrowForward} aria-hidden="true" /></span>
+                    </span>
+                  </IonButton>
+                </div>
+              </section>
 
-        <div className="sec">{t("Ecosistema")}</div>
-        <div className="group-list">
-          <button type="button" className="group-row" onClick={() => go("edu")}>
-            <span className="group-row-ico">
-              <IonIcon icon={schoolOutline} />
-            </span>
-            <span className="group-row-body">
-              <strong>{t("Academia BIO")}</strong>
-              <small>{t("18 hrs completadas")}</small>
-            </span>
-            <span className="group-row-chevron">›</span>
-          </button>
-          <button
-            type="button"
-            className="group-row"
-            onClick={() => go("infinito")}
-          >
-            <span className="group-row-ico">
-              <IonIcon icon={infinite} />
-            </span>
-            <span className="group-row-body">
-              <strong>INFINITO B2C</strong>
-              <small>{t("Consciencia · Bienestar")}</small>
-            </span>
-            <span className="group-row-chevron">›</span>
-          </button>
-        </div>
-
-        <div className="sec">{t("Cuenta")}</div>
-        <ContactSection />
-        <LeagueSection />
-        <div className="group-list" style={{ marginBottom: 20 }}>
-          <button type="button" className="group-row" onClick={toggleLang}>
-            <span className="group-row-ico">
-              <IonIcon icon={languageOutline} />
-            </span>
-            <span className="group-row-body">
-              <strong>{t("Idioma")}</strong>
-              <small>{lang === "es" ? "ES → EN" : "EN → ES"}</small>
-            </span>
-            <span className="group-row-chevron">›</span>
-          </button>
-          <button type="button" className="group-row" onClick={openPanic}>
-            <span
-              className="group-row-ico"
-              style={{ background: "var(--red-l)", color: "var(--panic)" }}
-            >
-              <IonIcon icon={medkit} />
-            </span>
-            <span className="group-row-body">
-              <strong style={{ color: "var(--panic)" }}>
-                {t("Botón de pánico SOS")}
-              </strong>
-              <small>{t("Ambulancia + familia + médico")}</small>
-            </span>
-          </button>
-          <button
-            type="button"
-            className="group-row"
-            onClick={() => {
-              logout();
-              showToast(t("Sesión cerrada"), "ok");
-            }}
-          >
-            <span
-              className="group-row-ico"
-              style={{ background: "var(--red-l)", color: "var(--red)" }}
-            >
-              <IonIcon icon={logOutOutline} />
-            </span>
-            <span className="group-row-body">
-              <strong style={{ color: "var(--red)" }}>
-                {t("Cerrar sesión")}
-              </strong>
-            </span>
-          </button>
-        </div>
-      </Scroll>
-    </Screen>
+              <section className="pf-account" ref={accountRef} tabIndex={-1} aria-labelledby="pf-account-title">
+                <div className="pf-section-title"><div><span className="pf-eyebrow">{t("A TU MANERA")}</span><h2 id="pf-account-title">{t("Cuenta y preferencias")}</h2></div><IonIcon className="pf-section-settings" icon={optionsOutline} aria-hidden="true" /></div>
+                <ContactSection />
+                <IonAccordionGroup className="pf-league">
+                  <IonAccordion value="league">
+                    <IonItem slot="header" className="pf-menu-row" lines="none">
+                      <span slot="start" className="pf-menu-icon sand"><IonIcon icon={trophyOutline} aria-hidden="true" /></span>
+                      <IonLabel><h3>{t("Privacidad en la Liga")}</h3><p>{t("Elige cómo participas")}</p></IonLabel>
+                    </IonItem>
+                    <div slot="content"><LeagueSection /></div>
+                  </IonAccordion>
+                </IonAccordionGroup>
+                <IonList className="pf-menu pf-account-menu" lines="none">
+                  <IonItem button detail={false} className="pf-menu-row" onClick={toggleLang}>
+                    <span slot="start" className="pf-menu-icon neutral"><IonIcon icon={languageOutline} aria-hidden="true" /></span>
+                    <IonLabel><h3>{t("Idioma")}</h3><p>{t("Elige cómo quieres leernos")}</p></IonLabel>
+                    <span slot="end" className="pf-language">{lang === "es" ? "ES" : "EN"}<IonIcon icon={chevronForward} aria-hidden="true" /></span>
+                  </IonItem>
+                  <IonItem button detail={false} className="pf-menu-row pf-sos-row" onClick={openPanic}>
+                    <span slot="start" className="pf-menu-icon alert"><IonIcon icon={medkit} aria-hidden="true" /></span>
+                    <IonLabel><h3>{t("Botón de pánico SOS")}</h3><p>{t("Acceso al protocolo de emergencia")}</p></IonLabel>
+                    <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                  </IonItem>
+                </IonList>
+                <IonButton fill="clear" expand="block" className="pf-logout" onClick={() => { logout(); showToast(t("Sesión cerrada"), "ok"); }}>
+                  <IonIcon icon={logOutOutline} slot="start" />{t("Cerrar sesión")}
+                </IonButton>
+                <div className="pf-signature"><span aria-hidden="true" /><span>COPP ADRESD</span><span aria-hidden="true" /></div>
+                <p className="pf-closing">{t("Tu bienestar empieza contigo.")}</p>
+              </section>
+            </div>
+          </div>
+        </Scroll>
+      </Screen>
+    </MotionConfig>
   );
 }
