@@ -792,6 +792,7 @@ export function ProgramPage() {
                   description={serverActiveTask?.content?.description}
                   durationSecs={serverActiveTask?.content?.durationSecs}
                   mediaUrl={serverActiveTask?.content?.mediaUrl}
+                  coverUrl={serverActiveTask?.content?.thumbnailUrl}
                   audioError={audioError}
                   chapters={serverActiveTask?.content?.chapters}
                   takeaways={serverActiveTask?.content?.takeaways}

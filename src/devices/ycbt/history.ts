@@ -34,6 +34,7 @@ export interface HistorySyncEvents {
 
 export class HistorySync {
   private readonly deviceId: string;
+  private readonly blockedStorageKey: string;
   private readonly send: (type: number, payload: number[]) => Promise<void>;
   private readonly events: HistorySyncEvents;
 
@@ -56,6 +57,19 @@ export class HistorySync {
     events: HistorySyncEvents,
   ) {
     this.deviceId = deviceId;
+    this.blockedStorageKey = `antares_ycbt_history_blocked:${deviceId}`;
+    try {
+      const stored = JSON.parse(
+        localStorage.getItem(this.blockedStorageKey) ?? "[]",
+      );
+      if (Array.isArray(stored)) {
+        for (const query of stored) {
+          if (Number.isInteger(query)) this.blocked.add(query);
+        }
+      }
+    } catch {
+      // Storage is optional (web privacy mode/tests); keep the in-memory cache.
+    }
     this.send = send;
     this.events = events;
   }
@@ -101,6 +115,14 @@ export class HistorySync {
       this.note(`${this.current.key}: ${error}`);
       if (error === "unsupported-command" || error === "unsupported-key") {
         this.blocked.add(this.current.query);
+        try {
+          localStorage.setItem(
+            this.blockedStorageKey,
+            JSON.stringify([...this.blocked]),
+          );
+        } catch {
+          // The current session still benefits from the in-memory cache.
+        }
       }
       this.advance();
       return;

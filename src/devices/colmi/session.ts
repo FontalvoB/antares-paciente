@@ -77,6 +77,7 @@ export class ColmiSession implements DeviceSession {
   private onInfo?: InfoSink;
   private readonly stream = new FrameStream();
   private stopped = false;
+  private appActive = true;
   private subscribed = false;
   private queue: Promise<void> = Promise.resolve();
   private watchdogTimer?: number;
@@ -90,6 +91,8 @@ export class ColmiSession implements DeviceSession {
   private declaredCapabilities: ColmiCapabilities | null = null;
   private readonly history: ColmiHistory;
   private readonly bc: BcChannel;
+  private historyBusy = false;
+  private historyPromise: Promise<void> | null = null;
   /** Ya se anotó qué layout de FC usa este firmware (evita spam en el log). */
   private hrLayoutNoted = false;
   /** Ya se volcó una trama de presión sin lectura plausible. */
@@ -121,6 +124,8 @@ export class ColmiSession implements DeviceSession {
   }
 
   async start(onSample: SampleSink, onInfo: InfoSink): Promise<void> {
+    this.stopped = false;
+    this.appActive = true;
     this.onSample = onSample;
     this.onInfo = onInfo;
     this.onInfo({ name: this.descriptor.name });
@@ -145,7 +150,12 @@ export class ColmiSession implements DeviceSession {
 
   /** Vuelve a pedir la batería (la pantalla la refresca al abrirse). */
   requestInfo(): void {
-    if (this.stopped) return;
+    if (
+      this.stopped ||
+      !this.appActive ||
+      this.measureType !== null
+    )
+      return;
     void this.send(CMD.BATTERY).catch(() => undefined);
   }
 
@@ -156,19 +166,44 @@ export class ColmiSession implements DeviceSession {
 
   /** Volcado del historial de la banda (pasos, FC, estrés/HRV, sueño, SpO2). */
   async syncHistory(): Promise<void> {
+    if (this.stopped || !this.appActive || this.measureType !== null) return;
+    if (this.historyBusy) return this.historyPromise ?? Promise.resolve();
+    this.historyBusy = true;
+    const promise = (async () => {
+      await this.history.start(
+        buildHistoryRequests(0, {
+          includeSleepProbe: ble.isBleDebugEnabled(),
+        }),
+      );
+      if (!this.appActive || this.stopped) return;
+      const ready = await this.bc.open();
+      if (!ready || !this.appActive || this.stopped) return;
+      for (const sample of await this.bc.sleepNights()) this.emit(sample);
+      for (const sample of await this.bc.spo2History(0)) this.emit(sample);
+    })().finally(() => {
+      this.historyBusy = false;
+      this.historyPromise = null;
+    });
+    this.historyPromise = promise;
+    return promise;
+  }
+
+  setAppActive(active: boolean): void {
     if (this.stopped) return;
-    await this.history.start(
-      buildHistoryRequests(0, {
-        includeSleepProbe: ble.isBleDebugEnabled(),
-      }),
-    );
-    const ready = await this.bc.open();
-    if (!ready) return;
-    for (const sample of await this.bc.sleepNights()) this.emit(sample);
-    for (const sample of await this.bc.spo2History(0)) this.emit(sample);
+    this.appActive = active;
+    if (!active) {
+      this.stopWatchdog();
+      this.stopBatteryRefresh();
+      this.history.abort();
+      void this.bc.close();
+      return;
+    }
+    this.startWatchdog();
+    this.startBatteryRefresh();
   }
 
   async stop(): Promise<void> {
+    this.appActive = false;
     if (!this.stopped) {
       this.stopWatchdog();
       this.stopBatteryRefresh();
@@ -206,7 +241,7 @@ export class ColmiSession implements DeviceSession {
    */
   measure(kind: MetricKind, onDone?: MeasureCallback): void {
     const type = MEASURE_TYPE_BY_METRIC[kind];
-    if (type === undefined || this.stopped) {
+    if (type === undefined || this.stopped || !this.appActive) {
       onDone?.(false, "refused");
       return;
     }
@@ -249,13 +284,17 @@ export class ColmiSession implements DeviceSession {
     this.measureCount = 0;
     this.clearMeasureTimer();
     done?.(ok, reason);
-    if (type === null || this.stopped) return;
+    if (type === null || this.stopped || !this.appActive) return;
     void (async () => {
       try {
         await this.send(CMD.STOP_REALTIME, [type, 0, 0]);
         // El re-arme de la FC SOLO si no hay otra medida en curso: si se cuela
         // después del START nuevo, cancela su barrido (era el bug de presión).
-        if (!this.stopped && this.measureType === null) {
+        if (
+          !this.stopped &&
+          this.appActive &&
+          this.measureType === null
+        ) {
           await this.startHeartRate();
         }
       } catch {
@@ -271,12 +310,17 @@ export class ColmiSession implements DeviceSession {
    */
   private retryMeasure(): void {
     const type = this.measureType;
-    if (type === null || this.measureCount > 0 || this.stopped) return;
+    if (
+      type === null ||
+      this.measureCount > 0 ||
+      this.stopped ||
+      !this.appActive
+    ) return;
     this.note(`[colmi] ${MEASURE_NOTE[type] ?? type}: reintento de barrido`);
     void (async () => {
       try {
         await this.send(CMD.STOP_REALTIME, [type, 0, 0]);
-        if (this.stopped || this.measureType !== type) return;
+        if (this.stopped || !this.appActive || this.measureType !== type) return;
         await this.send(CMD.START_REALTIME, [type, 1]);
       } catch {
         // Sin conexión: nada que reintentar.
@@ -303,7 +347,7 @@ export class ColmiSession implements DeviceSession {
   private startWatchdog(): void {
     this.stopWatchdog();
     this.watchdogTimer = window.setInterval(() => {
-      if (this.stopped || this.measureType !== null) return;
+      if (this.stopped || !this.appActive || this.measureType !== null) return;
       if (Date.now() - this.lastHeartRateAt < HR_RETRY_MS) return;
       void this.startHeartRate().catch(() => undefined);
     }, WATCHDOG_INTERVAL_MS);

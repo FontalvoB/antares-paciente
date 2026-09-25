@@ -119,6 +119,8 @@ export interface DeviceSession {
   measurePolicy?(kind: MetricKind): MeasurePolicy | undefined;
   /** Vuelve a pedir info del dispositivo (batería/firmware) si aplica. */
   requestInfo?(): void;
+  /** Pausa el trabajo periódico cuando la app pasa a segundo plano. */
+  setAppActive?(active: boolean): void;
   /** Sincroniza el historial almacenado en el dispositivo (sueño, pasos…). */
   syncHistory?(): Promise<void>;
 }

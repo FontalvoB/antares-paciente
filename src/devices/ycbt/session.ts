@@ -88,6 +88,7 @@ export class YcbtSession implements DeviceSession {
   private onSample?: SampleSink;
   private onInfo?: InfoSink;
   private stopped = false;
+  private appActive = true;
   private refreshTimer?: number;
   private queue: Promise<void> = Promise.resolve();
   private subscribed: { service: string; characteristic: string }[] = [];
@@ -98,6 +99,8 @@ export class YcbtSession implements DeviceSession {
   private measureTarget = 1;
   private measureDone?: MeasureCallback;
   private measureTimer?: number;
+  private historyBusy = false;
+  private historyPromise: Promise<void> | null = null;
 
   constructor(descriptor: DeviceDescriptor, services: BleService[]) {
     this.descriptor = descriptor;
@@ -127,6 +130,8 @@ export class YcbtSession implements DeviceSession {
   }
 
   async start(onSample: SampleSink, onInfo: InfoSink): Promise<void> {
+    this.stopped = false;
+    this.appActive = true;
     this.onSample = onSample;
     this.onInfo = onInfo;
     this.onInfo({ name: this.descriptor.name });
@@ -150,6 +155,7 @@ export class YcbtSession implements DeviceSession {
   }
 
   async stop(): Promise<void> {
+    this.appActive = false;
     if (!this.stopped) {
       this.stopRefresh();
       this.cancelMeasure(false, "disconnected");
@@ -173,7 +179,7 @@ export class YcbtSession implements DeviceSession {
   /** Medida puntual: `03 2f 01 <modo>`; el anillo responde por el stream 0x06. */
   measure(kind: MetricKind, onDone?: MeasureCallback): void {
     const mode = MEASURE_MODE[kind as keyof typeof MEASURE_MODE];
-    if (mode === undefined || this.stopped) {
+    if (mode === undefined || this.stopped || !this.appActive) {
       onDone?.(false, "refused");
       return;
     }
@@ -203,7 +209,7 @@ export class YcbtSession implements DeviceSession {
    * firmware. La respuesta llega por el canal C1 y se publica vía onInfo.
    */
   requestInfo(): void {
-    if (this.stopped) return;
+    if (this.stopped || !this.appActive || this.measureMode !== null) return;
     void this.send(OP.GET_DEVICE_INFO, [0x47, 0x43]).catch(() => undefined);
   }
 
@@ -218,10 +224,31 @@ export class YcbtSession implements DeviceSession {
    * 0x0600 hasta que termina el dump.
    */
   syncHistory(): Promise<void> {
-    if (this.stopped) return Promise.resolve();
-    return this.history
+    if (this.stopped || !this.appActive || this.measureMode !== null) {
+      return Promise.resolve();
+    }
+    if (this.historyBusy) return this.historyPromise ?? Promise.resolve();
+    this.historyBusy = true;
+    const promise = this.history
       .start(this.historyTypes())
-      .then(() => this.refreshLiveStatus());
+      .then(() => {
+        if (this.measureMode === null && this.appActive) {
+          this.refreshLiveStatus();
+        }
+      })
+      .finally(() => {
+        this.historyBusy = false;
+        this.historyPromise = null;
+      });
+    this.historyPromise = promise;
+    return promise;
+  }
+
+  setAppActive(active: boolean): void {
+    if (this.stopped) return;
+    this.appActive = active;
+    if (active) this.startRefresh();
+    else this.stopRefresh();
   }
 
   // ─── Sesión YCBT ───────────────────────────────────────────────────────
@@ -253,7 +280,8 @@ export class YcbtSession implements DeviceSession {
   private startRefresh(): void {
     this.stopRefresh();
     this.refreshTimer = window.setInterval(() => {
-      if (this.stopped) return;
+      if (this.stopped || !this.appActive || this.measureMode !== null) return;
+      if (this.historyBusy) return;
       this.refreshLiveStatus();
       this.requestInfo();
       void this.syncHistory();

@@ -11,7 +11,6 @@ import {
   IonAccordionGroup,
   IonAlert,
   IonButton,
-  IonProgressBar,
   IonIcon,
   IonItem,
   IonLabel,
@@ -23,9 +22,11 @@ import {
   batteryHalfOutline,
   bluetooth,
   copyOutline,
+  footstepsOutline,
+  moonOutline,
   pulseOutline,
-  syncOutline,
   trashOutline,
+  waterOutline,
 } from "ionicons/icons";
 import { EcgTrace } from "../components/EcgTrace";
 import { PageHeader } from "../components/PageHeader";
@@ -35,7 +36,7 @@ import { useWearable } from "../context/WearableContext";
 import { describeServices, formatEntry } from "../devices/diagnostics";
 import { useI18n } from "../i18n/I18nContext";
 import { useElapsed } from "../hooks/useElapsed";
-import { measurePhase, measurePhaseLabel } from "../utils/measure";
+import { measurePhase } from "../utils/measure";
 import { agoLabel, formatSleep } from "../utils/wearable";
 import type {
   DeviceDescriptor,
@@ -57,13 +58,6 @@ const ERROR_KEYS: Record<WearableErrorCode, string> = {
   "no-data":
     "El dispositivo no envía datos. Verifica que esté vinculado con su app oficial.",
   unknown: "Ocurrió un error inesperado. Inténtalo de nuevo.",
-};
-
-/** Etiqueta del botón de medida por métrica. */
-const MEASURE_LABELS: Partial<Record<MetricKind, string>> = {
-  heart_rate: "Medir FC ahora",
-  spo2: "Medir SpO2 ahora",
-  blood_pressure: "Medir presión ahora",
 };
 
 /** Red de seguridad de la UI: si el driver nunca avisa, se libera el botón. */
@@ -159,6 +153,7 @@ export function WearablePage() {
   const { wearableConnected, wearableName, showToast } = useApp();
   const {
     phase,
+    isMock,
     devices,
     hasScanned,
     info,
@@ -177,10 +172,10 @@ export function WearablePage() {
     syncStage,
     lastSyncAt,
     syncHistory,
-    syncAll: syncAllAction,
     refreshInfo,
     savedDevice,
     reconnect,
+    connectMock,
     injectDebugSample,
     scan,
     connect,
@@ -345,25 +340,42 @@ export function WearablePage() {
   );
   startRef.current = startMeasure;
 
-  /** Una sola acción: FC → SpO2 → presión, en secuencia. */
+  /** ¿La tarjeta de esta métrica puede lanzar su medida con doble clic? */
+  const cardMeasurable = (kind: MetricKind) =>
+    measuring === null &&
+    queued === 0 &&
+    !syncing &&
+    measureKinds.includes(kind);
+  /** Medida en curso (tarjeta o sync): alimenta la carga dentro de la tarjeta. */
+  const activeMeasure = measuring
+    ? { kind: measuring.kind, progress: measureProgress, elapsed }
+    : syncStage
+      ? { kind: syncStage.kind, progress: syncProgress, elapsed: syncElapsed }
+      : null;
+  const measureSeconds = activeMeasure
+    ? Math.max(
+        0,
+        Math.ceil(
+          activeMeasure.progress.windowMs / 1000 - activeMeasure.elapsed,
+        ),
+      )
+    : 0;
+  const isMeasuringKind = (kind: MetricKind) => activeMeasure?.kind === kind;
+
+  /** Medir todo: sincroniza historial y luego FC → SpO2 → presión. */
   const measureAll = () => {
-    if (measuring || measureQueue.current.length > 0) return;
-    const [first, ...rest] = measureKinds;
-    if (!first) return;
-    measureQueue.current = rest;
-    setQueued(rest.length);
-    startMeasure(first);
+    if (measuring || queued > 0 || syncing) return;
+    void (async () => {
+      await syncHistory();
+      const [first, ...rest] = measureKinds;
+      if (!first) return;
+      measureQueue.current = rest;
+      setQueued(rest.length);
+      startMeasure(first);
+    })();
   };
 
-  /**
-   * Sincronización completa (la implementa el contexto, compartida con
-   * Programa): volcado de historial y luego las medidas que falten o estén
-   * vencidas, en secuencia.
-   */
-  const syncAll = () => {
-    if (syncing || measuring) return;
-    void syncAllAction();
-  };
+
 
   const copyDiagnostics = () => {
     const text = [describeServices(gatt), "", ...log.map(formatEntry)].join(
@@ -394,12 +406,6 @@ export function WearablePage() {
         ? agoLabel(hrSample?.ts, t)
         : t("Sin datos aún");
 
-  /** Etiqueta del botón de sync según la fase en curso. */
-  const syncButtonLabel = measuring
-    ? measurePhaseLabel(measuring.kind, measureProgress, elapsed, t)
-    : syncStage
-      ? measurePhaseLabel(syncStage.kind, syncProgress, syncElapsed, t)
-      : t("Sincronizando…");
 
   return (
     <Screen>
@@ -416,10 +422,18 @@ export function WearablePage() {
             <span
               className="dot"
               style={{
-                background: wearableConnected ? "var(--safe)" : "var(--mu)",
+                background: wearableConnected
+                  ? isMock
+                    ? "var(--org)"
+                    : "var(--safe)"
+                  : "var(--mu)",
               }}
             />
-            {wearableConnected ? t("Conectado") : t("Sin wearable")}
+            {wearableConnected
+              ? isMock
+                ? t("Demo")
+                : t("Conectado")
+              : t("Sin wearable")}
           </span>
         }
       />
@@ -553,7 +567,47 @@ export function WearablePage() {
               )}
             </IonButton>
 
-            <IonList className="group-list" lines="none">
+            {scanning && (
+              <div
+                className="watch-scan-strip"
+                role="status"
+                aria-live="polite"
+              >
+                <span className="watch-scan-pulse" aria-hidden="true" />
+                <span>{t("Buscando cerca de ti…")}</span>
+              </div>
+            )}
+
+            {import.meta.env.DEV && (
+              <section className="watch-demo-card">
+                <span className="watch-demo-icon" aria-hidden="true">
+                  <IonIcon icon={pulseOutline} />
+                </span>
+                <div className="watch-demo-copy">
+                  <strong>{t("Prueba el panel sin dispositivo real")}</strong>
+                  <p>
+                    {t(
+                      "Datos de muestra para explorar la vista. No se guardan ni se envían.",
+                    )}
+                  </p>
+                </div>
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  className="bt"
+                  disabled={connecting}
+                  onClick={connectMock}
+                >
+                  <IonIcon icon={pulseOutline} slot="start" />
+                  {t("Iniciar demo")}
+                </IonButton>
+              </section>
+            )}
+
+            <IonList
+              className="group-list watch-diagnostics"
+              lines="none"
+            >
               <IonItem className="group-item">
                 <IonLabel>
                   <h3>{t("Modo diagnóstico")}</h3>
@@ -610,62 +664,40 @@ export function WearablePage() {
                 </span>
               </div>
 
-              <div className="dev-card-actions">
-                <IonButton
-                  expand="block"
-                  className="bt bt-primary"
-                  disabled={syncing || measuring !== null}
-                  onClick={syncAll}
-                >
-                  {syncing || measuring !== null ? (
-                    <>
-                      <IonSpinner
-                        name="crescent"
-                        color="light"
-                        style={{ width: 16, height: 16, marginRight: 8 }}
-                      />
-                      {syncButtonLabel}
-                    </>
-                  ) : (
-                    <>
-                      <IonIcon icon={syncOutline} slot="start" />
-                      {t("Sincronizar ahora")}
-                    </>
-                  )}
-                </IonButton>
-                <IonButton
-                  expand="block"
-                  size="small"
-                  fill="clear"
-                  className="bt"
-                  style={
-                    {
-                      "--color": "var(--red)",
-                    } as CSSProperties
-                  }
-                  onClick={() => setConfirmOff(true)}
-                >
-                  {t("Desconectar wearable")}
-                </IonButton>
-              </div>
-
-              {(syncing || measuring !== null) && (
-                <div className="dev-card-progress">
-                  <IonProgressBar
-                    value={
-                      measuring
-                        ? measureProgress.progress
-                        : syncProgress.progress
-                    }
-                    aria-label={t("Progreso de la medición")}
-                  />
-                  <p className="cs">{syncButtonLabel}</p>
-                </div>
-              )}
             </section>
 
+            {isMock && (
+              <div className="watch-demo-banner">
+                <IonIcon icon={pulseOutline} aria-hidden="true" />
+                <div>
+                  <strong>{t("Modo demo")}</strong>
+                  <span>
+                    {t("Lecturas simuladas · no enviadas al servidor")}
+                  </span>
+                </div>
+                <IonButton
+                  size="small"
+                  fill="outline"
+                  className="bt watch-demo-test"
+                  disabled={syncing || measuring !== null}
+                  onClick={measureAll}
+                >
+                  {t("Probar medición")}
+                </IonButton>
+              </div>
+            )}
+
             {/* Un solo hero: FC grande + traza del pulso al ritmo real. */}
-            <div className="vital-hero">
+            <div
+              className={`vital-hero ${
+                cardMeasurable("heart_rate") ? "is-measurable" : ""
+              } ${isMeasuringKind("heart_rate") ? "is-measuring" : ""}`}
+              onDoubleClick={
+                cardMeasurable("heart_rate")
+                  ? () => startMeasure("heart_rate")
+                  : undefined
+              }
+            >
               <div className="vital-hero-kicker">
                 {t("Frecuencia cardíaca")}
               </div>
@@ -676,96 +708,113 @@ export function WearablePage() {
                 </div>
               </div>
               <EcgTrace bpm={hr} height={56} />
-              <div className="vital-hero-hint">{liveHint}</div>
+              <div className="vital-hero-hint">
+                {isMeasuringKind("heart_rate")
+                  ? t("{seconds} s", { seconds: String(measureSeconds) })
+                  : liveHint}
+              </div>
             </div>
 
             <div className="sec">{t("Métricas de hoy")}</div>
             <div className="grid-2">
-              <div className="card card-accent ac-blue">
-                <div
-                  className="display"
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 800,
-                    letterSpacing: "-0.6px",
-                  }}
-                >
-                  {spo2 ? `${Math.round(spo2)}%` : "—"}
+              <article
+                className={`card card-accent ac-blue watch-metric watch-metric--spo2 ${
+                  cardMeasurable("spo2") ? "is-measurable" : ""
+                } ${isMeasuringKind("spo2") ? "is-measuring" : ""}`}
+                onDoubleClick={
+                  cardMeasurable("spo2")
+                    ? () => startMeasure("spo2")
+                    : undefined
+                }
+              >
+                <span className="watch-metric-icon" aria-hidden="true">
+                  <IonIcon icon={waterOutline} />
+                </span>
+                <div className="watch-metric-copy">
+                  <div className="watch-metric-label">{t("SpO2")}</div>
+                  <div className="watch-metric-value">
+                    {spo2 ? `${Math.round(spo2)}%` : "—"}
+                  </div>
+                  <div className="watch-metric-meta">
+                    {isMeasuringKind("spo2")
+                      ? t("{seconds} s", { seconds: String(measureSeconds) })
+                      : agoLabel(spo2Sample?.ts, t)}
+                  </div>
                 </div>
-                <div className="ct" style={{ marginTop: 4 }}>
-                  {t("SpO2")}
+              </article>
+              <article
+                className={`card card-accent ac-org watch-metric watch-metric--pressure ${
+                  cardMeasurable("blood_pressure") ? "is-measurable" : ""
+                } ${isMeasuringKind("blood_pressure") ? "is-measuring" : ""}`}
+                onDoubleClick={
+                  cardMeasurable("blood_pressure")
+                    ? () => startMeasure("blood_pressure")
+                    : undefined
+                }
+              >
+                <span className="watch-metric-icon" aria-hidden="true">
+                  <IonIcon icon={pulseOutline} />
+                </span>
+                <div className="watch-metric-copy">
+                  <div className="watch-metric-label">{t("Presión")}</div>
+                  <div className="watch-metric-value">
+                    {blood
+                      ? `${Math.round(blood.value)}/${Math.round(blood.value2 ?? 0)}`
+                      : "—"}
+                  </div>
+                  <div className="watch-metric-meta">
+                    {isMeasuringKind("blood_pressure")
+                      ? t("{seconds} s", { seconds: String(measureSeconds) })
+                      : agoLabel(bloodSample?.ts, t)}
+                  </div>
                 </div>
-                <div className="cs">{agoLabel(spo2Sample?.ts, t)}</div>
-              </div>
-              <div className="card card-accent ac-org">
-                <div
-                  className="display"
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 800,
-                    letterSpacing: "-0.6px",
-                  }}
-                >
-                  {blood
-                    ? `${Math.round(blood.value)}/${Math.round(blood.value2 ?? 0)}`
-                    : "—"}
+              </article>
+              <article className="card card-accent ac-pur watch-metric watch-metric--sleep">
+                <span className="watch-metric-icon" aria-hidden="true">
+                  <IonIcon icon={moonOutline} />
+                </span>
+                <div className="watch-metric-copy">
+                  <div className="watch-metric-label">{t("Sueño")}</div>
+                  <div className="watch-metric-value">
+                    {sleepMinutes != null
+                      ? formatSleep(sleepMinutes, t)
+                      : "—"}
+                  </div>
+                  <div className="watch-metric-meta">
+                    {sleepMinutes != null
+                      ? t("Última noche")
+                      : t("Sin datos aún")}
+                  </div>
                 </div>
-                <div className="ct" style={{ marginTop: 4 }}>
-                  {t("Presión")}
+              </article>
+              <article className="card card-accent ac-teal watch-metric watch-metric--steps">
+                <span className="watch-metric-icon" aria-hidden="true">
+                  <IonIcon icon={footstepsOutline} />
+                </span>
+                <div className="watch-metric-copy">
+                  <div className="watch-metric-label">{t("Pasos")}</div>
+                  <div className="watch-metric-value">
+                    {steps != null
+                      ? Math.round(steps).toLocaleString(locale)
+                      : "—"}
+                  </div>
+                  <div className="watch-metric-meta">
+                    {agoLabel(stepsAt, t)}
+                  </div>
                 </div>
-                <div className="cs">{agoLabel(bloodSample?.ts, t)}</div>
-              </div>
-              <div className="card card-accent ac-pur">
-                <div
-                  className="display"
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 800,
-                    letterSpacing: "-0.6px",
-                  }}
-                >
-                  {sleepMinutes != null ? formatSleep(sleepMinutes, t) : "—"}
-                </div>
-                <div className="ct" style={{ marginTop: 4 }}>
-                  {t("Sueño")}
-                </div>
-                <div className="cs">
-                  {sleepMinutes != null
-                    ? t("Última noche")
-                    : t("Sin datos aún")}
-                </div>
-              </div>
-              <div className="card card-accent ac-teal">
-                <div
-                  className="display"
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 800,
-                    letterSpacing: "-0.6px",
-                  }}
-                >
-                  {steps != null
-                    ? Math.round(steps).toLocaleString(locale)
-                    : "—"}
-                </div>
-                <div className="ct" style={{ marginTop: 4 }}>
-                  {t("Pasos")}
-                </div>
-                <div className="cs">{agoLabel(stepsAt, t)}</div>
-              </div>
+              </article>
             </div>
 
             {measureKinds.length > 0 && (
               <>
-                <div className="sec">{t("Mediciones puntuales")}</div>
-                <div style={{ padding: "0 16px" }}>
+                <div style={{ padding: "16px 16px 0" }}>
                   <IonButton
                     expand="block"
                     className="bt bt-primary"
                     disabled={measuring !== null || queued > 0 || syncing}
                     onClick={measureAll}
                   >
-                    {measuring ? (
+                    {measuring || syncing ? (
                       <>
                         <IonSpinner
                           name="crescent"
@@ -786,94 +835,8 @@ export function WearablePage() {
                     )}
                   </IonButton>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    padding: "8px 16px 0",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {measureKinds.map((kind) => (
-                    <IonButton
-                      key={kind}
-                      expand="block"
-                      className="bt"
-                      fill="outline"
-                      disabled={measuring !== null || queued > 0 || syncing}
-                      onClick={() => startMeasure(kind)}
-                    >
-                      {measuring?.kind === kind ? (
-                        <>
-                          <IonSpinner
-                            name="crescent"
-                            style={{ width: 16, height: 16, marginRight: 8 }}
-                          />
-                          {t("Midiendo…")}
-                        </>
-                      ) : (
-                        t(MEASURE_LABELS[kind] ?? "Medir ahora")
-                      )}
-                    </IonButton>
-                  ))}
-                </div>
-                {measuring ? (
-                  <>
-                    <div style={{ padding: "8px 0 4px" }}>
-                      <IonProgressBar
-                        value={measureProgress.progress}
-                        aria-label={t("Progreso de la medición")}
-                      />
-                    </div>
-                    <p className="watch-pair-copy">
-                      {measurePhaseLabel(
-                        measuring.kind,
-                        measureProgress,
-                        elapsed,
-                        t,
-                      )}
-                    </p>
-                  </>
-                ) : (
-                  <p className="watch-pair-copy">
-                    {t("Mantén el wearable en contacto y sin moverte.")}
-                  </p>
-                )}
               </>
             )}
-
-            {/* Lo que llena el volcado: pasos del día y sueño de anoche. */}
-            <div className="sec">{t("Historial del wearable")}</div>
-            <div className="card" style={{ margin: "0 16px", padding: 12 }}>
-              <div style={{ display: "flex", gap: 12 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="cs">{t("Pasos")}</div>
-                  <div
-                    className="display"
-                    style={{ fontSize: 20, fontWeight: 800 }}
-                  >
-                    {steps != null
-                      ? Math.round(steps).toLocaleString(locale)
-                      : "—"}
-                  </div>
-                  <div className="cs">{agoLabel(stepsAt, t)}</div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="cs">{t("Sueño")}</div>
-                  <div
-                    className="display"
-                    style={{ fontSize: 20, fontWeight: 800 }}
-                  >
-                    {sleepMinutes != null ? formatSleep(sleepMinutes, t) : "—"}
-                  </div>
-                  <div className="cs">
-                    {sleepMinutes != null
-                      ? t("Última noche")
-                      : t("Sin datos aún")}
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Avanzado: diagnóstico colapsado para no ensuciar la vista. */}
             <div className="sec">{t("Avanzado")}</div>
@@ -975,6 +938,23 @@ export function WearablePage() {
                   </div>
                 </IonAccordion>
               </IonAccordionGroup>
+            </div>
+
+            <div className="dev-footer-action">
+              <IonButton
+                expand="block"
+                size="small"
+                fill="clear"
+                className="bt"
+                style={
+                  {
+                    "--color": "var(--red)",
+                  } as CSSProperties
+                }
+                onClick={() => (isMock ? disconnect() : setConfirmOff(true))}
+              >
+                {t(isMock ? "Salir de demo" : "Desconectar wearable")}
+              </IonButton>
             </div>
 
             <div style={{ height: 20 }} />

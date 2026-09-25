@@ -65,7 +65,6 @@ export function HomePage() {
     openPanic,
     openVoice,
     pointsTotal: appPointsTotal,
-    wearableConnected,
     program: appProgram,
     streak: appStreak,
     programWeek: appProgramWeek,
@@ -574,7 +573,7 @@ export function HomePage() {
               },
               {
                 id: "bt" as const,
-                label: wearableConnected ? t("Wearable") : t("Conectar"),
+                label: t("Conectar"),
                 icon: watchOutline,
                 fn: () => navigate("bt"),
               },

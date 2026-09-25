@@ -128,6 +128,7 @@ export interface VitalField {
 }
 
 export const VITAL_FIELDS: readonly VitalField[] = [
+  // Orden de presentación: lecturas del wearable y luego peso, temperatura y glucosa.
   {
     id: "fc",
     emoji: "❤️",
@@ -161,39 +162,6 @@ export const VITAL_FIELDS: readonly VitalField[] = [
     min: 80,
     max: 100,
   },
-  {
-    id: "glu",
-    emoji: "🩸",
-    label: "Glucosa",
-    unit: "mg/dL",
-    hint: "Ayunas 70–99",
-    lo: 70,
-    hi: 99,
-    min: 40,
-    max: 200,
-  },
-  {
-    id: "peso",
-    emoji: "⚖️",
-    label: "Peso",
-    unit: "kg",
-    hint: "Tendencia > cifra",
-    lo: 50,
-    hi: 140,
-    min: 30,
-    max: 160,
-  },
-  {
-    id: "temp",
-    emoji: "🌡️",
-    label: "Temperatura",
-    unit: "°C",
-    hint: "36.1–37.2",
-    lo: 36,
-    hi: 37.2,
-    min: 34,
-    max: 41,
-  },
   // Del wearable: el sync los autollena desde el acumulado del día.
   {
     id: "pasos",
@@ -220,6 +188,39 @@ export const VITAL_FIELDS: readonly VitalField[] = [
     min: 0,
     max: 720,
     scale: 60,
+  },
+  {
+    id: "peso",
+    emoji: "⚖️",
+    label: "Peso",
+    unit: "kg",
+    hint: "Tendencia > cifra",
+    lo: 50,
+    hi: 140,
+    min: 30,
+    max: 160,
+  },
+  {
+    id: "temp",
+    emoji: "🌡️",
+    label: "Temperatura",
+    unit: "°C",
+    hint: "36.1–37.2",
+    lo: 36,
+    hi: 37.2,
+    min: 34,
+    max: 41,
+  },
+  {
+    id: "glu",
+    emoji: "🩸",
+    label: "Glucosa",
+    unit: "mg/dL",
+    hint: "Ayunas 70–99",
+    lo: 70,
+    hi: 99,
+    min: 40,
+    max: 200,
   },
 ];
 
