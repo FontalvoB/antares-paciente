@@ -45,11 +45,22 @@ import { paneMotion } from "./program/ui";
 import { useClinicalChests } from "../hooks/useClinicalChests";
 import { useProgram } from "../hooks/useProgram";
 import { useStreakChests } from "../hooks/useStreakChests";
-import { useCompleteTask } from "../hooks/useCompleteTask";
+import { useQueryClient } from "@tanstack/react-query";
+import { programKeys } from "../hooks/queryKeys";
+import { applyOptimistic, useCompleteTask } from "../hooks/useCompleteTask";
+import {
+  isOnline,
+  queueTaskCompletion,
+} from "../services/offline/offline-queue-service";
 import { useProgramScores } from "../hooks/useProgramScores";
 import { useProgramCalendar } from "../hooks/useProgramCalendar";
 import { resolveStationSec } from "../utils/exerciseSteps";
-import type { TaskCode, VitalsPayload } from "../services/program/types";
+import type {
+  CompleteTaskInput,
+  ProgramSnapshotDto,
+  TaskCode,
+  VitalsPayload,
+} from "../services/program/types";
 
 const CONF_COLORS = [
   "var(--teal)",
@@ -111,6 +122,7 @@ export function ProgramPage() {
   } = useProgram();
 
   const completeTaskMutation = useCompleteTask();
+  const queryClient = useQueryClient();
   const {
     scores,
     stale: scoresStale,
@@ -323,6 +335,36 @@ export function ProgramPage() {
       },
     ) => {
       if (program[id]) return;
+
+      // Fase 12 (offline-first): sin red se encola persistente el check-in
+      // con el payload derivado del snapshot (enrollmentId/localDate nunca
+      // salen de la UI) y se pinta optimista la tarjeta — sin celebración,
+      // XP local ni toast de éxito (el servidor no confirmó). Al despachar,
+      // la invalidación reconcilia XP/racha con la verdad del servidor.
+      if (!isOnline() && snapshot) {
+        const offlinePayload: CompleteTaskInput = {
+          enrollmentId: snapshot.enrollmentId,
+          localDate: snapshot.todayLocalDate,
+          taskCode: id as TaskCode,
+          clientRequestId: crypto.randomUUID(),
+          clientCompletedAt: new Date().toISOString(),
+          ...(extra?.moodScore !== undefined && {
+            moodScore: extra.moodScore,
+          }),
+          ...(extra?.barriers !== undefined && { barriers: extra.barriers }),
+          ...(extra?.vitals !== undefined && { vitals: extra.vitals }),
+        };
+        queueTaskCompletion(offlinePayload);
+        queryClient.setQueryData<ProgramSnapshotDto>(
+          programKeys.snapshot,
+          (old) =>
+            old
+              ? applyOptimistic(old, id as TaskCode, extra?.vitals ?? null)
+              : old,
+        );
+        setActive(null);
+        return;
+      }
 
       const willComplete = progress.doneCount + 1 === progress.total;
       // El monto del bonus sale del snapshot (regla DAY_BONUS real) para que

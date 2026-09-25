@@ -2260,5 +2260,11 @@
   "Tus avisos de salud": "Your health updates",
   "hace un momento": "Just now",
   "Sin leer": "Unread",
-  "Notificaciones sin leer: {count}": "Unread notifications: {count}"
+  "Notificaciones sin leer: {count}": "Unread notifications: {count}",
+  "Sin conexión": "No connection",
+  "Tus avances se guardarán y sincronizarán automáticamente": "Your progress will be saved and synced automatically",
+  "Tienes 1 cambio pendiente de sincronizar": "You have 1 pending change to sync",
+  "Tienes {n} cambios pendientes de sincronizar": "You have {n} pending changes to sync",
+  "Sincronizando tus avances…": "Syncing your progress…",
+  "Conexión restablecida": "Connection restored"
 }

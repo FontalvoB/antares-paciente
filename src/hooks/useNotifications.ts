@@ -21,6 +21,7 @@ import {
   fetchNotifications,
   markNotificationRead,
 } from "../services/notifications/notifications-service";
+import { queueNotificationRead } from "../services/offline/offline-queue-service";
 import { notificationsKeys } from "./queryKeys";
 
 import type { PaginatedNotificationsResult } from "../services/notifications/types";
@@ -28,6 +29,13 @@ import type { PaginatedNotificationsResult } from "../services/notifications/typ
 const LIST_PAGE = 1;
 const LIST_PAGE_SIZE = 50;
 const STALE_MS = 60 * 1000;
+
+/** Fallo de transporte: la entrada se conserva en la cola offline (Fase 12). */
+function isTransportError(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return true;
+  if (err.errorType === "network" || err.errorType === "TIMEOUT") return true;
+  return err.errorType === "server" && err.status >= 500;
+}
 
 export interface UseNotificationsResult {
   /** Avisos de la primera página (los más recientes primero). Vacío mientras carga o en error sin cache. */
@@ -72,23 +80,53 @@ export function useNotifications(): UseNotificationsResult {
 
   const markAsRead = useCallback(
     async (id: string): Promise<void> => {
-      await markNotificationRead(id);
+      // Optimismo primero: el tap en el modal se refleja al instante.
+      let wasUnread = false;
       queryClient.setQueryData<PaginatedNotificationsResult>(key, (prev) => {
         if (!prev) return prev;
-        let decremented = false;
+        let touched = false;
         const items = prev.items.map((item) => {
           if (item.id !== id || item.readAt !== null) return item;
-          decremented = true;
+          touched = true;
           return { ...item, readAt: new Date().toISOString() };
         });
+        wasUnread = wasUnread || touched;
         return {
           ...prev,
           items,
-          unreadCount: decremented
+          unreadCount: touched
             ? Math.max(0, prev.unreadCount - 1)
             : prev.unreadCount,
         };
       });
+      try {
+        await markNotificationRead(id);
+      } catch (err) {
+        if (isTransportError(err)) {
+          // Fase 12: sin red o 5xx/timeout → cola persistente con
+          // idempotencyKey; el optimismo se conserva y el dispatcher
+          // reconcilia al recuperar conexión. No se propaga.
+          queueNotificationRead(id);
+          return;
+        }
+        // Negocio (4xx): rollback del optimismo y se propaga.
+        if (wasUnread) {
+          queryClient.setQueryData<PaginatedNotificationsResult>(
+            key,
+            (prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                items: prev.items.map((item) =>
+                  item.id === id ? { ...item, readAt: null } : item,
+                ),
+                unreadCount: prev.unreadCount + 1,
+              };
+            },
+          );
+        }
+        throw err;
+      }
     },
     [key, queryClient],
   );
@@ -99,26 +137,47 @@ export function useNotifications(): UseNotificationsResult {
       .filter((item) => item.readAt === null)
       .map((item) => item.id);
     if (unreadIds.length === 0) return;
-    const results = await Promise.allSettled(
-      unreadIds.map((id) => markNotificationRead(id)),
-    );
-    const readOk = new Set(
-      unreadIds.filter((_, i) => results[i].status === "fulfilled"),
-    );
-    if (readOk.size === 0) return;
+    // Optimismo primero: todo lo no leído se marca al instante.
     const now = new Date().toISOString();
     queryClient.setQueryData<PaginatedNotificationsResult>(key, (prev) => {
       if (!prev) return prev;
       return {
         ...prev,
         items: prev.items.map((item) =>
-          readOk.has(item.id) && item.readAt === null
-            ? { ...item, readAt: now }
-            : item,
+          item.readAt === null ? { ...item, readAt: now } : item,
         ),
-        unreadCount: Math.max(0, prev.unreadCount - readOk.size),
+        unreadCount: 0,
       };
     });
+    const results = await Promise.allSettled(
+      unreadIds.map((id) => markNotificationRead(id)),
+    );
+    const reasonOf = (i: number): unknown =>
+      (results[i] as PromiseRejectedResult).reason;
+    const businessFailed = unreadIds.filter(
+      (_, i) =>
+        results[i].status === "rejected" && !isTransportError(reasonOf(i)),
+    );
+    unreadIds.forEach((id, i) => {
+      if (results[i].status === "rejected" && isTransportError(reasonOf(i))) {
+        queueNotificationRead(id);
+      }
+    });
+    if (businessFailed.length === 0) return;
+    // Rollback solo de los rechazados por negocio; los encolados conservan
+    // el optimismo hasta el despacho.
+    const failedSet = new Set(businessFailed);
+    queryClient.setQueryData<PaginatedNotificationsResult>(key, (prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        items: prev.items.map((item) =>
+          failedSet.has(item.id) ? { ...item, readAt: null } : item,
+        ),
+        unreadCount: prev.unreadCount + businessFailed.length,
+      };
+    });
+    throw reasonOf(unreadIds.indexOf(businessFailed[0]));
   }, [key, queryClient]);
 
   const refresh = useCallback(() => {
