@@ -55,3 +55,31 @@ PROMPT-CONTEXT.md
 
 # --- Artefactos locales de validación (no publicar) ---
 .artifacts/
+
+# --- QA, Pruebas E2E y Capturas Visuales (Playwright / Puppeteer / Cypress) ---
+.shots/
+screenshots/
+**/screenshots/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+qa-reports/
+docs/*-qa/
+docs/**/*-qa/
+docs/**/*.png
+docs/**/*.jpg
+docs/**/*.jpeg
+docs/**/*.webp
+docs/**/report.json
+docs/**/*-report.json
+
+# Scripts temporales de QA / diagnóstico local
+scripts/*-qa*.*
+scripts/tmp-*.*
+scripts/*.tmp.*
+
+# Preservar assets legítimos de producción de la app
+!src/assets/**
+!public/**
+

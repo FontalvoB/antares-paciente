@@ -374,7 +374,7 @@ export function ProfilePage() {
 
               <motion.div initial={{ opacity: 0, y: reduce ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: reduce ? 0 : 0.12, duration: reduce ? 0 : 0.45 }}>
-                <IonButton className="pf-avatar-feature" fill="clear" expand="block" onClick={() => go("avatar")}>
+                <IonButton className="pf-avatar-feature" fill="clear" expand="block" onClick={() => go("body")}>
                   <span className="pf-avatar-copy">
                     <span className="pf-feature-kicker"><IonIcon icon={sparklesOutline} aria-hidden="true" />{t("TU VERSIÓN DIGITAL")}</span>
                     <strong>{t("Mi Avatar")}</strong>

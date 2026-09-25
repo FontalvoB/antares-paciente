@@ -1,5 +1,18 @@
-import { IonBadge, IonButton, IonIcon, IonInput, IonSpinner } from "@ionic/react";
-import { attach, medkit, mic, send as sendIcon } from "ionicons/icons";
+import {
+  IonBadge,
+  IonButton,
+  IonIcon,
+  IonInput,
+  IonSpinner,
+} from "@ionic/react";
+import {
+  attach,
+  informationCircle,
+  medkit,
+  mic,
+  send as sendIcon,
+} from "ionicons/icons";
+import { motion } from "framer-motion";
 import {
   useEffect,
   useLayoutEffect,
@@ -10,6 +23,7 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import { Screen } from "../components/Screen";
 import { ChatRichText } from "../components/ChatRichText";
+import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
@@ -207,6 +221,10 @@ export function ChatPage() {
   const t = useT();
   const { lang } = useI18n();
 
+  // Inicial del microavatar del usuario (solo presentación).
+  const userInitial =
+    (user.nombre || "?").trim().charAt(0).toUpperCase() || "?";
+
   const send = (msg = text) => {
     if (uploading) return;
     const v = msg.trim();
@@ -230,7 +248,11 @@ export function ChatPage() {
     const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
     const type = file.type ? file.type.split(";")[0].trim().toLowerCase() : "";
     const isAllowedExt = [".jpg", ".jpeg", ".png", ".pdf"].includes(ext);
-    const isAllowedType = ["image/jpeg", "image/png", "application/pdf"].includes(type);
+    const isAllowedType = [
+      "image/jpeg",
+      "image/png",
+      "application/pdf",
+    ].includes(type);
     if (!isAllowedExt && !isAllowedType) {
       showToast(
         t("Tipo de archivo no permitido. Solo se aceptan JPEG, PNG o PDF."),
@@ -255,9 +277,7 @@ export function ChatPage() {
       ]);
     } catch (err: unknown) {
       const errorMsg =
-        err instanceof Error
-          ? err.message
-          : t("Error al procesar el examen.");
+        err instanceof Error ? err.message : t("Error al procesar el examen.");
       showToast(errorMsg, "err");
     } finally {
       setUploading(false);
@@ -308,18 +328,32 @@ export function ChatPage() {
           gap: 12,
         }}
       >
+        {/* Disclaimer clínico preventivo (Fase 9): no invasivo, siempre
+            visible al inicio del listado. No sustituye atención de urgencia:
+            ante síntomas de alarma el chat sugiere activar SOS. */}
+        <div className="chat-disclaimer" role="note">
+          <IonIcon
+            icon={informationCircle}
+            aria-hidden="true"
+            className="chat-disclaimer-ico"
+          />
+          <span>
+            {t(
+              "Asistente clínico inteligente (no sustituye una consulta médica de urgencia)",
+            )}
+          </span>
+        </div>
         {hasMore ? (
           <div className="chat-history-hint" role="status">
             {loadingMore ? (
               <>
-                <IonSpinner
-                  name="crescent"
-                  style={{ width: 14, height: 14 }}
-                />
+                <IonSpinner name="crescent" style={{ width: 14, height: 14 }} />
                 <span>{t("Cargando mensajes anteriores…")}</span>
               </>
             ) : (
-              <span>{t("Desliza hacia arriba para ver mensajes anteriores")}</span>
+              <span>
+                {t("Desliza hacia arriba para ver mensajes anteriores")}
+              </span>
             )}
           </div>
         ) : chat.length > PAGE_SIZE ? (
@@ -330,34 +364,36 @@ export function ChatPage() {
         {chat.map((m) => (
           <div
             key={m.id}
-            style={{
-              display: "flex",
-              gap: 8,
-              flexDirection: m.role === "user" ? "row-reverse" : "row",
-            }}
+            className={`chat-row${m.role === "user" ? " chat-row-user" : ""}`}
           >
-            {m.role !== "user" && (
+            {m.role !== "user" ? (
               <div
-                className="avatar"
-                style={{
-                  width: 28,
-                  height: 28,
-                  fontSize: 11,
-                  background:
-                    m.role === "alert"
-                      ? "var(--panic)"
-                      : "linear-gradient(145deg,#1a6ad8,#20c8ff)",
-                }}
+                className={`chat-avatar${m.role === "alert" ? " chat-avatar-alert" : ""}`}
+                aria-hidden="true"
               >
                 {m.role === "alert" ? "!" : "AI"}
               </div>
+            ) : (
+              <div className="chat-avatar chat-avatar-user" aria-hidden="true">
+                {userInitial}
+              </div>
             )}
-            <div>
+            <div className="chat-msg">
               <div
                 className={`bub ${m.role === "user" ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
-                style={{ whiteSpace: "pre-wrap" }}
               >
                 {m.role === "user" ? m.text : <ChatRichText text={m.text} />}
+                {m.role === "alert" && (
+                  <IonButton
+                    expand="block"
+                    size="small"
+                    className="cta-button"
+                    aria-label={t("Activar protocolo de emergencia")}
+                    onClick={openPanic}
+                  >
+                    {t("Activar protocolo de emergencia")}
+                  </IonButton>
+                )}
                 {m.role === "bot" && m.cta && (
                   <IonButton
                     expand="block"
@@ -390,17 +426,13 @@ export function ChatPage() {
                     </IonButton>
                   </div>
                 )}
+                {/* Feedback clínico (Fase 9): solo en respuestas reales del
+                    backend con executionId; fallbacks locales no se califican. */}
+                {m.role === "bot" && m.executionId && (
+                  <ChatFeedbackAction executionId={m.executionId} />
+                )}
               </div>
-              <div
-                style={{
-                  fontSize: 10,
-                  color: "var(--mu)",
-                  marginTop: 4,
-                  textAlign: m.role === "user" ? "right" : "left",
-                }}
-              >
-                {m.time}
-              </div>
+              <div className="chat-time">{m.time}</div>
             </div>
           </div>
         ))}
@@ -412,15 +444,7 @@ export function ChatPage() {
               flexDirection: "row",
             }}
           >
-            <div
-              className="avatar"
-              style={{
-                width: 28,
-                height: 28,
-                fontSize: 11,
-                background: "linear-gradient(145deg,#1a6ad8,#20c8ff)",
-              }}
-            >
+            <div className="chat-avatar" aria-hidden="true">
               AI
             </div>
             <div>
@@ -432,10 +456,7 @@ export function ChatPage() {
                   gap: 8,
                 }}
               >
-                <IonSpinner
-                  name="crescent"
-                  style={{ width: 16, height: 16 }}
-                />
+                <IonSpinner name="crescent" style={{ width: 16, height: 16 }} />
                 <span>{t("Analizando examen de laboratorio…")}</span>
               </div>
             </div>
@@ -487,20 +508,26 @@ export function ChatPage() {
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder={t("Escribe un mensaje…")}
         />
-        <IonButton
-          className="bt bt-round"
-          style={
-            {
-              "--background": "var(--navy)",
-              "--color": "#fff",
-            } as CSSProperties
-          }
-          aria-label={t("Enviar")}
-          disabled={uploading}
-          onClick={() => send()}
+        <motion.span
+          className="chat-send-wrap"
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.15 }}
         >
-          <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
-        </IonButton>
+          <IonButton
+            className="bt bt-round"
+            style={
+              {
+                "--background": "var(--navy)",
+                "--color": "#fff",
+              } as CSSProperties
+            }
+            aria-label={t("Enviar")}
+            disabled={uploading}
+            onClick={() => send()}
+          >
+            <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
+          </IonButton>
+        </motion.span>
       </div>
     </Screen>
   );

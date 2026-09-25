@@ -126,6 +126,7 @@ interface AppState {
       text: string;
       cta?: ChatSuggestion | null;
       kind?: ChatMessage["kind"];
+      executionId?: string;
     }>,
   ) => void;
   connectWearable: (name: string) => void;
@@ -728,7 +729,10 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
-      navigate: (s) => setScreen(s),
+      // Destino unificado: «Mi Avatar» abre Perfil corporal (screen='body').
+      // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
+      // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
+      navigate: (s) => setScreen(s === "avatar" ? "body" : s),
       openBookingWizard: () => {
         setBookingWizardAutoOpen(true);
         setScreen("book");
@@ -832,6 +836,7 @@ export function AppProvider({
               time: nowLabel(),
               threadId: result.threadId || threadId,
               cta: suggestion,
+              executionId: result.executionId,
             };
           } catch {
             return null;
@@ -870,6 +875,7 @@ export function AppProvider({
                       text: result.reply,
                       threadId: result.threadId || threadId,
                       cta: suggestion,
+                      executionId: result.executionId,
                     }
                   : m,
               ),
@@ -956,6 +962,7 @@ export function AppProvider({
           threadId,
           cta: m.cta,
           kind: m.kind,
+          executionId: m.executionId,
         }));
         setChat((prev) => {
           const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";

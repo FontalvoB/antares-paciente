@@ -15,10 +15,13 @@ import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
 import { MealFoodFlow } from "../components/MealFoodFlow";
 import { MealIntakeForm } from "../components/MealIntakeForm";
+import { MealLoggedPanel } from "../components/nutrition/MealLoggedPanel";
 import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import { useI18n } from "../i18n/I18nContext";
 import { useNutritionLog } from "../hooks/useNutritionLog";
+import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
+import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { useProgram } from "../hooks/useProgram";
 import { useProgramScores } from "../hooks/useProgramScores";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
@@ -81,6 +84,15 @@ export function NutritionPage() {
   const { history: metricsHistory, isLoading: metricsLoading } =
     useMetricsHistory();
   const { today: deviceToday } = useWearable();
+  // Plan alimentario asignado (self-service, sin inscripción): metas clínicas
+  // reales del profesional. 404 sin plan → null (vacío honesto en Indicaciones)
+  // y las tarjetas del día conservan la referencia del snapshot del programa.
+  const {
+    plan: nutritionPlan,
+    isLoading: planLoading,
+    error: planError,
+    refetch: refetchPlan,
+  } = useMyNutritionPlan();
   const [tab, setTab] = useState<
     "hoy" | "semana" | "indicaciones" | "historial"
   >("hoy");
@@ -108,10 +120,6 @@ export function NutritionPage() {
     autoSource?: "camera" | "gallery";
   }
   const [flow, setFlow] = useState<MealFlow | null>(null);
-  // Hoja de opciones al pedir registrar (foto/galería/manual).
-  const [sheetMeal, setSheetMeal] = useState<Exclude<MealCode, "agua"> | null>(
-    null,
-  );
   // La tarjeta IA global pide primero la comida y luego abre el flujo.
   const [mealPickerSource, setMealPickerSource] = useState<
     "camera" | "gallery" | null
@@ -135,6 +143,21 @@ export function NutritionPage() {
   const intakeTotals = useMemo(() => deriveIntakeTotals(snapshot), [snapshot]);
   const serverTargets = useMemo(() => derivePlanTargets(snapshot), [snapshot]);
   const serverGlasses = useMemo(() => deriveWaterGlasses(snapshot), [snapshot]);
+  // Referencia diaria del plan asignado: manda sobre el snapshot del programa
+  // en el anillo de kcal y la meta de hidratación de «Hoy».
+  const calorieTarget =
+    nutritionPlan?.dailyCalorieTarget ?? serverTargets.calories;
+  const planWaterMl = useMemo(() => {
+    if (!nutritionPlan) return null;
+    if (nutritionPlan.dailyWaterMl != null) return nutritionPlan.dailyWaterMl;
+    for (const day of nutritionPlan.days ?? []) {
+      if (day.dailyWaterMl != null) return day.dailyWaterMl;
+    }
+    return null;
+  }, [nutritionPlan]);
+  // Vasos de 250 ml; sin plan rige el estándar histórico 8 vasos (2 L).
+  const waterGoalGlasses =
+    planWaterMl != null ? Math.max(1, Math.round(planWaterMl / 250)) : 8;
   const mealSources = useMemo(() => {
     const map = new Map<MealCode, "manual" | "ai_photo" | null>();
     for (const code of ["des", "alm", "mer", "cen"] as MealCode[]) {
@@ -296,12 +319,13 @@ export function NutritionPage() {
     return rows;
   }, [serverTargets, locale]);
 
-  // kcal-strip (server): anillo = kcal reales derivadas; ratio vs target real
-  // (clamp 0..1); sin target → suma sin denominador. Barras de macros solo
-  // con target real, progreso = real/target clamp 0..1 (sin % fijos).
+  // Anillo de metas (server): anillo = kcal reales derivadas; ratio vs la
+  // referencia del plan asignado (fallback al snapshot); sin target → suma
+  // sin denominador. Barras de macros solo con target real, progreso =
+  // real/target clamp 0..1 (sin % fijos).
   const kcalRatio =
-    serverTargets.calories != null && serverTargets.calories > 0
-      ? Math.min(1, Math.max(0, intakeTotals.calories / serverTargets.calories))
+    calorieTarget != null && calorieTarget > 0
+      ? Math.min(1, Math.max(0, intakeTotals.calories / calorieTarget))
       : null;
   const ringOffset = kcalRatio != null ? 239 * (1 - kcalRatio) : 239;
   const macroBars = [
@@ -334,7 +358,6 @@ export function NutritionPage() {
   // Abre el modal de registro manual con el formulario VACÍO. Los valores
   // del plan se muestran como referencia ("Objetivo"), nunca como consumo.
   const openRegister = (id: MealCode) => {
-    setSheetMeal(null);
     setRegisterTarget(id);
   };
 
@@ -555,198 +578,218 @@ export function NutritionPage() {
           )}
         </div>
 
-        <div className="kcal-strip">
-          <div
-            style={{
-              position: "relative",
-              width: 92,
-              height: 92,
-              flexShrink: 0,
-            }}
-          >
-            <svg
-              width="92"
-              height="92"
-              viewBox="0 0 100 100"
-              style={{ transform: "rotate(-90deg)" }}
-            >
-              <circle
-                cx="50"
-                cy="50"
-                r="38"
-                fill="none"
-                stroke="#E8EEF4"
-                strokeWidth="10"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="38"
-                fill="none"
-                stroke="#1D9E75"
-                strokeWidth="10"
-                strokeDasharray="239"
-                strokeDashoffset={ringOffset}
-                strokeLinecap="round"
-              />
-            </svg>
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <div
-                className="display"
-                style={{ fontSize: 16, fontWeight: 800 }}
+        <div className="nut-goals-card">
+          <div className="nut-goals-head">
+            <div className="nut-kicker">{t("Tu progreso de hoy")}</div>
+            {kcalRatio != null && (
+              <span className="nut-goals-pct">
+                {Math.round(kcalRatio * 100)} %
+              </span>
+            )}
+          </div>
+          <div className="nut-goals-body">
+            <div className="nut-ring">
+              <svg
+                width="104"
+                height="104"
+                viewBox="0 0 100 100"
+                style={{ transform: "rotate(-90deg)" }}
+                aria-hidden="true"
               >
-                {formatMetricValue(intakeTotals.calories, 0, locale)}
+                <defs>
+                  <linearGradient id="nutRingGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" style={{ stopColor: "var(--teal)" }} />
+                    <stop offset="1" style={{ stopColor: "var(--blue)" }} />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="var(--g1)"
+                  strokeWidth="10"
+                />
+                <motion.circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="url(#nutRingGrad)"
+                  strokeWidth="10"
+                  strokeDasharray="239"
+                  strokeLinecap="round"
+                  initial={{ strokeDashoffset: 239 }}
+                  animate={{ strokeDashoffset: ringOffset }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </svg>
+              <div className="nut-ring-center">
+                <div className="display nut-ring-value">
+                  {formatMetricValue(intakeTotals.calories, 0, locale)}
+                </div>
+                {kcalRatio != null && calorieTarget != null && (
+                  <div className="nut-ring-target">
+                    /{formatMetricValue(calorieTarget, 0, locale)}
+                  </div>
+                )}
+                <div className="nut-ring-unit">kcal</div>
               </div>
-              {kcalRatio != null && (
-                <div style={{ fontSize: 9, color: "var(--mu)" }}>
-                  /
-                  {formatMetricValue(
-                    serverTargets.calories as number,
-                    0,
-                    locale,
-                  )}
+            </div>
+            <div className="nut-macro-list">
+              {macroBars.length > 0 ? (
+                macroBars.map((b, i) => (
+                  <div
+                    key={b.key}
+                    className="nut-macro-row"
+                    style={{ animationDelay: `${i * 70}ms` }}
+                  >
+                    <div className="nut-macro-top">
+                      <span className="nut-macro-label">{t(b.key)}</span>
+                      <span className="nut-macro-val">
+                        {formatMetricValue(b.value, 0, locale)}/
+                        {formatMetricValue(b.target as number, 0, locale)}g
+                      </span>
+                    </div>
+                    <IonProgressBar
+                      className="pb nut-macro-bar"
+                      style={
+                        {
+                          "--background": "var(--g1)",
+                          "--progress-background": b.color,
+                        } as CSSProperties
+                      }
+                      value={Math.min(
+                        1,
+                        Math.max(0, b.value / (b.target as number)),
+                      )}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="nut-macro-empty">
+                  <span style={{ fontSize: 18 }}>🍽️</span>
+                  <span>{t("Registra tus comidas para ver tu progreso")}</span>
                 </div>
               )}
             </div>
           </div>
-          <div style={{ flex: 1 }}>
-            {macroBars.length > 0 ? (
-              macroBars.map((b) => (
-                <div
-                  key={b.key}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginBottom: 6,
-                  }}
-                >
-                  <span style={{ fontSize: 10, color: "var(--mu)", width: 78 }}>
-                    {t(b.key)}
-                  </span>
-                  <IonProgressBar
-                    className="pb"
-                    style={
-                      {
-                        flex: 1,
-                        "--progress-background": b.color,
-                      } as CSSProperties
-                    }
-                    value={Math.min(
-                      1,
-                      Math.max(0, b.value / (b.target as number)),
-                    )}
-                  />
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      width: 36,
-                      textAlign: "right",
-                    }}
-                  >
-                    {Math.round(b.value)}g
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--mu)",
-                  lineHeight: 1.5,
-                  paddingTop: 4,
-                }}
-              >
-                {t("Registra tus comidas para ver tu progreso")}
-              </div>
-            )}
-          </div>
+          {activeKcal != null && (
+            <div className="nut-spent">
+              <span aria-hidden="true" className="nut-spent-ico">
+                🔥
+              </span>
+              <span>
+                {t("Gasto activo del día: {kcal} kcal", {
+                  kcal: formatMetricValue(activeKcal, 0, locale),
+                })}
+              </span>
+            </div>
+          )}
         </div>
-
-        {activeKcal != null && (
-          <div
-            style={{
-              padding: "0 16px",
-              marginTop: -4,
-              fontSize: 12,
-              color: "var(--mu)",
-            }}
-          >
-            {t("Gasto activo del día: {kcal} kcal", {
-              kcal: formatMetricValue(activeKcal, 0, locale),
-            })}
-          </div>
-        )}
 
         {tab === "hoy" && (
           <>
             <div
-              className="card"
+              className="card nut-hyd-card"
               style={{
-                margin: "10px 14px",
                 background: "var(--blue-l)",
                 borderColor: "#B5D4F4",
               }}
             >
-              <div
-                style={{
-                  fontWeight: 700,
-                  color: "var(--blue)",
-                  marginBottom: 10,
-                  fontSize: 13,
-                }}
-              >
-                {t("💧 Hidratación · {glasses} vasos · meta 8 vasos (2L)", {
-                  glasses: String(displayedGlasses),
+              <div className="nut-hyd-head">
+                <div className="nut-hyd-title">
+                  {planWaterMl != null && planWaterMl !== 2000
+                    ? t(
+                        "💧 Hidratación · {glasses} vasos · meta {goal} vasos ({liters} L)",
+                        {
+                          glasses: String(displayedGlasses),
+                          goal: String(waterGoalGlasses),
+                          liters: formatMetricValue(
+                            planWaterMl / 1000,
+                            1,
+                            locale,
+                          ),
+                        },
+                      )
+                    : t(
+                        "💧 Hidratación · {glasses} vasos · meta 8 vasos (2L)",
+                        {
+                          glasses: String(displayedGlasses),
+                        },
+                      )}
+                </div>
+                <span className="nut-hyd-badge" aria-hidden="true">
+                  {displayedGlasses}/{waterGoalGlasses}
+                </span>
+              </div>
+              <div className="nut-hyd-sub">
+                {t("{current} / {goal} ml", {
+                  current: formatMetricValue(displayedGlasses * 250, 0, locale),
+                  goal: formatMetricValue(waterGoalGlasses * 250, 0, locale),
                 })}
               </div>
-              <div style={{ display: "flex", gap: 6 }}>
+              <IonProgressBar
+                className="nut-hyd-bar"
+                aria-hidden="true"
+                value={Math.min(
+                  1,
+                  Math.max(0, displayedGlasses / waterGoalGlasses),
+                )}
+              />
+              <div className="nut-hyd-grid">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <button
+                  <motion.button
                     key={i}
+                    type="button"
                     className={`hyd-glass ${i < displayedGlasses ? "full" : ""}`}
                     disabled={!canMutate}
+                    aria-pressed={i < displayedGlasses}
+                    aria-label={t("Vaso {n} de {goal}", {
+                      n: String(i + 1),
+                      goal: String(8),
+                    })}
                     onClick={() => tapGlass(i + 1)}
+                    whileTap={canMutate ? { scale: 0.9 } : undefined}
                   >
-                    🥛
-                  </button>
+                    {i < displayedGlasses ? "💧" : "🥛"}
+                  </motion.button>
                 ))}
               </div>
             </div>
-            {displayMeals.map((m) => (
-              <div key={m.id} className="meal-card">
+            {displayMeals.map((m, idx) => (
+              <motion.article
+                key={m.id}
+                className="meal-card"
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-32px" }}
+                transition={{
+                  duration: 0.38,
+                  delay: Math.min(idx * 0.06, 0.18),
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
                 <div className="meal-hdr">
-                  <span>{m.emoji}</span>
-                  <span style={{ flex: 1, fontWeight: 700 }}>{t(m.title)}</span>
+                  <span className="meal-ico" aria-hidden="true">
+                    {m.emoji}
+                  </span>
+                  <span className="meal-title">{t(m.title)}</span>
                   {m.kcal != null && (
-                    <span style={{ opacity: 0.75, fontSize: 12 }}>
-                      {m.kcal} kcal
-                    </span>
+                    <span className="meal-kcal">{m.kcal} kcal</span>
                   )}
                 </div>
                 {m.items.length > 0 ? (
                   m.items.map((it) => (
                     <div key={it[1]} className="food-item">
-                      <span>{it[0]}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>
-                          {t(it[1])}
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--mu)" }}>
-                          {t(it[2])}
-                        </div>
+                      <span className="food-ico" aria-hidden="true">
+                        {it[0]}
+                      </span>
+                      <div className="food-main">
+                        <div className="food-name">{t(it[1])}</div>
+                        <div className="food-desc">{t(it[2])}</div>
                       </div>
-                      <div>
+                      <div className="food-macros">
                         {it[3] && <span className="fm fm-c">{it[3]}</span>}
                         {it[4] && <span className="fm fm-p">{it[4]}</span>}
                         {it[5] && <span className="fm fm-g">{it[5]}</span>}
@@ -754,95 +797,67 @@ export function NutritionPage() {
                     </div>
                   ))
                 ) : (
-                  <div
-                    style={{ padding: 12, fontSize: 12, color: "var(--mu)" }}
-                  >
-                    {t("Sin comidas del plan para este momento")}
+                  <div className="meal-empty">
+                    <span aria-hidden="true" className="meal-empty-ico">
+                      🍽️
+                    </span>
+                    <span>{t("Sin comidas del plan para este momento")}</span>
                   </div>
                 )}
                 {loggedSet.has(m.id) ? (
-                  <div
-                    style={{
-                      margin: 12,
-                      background: "var(--teal-l)",
-                      borderRadius: 12,
-                      padding: 12,
-                      color: "#0F6E56",
-                      fontWeight: 700,
-                      fontSize: 13,
-                    }}
-                  >
-                    <div style={{ marginBottom: 8 }}>
-                      {mealSources.get(m.id as MealCode) === "ai_photo"
-                        ? t("✓ Registrado con foto · análisis IA")
-                        : mealSources.get(m.id as MealCode) === "manual"
-                          ? t("✓ Registrado manualmente")
-                          : t("✓ Registrado")}
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <IonButton
-                        size="small"
-                        fill="outline"
-                        style={{ flex: 1 }}
-                        onClick={() =>
-                          setFlow({
-                            meal: m.id as Exclude<MealCode, "agua">,
-                            mode: "detail",
-                            startAt: "detail",
-                          })
-                        }
-                      >
-                        {t("Ver detalle")}
-                      </IonButton>
-                      <IonButton
-                        size="small"
-                        fill="outline"
-                        style={{ flex: 1 }}
-                        onClick={() =>
-                          setFlow({
-                            meal: m.id as Exclude<MealCode, "agua">,
-                            mode: "detail",
-                            startAt: "edit",
-                          })
-                        }
-                      >
-                        {t("Editar comida")}
-                      </IonButton>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() =>
-                      canMutate &&
-                      setSheetMeal(m.id as Exclude<MealCode, "agua">)
+                  <MealLoggedPanel
+                    source={mealSources.get(m.id as MealCode) ?? null}
+                    createdAt={
+                      findMealLog(snapshot, m.id as MealCode)?.createdAt ?? null
                     }
-                    disabled={!canMutate}
-                    style={{
-                      margin: 12,
-                      width: "calc(100% - 24px)",
-                      background: "linear-gradient(145deg,#102a50,#173c73)",
-                      border: "1.5px dashed rgba(32,200,255,.4)",
-                      borderRadius: 12,
-                      padding: 12,
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      textAlign: "left",
-                    }}
-                  >
-                    <span style={{ fontSize: 20 }}>📸</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>
-                        {t("Registrar lo que comí")}
-                      </div>
-                      <div style={{ fontSize: 11, opacity: 0.6 }}>
-                        {t("IA analiza gramos · kcal · adherencia")}
-                      </div>
-                    </div>
-                  </button>
+                    onDetail={() =>
+                      setFlow({
+                        meal: m.id as Exclude<MealCode, "agua">,
+                        mode: "detail",
+                        startAt: "detail",
+                      })
+                    }
+                    onEdit={() =>
+                      setFlow({
+                        meal: m.id as Exclude<MealCode, "agua">,
+                        mode: "detail",
+                        startAt: "edit",
+                      })
+                    }
+                  />
+                ) : (
+                  <div className="meal-actions">
+                    <motion.button
+                      type="button"
+                      className="meal-btn meal-btn-reg"
+                      onClick={() =>
+                        canMutate &&
+                        openRegister(m.id as Exclude<MealCode, "agua">)
+                      }
+                      disabled={!canMutate}
+                      whileTap={canMutate ? { scale: 0.97 } : undefined}
+                    >
+                      {t("Registrar")}
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      className="meal-btn meal-btn-ia"
+                      onClick={() =>
+                        canMutate &&
+                        setFlow({
+                          meal: m.id as Exclude<MealCode, "agua">,
+                          mode: "register",
+                          autoSource: "camera",
+                        })
+                      }
+                      disabled={!canMutate}
+                      whileTap={canMutate ? { scale: 0.97 } : undefined}
+                    >
+                      📸 {t("Foto IA")}
+                    </motion.button>
+                  </div>
                 )}
-              </div>
+              </motion.article>
             ))}
           </>
         )}
@@ -879,6 +894,7 @@ export function NutritionPage() {
                       {t("Esta semana")}
                     </div>
                     <div
+                      className="display"
                       style={{
                         fontSize: 22,
                         fontWeight: 800,
@@ -915,7 +931,10 @@ export function NutritionPage() {
                       <div style={{ fontSize: 11, color: "var(--mu)" }}>
                         {t("Semana anterior")}
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800 }}>
+                      <div
+                        className="display"
+                        style={{ fontSize: 22, fontWeight: 800 }}
+                      >
                         {formatMetricValue(weekPrevious, 0, locale)}%
                       </div>
                     </div>
@@ -927,41 +946,14 @@ export function NutritionPage() {
         )}
 
         {tab === "indicaciones" && (
-          <div className="card" style={{ margin: 14 }}>
-            {planRows.length > 0 ? (
-              planRows.map((row) => (
-                <div
-                  key={row.label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 0",
-                    borderBottom: "1px solid var(--g1)",
-                  }}
-                >
-                  <span>{row.emoji}</span>
-                  <span style={{ flex: 1, fontWeight: 600 }}>
-                    {t(row.label)}
-                  </span>
-                  <span style={{ fontWeight: 800, color: "var(--teal)" }}>
-                    {row.value}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div
-                style={{
-                  padding: "6px 0",
-                  fontSize: 13,
-                  color: "var(--mu)",
-                  lineHeight: 1.6,
-                }}
-              >
-                {t("Sin plan nutricional asignado")}
-              </div>
-            )}
-          </div>
+          <NutritionPlanTab
+            plan={nutritionPlan}
+            isLoading={planLoading}
+            error={planError}
+            fallbackRows={planRows}
+            locale={locale}
+            onRetry={() => void refetchPlan()}
+          />
         )}
 
         {tab === "historial" && (
@@ -1101,48 +1093,6 @@ export function NutritionPage() {
           </IonButton>
         </motion.div>
       </IonModal>
-
-      {/* ── Hoja por comida: foto / galería / manual (contexto preservado) ── */}
-      <IonActionSheet
-        isOpen={sheetMeal !== null}
-        onDidDismiss={() => setSheetMeal(null)}
-        header={
-          sheetMeal
-            ? t("Registrar {meal}", { meal: t(MEAL_LABELS[sheetMeal]) })
-            : ""
-        }
-        buttons={[
-          {
-            text: t("Tomar foto"),
-            handler: () => {
-              if (sheetMeal)
-                setFlow({
-                  meal: sheetMeal,
-                  mode: "register",
-                  autoSource: "camera",
-                });
-            },
-          },
-          {
-            text: t("Seleccionar imagen"),
-            handler: () => {
-              if (sheetMeal)
-                setFlow({
-                  meal: sheetMeal,
-                  mode: "register",
-                  autoSource: "gallery",
-                });
-            },
-          },
-          {
-            text: t("Registro manual"),
-            handler: () => {
-              if (sheetMeal) openRegister(sheetMeal);
-            },
-          },
-          { text: t("Cancelar"), role: "cancel" },
-        ]}
-      />
 
       {/* ── La tarjeta IA global pide primero la comida ── */}
       <IonActionSheet
