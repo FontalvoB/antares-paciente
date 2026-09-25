@@ -10125,6 +10125,18 @@ ion-input.vt-input.has-focus {
 .vt-lesson .vt-value em {
   font-size: 10px;
 }
+/* Presión arterial: etiqueta y unidad largas; deben caber en dos columnas. */
+.vt-lesson .vt-pa .vt-label {
+  font-size: 9px;
+  letter-spacing: 0.3px;
+}
+.vt-lesson .vt-pa ion-input.vt-input {
+  font-size: 18px;
+  letter-spacing: -0.5px;
+}
+.vt-lesson .vt-pa .vt-value em {
+  font-size: 9px;
+}
 .vt-lesson .vt-row-detail {
   display: block;
   width: 100%;
