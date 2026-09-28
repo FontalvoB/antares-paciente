@@ -47,6 +47,68 @@ npm run lint       # oxlint
 npm run sync       # build + npx cap sync
 ```
 
+## Modos de build iOS (development vs production)
+
+El backend al que apunta la app lo decide **Vite al compilar**, no el instalador:
+
+|           | `development` (device contra el Mac)           | `production` (TestFlight / release)              |
+| --------- | ---------------------------------------------- | ------------------------------------------------ |
+| Comando   | `npm run sync:dev`                             | `npm run sync`                                   |
+| Modo Vite | `vite build --mode development`                | `vite build` (production)                        |
+| Env       | `.env.development` → `http://10.50.30.99:5080` | `.env.production` → `https://erp.coppadresd.com` |
+| Datos     | pacientes demo + seeds locales                 | datos reales (sin usuarios demo)                 |
+| iOS extra | ATS + permiso de red local (solo dev)          | ninguno (https)                                  |
+
+Verificación rápida de qué quedó embebido:
+
+```bash
+rg -o "10\.50\.30\.99:5080|erp\.coppadresd\.com" dist/assets/*.js | sort -u
+```
+
+**Credenciales demo contra el gateway local** (verificadas, `application: "app"`):
+`32534534` / `Demo1234!` (paciente.prueba@mediquer.com) y `1000000001` / `Demo1234!`
+(Juan Pérez). `Test@1234` del `.http` está obsoleto. Reset de una cuenta:
+`POST /api/auth/internal/seed-demo-password` `{email,password}` con `X-Internal-Key`
+(solo Development).
+
+**Extras iOS del modo development** (no commitear; agregar localmente a
+`ios/App/App/Info.plist` para probar http en el device, con el teléfono en la
+misma red que el Mac):
+
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+	<key>NSAllowsArbitraryLoads</key><true/>
+	<key>NSAllowsLocalNetworking</key><true/>
+</dict>
+<key>NSLocalNetworkUsageDescription</key>
+<string>Copp Adresd se conecta al servidor de desarrollo en tu red local durante las pruebas.</string>
+```
+
+Antes de archivar para TestFlight **revertir ese bloque** y validar con
+`npm run release:check` (falla si el ATS de desarrollo sigue presente).
+
+**Permisos nativos que deben estar commiteados en `Info.plist`** (aplican a dev
+y a TestFlight; el CLI de Capacitor 8 **no** aplica `ios.infoPlist`, así que el
+plist es la fuente operativa):
+
+- `NSBluetoothAlwaysUsageDescription` + `NSBluetoothPeripheralUsageDescription`
+  — sin ellas iOS **termina la app** al escanear/conectar el wearable.
+- Cámara, micrófono y fotos (ya presentes).
+
+Pendiente cuando la app deba recibir push en device/TestFlight: capability
+_Push Notifications_ + _Background Modes ▸ Remote notifications_ en Xcode y la
+APNs key en App Store Connect; sin eso `PushNotifications.register()` falla en
+silencio (hoy no hay `App.entitlements`).
+
+**Recarga en vivo** (opcional, dev): `npm run dev` + `CAP_LIVE_RELOAD=1 npx cap sync ios`
+(el device carga `http://10.50.30.99:5173`; requiere los extras iOS de arriba).
+
+**Checklist TestFlight**: `git pull` en main → `yarn install` → `npm run sync`
+→ subir `CURRENT_PROJECT_VERSION` (`cd ios/App && xcrun agvtool new-version -all N`)
+→ Xcode: scheme `App`, Any iOS Device, Product ▸ Archive ▸ Distribute App ▸
+App Store Connect ▸ Upload → esperar _Processing_ en TestFlight → grupo de testers.
+
 ## BEFORE CODING (obligatorio)
 
 Antes de escribir código de UI: 1) leer AGENTS.md, 2) cargar skills relevantes, 3) buscar componentes existentes en `src/components/`, 4) buscar equivalente Ionic (matriz en `ionic-components`), 5) revisar design system (`ionic-theme`), 6) revisar patrones existentes, 7) solo después implementar. Verificar con la Definition of Done de `ionic-rules`.

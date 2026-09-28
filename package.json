@@ -6,11 +6,14 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc -b && vite build",
+    "build:dev": "tsc -b && vite build --mode development",
     "lint": "oxlint",
     "test": "vitest run",
     "i18n:check": "node scripts/i18n-scan.mjs",
     "preview": "vite preview",
-    "sync": "npm run build && npx cap sync"
+    "sync": "npm run build && npx cap sync",
+    "sync:dev": "npm run build:dev && npx cap sync",
+    "release:check": "node -e \"const s=require('fs').readFileSync('ios/App/App/Info.plist','utf8'); if(s.includes('NSAllowsArbitraryLoads')||s.includes('NSAllowsLocalNetworking')){console.error('FALLA: Info.plist tiene ATS de desarrollo; revertir antes de archivar.');process.exit(1)} console.log('Info.plist OK para release (sin ATS de desarrollo).')\""
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",

@@ -8,11 +8,21 @@ export default defineConfig(({ mode }) => {
 
   // Única entrada pública: el API Gateway (YARP, 5080). Todos los servicios
   // (Auth, Api, Telemedicina, Comunidad, Storage) se enrutan por prefijo.
-  const gatewayTarget = (env.VITE_GATEWAY_BASE_URL || "http://localhost:5080").replace(/\/+$/, "");
+  const gatewayTarget = (
+    env.VITE_GATEWAY_BASE_URL || "http://localhost:5080"
+  ).replace(/\/+$/, "");
   const gatewayWsTarget = gatewayTarget.replace(/^http/, "ws");
 
   return {
     plugins: [react()],
+    // Herramientas de dev (mock del wearable, tarjeta demo): ON en el dev
+    // server y en `build:dev` (`--mode development`), OFF en producción —
+    // constante literal para que Rollup elimine el import dinámico del mock.
+    define: {
+      __DEV_TOOLS__: JSON.stringify(
+        mode !== "production" || env.VITE_DEV_TOOLS === "true",
+      ),
+    },
     server: {
       host: true,
       port: 5173,
