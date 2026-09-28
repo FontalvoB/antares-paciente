@@ -24,14 +24,18 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Copp Adresd usa Bluetooth para conectarse a tu wearable (anillo o banda) y leer tus signos vitales, pasos y sueño.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Copp Adresd usa Bluetooth para conectarse a tu wearable y leer tus signos vitales.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Copp Adresd usa el micrófono para las consultas de telemedicina.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Copp Adresd accede a tus fotos para analizar tus comidas.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Copp Adresd guarda las fotos de tus comidas para tu registro nutricional.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Copp Adresd accede a tus fotos para analizar tus comidas.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
