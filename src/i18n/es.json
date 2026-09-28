@@ -2257,5 +2257,14 @@
   "Tienes 1 cambio pendiente de sincronizar": "Tienes 1 cambio pendiente de sincronizar",
   "Tienes {n} cambios pendientes de sincronizar": "Tienes {n} cambios pendientes de sincronizar",
   "Sincronizando tus avances…": "Sincronizando tus avances…",
-  "Conexión restablecida": "Conexión restablecida"
+  "Conexión restablecida": "Conexión restablecida",
+  "Cualquier profesional disponible": "Cualquier profesional disponible",
+  "Profesional (opcional)": "Profesional (opcional)",
+  "Sin profesionales listados. El equipo te asignará.": "Sin profesionales listados. El equipo te asignará.",
+  "Medicina": "Medicina",
+  "Salud mental": "Salud mental",
+  "Enfermería": "Enfermería",
+  "Terapia": "Terapia",
+  "Coordinación": "Coordinación",
+  "Fitness": "Fitness"
 }

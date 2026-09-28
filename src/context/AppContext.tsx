@@ -35,10 +35,12 @@ import {
   fetchMyContext,
   fetchMyRequests,
   fetchProfessionalsCatalog,
+  fetchSpecialties,
   hasRealSession,
   type AppointmentDto,
   type AppointmentRequestDto,
   type ProfessionalCatalogItem,
+  type SpecialtyDto,
 } from "../utils/appointmentsApi";
 import {
   buildRealAppointments,
@@ -150,10 +152,26 @@ interface AppState {
    * activos. Nunca contiene nombres inventados.
    */
   teamProfessionals: TeamProfessional[] | null;
+  /**
+   * Catálogo de especialidades del ERP (`erp.specialties`, null = aún no
+   * cargado). Fuente del Paso 1 del wizard en modo real.
+   */
+  specialties: SpecialtyDto[] | null;
+  /** Catálogo crudo de profesionales (null = aún no cargado). */
+  professionalsCatalog: ProfessionalCatalogItem[] | null;
   refreshAppointments: () => Promise<void>;
   /** Envía la solicitud contra el backend (modo real). Devuelve éxito. */
   submitAppointmentRequest: (input: {
-    typeId: string;
+    /** Ruta legacy por tipo mock (demo/compatibilidad). */
+    typeId?: string;
+    /** Ruta por catálogo: especialidad elegida (veredicto D1). */
+    specialtyId?: string;
+    /**
+     * Profesional elegido por id exacto; `null` = "cualquier profesional
+     * disponible" (solicitud sin asignar, la gestiona el ERP). En la ruta
+     * legacy se ignora (se resolvía por regex, pendiente de retirar).
+     */
+    professionalId?: string | null;
     date: string;
     time: string;
     reason: string;
@@ -327,6 +345,7 @@ export function AppProvider({
   const [catalog, setCatalog] = useState<ProfessionalCatalogItem[] | null>(
     null,
   );
+  const [specialties, setSpecialties] = useState<SpecialtyDto[] | null>(null);
   const [patientCtx, setPatientCtx] = useState<{
     patientId: string | null;
     orgId: string;
@@ -360,13 +379,20 @@ export function AppProvider({
       // Sin organizations/tree: el org id REAL del paciente viene del
       // /telemedicine/me (resuelto por el backend desde su clínica ERP).
       // Llamar al árbol ERP con aud=app daba 403 en cada arranque.
-      const [me, appts, reqs, catalogData] = await Promise.all([
-        fetchMyContext(),
-        fetchMyAppointments({ pageSize: 100 }),
-        fetchMyRequests(),
-        fetchProfessionalsCatalog(),
-      ]);
+      // Especialidades best-effort: si el catálogo falla, las citas igual
+      // cargan y el wizard usa la ruta demo (el wiring de slots espera al
+      // contrato /availability, B1).
+      const [me, appts, reqs, catalogData, specialtiesData] = await Promise.all(
+        [
+          fetchMyContext(),
+          fetchMyAppointments({ pageSize: 100 }),
+          fetchMyRequests(),
+          fetchProfessionalsCatalog(),
+          fetchSpecialties().catch(() => null),
+        ],
+      );
       setCatalog(catalogData.data);
+      setSpecialties(specialtiesData);
       setPatientCtx({
         patientId: me.patient?.id ?? null,
         orgId: me.patient?.organizationId ?? "",
@@ -452,13 +478,54 @@ export function AppProvider({
 
   const submitAppointmentRequest = useCallback(
     async (input: {
-      typeId: string;
+      typeId?: string;
+      specialtyId?: string;
+      professionalId?: string | null;
       date: string;
       time: string;
       reason: string;
       mode: string;
     }): Promise<boolean> => {
       if (!patientCtx?.patientId || !catalog) return false;
+
+      // Ruta por catálogo (veredicto D1): especialidad elegida + profesional
+      // opcional por id exacto. `professionalId = null` = "cualquier
+      // profesional disponible" (el ERP asigna después). Sin regex.
+      if (input.specialtyId) {
+        const selected =
+          input.professionalId != null
+            ? catalog.find((p) => p.id === input.professionalId)
+            : undefined;
+        // Id explícito que no existe en el catálogo → no inventar: abortar.
+        if (input.professionalId != null && !selected) return false;
+        try {
+          await createRequest({
+            patientId: patientCtx.patientId,
+            organizationId: patientCtx.orgId,
+            specialtyId: input.specialtyId,
+            ...(selected
+              ? {
+                  professionalId: selected.id,
+                  clinicId: selected.clinicIds[0],
+                  locationId: selected.locations[0]?.id,
+                }
+              : {}),
+            preferredStart: new Date(
+              `${input.date}T${input.time}:00`,
+            ).toISOString(),
+            reason: input.reason.trim(),
+          });
+          await refreshAppointments();
+          return true;
+        } catch (err) {
+          console.warn("[appointments] No se pudo enviar la solicitud:", err);
+          return false;
+        }
+      }
+
+      // Ruta legacy por tipo mock (demo/compatibilidad, pendiente de retirar
+      // en 2.A.2): conserva el comportamiento anterior.
+      if (!input.typeId) return false;
       const professional = realProfessionalByType(
         input.typeId as "medica" | "psicologia" | "nutricion" | "urgencia",
         catalog,
@@ -1011,6 +1078,8 @@ export function AppProvider({
       appointmentsError,
       teamProfessional,
       teamProfessionals,
+      specialties,
+      professionalsCatalog: catalog,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
@@ -1052,6 +1121,8 @@ export function AppProvider({
       appointmentsError,
       teamProfessional,
       teamProfessionals,
+      specialties,
+      catalog,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,

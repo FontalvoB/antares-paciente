@@ -147,6 +147,21 @@ export interface ProfessionalCatalogItem {
   status: string;
 }
 
+/**
+ * Especialidad del catálogo ERP (`erp.specialties`, vía
+ * `GET /api/v1/specialties`). `category` es el área clínica de agrupación
+ * (ej. "Medicina") y cada especialidad activa es un tipo de atención
+ * agendable. Agregar especialidades no requiere cambios de código.
+ */
+export interface SpecialtyDto {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  description: string | null;
+  isActive: boolean;
+}
+
 export interface PatientContextDto {
   professional: {
     id: string;
@@ -381,4 +396,14 @@ export function sendRoomChatMessage(
   totalPages: number;
 }> {
   return api("/api/v1/professionals-catalog?page=1&pageSize=100");
+}
+
+/**
+ * Catálogo de especialidades del ERP (`erp.specialties`), ordenado por el
+ * backend por categoría y `sort_order`. Reutiliza el endpoint existente —
+ * no inventa endpoints. La UI agrupa por `category` y trata cada
+ * especialidad activa como tipo de atención agendable.
+ */
+export function fetchSpecialties(): Promise<SpecialtyDto[]> {
+  return api<SpecialtyDto[]>("/api/v1/specialties");
 }

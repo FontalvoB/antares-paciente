@@ -5,6 +5,8 @@ import {
   IonIcon,
   IonRadio,
   IonRadioGroup,
+  IonSelect,
+  IonSelectOption,
   IonTextarea,
 } from "@ionic/react";
 import {
@@ -17,6 +19,7 @@ import {
   leaf,
   locationOutline,
   medkit,
+  personOutline,
   sparkles,
   videocamOutline,
   warningOutline,
@@ -34,6 +37,14 @@ import {
   type ConsultTypeId,
   type ListedAppointment,
 } from "../data/appointments";
+import {
+  activeCareOptions,
+  careVisualFor,
+  groupCareOptionsByCategory,
+  professionalsForSpecialty,
+  TEMPORARY_CATALOG_SLOT_PROFILE,
+  type CareOption,
+} from "../data/careOptions";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import {
@@ -96,13 +107,23 @@ export function RequestAppointmentWizard({
   onCancel: () => void;
   onSubmitted: (appt: ListedAppointment) => void;
 }) {
-  const { teamProfessional, realMode, submitAppointmentRequest, showToast } =
-    useApp();
+  const {
+    teamProfessional,
+    realMode,
+    specialties,
+    professionalsCatalog,
+    submitAppointmentRequest,
+    showToast,
+  } = useApp();
   const t = useT();
   const today = toLocalISODate();
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
   const [typeId, setTypeId] = useState<ConsultTypeId | "">("");
+  // Ruta por catálogo (veredicto D1, tarea 2.A.3): especialidad elegida +
+  // profesional opcional ("" = cualquiera, viaja como professional_id=null).
+  const [specialtyId, setSpecialtyId] = useState("");
+  const [professionalId, setProfessionalId] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
@@ -111,15 +132,49 @@ export function RequestAppointmentWizard({
   const dir = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Opciones de atención desde el catálogo (null = aún no cargado).
+  const careOptions = useMemo(
+    () => activeCareOptions(specialties),
+    [specialties],
+  );
+  // Ruta por catálogo solo en modo real con catálogo no vacío; si no, la
+  // ruta legacy demo (CONSULT_TYPES) para no romper el modo sin sesión.
+  const useCatalogPath = realMode && !!careOptions && careOptions.length > 0;
+  const careGroups = useMemo(
+    () => groupCareOptionsByCategory(careOptions ?? []),
+    [careOptions],
+  );
+  const selectedCare: CareOption | null =
+    careOptions?.find((o) => o.specialtyId === specialtyId) ?? null;
+  const eligibleProfessionals = useMemo(
+    () =>
+      useCatalogPath && specialtyId
+        ? (professionalsForSpecialty(professionalsCatalog, specialtyId) ?? [])
+        : [],
+    [useCatalogPath, specialtyId, professionalsCatalog],
+  );
+  const selectedProfessional =
+    eligibleProfessionals.find((p) => p.id === professionalId) ?? null;
+
   const range = bookingWindow();
   const professional = typeId ? teamProfessional(typeId) : null;
   const consultType = typeId ? consultTypeById(typeId) : null;
-  const slots = typeId && date ? getAvailableSlots(typeId, date) : [];
+  // Motor de slots mock (2.A.2 lo retira; B1 lo reemplaza por /availability).
+  // En la ruta por catálogo usa el perfil temporal neutro (ver
+  // TEMPORARY_CATALOG_SLOT_PROFILE): sin precisión inventada por especialidad.
+  const slotTypeId: ConsultTypeId | "" = useCatalogPath
+    ? specialtyId
+      ? TEMPORARY_CATALOG_SLOT_PROFILE
+      : ""
+    : typeId;
+  const slots = slotTypeId && date ? getAvailableSlots(slotTypeId, date) : [];
   const { morning, afternoon } = splitSlots(slots);
-  const nextSlot = typeId ? firstOpenSlot(typeId) : null;
+  const nextSlot = slotTypeId ? firstOpenSlot(slotTypeId) : null;
   const cells = monthGrid(year, month);
   const meta = STEPS[step - 1] ?? STEPS[0];
-  const proShort = professional?.name.split(",")[0] ?? "";
+  const proShort = useCatalogPath
+    ? (selectedProfessional?.fullName.split(",")[0] ?? selectedCare?.name ?? "")
+    : (professional?.name.split(",")[0] ?? "");
   const minCursor = isoYearMonth(range.min);
   const maxCursor = isoYearMonth(range.max);
   const canPrev =
@@ -130,10 +185,10 @@ export function RequestAppointmentWizard({
     (year === maxCursor.year && month < maxCursor.month);
 
   const canContinue = useMemo(() => {
-    if (step === 1) return typeId !== "";
+    if (step === 1) return useCatalogPath ? specialtyId !== "" : typeId !== "";
     if (step === 2) return date !== "" && time !== "";
     return reason.trim().length >= 10 && mode !== "";
-  }, [step, typeId, date, time, reason, mode]);
+  }, [step, useCatalogPath, specialtyId, typeId, date, time, reason, mode]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
@@ -151,8 +206,23 @@ export function RequestAppointmentWizard({
     }
   };
 
+  const pickCare = (id: string) => {
+    setSpecialtyId(id);
+    // Sin preselección silenciosa: el profesional queda en "cualquiera"
+    // hasta que el paciente elija explícitamente (veredicto D1).
+    setProfessionalId("");
+    setTime("");
+    const open = firstOpenSlot(TEMPORARY_CATALOG_SLOT_PROFILE);
+    if (open) {
+      setDate(open.date);
+      setCursor(isoYearMonth(open.date));
+    } else {
+      setDate("");
+    }
+  };
+
   const pickDate = (iso: string) => {
-    if (!typeId || !isSelectableBookingDate(iso, typeId)) return;
+    if (!slotTypeId || !isSelectableBookingDate(iso, slotTypeId)) return;
     setDate(iso);
     setTime("");
   };
@@ -183,7 +253,8 @@ export function RequestAppointmentWizard({
       go(step + 1);
       return;
     }
-    if (!typeId || !mode) return;
+    if (useCatalogPath ? !specialtyId : !typeId) return;
+    if (!mode) return;
     if (realMode) {
       // Modo sesión real: "Solicitar cita" envía la solicitud al backend de
       // inmediato (el wizard cierra con toast de éxito/error). La pantalla
@@ -195,8 +266,51 @@ export function RequestAppointmentWizard({
   };
 
   const finish = () => {
-    if (!typeId || !mode) return;
+    if (!mode) return;
     if (realMode) {
+      // Modo sesión real: la solicitud viaja al backend y la lista se refresca.
+      if (useCatalogPath) {
+        if (!specialtyId || !selectedCare) return;
+        const payload = {
+          specialtyId,
+          professionalId: professionalId || null,
+          date,
+          time,
+          reason,
+          mode,
+        };
+        const summaryName =
+          selectedProfessional?.fullName ?? "Equipo COPP-ADRESD";
+        const summaryRole =
+          selectedProfessional?.professionalTypeName ?? selectedCare.name;
+        void submitAppointmentRequest(payload).then((ok) => {
+          if (ok) {
+            onSubmitted({
+              id: `req-${Date.now()}`,
+              when: "PENDIENTE",
+              mode,
+              accent: "linear-gradient(90deg,#0C3D2C,var(--teal))",
+              emoji: "🩺",
+              name: summaryName,
+              role: summaryRole,
+              time,
+              day: isTodayISO(date)
+                ? "Hoy"
+                : formatDateForDisplay(date).slice(0, 5),
+              motivo: `${selectedCare.name} · ${reason.trim()}`,
+              color: "var(--teal)",
+              pending: true,
+            });
+          } else {
+            showToast(
+              "No se pudo enviar la solicitud. Intenta de nuevo.",
+              "err",
+            );
+          }
+        });
+        return;
+      }
+      if (!typeId) return;
       // Modo sesión real: la solicitud viaja al backend y la lista se refresca.
       void submitAppointmentRequest({ typeId, date, time, reason, mode }).then(
         (ok) => {
@@ -214,6 +328,7 @@ export function RequestAppointmentWizard({
       );
       return;
     }
+    if (!typeId) return;
     onSubmitted(
       buildRequestedAppointment({ typeId, date, time, reason, mode }),
     );
@@ -224,6 +339,23 @@ export function RequestAppointmentWizard({
     if (delta > 0 && !canNext) return;
     setCursor((c) => shiftMonth(c.year, c.month, delta));
   };
+
+  // Resumen del paso 3 (ruta por catálogo: datos del backend, sin mocks).
+  const summaryLabel = useCatalogPath
+    ? (selectedCare?.name ?? "")
+    : (consultType?.label ?? "");
+  const summaryProName = useCatalogPath
+    ? (selectedProfessional?.fullName ?? "Equipo COPP-ADRESD")
+    : (professional?.name ?? "");
+  const summaryProRole = useCatalogPath
+    ? (selectedProfessional?.professionalTypeName ?? selectedCare?.name ?? "")
+    : (professional?.role ?? "");
+  const summaryAccent = useCatalogPath
+    ? "linear-gradient(90deg,#0C3D2C,var(--teal))"
+    : (professional?.accent ?? "");
+  const summaryColorSoft = useCatalogPath
+    ? "var(--teal-l)"
+    : (professional?.colorSoft ?? "");
 
   return (
     <div className="req-page">
@@ -269,9 +401,18 @@ export function RequestAppointmentWizard({
         <p className="sub">
           {done ? "El equipo confirmará tu cita en breve" : meta.sub}
         </p>
-        {(typeId || date || time) && !done && (
+        {(specialtyId || typeId || date || time) && !done && (
           <div className="chips">
-            {consultType && (
+            {useCatalogPath && selectedCare && (
+              <button
+                type="button"
+                className="chip chip-glass"
+                onClick={() => go(1)}
+              >
+                {t(selectedCare.name)}
+              </button>
+            )}
+            {!useCatalogPath && consultType && (
               <button
                 type="button"
                 className="chip chip-glass"
@@ -371,13 +512,108 @@ export function RequestAppointmentWizard({
               exit={{ opacity: 0, x: -16 * dir.current }}
               transition={{ duration: 0.28, ease: EASE }}
             >
-              {step === 1 && (
+              {step === 1 && useCatalogPath && (
+                <div className="req-catalog">
+                  {careGroups.map((group, gi) => {
+                    const visual = careVisualFor(gi);
+                    return (
+                      <section key={group.category} className="req-area">
+                        <div className="req-field-lbl">{t(group.category)}</div>
+                        <IonRadioGroup
+                          className="req-types"
+                          value={specialtyId || undefined}
+                          onIonChange={(e) =>
+                            pickCare(e.detail.value as string)
+                          }
+                        >
+                          {group.options.map((opt) => {
+                            const selected = specialtyId === opt.specialtyId;
+                            return (
+                              <IonRadio
+                                key={opt.specialtyId}
+                                value={opt.specialtyId}
+                                className={`req-type-card ac-${visual.tone} ${selected ? "sel" : ""}`}
+                                justify="start"
+                                labelPlacement="end"
+                                aria-label={t(opt.name)}
+                              >
+                                <span className="req-type-inner">
+                                  <span className="req-type-top">
+                                    <span
+                                      className="req-type-ico"
+                                      style={{
+                                        background: visual.bg,
+                                        color: visual.fg,
+                                      }}
+                                    >
+                                      <IonIcon icon={visual.icon} />
+                                    </span>
+                                    <span className="req-type-kicker">
+                                      {t(group.category)}
+                                    </span>
+                                    {selected ? (
+                                      <IonIcon
+                                        className="req-type-check"
+                                        icon={checkmarkCircle}
+                                      />
+                                    ) : null}
+                                  </span>
+                                  <span className="req-type-copy">
+                                    <span className="ct">{t(opt.name)}</span>
+                                    {opt.description ? (
+                                      <span className="cs">
+                                        {opt.description}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </span>
+                              </IonRadio>
+                            );
+                          })}
+                        </IonRadioGroup>
+                      </section>
+                    );
+                  })}
+
+                  {specialtyId && (
+                    <div className="field">
+                      <label>{t("Profesional (opcional)")}</label>
+                      <IonSelect
+                        className="fld"
+                        interface="popover"
+                        value={professionalId}
+                        aria-label={t("Profesional (opcional)")}
+                        onIonChange={(e) =>
+                          setProfessionalId(e.detail.value as string)
+                        }
+                      >
+                        <IonSelectOption value="">
+                          {t("Cualquier profesional disponible")}
+                        </IonSelectOption>
+                        {eligibleProfessionals.map((p) => (
+                          <IonSelectOption key={p.id} value={p.id}>
+                            {p.fullName}
+                          </IonSelectOption>
+                        ))}
+                      </IonSelect>
+                      {professionalsCatalog !== null &&
+                      eligibleProfessionals.length === 0 ? (
+                        <span className="req-hint">
+                          {t(
+                            "Sin profesionales listados. El equipo te asignará.",
+                          )}
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {step === 1 && !useCatalogPath && (
                 <IonRadioGroup
                   className="req-types"
                   value={typeId || undefined}
-                  onIonChange={(e) =>
-                    pickType(e.detail.value as ConsultTypeId)
-                  }
+                  onIonChange={(e) => pickType(e.detail.value as ConsultTypeId)}
                 >
                   {CONSULT_TYPES.map((kind) => {
                     const pro = teamProfessional(kind.id);
@@ -431,9 +667,7 @@ export function RequestAppointmentWizard({
                           {kind.id === "urgencia" ? (
                             <span className="req-type-note">
                               <IonIcon icon={warningOutline} />
-                              {t(
-                                "Si es una emergencia en curso, usa SOS.",
-                              )}
+                              {t("Si es una emergencia en curso, usa SOS.")}
                             </span>
                           ) : null}
                         </span>
@@ -443,7 +677,7 @@ export function RequestAppointmentWizard({
                 </IonRadioGroup>
               )}
 
-              {step === 2 && typeId && (
+              {step === 2 && (useCatalogPath ? !!specialtyId : !!typeId) && (
                 <div className="req-agenda">
                   {nextSlot &&
                     !(nextSlot.date === date && nextSlot.time === time) && (
@@ -453,7 +687,9 @@ export function RequestAppointmentWizard({
                         onClick={jumpNext}
                       >
                         <span className="req-soon-copy">
-                          <span className="req-soon-kicker">{t("Más pronto")}</span>
+                          <span className="req-soon-kicker">
+                            {t("Más pronto")}
+                          </span>
                           <span className="req-soon-when">
                             {isTodayISO(nextSlot.date)
                               ? t("Hoy")
@@ -502,9 +738,13 @@ export function RequestAppointmentWizard({
                           return (
                             <span key={`e-${i}`} className="req-cal-cell" />
                           );
-                        const enabled = isSelectableBookingDate(iso, typeId);
+                        const enabled =
+                          !!slotTypeId &&
+                          isSelectableBookingDate(iso, slotTypeId);
                         const hasSlots =
-                          enabled && getAvailableSlots(typeId, iso).length > 0;
+                          enabled &&
+                          !!slotTypeId &&
+                          getAvailableSlots(slotTypeId, iso).length > 0;
                         const selected = iso === date;
                         const todayCell = isTodayISO(iso);
                         return (
@@ -559,7 +799,9 @@ export function RequestAppointmentWizard({
                       >
                         {!date ? (
                           <div className="req-empty">
-                            <strong>{t("Elige un día en el calendario")}</strong>
+                            <strong>
+                              {t("Elige un día en el calendario")}
+                            </strong>
                             <p>
                               {t("Los días marcados tienen horarios libres.")}
                             </p>
@@ -634,144 +876,179 @@ export function RequestAppointmentWizard({
                 </div>
               )}
 
-              {step === 3 && professional && consultType && (
-                <>
-                  <div className="field">
-                    <label htmlFor="req-motivo">Motivo de la consulta</label>
-                    <IonTextarea
-                      id="req-motivo"
-                      className="fld"
-                      autoGrow
-                      rows={4}
-                      maxlength={500}
-                      enterkeyhint="done"
-                      placeholder="Cuéntale al equipo qué te preocupa hoy"
-                      value={reason}
-                      onIonInput={(e) => setReason(e.detail.value ?? "")}
-                    />
-                    <span className="req-hint">
-                      {reason.trim().length < 10
-                        ? "Mínimo 10 caracteres"
-                        : `${reason.trim().length} / 500`}
-                    </span>
-                  </div>
-
-                  <div className="req-field-lbl">Modalidad</div>
-                  <IonRadioGroup
-                    className="req-modes"
-                    value={mode || undefined}
-                    onIonChange={(e) =>
-                      setMode(e.detail.value as AppointmentMode)
-                    }
-                  >
-                    <IonRadio
-                      value="Videollamada"
-                      className={`card req-mode-card ${mode === "Videollamada" ? "sel" : ""}`}
-                      justify="start"
-                      labelPlacement="end"
-                    >
-                      <span className="req-mode-inner">
-                        <span
-                          className="ico"
-                          style={{
-                            background: "var(--teal-l)",
-                            color: "var(--teal)",
-                            marginBottom: 0,
-                          }}
-                        >
-                          <IonIcon icon={videocamOutline} />
-                        </span>
-                        <span className="req-type-copy">
-                          <span className="ct">Videollamada</span>
-                          <span className="cs">Desde casa · sala virtual</span>
-                        </span>
-                      </span>
-                    </IonRadio>
-                    <IonRadio
-                      value="Presencial"
-                      className={`card req-mode-card ${mode === "Presencial" ? "sel" : ""}`}
-                      justify="start"
-                      labelPlacement="end"
-                    >
-                      <span className="req-mode-inner">
-                        <span
-                          className="ico"
-                          style={{
-                            background: "var(--blue-l)",
-                            color: "var(--blue)",
-                            marginBottom: 0,
-                          }}
-                        >
-                          <IonIcon icon={locationOutline} />
-                        </span>
-                        <span className="req-type-copy">
-                          <span className="ct">Presencial</span>
-                          <span className="cs">En la clínica COPP-ADRESD</span>
-                        </span>
-                      </span>
-                    </IonRadio>
-                  </IonRadioGroup>
-
-                  <article
-                    className="appt-featured"
-                    style={{ margin: "14px 0 0" }}
-                  >
-                    <div
-                      className="appt-featured-band"
-                      style={{ background: professional.accent }}
-                    >
-                      <span>RESUMEN</span>
-                      <span
-                        style={{
-                          background: "rgba(255,255,255,.2)",
-                          borderRadius: 8,
-                          padding: "3px 8px",
-                        }}
-                      >
-                        {mode || "Modalidad"}
+              {step === 3 &&
+                (useCatalogPath
+                  ? !!selectedCare
+                  : !!(professional && consultType)) && (
+                  <>
+                    <div className="field">
+                      <label htmlFor="req-motivo">Motivo de la consulta</label>
+                      <IonTextarea
+                        id="req-motivo"
+                        className="fld"
+                        autoGrow
+                        rows={4}
+                        maxlength={500}
+                        enterkeyhint="done"
+                        placeholder="Cuéntale al equipo qué te preocupa hoy"
+                        value={reason}
+                        onIonInput={(e) => setReason(e.detail.value ?? "")}
+                      />
+                      <span className="req-hint">
+                        {reason.trim().length < 10
+                          ? "Mínimo 10 caracteres"
+                          : `${reason.trim().length} / 500`}
                       </span>
                     </div>
-                    <div className="appt-featured-body">
-                      <div className="appt-featured-when">{time || "—"}</div>
-                      <div className="appt-featured-mode">
-                        {date ? formatDateForDisplay(date) : "—"} ·{" "}
-                        {consultType.label}
+
+                    {useCatalogPath && (
+                      <div className="field">
+                        <label>{t("Profesional (opcional)")}</label>
+                        <IonSelect
+                          className="fld"
+                          interface="popover"
+                          value={professionalId}
+                          aria-label={t("Profesional (opcional)")}
+                          onIonChange={(e) =>
+                            setProfessionalId(e.detail.value as string)
+                          }
+                        >
+                          <IonSelectOption value="">
+                            {t("Cualquier profesional disponible")}
+                          </IonSelectOption>
+                          {eligibleProfessionals.map((p) => (
+                            <IonSelectOption key={p.id} value={p.id}>
+                              {p.fullName}
+                            </IonSelectOption>
+                          ))}
+                        </IonSelect>
                       </div>
+                    )}
+
+                    <div className="req-field-lbl">Modalidad</div>
+                    <IonRadioGroup
+                      className="req-modes"
+                      value={mode || undefined}
+                      onIonChange={(e) =>
+                        setMode(e.detail.value as AppointmentMode)
+                      }
+                    >
+                      <IonRadio
+                        value="Videollamada"
+                        className={`card req-mode-card ${mode === "Videollamada" ? "sel" : ""}`}
+                        justify="start"
+                        labelPlacement="end"
+                      >
+                        <span className="req-mode-inner">
+                          <span
+                            className="ico"
+                            style={{
+                              background: "var(--teal-l)",
+                              color: "var(--teal)",
+                              marginBottom: 0,
+                            }}
+                          >
+                            <IonIcon icon={videocamOutline} />
+                          </span>
+                          <span className="req-type-copy">
+                            <span className="ct">Videollamada</span>
+                            <span className="cs">
+                              Desde casa · sala virtual
+                            </span>
+                          </span>
+                        </span>
+                      </IonRadio>
+                      <IonRadio
+                        value="Presencial"
+                        className={`card req-mode-card ${mode === "Presencial" ? "sel" : ""}`}
+                        justify="start"
+                        labelPlacement="end"
+                      >
+                        <span className="req-mode-inner">
+                          <span
+                            className="ico"
+                            style={{
+                              background: "var(--blue-l)",
+                              color: "var(--blue)",
+                              marginBottom: 0,
+                            }}
+                          >
+                            <IonIcon icon={locationOutline} />
+                          </span>
+                          <span className="req-type-copy">
+                            <span className="ct">Presencial</span>
+                            <span className="cs">
+                              En la clínica COPP-ADRESD
+                            </span>
+                          </span>
+                        </span>
+                      </IonRadio>
+                    </IonRadioGroup>
+
+                    <article
+                      className="appt-featured"
+                      style={{ margin: "14px 0 0" }}
+                    >
                       <div
-                        style={{
-                          display: "flex",
-                          gap: 10,
-                          alignItems: "center",
-                          marginBottom: reason.trim() ? 10 : 0,
-                        }}
+                        className="appt-featured-band"
+                        style={{ background: summaryAccent }}
                       >
-                        <div
-                          className="avatar"
+                        <span>RESUMEN</span>
+                        <span
                           style={{
-                            width: 44,
-                            height: 44,
-                            background: professional.colorSoft,
-                            fontSize: 20,
+                            background: "rgba(255,255,255,.2)",
+                            borderRadius: 8,
+                            padding: "3px 8px",
                           }}
                         >
-                          {professional.emoji}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 700 }}>
-                            {professional.name}
-                          </div>
-                          <div style={{ fontSize: 12, color: "var(--mu)" }}>
-                            {professional.role}
-                          </div>
-                        </div>
+                          {mode || "Modalidad"}
+                        </span>
                       </div>
-                      {reason.trim() ? (
-                        <p className="req-ticket-motivo">{reason.trim()}</p>
-                      ) : null}
-                    </div>
-                  </article>
-                </>
-              )}
+                      <div className="appt-featured-body">
+                        <div className="appt-featured-when">{time || "—"}</div>
+                        <div className="appt-featured-mode">
+                          {date ? formatDateForDisplay(date) : "—"} ·{" "}
+                          {t(summaryLabel)}
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 10,
+                            alignItems: "center",
+                            marginBottom: reason.trim() ? 10 : 0,
+                          }}
+                        >
+                          <div
+                            className="avatar"
+                            style={{
+                              width: 44,
+                              height: 44,
+                              background: summaryColorSoft,
+                              fontSize: 20,
+                            }}
+                          >
+                            {useCatalogPath ? (
+                              <IonIcon icon={personOutline} />
+                            ) : (
+                              professional?.emoji
+                            )}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700 }}>
+                              {t(summaryProName)}
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--mu)" }}>
+                              {t(summaryProRole)}
+                            </div>
+                          </div>
+                        </div>
+                        {reason.trim() ? (
+                          <p className="req-ticket-motivo">{reason.trim()}</p>
+                        ) : null}
+                      </div>
+                    </article>
+                  </>
+                )}
             </motion.div>
           )}
         </AnimatePresence>

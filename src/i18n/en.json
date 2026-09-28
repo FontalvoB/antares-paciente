@@ -2287,5 +2287,14 @@
   "Tienes 1 cambio pendiente de sincronizar": "You have 1 pending change to sync",
   "Tienes {n} cambios pendientes de sincronizar": "You have {n} pending changes to sync",
   "Sincronizando tus avances…": "Syncing your progress…",
-  "Conexión restablecida": "Connection restored"
+  "Conexión restablecida": "Connection restored",
+  "Cualquier profesional disponible": "Any available professional",
+  "Profesional (opcional)": "Professional (optional)",
+  "Sin profesionales listados. El equipo te asignará.": "No professionals listed. Our team will assign one.",
+  "Medicina": "Medicine",
+  "Salud mental": "Mental health",
+  "Enfermería": "Nursing",
+  "Terapia": "Therapy",
+  "Coordinación": "Care coordination",
+  "Fitness": "Fitness"
 }
