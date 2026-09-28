@@ -359,6 +359,7 @@ export function ProfilePage() {
                     <IonAvatar className="pf-monogram" aria-hidden="true">{initials || <IonIcon icon={bodyOutline} />}</IonAvatar>
                     <span className="pf-card-caption">{t("MI PERFIL DE SALUD")}</span>
                     <h2>{user.nombre}</h2>
+                    {user.cedula && <p className="pf-doc"><span>{t("Documento")}</span>{user.cedula}</p>}
                     {user.ciudad && <p className="pf-city"><IonIcon icon={locationOutline} aria-hidden="true" />{user.ciudad}</p>}
                   </div>
                   {weekSub && <div className="pf-membership"><span aria-hidden="true" />{weekSub}</div>}
@@ -404,7 +405,7 @@ export function ProfilePage() {
                 </div>
                 <IonList className="pf-menu" lines="none">
                   {[
-                    { icon: bodyOutline, title: "Visualización del perfil", sub: "Índices y mediciones corporales", tone: "lilac", action: () => go("body") },
+                    { icon: bodyOutline, title: "Perfil corporal", sub: "Índices y mediciones corporales", tone: "lilac", action: () => go("body") },
                     { icon: clipboardOutline, title: "Batería de evaluación", sub: "Tests de salud pendientes", tone: "sky", action: () => openTests() },
                     { icon: leafOutline, title: "Plan nutricional", sub: "Alimentación que te acompaña", tone: "mint", action: () => go("nut") },
                   ].map(item => (

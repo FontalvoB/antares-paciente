@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { IonButton, IonSkeletonText } from "@ionic/react";
 import { useT } from "../../i18n/I18nContext";
@@ -45,7 +46,7 @@ interface AssignedMealCard {
   foods: string | null;
   notes: string | null;
   schedule: string | null;
-  macroLine: string;
+  macros: Array<{ text: string; tone: string }>;
 }
 
 /**
@@ -112,18 +113,32 @@ export function NutritionPlanTab({
           ? (mealTypeToCode(m.mealType) ?? null)
           : null;
         const meta = code ? PLAN_MEAL_META[code] : undefined;
-        const macros = [
+        const macros: Array<{ text: string; tone: string }> = [
           m.carbsG != null
-            ? `${formatMetricValue(m.carbsG, 0, locale)}g C`
-            : "",
+            ? {
+                text: `${formatMetricValue(m.carbsG, 0, locale)}g C`,
+                tone: "fm-c",
+              }
+            : null,
           m.proteinG != null
-            ? `${formatMetricValue(m.proteinG, 0, locale)}g P`
-            : "",
-          m.fatG != null ? `${formatMetricValue(m.fatG, 0, locale)}g G` : "",
+            ? {
+                text: `${formatMetricValue(m.proteinG, 0, locale)}g P`,
+                tone: "fm-p",
+              }
+            : null,
+          m.fatG != null
+            ? {
+                text: `${formatMetricValue(m.fatG, 0, locale)}g G`,
+                tone: "fm-g",
+              }
+            : null,
           m.fiberG != null
-            ? `${formatMetricValue(m.fiberG, 0, locale)}g F`
-            : "",
-        ].filter(Boolean);
+            ? {
+                text: `${formatMetricValue(m.fiberG, 0, locale)}g F`,
+                tone: "fm-f",
+              }
+            : null,
+        ].filter((x): x is { text: string; tone: string } => x !== null);
         return {
           key: `${code ?? "plan"}-${i}`,
           label: meta ? meta.label : (m.mealType ?? ""),
@@ -133,7 +148,7 @@ export function NutritionPlanTab({
           foods: m.foods ?? null,
           notes: m.notes ?? null,
           schedule: m.suggestedTime ?? plan.mealTiming ?? null,
-          macroLine: macros.join(" · "),
+          macros,
         };
       });
   }, [plan, locale]);
@@ -157,120 +172,93 @@ export function NutritionPlanTab({
   if (plan) {
     return (
       <>
-        <div className="card" style={{ margin: 14 }}>
-          {plan.name && (
-            <div style={{ fontWeight: 800, fontSize: 15 }}>{plan.name}</div>
-          )}
+        <div className="card nut-plan-card">
+          {plan.name && <div className="nut-plan-name">{plan.name}</div>}
           {plan.targetCondition && (
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--mu)",
-                marginTop: 2,
-                marginBottom: 6,
-              }}
-            >
+            <div className="nut-plan-cond">
               {t("Condición objetivo")}: {plan.targetCondition}
             </div>
           )}
           {plan.description && (
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--mu)",
-                lineHeight: 1.5,
-                marginBottom: 6,
-              }}
-            >
-              {plan.description}
-            </div>
+            <div className="nut-plan-desc">{plan.description}</div>
           )}
           {goalRows.map((row) => (
-            <div
-              key={row.label}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 0",
-                borderBottom: "1px solid var(--g1)",
-              }}
-            >
-              <span>{row.emoji}</span>
-              <span style={{ flex: 1, fontWeight: 600 }}>{t(row.label)}</span>
-              <span style={{ fontWeight: 800, color: "var(--teal)" }}>
-                {row.value}
+            <div key={row.label} className="nut-plan-row">
+              <span className="nut-plan-ico" aria-hidden="true">
+                {row.emoji}
               </span>
+              <span className="nut-plan-label">{t(row.label)}</span>
+              <span className="nut-plan-val">{row.value}</span>
             </div>
           ))}
           {waterMl != null && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 0",
-                borderBottom: "1px solid var(--g1)",
-              }}
-            >
-              <span>💧</span>
-              <span style={{ flex: 1, fontWeight: 600 }}>
-                {t("Agua diaria")}
+            <div className="nut-plan-row">
+              <span className="nut-plan-ico" aria-hidden="true">
+                💧
               </span>
-              <span style={{ fontWeight: 800, color: "var(--teal)" }}>
+              <span className="nut-plan-label">{t("Agua diaria")}</span>
+              <span className="nut-plan-val">
                 {formatMetricValue(waterMl, 0, locale)} ml
               </span>
             </div>
           )}
         </div>
-        {mealCards.map((m) => (
-          <div key={m.key} className="meal-card">
+        {mealCards.map((m, idx) => (
+          <motion.article
+            key={m.key}
+            className="meal-card"
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-32px" }}
+            transition={{
+              duration: 0.38,
+              delay: Math.min(idx * 0.06, 0.18),
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          >
             <div className="meal-hdr">
-              <span>{m.emoji}</span>
-              <span style={{ flex: 1, fontWeight: 700 }}>
+              <span className="meal-ico" aria-hidden="true">
+                {m.emoji}
+              </span>
+              <span className="meal-title">
                 {m.labelIsKey ? t(m.label) : m.label}
               </span>
               {m.kcal != null && (
-                <span style={{ opacity: 0.75, fontSize: 12 }}>
+                <span className="meal-kcal">
                   {formatMetricValue(m.kcal, 0, locale)} kcal
                 </span>
               )}
             </div>
-            <div
-              style={{
-                padding: 12,
-                fontSize: 12,
-                color: "var(--mu)",
-                display: "grid",
-                gap: 6,
-                lineHeight: 1.5,
-              }}
-            >
+            <div className="nut-plan-details">
               {m.foods && (
-                <div>
+                <div className="nut-plan-detail">
                   <strong>{t("Alimentos recomendados")}: </strong>
                   {m.foods}
                 </div>
               )}
               {m.schedule && (
-                <div>
+                <div className="nut-plan-detail">
                   <strong>{t("Horario sugerido")}: </strong>
                   {m.schedule}
                 </div>
               )}
               {m.notes && (
-                <div>
+                <div className="nut-plan-detail">
                   <strong>{t("Notas del nutricionista")}: </strong>
                   {m.notes}
                 </div>
               )}
-              {m.macroLine && (
-                <div>
-                  <span className="fm fm-c">{m.macroLine}</span>
+              {m.macros.length > 0 && (
+                <div className="nut-plan-macros">
+                  {m.macros.map((macro) => (
+                    <span key={macro.text} className={`fm ${macro.tone}`}>
+                      {macro.text}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
+          </motion.article>
         ))}
       </>
     );
@@ -278,23 +266,14 @@ export function NutritionPlanTab({
 
   if (fallbackRows.length > 0) {
     return (
-      <div className="card" style={{ margin: 14 }}>
+      <div className="card nut-plan-card">
         {fallbackRows.map((row) => (
-          <div
-            key={row.label}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 0",
-              borderBottom: "1px solid var(--g1)",
-            }}
-          >
-            <span>{row.emoji}</span>
-            <span style={{ flex: 1, fontWeight: 600 }}>{t(row.label)}</span>
-            <span style={{ fontWeight: 800, color: "var(--teal)" }}>
-              {row.value}
+          <div key={row.label} className="nut-plan-row">
+            <span className="nut-plan-ico" aria-hidden="true">
+              {row.emoji}
             </span>
+            <span className="nut-plan-label">{t(row.label)}</span>
+            <span className="nut-plan-val">{row.value}</span>
           </div>
         ))}
       </div>

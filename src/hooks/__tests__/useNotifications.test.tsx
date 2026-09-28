@@ -1,10 +1,10 @@
 /**
- * Tests de useNotifications (Fase 11, tarea 2.5).
+ * Tests de useNotifications (Fase 11, tarea 2.5; Fase 12, tarea 2.5).
  *
- * Se mockea la capa de servicio (misma ruta que importa el hook): el hook
- * solo orquesta TanStack Query + actualización optimista de la cache.
- * Cobertura: carga inicial, lista + unreadCount, markAsRead (decrementa),
- * markAllAsRead (vacía el conteo) y refresh (refetch).
+ * Se mockean la capa de servicio y la cola offline (mismas rutas que
+ * importa el hook). Cobertura: carga inicial, lista + unreadCount,
+ * markAsRead (decrementa), markAllAsRead (vacía el conteo), refresh y
+ * resiliencia Fase 12 (transporte → encola sin lanzar; 4xx → revierte).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
@@ -17,11 +17,17 @@ import type { PaginatedNotificationsResult } from "../../services/notifications/
 
 const fetchNotificationsMock = vi.fn();
 const markNotificationReadMock = vi.fn();
+const queueNotificationReadMock = vi.fn();
 
 vi.mock("../../services/notifications/notifications-service", () => ({
   fetchNotifications: (...args: unknown[]) => fetchNotificationsMock(...args),
   markNotificationRead: (...args: unknown[]) =>
     markNotificationReadMock(...args),
+}));
+
+vi.mock("../../services/offline/offline-queue-service", () => ({
+  queueNotificationRead: (...args: unknown[]) =>
+    queueNotificationReadMock(...args),
 }));
 
 import { useNotifications } from "../useNotifications";
@@ -204,5 +210,101 @@ describe("useNotifications — centro de avisos in-app", () => {
       await result.current.markAllAsRead();
     });
     expect(markNotificationReadMock).not.toHaveBeenCalled();
+  });
+
+  it("markAsRead con fallo de transporte encola y conserva el optimismo sin lanzar", async () => {
+    fetchNotificationsMock.mockResolvedValue(fixturePage());
+    markNotificationReadMock.mockRejectedValue(
+      new ApiError({ message: "Sin red", status: 0, errorType: "network" }),
+    );
+    queueNotificationReadMock.mockReset();
+    const { result } = renderHook(() => useNotifications(), {
+      wrapper: makeWrapper(newClient()),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.markAsRead("n-1");
+    });
+
+    expect(queueNotificationReadMock).toHaveBeenCalledWith("n-1");
+    await waitFor(() => expect(result.current.unreadCount).toBe(0));
+    expect(
+      result.current.notifications.find((n) => n.id === "n-1")?.readAt,
+    ).not.toBeNull();
+  });
+
+  it("markAsRead con 4xx revierte el optimismo y propaga", async () => {
+    fetchNotificationsMock.mockResolvedValue(fixturePage());
+    markNotificationReadMock.mockRejectedValue(
+      new ApiError({
+        message: "No existe",
+        status: 404,
+        errorType: "business",
+      }),
+    );
+    queueNotificationReadMock.mockReset();
+    const { result } = renderHook(() => useNotifications(), {
+      wrapper: makeWrapper(newClient()),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await expect(result.current.markAsRead("n-1")).rejects.toMatchObject({
+        status: 404,
+      });
+    });
+
+    expect(queueNotificationReadMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.unreadCount).toBe(1));
+    expect(
+      result.current.notifications.find((n) => n.id === "n-1")?.readAt,
+    ).toBeNull();
+  });
+
+  it("markAllAsRead mixto: encola transporte, revierte negocio y lanza", async () => {
+    fetchNotificationsMock.mockResolvedValue(
+      fixturePage({
+        items: [
+          { ...fixturePage().items[0], id: "n-1", readAt: null },
+          { ...fixturePage().items[0], id: "n-3", readAt: null },
+        ],
+        unreadCount: 2,
+        totalCount: 2,
+      }),
+    );
+    markNotificationReadMock
+      .mockRejectedValueOnce(
+        new ApiError({ message: "Sin red", status: 0, errorType: "network" }),
+      )
+      .mockRejectedValueOnce(
+        new ApiError({
+          message: "No existe",
+          status: 404,
+          errorType: "business",
+        }),
+      );
+    queueNotificationReadMock.mockReset();
+    const { result } = renderHook(() => useNotifications(), {
+      wrapper: makeWrapper(newClient()),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await expect(result.current.markAllAsRead()).rejects.toMatchObject({
+        status: 404,
+      });
+    });
+
+    // n-1 (transporte) encolado con optimismo; n-3 (404) revertido.
+    expect(queueNotificationReadMock).toHaveBeenCalledWith("n-1");
+    expect(queueNotificationReadMock).not.toHaveBeenCalledWith("n-3");
+    await waitFor(() => expect(result.current.unreadCount).toBe(1));
+    expect(
+      result.current.notifications.find((n) => n.id === "n-1")?.readAt,
+    ).not.toBeNull();
+    expect(
+      result.current.notifications.find((n) => n.id === "n-3")?.readAt,
+    ).toBeNull();
   });
 });

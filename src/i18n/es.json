@@ -2236,5 +2236,11 @@
   "Tus avisos de salud": "Tus avisos de salud",
   "hace un momento": "hace un momento",
   "Sin leer": "Sin leer",
-  "Notificaciones sin leer: {count}": "Notificaciones sin leer: {count}"
+  "Notificaciones sin leer: {count}": "Notificaciones sin leer: {count}",
+  "Sin conexión": "Sin conexión",
+  "Tus avances se guardarán y sincronizarán automáticamente": "Tus avances se guardarán y sincronizarán automáticamente",
+  "Tienes 1 cambio pendiente de sincronizar": "Tienes 1 cambio pendiente de sincronizar",
+  "Tienes {n} cambios pendientes de sincronizar": "Tienes {n} cambios pendientes de sincronizar",
+  "Sincronizando tus avances…": "Sincronizando tus avances…",
+  "Conexión restablecida": "Conexión restablecida"
 }

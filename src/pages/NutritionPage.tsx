@@ -20,6 +20,10 @@ import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import { useI18n } from "../i18n/I18nContext";
 import { useNutritionLog } from "../hooks/useNutritionLog";
+import {
+  isOnline,
+  queueHydration,
+} from "../services/offline/offline-queue-service";
 import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
 import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { useProgram } from "../hooks/useProgram";
@@ -443,6 +447,14 @@ export function NutritionPage() {
   const tapGlass = (n: number) => {
     if (!canMutate || n <= displayedGlasses) return;
     setPendingGlasses(n);
+    // Fase 12 (offline-first): sin red se encola persistente con
+    // idempotencyKey en vez de disparar el mutate (TanStack lo pausaría sin
+    // persistir ni contar en el banner). El optimismo local sobrevive por
+    // `pendingGlasses`; al despachar se invalida y el refetch reconcilia.
+    if (!isOnline()) {
+      queueHydration({ waterMl: n * 250, source: "manual" });
+      return;
+    }
     nutritionMutation.mutate(
       {
         mealCode: "agua",

@@ -24,6 +24,7 @@ import { useTabletLayout } from "./hooks/useTabletLayout";
 import { PanicOverlay } from "./components/PanicOverlay";
 import { VoiceOverlay } from "./components/VoiceOverlay";
 import { ToastHost } from "./components/ToastHost";
+import { OfflineBanner } from "./components/common/OfflineBanner";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
@@ -222,6 +223,7 @@ function Shell() {
         <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />
+        <OfflineBanner />
       </div>
     </div>
   );

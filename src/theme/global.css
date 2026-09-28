@@ -6262,6 +6262,110 @@ ion-toast.app-toast {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ============================================================
+   OFFLINE BANNER — resiliencia en red (Fase 12).
+   Bento flotante no intrusivo: fixed bajo el notch, z-index 999,
+   pointer-events none (nunca bloquea toques). Ámbar offline, verde
+   sincronizando/restaurado. Entrada con desliz suave; la salida la
+   orquesta el componente (clase .ob-leaving 400 ms antes de ocultar).
+   ============================================================ */
+.ob-wrap {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: 0;
+  right: 0;
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+.ob-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(92vw, 400px);
+  padding: 11px 14px;
+  border-radius: 16px;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  box-shadow: var(--shadow-sm);
+  animation: obSlideIn 0.28s ease-out;
+}
+.ob-card.ob-offline {
+  border-color: color-mix(in srgb, var(--org) 45%, var(--bd));
+}
+.ob-card.ob-syncing,
+.ob-card.ob-restored {
+  border-color: color-mix(in srgb, var(--safe) 45%, var(--bd));
+}
+.ob-card.ob-leaving {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.ob-ico {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  font-size: 20px;
+}
+.ob-offline .ob-ico {
+  background: var(--org-l);
+  color: var(--org-d);
+}
+.ob-syncing .ob-ico,
+.ob-restored .ob-ico {
+  background: var(--teal-l);
+  color: var(--teal-d);
+}
+.ob-spin ion-icon {
+  animation: obSpin 1.1s linear infinite;
+}
+.ob-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ob-body strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--tx);
+}
+.ob-body small {
+  font-size: 12px;
+  color: var(--mu);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+@keyframes obSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes obSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-card {
+    animation: none;
+  }
+  .ob-spin ion-icon {
+    animation: none;
+  }
+}
 ion-loading.app-loading {
   --background: #12263a;
   --color: #fff;
@@ -25747,4 +25851,151 @@ ion-button.club-event-btn {
   font-size: 12px;
   font-weight: 600;
   color: var(--mu);
+}
+
+/* ============================================================
+   Perfil + Plan nutricional premium (front-artisan)
+   Solo presentación: sin cambios de lógica ni datos.
+   ============================================================ */
+
+/* Monograma con borde degradado sutil (doble capa sobre el cover). */
+.pf-monogram {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--ice) 35%, transparent),
+        color-mix(in srgb, var(--wh) 8%, transparent)
+      )
+      padding-box,
+    linear-gradient(135deg, var(--ice), var(--teal)) border-box;
+}
+
+/* Documento del paciente bajo el nombre: etiqueta + valor Space Grotesk. */
+.pf-doc {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: var(--wh);
+}
+.pf-doc span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--ice);
+}
+
+/* Micro-interacciones táctiles en acciones del perfil. */
+.pf-quick:active,
+.pf-team-card:active,
+.pf-discover-card:active,
+.pf-avatar-feature:active {
+  transform: scale(0.96);
+}
+.pf-logout:active,
+.pf-settings:active {
+  transform: scale(0.92);
+}
+
+/* Tarjeta del plan asignado: bento coherente con el resto de Nutrición. */
+.nut-plan-card {
+  margin: 12px 14px 0;
+  padding: 18px 16px 8px;
+  border-radius: 22px;
+}
+.nut-plan-name {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--tx);
+}
+.nut-plan-cond {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mu);
+}
+.nut-plan-desc {
+  margin: 6px 0 4px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--mu);
+}
+.nut-plan-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--g1);
+}
+.nut-plan-row:last-child {
+  border-bottom: none;
+}
+.nut-plan-ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: var(--g0);
+  font-size: 19px;
+}
+.nut-plan-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+}
+.nut-plan-val {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--teal);
+  white-space: nowrap;
+}
+
+/* Detalle de comidas del plan: filas limpias + pills de macros. */
+.nut-plan-details {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+.nut-plan-detail {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--mu);
+}
+.nut-plan-detail strong {
+  color: var(--tx);
+  font-weight: 700;
+}
+.nut-plan-macros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 2px;
+}
+.fm-f {
+  background: var(--pur-l);
+  color: var(--pur-d);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-quick:active,
+  .pf-team-card:active,
+  .pf-discover-card:active,
+  .pf-avatar-feature:active,
+  .pf-logout:active,
+  .pf-settings:active {
+    transform: none;
+  }
 }
