@@ -332,12 +332,14 @@ export function mapRequestToListed(
   req: AppointmentRequestDto,
 ): ListedAppointment {
   const style = styleForType("medica");
+  // Estado legible de la solicitud (REQ-APP-03 bugfix: "En revisión" /
+  // "Aprobada", sin botón de sala — la sala no existe hasta confirmar).
   const when =
     req.status === "Approved"
-      ? "APROBADA"
+      ? "Aprobada"
       : req.status === "Rejected"
-        ? "RECHAZADA"
-        : "PENDIENTE";
+        ? "Rechazada"
+        : "En revisión";
   const preferred = req.preferredStart ? new Date(req.preferredStart) : null;
   return {
     id: `req-${req.id}`,
@@ -367,6 +369,21 @@ export const APPOINTMENT_STATUS_LABELS: Record<
   Cancelled: "CANCELADA",
   NoShow: "NO SHOW",
 };
+
+/**
+ * ¿La fila puede abrir sala? (REQ-APP-03 bugfix 2026-09-28): solo citas
+ * reales con sala potencial (`Confirmed`/`InProgress`) y nunca ids de
+ * solicitud (`req-*`, sin sala en el backend → 404). Las solicitudes
+ * muestran su estado sin botón de sala.
+ */
+export function canJoinAppointment(
+  appointment: Pick<ListedAppointment, "id" | "status">,
+): boolean {
+  if (appointment.id.startsWith("req-")) return false;
+  return (
+    appointment.status === "Confirmed" || appointment.status === "InProgress"
+  );
+}
 
 /** Cita del backend → fila de la lista. */
 export function mapAppointmentToListed(

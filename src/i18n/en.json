@@ -2349,5 +2349,8 @@
   "Se necesita tu organización para buscar por especialidad.": "Your organization is needed to search by specialty.",
   "Cancelada": "Cancelled",
   "No asistió": "Did not attend",
-  "Medicina General": "General medicine"
+  "Medicina General": "General medicine",
+  "En revisión": "Under review",
+  "Aprobada": "Approved",
+  "Rechazada": "Rejected"
 }

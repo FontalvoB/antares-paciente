@@ -7,7 +7,11 @@ import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard
 import { RescheduleAppointmentSheet } from "../components/RescheduleAppointmentSheet";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
-import { INITIAL_UPCOMING, pastAppointmentChip } from "../data/appointments";
+import {
+  INITIAL_UPCOMING,
+  canJoinAppointment,
+  pastAppointmentChip,
+} from "../data/appointments";
 import type { ListedAppointment } from "../data/appointments";
 import { useT } from "../i18n/I18nContext";
 import {
@@ -148,17 +152,30 @@ export function AppointmentsPage() {
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <IonButton
-                  expand="block"
-                  className="bt bt-sm bt-teal"
-                  style={{ flex: 1 }}
-                  onClick={() => {
-                    if (realMode) openRoom(featured);
-                    else showToast(t("Entrando a la sala de espera…"), "ok");
-                  }}
-                >
-                  {t("Unirse a telemedicina")}
-                </IonButton>
+                {/* REQ-APP-03 bugfix: Unirse solo en citas reales
+                    Confirmadas/En curso; las solicitudes muestran su estado
+                    sin botón de sala (su id req-* daría 404). En demo se
+                    conserva el brindis ilustrativo. */}
+                {!realMode || canJoinAppointment(featured) ? (
+                  <IonButton
+                    expand="block"
+                    className="bt bt-sm bt-teal"
+                    style={{ flex: 1 }}
+                    onClick={() => {
+                      if (realMode) openRoom(featured);
+                      else showToast(t("Entrando a la sala de espera…"), "ok");
+                    }}
+                  >
+                    {t("Unirse a telemedicina")}
+                  </IonButton>
+                ) : (
+                  <span
+                    className="chip chip-org"
+                    style={{ flex: 1, textAlign: "center" }}
+                  >
+                    {t(featured.when)}
+                  </span>
+                )}
                 <IonButton
                   className="bt bt-round"
                   style={
@@ -229,7 +246,7 @@ export function AppointmentsPage() {
                   </small>
                 </div>
                 {a.pending ? (
-                  <span className="chip chip-org">{t("PENDIENTE")}</span>
+                  <span className="chip chip-org">{t(a.when)}</span>
                 ) : null}
                 {canReschedule(a) ? (
                   <IonButton
