@@ -1,5 +1,9 @@
 import { flash, leaf, medkit, sparkles } from "ionicons/icons";
-import { DIRECT_ENTRY_SPECIALTY_CODES } from "./careEntryPoints";
+import {
+  DIRECT_ENTRY_DISPLAY,
+  DIRECT_ENTRY_SPECIALTY_CODES,
+  type EntryPointDisplay,
+} from "./careEntryPoints";
 import type {
   AvailabilitySlotDto,
   ProfessionalCatalogItem,
@@ -123,6 +127,62 @@ export function careVisualFor(areaIndex: number): {
         CARE_VISUALS.length
     ] ?? CARE_VISUALS[0];
   return { tone: visual.tone, bg: visual.bg, fg: visual.fg, icon: visual.icon };
+}
+
+/** Estética de marca por tono (tabla única, sin hex sueltos). */
+export function toneVisual(tone: string): {
+  tone: string;
+  bg: string;
+  fg: string;
+} {
+  const found = CARE_VISUALS.find((v) => v.tone === tone) ?? CARE_VISUALS[0];
+  return { tone: found.tone, bg: found.bg, fg: found.fg };
+}
+
+/** Tarjeta resuelta para pintar (diseño distintivo o fallback genérico). */
+export interface EntryCardDisplay {
+  /** Clave i18n del título; ausente = usar el nombre del catálogo. */
+  titleKey?: string;
+  /** Clave i18n de la descripción; ausente = descripción del catálogo. */
+  descKey?: string;
+  /** Clave i18n del kicker; ausente = sin kicker (lo pone el llamador). */
+  kickerKey?: string;
+  icon: string;
+  tone: string;
+  bg: string;
+  fg: string;
+  sosNote: boolean;
+}
+
+/**
+ * Presentación de una opción de entrada por `code` (Decisión 5): si el
+ * código tiene entrada en `DIRECT_ENTRY_DISPLAY` usa su título en español,
+ * icono y tono distintivos; si no, fallback genérico (nombre del catálogo +
+ * estética rotativa) para no romper ante nuevos códigos.
+ */
+export function entryDisplayFor(code: string, index: number): EntryCardDisplay {
+  const meta: EntryPointDisplay | undefined = DIRECT_ENTRY_DISPLAY[code];
+  if (meta) {
+    const visual = toneVisual(meta.tone);
+    return {
+      titleKey: meta.titleKey,
+      descKey: meta.descKey,
+      kickerKey: meta.kickerKey,
+      icon: meta.icon,
+      tone: visual.tone,
+      bg: visual.bg,
+      fg: visual.fg,
+      sosNote: meta.sosNote,
+    };
+  }
+  const fallback = careVisualFor(index);
+  return {
+    icon: fallback.icon,
+    tone: fallback.tone,
+    bg: fallback.bg,
+    fg: fallback.fg,
+    sosNote: false,
+  };
 }
 
 /** Ranura disponible lista para pintar (B4: solo `isAvailable`). */

@@ -3,12 +3,14 @@ import {
   activeCareOptions,
   careVisualFor,
   dayHasSchedule,
+  entryDisplayFor,
   entryPointCareOptions,
   groupCareOptionsByCategory,
   isCatalogBookingDate,
   professionalsForSpecialty,
   splitSlotViews,
   toAvailableSlotViews,
+  toneVisual,
   type CareOption,
 } from "../careOptions";
 import type {
@@ -269,5 +271,36 @@ describe("entryPointCareOptions — Decisión 5: solo MG + Urgencia", () => {
       option("family_medicine"),
     ]);
     expect(out).toEqual([]);
+  });
+});
+
+describe("entryDisplayFor — tarjetas distintas por código", () => {
+  it("FAMILY_MEDICINE → título en español, icono y tono teal", () => {
+    const display = entryDisplayFor("FAMILY_MEDICINE", 0);
+    expect(display.titleKey).toBe("Medicina General");
+    expect(display.descKey).toBe("Control y prevención");
+    expect(display.tone).toBe("teal");
+    expect(display.sosNote).toBe(false);
+    expect(typeof display.icon).toBe("string");
+  });
+
+  it("URGENT_CARE → título en español, tono org y aviso SOS", () => {
+    const display = entryDisplayFor("URGENT_CARE", 1);
+    expect(display.titleKey).toBe("Urgencia");
+    expect(display.tone).toBe("org");
+    expect(display.sosNote).toBe(true);
+  });
+
+  it("código sin diseño → fallback genérico sin claves", () => {
+    const display = entryDisplayFor("FUTURE_CODE", 2);
+    expect(display.titleKey).toBeUndefined();
+    expect(display.descKey).toBeUndefined();
+    expect(display.sosNote).toBe(false);
+  });
+
+  it("toneVisual resuelve la paleta de marca sin hex sueltos", () => {
+    expect(toneVisual("teal").bg).toBe("var(--teal-l)");
+    expect(toneVisual("org").fg).toBe("var(--org)");
+    expect(toneVisual("desconocido").tone).toBe("teal");
   });
 });

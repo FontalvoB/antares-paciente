@@ -36,8 +36,8 @@ import {
 } from "../data/appointments";
 import {
   activeCareOptions,
-  careVisualFor,
   dayHasSchedule,
+  entryDisplayFor,
   entryPointCareOptions,
   groupCareOptionsByCategory,
   isCatalogBookingDate,
@@ -470,6 +470,64 @@ export function RequestAppointmentWizard({
     setCursor((c) => shiftMonth(c.year, c.month, delta));
   };
 
+  // Tarjeta de entrada directa (Decisión 5): título en español por code
+  // (fallback al nombre del catálogo), icono Ionicons, check al seleccionar.
+  // `categoryKicker` solo cuando no hay encabezado de área (plano): evita
+  // encabezados duplicados.
+  const renderEntryCard = (
+    opt: CareOption,
+    index: number,
+    categoryKicker: boolean,
+  ) => {
+    const display = entryDisplayFor(opt.code, index);
+    const selected = specialtyId === opt.specialtyId;
+    const title = display.titleKey ? t(display.titleKey) : opt.name;
+    const desc = display.descKey ? t(display.descKey) : (opt.description ?? "");
+    const kicker = display.kickerKey
+      ? t(display.kickerKey)
+      : categoryKicker
+        ? t(opt.category)
+        : null;
+    return (
+      <IonRadio
+        key={opt.specialtyId}
+        value={opt.specialtyId}
+        className={`req-type-card ac-${display.tone} ${selected ? "sel" : ""}`}
+        justify="start"
+        labelPlacement="end"
+        aria-label={title}
+      >
+        <span className="req-type-inner">
+          <span className="req-type-top">
+            <span
+              className="req-type-ico"
+              style={{ background: display.bg, color: display.fg }}
+            >
+              <IonIcon icon={display.icon} />
+            </span>
+            {kicker ? <span className="req-type-kicker">{kicker}</span> : null}
+            {selected ? (
+              <IonIcon className="req-type-check" icon={checkmarkCircle} />
+            ) : null}
+          </span>
+          <span className="req-type-copy">
+            <span className="ct">{title}</span>
+            {desc ? <span className="cs">{desc}</span> : null}
+          </span>
+          {display.sosNote ? (
+            <span className="req-type-note">
+              <IonIcon icon={warningOutline} />
+              {t("Si es una emergencia en curso, usa SOS.")}
+            </span>
+          ) : null}
+        </span>
+      </IonRadio>
+    );
+  };
+  // Con un área única (caso Decisión 5) se renderiza plano, sin encabezados;
+  // si la entrada creciera a varias áreas, se agrupa con un encabezado.
+  const showAreaHeaders = careGroups.length > 1;
+
   // Resumen del paso 3 (ruta por catálogo: datos del backend, sin mocks).
   const summaryLabel = useCatalogPath
     ? (selectedCare?.name ?? "")
@@ -689,9 +747,18 @@ export function RequestAppointmentWizard({
             >
               {step === 1 && useCatalogPath && (
                 <div className="req-catalog">
-                  {careGroups.map((group, gi) => {
-                    const visual = careVisualFor(gi);
-                    return (
+                  {!showAreaHeaders ? (
+                    <IonRadioGroup
+                      className="req-types"
+                      value={specialtyId || undefined}
+                      onIonChange={(e) => pickCare(e.detail.value as string)}
+                    >
+                      {(careOptions ?? []).map((opt, i) =>
+                        renderEntryCard(opt, i, true),
+                      )}
+                    </IonRadioGroup>
+                  ) : (
+                    careGroups.map((group, gi) => (
                       <section key={group.category} className="req-area">
                         <div className="req-field-lbl">{t(group.category)}</div>
                         <IonRadioGroup
@@ -701,54 +768,13 @@ export function RequestAppointmentWizard({
                             pickCare(e.detail.value as string)
                           }
                         >
-                          {group.options.map((opt) => {
-                            const selected = specialtyId === opt.specialtyId;
-                            return (
-                              <IonRadio
-                                key={opt.specialtyId}
-                                value={opt.specialtyId}
-                                className={`req-type-card ac-${visual.tone} ${selected ? "sel" : ""}`}
-                                justify="start"
-                                labelPlacement="end"
-                                aria-label={t(opt.name)}
-                              >
-                                <span className="req-type-inner">
-                                  <span className="req-type-top">
-                                    <span
-                                      className="req-type-ico"
-                                      style={{
-                                        background: visual.bg,
-                                        color: visual.fg,
-                                      }}
-                                    >
-                                      <IonIcon icon={visual.icon} />
-                                    </span>
-                                    <span className="req-type-kicker">
-                                      {t(group.category)}
-                                    </span>
-                                    {selected ? (
-                                      <IonIcon
-                                        className="req-type-check"
-                                        icon={checkmarkCircle}
-                                      />
-                                    ) : null}
-                                  </span>
-                                  <span className="req-type-copy">
-                                    <span className="ct">{t(opt.name)}</span>
-                                    {opt.description ? (
-                                      <span className="cs">
-                                        {opt.description}
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                </span>
-                              </IonRadio>
-                            );
-                          })}
+                          {group.options.map((opt) =>
+                            renderEntryCard(opt, gi, false),
+                          )}
                         </IonRadioGroup>
                       </section>
-                    );
-                  })}
+                    ))
+                  )}
 
                   {specialtyId && (
                     <div className="field">
