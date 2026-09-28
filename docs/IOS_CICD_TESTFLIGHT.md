@@ -18,7 +18,7 @@ archive Release → IPA → upload a App Store Connect.
 ┌────────────┐   push/merge    ┌──────────────────────────────────────────────┐
 │  dev (git) │ ──────────────► │ GitHub Actions · iOS TestFlight              │
 └────────────┘                 │                                              │
-                               │  JOB 1 · quality (ubuntu-latest, rápido)     │
+                               │  JOB 1 · quality (ubuntu-24.04, rápido)      │
                                │   yarn install --frozen-lockfile             │
                                │   npm run lint / test / i18n:check           │
                                │   npm run release:check (Info.plist)         │
@@ -240,7 +240,8 @@ El IPA y los dSYMs quedan en `ios/App/output/` (ignorado por git).
   - **push a `dev`** (ignora cambios solo-docs) → validaciones + upload.
   - **PR hacia `dev`** → solo el job de validaciones (sin secretos ni upload).
   - **workflow_dispatch** (manual, con `skip_upload` y `build_number`).
-- Runner: `macos-26` con **Xcode 26.6** fijado (reproducible) + Node 24 + Ruby 3.4.
+- Runners fijos (sin `-latest`): `ubuntu-24.04` para validaciones y `macos-26`
+  con **Xcode 26.6** para el build iOS. Node 24 + Ruby 3.4.
 - Cachés: `yarn` (setup-node) y gems (ruby/setup-ruby `bundler-cache`).
 - El job `quality` es obligatorio antes de `testflight`; cualquier fallo
   (lint, tests, i18n, release:check, build) **detiene el despliegue**.

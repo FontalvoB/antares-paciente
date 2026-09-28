@@ -65,7 +65,8 @@ jobs:
   # ---------------------------------------------------------------------------
   quality:
     name: Validaciones (lint · tests · i18n · build web)
-    runs-on: ubuntu-latest
+    # Imagen fija (no `ubuntu-latest`): evita migraciones sorpresa de runner.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
