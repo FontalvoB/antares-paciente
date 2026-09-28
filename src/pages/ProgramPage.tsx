@@ -72,7 +72,6 @@ export function ProgramPage() {
     weekCheckins,
     user,
     wearableConnected,
-    connectWearable,
   } = useApp();
 
   const t = useT();
@@ -780,10 +779,7 @@ export function ProgramPage() {
                   pts={taskPts}
                   recentVitals={serverActiveTask?.content?.recentVitals}
                   wearableConnected={wearableConnected}
-                  onConnectWatch={() => {
-                    connectWearable("Copp Adresd Wearable");
-                    showToast(t("Wearable listo para sincronizar"), "ok");
-                  }}
+                  onOpenWearable={() => navigate("bt")}
                   onComplete={(vitals) =>
                     finish(
                       "vitals",

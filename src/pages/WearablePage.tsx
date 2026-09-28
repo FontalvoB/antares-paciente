@@ -36,7 +36,8 @@ import { useWearable } from "../context/WearableContext";
 import { describeServices, formatEntry } from "../devices/diagnostics";
 import { useI18n } from "../i18n/I18nContext";
 import { useElapsed } from "../hooks/useElapsed";
-import { measurePhase } from "../utils/measure";
+import { measurePhase, measurePhaseLabel } from "../utils/measure";
+import { useDoubleTap } from "../hooks/useDoubleTap";
 import { agoLabel, formatSleep } from "../utils/wearable";
 import type {
   DeviceDescriptor,
@@ -153,7 +154,7 @@ export function WearablePage() {
   const { wearableConnected, wearableName, showToast } = useApp();
   const {
     phase,
-    isMock,
+    sessionStale,
     devices,
     hasScanned,
     info,
@@ -175,7 +176,6 @@ export function WearablePage() {
     refreshInfo,
     savedDevice,
     reconnect,
-    connectMock,
     injectDebugSample,
     scan,
     connect,
@@ -191,6 +191,12 @@ export function WearablePage() {
   /** Cola de "Medir todo": se ejecuta una métrica tras otra. */
   const measureQueue = useRef<MetricKind[]>([]);
   const [queued, setQueued] = useState(0);
+  /** Métricas en cola (para marcarlas como "en cola" en su tarjeta). */
+  const [queuedKinds, setQueuedKinds] = useState<MetricKind[]>([]);
+  const syncQueue = useCallback(() => {
+    setQueued(measureQueue.current.length);
+    setQueuedKinds([...measureQueue.current]);
+  }, []);
   /** Segundos transcurridos de la medida en curso (para la pista de espera). */
   const elapsed = useElapsed(measuring?.since);
   const syncElapsed = useElapsed(syncStage?.startedAt);
@@ -212,14 +218,29 @@ export function WearablePage() {
 
   const scanning = phase === "scanning";
   const connecting = phase === "connecting";
+  /** Estado honesto de conexión: el flag de la app puede quedar obsoleto si la
+   *  banda deja de emitir (fuera de rango/apagada). */
+  const connOn = wearableConnected && !sessionStale && phase === "connected";
+  const connConnecting = !connOn && (sessionStale || scanning || connecting);
+  const connDot = connOn
+    ? "var(--safe)"
+    : connConnecting
+      ? "var(--org)"
+      : "var(--mu)";
+  const connLabel = connOn
+    ? t("Conectado")
+    : connConnecting
+      ? t("Conectando…")
+      : t("Sin wearable");
   const hrSample = samples.heart_rate;
   const hr = hrSample?.value;
   const spo2Sample = samples.spo2;
   const spo2 = spo2Sample?.value;
   const bloodSample = samples.blood_pressure;
   const blood = bloodSample;
-  const steps = today.steps ?? samples.steps?.value ?? null;
-  const stepsAt = samples.steps?.ts;
+  // Pasos: SOLO el acumulado del día. `samples.steps` puede ser un registro del
+  // historial de días atrás (el "Hace 63 h" de la tarjeta venía de ahí).
+  const steps = today.steps ?? null;
   const sleepMinutes = today.sleepMinutes;
 
   /**
@@ -311,15 +332,12 @@ export function WearablePage() {
                   "La medición no se completó. Mantén el wearable en contacto e inténtalo de nuevo.",
                 );
         showToast(message, "err");
-        // El dispositivo puede haber guardado la lectura en su historial: un
-        // volcado extra la trae sin que el usuario tenga que reintentar.
-        if (kind === "spo2") syncHistory();
       }
       const next = measureQueue.current.shift();
-      setQueued(measureQueue.current.length);
+      syncQueue();
       if (next) startRef.current(next);
     },
-    [showToast, syncHistory, t],
+    [showToast, syncHistory, syncQueue, t],
   );
 
   const startMeasure = useCallback(
@@ -346,21 +364,29 @@ export function WearablePage() {
     queued === 0 &&
     !syncing &&
     measureKinds.includes(kind);
+  // Doble toque/clic en una tarjeta = mide esa métrica (iOS no dispara dblclick).
+  const onHrDoubleTap = useDoubleTap(() => {
+    if (cardMeasurable("heart_rate")) startMeasure("heart_rate");
+  });
+  const onSpo2DoubleTap = useDoubleTap(() => {
+    if (cardMeasurable("spo2")) startMeasure("spo2");
+  });
+  const onBpDoubleTap = useDoubleTap(() => {
+    if (cardMeasurable("blood_pressure")) startMeasure("blood_pressure");
+  });
+
   /** Medida en curso (tarjeta o sync): alimenta la carga dentro de la tarjeta. */
   const activeMeasure = measuring
     ? { kind: measuring.kind, progress: measureProgress, elapsed }
     : syncStage
       ? { kind: syncStage.kind, progress: syncProgress, elapsed: syncElapsed }
       : null;
-  const measureSeconds = activeMeasure
-    ? Math.max(
-        0,
-        Math.ceil(
-          activeMeasure.progress.windowMs / 1000 - activeMeasure.elapsed,
-        ),
-      )
-    : 0;
   const isMeasuringKind = (kind: MetricKind) => activeMeasure?.kind === kind;
+  /** % de la ventana consumida por la medida de esa métrica (barra en la tarjeta). */
+  const measurePct = (kind: MetricKind) =>
+    isMeasuringKind(kind)
+      ? Math.round((activeMeasure?.progress.progress ?? 0) * 100)
+      : 0;
 
   /** Medir todo: sincroniza historial y luego FC → SpO2 → presión. */
   const measureAll = () => {
@@ -370,12 +396,10 @@ export function WearablePage() {
       const [first, ...rest] = measureKinds;
       if (!first) return;
       measureQueue.current = rest;
-      setQueued(rest.length);
+      syncQueue();
       startMeasure(first);
     })();
   };
-
-
 
   const copyDiagnostics = () => {
     const text = [describeServices(gatt), "", ...log.map(formatEntry)].join(
@@ -406,7 +430,6 @@ export function WearablePage() {
         ? agoLabel(hrSample?.ts, t)
         : t("Sin datos aún");
 
-
   return (
     <Screen>
       <PageHeader
@@ -418,22 +441,9 @@ export function WearablePage() {
             : t("Empareja un dispositivo para ver FC, sueño y SpO2")
         }
         trailing={
-          <span className={`status-pill ${wearableConnected ? "on" : ""}`}>
-            <span
-              className="dot"
-              style={{
-                background: wearableConnected
-                  ? isMock
-                    ? "var(--org)"
-                    : "var(--safe)"
-                  : "var(--mu)",
-              }}
-            />
-            {wearableConnected
-              ? isMock
-                ? t("Demo")
-                : t("Conectado")
-              : t("Sin wearable")}
+          <span className={`status-pill ${connOn ? "on" : ""}`}>
+            <span className="dot" style={{ background: connDot }} />
+            {connLabel}
           </span>
         }
       />
@@ -578,36 +588,7 @@ export function WearablePage() {
               </div>
             )}
 
-            {import.meta.env.DEV && (
-              <section className="watch-demo-card">
-                <span className="watch-demo-icon" aria-hidden="true">
-                  <IonIcon icon={pulseOutline} />
-                </span>
-                <div className="watch-demo-copy">
-                  <strong>{t("Prueba el panel sin dispositivo real")}</strong>
-                  <p>
-                    {t(
-                      "Datos de muestra para explorar la vista. No se guardan ni se envían.",
-                    )}
-                  </p>
-                </div>
-                <IonButton
-                  expand="block"
-                  fill="outline"
-                  className="bt"
-                  disabled={connecting}
-                  onClick={connectMock}
-                >
-                  <IonIcon icon={pulseOutline} slot="start" />
-                  {t("Iniciar demo")}
-                </IonButton>
-              </section>
-            )}
-
-            <IonList
-              className="group-list watch-diagnostics"
-              lines="none"
-            >
+            <IonList className="group-list watch-diagnostics" lines="none">
               <IonItem className="group-item">
                 <IonLabel>
                   <h3>{t("Modo diagnóstico")}</h3>
@@ -663,40 +644,16 @@ export function WearablePage() {
                     : t("Aún no sincronizado")}
                 </span>
               </div>
-
             </section>
-
-            {isMock && (
-              <div className="watch-demo-banner">
-                <IonIcon icon={pulseOutline} aria-hidden="true" />
-                <div>
-                  <strong>{t("Modo demo")}</strong>
-                  <span>
-                    {t("Lecturas simuladas · no enviadas al servidor")}
-                  </span>
-                </div>
-                <IonButton
-                  size="small"
-                  fill="outline"
-                  className="bt watch-demo-test"
-                  disabled={syncing || measuring !== null}
-                  onClick={measureAll}
-                >
-                  {t("Probar medición")}
-                </IonButton>
-              </div>
-            )}
 
             {/* Un solo hero: FC grande + traza del pulso al ritmo real. */}
             <div
               className={`vital-hero ${
                 cardMeasurable("heart_rate") ? "is-measurable" : ""
-              } ${isMeasuringKind("heart_rate") ? "is-measuring" : ""}`}
-              onDoubleClick={
-                cardMeasurable("heart_rate")
-                  ? () => startMeasure("heart_rate")
-                  : undefined
-              }
+              } ${isMeasuringKind("heart_rate") ? "is-measuring" : ""} ${
+                queuedKinds.includes("heart_rate") ? "is-queued" : ""
+              }`}
+              onClick={onHrDoubleTap}
             >
               <div className="vital-hero-kicker">
                 {t("Frecuencia cardíaca")}
@@ -710,9 +667,17 @@ export function WearablePage() {
               <EcgTrace bpm={hr} height={56} />
               <div className="vital-hero-hint">
                 {isMeasuringKind("heart_rate")
-                  ? t("{seconds} s", { seconds: String(measureSeconds) })
+                  ? measurePhaseLabel("heart_rate", measureProgress, t)
                   : liveHint}
               </div>
+              {isMeasuringKind("heart_rate") && (
+                <span className="watch-measure-bar" aria-hidden="true">
+                  <i style={{ width: `${measurePct("heart_rate")}%` }} />
+                </span>
+              )}
+              {queuedKinds.includes("heart_rate") && (
+                <span className="watch-metric-queue">{t("En cola")}</span>
+              )}
             </div>
 
             <div className="sec">{t("Métricas de hoy")}</div>
@@ -720,12 +685,10 @@ export function WearablePage() {
               <article
                 className={`card card-accent ac-blue watch-metric watch-metric--spo2 ${
                   cardMeasurable("spo2") ? "is-measurable" : ""
-                } ${isMeasuringKind("spo2") ? "is-measuring" : ""}`}
-                onDoubleClick={
-                  cardMeasurable("spo2")
-                    ? () => startMeasure("spo2")
-                    : undefined
-                }
+                } ${isMeasuringKind("spo2") ? "is-measuring" : ""} ${
+                  queuedKinds.includes("spo2") ? "is-queued" : ""
+                }`}
+                onClick={onSpo2DoubleTap}
               >
                 <span className="watch-metric-icon" aria-hidden="true">
                   <IonIcon icon={waterOutline} />
@@ -737,20 +700,26 @@ export function WearablePage() {
                   </div>
                   <div className="watch-metric-meta">
                     {isMeasuringKind("spo2")
-                      ? t("{seconds} s", { seconds: String(measureSeconds) })
+                      ? measurePhaseLabel("spo2", measureProgress, t)
                       : agoLabel(spo2Sample?.ts, t)}
                   </div>
+                  {isMeasuringKind("spo2") && (
+                    <span className="watch-measure-bar" aria-hidden="true">
+                      <i style={{ width: `${measurePct("spo2")}%` }} />
+                    </span>
+                  )}
+                  {queuedKinds.includes("spo2") && (
+                    <span className="watch-metric-queue">{t("En cola")}</span>
+                  )}
                 </div>
               </article>
               <article
                 className={`card card-accent ac-org watch-metric watch-metric--pressure ${
                   cardMeasurable("blood_pressure") ? "is-measurable" : ""
-                } ${isMeasuringKind("blood_pressure") ? "is-measuring" : ""}`}
-                onDoubleClick={
-                  cardMeasurable("blood_pressure")
-                    ? () => startMeasure("blood_pressure")
-                    : undefined
-                }
+                } ${isMeasuringKind("blood_pressure") ? "is-measuring" : ""} ${
+                  queuedKinds.includes("blood_pressure") ? "is-queued" : ""
+                }`}
+                onClick={onBpDoubleTap}
               >
                 <span className="watch-metric-icon" aria-hidden="true">
                   <IonIcon icon={pulseOutline} />
@@ -764,9 +733,19 @@ export function WearablePage() {
                   </div>
                   <div className="watch-metric-meta">
                     {isMeasuringKind("blood_pressure")
-                      ? t("{seconds} s", { seconds: String(measureSeconds) })
+                      ? measurePhaseLabel("blood_pressure", measureProgress, t)
                       : agoLabel(bloodSample?.ts, t)}
                   </div>
+                  {isMeasuringKind("blood_pressure") && (
+                    <span className="watch-measure-bar" aria-hidden="true">
+                      <i
+                        style={{ width: `${measurePct("blood_pressure")}%` }}
+                      />
+                    </span>
+                  )}
+                  {queuedKinds.includes("blood_pressure") && (
+                    <span className="watch-metric-queue">{t("En cola")}</span>
+                  )}
                 </div>
               </article>
               <article className="card card-accent ac-pur watch-metric watch-metric--sleep">
@@ -776,9 +755,7 @@ export function WearablePage() {
                 <div className="watch-metric-copy">
                   <div className="watch-metric-label">{t("Sueño")}</div>
                   <div className="watch-metric-value">
-                    {sleepMinutes != null
-                      ? formatSleep(sleepMinutes, t)
-                      : "—"}
+                    {sleepMinutes != null ? formatSleep(sleepMinutes, t) : "—"}
                   </div>
                   <div className="watch-metric-meta">
                     {sleepMinutes != null
@@ -799,7 +776,7 @@ export function WearablePage() {
                       : "—"}
                   </div>
                   <div className="watch-metric-meta">
-                    {agoLabel(stepsAt, t)}
+                    {steps != null ? t("Hoy") : t("Sin datos aún")}
                   </div>
                 </div>
               </article>
@@ -951,9 +928,9 @@ export function WearablePage() {
                     "--color": "var(--red)",
                   } as CSSProperties
                 }
-                onClick={() => (isMock ? disconnect() : setConfirmOff(true))}
+                onClick={() => setConfirmOff(true)}
               >
-                {t(isMock ? "Salir de demo" : "Desconectar wearable")}
+                {t("Desconectar wearable")}
               </IonButton>
             </div>
 

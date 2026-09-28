@@ -5739,6 +5739,159 @@ ion-segment.nut-period ion-segment-button {
     animation: none;
   }
 }
+/* Progreso real de la medida dentro de la tarjeta (visible también sin
+   animaciones: con Reduce Motion el ancho sigue avanzando, solo sin shimmer). */
+.watch-metric,
+.vital-hero {
+  position: relative;
+}
+.watch-measure-bar {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bd) 45%, #fff);
+}
+.watch-measure-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--metric-color, var(--blue));
+  transition: width 220ms linear;
+}
+.vital-hero .watch-measure-bar {
+  background: rgba(255, 255, 255, 0.22);
+}
+.vital-hero .watch-measure-bar i {
+  background: var(--wh);
+}
+/* Métricas encoladas por "Medir todo": se marcan para que se vea la espera. */
+.watch-metric.is-queued,
+.vital-hero.is-queued {
+  border-style: dashed;
+}
+.watch-metric-queue {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--tx);
+  background: color-mix(in srgb, var(--teal-l) 70%, #fff);
+}
+@media (prefers-reduced-motion: reduce) {
+  .watch-measure-bar i {
+    transition: none;
+  }
+}
+/* Tarjeta en cola de sync: chip "En cola" (clase compartida con el Reloj) y
+   borde punteado; sin brillo hasta que arranca su etapa. */
+.vt-lesson .vt-tile {
+  position: relative;
+}
+.vt-lesson .vt-tile.is-queued {
+  border-style: dashed;
+}
+
+/* Mientras la tarjeta carga/está midiendo, la unidad no se muestra (ocupa su
+   sitio para no saltar el layout, pero no aparece el "pasos" fantasma). */
+.vt-lesson .vt-value em.is-empty {
+  visibility: hidden;
+}
+
+/* Estado del wearable dentro del hero del check-in (pill + nombre + batería). */
+.vt-hero-conn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 clamp(10px, 1.6vw, 18px);
+}
+.vt-hero .status-pill {
+  padding: 5px 11px;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #f7f6fb;
+}
+.vt-hero .status-pill .dot {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+.vt-hero .status-pill.on {
+  background: color-mix(in srgb, var(--safe) 26%, transparent);
+  border-color: transparent;
+  color: #dcfce7;
+}
+.vt-conn-name {
+  min-width: 0;
+  max-width: 60%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: rgba(247, 246, 251, 0.72);
+}
+.vt-batt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(247, 246, 251, 0.72);
+}
+.vt-batt ion-icon {
+  font-size: 13px;
+}
+.vt-conn-sync {
+  font-size: 11px;
+  color: rgba(247, 246, 251, 0.55);
+}
+/* Punto "vivo" del pulso (la traza ya anima; esto lo lee de un golpe). */
+.vt-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ecg-trace, #4ade80);
+  vertical-align: middle;
+  animation: vtLivePulse 1.6s ease-in-out infinite;
+}
+@keyframes vtLivePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+/* Sin wearable: las tarjetas medibles se atenúan y lo dicen en su meta. */
+.vt-grid.is-offline .vt-tile.is-measurable {
+  opacity: 0.6;
+  border-style: dashed;
+}
+.vt-grid.is-offline .vt-tile.is-measurable .vt-icon {
+  opacity: 0.7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-live-dot {
+    animation: none;
+  }
+}
+
+/* Doble toque para medir: `manipulation` evita el zoom por doble tap de iOS. */
+.watch-metric,
+.vital-hero,
+.vt-lesson .vt-icon.is-measurable {
+  touch-action: manipulation;
+}
 .watch-metric--sleep .watch-metric-value {
   font-size: 20px;
   letter-spacing: -0.4px;
@@ -5762,8 +5915,7 @@ ion-segment.nut-period ion-segment-button {
   height: 46px;
   border-radius: 15px;
   background: color-mix(in srgb, var(--blue) 11%, var(--wh));
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--blue) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 18%, transparent);
   color: var(--blue);
   font-size: 22px;
 }
@@ -5802,47 +5954,6 @@ ion-segment.nut-period ion-segment-button {
   margin: 0;
 }
 
-.watch-demo-card {
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-  margin: 16px 0 0;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--bd));
-  border-radius: 18px;
-  background: linear-gradient(145deg, var(--wh), var(--ice-l));
-  box-shadow: var(--shadow-sm);
-}
-.watch-demo-icon {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--blue) 11%, var(--wh));
-  color: var(--blue);
-  font-size: 21px;
-}
-.watch-demo-copy {
-  min-width: 0;
-}
-.watch-demo-copy strong {
-  display: block;
-  color: var(--tx);
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.3;
-}
-.watch-demo-copy p {
-  margin: 3px 0 0;
-  color: var(--mu);
-  font-size: 11px;
-  line-height: 1.4;
-}
-.watch-demo-card ion-button {
-  grid-column: 1 / -1;
-}
 .watch-diagnostics {
   margin: 22px 0 0 !important;
   padding: 4px;
@@ -5859,61 +5970,6 @@ ion-segment.nut-period ion-segment-button {
   --padding-start: 12px;
   --inner-padding-end: 10px;
 }
-.watch-demo-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 16px 8px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--org) 30%, var(--bd));
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--org-l) 65%, var(--wh));
-  color: var(--org);
-}
-.watch-demo-banner > ion-icon {
-  flex: 0 0 auto;
-  font-size: 20px;
-}
-.watch-demo-banner > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.watch-demo-banner strong {
-  font-size: 12px;
-  font-weight: 800;
-}
-.watch-demo-banner span {
-  color: var(--mu);
-  font-size: 10px;
-  line-height: 1.35;
-}
-.watch-demo-test {
-  margin-left: auto;
-  flex: 0 0 auto;
-  --border-color: color-mix(in srgb, var(--org) 45%, var(--bd));
-  font-size: 12px;
-}
-
-/* Aviso demo: misma familia visual, más compacto. */
-.watch-demo-banner {
-  padding: 8px 10px;
-  border-radius: 14px;
-}
-.watch-demo-banner > ion-icon {
-  font-size: 17px;
-}
-.watch-demo-banner strong {
-  font-size: 11px;
-}
-.watch-demo-banner span {
-  font-size: 9.5px;
-}
-.watch-demo-test {
-  font-size: 11px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .watch-radar.is-scanning .watch-ring {
     animation: none;
@@ -9683,7 +9739,11 @@ ion-button.login-first-method:focus-visible {
   padding: clamp(18px, 3.3vw, 42px);
   color: #f7f6fb;
   background:
-    radial-gradient(ellipse at 86% 0%, rgba(193, 48, 99, 0.24), transparent 40%),
+    radial-gradient(
+      ellipse at 86% 0%,
+      rgba(193, 48, 99, 0.24),
+      transparent 40%
+    ),
     linear-gradient(145deg, #180d21 0%, #32142d 52%, #102f63 100%);
   box-shadow: 0 18px 42px rgba(9, 12, 30, 0.2);
   overflow: hidden;
@@ -10260,8 +10320,8 @@ ion-input.vt-input.has-focus {
   width: 100%;
   margin: 0;
 }
-/* Métrica en curso: la tarjeta se "carga" en su lugar (sin caja aparte). */
-.vt-lesson .vt-tile.is-measuring {
+/* Métrica en curso o en carga (sync/autollenado): la tarjeta se "carga" en su lugar. */
+.vt-lesson .vt-tile:is(.is-measuring, .is-loading) {
   border-color: color-mix(in srgb, var(--blue) 38%, var(--bd));
   background: linear-gradient(
     155deg,
@@ -10270,16 +10330,16 @@ ion-input.vt-input.has-focus {
   );
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 9%, transparent);
 }
-.vt-lesson .vt-tile.is-measuring .vt-icon {
+.vt-lesson .vt-tile:is(.is-measuring, .is-loading) .vt-icon {
   background: color-mix(in srgb, var(--blue) 16%, var(--wh));
   color: var(--blue);
   animation: measurePulse 1.6s ease-in-out infinite;
 }
-.vt-lesson .vt-tile.is-measuring .vt-value {
+.vt-lesson .vt-tile:is(.is-measuring, .is-loading) .vt-value {
   position: relative;
   opacity: 0.35;
 }
-.vt-lesson .vt-tile.is-measuring .vt-value::after {
+.vt-lesson .vt-tile:is(.is-measuring, .is-loading) .vt-value::after {
   content: "";
   position: absolute;
   inset: 3px 0;
@@ -10322,55 +10382,13 @@ ion-input.vt-input.has-focus {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .vt-lesson .vt-tile.is-measuring .vt-icon,
+  .vt-lesson .vt-tile:is(.is-measuring, .is-loading) .vt-icon,
   .vt-lesson .vt-status.is-live::before,
-  .vt-lesson .vt-tile.is-measuring .vt-value::after {
+  .vt-lesson .vt-tile:is(.is-measuring, .is-loading) .vt-value::after {
     animation: none;
   }
 }
 
-.vt-demo-note {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--org) 30%, var(--bd));
-  border-radius: 15px;
-  background: color-mix(in srgb, var(--org-l) 65%, var(--wh));
-}
-.vt-demo-orb {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  border-radius: 11px;
-  background: var(--wh);
-  color: var(--org);
-  font-size: 18px;
-}
-.vt-demo-note > span:last-child {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.vt-demo-note strong {
-  color: var(--org);
-  font-size: 11px;
-  font-weight: 800;
-}
-.vt-demo-note small {
-  color: var(--mu);
-  font-size: 10px;
-  line-height: 1.3;
-}
-.vt-demo-save-note {
-  margin: 0;
-  color: var(--mu);
-  font-size: 11px;
-  line-height: 1.4;
-}
 .vt-stamp {
   text-align: center;
   font-size: 11px;
