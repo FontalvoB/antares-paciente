@@ -1,4 +1,5 @@
 import { flash, leaf, medkit, sparkles } from "ionicons/icons";
+import { DIRECT_ENTRY_SPECIALTY_CODES } from "./careEntryPoints";
 import type {
   AvailabilitySlotDto,
   ProfessionalCatalogItem,
@@ -69,6 +70,20 @@ export function groupCareOptionsByCategory(
     category,
     options: opts,
   }));
+}
+
+/**
+ * Punto de entrada directa (Decisión 5, REQ-APP-02): conserva ÚNICAMENTE las
+ * opciones cuyo `code` pertenece a `DIRECT_ENTRY_SPECIALTY_CODES`
+ * (igualdad exacta, orden del backend preservado).
+ * `null` = catálogo aún no cargado (la UI no puede afirmar nada).
+ */
+export function entryPointCareOptions(
+  options: CareOption[] | null,
+): CareOption[] | null {
+  if (!options) return null;
+  const allowed = new Set<string>(DIRECT_ENTRY_SPECIALTY_CODES);
+  return options.filter((o) => allowed.has(o.code));
 }
 
 /**

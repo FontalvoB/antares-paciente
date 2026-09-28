@@ -3,6 +3,7 @@ import {
   activeCareOptions,
   careVisualFor,
   dayHasSchedule,
+  entryPointCareOptions,
   groupCareOptionsByCategory,
   isCatalogBookingDate,
   professionalsForSpecialty,
@@ -224,5 +225,49 @@ describe("dayHasSchedule — jornada vs cupo", () => {
       dayHasSchedule([slot({ start: "2026-10-05T09:00", isAvailable: false })]),
     ).toBe(true);
     expect(dayHasSchedule([])).toBe(false);
+  });
+});
+
+describe("entryPointCareOptions — Decisión 5: solo MG + Urgencia", () => {
+  function option(code: string): CareOption {
+    return {
+      specialtyId: `id-${code}`,
+      code,
+      name: code,
+      category: "Medicina",
+      description: null,
+    };
+  }
+
+  it("catálogo nulo → null (la UI no puede afirmar nada)", () => {
+    expect(entryPointCareOptions(null)).toBeNull();
+  });
+
+  it("conserva solo FAMILY_MEDICINE y URGENT_CARE en orden del backend", () => {
+    const out = entryPointCareOptions([
+      option("OBESITY_MEDICINE"),
+      option("FAMILY_MEDICINE"),
+      option("CLINICAL_NUTRITION"),
+      option("URGENT_CARE"),
+      option("CLINICAL_PSYCHOLOGY"),
+    ]);
+    expect(out?.map((o) => o.code)).toEqual(["FAMILY_MEDICINE", "URGENT_CARE"]);
+  });
+
+  it("Nutrición/Psicología fuera aunque estén activas (remisión médica)", () => {
+    const out = entryPointCareOptions([
+      option("CLINICAL_NUTRITION"),
+      option("CLINICAL_PSYCHOLOGY"),
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  it("no coincide por nombre ni parcial: igualdad exacta de code", () => {
+    const out = entryPointCareOptions([
+      option("FAMILY_MEDICINE2"),
+      option("XURGENT_CARE"),
+      option("family_medicine"),
+    ]);
+    expect(out).toEqual([]);
   });
 });

@@ -38,6 +38,7 @@ import {
   activeCareOptions,
   careVisualFor,
   dayHasSchedule,
+  entryPointCareOptions,
   groupCareOptionsByCategory,
   isCatalogBookingDate,
   professionalsForSpecialty,
@@ -150,9 +151,10 @@ export function RequestAppointmentWizard({
   const dir = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Opciones de atención desde el catálogo (null = aún no cargado).
+  // Opciones de atención desde el catálogo (null = aún no cargado),
+  // restringidas a la entrada directa de Decisión 5 (REQ-APP-02).
   const careOptions = useMemo(
-    () => activeCareOptions(specialties),
+    () => entryPointCareOptions(activeCareOptions(specialties)),
     [specialties],
   );
   // Ruta por catálogo solo en modo real con catálogo no vacío; si no, la
