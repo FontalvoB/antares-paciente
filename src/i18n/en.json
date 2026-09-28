@@ -2346,5 +2346,7 @@
   "Motivo de la cancelación": "Cancellation reason",
   "Escribe un motivo de al menos 5 caracteres.": "Write a reason of at least 5 characters.",
   "Cita reprogramada": "Appointment rescheduled",
-  "Se necesita tu organización para buscar por especialidad.": "Your organization is needed to search by specialty."
+  "Se necesita tu organización para buscar por especialidad.": "Your organization is needed to search by specialty.",
+  "Cancelada": "Cancelled",
+  "No asistió": "Did not attend"
 }

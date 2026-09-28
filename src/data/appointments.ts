@@ -54,6 +54,8 @@ export interface ListedAppointment {
   /** Ids reales para disponibilidad/reprogramación (2.A.4/2.A.5). */
   professionalId?: string | null;
   specialtyId?: string | null;
+  /** Motivo de cancelación/inasistencia (REQ-APP-04: visible en Anteriores). */
+  cancellationReason?: string | null;
 }
 
 export const CONSULT_TYPES: ConsultType[] = [
@@ -388,7 +390,26 @@ export function mapAppointmentToListed(
     roomClosesAt: appt.roomClosesAt ?? null,
     professionalId: appt.professionalId,
     specialtyId: appt.specialtyId,
+    cancellationReason: appt.cancellationReason ?? null,
   };
+}
+
+/**
+ * Chip de cita histórica (2.A.6): `Completed` → "Hecha" verde,
+ * `Cancelled` → "Cancelada" rojo, `NoShow` → "No asistió" ámbar.
+ * Sin estado (legado) → "Hecha" para no romper la vista demo.
+ */
+export function pastAppointmentChip(
+  status: AppointmentDto["status"] | undefined,
+): { label: string; className: string } {
+  switch (status) {
+    case "Cancelled":
+      return { label: "Cancelada", className: "chip chip-red" };
+    case "NoShow":
+      return { label: "No asistió", className: "chip chip-org" };
+    default:
+      return { label: "Hecha", className: "chip chip-teal" };
+  }
 }
 
 /**

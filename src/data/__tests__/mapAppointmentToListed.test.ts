@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { APPOINTMENT_STATUS_LABELS, mapAppointmentToListed } from "../appointments";
+import {
+  APPOINTMENT_STATUS_LABELS,
+  mapAppointmentToListed,
+  pastAppointmentChip,
+} from "../appointments";
 import type { AppointmentDto } from "../../utils/appointmentsApi";
 
 /** Cita del backend con defaults de campos no relevantes al test. */
-function appointmentDto(overrides: Partial<AppointmentDto> = {}): AppointmentDto {
+function appointmentDto(
+  overrides: Partial<AppointmentDto> = {},
+): AppointmentDto {
   return {
     id: "apt-1",
     requestId: null,
@@ -50,5 +56,45 @@ describe("mapAppointmentToListed — ventana de sala en la lista", () => {
     expect(listed.status).toBe("Confirmed");
     expect(listed.roomOpensAt).toBeNull();
     expect(listed.roomClosesAt).toBeNull();
+  });
+
+  it("lleva ids reales y motivo de cancelación a la fila", () => {
+    const listed = mapAppointmentToListed(
+      appointmentDto({
+        status: "Cancelled",
+        cancellationReason: "El paciente lo solicitó",
+      }),
+    );
+
+    expect(listed.professionalId).toBe("pro-1");
+    expect(listed.specialtyId).toBe("spe-1");
+    expect(listed.cancellationReason).toBe("El paciente lo solicitó");
+  });
+});
+
+describe("pastAppointmentChip — 2.A.6, un color por estado final", () => {
+  it("Completed → Hecha verde", () => {
+    expect(pastAppointmentChip("Completed")).toEqual({
+      label: "Hecha",
+      className: "chip chip-teal",
+    });
+  });
+
+  it("Cancelled → Cancelada rojo", () => {
+    expect(pastAppointmentChip("Cancelled")).toEqual({
+      label: "Cancelada",
+      className: "chip chip-red",
+    });
+  });
+
+  it("NoShow → No asistió ámbar", () => {
+    expect(pastAppointmentChip("NoShow")).toEqual({
+      label: "No asistió",
+      className: "chip chip-org",
+    });
+  });
+
+  it("sin estado (legado) → Hecha sin romper", () => {
+    expect(pastAppointmentChip(undefined).label).toBe("Hecha");
   });
 });

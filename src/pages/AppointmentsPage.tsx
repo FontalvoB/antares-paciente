@@ -7,7 +7,7 @@ import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard
 import { RescheduleAppointmentSheet } from "../components/RescheduleAppointmentSheet";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
-import { INITIAL_UPCOMING } from "../data/appointments";
+import { INITIAL_UPCOMING, pastAppointmentChip } from "../data/appointments";
 import type { ListedAppointment } from "../data/appointments";
 import { useT } from "../i18n/I18nContext";
 import {
@@ -259,18 +259,29 @@ export function AppointmentsPage() {
               <p>{t("Aún no hay citas anteriores.")}</p>
             </div>
           ) : (
-            past.map((a) => (
-              <div key={a.id} className="group-row">
-                <span className="group-row-ico">{a.emoji}</span>
-                <span className="group-row-body">
-                  <strong>{a.name}</strong>
-                  <small>
-                    {a.time} · {t(a.when)}
-                  </small>
-                </span>
-                <span className="chip chip-teal">{t("Hecha")}</span>
-              </div>
-            ))
+            past.map((a) => {
+              // 2.A.6: el chip refleja el estado final real (nunca todo verde).
+              const chip = pastAppointmentChip(a.status);
+              return (
+                <div key={a.id} className="group-row">
+                  <span className="group-row-ico">{a.emoji}</span>
+                  <span className="group-row-body">
+                    <strong>{a.name}</strong>
+                    <small>
+                      {a.time} · {t(a.when)}
+                    </small>
+                    {a.cancellationReason?.trim() ? (
+                      <small>
+                        {/* Texto libre del servidor: se muestra tal cual, sin
+                            diccionario (evita warnings de i18n en consola). */}
+                        {a.cancellationReason.trim()}
+                      </small>
+                    ) : null}
+                  </span>
+                  <span className={chip.className}>{t(chip.label)}</span>
+                </div>
+              );
+            })
           )}
         </div>
       </Scroll>
