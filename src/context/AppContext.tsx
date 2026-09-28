@@ -35,10 +35,13 @@ import {
   fetchMyContext,
   fetchMyRequests,
   fetchProfessionalsCatalog,
+  fetchSpecialties,
   hasRealSession,
+  rescheduleAppointment as rescheduleAppointmentApi,
   type AppointmentDto,
   type AppointmentRequestDto,
   type ProfessionalCatalogItem,
+  type SpecialtyDto,
 } from "../utils/appointmentsApi";
 import {
   buildRealAppointments,
@@ -150,17 +153,59 @@ interface AppState {
    * activos. Nunca contiene nombres inventados.
    */
   teamProfessionals: TeamProfessional[] | null;
+  /**
+   * Catálogo de especialidades del ERP (`erp.specialties`, null = aún no
+   * cargado). Fuente del Paso 1 del wizard en modo real.
+   */
+  specialties: SpecialtyDto[] | null;
+  /** Catálogo crudo de profesionales (null = aún no cargado). */
+  professionalsCatalog: ProfessionalCatalogItem[] | null;
+  /**
+   * Contexto asistencial del paciente (ids para disponibilidad/solicitudes,
+   * null = aún no cargado). `orgId` vacío = backend sin organización
+   * resuelta (el modo especialidad lo exige: el wizard lo comunica).
+   */
+  patientCareContext: {
+    patientId: string | null;
+    orgId: string;
+    clinicId: string | null;
+    locationId: string | null;
+  } | null;
   refreshAppointments: () => Promise<void>;
   /** Envía la solicitud contra el backend (modo real). Devuelve éxito. */
   submitAppointmentRequest: (input: {
-    typeId: string;
+    /** Ruta legacy por tipo mock (demo/compatibilidad). */
+    typeId?: string;
+    /** Ruta por catálogo: especialidad elegida (veredicto D1). */
+    specialtyId?: string;
+    /**
+     * Profesional elegido por id exacto; `null` = "cualquier profesional
+     * disponible" (solicitud sin asignar, la gestiona el ERP). En la ruta
+     * legacy se ignora (se resolvía por regex, pendiente de retirar).
+     */
+    professionalId?: string | null;
     date: string;
     time: string;
+    /**
+     * Inicio exacto en ISO (start de un slot disponible). Si se provee, se
+     * envía tal cual como `preferred_start` (2.A.4); si no, se reconstruye
+     * desde `date`+`time` (legado).
+     */
+    preferredStart?: string;
     reason: string;
     mode: string;
   }) => Promise<boolean>;
   /** Cancela una cita real. Devuelve éxito. */
   cancelAppointmentById: (id: string, reason: string) => Promise<boolean>;
+  /**
+   * Reprograma una cita confirmada al inicio indicado (ISO de un slot
+   * disponible). El 409 del backend (límite, anticipación, conflicto) vuelve
+   * como mensaje presentable. 2.A.5.
+   */
+  rescheduleAppointmentById: (
+    id: string,
+    input: { newStart: string; reason?: string | null },
+  ) => Promise<{ ok: boolean; error?: string }>;
   /** Abre la sala virtual de una cita. */
   openRoom: (appointment: ListedAppointment) => void;
   closeRoom: () => void;
@@ -327,9 +372,12 @@ export function AppProvider({
   const [catalog, setCatalog] = useState<ProfessionalCatalogItem[] | null>(
     null,
   );
+  const [specialties, setSpecialties] = useState<SpecialtyDto[] | null>(null);
   const [patientCtx, setPatientCtx] = useState<{
     patientId: string | null;
     orgId: string;
+    clinicId: string | null;
+    locationId: string | null;
   } | null>(null);
   const [appointments, setAppointments] = useState<AppointmentDto[] | null>(
     null,
@@ -360,16 +408,25 @@ export function AppProvider({
       // Sin organizations/tree: el org id REAL del paciente viene del
       // /telemedicine/me (resuelto por el backend desde su clínica ERP).
       // Llamar al árbol ERP con aud=app daba 403 en cada arranque.
-      const [me, appts, reqs, catalogData] = await Promise.all([
+      // Núcleo crítico (citas/solicitudes/contexto) en paralelo; catálogos
+      // best-effort independientes para que su fallo no tumbe la vista
+      // (QA-010): el wizard degrada a "cualquiera"/reintento en ese caso.
+      const [me, appts, reqs] = await Promise.all([
         fetchMyContext(),
         fetchMyAppointments({ pageSize: 100 }),
         fetchMyRequests(),
-        fetchProfessionalsCatalog(),
       ]);
-      setCatalog(catalogData.data);
+      const [catalogData, specialtiesData] = await Promise.all([
+        fetchProfessionalsCatalog().catch(() => null),
+        fetchSpecialties().catch(() => null),
+      ]);
+      setCatalog(catalogData?.data ?? null);
+      setSpecialties(specialtiesData);
       setPatientCtx({
         patientId: me.patient?.id ?? null,
         orgId: me.patient?.organizationId ?? "",
+        clinicId: me.patient?.clinicId ?? null,
+        locationId: me.patient?.locationId ?? null,
       });
       setAppointments(appts.items);
       setRequests(reqs);
@@ -383,14 +440,22 @@ export function AppProvider({
     }
   }, []);
 
-  // Con sesión real, refresca citas/catálogo al entrar a la app (Home o Citas)
-  // y cuando la pantalla de citas se vuelve visible. No en la sala (la cita
-  // activa vive en el contexto).
+  // Con sesión real, refresca al entrar a Citas (design §3.2: refresco por
+  // visibilidad) y tras cada mutación (los handlers llaman a refresh).
+  // No en la sala (la cita activa vive en el contexto). QA-010.
   useEffect(() => {
-    if (realMode && screen !== "room" && !appointments) {
+    if (realMode && screen === "book") {
       void refreshAppointments();
     }
-  }, [realMode, screen, appointments, refreshAppointments]);
+  }, [realMode, screen, refreshAppointments]);
+
+  // Carga inicial una sola vez para los demás consumidores (equipo del
+  // perfil, sala): sin esto el catálogo solo existiría tras visitar Citas.
+  useEffect(() => {
+    if (realMode && appointments === null && !appointmentsLoading) {
+      void refreshAppointments();
+    }
+  }, [realMode, appointments, appointmentsLoading, refreshAppointments]);
 
   useEffect(() => {
     if (!realMode) return;
@@ -452,13 +517,57 @@ export function AppProvider({
 
   const submitAppointmentRequest = useCallback(
     async (input: {
-      typeId: string;
+      typeId?: string;
+      specialtyId?: string;
+      professionalId?: string | null;
       date: string;
       time: string;
+      preferredStart?: string;
       reason: string;
       mode: string;
     }): Promise<boolean> => {
-      if (!patientCtx?.patientId || !catalog) return false;
+      if (!patientCtx?.patientId) return false;
+
+      // Ruta por catálogo (veredicto D1): especialidad elegida + profesional
+      // opcional por id exacto. `professionalId = null` = "cualquier
+      // profesional disponible" (el ERP asigna después; no exige catálogo).
+      // Sin regex.
+      if (input.specialtyId) {
+        const selected =
+          input.professionalId != null && catalog
+            ? catalog.find((p) => p.id === input.professionalId)
+            : undefined;
+        // Id explícito que no existe en el catálogo → no inventar: abortar.
+        if (input.professionalId != null && !selected) return false;
+        try {
+          await createRequest({
+            patientId: patientCtx.patientId,
+            organizationId: patientCtx.orgId,
+            specialtyId: input.specialtyId,
+            ...(selected
+              ? {
+                  professionalId: selected.id,
+                  clinicId: selected.clinicIds[0],
+                  locationId: selected.locations[0]?.id,
+                }
+              : {}),
+            // 2.A.4: el slot elegido viaja como preferred_start exacto.
+            preferredStart:
+              input.preferredStart ??
+              new Date(`${input.date}T${input.time}:00`).toISOString(),
+            reason: input.reason.trim(),
+          });
+          await refreshAppointments();
+          return true;
+        } catch (err) {
+          console.warn("[appointments] No se pudo enviar la solicitud:", err);
+          return false;
+        }
+      }
+
+      // Ruta legacy por tipo (solo demo sin sesión): conserva el
+      // comportamiento anterior con los mocks de tipos/equipo.
+      if (!input.typeId || !catalog) return false;
       const professional = realProfessionalByType(
         input.typeId as "medica" | "psicologia" | "nutricion" | "urgencia",
         catalog,
@@ -500,6 +609,29 @@ export function AppProvider({
       } catch (err) {
         console.warn("[appointments] No se pudo cancelar la cita:", err);
         return false;
+      }
+    },
+    [refreshAppointments],
+  );
+
+  const rescheduleAppointmentById = useCallback(
+    async (
+      id: string,
+      input: { newStart: string; reason?: string | null },
+    ): Promise<{ ok: boolean; error?: string }> => {
+      try {
+        await rescheduleAppointmentApi(id, {
+          newStart: input.newStart,
+          reason: input.reason ?? null,
+        });
+        await refreshAppointments();
+        return { ok: true };
+      } catch (err) {
+        console.warn("[appointments] No se pudo reprogramar la cita:", err);
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : undefined,
+        };
       }
     },
     [refreshAppointments],
@@ -1011,9 +1143,13 @@ export function AppProvider({
       appointmentsError,
       teamProfessional,
       teamProfessionals,
+      specialties,
+      professionalsCatalog: catalog,
+      patientCareContext: patientCtx,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
+      rescheduleAppointmentById,
       openRoom: (appointment) => {
         setRoomAppointment(appointment);
         setScreen("room");
@@ -1052,9 +1188,13 @@ export function AppProvider({
       appointmentsError,
       teamProfessional,
       teamProfessionals,
+      specialties,
+      catalog,
+      patientCtx,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
+      rescheduleAppointmentById,
       roomAppointment,
     ],
   );
