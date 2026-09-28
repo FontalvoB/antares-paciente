@@ -1,0 +1,10 @@
+# frozen_string_literal: true
+
+# =============================================================================
+# Appfile — identidad de la app para todas las acciones de fastlane.
+# Bundle ID y Team ID reales verificados en ios/App/App.xcodeproj/project.pbxproj
+# (NO cambiar: la app ya existe en App Store Connect con estos valores).
+# =============================================================================
+
+app_identifier("com.coppadresd.mobile")
+team_id(ENV["APPLE_TEAM_ID"].to_s.empty? ? "XZSSM34MU6" : ENV["APPLE_TEAM_ID"])

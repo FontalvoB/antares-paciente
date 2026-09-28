@@ -1,0 +1,24 @@
+# frozen_string_literal: true
+
+# =============================================================================
+# Matchfile — repositorio PRIVADO de certificados/perfiles cifrados.
+#
+# fastlane match guarda aquí (cifrado con MATCH_PASSWORD, AES-256-GCM) el
+# certificado "Apple Distribution" y el provisioning profile "App Store".
+# El repo NUNCA debe ser público ni contener secretos en claro.
+#
+# Configuración local: usa las credenciales git del equipo (gh/git).
+# GitHub Actions: clona con MATCH_GIT_BASIC_AUTHORIZATION (secreto) y
+# MATCH_READONLY=true.
+#
+# Para migrar el repo de certificados a otra cuenta/organización basta con
+# definir MATCH_GIT_URL (variable/secret) sin tocar este archivo.
+# =============================================================================
+
+git_url(ENV["MATCH_GIT_URL"].to_s.empty? ? "https://github.com/diomedescerda/antares-paciente-certificates.git" : ENV["MATCH_GIT_URL"])
+
+storage_mode("git")
+type("appstore")
+git_branch(ENV["MATCH_GIT_BRANCH"].to_s.empty? ? "main" : ENV["MATCH_GIT_BRANCH"])
+app_identifier("com.coppadresd.mobile")
+team_id(ENV["APPLE_TEAM_ID"].to_s.empty? ? "XZSSM34MU6" : ENV["APPLE_TEAM_ID"])
