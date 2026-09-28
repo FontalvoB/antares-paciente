@@ -1,5 +1,6 @@
 import { getAccessToken } from "./authApi";
 import { getGatewayBaseUrl } from "./apiBaseUrl";
+import { apiGet, apiPost } from "./apiClient";
 
 /**
  * Cliente del módulo de citas/telemedicina del paciente contra el API Gateway
@@ -406,4 +407,90 @@ export function sendRoomChatMessage(
  */
 export function fetchSpecialties(): Promise<SpecialtyDto[]> {
   return api<SpecialtyDto[]>("/api/v1/specialties");
+}
+
+// ── Disponibilidad real (contrato `/availability`, change citas-e2e-app-erp) ─
+
+/** Parámetros de `GET /api/v1/appointments/availability` (ambos modos). */
+export interface AvailabilityQuery {
+  professionalId?: string;
+  specialtyId?: string;
+  organizationId?: string;
+  clinicId?: string;
+  locationId?: string;
+  /** Día pedido en `YYYY-MM-DD` (el backend lo interpreta en UTC). */
+  date: string;
+}
+
+/** Ranura del día (todos los slots con flags, ver B4: filtrar `isAvailable`). */
+export interface AvailabilitySlotDto {
+  start: string;
+  end: string;
+  durationMinutes: number;
+  isAvailable: boolean;
+  conflictReason: string | null;
+  availableProfessionalCount: number;
+}
+
+/** Respuesta 200 de disponibilidad (slots UTC + offset local). */
+export interface AvailabilityResponseDto {
+  professionalId: string | null;
+  specialtyId: string | null;
+  date: string;
+  timezoneOffset: string;
+  slots: AvailabilitySlotDto[];
+}
+
+/**
+ * Disponibilidad real vía Gateway (`/api/v1/appointments/*` → Telemedicina).
+ * Modo profesional (`professionalId`) o modo especialidad (`specialtyId` +
+ * `organizationId` requerido, unión sin asignar). Cliente común: timeout +
+ * retry de sesión; cancelable con `AbortSignal` (QA-009).
+ */
+export function fetchAvailabilitySlots(
+  query: AvailabilityQuery,
+  opts?: { signal?: AbortSignal },
+): Promise<AvailabilityResponseDto> {
+  const qs = new URLSearchParams();
+  if (query.professionalId) qs.set("professionalId", query.professionalId);
+  if (query.specialtyId) qs.set("specialtyId", query.specialtyId);
+  if (query.organizationId) qs.set("organizationId", query.organizationId);
+  if (query.clinicId) qs.set("clinicId", query.clinicId);
+  if (query.locationId) qs.set("locationId", query.locationId);
+  qs.set("date", query.date);
+  return apiGet<AvailabilityResponseDto>(
+    `/api/v1/appointments/availability?${qs.toString()}`,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/** Entrada de `POST /api/v1/appointments/{id}/reschedule` (modo paciente). */
+export interface RescheduleInput {
+  /** Nuevo inicio en ISO (idealmente el `start` de un slot disponible). */
+  newStart: string;
+  durationMinutes?: number | null;
+  reason?: string | null;
+}
+
+/**
+ * Reprogramación directa del paciente (contrato 1.4): el servidor ignora el
+ * `RequestedBy` del body y fuerza `Patient`; valida propiedad, estado
+ * `Confirmed`, `reschedule_count < MaxReschedules`, anticipación mínima y
+ * no-solapamiento. Negocio inválido → 409.
+ */
+export function rescheduleAppointment(
+  id: string,
+  input: RescheduleInput,
+  opts?: { signal?: AbortSignal },
+): Promise<AppointmentDto> {
+  return apiPost<AppointmentDto>(
+    `/api/v1/appointments/${id}/reschedule`,
+    {
+      newStart: input.newStart,
+      durationMinutes: input.durationMinutes ?? null,
+      reason: input.reason ?? null,
+      requestedBy: "Patient",
+    },
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
 }

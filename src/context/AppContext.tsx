@@ -37,6 +37,7 @@ import {
   fetchProfessionalsCatalog,
   fetchSpecialties,
   hasRealSession,
+  rescheduleAppointment as rescheduleAppointmentApi,
   type AppointmentDto,
   type AppointmentRequestDto,
   type ProfessionalCatalogItem,
@@ -159,6 +160,17 @@ interface AppState {
   specialties: SpecialtyDto[] | null;
   /** Catálogo crudo de profesionales (null = aún no cargado). */
   professionalsCatalog: ProfessionalCatalogItem[] | null;
+  /**
+   * Contexto asistencial del paciente (ids para disponibilidad/solicitudes,
+   * null = aún no cargado). `orgId` vacío = backend sin organización
+   * resuelta (el modo especialidad lo exige: el wizard lo comunica).
+   */
+  patientCareContext: {
+    patientId: string | null;
+    orgId: string;
+    clinicId: string | null;
+    locationId: string | null;
+  } | null;
   refreshAppointments: () => Promise<void>;
   /** Envía la solicitud contra el backend (modo real). Devuelve éxito. */
   submitAppointmentRequest: (input: {
@@ -174,11 +186,26 @@ interface AppState {
     professionalId?: string | null;
     date: string;
     time: string;
+    /**
+     * Inicio exacto en ISO (start de un slot disponible). Si se provee, se
+     * envía tal cual como `preferred_start` (2.A.4); si no, se reconstruye
+     * desde `date`+`time` (legado).
+     */
+    preferredStart?: string;
     reason: string;
     mode: string;
   }) => Promise<boolean>;
   /** Cancela una cita real. Devuelve éxito. */
   cancelAppointmentById: (id: string, reason: string) => Promise<boolean>;
+  /**
+   * Reprograma una cita confirmada al inicio indicado (ISO de un slot
+   * disponible). El 409 del backend (límite, anticipación, conflicto) vuelve
+   * como mensaje presentable. 2.A.5.
+   */
+  rescheduleAppointmentById: (
+    id: string,
+    input: { newStart: string; reason?: string | null },
+  ) => Promise<{ ok: boolean; error?: string }>;
   /** Abre la sala virtual de una cita. */
   openRoom: (appointment: ListedAppointment) => void;
   closeRoom: () => void;
@@ -349,6 +376,8 @@ export function AppProvider({
   const [patientCtx, setPatientCtx] = useState<{
     patientId: string | null;
     orgId: string;
+    clinicId: string | null;
+    locationId: string | null;
   } | null>(null);
   const [appointments, setAppointments] = useState<AppointmentDto[] | null>(
     null,
@@ -379,23 +408,25 @@ export function AppProvider({
       // Sin organizations/tree: el org id REAL del paciente viene del
       // /telemedicine/me (resuelto por el backend desde su clínica ERP).
       // Llamar al árbol ERP con aud=app daba 403 en cada arranque.
-      // Especialidades best-effort: si el catálogo falla, las citas igual
-      // cargan y el wizard usa la ruta demo (el wiring de slots espera al
-      // contrato /availability, B1).
-      const [me, appts, reqs, catalogData, specialtiesData] = await Promise.all(
-        [
-          fetchMyContext(),
-          fetchMyAppointments({ pageSize: 100 }),
-          fetchMyRequests(),
-          fetchProfessionalsCatalog(),
-          fetchSpecialties().catch(() => null),
-        ],
-      );
-      setCatalog(catalogData.data);
+      // Núcleo crítico (citas/solicitudes/contexto) en paralelo; catálogos
+      // best-effort independientes para que su fallo no tumbe la vista
+      // (QA-010): el wizard degrada a "cualquiera"/reintento en ese caso.
+      const [me, appts, reqs] = await Promise.all([
+        fetchMyContext(),
+        fetchMyAppointments({ pageSize: 100 }),
+        fetchMyRequests(),
+      ]);
+      const [catalogData, specialtiesData] = await Promise.all([
+        fetchProfessionalsCatalog().catch(() => null),
+        fetchSpecialties().catch(() => null),
+      ]);
+      setCatalog(catalogData?.data ?? null);
       setSpecialties(specialtiesData);
       setPatientCtx({
         patientId: me.patient?.id ?? null,
         orgId: me.patient?.organizationId ?? "",
+        clinicId: me.patient?.clinicId ?? null,
+        locationId: me.patient?.locationId ?? null,
       });
       setAppointments(appts.items);
       setRequests(reqs);
@@ -409,14 +440,22 @@ export function AppProvider({
     }
   }, []);
 
-  // Con sesión real, refresca citas/catálogo al entrar a la app (Home o Citas)
-  // y cuando la pantalla de citas se vuelve visible. No en la sala (la cita
-  // activa vive en el contexto).
+  // Con sesión real, refresca al entrar a Citas (design §3.2: refresco por
+  // visibilidad) y tras cada mutación (los handlers llaman a refresh).
+  // No en la sala (la cita activa vive en el contexto). QA-010.
   useEffect(() => {
-    if (realMode && screen !== "room" && !appointments) {
+    if (realMode && screen === "book") {
       void refreshAppointments();
     }
-  }, [realMode, screen, appointments, refreshAppointments]);
+  }, [realMode, screen, refreshAppointments]);
+
+  // Carga inicial una sola vez para los demás consumidores (equipo del
+  // perfil, sala): sin esto el catálogo solo existiría tras visitar Citas.
+  useEffect(() => {
+    if (realMode && appointments === null && !appointmentsLoading) {
+      void refreshAppointments();
+    }
+  }, [realMode, appointments, appointmentsLoading, refreshAppointments]);
 
   useEffect(() => {
     if (!realMode) return;
@@ -483,17 +522,19 @@ export function AppProvider({
       professionalId?: string | null;
       date: string;
       time: string;
+      preferredStart?: string;
       reason: string;
       mode: string;
     }): Promise<boolean> => {
-      if (!patientCtx?.patientId || !catalog) return false;
+      if (!patientCtx?.patientId) return false;
 
       // Ruta por catálogo (veredicto D1): especialidad elegida + profesional
       // opcional por id exacto. `professionalId = null` = "cualquier
-      // profesional disponible" (el ERP asigna después). Sin regex.
+      // profesional disponible" (el ERP asigna después; no exige catálogo).
+      // Sin regex.
       if (input.specialtyId) {
         const selected =
-          input.professionalId != null
+          input.professionalId != null && catalog
             ? catalog.find((p) => p.id === input.professionalId)
             : undefined;
         // Id explícito que no existe en el catálogo → no inventar: abortar.
@@ -510,9 +551,10 @@ export function AppProvider({
                   locationId: selected.locations[0]?.id,
                 }
               : {}),
-            preferredStart: new Date(
-              `${input.date}T${input.time}:00`,
-            ).toISOString(),
+            // 2.A.4: el slot elegido viaja como preferred_start exacto.
+            preferredStart:
+              input.preferredStart ??
+              new Date(`${input.date}T${input.time}:00`).toISOString(),
             reason: input.reason.trim(),
           });
           await refreshAppointments();
@@ -523,9 +565,9 @@ export function AppProvider({
         }
       }
 
-      // Ruta legacy por tipo mock (demo/compatibilidad, pendiente de retirar
-      // en 2.A.2): conserva el comportamiento anterior.
-      if (!input.typeId) return false;
+      // Ruta legacy por tipo (solo demo sin sesión): conserva el
+      // comportamiento anterior con los mocks de tipos/equipo.
+      if (!input.typeId || !catalog) return false;
       const professional = realProfessionalByType(
         input.typeId as "medica" | "psicologia" | "nutricion" | "urgencia",
         catalog,
@@ -567,6 +609,29 @@ export function AppProvider({
       } catch (err) {
         console.warn("[appointments] No se pudo cancelar la cita:", err);
         return false;
+      }
+    },
+    [refreshAppointments],
+  );
+
+  const rescheduleAppointmentById = useCallback(
+    async (
+      id: string,
+      input: { newStart: string; reason?: string | null },
+    ): Promise<{ ok: boolean; error?: string }> => {
+      try {
+        await rescheduleAppointmentApi(id, {
+          newStart: input.newStart,
+          reason: input.reason ?? null,
+        });
+        await refreshAppointments();
+        return { ok: true };
+      } catch (err) {
+        console.warn("[appointments] No se pudo reprogramar la cita:", err);
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : undefined,
+        };
       }
     },
     [refreshAppointments],
@@ -1080,9 +1145,11 @@ export function AppProvider({
       teamProfessionals,
       specialties,
       professionalsCatalog: catalog,
+      patientCareContext: patientCtx,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
+      rescheduleAppointmentById,
       openRoom: (appointment) => {
         setRoomAppointment(appointment);
         setScreen("room");
@@ -1123,9 +1190,11 @@ export function AppProvider({
       teamProfessionals,
       specialties,
       catalog,
+      patientCtx,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
+      rescheduleAppointmentById,
       roomAppointment,
     ],
   );

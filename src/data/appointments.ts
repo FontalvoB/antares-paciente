@@ -1,7 +1,6 @@
 import {
   addDaysToISO,
   formatDateForDisplay,
-  isWeekendISO,
   toLocalISODate,
   weekdayShortEs,
 } from "../utils/dates";
@@ -52,6 +51,9 @@ export interface ListedAppointment {
   /** Ventana de la sala virtual (opcional hasta el despliegue del backend). */
   roomOpensAt?: string | null;
   roomClosesAt?: string | null;
+  /** Ids reales para disponibilidad/reprogramación (2.A.4/2.A.5). */
+  professionalId?: string | null;
+  specialtyId?: string | null;
 }
 
 export const CONSULT_TYPES: ConsultType[] = [
@@ -157,39 +159,10 @@ export const INITIAL_UPCOMING: ListedAppointment[] = [
   },
 ];
 
-const WEEKDAY_SLOTS = [
-  "08:00",
-  "08:30",
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
-  "18:00",
-  "18:30",
-  "19:00",
-  "19:30",
-] as const;
-
-const URGENCY_WEEKEND_SLOTS = ["09:00", "11:00", "14:00", "16:00"] as const;
-
-/** Huecos ocupados por profesional y día de la semana (0 = domingo). */
-const BUSY: Record<string, Partial<Record<number, readonly string[]>>> = {
-  ramirez: { 2: ["15:00"], 4: ["09:00", "09:30"] },
-  mora: { 3: ["10:00"], 5: ["11:00", "14:00"] },
-  torres: { 2: ["08:30"], 4: ["10:00", "10:30"] },
-  cruz: { 1: ["12:00"], 6: ["11:00"] },
-};
+export function bookingWindow() {
+  const min = toLocalISODate();
+  return { min, max: addDaysToISO(min, 30) };
+}
 
 export function consultTypeById(id: ConsultTypeId): ConsultType {
   return CONSULT_TYPES.find((t) => t.id === id) ?? CONSULT_TYPES[0];
@@ -199,87 +172,6 @@ export function professionalByType(typeId: ConsultTypeId): TeamProfessional {
   return (
     TEAM_PROFESSIONALS.find((p) => p.typeId === typeId) ?? TEAM_PROFESSIONALS[0]
   );
-}
-
-function slotMinutes(slot: string): number {
-  const [h, m] = slot.split(":").map(Number);
-  return (h ?? 0) * 60 + (m ?? 0);
-}
-
-function nowMinutes(): number {
-  const n = new Date();
-  return n.getHours() * 60 + n.getMinutes();
-}
-
-export function bookingWindow() {
-  const min = toLocalISODate();
-  return { min, max: addDaysToISO(min, 30) };
-}
-
-export function isSelectableBookingDate(
-  iso: string,
-  typeId: ConsultTypeId | "",
-): boolean {
-  const { min, max } = bookingWindow();
-  if (iso < min || iso > max) return false;
-  if (typeId !== "urgencia" && isWeekendISO(iso)) return false;
-  return true;
-}
-
-export function listSelectableDates(
-  typeId: ConsultTypeId,
-  limit = 12,
-): string[] {
-  const { min, max } = bookingWindow();
-  const out: string[] = [];
-  let iso = min;
-  while (iso <= max && out.length < limit) {
-    if (isSelectableBookingDate(iso, typeId)) out.push(iso);
-    iso = addDaysToISO(iso, 1);
-  }
-  return out;
-}
-
-export function splitSlots(slots: string[]): {
-  morning: string[];
-  afternoon: string[];
-} {
-  const morning: string[] = [];
-  const afternoon: string[] = [];
-  for (const slot of slots) {
-    if (slotMinutes(slot) < 12 * 60) morning.push(slot);
-    else afternoon.push(slot);
-  }
-  return { morning, afternoon };
-}
-
-export function getAvailableSlots(
-  typeId: ConsultTypeId,
-  isoDate: string,
-): string[] {
-  const pro = professionalByType(typeId);
-  const [y, m, d] = isoDate.split("-").map(Number);
-  const weekday = new Date(y, (m ?? 1) - 1, d ?? 1).getDay();
-  const weekend = weekday === 0 || weekday === 6;
-  const pool = weekend
-    ? typeId === "urgencia"
-      ? [...URGENCY_WEEKEND_SLOTS]
-      : []
-    : [...WEEKDAY_SLOTS];
-  const busy = new Set(BUSY[pro.id]?.[weekday] ?? []);
-  const today = toLocalISODate();
-  const cutoff = isoDate === today ? nowMinutes() : -1;
-  return pool.filter((slot) => !busy.has(slot) && slotMinutes(slot) > cutoff);
-}
-
-export function firstOpenSlot(
-  typeId: ConsultTypeId,
-): { date: string; time: string } | null {
-  for (const iso of listSelectableDates(typeId, 31)) {
-    const open = getAvailableSlots(typeId, iso);
-    if (open[0]) return { date: iso, time: open[0] };
-  }
-  return null;
 }
 
 export function buildRequestedAppointment(input: {
@@ -494,6 +386,8 @@ export function mapAppointmentToListed(
     status: appt.status,
     roomOpensAt: appt.roomOpensAt ?? null,
     roomClosesAt: appt.roomClosesAt ?? null,
+    professionalId: appt.professionalId,
+    specialtyId: appt.specialtyId,
   };
 }
 

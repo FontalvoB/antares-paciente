@@ -1,11 +1,14 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { IonAlert, IonButton, IonModal } from "@ionic/react";
+import { IonAlert, IonButton, IonIcon, IonModal } from "@ionic/react";
+import { calendarOutline } from "ionicons/icons";
 import { PageHeader } from "../components/PageHeader";
 import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
 import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard";
+import { RescheduleAppointmentSheet } from "../components/RescheduleAppointmentSheet";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { INITIAL_UPCOMING } from "../data/appointments";
+import type { ListedAppointment } from "../data/appointments";
 import { useT } from "../i18n/I18nContext";
 import {
   isPreVisitIntakeEditable,
@@ -28,6 +31,10 @@ export function AppointmentsPage() {
   const t = useT();
   const [requestOpen, setRequestOpen] = useState(false);
   const [cancelId, setCancelId] = useState<string | null>(null);
+  /** Cita a reprogramar (2.A.5): abre la hoja con disponibilidad real. */
+  const [reschedAppt, setReschedAppt] = useState<ListedAppointment | null>(
+    null,
+  );
   /** Pre-consulta de la cita destacada (F4): editable mientras Confirmed. */
   const [intakeOpen, setIntakeOpen] = useState(false);
 
@@ -50,9 +57,9 @@ export function AppointmentsPage() {
   const intakeVisible = preVisitIntakeVisible(featured?.status);
   const intakeEditable = isPreVisitIntakeEditable(featured?.status);
 
-  const handleCancel = async (id: string) => {
+  const handleCancel = async (id: string, reason: string) => {
     if (realMode) {
-      const ok = await cancelAppointmentById(id, "Solicitud del paciente");
+      const ok = await cancelAppointmentById(id, reason);
       if (ok) {
         showToast(t("Cita cancelada"), "warn");
       } else {
@@ -63,6 +70,10 @@ export function AppointmentsPage() {
     }
     setCancelId(null);
   };
+
+  /** Solo citas confirmadas con profesional asignado se reprograman (2.A.5). */
+  const canReschedule = (a: ListedAppointment) =>
+    realMode && a.status === "Confirmed" && !!a.professionalId;
 
   return (
     <Screen>
@@ -174,6 +185,17 @@ export function AppointmentsPage() {
                     : t("Ver mi pre-consulta")}
                 </IonButton>
               ) : null}
+              {featured && canReschedule(featured) ? (
+                <IonButton
+                  expand="block"
+                  className="bt bt-sm bt-ghost"
+                  style={{ marginTop: 10 }}
+                  onClick={() => setReschedAppt(featured)}
+                >
+                  <IonIcon icon={calendarOutline} aria-hidden="true" />
+                  &nbsp;{t("Reprogramar")}
+                </IonButton>
+              ) : null}
             </div>
           </article>
         ) : null}
@@ -208,6 +230,15 @@ export function AppointmentsPage() {
                 </div>
                 {a.pending ? (
                   <span className="chip chip-org">{t("PENDIENTE")}</span>
+                ) : null}
+                {canReschedule(a) ? (
+                  <IonButton
+                    className="bt bt-mini bt-ghost"
+                    aria-label={t("Reprogramar cita")}
+                    onClick={() => setReschedAppt(a)}
+                  >
+                    <IonIcon icon={calendarOutline} aria-hidden="true" />
+                  </IonButton>
                 ) : null}
                 <IonButton
                   className="bt bt-mini bt-ghost"
@@ -274,18 +305,48 @@ export function AppointmentsPage() {
       <IonAlert
         isOpen={!!cancelId}
         header={t("¿Cancelar la cita?")}
-        message={t("Se notificará al equipo médico.")}
+        message={t(
+          "Se notificará al equipo médico. Cuéntanos el motivo (mínimo 5 caracteres).",
+        )}
+        inputs={[
+          {
+            name: "reason",
+            type: "textarea",
+            placeholder: t("Motivo de la cancelación"),
+          },
+        ]}
         buttons={[
           { text: t("Volver"), role: "cancel" },
           {
             text: t("Cancelar cita"),
             role: "destructive",
-            handler: () => {
-              if (cancelId) void handleCancel(cancelId);
+            handler: (data) => {
+              const reason = String(
+                (data as { reason?: unknown } | undefined)?.reason ?? "",
+              ).trim();
+              // El backend exige motivo de al menos 5 caracteres: se valida
+              // aquí para no viajar en vano (2.A.5).
+              if (reason.length < 5) {
+                showToast(
+                  t("Escribe un motivo de al menos 5 caracteres."),
+                  "err",
+                );
+                return false;
+              }
+              if (cancelId) void handleCancel(cancelId, reason);
             },
           },
         ]}
         onDidDismiss={() => setCancelId(null)}
+      />
+
+      <RescheduleAppointmentSheet
+        appointment={reschedAppt}
+        onClose={() => setReschedAppt(null)}
+        onDone={(ok) => {
+          setReschedAppt(null);
+          if (ok) showToast(t("Cita reprogramada"), "ok");
+        }}
       />
     </Screen>
   );

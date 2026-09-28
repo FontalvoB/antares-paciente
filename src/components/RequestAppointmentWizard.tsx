@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   IonButton,
@@ -7,6 +7,7 @@ import {
   IonRadioGroup,
   IonSelect,
   IonSelectOption,
+  IonSpinner,
   IonTextarea,
 } from "@ionic/react";
 import {
@@ -29,10 +30,6 @@ import {
   buildRequestedAppointment,
   bookingWindow,
   consultTypeById,
-  firstOpenSlot,
-  getAvailableSlots,
-  isSelectableBookingDate,
-  splitSlots,
   type AppointmentMode,
   type ConsultTypeId,
   type ListedAppointment,
@@ -40,14 +37,22 @@ import {
 import {
   activeCareOptions,
   careVisualFor,
+  dayHasSchedule,
   groupCareOptionsByCategory,
+  isCatalogBookingDate,
   professionalsForSpecialty,
-  TEMPORARY_CATALOG_SLOT_PROFILE,
+  splitSlotViews,
+  toAvailableSlotViews,
   type CareOption,
 } from "../data/careOptions";
+import {
+  fetchAvailabilitySlots,
+  type AvailabilitySlotDto,
+} from "../utils/appointmentsApi";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import {
+  addDaysToISO,
   formatDateForDisplay,
   formatLongDateEs,
   isTodayISO,
@@ -112,6 +117,8 @@ export function RequestAppointmentWizard({
     realMode,
     specialties,
     professionalsCatalog,
+    patientCareContext,
+    refreshAppointments,
     submitAppointmentRequest,
     showToast,
   } = useApp();
@@ -126,8 +133,19 @@ export function RequestAppointmentWizard({
   const [professionalId, setProfessionalId] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  // Inicio exacto del slot elegido (ISO del backend → preferred_start).
+  const [slotStart, setSlotStart] = useState("");
   const [reason, setReason] = useState("");
   const [mode, setMode] = useState<AppointmentMode | "">("");
+  // Disponibilidad remota por día (2.A.4): caché + estados de carga.
+  const [daySlots, setDaySlots] = useState<
+    Record<string, AvailabilitySlotDto[]>
+  >({});
+  const [dayLoading, setDayLoading] = useState(false);
+  const [dayError, setDayError] = useState<string | null>(null);
+  const [probing, setProbing] = useState(false);
+  // Reintento manual de disponibilidad (botón "Reintentar").
+  const [retryTick, setRetryTick] = useState(0);
   const [{ year, month }, setCursor] = useState(() => isoYearMonth(today));
   const dir = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -159,17 +177,129 @@ export function RequestAppointmentWizard({
   const range = bookingWindow();
   const professional = typeId ? teamProfessional(typeId) : null;
   const consultType = typeId ? consultTypeById(typeId) : null;
-  // Motor de slots mock (2.A.2 lo retira; B1 lo reemplaza por /availability).
-  // En la ruta por catálogo usa el perfil temporal neutro (ver
-  // TEMPORARY_CATALOG_SLOT_PROFILE): sin precisión inventada por especialidad.
-  const slotTypeId: ConsultTypeId | "" = useCatalogPath
-    ? specialtyId
-      ? TEMPORARY_CATALOG_SLOT_PROFILE
-      : ""
-    : typeId;
-  const slots = slotTypeId && date ? getAvailableSlots(slotTypeId, date) : [];
-  const { morning, afternoon } = splitSlots(slots);
-  const nextSlot = slotTypeId ? firstOpenSlot(slotTypeId) : null;
+  const orgId = patientCareContext?.orgId ?? "";
+
+  // Parámetros de disponibilidad (contrato `/availability`): modo
+  // profesional con elegido, o modo especialidad (+organización requerida
+  // por el backend) agregando sin asignar.
+  const buildAvailabilityQuery = useCallback(
+    (iso: string) => {
+      if (!useCatalogPath || !specialtyId) return null;
+      if (professionalId) return { professionalId, date: iso };
+      if (!orgId) return null;
+      return { specialtyId, organizationId: orgId, date: iso };
+    },
+    [useCatalogPath, specialtyId, professionalId, orgId],
+  );
+
+  // Búsqueda del primer día con cupo al entrar al Paso 2 o cambiar la
+  // selección (máx. 14 días, cancelable). Cachea cada día consultado.
+  useEffect(() => {
+    if (step !== 2 || !useCatalogPath || !specialtyId) return;
+    // El modo especialidad exige organización (contrato 400): sin ella no
+    // hay qué consultar; error explícito en vez de spinner infinito.
+    if (!professionalId && !orgId) {
+      setDayError(
+        t("Se necesita tu organización para buscar por especialidad."),
+      );
+      setProbing(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    setProbing(true);
+    setDayError(null);
+    setDaySlots({});
+    setDate("");
+    setSlotStart("");
+    setTime("");
+    void (async () => {
+      for (let i = 0; i < 14; i++) {
+        if (ctrl.signal.aborted) return;
+        const iso = addDaysToISO(toLocalISODate(), i);
+        if (!isCatalogBookingDate(iso)) continue;
+        const q = buildAvailabilityQuery(iso);
+        if (!q) break;
+        try {
+          const res = await fetchAvailabilitySlots(q, {
+            signal: ctrl.signal,
+          });
+          if (ctrl.signal.aborted) return;
+          setDaySlots((prev) => ({ ...prev, [iso]: res.slots }));
+          if (res.slots.some((s) => s.isAvailable)) {
+            setDate(iso);
+            setCursor(isoYearMonth(iso));
+            break;
+          }
+        } catch (err) {
+          if (ctrl.signal.aborted) return;
+          setDayError(
+            err instanceof Error
+              ? err.message
+              : "No se pudo cargar la disponibilidad",
+          );
+          break;
+        }
+      }
+      if (!ctrl.signal.aborted) setProbing(false);
+    })();
+    return () => ctrl.abort();
+  }, [
+    step,
+    useCatalogPath,
+    specialtyId,
+    buildAvailabilityQuery,
+    retryTick,
+    t,
+    professionalId,
+    orgId,
+  ]);
+
+  // Carga bajo demanda del día tocado manualmente (si no está en caché).
+  useEffect(() => {
+    if (step !== 2 || !useCatalogPath || !date || daySlots[date]) return;
+    const q = buildAvailabilityQuery(date);
+    if (!q) return;
+    const ctrl = new AbortController();
+    setDayLoading(true);
+    setDayError(null);
+    void fetchAvailabilitySlots(q, { signal: ctrl.signal })
+      .then((res) => {
+        if (ctrl.signal.aborted) return;
+        setDaySlots((prev) => ({ ...prev, [date]: res.slots }));
+      })
+      .catch((err: unknown) => {
+        if (ctrl.signal.aborted) return;
+        setDayError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo cargar la disponibilidad",
+        );
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setDayLoading(false);
+      });
+    return () => ctrl.abort();
+  }, [step, useCatalogPath, date, daySlots, buildAvailabilityQuery, retryTick]);
+
+  // Vistas de slots (B4: solo `isAvailable`) + días verificados con cupo.
+  const slotViews = useMemo(
+    () => toAvailableSlotViews(daySlots[date] ?? []),
+    [daySlots, date],
+  );
+  const { morning, afternoon } = useMemo(
+    () => splitSlotViews(slotViews),
+    [slotViews],
+  );
+  const scheduledDay = date ? (daySlots[date] ?? null) : null;
+  const dotDays = useMemo(
+    () =>
+      new Set(
+        Object.entries(daySlots)
+          .filter(([, s]) => s.some((x) => x.isAvailable))
+          .map(([iso]) => iso),
+      ),
+    [daySlots],
+  );
   const cells = monthGrid(year, month);
   const meta = STEPS[step - 1] ?? STEPS[0];
   const proShort = useCatalogPath
@@ -186,9 +316,19 @@ export function RequestAppointmentWizard({
 
   const canContinue = useMemo(() => {
     if (step === 1) return useCatalogPath ? specialtyId !== "" : typeId !== "";
-    if (step === 2) return date !== "" && time !== "";
+    if (step === 2)
+      return useCatalogPath ? date !== "" && slotStart !== "" : false;
     return reason.trim().length >= 10 && mode !== "";
-  }, [step, useCatalogPath, specialtyId, typeId, date, time, reason, mode]);
+  }, [
+    step,
+    useCatalogPath,
+    specialtyId,
+    typeId,
+    date,
+    slotStart,
+    reason,
+    mode,
+  ]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
@@ -196,42 +336,28 @@ export function RequestAppointmentWizard({
 
   const pickType = (id: ConsultTypeId) => {
     setTypeId(id);
-    setTime("");
-    const open = firstOpenSlot(id);
-    if (open) {
-      setDate(open.date);
-      setCursor(isoYearMonth(open.date));
-    } else {
-      setDate("");
-    }
   };
 
   const pickCare = (id: string) => {
     setSpecialtyId(id);
     // Sin preselección silenciosa: el profesional queda en "cualquiera"
-    // hasta que el paciente elija explícitamente (veredicto D1).
+    // hasta que el paciente elija explícitamente (veredicto D1). La fecha y
+    // el slot los resuelve la búsqueda de disponibilidad del Paso 2.
     setProfessionalId("");
+    setSlotStart("");
     setTime("");
-    const open = firstOpenSlot(TEMPORARY_CATALOG_SLOT_PROFILE);
-    if (open) {
-      setDate(open.date);
-      setCursor(isoYearMonth(open.date));
-    } else {
-      setDate("");
-    }
   };
 
   const pickDate = (iso: string) => {
-    if (!slotTypeId || !isSelectableBookingDate(iso, slotTypeId)) return;
+    if (!isCatalogBookingDate(iso)) return;
     setDate(iso);
+    setSlotStart("");
     setTime("");
   };
 
-  const jumpNext = () => {
-    if (!nextSlot) return;
-    setDate(nextSlot.date);
-    setTime(nextSlot.time);
-    setCursor(isoYearMonth(nextSlot.date));
+  const pickSlot = (startIso: string, label: string) => {
+    setSlotStart(startIso);
+    setTime(label);
   };
 
   const go = (n: number) => {
@@ -270,12 +396,14 @@ export function RequestAppointmentWizard({
     if (realMode) {
       // Modo sesión real: la solicitud viaja al backend y la lista se refresca.
       if (useCatalogPath) {
-        if (!specialtyId || !selectedCare) return;
+        if (!specialtyId || !selectedCare || !slotStart) return;
         const payload = {
           specialtyId,
           professionalId: professionalId || null,
           date,
           time,
+          // 2.A.4: el slot elegido viaja como preferred_start exacto.
+          preferredStart: slotStart,
           reason,
           mode,
         };
@@ -295,7 +423,7 @@ export function RequestAppointmentWizard({
               role: summaryRole,
               time,
               day: isTodayISO(date)
-                ? "Hoy"
+                ? t("Hoy")
                 : formatDateForDisplay(date).slice(0, 5),
               motivo: `${selectedCare.name} · ${reason.trim()}`,
               color: "var(--teal)",
@@ -357,6 +485,38 @@ export function RequestAppointmentWizard({
     ? "var(--teal-l)"
     : (professional?.colorSoft ?? "");
 
+  // QA-008: en sesión real nunca se cae en silencio a la ruta legacy. Sin
+  // catálogo → loading; catálogo vacío/fallido → error recuperable.
+  if (realMode && specialties === null) {
+    return (
+      <div className="req-page">
+        <div className="req-empty" role="status" aria-live="polite">
+          <IonSpinner name="crescent" aria-hidden="true" />
+          <strong>{t("Cargando tipos de atención…")}</strong>
+        </div>
+      </div>
+    );
+  }
+  if (realMode && (!careOptions || careOptions.length === 0)) {
+    return (
+      <div className="req-page">
+        <div className="req-empty" role="alert">
+          <strong>{t("No se pudieron cargar los tipos de atención")}</strong>
+          <p>{t("Revisa tu conexión e inténtalo de nuevo.")}</p>
+          <IonButton
+            className="bt bt-sm bt-teal"
+            onClick={() => void refreshAppointments()}
+          >
+            {t("Reintentar")}
+          </IonButton>
+          <IonButton className="bt bt-sm bt-ghost" onClick={onCancel}>
+            {t("Cerrar")}
+          </IonButton>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="req-page">
       <header className="req-hero">
@@ -364,21 +524,24 @@ export function RequestAppointmentWizard({
         <div className="req-hero-top">
           <IonButton
             className="bt bt-round req-hero-btn"
-            aria-label={step === 1 ? "Cerrar" : "Volver"}
+            aria-label={step === 1 ? t("Cerrar") : t("Volver")}
             onClick={back}
           >
             <IonIcon slot="icon-only" icon={step === 1 ? close : chevronBack} />
           </IonButton>
           <div
             className="req-hero-dots"
-            aria-label={`Paso ${step} de ${TOTAL}`}
+            aria-label={t("Paso {step} de {total}", {
+              step: String(step),
+              total: String(TOTAL),
+            })}
           >
             {STEPS.map((s, i) => (
               <button
                 key={s.title}
                 type="button"
                 className={`req-dot ${i + 1 < step || done ? "done" : i + 1 === step ? "now" : ""}`}
-                aria-label={s.title}
+                aria-label={t(s.title)}
                 disabled={i + 1 > step}
                 onClick={() => i + 1 < step && go(i + 1)}
               />
@@ -386,20 +549,23 @@ export function RequestAppointmentWizard({
           </div>
           <IonButton
             className="bt bt-round req-hero-btn"
-            aria-label="Cerrar"
+            aria-label={t("Cerrar")}
             onClick={onCancel}
           >
             <IonIcon slot="icon-only" icon={close} />
           </IonButton>
         </div>
         <div className="kicker">
-          Paso {done ? TOTAL : step} de {TOTAL}
+          {t("Paso {step} de {total}", {
+            step: String(done ? TOTAL : step),
+            total: String(TOTAL),
+          })}
         </div>
         <h1 className="req-hero-title">
-          {done ? "Solicitud lista" : meta.title}
+          {done ? t("Solicitud lista") : t(meta.title)}
         </h1>
         <p className="sub">
-          {done ? "El equipo confirmará tu cita en breve" : meta.sub}
+          {done ? t("El equipo confirmará tu cita en breve") : t(meta.sub)}
         </p>
         {(specialtyId || typeId || date || time) && !done && (
           <div className="chips">
@@ -418,7 +584,7 @@ export function RequestAppointmentWizard({
                 className="chip chip-glass"
                 onClick={() => go(1)}
               >
-                {consultType.emoji} {consultType.label}
+                {consultType.emoji} {t(consultType.label)}
               </button>
             )}
             {date && (
@@ -428,7 +594,7 @@ export function RequestAppointmentWizard({
                 onClick={() => go(2)}
               >
                 <IonIcon icon={calendarOutline} />{" "}
-                {isTodayISO(date) ? "Hoy" : formatDateForDisplay(date)}
+                {isTodayISO(date) ? t("Hoy") : formatDateForDisplay(date)}
                 {time ? ` · ${time}` : ""}
               </button>
             )}
@@ -453,17 +619,22 @@ export function RequestAppointmentWizard({
                 className="display"
                 style={{ fontSize: 22, fontWeight: 700 }}
               >
-                Cita solicitada
+                {t("Cita solicitada")}
               </div>
               <p>
-                Quedó en revisión. Te avisamos cuando {proShort} la confirme.
+                {t(
+                  "Quedó en revisión. Te avisamos cuando {name} la confirme.",
+                  {
+                    name: proShort,
+                  },
+                )}
               </p>
               <article className="appt-featured" style={{ margin: "16px 0 0" }}>
                 <div
                   className="appt-featured-band"
                   style={{ background: professional.accent }}
                 >
-                  <span>PENDIENTE</span>
+                  <span>{t("PENDIENTE")}</span>
                   <span
                     style={{
                       background: "rgba(255,255,255,.2)",
@@ -471,13 +642,13 @@ export function RequestAppointmentWizard({
                       padding: "3px 8px",
                     }}
                   >
-                    {mode}
+                    {t(mode)}
                   </span>
                 </div>
                 <div className="appt-featured-body">
                   <div className="appt-featured-when">{time}</div>
                   <div className="appt-featured-mode">
-                    {formatDateForDisplay(date)} · {consultType.label}
+                    {formatDateForDisplay(date)} · {t(consultType.label)}
                   </div>
                   <div
                     style={{ display: "flex", gap: 10, alignItems: "center" }}
@@ -494,9 +665,11 @@ export function RequestAppointmentWizard({
                       {professional.emoji}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700 }}>{professional.name}</div>
+                      <div style={{ fontWeight: 700 }}>
+                        {t(professional.name)}
+                      </div>
                       <div style={{ fontSize: 12, color: "var(--mu)" }}>
-                        {professional.role}
+                        {t(professional.role)}
                       </div>
                     </div>
                   </div>
@@ -677,36 +850,26 @@ export function RequestAppointmentWizard({
                 </IonRadioGroup>
               )}
 
-              {step === 2 && (useCatalogPath ? !!specialtyId : !!typeId) && (
+              {step === 2 && useCatalogPath && !!specialtyId && (
                 <div className="req-agenda">
-                  {nextSlot &&
-                    !(nextSlot.date === date && nextSlot.time === time) && (
-                      <IonButton
-                        expand="block"
-                        className="req-soon"
-                        onClick={jumpNext}
-                      >
-                        <span className="req-soon-copy">
-                          <span className="req-soon-kicker">
-                            {t("Más pronto")}
-                          </span>
-                          <span className="req-soon-when">
-                            {isTodayISO(nextSlot.date)
-                              ? t("Hoy")
-                              : formatDateForDisplay(nextSlot.date)}
-                            <strong>{nextSlot.time}</strong>
-                          </span>
-                        </span>
-                        <IonIcon icon={chevronForward} aria-hidden="true" />
-                      </IonButton>
-                    )}
+                  {probing && (
+                    <div
+                      className="req-empty"
+                      role="status"
+                      aria-live="polite"
+                      style={{ margin: "0 0 12px" }}
+                    >
+                      <IonSpinner name="crescent" aria-hidden="true" />
+                      <strong>{t("Buscando horarios disponibles…")}</strong>
+                    </div>
+                  )}
 
                   <section className="req-cal card">
                     <div className="req-cal-nav">
                       <IonButton
                         className="bt bt-round req-cal-nav-btn"
                         disabled={!canPrev}
-                        aria-label="Mes anterior"
+                        aria-label={t("Mes anterior")}
                         onClick={() => moveMonth(-1)}
                       >
                         <IonIcon slot="icon-only" icon={chevronBack} />
@@ -717,7 +880,7 @@ export function RequestAppointmentWizard({
                       <IonButton
                         className="bt bt-round req-cal-nav-btn"
                         disabled={!canNext}
-                        aria-label="Mes siguiente"
+                        aria-label={t("Mes siguiente")}
                         onClick={() => moveMonth(1)}
                       >
                         <IonIcon slot="icon-only" icon={chevronForward} />
@@ -731,20 +894,15 @@ export function RequestAppointmentWizard({
                     <div
                       className="req-cal-grid"
                       role="grid"
-                      aria-label="Calendario de disponibilidad"
+                      aria-label={t("Calendario de disponibilidad")}
                     >
                       {cells.map((iso, i) => {
                         if (!iso)
                           return (
                             <span key={`e-${i}`} className="req-cal-cell" />
                           );
-                        const enabled =
-                          !!slotTypeId &&
-                          isSelectableBookingDate(iso, slotTypeId);
-                        const hasSlots =
-                          enabled &&
-                          !!slotTypeId &&
-                          getAvailableSlots(slotTypeId, iso).length > 0;
+                        const enabled = isCatalogBookingDate(iso);
+                        const hasSlots = enabled && dotDays.has(iso);
                         const selected = iso === date;
                         const todayCell = isTodayISO(iso);
                         return (
@@ -753,7 +911,7 @@ export function RequestAppointmentWizard({
                             fill={selected ? "solid" : "clear"}
                             className={`bt req-cal-day${selected ? " sel" : ""}${todayCell && !selected ? " today" : ""}${!enabled ? " off" : ""}${hasSlots ? " open" : ""}`}
                             disabled={!enabled}
-                            aria-label={`${formatLongDateEs(iso)}${hasSlots ? ", con horarios" : ""}`}
+                            aria-label={`${formatLongDateEs(iso)}${hasSlots ? ` · ${t("Con cupo")}` : ""}`}
                             aria-pressed={selected}
                             onClick={() => pickDate(iso)}
                           >
@@ -778,12 +936,16 @@ export function RequestAppointmentWizard({
                         </div>
                         <div className="req-times-sub">
                           {date
-                            ? slots.length
+                            ? slotViews.length > 0
                               ? t("{count} horarios · {name}", {
-                                  count: String(slots.length),
+                                  count: String(slotViews.length),
                                   name: proShort,
                                 })
-                              : t("Sin cupo este día")
+                              : scheduledDay === null
+                                ? t("Cargando horarios…")
+                                : dayHasSchedule(scheduledDay)
+                                  ? t("Sin cupo este día")
+                                  : t("Sin jornada este día")
                             : t("Agenda de {name}", { name: proShort })}
                         </div>
                       </div>
@@ -797,21 +959,46 @@ export function RequestAppointmentWizard({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2, ease: EASE }}
                       >
-                        {!date ? (
+                        {probing || dayLoading || !date ? (
+                          <div
+                            className="req-empty"
+                            role="status"
+                            aria-live="polite"
+                          >
+                            <IonSpinner name="crescent" aria-hidden="true" />
+                            <strong>
+                              {t(
+                                !date
+                                  ? "Buscando horarios disponibles…"
+                                  : "Cargando horarios…",
+                              )}
+                            </strong>
+                          </div>
+                        ) : dayError ? (
+                          <div className="req-empty" role="alert">
+                            <strong>
+                              {t("No se pudo cargar la disponibilidad")}
+                            </strong>
+                            <p>{dayError}</p>
+                            <IonButton
+                              className="bt bt-sm bt-ghost"
+                              onClick={() => setRetryTick((n) => n + 1)}
+                            >
+                              {t("Reintentar")}
+                            </IonButton>
+                          </div>
+                        ) : slotViews.length === 0 ? (
                           <div className="req-empty">
                             <strong>
-                              {t("Elige un día en el calendario")}
+                              {t(
+                                scheduledDay && dayHasSchedule(scheduledDay)
+                                  ? "Sin cupo este día"
+                                  : "Sin horarios este día",
+                              )}
                             </strong>
                             <p>
-                              {t("Los días marcados tienen horarios libres.")}
-                            </p>
-                          </div>
-                        ) : slots.length === 0 ? (
-                          <div className="req-empty">
-                            <strong>{t("Sin horarios este día")}</strong>
-                            <p>
                               {t(
-                                "Prueba un día marcado o usa el horario más pronto.",
+                                "Prueba un día marcado con cupo o elige otra atención.",
                               )}
                             </p>
                           </div>
@@ -825,13 +1012,15 @@ export function RequestAppointmentWizard({
                                 <div className="req-slots">
                                   {morning.map((slot) => (
                                     <IonButton
-                                      key={slot}
-                                      className={`bt req-slot ${time === slot ? "sel" : ""}`}
-                                      aria-pressed={time === slot}
-                                      onClick={() => setTime(slot)}
+                                      key={slot.startIso}
+                                      className={`bt req-slot ${slotStart === slot.startIso ? "sel" : ""}`}
+                                      aria-pressed={slotStart === slot.startIso}
+                                      onClick={() =>
+                                        pickSlot(slot.startIso, slot.timeLabel)
+                                      }
                                     >
                                       <span className="req-slot-time">
-                                        {slot}
+                                        {slot.timeLabel}
                                       </span>
                                     </IonButton>
                                   ))}
@@ -846,13 +1035,15 @@ export function RequestAppointmentWizard({
                                 <div className="req-slots">
                                   {afternoon.map((slot) => (
                                     <IonButton
-                                      key={slot}
-                                      className={`bt req-slot ${time === slot ? "sel" : ""}`}
-                                      aria-pressed={time === slot}
-                                      onClick={() => setTime(slot)}
+                                      key={slot.startIso}
+                                      className={`bt req-slot ${slotStart === slot.startIso ? "sel" : ""}`}
+                                      aria-pressed={slotStart === slot.startIso}
+                                      onClick={() =>
+                                        pickSlot(slot.startIso, slot.timeLabel)
+                                      }
                                     >
                                       <span className="req-slot-time">
-                                        {slot}
+                                        {slot.timeLabel}
                                       </span>
                                     </IonButton>
                                   ))}
@@ -864,15 +1055,30 @@ export function RequestAppointmentWizard({
                       </motion.div>
                     </AnimatePresence>
 
-                    {date && time && (
+                    {date && slotStart && (
                       <div className="req-pick">
                         <IonIcon icon={calendarOutline} />
                         <span>{formatLongDateEs(date)}</span>
                         <strong>{time}</strong>
-                        <em>{DURATION}</em>
+                        <em>{t(DURATION)}</em>
                       </div>
                     )}
                   </section>
+                </div>
+              )}
+
+              {step === 2 && !useCatalogPath && (
+                <div
+                  className="req-empty"
+                  style={{ margin: "8px 0 0" }}
+                  role="status"
+                >
+                  <strong>{t("Inicia sesión para ver horarios")}</strong>
+                  <p>
+                    {t(
+                      "Los horarios reales se cargan con tu sesión de paciente.",
+                    )}
+                  </p>
                 </div>
               )}
 
@@ -882,7 +1088,9 @@ export function RequestAppointmentWizard({
                   : !!(professional && consultType)) && (
                   <>
                     <div className="field">
-                      <label htmlFor="req-motivo">Motivo de la consulta</label>
+                      <label htmlFor="req-motivo">
+                        {t("Motivo de la consulta")}
+                      </label>
                       <IonTextarea
                         id="req-motivo"
                         className="fld"
@@ -890,13 +1098,15 @@ export function RequestAppointmentWizard({
                         rows={4}
                         maxlength={500}
                         enterkeyhint="done"
-                        placeholder="Cuéntale al equipo qué te preocupa hoy"
+                        placeholder={t(
+                          "Cuéntale al equipo qué te preocupa hoy",
+                        )}
                         value={reason}
                         onIonInput={(e) => setReason(e.detail.value ?? "")}
                       />
                       <span className="req-hint">
                         {reason.trim().length < 10
-                          ? "Mínimo 10 caracteres"
+                          ? t("Mínimo 10 caracteres")
                           : `${reason.trim().length} / 500`}
                       </span>
                     </div>
@@ -904,28 +1114,17 @@ export function RequestAppointmentWizard({
                     {useCatalogPath && (
                       <div className="field">
                         <label>{t("Profesional (opcional)")}</label>
-                        <IonSelect
-                          className="fld"
-                          interface="popover"
-                          value={professionalId}
-                          aria-label={t("Profesional (opcional)")}
-                          onIonChange={(e) =>
-                            setProfessionalId(e.detail.value as string)
-                          }
-                        >
-                          <IonSelectOption value="">
-                            {t("Cualquier profesional disponible")}
-                          </IonSelectOption>
-                          {eligibleProfessionals.map((p) => (
-                            <IonSelectOption key={p.id} value={p.id}>
-                              {p.fullName}
-                            </IonSelectOption>
-                          ))}
-                        </IonSelect>
+                        <div className="req-pick">
+                          <IonIcon icon={personOutline} />
+                          <span>
+                            {selectedProfessional?.fullName ??
+                              t("Cualquier profesional disponible")}
+                          </span>
+                        </div>
                       </div>
                     )}
 
-                    <div className="req-field-lbl">Modalidad</div>
+                    <div className="req-field-lbl">{t("Modalidad")}</div>
                     <IonRadioGroup
                       className="req-modes"
                       value={mode || undefined}
@@ -951,9 +1150,9 @@ export function RequestAppointmentWizard({
                             <IonIcon icon={videocamOutline} />
                           </span>
                           <span className="req-type-copy">
-                            <span className="ct">Videollamada</span>
+                            <span className="ct">{t("Videollamada")}</span>
                             <span className="cs">
-                              Desde casa · sala virtual
+                              {t("Desde casa · sala virtual")}
                             </span>
                           </span>
                         </span>
@@ -976,9 +1175,9 @@ export function RequestAppointmentWizard({
                             <IonIcon icon={locationOutline} />
                           </span>
                           <span className="req-type-copy">
-                            <span className="ct">Presencial</span>
+                            <span className="ct">{t("Presencial")}</span>
                             <span className="cs">
-                              En la clínica COPP-ADRESD
+                              {t("En la clínica COPP-ADRESD")}
                             </span>
                           </span>
                         </span>
@@ -993,7 +1192,7 @@ export function RequestAppointmentWizard({
                         className="appt-featured-band"
                         style={{ background: summaryAccent }}
                       >
-                        <span>RESUMEN</span>
+                        <span>{t("RESUMEN")}</span>
                         <span
                           style={{
                             background: "rgba(255,255,255,.2)",
@@ -1001,7 +1200,7 @@ export function RequestAppointmentWizard({
                             padding: "3px 8px",
                           }}
                         >
-                          {mode || "Modalidad"}
+                          {mode ? t(mode) : t("Modalidad")}
                         </span>
                       </div>
                       <div className="appt-featured-body">
@@ -1057,12 +1256,12 @@ export function RequestAppointmentWizard({
       <div className="req-foot">
         {done ? (
           <IonButton expand="block" className="bt bt-primary" onClick={finish}>
-            Ver mis citas
+            {t("Ver mis citas")}
           </IonButton>
         ) : (
           <div className="req-foot-row">
             <IonButton expand="block" className="bt bt-ghost" onClick={back}>
-              {step === 1 ? "Cancelar" : "Volver"}
+              {step === 1 ? t("Cancelar") : t("Volver")}
             </IonButton>
             <IonButton
               expand="block"
@@ -1070,7 +1269,7 @@ export function RequestAppointmentWizard({
               disabled={!canContinue}
               onClick={next}
             >
-              {step === TOTAL ? "Solicitar cita" : "Continuar"}
+              {step === TOTAL ? t("Solicitar cita") : t("Continuar")}
             </IonButton>
           </div>
         )}

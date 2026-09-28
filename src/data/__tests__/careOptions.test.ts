@@ -2,11 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   activeCareOptions,
   careVisualFor,
+  dayHasSchedule,
   groupCareOptionsByCategory,
+  isCatalogBookingDate,
   professionalsForSpecialty,
+  splitSlotViews,
+  toAvailableSlotViews,
   type CareOption,
 } from "../careOptions";
 import type {
+  AvailabilitySlotDto,
   ProfessionalCatalogItem,
   SpecialtyDto,
 } from "../../utils/appointmentsApi";
@@ -148,5 +153,76 @@ describe("careVisualFor — estética por posición, no por nombre", () => {
   it("rota la paleta de forma determinista", () => {
     expect(careVisualFor(0)).toEqual(careVisualFor(4));
     expect(careVisualFor(1).tone).not.toBe(careVisualFor(0).tone);
+  });
+});
+
+function slot(
+  overrides: Partial<AvailabilitySlotDto> & { start: string },
+): AvailabilitySlotDto {
+  return {
+    end: overrides.start,
+    durationMinutes: 30,
+    isAvailable: true,
+    conflictReason: null,
+    availableProfessionalCount: 1,
+    ...overrides,
+  };
+}
+
+describe("toAvailableSlotViews — B4: solo isAvailable en UI", () => {
+  it("filtra ocupados/bloqueados y ordena por inicio", () => {
+    // ISOs sin offset = hora local: determinista en cualquier TZ.
+    const views = toAvailableSlotViews([
+      slot({ start: "2026-10-05T10:00" }),
+      slot({
+        start: "2026-10-05T09:00",
+        isAvailable: false,
+        conflictReason: "Booked",
+        availableProfessionalCount: 0,
+      }),
+      slot({
+        start: "2026-10-05T09:30",
+        isAvailable: false,
+        conflictReason: "TooSoon",
+        availableProfessionalCount: 0,
+      }),
+      slot({ start: "2026-10-05T14:00" }),
+    ]);
+    expect(views.map((v) => v.timeLabel)).toEqual(["10:00", "14:00"]);
+    expect(views.map((v) => v.startIso)).toEqual([
+      "2026-10-05T10:00",
+      "2026-10-05T14:00",
+    ]);
+  });
+
+  it("parte mañana/tarde por hora local", () => {
+    const { morning, afternoon } = splitSlotViews(
+      toAvailableSlotViews([
+        slot({ start: "2026-10-05T11:30" }),
+        slot({ start: "2026-10-05T12:00" }),
+      ]),
+    );
+    expect(morning).toHaveLength(1);
+    expect(afternoon).toHaveLength(1);
+  });
+});
+
+describe("isCatalogBookingDate — ventana sin reglas por especialidad", () => {
+  it("acepta hoy y el límite de 30 días, rechaza ayer y +31", async () => {
+    const { toLocalISODate, addDaysToISO } = await import("../../utils/dates");
+    const today = toLocalISODate();
+    expect(isCatalogBookingDate(today)).toBe(true);
+    expect(isCatalogBookingDate(addDaysToISO(today, 30))).toBe(true);
+    expect(isCatalogBookingDate(addDaysToISO(today, 31))).toBe(false);
+    expect(isCatalogBookingDate(addDaysToISO(today, -1))).toBe(false);
+  });
+});
+
+describe("dayHasSchedule — jornada vs cupo", () => {
+  it("distingue día con jornada llena de día sin jornada", () => {
+    expect(
+      dayHasSchedule([slot({ start: "2026-10-05T09:00", isAvailable: false })]),
+    ).toBe(true);
+    expect(dayHasSchedule([])).toBe(false);
   });
 });

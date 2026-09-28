@@ -1,8 +1,10 @@
 import { flash, leaf, medkit, sparkles } from "ionicons/icons";
 import type {
+  AvailabilitySlotDto,
   ProfessionalCatalogItem,
   SpecialtyDto,
 } from "../utils/appointmentsApi";
+import { addDaysToISO, toLocalISODate } from "../utils/dates";
 
 /**
  * Adaptador del catálogo de atención (`erp.specialties`) a opciones del
@@ -108,11 +110,65 @@ export function careVisualFor(areaIndex: number): {
   return { tone: visual.tone, bg: visual.bg, fg: visual.fg, icon: visual.icon };
 }
 
+/** Ranura disponible lista para pintar (B4: solo `isAvailable`). */
+export interface AvailabilitySlotView {
+  /** Inicio exacto en ISO (viaja como `preferred_start`/`new_start`). */
+  startIso: string;
+  endIso: string;
+  /** "HH:mm" en hora local. */
+  timeLabel: string;
+  period: "morning" | "afternoon";
+}
+
+/** "HH:mm" local desde un ISO. */
+function slotTimeLabel(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 /**
- * Perfil de slots mock TEMPORAL para la ruta por catálogo.
- * TODO(2.A.4/B1): eliminar con el wiring a `GET /availability`. Los slots
- * mock por tipo (`WEEKDAY_SLOTS`/`BUSY`) se retiran en 2.A.2; mientras tanto
- * la ruta por catálogo usa el perfil neutro de semana para no inventar
- * precisión por especialidad ni hardcodear reglas de fin de semana.
+ * Slots disponibles del día, filtrados por `isAvailable` (B4: satisface en UI
+ * ambas lecturas del contrato — el slot ocupado nunca se ofrece).
+ * Ordenados por inicio.
  */
-export const TEMPORARY_CATALOG_SLOT_PROFILE = "medica" as const;
+export function toAvailableSlotViews(
+  slots: AvailabilitySlotDto[],
+): AvailabilitySlotView[] {
+  return slots
+    .filter((s) => s.isAvailable)
+    .map((s) => ({
+      startIso: s.start,
+      endIso: s.end,
+      timeLabel: slotTimeLabel(s.start),
+      period: (new Date(s.start).getHours() < 12
+        ? "morning"
+        : "afternoon") as AvailabilitySlotView["period"],
+    }))
+    .sort((a, b) => (a.startIso < b.startIso ? -1 : 1));
+}
+
+/** Parte las vistas en mañana/tarde para la UI del wizard. */
+export function splitSlotViews(slots: AvailabilitySlotView[]): {
+  morning: AvailabilitySlotView[];
+  afternoon: AvailabilitySlotView[];
+} {
+  return {
+    morning: slots.filter((s) => s.period === "morning"),
+    afternoon: slots.filter((s) => s.period === "afternoon"),
+  };
+}
+
+/**
+ * Días seleccionables en la ruta por catálogo: ventana de 30 días. La agenda
+ * real (fines de semana, turnos) la conoce el backend vía `/availability`;
+ * la UI no hardcodea reglas por especialidad.
+ */
+export function isCatalogBookingDate(iso: string): boolean {
+  const min = toLocalISODate();
+  return iso >= min && iso <= addDaysToISO(min, 30);
+}
+
+/** ¿El día trae jornada (slots) aunque ninguno esté libre? */
+export function dayHasSchedule(slots: AvailabilitySlotDto[]): boolean {
+  return slots.length > 0;
+}
