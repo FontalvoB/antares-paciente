@@ -230,8 +230,10 @@ El IPA y los dSYMs quedan en `ios/App/output/` (ignorado por git).
 ## 8. GitHub Actions
 
 - Archivo: `.github/workflows/ios-testflight.yml`.
-- Disparadores: **push a `dev`** (ignora cambios solo-docs) y
-  **workflow_dispatch** (manual, con `skip_upload` y `build_number`).
+- Disparadores:
+  - **push a `dev`** (ignora cambios solo-docs) → validaciones + upload.
+  - **PR hacia `dev`** → solo el job de validaciones (sin secretos ni upload).
+  - **workflow_dispatch** (manual, con `skip_upload` y `build_number`).
 - Runner: `macos-26` con **Xcode 26.6** fijado (reproducible) + Node 24 + Ruby 3.4.
 - Cachés: `yarn` (setup-node) y gems (ruby/setup-ruby `bundler-cache`).
 - El job `quality` es obligatorio antes de `testflight`; cualquier fallo

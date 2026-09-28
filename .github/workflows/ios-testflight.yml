@@ -21,6 +21,14 @@ on:
       - "**.md"
       - ".agents/**"
       - "android/**"
+  # En PRs hacia dev solo corre el job de validaciones (sin secretos ni upload).
+  pull_request:
+    branches: [dev]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".agents/**"
+      - "android/**"
   # Para desplegar también desde `main` (cuando se promueva):
   #   branches: [dev, main]
   workflow_dispatch:
@@ -100,6 +108,9 @@ jobs:
   testflight:
     name: iOS → TestFlight
     needs: quality
+    # Los PRs solo validan: nunca suben builds (los secretos y el upload
+    # ocurren en push/merge a dev o vía workflow_dispatch).
+    if: github.event_name != 'pull_request'
     runs-on: macos-26
     timeout-minutes: 120
     steps:
