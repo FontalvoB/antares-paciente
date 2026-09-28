@@ -76,6 +76,12 @@ Notas de la auditoría que **no** se tocaron (funcionan hoy):
   equipo). Recomendación: eliminar los otros dos en una limpieza aparte.
 - Existe `ios/App/App.xcodeproj/xcshareddata/xcodecloud/manifest.json`
   (intento previo con Xcode Cloud). No se usa; se conserva.
+- **Xcode Cloud está configurado en App Store Connect** y publica su propio
+  check (`App | Default | Build - iOS`) en cada commit. Es independiente de este
+  pipeline: no lo bloquea, pero genera ruido y —si alguien lo reactiva— podría
+  subir builds en paralelo. Si se adopta GitHub Actions, desactivar allí el
+  workflow (App Store Connect ▸ Xcode Cloud ▸ Manage Workflows) para evitar
+  duplicados y números de build encontrados.
 
 ---
 
@@ -240,6 +246,10 @@ El IPA y los dSYMs quedan en `ios/App/output/` (ignorado por git).
   (lint, tests, i18n, release:check, build) **detiene el despliegue**.
 - `concurrency: ios-testflight-<ref>` evita subidas simultáneas (números de
   build duplicados).
+- Nota: `workflow_dispatch` aparece en la UI (y en la API) recién cuando el
+  workflow vive en la rama por defecto del repo (`main`). Hasta entonces, para
+  disparar el pipeline completo usá push a `dev`; una vez mergeado a `main`, el
+  botón **Run workflow** queda disponible.
 - Para publicar también desde `main`: descomentar `branches: [dev, main]` en el
   workflow.
 - Endurecimiento opcional: crear un **Environment** `testflight` (Settings ▸
@@ -312,6 +322,9 @@ FORCE_SIGNING=true MATCH_READONLY=false bundle exec fastlane ios signing
   `.github/workflows/ios-testflight.yml` (queda solo el manual).
 - **Solo menos despliegues**: añadir al job `testflight` la condición
   `if: github.event_name == 'workflow_dispatch'`.
+- **Xcode Cloud** (si sigue activo como integración aparte): se detiene en
+  App Store Connect ▸ **Xcode Cloud** ▸ _Manage Workflows_ ▸ desactivar/eliminar
+  el workflow `Default`.
 
 ---
 
@@ -325,6 +338,7 @@ FORCE_SIGNING=true MATCH_READONLY=false bundle exec fastlane ios signing
 | `ERROR ITMS-4238: Redundant Binary Upload`                     | Build number duplicado: el workflow usa `concurrency` y TestFlight+1; forzar `BUILD_NUMBER` o esperar a que Apple registre el build previo                     |
 | `The bundle identifier ... was not found`                      | El App ID debe existir en developer.apple.com y la app en App Store Connect (ya existen)                                                                       |
 | `Missing Compliance` en TestFlight                             | Responder el formulario de cifrado en App Store Connect (una vez por versión)                                                                                  |
+| Falla el check `App \| Default` en PRs                         | Es **Xcode Cloud** (integración aparte en App Store Connect), no este pipeline; no bloquea el despliegue. Desactivarlo si se adopta GitHub Actions             |
 | Falla `npm run release:check`                                  | `Info.plist` conserva ATS de desarrollo (`NSAllowsArbitraryLoads`/`NSAllowsLocalNetworking`): revertir antes de archivar                                       |
 | `xcodebuild` no resuelve paquetes SPM                          | En CI se ejecuta `yarn install` + `npx cap sync ios` antes del archive (los plugins de Capacitor son paquetes SPM locales de `node_modules`)                   |
 | `errSecInternalComponent` / prompts de keychain en CI          | `setup_ci` crea el keychain temporal; verificar que el lane corre con `CI=true`                                                                                |
