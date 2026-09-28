@@ -57,23 +57,18 @@ export const MEASURE_SHORT: Partial<Record<MetricKind, string>> = {
 type Translate = (source: string, params?: Record<string, string>) => string;
 
 /**
- * Etiqueta del cronómetro: `Midiendo {métrica}… {restantes}s` mientras está
- * dentro del tiempo esperado y `Ajustando el sensor… ({transcurrido}s)` después.
+ * Etiqueta de fase de una medida puntual: `Midiendo {métrica}…` mientras corre
+ * dentro del tiempo esperado y `Ajustando el sensor…` cuando el sensor ya está
+ * enganchando (o el dato llega tarde). Sin cifras: la ventana del driver no es
+ * un cronómetro exacto y mostraba segundos engañosos.
  */
 export function measurePhaseLabel(
   kind: MetricKind,
   phase: MeasurePhase,
-  elapsedSeconds: number,
   t: Translate,
 ): string {
-  const metric = t(MEASURE_SHORT[kind] ?? "Medición");
-  if (phase.phase === "measuring") {
-    return t("Midiendo {metric}… {seconds}s", {
-      metric,
-      seconds: String(Math.ceil(phase.remainingMs / 1000)),
-    });
-  }
-  return t("Ajustando el sensor… ({seconds}s)", {
-    seconds: String(elapsedSeconds),
+  if (phase.phase === "adjusting") return t("Ajustando el sensor…");
+  return t("Midiendo {metric}…", {
+    metric: t(MEASURE_SHORT[kind] ?? "Medición"),
   });
 }

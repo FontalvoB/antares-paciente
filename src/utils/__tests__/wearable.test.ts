@@ -38,4 +38,10 @@ describe("formatSleep", () => {
   it("horas exactas van sin '0 min'", () => {
     expect(formatSleep(420, t)).toBe("7 h");
   });
+
+  it("redondea minutos fraccionarios (nada de 40.19999999999999)", () => {
+    expect(formatSleep(100.2, t)).toBe("1 h 40 min");
+    expect(formatSleep(100.6, t)).toBe("1 h 41 min");
+    expect(formatSleep(59.7, t)).toBe("1 h");
+  });
 });

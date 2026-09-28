@@ -34,6 +34,9 @@ function u32(value: number): number[] {
 }
 
 function setup() {
+  // Aísla cada test: HistorySync persiste los tipos bloqueados (0xFC) por
+  // dispositivo en localStorage, así que un test no debe ver lo del anterior.
+  localStorage.clear();
   const sends: Array<{ type: number; payload: number[] }> = [];
   const samples: HealthSample[] = [];
   const notes: string[] = [];

@@ -72,7 +72,10 @@ function doRefresh(): Promise<boolean> {
     refreshPromise = fetch(resolveUrl("/api/auth/refresh"), {
       method: "POST",
       credentials: "include",
-      // No Bearer token — refresh uses HttpOnly cookie only
+      // No Bearer token — refresh uses HttpOnly cookie only.
+      // Timeout propio: si el refresh se cuelga, el 401 que lo disparó espera
+      // para siempre y bloquea apiFetch (y con él, syncs y POSTs de métricas).
+      signal: AbortSignal.timeout(10_000),
     })
       .then(async (res) => {
         // 401 (cookie ausente o inválida) = la sesión ya no es recuperable:

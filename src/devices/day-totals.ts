@@ -1,4 +1,5 @@
 import type { HealthSample } from "./types";
+import { toLocalISODate } from "../utils/dates";
 
 // Acumulado del día de UN dispositivo. Vive separado del contexto para poder
 // testearlo y para que el reset al cambiar de wearable sea explícito: los datos
@@ -70,6 +71,10 @@ export function applySample(store: DayStore, sample: HealthSample): boolean {
     case "distance": {
       const field = sample.metric === "steps" ? "steps" : "distance";
       if (sample.agg === "sum") {
+        // Cubetas del historial: solo las del día del acumulado. El volcado
+        // trae varios días y sin esta guarda todos se sumaban a hoy (p. ej.
+        // 4.498 pasos recién puesto el anillo).
+        if (toLocalISODate(new Date(sample.ts)) !== store.date) return false;
         const bucket = store.buckets.get(sample.ts) ?? {
           steps: 0,
           distance: 0,
@@ -87,12 +92,17 @@ export function applySample(store: DayStore, sample: HealthSample): boolean {
         return true;
       }
       return false;
-    case "sleep":
+    case "sleep": {
+      // La noche pertenece al día en que terminó: `sample.ts` es la hora de
+      // despertar. Sin esta guarda, un volcado con noches viejas (la banda
+      // etiqueta la última sin importar cuándo fue) se mostraba como la de hoy.
+      if (toLocalISODate(new Date(sample.ts)) !== store.date) return false;
       if (!store.sleep || sample.ts > store.sleep.ts) {
         store.sleep = { ts: sample.ts, minutes: sample.value };
         return true;
       }
       return false;
+    }
     default:
       return false;
   }

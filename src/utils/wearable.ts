@@ -11,10 +11,16 @@ export function agoLabel(ts: number | undefined, t: Translate): string {
   return t("Hace {h} h", { h: String(Math.round(minutes / 60)) });
 }
 
-/** Minutos de sueño → "7 h 15 min" ("7 h" si los minutos son exactos). */
+/**
+ * Minutos de sueño → "7 h 15 min" ("7 h" si los minutos son exactos). Los
+ * minutos se redondean a entero: las lecturas del wearable pueden traer
+ * fracciones y no queremos "40.19999999999999 min" en pantalla.
+ */
 export function formatSleep(minutes: number, t: Translate): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+  if (!Number.isFinite(minutes)) return t("{min} min", { min: "0" });
+  const total = Math.max(0, Math.round(minutes));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
   if (h <= 0) return t("{min} min", { min: String(m) });
   if (m === 0) return t("{h} h", { h: String(h) });
   return t("{h} h {min} min", { h: String(h), min: String(m) });

@@ -53,10 +53,18 @@ const REFRESH_INTERVAL_MS = 30 * 60_000;
  * válida — exigirle 3 era lo que agotaba la ventana y mostraba un error falso
  * aunque el anillo sí hubiera medido.
  */
-const MEASURE_POLICY: Record<string, { target: number; windowMs: number }> = {
-  heart_rate: { target: 3, windowMs: 30_000 },
-  blood_pressure: { target: 3, windowMs: 60_000 },
-  spo2: { target: 1, windowMs: 60_000 },
+const MEASURE_POLICY: Record<
+  string,
+  { target: number; windowMs: number; retryMs?: number }
+> = {
+  // Reintento único si el barrido no emite nada antes de `retryMs`: el sensor
+  // recién conectado (o tras el volcado de historial) a veces no engancha en
+  // el primer intento y la medida cerraba en "timeout" sin nada.
+  heart_rate: { target: 3, windowMs: 30_000, retryMs: 10_000 },
+  blood_pressure: { target: 3, windowMs: 60_000, retryMs: 15_000 },
+  // SpO2: basta la primera lectura, pero el barrido del anillo suele fijarla al
+  // final (60 s). Si la lectura llega tarde, un volcado extra la recupera.
+  spo2: { target: 1, windowMs: 60_000, retryMs: 20_000 },
 };
 const DEFAULT_MEASURE_POLICY = { target: 3, windowMs: 30_000 };
 
@@ -64,6 +72,7 @@ const DEFAULT_MEASURE_POLICY = { target: 3, windowMs: 30_000 };
 export function measurePolicyFor(kind: MetricKind): {
   target: number;
   windowMs: number;
+  retryMs?: number;
 } {
   return MEASURE_POLICY[kind] ?? DEFAULT_MEASURE_POLICY;
 }
@@ -99,6 +108,8 @@ export class YcbtSession implements DeviceSession {
   private measureTarget = 1;
   private measureDone?: MeasureCallback;
   private measureTimer?: number;
+  private measureRetryTimer?: number;
+  private measureRetried = false;
   private historyBusy = false;
   private historyPromise: Promise<void> | null = null;
 
@@ -190,6 +201,7 @@ export class YcbtSession implements DeviceSession {
     this.measureCount = 0;
     this.measureTarget = policy.target;
     this.measureDone = onDone;
+    this.measureRetried = false;
     this.measureTimer = window.setTimeout(
       // Ventana agotada: si llegó al menos una lectura, la medida vale.
       () =>
@@ -199,6 +211,21 @@ export class YcbtSession implements DeviceSession {
         ),
       policy.windowMs,
     );
+    if (policy.retryMs) {
+      // Reintento único: si el barrido no emite nada, se re-arma una vez.
+      this.measureRetryTimer = window.setTimeout(
+        () => {
+          if (this.measureMode !== mode || this.measureRetried) return;
+          if (this.measureCount > 0) return;
+          this.measureRetried = true;
+          ble.noteDiagnostic(`[ycbt] medida ${kind}: reintento de barrido`);
+          void this.send(OP.LIVE_MEASUREMENT, [MEASURE_ENABLE, mode]).catch(
+            () => undefined,
+          );
+        },
+        policy.retryMs,
+      );
+    }
     void this.send(OP.LIVE_MEASUREMENT, [MEASURE_ENABLE, mode]).catch(
       () => undefined,
     );
@@ -453,6 +480,7 @@ export class YcbtSession implements DeviceSession {
 
   private cancelMeasure(ok: boolean, reason: MeasureOutcome): void {
     const mode = this.measureMode;
+    const metric = this.measureMetric;
     const done = this.measureDone;
     this.measureMode = null;
     this.measureMetric = null;
@@ -462,10 +490,20 @@ export class YcbtSession implements DeviceSession {
       window.clearTimeout(this.measureTimer);
       this.measureTimer = undefined;
     }
+    if (this.measureRetryTimer !== undefined) {
+      window.clearTimeout(this.measureRetryTimer);
+      this.measureRetryTimer = undefined;
+    }
     if (mode !== null && !this.stopped) {
       // El stop repite su propio modo: no es un comodín.
       void this.send(OP.LIVE_MEASUREMENT, [MEASURE_DISABLE, mode]).catch(
         () => undefined,
+      );
+      // Diagnóstico en el Registro BLE: qué medida cerró, con cuántas lecturas.
+      ble.noteDiagnostic(
+        `[ycbt] medida ${metric ?? mode}: ${
+          ok ? "completada" : reason
+        } (${this.measureCount} lectura(s))`,
       );
     }
     done?.(ok, reason);

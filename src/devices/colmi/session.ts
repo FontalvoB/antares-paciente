@@ -1,6 +1,6 @@
 import * as ble from "../ble/ble-client";
 import { delay } from "../util";
-import { BcChannel } from "./bc";
+import { BcChannel, nightHasHrSupport } from "./bc";
 import { ColmiHistory, buildHistoryRequests } from "./history";
 import {
   CMD,
@@ -92,6 +92,8 @@ export class ColmiSession implements DeviceSession {
   private readonly history: ColmiHistory;
   private readonly bc: BcChannel;
   private historyBusy = false;
+  /** FC del volcado en curso: corrobora las noches que devuelve el canal bc. */
+  private syncHrSamples: HealthSample[] = [];
   private historyPromise: Promise<void> | null = null;
   /** Ya se anotó qué layout de FC usa este firmware (evita spam en el log). */
   private hrLayoutNoted = false;
@@ -104,7 +106,11 @@ export class ColmiSession implements DeviceSession {
       descriptor.deviceId,
       (cmd, payload) => this.send(cmd, payload),
       {
-        onSamples: (samples) => samples.forEach((sample) => this.emit(sample)),
+        onSamples: (samples) =>
+          samples.forEach((sample) => {
+            if (sample.metric === "heart_rate") this.syncHrSamples.push(sample);
+            this.emit(sample);
+          }),
         onNote: (text) => ble.noteDiagnostic(text),
       },
     );
@@ -170,6 +176,7 @@ export class ColmiSession implements DeviceSession {
     if (this.historyBusy) return this.historyPromise ?? Promise.resolve();
     this.historyBusy = true;
     const promise = (async () => {
+      this.syncHrSamples = [];
       await this.history.start(
         buildHistoryRequests(0, {
           includeSleepProbe: ble.isBleDebugEnabled(),
@@ -178,7 +185,16 @@ export class ColmiSession implements DeviceSession {
       if (!this.appActive || this.stopped) return;
       const ready = await this.bc.open();
       if (!ready || !this.appActive || this.stopped) return;
-      for (const sample of await this.bc.sleepNights()) this.emit(sample);
+      for (const sample of await this.bc.sleepNights()) {
+        if (nightHasHrSupport(sample, this.syncHrSamples)) {
+          this.emit(sample);
+        } else {
+          // Banda sin puesto: guardó una "noche" sin FC. Mejor no mostrarla.
+          this.note(
+            `[colmi] bc sleep: noche descartada sin FC (${Math.round(sample.value)} min)`,
+          );
+        }
+      }
       for (const sample of await this.bc.spo2History(0)) this.emit(sample);
     })().finally(() => {
       this.historyBusy = false;

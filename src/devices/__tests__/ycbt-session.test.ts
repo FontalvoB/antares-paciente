@@ -255,3 +255,53 @@ describe("YcbtSession.syncHistory — sueño pese al bitmap", () => {
     expect(sleep?.unit).toBe("min");
   });
 });
+describe("YcbtSession.measure — reintento único del anillo", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    sinks.clear();
+    writes.length = 0;
+    collected.length = 0;
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("sin lecturas antes del reintento, re-arma el barrido una sola vez y luego cierra", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    const done = new Promise<void>((resolve) => {
+      session.measure("spo2", (ok, reason) => {
+        outcomes.push([ok, reason]);
+        resolve();
+      });
+    });
+
+    await vi.advanceTimersByTimeAsync(21_000);
+    // Inicial + el reintento único (no más).
+    expect(sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1).length).toBe(2);
+    expect(sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1 && f.payload[1] === 2).length).toBe(2);
+    expect(outcomes).toEqual([]);
+
+    emitOnC3(0x0602, [97]);
+    await done;
+    await vi.advanceTimersByTimeAsync(1);
+    expect(outcomes).toEqual([[true, "completed"]]);
+    // El disable llega tras cerrar la medida.
+    expect(sentFrames()).toContainEqual({ type: 0x032f, payload: [0, 2] });
+  });
+
+  it("con una lectura previa no reintenta", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    session.measure("spo2", (ok, reason) => outcomes.push([ok, reason]));
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    emitOnC3(0x0602, [98]);
+    await vi.advanceTimersByTimeAsync(21_000);
+
+    expect(outcomes).toEqual([[true, "completed"]]);
+    expect(sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1).length).toBe(1);
+  });
+});
+

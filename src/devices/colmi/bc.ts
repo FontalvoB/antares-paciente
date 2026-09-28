@@ -264,6 +264,34 @@ export class BcChannel {
   }
 }
 
+/** Lecturas de FC mínimas para dar por buena una noche de la banda. */
+export const MIN_NIGHT_HR_READINGS = 6;
+
+/**
+ * Corrobora una noche de la banda con la curva de FC del mismo volcado: sin
+ * puesto no hay FC, así que una noche "fantasma" (banda guardada sin usar) se
+ * cae. Si el volcado no trajo ninguna FC (log 24/7 apagado en la banda) no se
+ * filtra nada, para no perder noches legítimas.
+ */
+export function nightHasHrSupport(
+  night: HealthSample,
+  hrSamples: readonly HealthSample[],
+  minReadings = MIN_NIGHT_HR_READINGS,
+): boolean {
+  if (hrSamples.length === 0) return true;
+  const wake = night.ts;
+  const start = wake - Math.max(0, night.value) * 60_000;
+  let count = 0;
+  for (const hr of hrSamples) {
+    if (hr.metric !== "heart_rate") continue;
+    if (hr.ts < start || hr.ts > wake) continue;
+    if (hr.value < 30 || hr.value > 140) continue;
+    count += 1;
+    if (count >= minReadings) return true;
+  }
+  return false;
+}
+
 /**
  * Blob de sueño (bc 0x27): `[N]` noches, cada una `[idx][?][inicio u16][fin u16]`
  * seguida de pares `(fase, duración_min)` que suman exactamente la duración de

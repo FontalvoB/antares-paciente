@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { decodeSleepBlob, decodeSpo2Hours, parseBcFrames } from "../colmi/bc";
+import {
+  decodeSleepBlob,
+  decodeSpo2Hours,
+  nightHasHrSupport,
+  parseBcFrames,
+} from "../colmi/bc";
+import type { HealthSample } from "../types";
 import { BC_MAGIC, BC_SLEEP, bcFrame, crc16Modbus } from "../colmi/protocol";
 
 const DEVICE = "band-1";
@@ -74,5 +80,46 @@ describe("bc — SpO2 por hora (0x2A)", () => {
     expect(samples.map((s) => s.value)).toEqual([99, 97]);
     expect(new Date(samples[0]!.ts).getHours()).toBe(7);
     expect(new Date(samples[1]!.ts).getHours()).toBe(8);
+  });
+});
+
+describe("nightHasHrSupport — noches fantasma de la banda", () => {
+  const wake = new Date(2026, 8, 21, 7, 0).getTime();
+  const sleepSample = (minutes: number): HealthSample => ({
+    metric: "sleep",
+    value: minutes,
+    unit: "min",
+    ts: wake,
+    deviceId: "dev-1",
+  });
+  const hrSample = (ts: number, value: number): HealthSample => ({
+    metric: "heart_rate",
+    value,
+    unit: "bpm",
+    ts,
+    deviceId: "dev-1",
+  });
+
+  it("conserva la noche cuando hay FC suficiente en su ventana", () => {
+    const hr = Array.from({ length: 6 }, (_, i) =>
+      hrSample(wake - (i + 1) * 5 * 60_000, 58),
+    );
+    expect(nightHasHrSupport(sleepSample(420), hr)).toBe(true);
+  });
+
+  it("descarta la noche cuando el volcado trae FC pero ninguna en la ventana", () => {
+    const hr = [hrSample(wake + 60_000, 70), hrSample(wake - 30 * 60 * 60_000, 65)];
+    expect(nightHasHrSupport(sleepSample(420), hr)).toBe(false);
+  });
+
+  it("no filtra si el volcado no trajo ninguna FC (log apagado)", () => {
+    expect(nightHasHrSupport(sleepSample(420), [])).toBe(true);
+  });
+
+  it("ignora lecturas implausibles (fuera de 30–140 lpm)", () => {
+    const hr = Array.from({ length: 6 }, (_, i) =>
+      hrSample(wake - (i + 1) * 5 * 60_000, 190),
+    );
+    expect(nightHasHrSupport(sleepSample(420), hr)).toBe(false);
   });
 });

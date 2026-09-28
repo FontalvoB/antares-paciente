@@ -63,13 +63,17 @@ describe("measurePhase", () => {
 describe("measurePhaseLabel", () => {
   const policy = { windowMs: 60_000, retryMs: 15_000 };
 
-  it("nombra la métrica y cuenta los segundos restantes en la fase de medida", () => {
-    const label = measurePhaseLabel("blood_pressure", measurePhase(0, policy), 0, t);
-    expect(label).toBe("Midiendo Presión… 15s");
+  it("nombra la métrica durante la fase de medida (sin cifras)", () => {
+    const label = measurePhaseLabel("blood_pressure", measurePhase(0, policy), t);
+    expect(label).toBe("Midiendo Presión…");
   });
 
-  it("pasa a 'Ajustando el sensor' con el transcurrido", () => {
-    const label = measurePhaseLabel("blood_pressure", measurePhase(20_000, policy), 20, t);
-    expect(label).toBe("Ajustando el sensor… (20s)");
+  it("pasa a 'Ajustando el sensor…' cuando el sensor engancha", () => {
+    const label = measurePhaseLabel(
+      "blood_pressure",
+      measurePhase(20_000, policy),
+      t,
+    );
+    expect(label).toBe("Ajustando el sensor…");
   });
 });

@@ -37,6 +37,7 @@ import { toHex } from "../devices/util";
 import { programKeys } from "../hooks/queryKeys";
 import { recordDeviceMetrics } from "../services/program/metrics-history-service";
 import { toLocalISODate } from "../utils/dates";
+import { putNewestSample } from "../utils/samples";
 import { useT } from "../i18n/I18nContext";
 import { useApp } from "./AppContext";
 import type {
@@ -61,6 +62,14 @@ type WearableOperation = "sync" | "measure";
 const INGEST_INTERVAL_MS = 60_000;
 /** Espera mínima entre reintentos automáticos (arranque/segundo plano). */
 const RECONNECT_DEBOUNCE_MS = 15_000;
+/** Pausa entre el volcado de historial y la primera medida del sync. */
+const SYNC_SETTLE_MS = 800;
+/** Sin NINGUNA notificación en este tiempo, la sesión está muerta. */
+const SESSION_STALE_MS = 120_000;
+/** Cada cuánto se comprueba la liveness de la sesión conectada. */
+const SESSION_LIVENESS_TICK_MS = 30_000;
+/** Tope duro de un sync completo: si algo se cuelga, la UI se libera sola. */
+const SYNC_SAFETY_MS = 120_000;
 /**
  * Escalera de reintentos de la reconexión automática: al abrir la app el
  * wearable puede tardar en anunciarse (o estar dormido), y un único intento
@@ -70,13 +79,6 @@ const AUTO_RECONNECT_DELAYS_MS = [0, 5_000, 15_000, 30_000, 60_000];
 
 export interface WearableState {
   phase: WearablePhase;
-  /** true when the connected session is the local, non-persistent demo. */
-  isMock: boolean;
-  /**
-   * Valores sembrados del demo para el formulario de signos vitales. Solo se
-   * llena con la sesión simulada de DEV; en producción queda vacío.
-   */
-  mockVitalValues: Record<string, string>;
   /** Dispositivos encontrados en la búsqueda actual. */
   devices: DeviceDescriptor[];
   /** true cuando la última búsqueda terminó (para el estado vacío). */
@@ -108,8 +110,15 @@ export interface WearableState {
   /** Epoch ms del último volcado completado. */
   lastSyncAt: number | null;
   syncHistory(): Promise<void>;
+  /**
+   * true cuando decimos estar conectados pero el dispositivo dejó de emitir
+   * (fuera de rango/apagado): la UI debe dejar de mostrarlo como conectado.
+   */
+  sessionStale: boolean;
   /** Volcado + medidas pendientes: deja todas las métricas al día. */
-  syncAll(): Promise<void>;
+  syncAll(options?: { forceMeasure?: readonly MetricKind[] }): Promise<
+    MetricKind[]
+  >;
   /** Medida puntual en curso dentro de un sync (para el cronómetro de la UI). */
   syncStage: { kind: MetricKind; startedAt: number } | null;
   /** Re-pide info del dispositivo (batería/firmware) al driver conectado. */
@@ -118,8 +127,6 @@ export interface WearableState {
   savedDevice: SavedDevice | null;
   /** Intenta reconectar al último dispositivo guardado. */
   reconnect(): void;
-  /** Opens seeded sample data in development without touching Bluetooth. */
-  connectMock(): void;
   /**
    * Herramienta de diagnóstico: inyecta una muestra como si la hubiera enviado
    * el anillo, para ver el efecto en tarjetas/agregados sin esperar hardware.
@@ -152,17 +159,9 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const [phase, setPhase] = useState<WearablePhase>("idle");
-  const [isMock, setIsMock] = useState(false);
-  const [mockVitalValues, setMockVitalValues] = useState<
-    Record<string, string>
-  >({});
-  /**
-   * Módulo del wearable simulado: se carga con `import()` dentro del guard de
-   * DEV, así el demo nunca entra al bundle de producción.
-   */
-  const mockApiRef = useRef<
-    typeof import("../devices/mock-wearable") | null
-  >(null);
+  const [sessionStale, setSessionStale] = useState(false);
+  /** Última notificación recibida del dispositivo (liveness, sin re-render). */
+  const lastSeenAtRef = useRef(Date.now());
   const [devices, setDevices] = useState<DeviceDescriptor[]>([]);
   const [hasScanned, setHasScanned] = useState(false);
   const [device, setDevice] = useState<DeviceDescriptor | null>(null);
@@ -177,9 +176,6 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const [log, setLog] = useState<DiagEntry[]>([]);
   const [canMeasure, setCanMeasure] = useState(false);
   const [measureKinds, setMeasureKinds] = useState<MetricKind[]>([]);
-  /** Espejo de `isMock` para los temporizadores del demo. */
-  const isMockRef = useRef(false);
-  isMockRef.current = isMock;
   const [syncing, setSyncing] = useState(false);
   const [syncStage, setSyncStage] = useState<{
     kind: MetricKind;
@@ -234,8 +230,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     queuedSyncRef.current = false;
     resetDayAggregate();
     sessionRef.current = null;
-    setIsMock(false);
-    setMockVitalValues({});
+    setSessionStale(false);
     setDevice(null);
     setInfo({});
     setSamples({});
@@ -322,7 +317,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   );
 
   const handleSample = useCallback((sample: HealthSample) => {
-    setSamples((prev) => ({ ...prev, [sample.metric]: sample }));
+    lastSeenAtRef.current = Date.now();
+    setSamples((prev) => putNewestSample(prev, sample));
 
     const day = toLocalISODate();
     if (dayStore.current.date !== day) {
@@ -336,6 +332,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleInfo = useCallback((delta: DeviceInfo) => {
+    lastSeenAtRef.current = Date.now();
     setInfo((prev) => ({ ...prev, ...delta }));
   }, []);
 
@@ -393,17 +390,6 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   /** Volcado del historial (sin estado: lo gobiernan syncHistory/syncAll). */
   const runSync = useCallback(async () => {
-    if (isMock) {
-      await new Promise<void>((resolve) => window.setTimeout(resolve, 420));
-      const now = Date.now();
-      const api = mockApiRef.current;
-      if (api) {
-        setSamples(api.createMockWearableSamples(now));
-        setToday(api.MOCK_TODAY_TOTALS);
-      }
-      setLastSyncAt(now);
-      return;
-    }
     const session = sessionRef.current;
     if (!session?.syncHistory) return;
     try {
@@ -414,7 +400,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     } catch {
       // El driver ya aísla sus fallos; sin volcado no hay nada que reportar.
     }
-  }, [flushIngest, isMock]);
+  }, [flushIngest]);
 
   /** Volcado del historial del anillo, con estado para la UI. */
   const syncHistory = useCallback(async () => {
@@ -425,9 +411,18 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     if (operationRef.current === "sync") return;
     operationRef.current = "sync";
     setSyncing(true);
+    const safety = window.setTimeout(() => {
+      // Red de seguridad: ni la red ni un driver pueden dejar la UI en
+      // "Midiendo…" para siempre.
+      setSyncStage(null);
+      setSyncing(false);
+      operationRef.current = null;
+      queuedSyncRef.current = false;
+    }, SYNC_SAFETY_MS);
     try {
       await runSync();
     } finally {
+      window.clearTimeout(safety);
       setSyncing(false);
       operationRef.current = null;
       if (queuedSyncRef.current) {
@@ -439,62 +434,71 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   syncHistoryRef.current = syncHistory;
 
   /**
-   * Medida simulada del demo: espera la ventana acortada de la métrica e
-   * inyecta una muestra semilla. Nunca marca el acumulado como pendiente ni
-   * se persiste en el backend.
-   */
-  const simulateMeasure = useCallback((kind: MetricKind) => {
-    const api = mockApiRef.current;
-    const windowMs = api?.MOCK_MEASURE_WINDOWS[kind] ?? 8_000;
-    return new Promise<void>((resolve) => {
-      window.setTimeout(() => {
-        if (isMockRef.current) {
-          const sample = api?.mockMeasureSample(kind);
-          if (sample) setSamples((prev) => ({ ...prev, [kind]: sample }));
-        }
-        resolve();
-      }, windowMs);
-    });
-  }, []);
-
-  /**
    * Sincronización completa, compartida por Reloj y Programa: volcado del
    * historial (pasos, sueño, vitales guardados) y después las medidas
    * puntuales que falten o estén vencidas, en secuencia. Un solo toque deja
    * todas las métricas al día sin depender de la app oficial.
    */
-  const syncAll = useCallback(async () => {
+  const syncAll = useCallback(
+    async (options?: { forceMeasure?: readonly MetricKind[] }) => {
     if (operationRef.current !== null) {
       if (operationRef.current === "measure") queuedSyncRef.current = true;
-      return;
+      return [];
     }
     operationRef.current = "sync";
     setSyncing(true);
+    const safety = window.setTimeout(() => {
+      setSyncStage(null);
+      setSyncing(false);
+      operationRef.current = null;
+      queuedSyncRef.current = false;
+    }, SYNC_SAFETY_MS);
+    /** Métricas que se midieron de verdad (para que la UI no espere de más). */
+    const measured: MetricKind[] = [];
     try {
       await runSync();
-      // Demo: se miden siempre las tres métricas (ventanas acortadas) para
-      // poder ver la secuencia completa; nunca se persiste.
-      if (isMock) {
-        for (const kind of mockApiRef.current?.MOCK_MEASURE_KINDS ?? []) {
-          setSyncStage({ kind, startedAt: Date.now() });
-          await simulateMeasure(kind);
-        }
-        return;
-      }
+      // Respiro tras el volcado: la primera medida forzada no debe llegar justo
+      // cuando el dump cierra (el anillo a veces la ignora y cierra en timeout).
+      await new Promise<void>((resolve) =>
+        window.setTimeout(resolve, SYNC_SETTLE_MS),
+      ).catch(() => undefined);
       const session = sessionRef.current;
-      if (!session?.measure) return;
+      if (!session?.measure) return measured;
       const stale = staleMeasureKinds(
         session.measureKinds ?? measureKinds,
         samplesRef.current,
         Date.now(),
       );
-      for (const kind of stale) {
-        setSyncStage({ kind, startedAt: Date.now() });
-        await new Promise<void>((resolve) => {
-          session.measure?.(kind, () => resolve());
-        });
+      // `forceMeasure` mide aunque no esté vencida (check-in clínico).
+      const toMeasure = [...stale];
+      for (const kind of options?.forceMeasure ?? []) {
+        if (!toMeasure.includes(kind)) toMeasure.push(kind);
       }
+      for (const kind of toMeasure) {
+        measured.push(kind);
+        setSyncStage({ kind, startedAt: Date.now() });
+        let ok = false;
+        await new Promise<void>((resolve) => {
+          const policy = session.measurePolicy?.(kind);
+          // Tope por medida (ventana del driver + margen): si el driver no
+          // avisa nunca, la secuencia continúa en vez de dejar "Midiendo…".
+          const guard = window.setTimeout(
+            resolve,
+            (policy?.windowMs ?? 30_000) + 5_000,
+          );
+          session.measure?.(kind, (done) => {
+            ok = done;
+            window.clearTimeout(guard);
+            resolve();
+          });
+        });
+        // El anillo suele guardar la SpO2 que no llegó a tiempo: un volcado
+        // extra la trae del historial sin que el usuario reintente.
+        if (kind === "spo2" && !ok) await runSync();
+      }
+      return measured;
     } finally {
+      window.clearTimeout(safety);
       setSyncStage(null);
       setSyncing(false);
       operationRef.current = null;
@@ -503,7 +507,9 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         void syncHistoryRef.current();
       }
     }
-  }, [isMock, measureKinds, runSync, simulateMeasure]);
+    },
+    [measureKinds, runSync],
+  );
 
   const connect = useCallback(
     (target: DeviceDescriptor, options?: { silent?: boolean }) => {
@@ -584,6 +590,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
           setInfo((prev) => ({ ...prev, name: label }));
           setSamples({});
           setPhase("connected");
+          lastSeenAtRef.current = Date.now();
+          setSessionStale(false);
           app.connectWearable(label);
           // Se recuerda el dispositivo para reconectar sin volver a emparejar.
           saveDevice(resolved);
@@ -631,11 +639,6 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   );
 
   const disconnect = useCallback(() => {
-    if (isMock) {
-      resetSessionState();
-      app.disconnectWearable();
-      return;
-    }
     const session = sessionRef.current;
     const deviceId = device?.deviceId;
     intentionalDisconnect.current = true;
@@ -650,38 +653,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       if (session) await session.stop().catch(() => undefined);
       if (deviceId) await ble.disconnectDevice(deviceId);
     })();
-  }, [app, device, flushIngest, isMock, resetSessionState]);
-
-  const connectMock = useCallback(() => {
-    if (import.meta.env.DEV) {
-      // Carga diferida: el módulo del demo queda fuera del bundle de producción.
-      void (async () => {
-        const api = await import("../devices/mock-wearable");
-        mockApiRef.current = api;
-        clearScanTimer();
-        void ble.stopScan();
-        resetSessionState();
-
-        const now = Date.now();
-        const name = t("Wearable de prueba");
-        setDevices([]);
-        setHasScanned(false);
-        setError(null);
-        setIsMock(true);
-        setInfo({ name, battery: 92, firmware: "DEMO" });
-        setSamples(api.createMockWearableSamples(now));
-        setToday(api.MOCK_TODAY_TOTALS);
-        setMockVitalValues(api.MOCK_VITAL_VALUES);
-        setLastSyncAt(now);
-        // El demo permite medir: las ventanas son simuladas (sin BLE).
-        setCanMeasure(true);
-        setMeasureKinds(api.MOCK_MEASURE_KINDS);
-        setPhase("connected");
-        app.connectWearable(name);
-        app.showToast(t("Modo demo activado"), "ok");
-      })();
-    }
-  }, [app, clearScanTimer, resetSessionState, t]);
+  }, [app, device, flushIngest, resetSessionState]);
 
   /** Reconexión al último dispositivo guardado (una sola pasada, sin ruido). */
   const reconnect = useCallback(() => {
@@ -689,10 +661,25 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     if (!target || phase === "connecting" || phase === "connected") return;
     connect(target, { silent: true });
   }, [connect, phase, savedDevice]);
+  const reconnectRef = useRef(reconnect);
+  reconnectRef.current = reconnect;
 
+  /**
+   * Liveness: la banda puede dejar de emitir sin evento (fuera de rango,
+   * apagada) y el flag de la app quedaría mintiendo. Si no hay ninguna
+   * notificación en `SESSION_STALE_MS`, la sesión está muerta: se resetea, se
+   * limpia el flag, se avisa y se intenta reconectar en silencio.
+   */
   useEffect(() => {
-    if (app.flow !== "app" && isMock) disconnect();
-  }, [app.flow, disconnect, isMock]);
+    if (phase !== "connected") return;
+    const timer = window.setInterval(() => {
+      if (Date.now() - lastSeenAtRef.current <= SESSION_STALE_MS) return;
+      setSessionStale(true);
+      handleUnexpectedDisconnect();
+      reconnectRef.current();
+    }, SESSION_LIVENESS_TICK_MS);
+    return () => window.clearInterval(timer);
+  }, [phase, handleUnexpectedDisconnect]);
 
   const cancelScan = useCallback(() => finishScan(), [finishScan]);
 
@@ -711,7 +698,6 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearLog = useCallback(() => setLog([]), []);
-
 
   const measure = useCallback(
     (kind: MetricKind, onDone?: MeasureCallback) => {
@@ -735,29 +721,25 @@ export function WearableProvider({ children }: { children: ReactNode }) {
           void syncHistoryRef.current();
         }
       };
-      if (isMock) {
-        void simulateMeasure(kind).then(() => finish(true, "completed"));
-        return;
-      }
       const session = sessionRef.current;
       if (!session?.measure) {
         finish(false, "refused");
         return;
       }
-      session.measure(kind, finish);
+      session.measure(kind, (ok, reason) => {
+        finish(ok, reason);
+        // Mismo caso que en el sync: la lectura puede estar en el historial.
+        if (!ok && kind === "spo2") void syncHistoryRef.current();
+      });
     },
-    [isMock, simulateMeasure],
+    [],
   );
 
   const measurePolicy = useCallback(
     (kind: MetricKind) => {
-      if (isMock) {
-        const windowMs = mockApiRef.current?.MOCK_MEASURE_WINDOWS[kind];
-        return windowMs ? { windowMs } : undefined;
-      }
       return sessionRef.current?.measurePolicy?.(kind);
     },
-    [isMock],
+    [],
   );
 
   const refreshInfo = useCallback(() => {
@@ -870,12 +852,9 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   // aunque no haya volcados ni medidas puntuales.
   useEffect(() => {
     if (phase !== "connected") return;
-    const timer = window.setInterval(
-      () => {
-        if (appActiveRef.current) void flushIngest();
-      },
-      INGEST_INTERVAL_MS,
-    );
+    const timer = window.setInterval(() => {
+      if (appActiveRef.current) void flushIngest();
+    }, INGEST_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [flushIngest, phase]);
 
@@ -919,8 +898,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const value = useMemo<WearableState>(
     () => ({
       phase,
-      isMock,
-      mockVitalValues,
+      sessionStale,
       devices,
       hasScanned,
       device,
@@ -945,7 +923,6 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       refreshInfo,
       savedDevice,
       reconnect,
-      connectMock,
       injectDebugSample,
       scan,
       cancelScan,
@@ -955,8 +932,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     }),
     [
       phase,
-      isMock,
-      mockVitalValues,
+      sessionStale,
       devices,
       hasScanned,
       device,
@@ -981,7 +957,6 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       refreshInfo,
       savedDevice,
       reconnect,
-      connectMock,
       injectDebugSample,
       scan,
       cancelScan,
