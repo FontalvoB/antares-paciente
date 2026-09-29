@@ -7,6 +7,8 @@ import {
 } from "@ionic/react";
 import {
   attach,
+  cameraOutline,
+  closeCircle,
   informationCircle,
   medkit,
   mic,
@@ -26,6 +28,7 @@ import { ChatRichText } from "../components/ChatRichText";
 import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
+import { captureChatImage } from "../services/media/camera-service";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
 
 const quick = [
@@ -58,6 +61,13 @@ export function ChatPage() {
   } = useApp();
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
+  // Imagen conversacional pendiente (agente-asistente-citas D3): miniatura
+  // removible en el compositor; viaja con el próximo mensaje como multimodal.
+  const [pendingImage, setPendingImage] = useState<{
+    base64: string;
+    mimeType: string;
+    dataUrl: string;
+  } | null>(null);
   // Paginación server-driven: `hasMore`/`nextCursor` los define el backend y
   // `loadingMore` cubre la carga del tramo anterior al llegar al tope.
   const [hasMore, setHasMore] = useState(false);
@@ -229,8 +239,16 @@ export function ChatPage() {
     if (uploading) return;
     const v = msg.trim();
     if (!v) return;
-    sendChat(v);
+    sendChat(v, pendingImage ?? undefined);
+    setPendingImage(null);
     setText("");
+  };
+
+  /** Captura (cámara o galería) para el contexto conversacional (D3). */
+  const handleCaptureImage = async () => {
+    if (uploading || pendingImage) return;
+    const image = await captureChatImage();
+    if (image) setPendingImage(image);
   };
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -382,6 +400,23 @@ export function ChatPage() {
               <div
                 className={`bub ${m.role === "user" ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
               >
+                {m.role === "user" && m.image && (
+                  // Miniatura de la imagen conversacional adjunta (D3):
+                  // ancho acotado, radius de marca, sin recargar el hilo.
+                  <img
+                    src={m.image.dataUrl}
+                    alt={t("Imagen adjunta")}
+                    style={{
+                      display: "block",
+                      maxWidth: 220,
+                      maxHeight: 220,
+                      width: "100%",
+                      objectFit: "cover",
+                      borderRadius: 12,
+                      marginBottom: m.text ? 8 : 0,
+                    }}
+                  />
+                )}
                 {m.role === "user" ? m.text : <ChatRichText text={m.text} />}
                 {m.role === "alert" && (
                   <IonButton
@@ -486,6 +521,21 @@ export function ChatPage() {
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
         </IonButton>
+        {/* Foto conversacional (D3): cámara o galería con prompt nativo. */}
+        <IonButton
+          className="bt bt-round"
+          style={
+            {
+              "--background": "var(--teal-l)",
+              "--color": "var(--teal)",
+            } as CSSProperties
+          }
+          aria-label={t("Adjuntar imagen al chat")}
+          disabled={uploading || !!pendingImage}
+          onClick={() => void handleCaptureImage()}
+        >
+          <IonIcon icon={cameraOutline} style={{ fontSize: 20 }} />
+        </IonButton>
         <IonButton
           className="bt bt-round"
           style={
@@ -529,6 +579,45 @@ export function ChatPage() {
           </IonButton>
         </motion.span>
       </div>
+      {pendingImage && (
+        // Miniatura removible del adjunto pendiente (D3): preview + descarte.
+        <div
+          className="chat-pending-image"
+          role="status"
+          aria-label={t("Imagen lista para enviar")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 16px",
+            background: "var(--teal-l)",
+            borderTop: "1px solid var(--bd)",
+          }}
+        >
+          <img
+            src={pendingImage.dataUrl}
+            alt={t("Imagen adjunta")}
+            style={{
+              width: 52,
+              height: 52,
+              objectFit: "cover",
+              borderRadius: 10,
+            }}
+          />
+          <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 600 }}>
+            {t("Imagen lista para enviar")}
+          </span>
+          <IonButton
+            size="small"
+            fill="clear"
+            aria-label={t("Quitar imagen adjunta")}
+            style={{ marginLeft: "auto", color: "var(--panic)" }}
+            onClick={() => setPendingImage(null)}
+          >
+            <IonIcon icon={closeCircle} style={{ fontSize: 22 }} />
+          </IonButton>
+        </div>
+      )}
     </Screen>
   );
 }

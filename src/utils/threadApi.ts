@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { getAccessToken } from "./authApi";
 import { getApiBaseUrl } from "./apiBaseUrl";
-import type { ChatSuggestion } from "../types";
+import type { ChatImageAttachment, ChatSuggestion } from "../types";
 
 /** Mensaje individual del historial del thread (rol user | bot). */
 export interface ThreadMessage {
@@ -66,18 +66,65 @@ export interface ChatResult {
   threadId: string;
   executionId?: string;
   agent?: string;
+  /**
+   * Respuesta canónica consolidada del AI Service (evento `done`, change
+   * agente-asistente-citas D1). Ausente con backends previos: el consumidor
+   * cae a `reply` (tokens acumulados).
+   */
+  answer?: string | null;
   /** Sugerencias de acción del bot (v1: appointment CTA). Ausente = sin sugerencia. */
   suggestions?: ChatSuggestion[] | null;
+}
+
+/**
+ * Normaliza de forma tolerante las sugerencias del asistente: el AI Service
+ * emite snake_case (`cta_text`) y el DTO TypeScript espera `ctaText`
+ * (agente-asistente-citas D2). Entradas malformadas se descartan.
+ */
+export function normalizeSuggestions(raw: unknown): ChatSuggestion[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: ChatSuggestion[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null) continue;
+    const rec = item as Record<string, unknown>;
+    const ctaText = rec.ctaText ?? rec.cta_text;
+    if (typeof rec.type !== "string" || typeof ctaText !== "string") continue;
+    out.push({
+      type: rec.type,
+      ctaText,
+      reason: typeof rec.reason === "string" ? rec.reason : null,
+      urgency: typeof rec.urgency === "string" ? rec.urgency : undefined,
+    });
+  }
+  return out;
+}
+
+/** Cuerpo JSON de chat: texto + adjunto de imagen opcional (D3). */
+function chatBody(
+  message: string,
+  threadId: string,
+  image?: ChatImageAttachment,
+): string {
+  return JSON.stringify({
+    message,
+    threadId,
+    ...(image
+      ? { imageData: image.base64, imageMimeType: image.mimeType }
+      : {}),
+  });
 }
 
 /**
  * Envía un mensaje de chat al backend .NET (POST /api/v1/chat).
  * El backend inyecta la identidad del usuario desde el JWT y delega
  * la ejecución al AI Service persistiendo el estado en LangGraph.
+ * La imagen opcional viaja en el cuerpo (`imageData`/`imageMimeType`): con
+ * backends anteriores los campos extra se ignoran (compatible hacia atrás).
  */
 export async function sendChatMessage(
   message: string,
   threadId: string,
+  image?: ChatImageAttachment,
 ): Promise<ChatResult> {
   const token = getAccessToken();
   const res = await fetch(`${getApiBaseUrl()}/api/v1/chat`, {
@@ -86,10 +133,7 @@ export async function sendChatMessage(
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({
-      message,
-      threadId,
-    }),
+    body: chatBody(message, threadId, image),
   });
 
   if (!res.ok) {
@@ -103,7 +147,10 @@ export async function sendChatMessage(
     throw new Error(errorMsg);
   }
 
-  return (await res.json()) as ChatResult;
+  const result = (await res.json()) as ChatResult;
+  // El .NET devuelve camelCase; la normalización es defensiva para aceptar
+  // también passthrough directo del AI Service (snake_case).
+  return { ...result, suggestions: normalizeSuggestions(result.suggestions) };
 }
 
 export interface LabExamUploadResult {
@@ -185,17 +232,23 @@ export interface StreamCallbacks {
  * Chat con streaming SSE vía el backend .NET (POST /api/v1/chat/stream,
  * relay crudo del AI Service). Lanza si el HTTP falla (el llamador cae al
  * fallback local). Robusto a líneas JSON cortadas entre chunks de red.
+ *
+ * Consolidación canónica (agente-asistente-citas D1.2): el evento `done`
+ * trae `answer` con la respuesta final del turno y `suggestions`; el
+ * llamador SOBREESCRIBE el texto acumulado con `answer`, eliminando las
+ * pasadas duplicadas que el servidor emitiera alrededor de tool-calls.
  */
 export async function streamChatMessage(
   message: string,
   threadId: string,
   callbacks: StreamCallbacks = {},
+  image?: ChatImageAttachment,
 ): Promise<ChatResult> {
   // Nativo + CapacitorHttp: el fetch del WebView está parcheado (HTTP nativo,
   // sin streaming de body) — SSE se degradaría a buffering completo. Fallback
   // C1 (design): chat síncrono en nativo, el texto llega en un solo bloque.
   if (Capacitor.isNativePlatform()) {
-    const result = await sendChatMessage(message, threadId);
+    const result = await sendChatMessage(message, threadId, image);
     if (result.reply) callbacks.onToken?.(result.reply);
     return result;
   }
@@ -208,7 +261,7 @@ export async function streamChatMessage(
       Accept: "text/event-stream",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message, threadId }),
+    body: chatBody(message, threadId, image),
   });
 
   if (!res.ok || !res.body) {
@@ -216,6 +269,8 @@ export async function streamChatMessage(
   }
 
   let reply = "";
+  let answer: string | null = null;
+  let suggestions: ChatSuggestion[] | null = null;
   let outThreadId = threadId;
   let executionId: string | undefined;
   let streamError: string | null = null;
@@ -238,6 +293,8 @@ export async function streamChatMessage(
         error?: string;
         thread_id?: string;
         execution_id?: string;
+        answer?: string;
+        suggestions?: unknown;
       };
       // El AI Service emite {"type":"token","content":"..."}.
       const piece = parsed.content ?? parsed.token;
@@ -246,6 +303,17 @@ export async function streamChatMessage(
         callbacks.onToken?.(piece);
       } else if (parsed.type === "error" && parsed.error) {
         streamError = parsed.error;
+      } else if (
+        parsed.type === "done" ||
+        parsed.answer != null ||
+        parsed.suggestions != null
+      ) {
+        // Evento de finalización del turno (también viaja thread/execution):
+        // captura la respuesta canónica y las sugerencias estructuradas.
+        if (typeof parsed.answer === "string") answer = parsed.answer;
+        suggestions = normalizeSuggestions(parsed.suggestions) ?? suggestions;
+        if (parsed.thread_id) outThreadId = parsed.thread_id;
+        if (parsed.execution_id) executionId = parsed.execution_id;
       } else if (parsed.thread_id || parsed.execution_id) {
         if (parsed.thread_id) outThreadId = parsed.thread_id;
         if (parsed.execution_id) executionId = parsed.execution_id;
@@ -270,6 +338,12 @@ export async function streamChatMessage(
   }
 
   if (streamError) throw new Error(streamError);
-  if (!reply) throw new Error("El agente no respondió.");
-  return { reply, threadId: outThreadId, executionId };
+  if (!reply && !answer) throw new Error("El agente no respondió.");
+  return {
+    reply: answer || reply,
+    answer,
+    threadId: outThreadId,
+    executionId,
+    suggestions,
+  };
 }

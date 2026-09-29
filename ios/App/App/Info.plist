@@ -32,6 +32,8 @@
 	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Copp Adresd usa el micrófono para las consultas de telemedicina.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Copp Adresd usa tu ubicación únicamente para adjuntarla a una alerta SOS, si la compartes.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Copp Adresd guarda las fotos de tus comidas para tu registro nutricional.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

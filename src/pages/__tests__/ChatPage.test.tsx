@@ -3,11 +3,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ChatPage } from "../ChatPage";
 import { fetchThreadState, uploadLabExam } from "../../utils/threadApi";
+import { captureChatImage } from "../../services/media/camera-service";
 import { sendChatFeedback } from "../../services/chat/chat-service";
 
 vi.mock("../../utils/threadApi", () => ({
   fetchThreadState: vi.fn().mockResolvedValue(null),
   uploadLabExam: vi.fn(),
+}));
+
+vi.mock("../../services/media/camera-service", () => ({
+  captureChatImage: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("../../services/chat/chat-service", () => ({
@@ -33,6 +38,8 @@ const mockState = vi.hoisted(() => ({
     time: string;
     kind?: "lab-exam";
     executionId?: string;
+    cta?: { type: string; ctaText: string } | null;
+    image?: { dataUrl: string } | null;
   }>,
 }));
 
@@ -242,6 +249,119 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
 
     expect(screen.queryByText("Examen procesado")).toBeNull();
     expect(screen.queryByLabelText("Ver todas las métricas")).toBeNull();
+  });
+});
+
+describe("ChatPage — CTA de agendamiento y imagen conversacional (REQ-AG-02/03)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.lang = "es";
+    mockState.chat = [welcomeMessage];
+    vi.mocked(captureChatImage).mockResolvedValue(null);
+  });
+
+  it("renderiza el botón CTA del bot con ctaText y abre el wizard al pulsarlo", () => {
+    mockState.chat = [
+      ...mockState.chat,
+      {
+        id: "msg-cta",
+        role: "bot",
+        text: "Te recomiendo una consulta.",
+        time: "10:05 AM",
+        cta: { type: "appointment", ctaText: "Agenda tu cita aquí" },
+      },
+    ];
+
+    render(<ChatPage />);
+
+    const ctaButton = screen.getByLabelText("Agenda tu cita aquí");
+    expect(ctaButton).toBeTruthy();
+    fireEvent.click(ctaButton);
+    expect(openBookingWizardMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("mensajes sin cta no renderizan el botón de agendamiento", () => {
+    render(<ChatPage />);
+    expect(screen.queryByLabelText("Agenda tu cita aquí")).toBeNull();
+  });
+
+  it("captura imagen con cámara: miniatura en el compositor y envío con adjunto", async () => {
+    vi.mocked(captureChatImage).mockResolvedValueOnce({
+      base64: "aW1hZ2Vu",
+      mimeType: "image/jpeg",
+      dataUrl: "data:image/jpeg;base64,aW1hZ2Vu",
+    });
+
+    const { container } = render(<ChatPage />);
+
+    fireEvent.click(screen.getByLabelText("Adjuntar imagen al chat"));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Imagen lista para enviar")).toBeTruthy();
+    });
+    // La miniatura previsualiza la imagen pendiente.
+    const thumb = container.querySelector<HTMLImageElement>(
+      'img[alt="Imagen adjunta"]',
+    );
+    expect(thumb?.src).toContain("data:image/jpeg;base64,aW1hZ2Vu");
+
+    // El envío (quick chip → send con imagen pendiente) incluye el adjunto.
+    fireEvent.click(screen.getByText("Síntomas"));
+    await waitFor(() => {
+      expect(sendChatMock).toHaveBeenCalledWith(
+        "Tengo dolor en el pecho, ¿qué hago?",
+        {
+          base64: "aW1hZ2Vu",
+          mimeType: "image/jpeg",
+          dataUrl: "data:image/jpeg;base64,aW1hZ2Vu",
+        },
+      );
+    });
+    // El adjunto se consumió al enviar.
+    expect(screen.queryByLabelText("Imagen lista para enviar")).toBeNull();
+  });
+
+  it("descartar la imagen pendiente: el envío viaja solo con texto", async () => {
+    vi.mocked(captureChatImage).mockResolvedValueOnce({
+      base64: "aG9sYQ==",
+      mimeType: "image/jpeg",
+      dataUrl: "data:image/jpeg;base64,aG9sYQ==",
+    });
+
+    render(<ChatPage />);
+    fireEvent.click(screen.getByLabelText("Adjuntar imagen al chat"));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Imagen lista para enviar")).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByLabelText("Quitar imagen adjunta"));
+    expect(screen.queryByLabelText("Imagen lista para enviar")).toBeNull();
+
+    // Sin imagen pendiente el envío va solo con texto (second arg undefined).
+    fireEvent.click(screen.getByText("Progreso"));
+    await waitFor(() => {
+      expect(sendChatMock).toHaveBeenCalledWith(
+        "¿Cómo va mi progreso esta semana?",
+        undefined,
+      );
+    });
+  });
+
+  it("muestra la imagen del remitente en la burbuja user", () => {
+    mockState.chat = [
+      {
+        id: "msg-img",
+        role: "user",
+        text: "Mira esta erupción",
+        time: "10:07 AM",
+        image: { dataUrl: "data:image/jpeg;base64,aG9sYQ==" },
+      },
+    ];
+
+    const { container } = render(<ChatPage />);
+    const bubble = container.querySelector<HTMLImageElement>(
+      'img[alt="Imagen adjunta"]',
+    );
+    expect(bubble?.src).toContain("data:image/jpeg;base64,aG9sYQ==");
   });
 });
 

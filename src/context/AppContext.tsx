@@ -52,6 +52,7 @@ import {
 } from "../data/appointments";
 import { useT } from "../i18n/I18nContext";
 import type {
+  ChatImageAttachment,
   ChatMessage,
   ChatSuggestion,
   Flow,
@@ -109,7 +110,17 @@ interface AppState {
   activateSos: () => void;
   openVoice: () => void;
   closeVoice: () => void;
-  sendChat: (text: string) => void;
+  sendChat: (text: string, image?: ChatImageAttachment) => void;
+  /**
+   * Turno de chat para el agente de voz (agente-asistente-citas D4): mismo
+   * pipeline que `sendChat` (streaming + fallbacks + persistencia en la
+   * lista) pero retornando el mensaje final del bot para vocalizarlo.
+   * `null` = el asistente no respondió (la UI de voz lo comunica).
+   */
+  sendVoiceMessage: (
+    text: string,
+    image?: ChatImageAttachment,
+  ) => Promise<ChatMessage | null>;
   /** Hay mensajes del bot sin ver en el thread (dot en la tab Chat). */
   chatUnread: boolean;
   /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
@@ -741,6 +752,141 @@ export function AppProvider({
   );
 
   /**
+   * Turno completo de conversación con el asistente (change
+   * agente-asistente-citas D1.2): pinta el mensaje del usuario, hace
+   * streaming del bot token a token y, al finalizar, SOBREESCRIBE el texto
+   * del turno con la respuesta canónica (`answer`) para que las pasadas
+   * duplicadas alrededor de tool-calls jamás queden en la burbuja. Ante
+   * fallo sin tokens pintados cae a la vía bloqueante y luego al fallback
+   * local. Usado por `sendChat` (fire-and-forget) y por el agente de voz
+   * (`sendVoiceMessage`), que necesita el mensaje final para vocalizarlo.
+   */
+  const runChatTurn = useCallback(
+    async (
+      text: string,
+      image?: ChatImageAttachment,
+    ): Promise<ChatMessage | null> => {
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        text,
+        time: nowLabel(),
+        threadId,
+        image: image ? { dataUrl: image.dataUrl } : undefined,
+      };
+
+      // Si solo estaba el saludo inicial, se remueve para dar paso a la conversación
+      setChat((prev) => {
+        const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
+        return isOnlyWelcome ? [userMsg] : [...prev, userMsg];
+      });
+
+      // Vía bloqueante como respaldo del streaming (misma respuesta final).
+      const tryBlockingChat = async (): Promise<ChatMessage | null> => {
+        try {
+          const result = await sendChatMessage(text, threadId, image);
+          const suggestion = result.suggestions?.find(
+            (s) => s.type === "appointment",
+          );
+          return {
+            id: crypto.randomUUID(),
+            role: "bot",
+            text: result.answer ?? result.reply,
+            time: nowLabel(),
+            threadId: result.threadId || threadId,
+            cta: suggestion,
+            executionId: result.executionId,
+          };
+        } catch {
+          return null;
+        }
+      };
+
+      // Mensaje de voz/fallback compartido: devuelve el mensaje del bot
+      // creado por este turno (o null) para que la voz lo vocalice.
+      let turnBotMessage: ChatMessage | null = null;
+
+      const emitBotMessage = (msg: ChatMessage) => {
+        turnBotMessage = msg;
+        setChat((prev) => {
+          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
+          return isOnlyWelcome ? [msg] : [...prev, msg];
+        });
+      };
+
+      // Streaming: el mensaje del bot se crea vacío y se rellena token
+      // a token. Si el stream falla sin haber pintado nada, se intenta
+      // la vía bloqueante y al final el fallback local.
+      const liveId = crypto.randomUUID();
+      let painted = "";
+      setChat((prev) => [
+        ...prev,
+        { id: liveId, role: "bot", text: "", time: nowLabel(), threadId },
+      ]);
+      const appendToken = (piece: string) => {
+        painted += piece;
+        const snapshot = painted;
+        setChat((prev) =>
+          prev.map((m) => (m.id === liveId ? { ...m, text: snapshot } : m)),
+        );
+      };
+      try {
+        const result = await streamChatMessage(
+          text,
+          threadId,
+          { onToken: appendToken },
+          image,
+        );
+        const suggestion = result.suggestions?.find(
+          (s) => s.type === "appointment",
+        );
+        // Consolidación canónica (agente-asistente-citas D1.2): el texto
+        // final del turno SIEMPRE se sustituye por `answer` (respuesta del
+        // modelo); así las pasadas duplicadas del stream jamás quedan en la
+        // burbuja, ni siquiera con desincronización de red.
+        const canonical = result.answer ?? result.reply;
+        const finalBot: ChatMessage = {
+          id: liveId,
+          role: "bot",
+          text: canonical,
+          time: nowLabel(),
+          threadId: result.threadId || threadId,
+          cta: suggestion,
+          executionId: result.executionId,
+        };
+        setChat((prev) => prev.map((m) => (m.id === liveId ? finalBot : m)));
+        turnBotMessage = finalBot;
+      } catch (err) {
+        if (!painted) {
+          // Sin streaming ni respuesta: se retira el vacío y va el fallback.
+          setChat((prev) => prev.filter((m) => m.id !== liveId));
+          const reply = await tryBlockingChat();
+          if (reply) {
+            emitBotMessage(reply);
+          } else {
+            // Safari serializa Error como {}: loguear el mensaje para ver
+            // el status real (p. ej. "Error al enviar mensaje (401)").
+            console.warn(
+              "[chat] Falló respuesta del AI service, usando fallback:",
+              err instanceof Error ? err.message : err,
+            );
+            const local = botReply(text, t);
+            emitBotMessage({
+              id: crypto.randomUUID(),
+              role: local.role,
+              text: local.text,
+              time: nowLabel(),
+              threadId,
+            });
+          }
+        }
+      }
+      return turnBotMessage;
+    },
+    [threadId, t],
+  );
+
+  /**
    * Chequea si hay mensajes del bot sin ver (dot en la tab Chat).
    * Fail-safe: sin sesión real, sin thread o ante cualquier error de fetch,
    * chatUnread queda en false — nunca un badge fantasma.
@@ -939,109 +1085,10 @@ export function AppProvider({
       activateSos: () => setSosActive(true),
       openVoice: () => setVoiceOpen(true),
       closeVoice: () => setVoiceOpen(false),
-      sendChat: (text) => {
-        const userMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "user",
-          text,
-          time: nowLabel(),
-          threadId,
-        };
-
-        // Si solo estaba el saludo inicial, se remueve para dar paso a la conversación
-        setChat((prev) => {
-          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
-          return isOnlyWelcome ? [userMsg] : [...prev, userMsg];
-        });
-
-        // Vía bloqueante como respaldo del streaming (misma respuesta final).
-        const tryBlockingChat = async (): Promise<ChatMessage | null> => {
-          try {
-            const result = await sendChatMessage(text, threadId);
-            const suggestion = result.suggestions?.find(
-              (s) => s.type === "appointment",
-            );
-            return {
-              id: crypto.randomUUID(),
-              role: "bot",
-              text: result.reply,
-              time: nowLabel(),
-              threadId: result.threadId || threadId,
-              cta: suggestion,
-              executionId: result.executionId,
-            };
-          } catch {
-            return null;
-          }
-        };
-
-        void (async () => {
-          // Streaming: el mensaje del bot se crea vacío y se rellena token
-          // a token. Si el stream falla sin haber pintado nada, se intenta
-          // la vía bloqueante y al final el fallback local.
-          const liveId = crypto.randomUUID();
-          let painted = "";
-          setChat((prev) => [
-            ...prev,
-            { id: liveId, role: "bot", text: "", time: nowLabel(), threadId },
-          ]);
-          const appendToken = (piece: string) => {
-            painted += piece;
-            const snapshot = painted;
-            setChat((prev) =>
-              prev.map((m) => (m.id === liveId ? { ...m, text: snapshot } : m)),
-            );
-          };
-          try {
-            const result = await streamChatMessage(text, threadId, {
-              onToken: appendToken,
-            });
-            const suggestion = result.suggestions?.find(
-              (s) => s.type === "appointment",
-            );
-            setChat((prev) =>
-              prev.map((m) =>
-                m.id === liveId
-                  ? {
-                      ...m,
-                      text: result.reply,
-                      threadId: result.threadId || threadId,
-                      cta: suggestion,
-                      executionId: result.executionId,
-                    }
-                  : m,
-              ),
-            );
-          } catch (err) {
-            if (!painted) {
-              // Sin streaming ni respuesta: se retira el vacío y va el fallback.
-              setChat((prev) => prev.filter((m) => m.id !== liveId));
-              const reply = await tryBlockingChat();
-              if (reply) {
-                setChat((prev) => [...prev, reply]);
-              } else {
-                // Safari serializa Error como {}: loguear el mensaje para ver
-                // el status real (p. ej. "Error al enviar mensaje (401)").
-                console.warn(
-                  "[chat] Falló respuesta del AI service, usando fallback:",
-                  err instanceof Error ? err.message : err,
-                );
-                const local = botReply(text, t);
-                setChat((prev) => [
-                  ...prev,
-                  {
-                    id: crypto.randomUUID(),
-                    role: local.role,
-                    text: local.text,
-                    time: nowLabel(),
-                    threadId,
-                  },
-                ]);
-              }
-            }
-          }
-        })();
+      sendChat: (text, image) => {
+        void runChatTurn(text, image);
       },
+      sendVoiceMessage: (text, image) => runChatTurn(text, image),
       hydrateChat: (messages) => {
         // Historial del thread (conversación completa o, con backends viejos,
         // el último mensaje inyectado). Si el chat solo tiene el mensaje de
