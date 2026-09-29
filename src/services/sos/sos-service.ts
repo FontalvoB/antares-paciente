@@ -25,7 +25,7 @@ export interface SosCoordinates {
   longitude: number;
 }
 
-/** Alerta SOS (DTO mínimo según REQ-SOS-01/05; campos extra ignorados). */
+/** Alerta SOS (DTO mínimo según REQ-SOS-01/03; campos extra ignorados). */
 export interface SosAlertDto {
   id: string;
   /** "Activa" | "Atendida" | "Cancelada" (string por compatibilidad). */
@@ -33,6 +33,15 @@ export interface SosAlertDto {
   createdAt: string;
   attendedAt?: string | null;
   cancelledAt?: string | null;
+  /**
+   * Estado del canal SMS reportado por el backend (REQ-SOS-03):
+   * "Enviado" | "Fallido" | "Timeout" | "NoConfigurado" | "Pendiente".
+   * La UI lo usa para copy honesto (BUG-01): solo con "Enviado" se afirma
+   * entrega al contacto de emergencia.
+   */
+  smsChannelStatus?: string | null;
+  /** Ubicación persistida de la alerta. Null = no compartida (BUG-01 b). */
+  location?: { latitude: number; longitude: number } | null;
 }
 
 export class SosServiceError extends Error {

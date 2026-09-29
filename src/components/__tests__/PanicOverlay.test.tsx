@@ -12,7 +12,9 @@ import { PanicOverlay } from "../PanicOverlay";
  * Tests de REQ-SOS-07 (change sos-panic-real):
  * 1) la inactividad (>5 s) NUNCA activa SOS (sin temporizador de auto-disparo);
  * 2) la activación exige doble confirmación deliberada (orbe → confirmar);
- * 3) la rama real (VITE_SOS_ENABLED) despacha al backend y refleja el ciclo.
+ * 3) la rama real (VITE_SOS_ENABLED) despacha al backend y refleja el ciclo;
+ * 4) BUG-01: el copy afirma SOLO lo que el estado real de la alerta respalda
+ *    (smsChannelStatus de POST /alerts y GET /active; location).
  */
 
 // Mock del servicio SOS: controla el flag y captura las llamadas de red.
@@ -69,7 +71,7 @@ vi.mock("../../i18n/I18nContext", () => ({
 // framer-motion mockeado: AnimatePresence/motion en happy-dom genera
 // AbortError no manejados al cancelar animaciones WAAPI (ruido que marca el
 // run como fallido aunque los tests pasen). El objetivo aquí es la lógica
-// SOS/REQ-SOS-07, no la animación.
+// SOS/REQ-SOS-07/BUG-01, no la animación.
 vi.mock("framer-motion", async () => {
   const React = await import("react");
   const strip = (props: Record<string, unknown>) => {
@@ -104,30 +106,33 @@ vi.mock("framer-motion", async () => {
   };
 });
 
-// Útil tras cada click: Ionic/Framer resuelven en microtareas/rAF reales.
+// Útil tras cada click: Ionic resuelve en microtareas.
 const flush = async () => {
   await act(async () => {
     await Promise.resolve();
   });
 };
 
+beforeEach(() => {
+  context.panicOpen = true;
+  context.sosActive = false;
+  context.activateSos.mockClear();
+  context.closePanic.mockClear();
+  context.showToast.mockClear();
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
+
 describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () => {
   beforeEach(() => {
-    context.panicOpen = true;
-    context.sosActive = false;
-    context.activateSos.mockClear();
-    context.closePanic.mockClear();
-    context.showToast.mockClear();
     sosMock.enabled = false;
     sosMock.activate.mockReset();
     sosMock.fetchActive.mockReset();
     sosMock.cancel.mockReset();
     sosMock.coords.mockReset().mockResolvedValue(null);
-  });
-
-  afterEach(() => {
-    cleanup();
-    vi.useRealTimers();
   });
 
   it("inactividad de más de 5 segundos NO activa SOS ni llama a la red", () => {
@@ -179,11 +184,6 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
 
 describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => {
   beforeEach(() => {
-    context.panicOpen = true;
-    context.sosActive = false;
-    context.activateSos.mockClear();
-    context.closePanic.mockClear();
-    context.showToast.mockClear();
     sosMock.enabled = true;
     sosMock.activate.mockReset();
     sosMock.fetchActive.mockReset();
@@ -191,11 +191,6 @@ describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => 
     sosMock.coords
       .mockReset()
       .mockResolvedValue({ latitude: 4.6, longitude: -74.1 });
-  });
-
-  afterEach(() => {
-    cleanup();
-    vi.useRealTimers();
   });
 
   it("despacha POST /api/v1/sos/alerts con GPS best-effort y activa el estado local", async () => {
@@ -294,5 +289,119 @@ describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => 
     await flush();
     expect(sosMock.cancel).toHaveBeenCalledWith("a-1");
     expect(context.closePanic).toHaveBeenCalled();
+  });
+});
+
+describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
+  beforeEach(() => {
+    sosMock.enabled = true;
+    sosMock.activate.mockReset();
+    sosMock.fetchActive.mockReset();
+    sosMock.cancel.mockReset();
+    sosMock.coords
+      .mockReset()
+      .mockResolvedValue({ latitude: 4.6, longitude: -74.1 });
+  });
+
+  const activate = async () => {
+    const { rerender } = render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    await flush();
+    // El copy activo depende de sosActive (estado local del overlay).
+    context.sosActive = true;
+    rerender(<PanicOverlay />);
+    await flush();
+  };
+
+  it("canal NoConfigurado + location null: degradación clara, sin afirmar entrega ni GPS", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-1",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "NoConfigurado",
+      location: null,
+    });
+    // El sondeo devuelve la misma alerta (estado vivo del canal).
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-1",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "NoConfigurado",
+      location: null,
+    });
+
+    await activate();
+
+    // Mensaje principal honesto de degradación.
+    expect(
+      screen.getByText(
+        "Alerta registrada para tu equipo clínico. SMS no disponible en este momento. Sin ubicación en esta alerta.",
+      ),
+    ).toBeTruthy();
+    const copy = document.querySelector(".sos-copy p");
+    expect(copy?.textContent).not.toContain("GPS");
+    expect(copy?.textContent).not.toContain("signos vitales");
+    expect(copy?.textContent).not.toContain("Ambulancia");
+    // Fila familiar: canal degradado, sin afirmar "Alerta enviada"/"SMS enviado".
+    expect(screen.getByText("SMS no disponible en este momento")).toBeTruthy();
+    expect(screen.queryByText("Alerta enviada · 000")).toBeNull();
+    expect(screen.queryByText("SMS enviado · 000")).toBeNull();
+  });
+
+  it("canal Enviado + location: sí afirma SMS al contacto y ubicación compartida", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-2",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      location: { latitude: 4.6, longitude: -74.1 },
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-2",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      location: { latitude: 4.6, longitude: -74.1 },
+    });
+
+    await activate();
+
+    // El <p> compone copia de canal + copia de ubicación (mismo elemento).
+    const copy = document.querySelector(".sos-copy p");
+    expect(copy?.textContent).toBe(
+      "SMS enviado a tu contacto de emergencia. Tu ubicación fue compartida con tu equipo.",
+    );
+    expect(screen.getByText("SMS enviado · 000")).toBeTruthy();
+    expect(
+      screen.getByText("Tu ubicación fue compartida con tu equipo."),
+    ).toBeTruthy();
+  });
+
+  it("canal Fallido: mensaje de degradación idéntico al NoConfigurado", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-3",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Fallido",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-3",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Fallido",
+      location: null,
+    });
+
+    await activate();
+
+    expect(
+      screen.getByText(
+        "Alerta registrada para tu equipo clínico. SMS no disponible en este momento. Sin ubicación en esta alerta.",
+      ),
+    ).toBeTruthy();
   });
 });
