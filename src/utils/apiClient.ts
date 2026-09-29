@@ -208,6 +208,11 @@ export async function apiFetch<T>(
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  // La señal externa (p. ej. desmontaje del wizard) también debe cancelar:
+  // se combina con el timeout en vez de ignorarla (QA-009).
+  const signal = rest.signal
+    ? AbortSignal.any([controller.signal, rest.signal])
+    : controller.signal;
 
   try {
     const res = await fetch(url, {
@@ -216,7 +221,7 @@ export async function apiFetch<T>(
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
       credentials: "include",
-      signal: controller.signal,
+      signal,
     });
 
     clearTimeout(timeoutId);
@@ -265,6 +270,9 @@ export async function apiFetch<T>(
 
       const retryController = new AbortController();
       const retryTimeout = setTimeout(() => retryController.abort(), timeoutMs);
+      const retrySignal = rest.signal
+        ? AbortSignal.any([retryController.signal, rest.signal])
+        : retryController.signal;
 
       const retryRes = await fetch(url, {
         ...rest,
@@ -272,7 +280,7 @@ export async function apiFetch<T>(
         headers: retryHeaders,
         body: body !== undefined ? JSON.stringify(body) : undefined,
         credentials: "include",
-        signal: retryController.signal,
+        signal: retrySignal,
       });
 
       clearTimeout(retryTimeout);
