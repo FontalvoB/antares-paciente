@@ -328,7 +328,7 @@
   "Calorías diarias": "Daily calories",
   "IMC 26.4 · HbA1c 5.9%": "BMI 26.4 · HbA1c 5.9%",
   "Semanas": "Weeks",
-  "Diagnósticos · Lab · Medicamentos": "Diagnoses · Lab · Medications",
+  "Diagnósticos · Lab · Medicamentos": "Diagnoses · Labs · Medications",
   "Calendario de citas": "Appointments",
   "Cadera": "Hips",
   "Próxima: Dr. Ramírez hoy 15:00": "Next: Dr. Ramírez today 3:00 PM",
@@ -2272,5 +2272,14 @@
   "Tienes 1 cambio pendiente de sincronizar": "You have 1 pending change to sync",
   "Tienes {n} cambios pendientes de sincronizar": "You have {n} pending changes to sync",
   "Sincronizando tus avances…": "Syncing your progress…",
-  "Conexión restablecida": "Connection restored"
+  "Conexión restablecida": "Connection restored",
+  "Tu salud, nuestro propósito.": "Your health, our purpose.",
+  "Hoy es": "Today is",
+  "Tu progreso, nuestra prioridad": "Your progress, our priority",
+  "Mi perfil de salud": "My health profile",
+  "Avance del programa": "Program progress",
+  "Tu programa": "Your program",
+  "Haz que tu experiencia sea única.": "Make your experience unique.",
+  "Tu salud en equilibrio, todos los días.": "Balanced health, every day.",
+  "Profesionales que te acompañan": "Professionals supporting you"
 }

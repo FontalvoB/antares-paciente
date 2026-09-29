@@ -25999,3 +25999,784 @@ ion-button.club-event-btn {
     transform: none;
   }
 }
+
+/* Home: superficies y arte de la referencia;
+sin cambios en los datos. */
+.home .hm-head {
+  isolation: isolate;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 18px 12px;
+  background: radial-gradient(ellipse at 8% 0%, var(--home-sky), transparent 68%), linear-gradient(135deg, var(--home-mist), var(--wh) 80%);
+}
+.home .hm-head-top {
+  position: relative;
+  z-index: 3;
+  gap: 8px;
+}
+.hm-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.hm-wordmark img {
+  width: 43px;
+  flex-shrink: 0;
+}
+.hm-wordmark strong {
+  display: block;
+  font-size: clamp(13px, 3.6vw, 19px);
+  letter-spacing: -.7px;
+  white-space: nowrap;
+}
+.hm-wordmark sup {
+  font-size: 7px;
+  vertical-align: super;
+}
+.hm-wordmark small {
+  display: block;
+  color: var(--brand-green);
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  margin-top: 3px;
+}
+.home .hm-head-actions {
+  gap: 3px;
+  flex-shrink: 0;
+}
+.home .hm-icon-btn, .home .hm-head-actions .lang-toggle {
+  display: inline-flex;
+  margin: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 50%;
+  --background: color-mix(in srgb, var(--wh) 85%, transparent);
+  --color: var(--brand-navy);
+  font-size: 23px;
+}
+.home .hm-head-actions .lang-toggle {
+  width: 54px;
+  --border-radius: 24px;
+}
+.home .hm-bell-badge {
+  top: 0;
+  right: 0;
+}
+.home .hm-hello {
+  position: relative;
+  z-index: 2;
+  padding: 0;
+  width: 65%;
+  margin: 27px 0 4px;
+  font-size: clamp(26px, 7vw, 34px);
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+.home .hm-hello > span:first-child {
+  color: var(--brand-green);
+}
+.home .hm-hello > span:last-child {
+  font-size: .8em;
+  white-space: nowrap;
+}
+.hm-purpose {
+  position: relative;
+  z-index: 2;
+  width: 62%;
+  margin: 8px 0 24px;
+  color: var(--brand-sky-deep);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.hm-landscape {
+  position: absolute;
+  z-index: -1;
+  overflow: hidden;
+  inset: 0 0 4px 46%;
+  border-radius: 48% 0 0 52%;
+  background: radial-gradient(ellipse at 30% 65%, var(--home-leaf), transparent 40%), linear-gradient(140deg, var(--home-sky), var(--home-aqua) 45%, var(--home-mist) 70%);
+  border-left: 16px solid color-mix(in srgb, var(--home-aqua) 35%, transparent);
+  border-bottom: 13px solid color-mix(in srgb, var(--home-leaf) 50%, var(--wh));
+}
+.home .mascot-home {
+  top: 83px;
+  right: -4px;
+  width: 170px;
+  height: auto;
+  z-index: 1;
+}
+.home .mascot-home .mascot-character {
+  height: auto;
+}
+.hm-leaf {
+  position: absolute;
+  right: -7px;
+  bottom: 20px;
+  width: 48px;
+  height: 140px;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(130deg, var(--home-leaf), var(--brand-green));
+  transform: rotate(18deg);
+}
+.hm-leaf-two {
+  right: 15px;
+  bottom: -8px;
+  transform: rotate(-20deg);
+  background: linear-gradient(140deg, var(--home-aqua), var(--brand-navy-deep));
+}
+.hm-leaf-three {
+  right: -25px;
+  bottom: 9px;
+  transform: rotate(45deg);
+  background: linear-gradient(140deg, var(--home-aqua), var(--brand-green));
+}
+.hm-day-panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 89%;
+  padding: 10px;
+  border: 1px solid var(--wh);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--wh) 94%, transparent);
+  box-shadow: 0 5px 15px color-mix(in srgb, var(--home-aqua) 25%, transparent);
+}
+.hm-day-panel > ion-icon {
+  font-size: 23px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.hm-day-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+.hm-day-copy > span:first-child {
+  font-size: 10px;
+  color: var(--brand-sky-deep);
+}
+.home .hm-date {
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--brand-navy);
+}
+.hm-day-copy .hm-chip {
+  align-self: flex-start;
+  border-radius: 8px;
+  padding: 4px 9px;
+  margin-top: 3px;
+  font-size: 10px;
+}
+.hm-day-link {
+  width: 96px;
+  min-width: 0;
+  height: auto;
+  align-self: stretch;
+  margin: 0;
+  border-left: 1px solid var(--bd);
+  --padding-start: 8px;
+  --padding-end: 0;
+  --color: var(--brand-navy);
+  font-size: 11px;
+}
+.hm-day-link span {
+  white-space: normal;
+  text-align: left;
+  margin: 0 4px;
+  max-width: 51px;
+}
+.hm-day-link ion-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.hm-day-link ion-icon:last-child {
+  font-size: 15px;
+}
+.home .wheel-badge > ion-icon {
+  font-size: clamp(25px, calc(var(--wheel-size) * .072), 31px);
+}
+.home .hm-metrics {
+  width: calc(100% - 24px);
+  margin: 14px 12px 0;
+  padding: 8px;
+  gap: 8px;
+  border: 1px solid var(--ice-l);
+  border-radius: 24px;
+  background: linear-gradient(145deg, var(--wh), var(--home-mist));
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--home-aqua) 16%, transparent);
+  scroll-padding-inline-start: 8px;
+}
+.home .hm-metric {
+  flex-basis: clamp(112px, calc((100% - 16px) / 3), 180px);
+  min-height: 150px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--wh) 60%, transparent);
+  border-radius: 17px;
+  background: radial-gradient(ellipse at 90% 0%, var(--home-card-light), transparent 85%), linear-gradient(145deg, var(--home-card-mid), var(--home-card-deep));
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wh) 40%, transparent), 0 5px 10px color-mix(in srgb, var(--brand-sky) 28%, transparent);
+}
+.hm-metric-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  margin-bottom: 5px;
+  font-size: 20px;
+  color: var(--wh);
+  background: radial-gradient(circle at 30% 20%, var(--home-aqua), var(--mod-appt));
+  border: 1px solid var(--home-sky);
+  box-shadow: inset 0 0 5px var(--home-sky), 0 0 8px color-mix(in srgb, var(--home-aqua) 45%, transparent);
+}
+.home .hm-metric-val {
+  font-size: 25px;
+  line-height: 1.2;
+}
+.home .hm-metric-unit {
+  font-size: 10px;
+  color: var(--home-sky);
+  letter-spacing: 0;
+}
+.home .hm-metric-lbl {
+  font-size: 12px;
+  color: var(--home-sky);
+}
+.home .hm-metric-sub {
+  font-size: 10px;
+  color: var(--home-sky);
+}
+.home .hm-metric-rd {
+  color: var(--wh);
+}
+.home .hm-metric-bar {
+  margin-top: auto;
+  position: relative;
+  top: 3px;
+  background: var(--home-card-light);
+}
+.home .hm-metric-bar i {
+  background: linear-gradient(90deg, var(--home-cyan), var(--home-aqua));
+}
+@media (max-width: 374px) {
+  .home .hm-head {
+    padding-inline: 12px;
+  }
+  .hm-wordmark {
+    gap: 4px;
+  }
+  .hm-wordmark img {
+    width: 32px;
+  }
+  .hm-wordmark strong {
+    font-size: 12px;
+  }
+  .hm-wordmark small {
+    font-size: 5px;
+    letter-spacing: .7px;
+  }
+  .home .hm-head-actions {
+    gap: 0;
+  }
+  .home .hm-head-actions .lang-toggle {
+    width: 48px;
+  }
+  .hm-day-panel {
+    width: 96%;
+    gap: 6px;
+  }
+  .home .mascot-home {
+    right: 0;
+    width: 128px;
+  }
+}
+@media (min-width: 768px) {
+  .home .hm-head {
+    padding-inline: 28px;
+  }
+  .hm-wordmark strong {
+    font-size: 23px;
+  }
+  .hm-wordmark small {
+    font-size: 8px;
+  }
+  .hm-wordmark img {
+    width: 54px;
+  }
+  .home .hm-hello {
+    margin-top: 36px;
+  }
+  .hm-purpose {
+    margin-bottom: 30px;
+  }
+  .home .mascot-home {
+    width: 185px;
+    right: 35px;
+    top: 66px;
+  }
+  .hm-day-panel {
+    max-width: 450px;
+  }
+  .home .hm-date {
+    font-size: 13px;
+  }
+  .home .hm-metrics {
+    justify-content: space-between;
+  }
+  .home .hm-metric {
+    flex: 1 0 125px;
+  }
+}
+
+/* Perfil: superficies claras y acentos del diseño de referencia.
+Alcance local;
+formularios y lógica de guardado conservan su comportamiento. */
+.pf-reference .pf-scroll {
+  background: radial-gradient(ellipse at 100% 0%, var(--teal-l), transparent 30%), var(--home-mist);
+}
+.pf-reference .pf-layout {
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 18px 30px;
+  max-width: 760px;
+}
+.pf-reference .pf-heading {
+  display: block;
+  position: relative;
+  isolation: isolate;
+  margin-bottom: 10px;
+}
+.pf-reference .pf-heading::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 66%;
+  height: 125px;
+  right: -18px;
+  bottom: 0;
+  border-radius: 100% 0 70% 0;
+  background: linear-gradient(140deg, transparent, color-mix(in srgb, var(--home-aqua) 40%, transparent), var(--teal-l));
+  transform: rotate(-8deg);
+}
+.pf-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.pf-reference .hm-wordmark img {
+  width: 40px;
+}
+.pf-reference .hm-wordmark strong {
+  font-size: clamp(12px, 3.6vw, 19px);
+}
+.pf-header-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.pf-header-actions ion-button {
+  height: 44px;
+  min-width: 44px;
+  margin: 0;
+  --padding-start: 3px;
+  --padding-end: 3px;
+  --color: var(--navy);
+  --border-radius: 50%;
+}
+.pf-header-actions ion-icon {
+  font-size: 22px;
+}
+.pf-header-actions span {
+  font-size: 11px;
+  margin-left: 3px;
+}
+.pf-reference .pf-heading h1 {
+  margin: 0 0 3px;
+  font: 750 27px/1.15 var(--ion-font-family);
+  letter-spacing: -.6px;
+}
+.pf-reference .pf-heading p {
+  font-size: 13px;
+}
+.pf-reference .pf-identity {
+  position: relative;
+  z-index: 1;
+  border-radius: 30px;
+  border: 1px solid var(--wh);
+  background: linear-gradient(145deg, var(--wh) 30%, var(--home-mist));
+  box-shadow: 0 8px 15px color-mix(in srgb, var(--brand-sky) 25%, transparent), inset 0 -3px 3px color-mix(in srgb, var(--home-aqua) 30%, transparent);
+}
+.pf-identity-body {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) 78px;
+  gap: 10px;
+  align-items: center;
+  padding: 18px 12px;
+}
+.pf-reference .pf-monogram {
+  width: 60px;
+  height: 60px;
+  margin: 0;
+  border: 2px solid var(--wh);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mod-appt), var(--home-cyan));
+  color: var(--wh);
+  font-size: 23px;
+  box-shadow: var(--shadow-sm);
+}
+.pf-reference .pf-person {
+  margin: 0;
+}
+.pf-reference .pf-person h2 {
+  max-width: none;
+  margin: 0;
+  font: 750 16px/1.22 var(--ion-font-family);
+  letter-spacing: -.4px;
+  color: var(--navy);
+}
+.pf-patient-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0;
+  color: var(--teal);
+  font-size: 10px;
+}
+.pf-patient-label ion-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.pf-reference .pf-membership {
+  margin: 0;
+  padding: 5px 9px;
+  border-radius: 18px;
+  color: var(--wh);
+  background: linear-gradient(90deg, var(--brand-navy-deep), var(--navy));
+  font-size: 10px;
+  gap: 4px;
+}
+.pf-reference .pf-doc {
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 5px 0 0;
+  font-size: 10px;
+  color: var(--mu);
+  letter-spacing: 0;
+}
+.pf-reference .pf-doc span {
+  font-size: 9px;
+  letter-spacing: 0;
+  color: var(--mu);
+}
+.pf-reference .pf-city {
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--mu);
+}
+.pf-program-ring {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.pf-program-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.pf-program-ring circle {
+  fill: none;
+  stroke-width: 8;
+}
+.pf-ring-track {
+  stroke: var(--blue-l);
+}
+.pf-ring-value {
+  stroke: var(--safe);
+  stroke-linecap: round;
+}
+.pf-program-ring span {
+  font-size: 8px;
+  color: var(--mu);
+}
+.pf-program-ring strong {
+  font-size: 19px;
+  color: var(--navy);
+}
+.pf-program-ring ion-icon {
+  font-size: 13px;
+  color: var(--teal);
+}
+.pf-reference .pf-avatar-feature {
+  margin-top: 14px;
+  --border-radius: 18px;
+  --background: linear-gradient(105deg, var(--home-mist), var(--teal-l));
+  --box-shadow: 0 3px 8px color-mix(in srgb, var(--brand-sky) 18%, transparent);
+}
+.pf-reference .pf-avatar-feature::part(native) {
+  border: 1px solid color-mix(in srgb, var(--home-aqua) 35%, var(--wh));
+}
+.pf-reference .pf-avatar-copy {
+  padding: 15px 114px 15px 14px;
+  min-height: 78px;
+  justify-content: center;
+}
+.pf-reference .pf-avatar-copy strong {
+  font: 750 16px/1.2 var(--ion-font-family);
+  margin: 0;
+}
+.pf-reference .pf-feature-description {
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 5px;
+  max-width: none;
+  color: var(--mu);
+}
+.pf-mascot {
+  position: absolute;
+  width: 92px;
+  height: auto;
+  right: 37px;
+  top: -5px;
+}
+.pf-avatar-next {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  background: var(--wh);
+  color: var(--teal);
+  border-radius: 50%;
+}
+.pf-reference .pf-metrics {
+  gap: 8px;
+  margin-top: 14px;
+  padding: 6px;
+  border-radius: 22px;
+  border: 1px solid var(--wh);
+  background: color-mix(in srgb, var(--wh) 65%, transparent);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-sky) 20%, transparent);
+}
+.pf-reference .pf-metric {
+  position: relative;
+  gap: 3px;
+  padding: 9px;
+  text-align: left;
+  border: 1px solid var(--wh);
+  border-radius: 17px;
+  background: linear-gradient(140deg, var(--wh), var(--home-mist));
+  box-shadow: 0 3px 5px color-mix(in srgb, var(--home-aqua) 16%, transparent);
+}
+.pf-reference .pf-metric strong {
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -.5px;
+}
+.pf-reference .pf-metric > span {
+  font-size: 11px;
+}
+.pf-reference .pf-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  background: var(--teal-l);
+  color: var(--teal);
+  margin-bottom: 3px;
+}
+.pf-stat-icon ion-icon {
+  font-size: 21px;
+}
+.pf-reference .pf-metric-weight .pf-stat-icon {
+  color: var(--mod-appt);
+  background: var(--blue-l);
+}
+.pf-reference .pf-stat-underline {
+  height: 4px;
+  border-radius: 6px;
+  background: var(--teal-l);
+  margin-top: 6px;
+}
+.pf-reference .pf-metric-weight .pf-stat-underline {
+  background: var(--blue-l);
+}
+.pf-reference .pf-section-title {
+  margin: 18px 0 9px;
+}
+.pf-reference .pf-section-title h2 {
+  font: 750 17px/1.3 var(--ion-font-family);
+  letter-spacing: -.3px;
+  margin: 0;
+}
+.pf-reference .pf-section-title p {
+  font-size: 11px;
+  color: var(--mu);
+  margin: 3px 0 0;
+}
+.pf-reference .pf-care .pf-section-title {
+  border-left: 3px solid var(--brand-green-soft);
+  padding-left: 8px;
+}
+.pf-reference .pf-care .pf-menu {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}
+.pf-reference .pf-care .pf-menu-row {
+  --min-height: 58px;
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  --background: var(--wh);
+  margin-bottom: 6px;
+  border: 1px solid var(--wh);
+  border-left: 4px solid var(--pf-row-accent);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--brand-sky) 12%, transparent);
+}
+.pf-plan-sky {
+  --pf-row-accent: var(--mod-appt);
+}
+.pf-plan-mint {
+  --pf-row-accent: var(--safe);
+}
+.pf-plan-lilac {
+  --pf-row-accent: var(--pur);
+}
+.pf-plan-sand {
+  --pf-row-accent: var(--org);
+}
+.pf-reference .pf-care ion-label {
+  margin: 8px 0;
+}
+.pf-reference .pf-care ion-label h3 {
+  font-size: 12px;
+  font-weight: 700;
+}
+.pf-reference .pf-care ion-label p {
+  font-size: 10px;
+  margin-top: 1px;
+}
+.pf-reference .pf-care .pf-menu-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 9px;
+  font-size: 20px;
+}
+.pf-reference .pf-care .pf-menu-icon.sand {
+  color: var(--org);
+  background: var(--org-l);
+}
+.pf-reference .pf-team-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.pf-reference .pf-team-card {
+  --border-radius: 15px;
+  --box-shadow: var(--shadow-sm);
+}
+.pf-reference .pf-team-card::part(native) {
+  border-color: var(--wh);
+}
+.pf-reference .pf-team-inner {
+  padding: 10px 8px;
+}
+.pf-reference .pf-team-top {
+  margin-bottom: 7px;
+}
+.pf-reference .pf-team-top > ion-icon {
+  font-size: 12px;
+  color: var(--brand-green-soft);
+}
+.pf-reference .pf-pro-avatar {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  font-size: 11px;
+}
+.pf-reference .pf-team-card strong {
+  font-size: 10px;
+  line-height: 1.3;
+}
+.pf-reference .pf-team-card small {
+  font-size: 9px;
+  line-height: 1.3;
+}
+@media (max-width: 374px) {
+  .pf-reference .pf-layout {
+    padding-inline: 12px;
+  }
+  .pf-reference .hm-wordmark img {
+    width: 30px;
+  }
+  .pf-reference .hm-wordmark {
+    gap: 4px;
+  }
+  .pf-reference .hm-wordmark small {
+    font-size: 5px;
+    letter-spacing: .6px;
+  }
+  .pf-reference .pf-identity-body {
+    grid-template-columns: 47px minmax(0, 1fr) 65px;
+    gap: 7px;
+    padding: 15px 10px;
+  }
+  .pf-reference .pf-monogram {
+    width: 47px;
+    height: 47px;
+    font-size: 20px;
+  }
+  .pf-reference .pf-person h2 {
+    font-size: 14px;
+  }
+  .pf-program-ring {
+    width: 65px;
+    height: 65px;
+  }
+  .pf-reference .pf-avatar-copy {
+    padding-right: 110px;
+  }
+  .pf-reference .pf-avatar-copy strong {
+    font-size: 14px;
+  }
+  .pf-reference .pf-metric strong {
+    font-size: 17px;
+  }
+}
+@media (min-width: 1000px) {
+  .pf-reference .pf-layout {
+    max-width: 1180px;
+    grid-template-columns: 400px minmax(0, 1fr);
+    gap: 38px;
+    padding: 30px 28px;
+  }
+  .pf-reference .pf-content {
+    padding-top: 16px;
+  }
+  .pf-reference .pf-team-card strong {
+    font-size: 13px;
+  }
+  .pf-reference .pf-team-card small {
+    font-size: 11px;
+  }
+}
