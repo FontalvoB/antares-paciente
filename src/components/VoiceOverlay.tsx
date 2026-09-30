@@ -1,12 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
-import { IonButton, IonIcon, IonModal } from "@ionic/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { IonButton, IonIcon, IonModal, IonSpinner } from "@ionic/react";
 import { call, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useApp } from "../context/AppContext";
@@ -43,130 +36,113 @@ import {
 
 type VoiceMode = "idle" | "eleven" | "webspeech";
 
+/** Fase visual del turno: alimenta el orb, el punto de estado y las ondas. */
+type VoicePhase =
+  | "connecting"
+  | "listening"
+  | "thinking"
+  | "speaking"
+  | "muted"
+  | "unavailable";
+
 /** Props de la cápsula visual compartida por ambos motores. */
 interface VoiceShellProps {
+  phase: VoicePhase;
   statusLabel: string;
   transcriptLine: string;
-  live: boolean;
   muted: boolean;
   onToggleMute: () => void;
   onHangUp: () => void;
 }
 
-/** Cápsula visual única (misma estética del MVP D4, sin duplicar markup). */
+/** Cápsula visual única: pantalla de llamada inmersiva (estilo llamada de
+ * WhatsApp/ChatGPT). Orb reactivo a la fase, estado con punto pulsante,
+ * transcripción en tarjeta glass y controles circulares grandes (mute +
+ * colgar) con regreso claro al chat de texto. Solo presentación. */
 function VoiceShell({
+  phase,
   statusLabel,
   transcriptLine,
-  live,
   muted,
   onToggleMute,
   onHangUp,
 }: VoiceShellProps) {
   const t = useT();
+  const orbClass = `voice-orb vc-orb is-${phase}`;
   return (
     <>
-      <div className="voice-orb">
-        <IonIcon
-          icon={muted ? micOff : mic}
-          style={{ fontSize: 56, color: "var(--ice)" }}
-        />
+      {/* Encabezado de la llamada */}
+      <div className="vc-head">
+        <div className="vc-head-brand" aria-hidden="true">
+          <IonIcon icon={mic} />
+        </div>
+        <div className="display vc-title">{t("Agente de voz Copp Adresd")}</div>
+        <div className="vc-sub">
+          {t(
+            "Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.",
+          )}
+        </div>
       </div>
-      <div
-        className="display"
-        style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}
-      >
-        {t("Agente de voz Copp Adresd")}
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          color: "rgba(255,255,255,.6)",
-          textAlign: "center",
-          maxWidth: 280,
-          lineHeight: 1.6,
-        }}
-      >
-        {t(
-          "Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.",
+
+      {/* Orb reactivo: escucha (anillo rotatorio), habla (ondas), piensa
+          (spinner), conecta (pulso suave) o silenciado (gris). */}
+      <div className={orbClass} aria-hidden="true">
+        {phase === "connecting" || phase === "thinking" ? (
+          <IonSpinner name="crescent" className="vc-orb-spin" />
+        ) : (
+          <IonIcon icon={muted ? micOff : mic} className="vc-orb-ico" />
         )}
       </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          color: "var(--ice)",
-          fontSize: 13,
-        }}
-      >
-        <div className={`waves${live ? " live" : ""}`}>
+
+      {/* Estado: punto de color + etiqueta existente (t()) + ondas sutiles
+          que solo animan al responder. */}
+      <div className={`vc-status is-${phase}`}>
+        <span className="vc-status-dot" aria-hidden="true" />
+        <span
+          className={`waves vc-status-waves${phase === "speaking" ? " live" : ""}`}
+          aria-hidden="true"
+        >
           <span className="wave" />
           <span className="wave" />
           <span className="wave" />
           <span className="wave" />
           <span className="wave" />
-        </div>
+        </span>
         {statusLabel}
       </div>
-      <div
-        style={{
-          background: "rgba(255,255,255,.07)",
-          border: "1px solid rgba(255,255,255,.1)",
-          borderRadius: 14,
-          padding: 14,
-          width: "100%",
-          fontSize: 13,
-          color: "rgba(255,255,255,.78)",
-          lineHeight: 1.65,
-          minHeight: 84,
-        }}
-        aria-live="polite"
-      >
+
+      {/* Transcripción en vivo (tarjeta glass). */}
+      <div className="vc-transcript" aria-live="polite">
         {transcriptLine ||
           t("Presiona el micrófono y háblame: te escucho en tiempo real.")}
       </div>
-      <div style={{ display: "flex", gap: 14 }}>
+
+      {/* Controles de llamada: mute + colgar (72px, targets generosos). */}
+      <div className="vc-controls">
         <IonButton
-          className="bt bt-round-lg"
-          style={
-            {
-              "--background": "rgba(255,255,255,.12)",
-              "--color": "#fff",
-              "--border-color": "rgba(255,255,255,.2)",
-              "--border-width": "1px",
-              "--border-style": "solid",
-            } as CSSProperties
-          }
+          className="bt vc-btn vc-mute"
+          aria-pressed={muted}
           aria-label={muted ? t("Activar micrófono") : t("Silenciar micrófono")}
           onClick={onToggleMute}
         >
-          <IonIcon icon={muted ? micOff : mic} style={{ fontSize: 24 }} />
+          <IonIcon icon={muted ? micOff : mic} />
         </IonButton>
         <IonButton
-          className="bt bt-round-lg"
-          style={
-            {
-              "--background": "var(--panic)",
-              "--color": "#fff",
-            } as CSSProperties
-          }
+          className="bt vc-btn vc-hang"
           aria-label={t("Colgar")}
           onClick={onHangUp}
         >
-          <IonIcon icon={call} style={{ fontSize: 24 }} />
+          <IonIcon icon={call} />
         </IonButton>
       </div>
+
+      {/* Regreso claro al chat de texto: termina la llamada igual que
+          colgar (mismo handler), con affordance textual accesible. */}
+      <IonButton fill="clear" className="vc-back" onClick={onHangUp}>
+        {t("Volver al chat")}
+      </IonButton>
     </>
   );
-}
-
-interface VoiceShellProps {
-  statusLabel: string;
-  transcriptLine: string;
-  live: boolean;
-  muted: boolean;
-  onToggleMute: () => void;
-  onHangUp: () => void;
 }
 
 export function VoiceOverlay() {
@@ -378,40 +354,20 @@ export function VoiceOverlay() {
         className="voice-modal"
       >
         <div className="overlay overlay-voice">
-          <div className="voice-orb">
-            <IonIcon
-              icon={micOff}
-              style={{ fontSize: 56, color: "var(--ice)" }}
-            />
+          <div className="voice-orb vc-orb is-unavailable">
+            <IonIcon icon={micOff} className="vc-orb-ico" />
           </div>
-          <div
-            className="display"
-            style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}
-          >
+          <div className="display vc-title">
             {t("Voz no disponible en este dispositivo")}
           </div>
-          <div
-            style={{
-              fontSize: 13,
-              color: "rgba(255,255,255,.6)",
-              textAlign: "center",
-              maxWidth: 300,
-              lineHeight: 1.6,
-            }}
-          >
+          <div className="vc-sub vc-sub-wide">
             {t(
               "Tu navegador o WebView no soporta reconocimiento de voz. Usa el chat de texto: el asistente responde igual.",
             )}
           </div>
           <IonButton
             expand="block"
-            className="bt"
-            style={
-              {
-                "--background": "rgba(255,255,255,.12)",
-                "--color": "#fff",
-              } as CSSProperties
-            }
+            className="bt vc-use-chat"
             onClick={closeVoice}
           >
             {t("Usar chat de texto")}
@@ -457,6 +413,15 @@ export function VoiceOverlay() {
           </ConversationProvider>
         ) : (
           <VoiceShell
+            phase={
+              assistant.state === "processing"
+                ? "thinking"
+                : assistant.state === "speaking"
+                  ? "speaking"
+                  : assistant.muted
+                    ? "muted"
+                    : "listening"
+            }
             statusLabel={
               assistant.state === "processing"
                 ? t("Procesando…")
@@ -473,21 +438,12 @@ export function VoiceOverlay() {
                 ? assistant.transcript
                 : botLine
             }
-            live={assistant.state === "speaking"}
             muted={assistant.muted}
             onToggleMute={assistant.toggleMute}
             onHangUp={hangUp}
           />
         )}
-        <div
-          style={{
-            fontSize: 11,
-            color: "rgba(255,255,255,.4)",
-            textAlign: "center",
-          }}
-        >
-          {t("La conversación queda en tu chat.")}
-        </div>
+        <div className="vc-foot">{t("La conversación queda en tu chat.")}</div>
       </div>
     </IonModal>
   );
@@ -533,6 +489,17 @@ function ElevenVoiceBody({
     void start();
   }, [start]);
 
+  const phase: VoicePhase =
+    eleven.status === "connecting"
+      ? "connecting"
+      : thinking
+        ? "thinking"
+        : eleven.isSpeaking
+          ? "speaking"
+          : eleven.isMuted
+            ? "muted"
+            : "listening";
+
   const label =
     eleven.status === "connecting"
       ? t("Conectando…")
@@ -546,9 +513,9 @@ function ElevenVoiceBody({
 
   return (
     <VoiceShell
+      phase={phase}
       statusLabel={label}
       transcriptLine={eleven.isSpeaking ? botLine : userLine}
-      live={eleven.isSpeaking}
       muted={eleven.isMuted}
       onToggleMute={() => eleven.setMuted(!eleven.isMuted)}
       onHangUp={onHangUp}

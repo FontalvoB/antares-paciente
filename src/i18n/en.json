@@ -2388,5 +2388,14 @@
   "Tu alerta SOS ya fue atendida.": "Your SOS alert has already been attended.",
   "Tu navegador o WebView no soporta reconocimiento de voz. Usa el chat de texto: el asistente responde igual.": "Your browser or WebView doesn't support voice recognition. Use the text chat: the assistant answers the same.",
   "Usar chat de texto": "Use text chat",
-  "Voz no disponible en este dispositivo": "Voice not available on this device"
+  "Voz no disponible en este dispositivo": "Voice not available on this device",
+  "Fotos": "Photos",
+  "Archivo": "File",
+  "Adjuntar al chat": "Attach to chat",
+  "Volver al chat": "Back to chat",
+  "Asistente de salud": "Health assistant",
+  "Hola, {nombre} 👋": "Hi, {nombre} 👋",
+  "Paciente": "Patient",
+  "Tu asistente de IA en salud y bienestar": "Your AI assistant for health and wellbeing",
+  "Acciones rápidas del chat": "Quick chat actions"
 }

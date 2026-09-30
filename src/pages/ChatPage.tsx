@@ -1,18 +1,27 @@
 import {
+  IonActionSheet,
   IonBadge,
   IonButton,
   IonIcon,
   IonInput,
   IonSpinner,
 } from "@ionic/react";
+import { CameraSource } from "@capacitor/camera";
 import {
-  attach,
+  add,
   cameraOutline,
   closeCircle,
+  documentOutline,
+  imagesOutline,
   informationCircle,
   medkit,
   mic,
+  nutritionOutline,
+  calendarOutline,
+  pulseOutline,
+  trendingUpOutline,
   send as sendIcon,
+  sparkles,
 } from "ionicons/icons";
 import { motion } from "framer-motion";
 import {
@@ -22,21 +31,21 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { PageHeader } from "../components/PageHeader";
 import { Screen } from "../components/Screen";
+import { Mascot } from "../components/Mascot";
 import { ChatRichText } from "../components/ChatRichText";
 import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
-import { captureChatImage } from "../services/media/camera-service";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
+import { captureChatImage } from "../services/media/camera-service";
+import logoIcon from "../assets/LogoIndividual.png";
 
 const quick = [
-  ["¿Qué comer?", "¿Qué debo comer hoy según mi plan?"],
-  ["Síntomas", "Tengo dolor en el pecho, ¿qué hago?"],
-  ["Agendar", "Agenda una cita con el médico para hoy"],
-  ["Progreso", "¿Cómo va mi progreso esta semana?"],
-  ["Meditar", "Quiero meditar y calmar mi ansiedad"],
+  ["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline],
+  ["Síntomas", "Tengo dolor en el pecho, ¿qué hago?", pulseOutline],
+  ["Agendar", "Agenda una cita con el médico para hoy", calendarOutline],
+  ["Progreso", "¿Cómo va mi progreso esta semana?", trendingUpOutline],
 ];
 
 /** Mensajes visibles por tramo del historial progresivo. */
@@ -61,6 +70,8 @@ export function ChatPage() {
   } = useApp();
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
+  // Progressive disclosure del compositor (+): hoja de acciones de adjuntos.
+  const [attachSheetOpen, setAttachSheetOpen] = useState(false);
   // Imagen conversacional pendiente (agente-asistente-citas D3): miniatura
   // removible en el compositor; viaja con el próximo mensaje como multimodal.
   const [pendingImage, setPendingImage] = useState<{
@@ -244,11 +255,22 @@ export function ChatPage() {
     setText("");
   };
 
-  /** Captura (cámara o galería) para el contexto conversacional (D3). */
-  const handleCaptureImage = async () => {
-    if (uploading || pendingImage) return;
-    const image = await captureChatImage();
-    if (image) setPendingImage(image);
+  /**
+   * Adjunto conversacional desde el ActionSheet del compositor (+).
+   * REUTILIZA `captureChatImage` (una sola configuración de captura: Base64
+   * q75, ancho 1280, orientación corregida) para mantener el payload
+   * multimodal en el presupuesto del backend; la fuente (cámara o galería)
+   * la elige la hoja de acciones del propio chat. Cancelación o permiso
+   * denegado → silencioso (nunca rompe el compositor).
+   */
+  const attachFromSource = async (source: CameraSource) => {
+    if (uploading) return;
+    try {
+      const photo = await captureChatImage(source);
+      if (photo) setPendingImage(photo);
+    } catch {
+      // El usuario canceló: no mostrar ruido.
+    }
   };
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -304,12 +326,23 @@ export function ChatPage() {
 
   return (
     <Screen className="chat-kb">
-      <PageHeader
-        title={t("Chat")}
-        sub={t("Copp Adresd AI · en línea 24/7")}
-        trailing={
+      <header className="chat-premium-header">
+        <div className="chat-brand-lockup">
+          <img src={logoIcon} alt="" className="chat-brand-logo" />
+          <div>
+            <span className="chat-brand-name">COPP-ADRESD</span>
+            <span className="chat-brand-kicker">{t("Asistente de salud")}</span>
+          </div>
+        </div>
+        <div className="chat-hero-copy">
+          <div>
+            <h1 className="display">
+              {t("Hola, {nombre} 👋", { nombre: user.nombre || t("Paciente") })}
+            </h1>
+            <p>{t("Tu asistente de IA en salud y bienestar")}</p>
+          </div>
           <IonButton
-            className="bt bt-round"
+            className="bt bt-round chat-panic"
             style={
               {
                 "--background": "var(--red-l)",
@@ -321,30 +354,31 @@ export function ChatPage() {
           >
             <IonIcon icon={medkit} />
           </IonButton>
-        }
-      />
-      <div className="chip-scroll">
-        {quick.map(([l, q]) => (
-          <button
+        </div>
+        <Mascot pose="welcome" className="chat-header-mascot" />
+      </header>
+      <div
+        className="chip-scroll chat-quick-actions"
+        aria-label={t("Acciones rápidas del chat")}
+      >
+        {quick.map(([l, q, icon]) => (
+          <IonButton
             key={l}
-            type="button"
-            className="qrchip"
+            fill="clear"
+            className="qrchip chat-quick-action"
             onClick={() => send(t(q))}
           >
+            <span className="chat-quick-icon" aria-hidden="true">
+              <IonIcon icon={icon} />
+            </span>
             {t(l)}
-          </button>
+          </IonButton>
         ))}
       </div>
       <div
         ref={listRef}
-        className="screen-scroll"
+        className="screen-scroll chat-list"
         onScroll={handleScroll}
-        style={{
-          padding: "12px 16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
       >
         {/* Disclaimer clínico preventivo (Fase 9): no invasivo, siempre
             visible al inicio del listado. No sustituye atención de urgencia:
@@ -389,7 +423,11 @@ export function ChatPage() {
                 className={`chat-avatar${m.role === "alert" ? " chat-avatar-alert" : ""}`}
                 aria-hidden="true"
               >
-                {m.role === "alert" ? "!" : "AI"}
+                {m.role === "alert" ? (
+                  "!"
+                ) : (
+                  <IonIcon icon={sparkles} style={{ fontSize: 15 }} />
+                )}
               </div>
             ) : (
               <div className="chat-avatar chat-avatar-user" aria-hidden="true">
@@ -472,25 +510,12 @@ export function ChatPage() {
           </div>
         ))}
         {uploading && (
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              flexDirection: "row",
-            }}
-          >
+          <div className="chat-row">
             <div className="chat-avatar" aria-hidden="true">
-              AI
+              <IonIcon icon={sparkles} style={{ fontSize: 15 }} />
             </div>
-            <div>
-              <div
-                className="bub bub-bot"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+            <div className="chat-msg">
+              <div className="bub bub-bot chat-uploading">
                 <IonSpinner name="crescent" style={{ width: 16, height: 16 }} />
                 <span>{t("Analizando examen de laboratorio…")}</span>
               </div>
@@ -499,7 +524,32 @@ export function ChatPage() {
         )}
         <div ref={end} />
       </div>
-      <div className="composer">
+      {pendingImage && (
+        // Miniatura removible del adjunto pendiente (D3): preview + descarte,
+        // sobre el composer (patrón ChatGPT) para que el adjunto se vea
+        // junto al mensaje que lo llevará.
+        <div
+          className="chat-pending-image"
+          role="status"
+          aria-label={t("Imagen lista para enviar")}
+        >
+          <img src={pendingImage.dataUrl} alt={t("Imagen adjunta")} />
+          <span>{t("Imagen lista para enviar")}</span>
+          <IonButton
+            size="small"
+            fill="clear"
+            className="chat-pending-remove"
+            aria-label={t("Quitar imagen adjunta")}
+            onClick={() => setPendingImage(null)}
+          >
+            <IonIcon icon={closeCircle} style={{ fontSize: 22 }} />
+          </IonButton>
+        </div>
+      )}
+      {/* Compositor ChatGPT-style: [+ adjuntos] [voz] [entrada] [enviar].
+          El + abre la hoja de acciones (progressive disclosure) con las
+          fuentes de adjuntos; los mismos handlers subyacentes. */}
+      <div className="composer chat-composer">
         <input
           type="file"
           ref={fileInputRef}
@@ -508,47 +558,20 @@ export function ChatPage() {
           onChange={handleFileSelected}
         />
         <IonButton
-          className="bt bt-round"
-          style={
-            {
-              "--background": "var(--blue-l)",
-              "--color": "var(--blue)",
-            } as CSSProperties
-          }
+          className="bt bt-round chat-plus"
+          aria-label={t("Adjuntar al chat")}
+          disabled={uploading}
+          onClick={() => setAttachSheetOpen(true)}
+        >
+          <IonIcon icon={add} style={{ fontSize: 22 }} />
+        </IonButton>
+        <IonButton
+          className="bt bt-round chat-voice"
           aria-label={t("Agente de voz")}
           disabled={uploading}
           onClick={openVoice}
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
-        </IonButton>
-        {/* Foto conversacional (D3): cámara o galería con prompt nativo. */}
-        <IonButton
-          className="bt bt-round"
-          style={
-            {
-              "--background": "var(--teal-l)",
-              "--color": "var(--teal)",
-            } as CSSProperties
-          }
-          aria-label={t("Adjuntar imagen al chat")}
-          disabled={uploading || !!pendingImage}
-          onClick={() => void handleCaptureImage()}
-        >
-          <IonIcon icon={cameraOutline} style={{ fontSize: 20 }} />
-        </IonButton>
-        <IonButton
-          className="bt bt-round"
-          style={
-            {
-              "--background": "var(--blue-l)",
-              "--color": "var(--blue)",
-            } as CSSProperties
-          }
-          aria-label={t("Adjuntar examen")}
-          disabled={uploading}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <IonIcon icon={attach} style={{ fontSize: 20 }} />
         </IonButton>
         <IonInput
           className="chat-inp"
@@ -564,13 +587,7 @@ export function ChatPage() {
           transition={{ duration: 0.15 }}
         >
           <IonButton
-            className="bt bt-round"
-            style={
-              {
-                "--background": "var(--navy)",
-                "--color": "#fff",
-              } as CSSProperties
-            }
+            className="bt bt-round chat-send"
             aria-label={t("Enviar")}
             disabled={uploading}
             onClick={() => send()}
@@ -579,45 +596,29 @@ export function ChatPage() {
           </IonButton>
         </motion.span>
       </div>
-      {pendingImage && (
-        // Miniatura removible del adjunto pendiente (D3): preview + descarte.
-        <div
-          className="chat-pending-image"
-          role="status"
-          aria-label={t("Imagen lista para enviar")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "8px 16px",
-            background: "var(--teal-l)",
-            borderTop: "1px solid var(--bd)",
-          }}
-        >
-          <img
-            src={pendingImage.dataUrl}
-            alt={t("Imagen adjunta")}
-            style={{
-              width: 52,
-              height: 52,
-              objectFit: "cover",
-              borderRadius: 10,
-            }}
-          />
-          <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 600 }}>
-            {t("Imagen lista para enviar")}
-          </span>
-          <IonButton
-            size="small"
-            fill="clear"
-            aria-label={t("Quitar imagen adjunta")}
-            style={{ marginLeft: "auto", color: "var(--panic)" }}
-            onClick={() => setPendingImage(null)}
-          >
-            <IonIcon icon={closeCircle} style={{ fontSize: 22 }} />
-          </IonButton>
-        </div>
-      )}
+      <IonActionSheet
+        isOpen={attachSheetOpen}
+        onDidDismiss={() => setAttachSheetOpen(false)}
+        header={t("Adjuntar al chat")}
+        buttons={[
+          {
+            text: t("Tomar foto"),
+            icon: cameraOutline,
+            handler: () => void attachFromSource(CameraSource.Camera),
+          },
+          {
+            text: t("Fotos"),
+            icon: imagesOutline,
+            handler: () => void attachFromSource(CameraSource.Photos),
+          },
+          {
+            text: t("Archivo"),
+            icon: documentOutline,
+            handler: () => fileInputRef.current?.click(),
+          },
+          { text: t("Cancelar"), role: "cancel" as const },
+        ]}
+      />
     </Screen>
   );
 }

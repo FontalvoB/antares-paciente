@@ -35,15 +35,21 @@ export function dataUrlToBlob(
 
 /**
  * Captura de imagen conversacional (change agente-asistente-citas, D3).
- * Usa `@capacitor/camera` con ActionSheet nativa (cámara o galería),
- * salida Base64 JPEG y compresión fija para acotar el payload multimodal
- * (<1 MB). Desacoplado del flujo de exámenes de laboratorio.
- * Cancelación del usuario → null (nunca lanza).
+ * Usa `@capacitor/camera` con salida Base64 JPEG y compresión fija para acotar
+ * el payload multimodal (<1 MB). Desacoplado del flujo de exámenes de
+ * laboratorio. Cancelación del usuario → null (nunca lanza).
+ *
+ * `source` permite elegir la vía: `Prompt` (hoja nativa cámara/galería, por
+ * defecto) o una fuente explícita (`Camera`/`Photos`) cuando la UI ya la
+ * eligió — el composer del chat usa su propio ActionSheet y llama con la
+ * fuente concreta.
  */
-export async function captureChatImage(): Promise<ChatImageAttachment | null> {
+export async function captureChatImage(
+  source: CameraSource = CameraSource.Prompt,
+): Promise<ChatImageAttachment | null> {
   try {
     const photo = await Camera.getPhoto({
-      source: CameraSource.Prompt,
+      source,
       resultType: CameraResultType.Base64,
       quality: 75,
       // Redimensionado nativo: limita el peso del base64 en el body.

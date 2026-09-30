@@ -28,6 +28,36 @@ vi.mock("../../components/Screen", () => ({
   ),
 }));
 
+// Composer redesign (integración ElevenLabs): el adjuntar unificado usa
+// IonActionSheet, cuyo overlay real vive en shadow DOM (inaccesible en
+// jsdom). Este mock parcial renderiza sus botones en light DOM para poder
+// probar el flujo Tomar foto / Archivo. Todo lo demás de @ionic/react queda
+// intacto (IonButton, IonModal, IonIcon, ...).
+vi.mock("@ionic/react", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@ionic/react")>();
+  const IonActionSheetMock = ({
+    isOpen,
+    buttons,
+  }: {
+    isOpen?: boolean;
+    buttons?: Array<{ text: string; handler?: () => void; role?: string }>;
+  }) => {
+    if (!isOpen) return null;
+    return (
+      <div data-testid="attach-sheet">
+        {buttons
+          ?.filter((b) => b.role !== "cancel")
+          .map((b) => (
+            <button key={b.text} onClick={b.handler}>
+              {b.text}
+            </button>
+          ))}
+      </div>
+    );
+  };
+  return { ...mod, IonActionSheet: IonActionSheetMock };
+});
+
 // Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   lang: "en" as "es" | "en",
@@ -92,7 +122,10 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
   it("renders attachment button and hidden file input with accepted types", () => {
     const { container } = render(<ChatPage />);
 
-    const attachButton = screen.getByLabelText("Adjuntar examen");
+    // Composer redesign: el adjuntar unificado es el botón [+] del composer
+    // (ActionSheet con foto/galería/archivo). El input oculto del examen de
+    // laboratorio se conserva con sus tipos y límites.
+    const attachButton = screen.getByLabelText("Adjuntar al chat");
     expect(attachButton).toBeTruthy();
 
     const fileInput = container.querySelector(
@@ -294,7 +327,9 @@ describe("ChatPage — CTA de agendamiento y imagen conversacional (REQ-AG-02/03
 
     const { container } = render(<ChatPage />);
 
-    fireEvent.click(screen.getByLabelText("Adjuntar imagen al chat"));
+    // [+] → ActionSheet → Tomar foto (flujo real del composer rediseñado).
+    fireEvent.click(screen.getByLabelText("Adjuntar al chat"));
+    fireEvent.click(await screen.findByText("Tomar foto"));
     await waitFor(() => {
       expect(screen.getByLabelText("Imagen lista para enviar")).toBeTruthy();
     });
@@ -328,7 +363,8 @@ describe("ChatPage — CTA de agendamiento y imagen conversacional (REQ-AG-02/03
     });
 
     render(<ChatPage />);
-    fireEvent.click(screen.getByLabelText("Adjuntar imagen al chat"));
+    fireEvent.click(screen.getByLabelText("Adjuntar al chat"));
+    fireEvent.click(await screen.findByText("Tomar foto"));
     await waitFor(() => {
       expect(screen.getByLabelText("Imagen lista para enviar")).toBeTruthy();
     });
