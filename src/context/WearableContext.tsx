@@ -79,9 +79,14 @@ const SYNC_DUMP_MARGIN_MS = 30_000;
 /**
  * Escalera de reintentos de la reconexión automática: al abrir la app el
  * wearable puede tardar en anunciarse (o estar dormido), y un único intento
- * dejaba al usuario con el botón "Reconectar" en pantalla.
+ * dejaba al usuario con el botón "Reconectar" en pantalla. Tras la escalera
+ * NO se abandona: queda un intento lento cada `AUTO_RECONNECT_RETRY_MS`
+ * mientras la app esté en primer plano (la conexión BLE no sobrevive al
+ * cierre de la app; lo persistente es la identidad + este reintento).
  */
 const AUTO_RECONNECT_DELAYS_MS = [0, 5_000, 15_000, 30_000, 60_000];
+/** Ritmo lento indefinido una vez agotada la escalera inicial. */
+const AUTO_RECONNECT_RETRY_MS = 120_000;
 
 export interface WearableState {
   phase: WearablePhase;
@@ -669,14 +674,11 @@ export function WearableProvider({ children }: { children: ReactNode }) {
           resetSessionState();
           // Una reconexión automática fallida no invade la pantalla con un
           // error: queda la tarjeta de "Último dispositivo" para reintentar.
+          // El dispositivo guardado SOLO se olvida ante un firmware realmente
+          // incompatible: un "not found" transitorio (anillo dormido/fuera de
+          // alcance) no borra la memoria, la escalera sigue intentando.
           const wearableError = toWearableError(err, "connection-failed");
-          if (
-            silent &&
-            (wearableError.code === "unsupported-device" ||
-              /not found|unknown device|invalid.*device|no device/i.test(
-                wearableError.message,
-              ))
-          ) {
+          if (silent && wearableError.code === "unsupported-device") {
             clearSavedDevice();
             setSavedDevice(null);
           }
@@ -881,12 +883,21 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Reintentos automáticos escalonados: al abrir la app el anillo puede estar
-   * dormido o tardar en anunciarse, así que un único intento no basta. La
-   * escalera se reinicia al conectar y al volver del segundo plano.
+   * Reintentos automáticos: escalera rápida al abrir y luego un ritmo lento
+   * INDEFINIDO en primer plano (antes se abandonaba a los ~2 min y el anillo
+   * dormido quedaba sin reconectar hasta el toque manual).
    */
   const scheduleAutoReconnect = useCallback(() => {
-    if (autoAttempt.current >= AUTO_RECONNECT_DELAYS_MS.length) return;
+    if (autoAttempt.current >= AUTO_RECONNECT_DELAYS_MS.length) {
+      // Escalera agotada: reintento lento cada 2 min hasta conectar.
+      window.clearTimeout(autoTimer.current);
+      autoTimer.current = window.setTimeout(() => {
+        if (phaseRef.current === "connected" || !appActiveRef.current) return;
+        tryAutoReconnect(true);
+        scheduleAutoReconnect();
+      }, AUTO_RECONNECT_RETRY_MS);
+      return;
+    }
     const delay = AUTO_RECONNECT_DELAYS_MS[autoAttempt.current] ?? 0;
     autoAttempt.current += 1;
     window.clearTimeout(autoTimer.current);
