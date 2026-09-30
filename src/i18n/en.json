@@ -1,5 +1,10 @@
 {
   "Registrar peso": "Record weight",
+  "Conectando…": "Connecting…",
+  "Pensando…": "Thinking…",
+  "Se perdió la conexión con el asistente.": "The assistant connection was lost.",
+  "No pudimos conectar con el asistente. Intenta nuevamente.": "We couldn't reach the assistant. Please try again.",
+  "La conversación queda en tu chat.": "The conversation is saved in your chat.",
   "Peso (kg)": "Weight (kg)",
   "Entre 1 y 500 kg. Hasta dos decimales.": "Between 1 and 500 kg. Up to two decimal places.",
   "Fecha del registro": "Record date",

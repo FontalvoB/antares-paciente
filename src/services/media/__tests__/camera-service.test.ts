@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { captureChatImage } from "../camera-service";
+import { captureChatImage, dataUrlToBlob } from "../camera-service";
 
 /**
- * REQ-AG-03 (change agente-asistente-citas, D3): captura conversacional con
- * @capacitor/camera — ActionSheet (cámara/galería), salida Base64 JPEG
- * comprimida, dataUrl para la miniatura y cancelación limpia (null).
+ * Tests de `captureChatImage` (REQ-AG-03) y del helper `dataUrlToBlob`
+ * (BUG TestFlight P1: conversión dataUrl→Blob con type image/jpeg).
  */
 
 const getPhotoMock = vi.fn();
@@ -66,5 +65,50 @@ describe("captureChatImage — selección conversacional de imágenes", () => {
     });
 
     await expect(captureChatImage()).resolves.toBeNull();
+  });
+});
+
+describe("dataUrlToBlob — conversión dataUrl → Blob (BUG TestFlight P1)", () => {
+  it("decodifica base64 a los bytes exactos y declara el MIME del dataUrl", () => {
+    // "hola" en base64 = bytes [104, 111, 108, 97]
+    const blob = dataUrlToBlob("data:image/jpeg;base64,aG9sYQ==");
+
+    expect(blob.type).toBe("image/jpeg");
+    expect(blob.size).toBe(4);
+  });
+
+  it("usa el MIME forzado (override) cuando se provee", () => {
+    const blob = dataUrlToBlob("data:image/png;base64,cG5n", "image/jpeg");
+    expect(blob.type).toBe("image/jpeg");
+    expect(blob.size).toBe(3);
+  });
+
+  it("sin override respeta el MIME declarado (png)", () => {
+    const blob = dataUrlToBlob("data:image/png;base64,cG5n");
+    expect(blob.type).toBe("image/png");
+  });
+
+  it("bytes no truncados (payload con byte 0xFF > 127)", () => {
+    // 0xFF 0x00: base64 = /wA=
+    const blob = dataUrlToBlob("data:image/jpeg;base64,/wA=");
+    expect(blob.size).toBe(2);
+  });
+
+  it("lanza error ante un dataUrl sin base64", () => {
+    expect(() => dataUrlToBlob("data:image/jpeg,percent%20encoded")).toThrow(
+      "data URL base64 inválida",
+    );
+  });
+
+  it("lanza error ante una cadena que no es dataUrl", () => {
+    expect(() => dataUrlToBlob("no-es-data-url")).toThrow(
+      "data URL base64 inválida",
+    );
+  });
+
+  it("blob legible como bytes originales (roundtrip)", async () => {
+    const blob = dataUrlToBlob("data:image/jpeg;base64,aGVsbG8=");
+    const text = await blob.text();
+    expect(text).toBe("hello");
   });
 });

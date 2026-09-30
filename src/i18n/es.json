@@ -1,5 +1,10 @@
 {
   "Registrar peso": "Registrar peso",
+  "Conectando…": "Conectando…",
+  "Pensando…": "Pensando…",
+  "Se perdió la conexión con el asistente.": "Se perdió la conexión con el asistente.",
+  "No pudimos conectar con el asistente. Intenta nuevamente.": "No pudimos conectar con el asistente. Intenta nuevamente.",
+  "La conversación queda en tu chat.": "La conversación queda en tu chat.",
   "Peso (kg)": "Peso (kg)",
   "Entre 1 y 500 kg. Hasta dos decimales.": "Entre 1 y 500 kg. Hasta dos decimales.",
   "Fecha del registro": "Fecha del registro",
