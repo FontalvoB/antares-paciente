@@ -38,6 +38,10 @@
 	<string>Copp Adresd guarda las fotos de tus comidas para tu registro nutricional.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Copp Adresd accede a tus fotos para analizar tus comidas.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
