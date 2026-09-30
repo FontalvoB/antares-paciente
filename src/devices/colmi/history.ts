@@ -230,7 +230,8 @@ function sample(
   ts: number,
   agg?: "sum",
 ): HealthSample {
-  return { metric, value, unit, ts, deviceId, ...(agg ? { agg } : {}) };
+  // Este archivo decodifica el volcado de historial de la banda.
+  return { metric, value, unit, ts, deviceId, source: "history", ...(agg ? { agg } : {}) };
 }
 
 /**

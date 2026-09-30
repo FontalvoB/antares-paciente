@@ -332,6 +332,7 @@ export function decodeSleepBlob(
       unit: "min",
       ts: wake,
       deviceId,
+      source: "history",
     });
   }
   return out;
@@ -365,6 +366,7 @@ export function decodeSpo2Hours(
       unit: "%",
       ts: base + hour * 60 * 60_000,
       deviceId,
+      source: "history",
     });
   }
   return out;

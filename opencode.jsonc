@@ -35,9 +35,7 @@
       "description": "Revisor Ionic/React sin editar",
       "mode": "subagent",
       "system": "Revisor Ionic/React senior. Analiza sin editar: uso Ionic-first, composición, hooks, accesibilidad, i18n completo, rendimiento. Cita archivo:línea.",
-      "permissions": [
-        { "action": "edit", "resource": "*", "effect": "deny" },
-      ],
+      "permissions": [{ "action": "edit", "resource": "*", "effect": "deny" }],
     },
   },
   "experimental": {

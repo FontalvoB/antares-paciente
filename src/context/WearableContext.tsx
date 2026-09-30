@@ -13,6 +13,7 @@ import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useQueryClient } from "@tanstack/react-query";
 import * as ble from "../devices/ble/ble-client";
+import { nextHeartbeatDecision } from "../devices/heartbeat";
 import { DIAG_LOG_LIMIT, shortUuid } from "../devices/diagnostics";
 import type { DiagEntry } from "../devices/diagnostics";
 import {
@@ -38,6 +39,7 @@ import { programKeys } from "../hooks/queryKeys";
 import { recordDeviceMetrics } from "../services/program/metrics-history-service";
 import { toLocalISODate } from "../utils/dates";
 import { putNewestSample } from "../utils/samples";
+import { wearingInfoUpdate } from "../utils/wearing";
 import { useT } from "../i18n/I18nContext";
 import { useApp } from "./AppContext";
 import type {
@@ -70,6 +72,10 @@ const SESSION_STALE_MS = 120_000;
 const SESSION_LIVENESS_TICK_MS = 30_000;
 /** Tope duro de un sync completo: si algo se cuelga, la UI se libera sola. */
 const SYNC_SAFETY_MS = 120_000;
+/** Margen por medida sobre su ventana al re-armar la red del sync. */
+const MEASURE_GUARD_MARGIN_MS = 5_000;
+/** Margen para el volcado de historial + respiros al re-armar la red. */
+const SYNC_DUMP_MARGIN_MS = 30_000;
 /**
  * Escalera de reintentos de la reconexión automática: al abrir la app el
  * wearable puede tardar en anunciarse (o estar dormido), y un único intento
@@ -105,6 +111,10 @@ export interface WearableState {
   measure(kind: MetricKind, onDone?: MeasureCallback): void;
   /** Ventana/umbral de la medida de una métrica (cronómetro de la UI). */
   measurePolicy(kind: MetricKind): MeasurePolicy | undefined;
+  /** Detiene la medida puntual en curso (Cancelar de la vista de foco). */
+  stopMeasure(): void;
+  /** Cancela un `syncAll` en curso (Cancelar de la vista de foco). */
+  cancelSync(): void;
   /** true mientras corre un volcado de historial (sueño, pasos…). */
   syncing: boolean;
   /** Epoch ms del último volcado completado. */
@@ -116,9 +126,9 @@ export interface WearableState {
    */
   sessionStale: boolean;
   /** Volcado + medidas pendientes: deja todas las métricas al día. */
-  syncAll(options?: { forceMeasure?: readonly MetricKind[] }): Promise<
-    MetricKind[]
-  >;
+  syncAll(options?: {
+    forceMeasure?: readonly MetricKind[];
+  }): Promise<MetricKind[]>;
   /** Medida puntual en curso dentro de un sync (para el cronómetro de la UI). */
   syncStage: { kind: MetricKind; startedAt: number } | null;
   /** Re-pide info del dispositivo (batería/firmware) al driver conectado. */
@@ -191,6 +201,10 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   /** Evita que historia, medidas manuales y sync compitan por el mismo sensor. */
   const operationRef = useRef<WearableOperation | null>(null);
   const queuedSyncRef = useRef(false);
+  /** Pings de presencia sin respuesta acumulados (ver heartbeat). */
+  const heartbeatMisses = useRef(0);
+  /** La vista de foco pidió cancelar el sync: el bucle de etapas sale solo. */
+  const cancelSyncRef = useRef(false);
   const appActiveRef = useRef(true);
   /** Invalida callbacks de una conexión anterior que llegue tarde. */
   const sessionGenerationRef = useRef(0);
@@ -246,10 +260,19 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       intentionalDisconnect.current = false;
       return;
     }
+    const session = sessionRef.current;
+    const deviceId = device?.deviceId;
     resetSessionState();
     app.disconnectWearable();
+    // Cierre ordenado: soltar suscripciones y el enlace (antes se abandonaban
+    // y solo un reintento fallido los limpiaba de rebote).
+    void (async () => {
+      if (session) await session.stop().catch(() => undefined);
+      if (deviceId) await ble.disconnectDevice(deviceId).catch(() => undefined);
+    })();
     app.showToast(t("Se perdió la conexión con el dispositivo"), "warn");
-  }, [app, resetSessionState, t]);
+    startAutoReconnectRef.current();
+  }, [app, device, resetSessionState, t]);
 
   /**
    * Envía el acumulado del día al backend (upsert por día y métrica). Se
@@ -318,6 +341,10 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   const handleSample = useCallback((sample: HealthSample) => {
     lastSeenAtRef.current = Date.now();
+    setInfo((prev) => {
+      const update = wearingInfoUpdate(sample, prev);
+      return update ? { ...prev, ...update } : prev;
+    });
     setSamples((prev) => putNewestSample(prev, sample));
 
     const day = toLocalISODate();
@@ -441,72 +468,107 @@ export function WearableProvider({ children }: { children: ReactNode }) {
    */
   const syncAll = useCallback(
     async (options?: { forceMeasure?: readonly MetricKind[] }) => {
-    if (operationRef.current !== null) {
-      if (operationRef.current === "measure") queuedSyncRef.current = true;
-      return [];
-    }
-    operationRef.current = "sync";
-    setSyncing(true);
-    const safety = window.setTimeout(() => {
-      setSyncStage(null);
-      setSyncing(false);
-      operationRef.current = null;
-      queuedSyncRef.current = false;
-    }, SYNC_SAFETY_MS);
-    /** Métricas que se midieron de verdad (para que la UI no espere de más). */
-    const measured: MetricKind[] = [];
-    try {
-      await runSync();
-      // Respiro tras el volcado: la primera medida forzada no debe llegar justo
-      // cuando el dump cierra (el anillo a veces la ignora y cierra en timeout).
-      await new Promise<void>((resolve) =>
-        window.setTimeout(resolve, SYNC_SETTLE_MS),
-      ).catch(() => undefined);
-      const session = sessionRef.current;
-      if (!session?.measure) return measured;
-      const stale = staleMeasureKinds(
-        session.measureKinds ?? measureKinds,
-        samplesRef.current,
-        Date.now(),
-      );
-      // `forceMeasure` mide aunque no esté vencida (check-in clínico).
-      const toMeasure = [...stale];
-      for (const kind of options?.forceMeasure ?? []) {
-        if (!toMeasure.includes(kind)) toMeasure.push(kind);
+      if (operationRef.current !== null) {
+        if (operationRef.current === "measure") queuedSyncRef.current = true;
+        return [];
       }
-      for (const kind of toMeasure) {
-        measured.push(kind);
-        setSyncStage({ kind, startedAt: Date.now() });
-        let ok = false;
-        await new Promise<void>((resolve) => {
-          const policy = session.measurePolicy?.(kind);
-          // Tope por medida (ventana del driver + margen): si el driver no
-          // avisa nunca, la secuencia continúa en vez de dejar "Midiendo…".
-          const guard = window.setTimeout(
-            resolve,
-            (policy?.windowMs ?? 30_000) + 5_000,
-          );
-          session.measure?.(kind, (done) => {
-            ok = done;
-            window.clearTimeout(guard);
-            resolve();
-          });
-        });
-        // El anillo suele guardar la SpO2 que no llegó a tiempo: un volcado
-        // extra la trae del historial sin que el usuario reintente.
-        if (kind === "spo2" && !ok) await runSync();
-      }
-      return measured;
-    } finally {
-      window.clearTimeout(safety);
-      setSyncStage(null);
-      setSyncing(false);
-      operationRef.current = null;
-      if (queuedSyncRef.current) {
+      operationRef.current = "sync";
+      setSyncing(true);
+      cancelSyncRef.current = false;
+      // Red de seguridad: se re-arma con el costo real una vez conocida la
+      // lista a medir (un fijo quedaría corto con ventanas largas: anillo
+      // 30+60+90 s > 120 s y el sync se "cerraba" solo a la mitad).
+      let safety = window.setTimeout(() => {
+        setSyncStage(null);
+        setSyncing(false);
+        operationRef.current = null;
         queuedSyncRef.current = false;
-        void syncHistoryRef.current();
+      }, SYNC_SAFETY_MS);
+      /** Métricas que se midieron de verdad (para que la UI no espere de más). */
+      const measured: MetricKind[] = [];
+      try {
+        await runSync();
+        // Respiro tras el volcado: la primera medida forzada no debe llegar justo
+        // cuando el dump cierra (el anillo a veces la ignora y cierra en timeout).
+        await new Promise<void>((resolve) =>
+          window.setTimeout(resolve, SYNC_SETTLE_MS),
+        ).catch(() => undefined);
+        const session = sessionRef.current;
+        if (!session?.measure) return measured;
+        const stale = staleMeasureKinds(
+          session.measureKinds ?? measureKinds,
+          samplesRef.current,
+          Date.now(),
+        );
+        // `forceMeasure` mide aunque no esté vencida (check-in clínico).
+        const toMeasure = [...stale];
+        for (const kind of options?.forceMeasure ?? []) {
+          if (!toMeasure.includes(kind)) toMeasure.push(kind);
+        }
+        // Re-arme de la red con el costo real: suma de ventanas + margen de
+        // volcado. Un fijo mataría un sync largo de anillo antes de terminar.
+        // La FC persistente aporta 5 ventanas (re-enganches en borde de ventana).
+        window.clearTimeout(safety);
+        const safetyBudget = toMeasure.reduce(
+          (total, kind) =>
+            total +
+            (session.measurePolicy?.(kind)?.windowMs ?? 30_000) *
+              (kind === "heart_rate" ? 5 : 1) +
+            MEASURE_GUARD_MARGIN_MS,
+          SYNC_DUMP_MARGIN_MS,
+        );
+        safety = window.setTimeout(() => {
+          setSyncStage(null);
+          setSyncing(false);
+          operationRef.current = null;
+          queuedSyncRef.current = false;
+        }, safetyBudget);
+        for (const kind of toMeasure) {
+          // Cancelación del usuario (vista de foco): no arrancar más etapas y
+          // salir sin el volcado extra de SpO2.
+          if (cancelSyncRef.current) break;
+          measured.push(kind);
+          setSyncStage({ kind, startedAt: Date.now() });
+          let ok = false;
+          let closed = false;
+          await new Promise<void>((resolve) => {
+            const policy = session.measurePolicy?.(kind);
+            // Tope por medida (ventana del driver + margen): si el driver no
+            // avisa nunca, la secuencia continúa en vez de dejar "Midiendo…".
+            // La FC persistente recibe 5 ventanas para no wedgar la cola si el
+            // sensor queda mudo de verdad (la tarjeta la espera sin tope).
+            const guardBudget =
+              kind === "heart_rate"
+                ? (policy?.windowMs ?? 30_000) * 5 + 5_000
+                : (policy?.windowMs ?? 30_000) + 5_000;
+            const guard = window.setTimeout(resolve, guardBudget);
+            session.measure?.(kind, (done) => {
+              ok = done;
+              closed = true;
+              window.clearTimeout(guard);
+              resolve();
+            });
+          });
+          // El guard cortó pero el driver sigue midiendo: pararlo para que no
+          // mida en el vacío mientras la secuencia ya avanzó (cierra como
+          // "cancelled", sin toast ni reintento).
+          if (!closed) session.stopMeasure?.();
+          if (cancelSyncRef.current) break;
+          // El anillo suele guardar la SpO2 que no llegó a tiempo: un volcado
+          // extra la trae del historial sin que el usuario reintente.
+          if (kind === "spo2" && !ok) await runSync();
+        }
+        return measured;
+      } finally {
+        window.clearTimeout(safety);
+        setSyncStage(null);
+        setSyncing(false);
+        operationRef.current = null;
+        if (queuedSyncRef.current) {
+          queuedSyncRef.current = false;
+          void syncHistoryRef.current();
+        }
       }
-    }
     },
     [measureKinds, runSync],
   );
@@ -661,22 +723,35 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     if (!target || phase === "connecting" || phase === "connected") return;
     connect(target, { silent: true });
   }, [connect, phase, savedDevice]);
-  const reconnectRef = useRef(reconnect);
-  reconnectRef.current = reconnect;
+  /** La escalera de reconexión, llamable desde caídas inesperadas. */
+  const startAutoReconnectRef = useRef<() => void>(() => undefined);
 
   /**
-   * Liveness: la banda puede dejar de emitir sin evento (fuera de rango,
-   * apagada) y el flag de la app quedaría mintiendo. Si no hay ninguna
-   * notificación en `SESSION_STALE_MS`, la sesión está muerta: se resetea, se
-   * limpia el flag, se avisa y se intenta reconectar en silencio.
+   * Presencia: el silencio solo marca la UI como rancia (`sessionStale`), NO
+   * tumba la sesión — el anillo es callado por diseño entre barridos y antes
+   * este timer lo desconectaba a los 2 min (la banda nunca cae porque emite
+   * sin parar). En quietud se pide un ping liviano (batería/info); su
+   * respuesta refresca la presencia sola. N pings sin respuesta = enlace
+   * realmente caído: ahí sí se desmonta y arranca la escalera.
    */
   useEffect(() => {
     if (phase !== "connected") return;
     const timer = window.setInterval(() => {
-      if (Date.now() - lastSeenAtRef.current <= SESSION_STALE_MS) return;
-      setSessionStale(true);
-      handleUnexpectedDisconnect();
-      reconnectRef.current();
+      const idleFor = Date.now() - lastSeenAtRef.current;
+      setSessionStale(idleFor > SESSION_STALE_MS);
+      if (operationRef.current !== null) return;
+      if (!appActiveRef.current) return;
+      const decision = nextHeartbeatDecision(
+        idleFor,
+        SESSION_STALE_MS,
+        heartbeatMisses.current,
+      );
+      heartbeatMisses.current = decision.misses;
+      if (decision.action === "ping") {
+        sessionRef.current?.requestInfo?.();
+      } else if (decision.action === "dead") {
+        handleUnexpectedDisconnect();
+      }
     }, SESSION_LIVENESS_TICK_MS);
     return () => window.clearInterval(timer);
   }, [phase, handleUnexpectedDisconnect]);
@@ -699,48 +774,66 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   const clearLog = useCallback(() => setLog([]), []);
 
-  const measure = useCallback(
-    (kind: MetricKind, onDone?: MeasureCallback) => {
-      if (operationRef.current === "sync") {
-        onDone?.(false, "replaced");
-        return;
+  const measure = useCallback((kind: MetricKind, onDone?: MeasureCallback) => {
+    if (operationRef.current === "sync") {
+      onDone?.(false, "replaced");
+      return;
+    }
+    if (operationRef.current === "measure") {
+      onDone?.(false, "replaced");
+      return;
+    }
+    operationRef.current = "measure";
+    let completed = false;
+    const finish = (ok: boolean, reason: Parameters<MeasureCallback>[1]) => {
+      if (completed) return;
+      completed = true;
+      operationRef.current = null;
+      onDone?.(ok, reason);
+      if (queuedSyncRef.current) {
+        queuedSyncRef.current = false;
+        void syncHistoryRef.current();
       }
-      if (operationRef.current === "measure") {
-        onDone?.(false, "replaced");
-        return;
-      }
-      operationRef.current = "measure";
-      let completed = false;
-      const finish = (ok: boolean, reason: Parameters<MeasureCallback>[1]) => {
-        if (completed) return;
-        completed = true;
-        operationRef.current = null;
-        onDone?.(ok, reason);
-        if (queuedSyncRef.current) {
-          queuedSyncRef.current = false;
-          void syncHistoryRef.current();
-        }
-      };
-      const session = sessionRef.current;
-      if (!session?.measure) {
-        finish(false, "refused");
-        return;
-      }
-      session.measure(kind, (ok, reason) => {
-        finish(ok, reason);
-        // Mismo caso que en el sync: la lectura puede estar en el historial.
-        if (!ok && kind === "spo2") void syncHistoryRef.current();
-      });
-    },
-    [],
-  );
+    };
+    const session = sessionRef.current;
+    if (!session?.measure) {
+      finish(false, "refused");
+      return;
+    }
+    session.measure(kind, (ok, reason) => {
+      finish(ok, reason);
+      // Mismo caso que en el sync: la lectura puede estar en el historial.
+      if (!ok && kind === "spo2") void syncHistoryRef.current();
+    });
+  }, []);
 
-  const measurePolicy = useCallback(
-    (kind: MetricKind) => {
-      return sessionRef.current?.measurePolicy?.(kind);
-    },
-    [],
-  );
+  const measurePolicy = useCallback((kind: MetricKind) => {
+    return sessionRef.current?.measurePolicy?.(kind);
+  }, []);
+
+  /**
+   * Detiene la medida puntual en curso (Cancelar de la vista de foco): para
+   * el sensor en el driver y libera el candado de operación para que la UI
+   * pueda medir de nuevo. Sin medida en curso no hace nada.
+   */
+  const stopMeasure = useCallback(() => {
+    sessionRef.current?.stopMeasure?.();
+    if (operationRef.current === "measure") operationRef.current = null;
+  }, []);
+
+  /**
+   * Cancela un `syncAll` en curso (Cancelar de la vista de foco durante una
+   * secuencia): marca la salida, para la medida actual en el driver y limpia
+   * la UI de inmediato; el bucle de etapas sale solo al resolver sus esperas.
+   */
+  const cancelSync = useCallback(() => {
+    cancelSyncRef.current = true;
+    sessionRef.current?.stopMeasure?.();
+    setSyncStage(null);
+    setSyncing(false);
+    operationRef.current = null;
+    queuedSyncRef.current = false;
+  }, []);
 
   const refreshInfo = useCallback(() => {
     sessionRef.current?.requestInfo?.();
@@ -808,6 +901,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     autoAttempt.current = 0;
     scheduleAutoReconnect();
   }, [scheduleAutoReconnect]);
+  startAutoReconnectRef.current = startAutoReconnect;
 
   const stopAutoReconnect = useCallback(() => {
     window.clearTimeout(autoTimer.current);
@@ -915,6 +1009,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       measureKinds,
       measure,
       measurePolicy,
+      stopMeasure,
+      cancelSync,
       syncing,
       lastSyncAt,
       syncHistory,
@@ -949,6 +1045,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       measureKinds,
       measure,
       measurePolicy,
+      stopMeasure,
+      cancelSync,
       syncing,
       lastSyncAt,
       syncHistory,
