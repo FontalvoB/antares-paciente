@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { IonButton, IonIcon, IonModal, IonSpinner } from "@ionic/react";
-import { call, mic, micOff } from "ionicons/icons";
+import { IonButton, IonIcon, IonInput, IonModal } from "@ionic/react";
+import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
@@ -53,6 +53,7 @@ interface VoiceShellProps {
   muted: boolean;
   onToggleMute: () => void;
   onHangUp: () => void;
+  onSendText?: (text: string) => void;
 }
 
 /** Cápsula visual única: pantalla de llamada inmersiva (estilo llamada de
@@ -66,59 +67,42 @@ function VoiceShell({
   muted,
   onToggleMute,
   onHangUp,
+  onSendText,
 }: VoiceShellProps) {
   const t = useT();
+  const [text, setText] = useState("");
   const orbClass = `voice-orb vc-orb is-${phase}`;
+  const submitText = (event: React.FormEvent) => {
+    event.preventDefault();
+    const message = text.trim();
+    if (!message || !onSendText) return;
+    onSendText(message);
+    setText("");
+  };
   return (
-    <>
-      {/* Encabezado de la llamada */}
-      <div className="vc-head">
-        <div className="vc-head-brand" aria-hidden="true">
-          <IonIcon icon={mic} />
+    <div className="vc-shell">
+      <IonButton fill="clear" className="vc-back" aria-label={t("Volver al chat")} onClick={onHangUp}>
+        <IonIcon icon={chevronBack} />
+      </IonButton>
+      <div className="vc-center">
+        <div className={orbClass} aria-hidden="true">
+          {phase === "thinking" ? <span className="vc-orb-dots">•••</span> : null}
         </div>
-        <div className="display vc-title">{t("Agente de voz Copp Adresd")}</div>
-        <div className="vc-sub">
-          {t(
-            "Habla con naturalidad sobre síntomas, citas, medicamentos o tu plan nutricional.",
-          )}
+        <div className={`vc-status is-${phase}`} aria-live="polite">{statusLabel}</div>
+        <div className="vc-transcript" aria-live="polite">
+          {transcriptLine || t("Presiona el micrófono y háblame: te escucho en tiempo real.")}
         </div>
       </div>
-
-      {/* Orb reactivo: escucha (anillo rotatorio), habla (ondas), piensa
-          (spinner), conecta (pulso suave) o silenciado (gris). */}
-      <div className={orbClass} aria-hidden="true">
-        {phase === "connecting" || phase === "thinking" ? (
-          <IonSpinner name="crescent" className="vc-orb-spin" />
-        ) : (
-          <IonIcon icon={muted ? micOff : mic} className="vc-orb-ico" />
-        )}
-      </div>
-
-      {/* Estado: punto de color + etiqueta existente (t()) + ondas sutiles
-          que solo animan al responder. */}
-      <div className={`vc-status is-${phase}`}>
-        <span className="vc-status-dot" aria-hidden="true" />
-        <span
-          className={`waves vc-status-waves${phase === "speaking" ? " live" : ""}`}
-          aria-hidden="true"
-        >
-          <span className="wave" />
-          <span className="wave" />
-          <span className="wave" />
-          <span className="wave" />
-          <span className="wave" />
-        </span>
-        {statusLabel}
-      </div>
-
-      {/* Transcripción en vivo (tarjeta glass). */}
-      <div className="vc-transcript" aria-live="polite">
-        {transcriptLine ||
-          t("Presiona el micrófono y háblame: te escucho en tiempo real.")}
-      </div>
-
-      {/* Controles de llamada: mute + colgar (72px, targets generosos). */}
-      <div className="vc-controls">
+      <form className="vc-controls" onSubmit={submitText}>
+        <IonInput
+          className="vc-input"
+          value={text}
+          disabled={!onSendText}
+          onIonInput={(event) => setText(event.detail.value ?? "")}
+          placeholder={t("Escribe un mensaje…")}
+          aria-label={t("Escribe un mensaje…")}
+          enterkeyhint="send"
+        />
         <IonButton
           className="bt vc-btn vc-mute"
           aria-pressed={muted}
@@ -134,14 +118,8 @@ function VoiceShell({
         >
           <IonIcon icon={call} />
         </IonButton>
-      </div>
-
-      {/* Regreso claro al chat de texto: termina la llamada igual que
-          colgar (mismo handler), con affordance textual accesible. */}
-      <IonButton fill="clear" className="vc-back" onClick={onHangUp}>
-        {t("Volver al chat")}
-      </IonButton>
-    </>
+      </form>
+    </div>
   );
 }
 
@@ -519,6 +497,7 @@ function ElevenVoiceBody({
       muted={eleven.isMuted}
       onToggleMute={() => eleven.setMuted(!eleven.isMuted)}
       onHangUp={onHangUp}
+      onSendText={(text) => eleven.sendUserMessage(text)}
     />
   );
 }

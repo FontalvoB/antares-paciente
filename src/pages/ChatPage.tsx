@@ -413,12 +413,16 @@ export function ChatPage() {
             <span>{t("Inicio de la conversación")}</span>
           </div>
         ) : null}
-        {chat.map((m) => (
+        {chat.map((m, index) => {
+          const isLastInGroup =
+            index === chat.length - 1 || chat[index + 1].role !== m.role;
+          const isUser = m.role === "user";
+          return (
           <div
             key={m.id}
-            className={`chat-row${m.role === "user" ? " chat-row-user" : ""}`}
+            className={`chat-row${isUser ? " chat-row-user" : ""}${isLastInGroup ? " chat-row-group-end" : " chat-row-group-middle"}`}
           >
-            {m.role !== "user" ? (
+            {!isUser && isLastInGroup ? (
               <div
                 className={`chat-avatar${m.role === "alert" ? " chat-avatar-alert" : ""}`}
                 aria-hidden="true"
@@ -429,14 +433,12 @@ export function ChatPage() {
                   <IonIcon icon={sparkles} style={{ fontSize: 15 }} />
                 )}
               </div>
-            ) : (
-              <div className="chat-avatar chat-avatar-user" aria-hidden="true">
-                {userInitial}
-              </div>
-            )}
+            ) : !isUser ? (
+              <div className="chat-avatar chat-avatar-spacer" aria-hidden="true" />
+            ) : null}
             <div className="chat-msg">
               <div
-                className={`bub ${m.role === "user" ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
+                className={`bub ${isUser ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
               >
                 {m.role === "user" && m.image && (
                   // Miniatura de la imagen conversacional adjunta (D3):
@@ -507,8 +509,14 @@ export function ChatPage() {
               </div>
               <div className="chat-time">{m.time}</div>
             </div>
+            {isUser && (isLastInGroup ? (
+              <div className="chat-avatar chat-avatar-user" aria-hidden="true">
+                {userInitial}
+              </div>
+              ) : <div className="chat-avatar chat-avatar-spacer" aria-hidden="true" />)}
           </div>
-        ))}
+          );
+        })}
         {uploading && (
           <div className="chat-row">
             <div className="chat-avatar" aria-hidden="true">
