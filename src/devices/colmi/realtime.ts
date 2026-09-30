@@ -19,39 +19,50 @@ export interface HeartRateReading {
 /** Rango plausible de FC (lpm) para el layout en décimas. */
 const HR_MIN = 300;
 const HR_MAX = 2200;
+/** Lo mismo en lpm enteros para el layout clásico (byte). */
+const HR_BYTE_MIN = 30;
+const HR_BYTE_MAX = 220;
 
 /**
  * FC de una trama en vivo, tolerando los dos layouts conocidos. Devuelve null
  * si no hay lectura (el ack de la banda llega con todo en cero) o si el valor
- * en décimas cae fuera del rango humano.
+ * cae fuera del rango humano.
  */
 export function heartRateFromPayload(
   payload: Uint8Array,
 ): HeartRateReading | null {
   const classic = payload[2] ?? 0;
-  if (classic > 0) return { bpm: classic, layout: "byte" };
+  if (classic >= HR_BYTE_MIN && classic <= HR_BYTE_MAX) {
+    return { bpm: classic, layout: "byte" };
+  }
+  if (classic > 0) return null;
   const raw = (payload[5] ?? 0) | ((payload[6] ?? 0) << 8);
   if (raw < HR_MIN || raw > HR_MAX) return null;
   return { bpm: Math.round(raw / 10), layout: "u16" };
 }
 
-/** Rango plausible de SpO2 (%) para el layout en décimas. */
-const SPO2_RAW_MIN = 500;
-const SPO2_RAW_MAX = 1000;
+/** SpO2 real: por debajo de 70 no hay persona consciente que lo sostenga. */
+const SPO2_MIN = 70;
+const SPO2_MAX = 100;
 
 /**
- * SpO2 de una trama en vivo con el mismo criterio que la FC: byte clásico si
- * viene, y si no el u16 en décimas (el firmware H59 que emite la FC así puede
- * usar el mismo layout para el resto de sensores).
+ * SpO2 de una trama en vivo: SOLO el byte clásico (`payload[2]`), con gate
+ * 70–100. El fallback u16 se eliminó a propósito: en este firmware los bytes
+ * 5–6 llevan un campo de estado constante (p. ej. `27 03`/`79 02` idéntico en
+ * tramas de FC, SpO2 y presión durante minutos) que decodificaba como 63–81 %
+ * y cerraba barridos en 1.6 s con basura. Las lecturas reales siempre
+ * llegaron en el byte clásico (97/99/96 % verificados contra la app oficial).
+ * Si algún firmware futuro trae SpO2 real solo en u16, re-añadirlo EXIGIENDO
+ * varianza entre lecturas (ver el gate de FC en session.ts).
  */
 export function spo2FromPayload(
   payload: Uint8Array,
 ): { value: number; layout: "byte" | "u16" } | null {
   const classic = payload[2] ?? 0;
-  if (classic > 0) return { value: classic, layout: "byte" };
-  const raw = (payload[5] ?? 0) | ((payload[6] ?? 0) << 8);
-  if (raw < SPO2_RAW_MIN || raw > SPO2_RAW_MAX) return null;
-  return { value: Math.round(raw / 10), layout: "u16" };
+  if (classic >= SPO2_MIN && classic <= SPO2_MAX) {
+    return { value: classic, layout: "byte" };
+  }
+  return null;
 }
 
 /** Rangos plausibles de presión (mmHg). */

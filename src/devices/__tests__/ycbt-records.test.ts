@@ -153,6 +153,8 @@ describe("decodeHistory — vitales", () => {
     expect(samples).toHaveLength(1);
     expect(samples[0].metric).toBe("heart_rate");
     expect(samples[0].value).toBe(72);
+    // El volcado se marca como historial: no debe presentarse como "En vivo".
+    expect(samples[0].source).toBe("history");
   });
 
   it("descarta FC fuera de rango", () => {

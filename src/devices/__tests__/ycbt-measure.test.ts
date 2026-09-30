@@ -5,27 +5,25 @@ import { measurePolicyFor, outcomeForResult } from "../ycbt/session";
 // el SpO2 es un barrido largo cuya lectura se fija al final — exigirle 3
 // muestras agotaba la ventana y mostraba un error falso.
 describe("measurePolicyFor", () => {
-  it("la FC cierra con 3 muestras en 30 s y reintenta a los 10 s", () => {
+  it("la FC cierra con 3 muestras en ventanas de 30 s sin re-enganche intermedio", () => {
     expect(measurePolicyFor("heart_rate")).toEqual({
       target: 3,
       windowMs: 30_000,
-      retryMs: 10_000,
     });
   });
 
-  it("la presión espera 60 s con 3 muestras y reintenta a los 15 s", () => {
+  it("la presión espera 60 s, cierra con la primera lectura y reintenta a los 15 s", () => {
     expect(measurePolicyFor("blood_pressure")).toEqual({
-      target: 3,
+      target: 1,
       windowMs: 60_000,
       retryMs: 15_000,
     });
   });
 
-  it("el SpO2 termina con la PRIMERA lectura válida en 60 s (reintento a los 20 s)", () => {
+  it("el SpO2 termina con la PRIMERA lectura válida en 90 s y sin reintento", () => {
     expect(measurePolicyFor("spo2")).toEqual({
       target: 1,
-      windowMs: 60_000,
-      retryMs: 20_000,
+      windowMs: 90_000,
     });
   });
 

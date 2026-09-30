@@ -5990,6 +5990,29 @@ ion-segment.nut-period ion-segment-button {
   color: var(--tx);
   background: color-mix(in srgb, var(--teal-l) 70%, #fff);
 }
+/* Reintentar tras un fallo: la tarjeta fallida ofrece medir de nuevo (tras
+   Cerrar la vista de foco no quedaba forma visible de hacerlo). */
+.watch-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 6px 14px;
+  border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--wh));
+  border-radius: 999px;
+  background: var(--teal-l);
+  color: var(--teal-d);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+.watch-retry ion-icon {
+  font-size: 16px;
+}
+.watch-retry:active {
+  transform: scale(0.97);
+}
 @media (prefers-reduced-motion: reduce) {
   .watch-measure-bar i {
     transition: none;
@@ -10252,6 +10275,10 @@ ion-button.login-first-method:focus-visible {
     box-shadow 0.18s var(--ease),
     background-color 0.18s var(--ease);
 }
+/* Tarjeta vacía con dato en el Reloj: toda la tarjeta es el enlace. */
+.vt-tile.is-link {
+  cursor: pointer;
+}
 .vt-tile.vt-fc {
   --vt-accent: var(--red);
 }
@@ -10397,6 +10424,29 @@ ion-input.vt-input.has-focus {
   box-shadow: inset 0 1px 2px rgba(16, 42, 80, 0.08);
   min-width: 0;
   margin: 0;
+}
+/* Reintentar tras un fallo: la tarjeta fallida y vacía ofrece medir de nuevo
+   (tras Cerrar la vista de foco no quedaba forma visible de hacerlo). */
+.vt-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 14px;
+  margin-bottom: 8px;
+  border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--wh));
+  border-radius: 999px;
+  background: var(--teal-l);
+  color: var(--teal-d);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+.vt-retry ion-icon {
+  font-size: 16px;
+}
+.vt-retry:active {
+  transform: scale(0.97);
 }
 /* Verde marca el rango saludable; el marcador muestra el valor actual. */
 .vt-range b {
@@ -27737,10 +27787,6 @@ ion-button.vc-hang ion-icon {
   display: none;
 }
 @keyframes vcListen {
-  0%,
-  100% {
-    transform: scale(1);
-  }
   50% {
     transform: scale(1.06);
   }
@@ -27796,7 +27842,9 @@ ion-button.vc-hang ion-icon {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.1px;
-  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+  transition:
+    transform 150ms var(--ease),
+    box-shadow 150ms var(--ease);
 }
 .chat-quick-actions ion-button.chat-quick-action::part(native) {
   padding-inline: 11px 14px;
@@ -27835,7 +27883,9 @@ ion-button.vc-hang ion-icon {
   font-weight: 600;
   letter-spacing: -0.1px;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--navy) 4%, transparent);
-  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+  transition:
+    transform 150ms var(--ease),
+    box-shadow 150ms var(--ease);
 }
 .chat-list ion-button.cta-button:active {
   transform: scale(0.98);
@@ -27872,7 +27922,9 @@ ion-button.chat-fb-btn {
   --padding-end: 8px;
   --background-activated: var(--ice-l);
   border-radius: 50%;
-  transition: transform 150ms var(--ease), background 150ms var(--ease);
+  transition:
+    transform 150ms var(--ease),
+    background 150ms var(--ease);
 }
 ion-button.chat-fb-btn:active {
   transform: scale(0.96);
@@ -27894,7 +27946,10 @@ ion-button.chat-fb-btn:active {
   border-radius: 50%;
   background: var(--wh);
   box-shadow: 0 5px 13px color-mix(in srgb, var(--navy) 9%, transparent);
-  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease), opacity 150ms var(--ease);
+  transition:
+    transform 150ms var(--ease),
+    box-shadow 150ms var(--ease),
+    opacity 150ms var(--ease);
 }
 .chat-composer ion-button.chat-plus {
   --background: var(--wh);
@@ -27927,17 +27982,24 @@ ion-button.chat-fb-btn:active {
   border-color: color-mix(in srgb, var(--bd) 92%, var(--wh));
   background: var(--wh);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--navy) 3%, transparent);
-  transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease), background 150ms var(--ease);
+  transition:
+    border-color 150ms var(--ease),
+    box-shadow 150ms var(--ease),
+    background 150ms var(--ease);
 }
 .composer ion-input.chat-inp.has-focus {
   border-color: var(--brand-green-soft);
   background: var(--wh);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-green-soft) 16%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--brand-green-soft) 16%, transparent);
 }
 .vc-controls,
 ion-button.vc-btn,
 .vc-status {
-  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease), opacity 150ms var(--ease);
+  transition:
+    transform 150ms var(--ease),
+    box-shadow 150ms var(--ease),
+    opacity 150ms var(--ease);
 }
 ion-button.vc-btn:active {
   transform: scale(0.98);
@@ -27955,363 +28017,2207 @@ ion-button.vc-btn:active {
   }
 }
 /* Protocolo diario: identidad visual compartida con Inicio y Perfil. */
-.pg-reference { background: var(--home-mist); }
-.pg-reference .pg-scroll {
-  background: radial-gradient(ellipse at 105% 0%, var(--home-aqua) 0, transparent 34%), linear-gradient(150deg, var(--wh), var(--home-mist) 45%);
+.pg-reference {
+  background: var(--home-mist);
 }
-.pg-reference .pgh { position: relative; padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 0; background: transparent; color: var(--brand-navy); }
-.pgh-topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
-.pgh-topbar .hm-wordmark { min-width: 0; }
-.pgh-topbar .hm-wordmark img { width: 46px; height: 46px; object-fit: contain; }
-.pgh-topbar .hm-wordmark strong { font-size: clamp(14px, 4.1vw, 21px); white-space: nowrap; }
-.pgh-topbar .hm-wordmark small { font-size: 6.7px; letter-spacing: 1px; }
-.pgh-actions { display: flex; flex-shrink: 0; }
-.pgh-actions ion-button { width: 40px; height: 44px; margin: 0; --padding-start: 0; --padding-end: 0; --color: var(--brand-navy); }
-.pgh-actions ion-icon { font-size: 25px; }
-.pg-reference .pgh-unit { position: relative; isolation: isolate; overflow: hidden; gap: 12px; padding: 16px 13px; border: 1px solid var(--wh); border-radius: 24px; background: linear-gradient(115deg, var(--wh), var(--home-mist)); box-shadow: 0 8px 20px color-mix(in srgb, var(--home-aqua) 23%, transparent); }
-.pg-reference .pgh-unit::after { content: ''; position: absolute; z-index: -1; right: -20px; bottom: -38px; width: 100px; height: 115px; border-radius: 100% 0 100% 0; transform: rotate(20deg); background: linear-gradient(30deg, var(--home-aqua), var(--home-leaf)); opacity: .5; }
-.pg-reference .pgh-unit .pg-ring { flex-shrink: 0; }
-.pg-reference .pgh-unit .pg-ring-center b { font-size: 25px; line-height: 1; }
-.pg-reference .pgh-unit .pg-ring-center small { color: var(--brand-blue-mid); font-size: 13px; }
-.pg-reference .pgh-unit-copy { flex: 1; }
-.pg-reference .pgh-unit-copy strong { font-size: clamp(17px, 4.6vw, 23px); line-height: 1.15; }
-.pg-reference .pgh-unit-copy small { margin-top: 5px; font-size: 14px; }
-.pgh-progress-label { display: flex; align-items: center; gap: 5px; max-width: 87px; padding: 9px; border-radius: 16px; background: color-mix(in srgb, var(--home-aqua) 20%, var(--wh)); font-size: 10px; font-weight: 650; color: var(--brand-blue-mid); }
-.pgh-progress-label ion-icon { flex-shrink: 0; font-size: 22px; }
-.pg-reference .pgh-tabs { margin-top: 14px; padding: 3px; border: 2px solid var(--wh); border-radius: 999px; background: color-mix(in srgb, var(--home-sky) 35%, var(--wh)); box-shadow: 0 4px 14px color-mix(in srgb, var(--home-aqua) 25%, transparent); }
-.pg-reference .pgh-tabs ion-segment { min-height: 40px; }
-.pg-reference .pgh-tabs ion-segment-button { min-width: 0; min-height: 40px; --color: var(--brand-blue-mid); --color-checked: var(--wh); --indicator-color: linear-gradient(110deg, var(--home-card-mid), var(--home-cyan)); --border-radius: 999px; --padding-start: 5px; --padding-end: 5px; font-size: 12px; }
-.pg-reference .pgh-tabs ion-icon { font-size: 17px; margin-inline-end: 5px; }
-.pg-reference .pgh-tabs ion-segment-button + ion-segment-button::before { background: var(--home-sky); }
-.pg-reference .pcards { padding: 16px 16px 4px; gap: 14px; }
-.pg-reference .pcard { border-radius: 22px; border: 1px solid var(--wh); box-shadow: 0 6px 16px color-mix(in srgb, var(--home-aqua) 23%, transparent); }
-.pg-reference .pcard-photo { height: 140px; }
-.pg-reference .pcard-flag { width: 38px; height: 38px; top: 10px; left: 10px; font-size: 22px; box-shadow: none; background: var(--wh); }
-.pg-reference .pcard-next { top: 8px; right: 8px; padding: 6px 13px; border: 2px solid var(--home-sky); background: linear-gradient(120deg, var(--brand-blue-mid), var(--home-card-mid)); font-size: 10px; }
-.pg-reference .pcard-panel { min-height: 78px; gap: 8px; margin: -24px 0 0; padding: 12px; border-radius: 25px 25px 0 0; box-shadow: none; background: linear-gradient(115deg, var(--wh), var(--home-mist)); }
-.pcard-action-icon { display: grid; place-items: center; flex-shrink: 0; width: 39px; height: 39px; border-radius: 50%; font-size: 24px; color: var(--brand-green-soft); background: color-mix(in srgb, var(--home-aqua) 24%, var(--wh)); }
-.pg-reference .pcard-copy { flex: 1; }
-.pg-reference .pcard-copy strong { font-size: 15px; line-height: 1.25; color: var(--brand-navy); }
-.pg-reference .pcard-copy small { font-size: 11.5px; line-height: 1.4; color: var(--mu); overflow-wrap: anywhere; }
-.pg-reference .pcard-side { max-width: 80px; }
-.pg-reference .pcard-pts { padding: 4px 7px; font-size: 10px; white-space: nowrap; background: var(--brand-green-soft); }
-.pg-reference .pcard-meta { font-size: 10px; color: var(--brand-blue-mid); text-align: right; }
-.pcard-chevron { flex-shrink: 0; color: var(--brand-green-soft); font-size: 18px; }
-.pg-reference .pcard.done .pcard-action-icon { background: var(--brand-green-soft); color: var(--wh); }
-.pg-reference button.pcard:focus-visible { outline: 3px solid var(--brand-blue-mid); outline-offset: 3px; }
-.pg-encouragement { display: flex; align-items: center; gap: 15px; margin: 16px; padding: 17px; border: 1px solid var(--wh); border-radius: 22px; color: var(--brand-navy); background: linear-gradient(120deg, color-mix(in srgb, var(--home-leaf) 30%, var(--wh)), var(--home-mist), var(--home-sky)); }
-.pg-encouragement > ion-icon { flex-shrink: 0; color: var(--brand-green-soft); font-size: 34px; }
-.pg-encouragement > ion-icon:last-child { color: var(--brand-sky); }
-.pg-encouragement strong { font-size: 14px; }
-.pg-encouragement p { margin: 5px 0 0; color: var(--mu); font-size: 12px; line-height: 1.5; }
+.pg-reference .pg-scroll {
+  background:
+    radial-gradient(ellipse at 105% 0%, var(--home-aqua) 0, transparent 34%),
+    linear-gradient(150deg, var(--wh), var(--home-mist) 45%);
+}
+.pg-reference .pgh {
+  position: relative;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 0;
+  background: transparent;
+  color: var(--brand-navy);
+}
+.pgh-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.pgh-topbar .hm-wordmark {
+  min-width: 0;
+}
+.pgh-topbar .hm-wordmark img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.pgh-topbar .hm-wordmark strong {
+  font-size: clamp(14px, 4.1vw, 21px);
+  white-space: nowrap;
+}
+.pgh-topbar .hm-wordmark small {
+  font-size: 6.7px;
+  letter-spacing: 1px;
+}
+.pgh-actions {
+  display: flex;
+  flex-shrink: 0;
+}
+.pgh-actions ion-button {
+  width: 40px;
+  height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--brand-navy);
+}
+.pgh-actions ion-icon {
+  font-size: 25px;
+}
+.pg-reference .pgh-unit {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  gap: 12px;
+  padding: 16px 13px;
+  border: 1px solid var(--wh);
+  border-radius: 24px;
+  background: linear-gradient(115deg, var(--wh), var(--home-mist));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--home-aqua) 23%, transparent);
+}
+.pg-reference .pgh-unit::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -20px;
+  bottom: -38px;
+  width: 100px;
+  height: 115px;
+  border-radius: 100% 0 100% 0;
+  transform: rotate(20deg);
+  background: linear-gradient(30deg, var(--home-aqua), var(--home-leaf));
+  opacity: 0.5;
+}
+.pg-reference .pgh-unit .pg-ring {
+  flex-shrink: 0;
+}
+.pg-reference .pgh-unit .pg-ring-center b {
+  font-size: 25px;
+  line-height: 1;
+}
+.pg-reference .pgh-unit .pg-ring-center small {
+  color: var(--brand-blue-mid);
+  font-size: 13px;
+}
+.pg-reference .pgh-unit-copy {
+  flex: 1;
+}
+.pg-reference .pgh-unit-copy strong {
+  font-size: clamp(17px, 4.6vw, 23px);
+  line-height: 1.15;
+}
+.pg-reference .pgh-unit-copy small {
+  margin-top: 5px;
+  font-size: 14px;
+}
+.pgh-progress-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 87px;
+  padding: 9px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--home-aqua) 20%, var(--wh));
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--brand-blue-mid);
+}
+.pgh-progress-label ion-icon {
+  flex-shrink: 0;
+  font-size: 22px;
+}
+.pg-reference .pgh-tabs {
+  margin-top: 14px;
+  padding: 3px;
+  border: 2px solid var(--wh);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--home-sky) 35%, var(--wh));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--home-aqua) 25%, transparent);
+}
+.pg-reference .pgh-tabs ion-segment {
+  min-height: 40px;
+}
+.pg-reference .pgh-tabs ion-segment-button {
+  min-width: 0;
+  min-height: 40px;
+  --color: var(--brand-blue-mid);
+  --color-checked: var(--wh);
+  --indicator-color: linear-gradient(
+    110deg,
+    var(--home-card-mid),
+    var(--home-cyan)
+  );
+  --border-radius: 999px;
+  --padding-start: 5px;
+  --padding-end: 5px;
+  font-size: 12px;
+}
+.pg-reference .pgh-tabs ion-icon {
+  font-size: 17px;
+  margin-inline-end: 5px;
+}
+.pg-reference .pgh-tabs ion-segment-button + ion-segment-button::before {
+  background: var(--home-sky);
+}
+.pg-reference .pcards {
+  padding: 16px 16px 4px;
+  gap: 14px;
+}
+.pg-reference .pcard {
+  border-radius: 22px;
+  border: 1px solid var(--wh);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--home-aqua) 23%, transparent);
+}
+.pg-reference .pcard-photo {
+  height: 140px;
+}
+.pg-reference .pcard-flag {
+  width: 38px;
+  height: 38px;
+  top: 10px;
+  left: 10px;
+  font-size: 22px;
+  box-shadow: none;
+  background: var(--wh);
+}
+.pg-reference .pcard-next {
+  top: 8px;
+  right: 8px;
+  padding: 6px 13px;
+  border: 2px solid var(--home-sky);
+  background: linear-gradient(
+    120deg,
+    var(--brand-blue-mid),
+    var(--home-card-mid)
+  );
+  font-size: 10px;
+}
+.pg-reference .pcard-panel {
+  min-height: 78px;
+  gap: 8px;
+  margin: -24px 0 0;
+  padding: 12px;
+  border-radius: 25px 25px 0 0;
+  box-shadow: none;
+  background: linear-gradient(115deg, var(--wh), var(--home-mist));
+}
+.pcard-action-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  font-size: 24px;
+  color: var(--brand-green-soft);
+  background: color-mix(in srgb, var(--home-aqua) 24%, var(--wh));
+}
+.pg-reference .pcard-copy {
+  flex: 1;
+}
+.pg-reference .pcard-copy strong {
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--brand-navy);
+}
+.pg-reference .pcard-copy small {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--mu);
+  overflow-wrap: anywhere;
+}
+.pg-reference .pcard-side {
+  max-width: 80px;
+}
+.pg-reference .pcard-pts {
+  padding: 4px 7px;
+  font-size: 10px;
+  white-space: nowrap;
+  background: var(--brand-green-soft);
+}
+.pg-reference .pcard-meta {
+  font-size: 10px;
+  color: var(--brand-blue-mid);
+  text-align: right;
+}
+.pcard-chevron {
+  flex-shrink: 0;
+  color: var(--brand-green-soft);
+  font-size: 18px;
+}
+.pg-reference .pcard.done .pcard-action-icon {
+  background: var(--brand-green-soft);
+  color: var(--wh);
+}
+.pg-reference button.pcard:focus-visible {
+  outline: 3px solid var(--brand-blue-mid);
+  outline-offset: 3px;
+}
+.pg-encouragement {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 16px;
+  padding: 17px;
+  border: 1px solid var(--wh);
+  border-radius: 22px;
+  color: var(--brand-navy);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--home-leaf) 30%, var(--wh)),
+    var(--home-mist),
+    var(--home-sky)
+  );
+}
+.pg-encouragement > ion-icon {
+  flex-shrink: 0;
+  color: var(--brand-green-soft);
+  font-size: 34px;
+}
+.pg-encouragement > ion-icon:last-child {
+  color: var(--brand-sky);
+}
+.pg-encouragement strong {
+  font-size: 14px;
+}
+.pg-encouragement p {
+  margin: 5px 0 0;
+  color: var(--mu);
+  font-size: 12px;
+  line-height: 1.5;
+}
 @media (max-width: 359px) {
-  .pgh-progress-label { display: none; }
-  .pgh-topbar .hm-wordmark img { width: 36px; height: 40px; }
-  .pgh-topbar .hm-wordmark small { font-size: 5.5px; }
-  .pgh-actions ion-button { width: 36px; }
-  .pg-reference .pcard-panel { gap: 6px; padding: 10px; }
-  .pcard-action-icon { width: 30px; height: 30px; font-size: 20px; }
-  .pg-reference .pcard-copy strong { font-size: 13px; }
+  .pgh-progress-label {
+    display: none;
+  }
+  .pgh-topbar .hm-wordmark img {
+    width: 36px;
+    height: 40px;
+  }
+  .pgh-topbar .hm-wordmark small {
+    font-size: 5.5px;
+  }
+  .pgh-actions ion-button {
+    width: 36px;
+  }
+  .pg-reference .pcard-panel {
+    gap: 6px;
+    padding: 10px;
+  }
+  .pcard-action-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+  }
+  .pg-reference .pcard-copy strong {
+    font-size: 13px;
+  }
 }
 @media (min-width: 600px) {
-  .pg-reference .pgh, .pg-reference .pg-pane { max-width: 740px; margin-inline: auto; }
-  .pg-reference .pcard-photo { height: 220px; }
-  .pg-reference .pcard-copy strong { font-size: 20px; }
-  .pg-reference .pcard-copy small { font-size: 14px; }
-  .pg-reference .pcard-panel { padding: 18px; gap: 14px; }
-  .pg-reference .pcard-pts { font-size: 12px; }
+  .pg-reference .pgh,
+  .pg-reference .pg-pane {
+    max-width: 740px;
+    margin-inline: auto;
+  }
+  .pg-reference .pcard-photo {
+    height: 220px;
+  }
+  .pg-reference .pcard-copy strong {
+    font-size: 20px;
+  }
+  .pg-reference .pcard-copy small {
+    font-size: 14px;
+  }
+  .pg-reference .pcard-panel {
+    padding: 18px;
+    gap: 14px;
+  }
+  .pg-reference .pcard-pts {
+    font-size: 12px;
+  }
 }
 
 /* Wearable: estados de conexión sobre la identidad clara del programa. */
-.wearable-reference { background: var(--home-mist); }
+.wearable-reference {
+  background: var(--home-mist);
+}
 .wearable-reference .wearable-scroll {
   padding-top: calc(20px + env(safe-area-inset-top, 0px));
-  background: radial-gradient(ellipse at 105% 2%, color-mix(in srgb, var(--home-aqua) 65%, transparent), transparent 35%), linear-gradient(140deg, var(--wh), var(--home-mist) 50%);
+  background:
+    radial-gradient(
+      ellipse at 105% 2%,
+      color-mix(in srgb, var(--home-aqua) 65%, transparent),
+      transparent 35%
+    ),
+    linear-gradient(140deg, var(--wh), var(--home-mist) 50%);
 }
-.wearable-brand { margin: 0 24px 24px; }
-.wearable-brand img { width: 48px; height: 48px; object-fit: contain; }
-.wearable-brand strong { font-size: 20px; }
-.wearable-brand small { font-size: 7px; letter-spacing: 1px; }
-.wearable-reference .page-head { padding: 0 24px; background: transparent; color: var(--brand-navy); border: 0; }
-.wearable-reference .page-head-title { color: var(--brand-navy); font-size: 32px; }
-.wearable-reference .page-head-kicker { color: var(--brand-blue-mid); letter-spacing: 1.8px; font-size: 10px; }
-.wearable-reference .page-head-sub { color: var(--mu); font-size: 12px; line-height: 1.5; }
-.wearable-reference .status-pill { gap: 5px; padding: 8px; font-size: 10px; background: var(--wh); color: var(--brand-navy); border: 4px solid var(--home-mist); box-shadow: 0 3px 12px color-mix(in srgb, var(--home-aqua) 20%, transparent); }
-.wearable-battery { display: inline-flex; align-items: center; gap: 3px; color: var(--brand-green-soft); margin-left: 4px; }
-.wearable-battery ion-icon { font-size: 17px; }
-.wearable-showcase { text-align: center; padding: 8px 20px 18px; }
-.wearable-art { position: relative; display: grid; place-items: center; width: 290px; max-width: 100%; height: 188px; margin: auto; isolation: isolate; }
-.wearable-orbit { display: grid; place-items: center; width: 170px; height: 170px; border: 8px solid var(--home-sky); outline: 5px solid var(--wh); border-radius: 50%; background: radial-gradient(circle, var(--wh) 40%, var(--home-mist)); box-shadow: 0 0 0 10px color-mix(in srgb, var(--home-sky) 25%, transparent), 0 12px 25px color-mix(in srgb, var(--brand-sky) 20%, transparent); }
-.is-connected .wearable-orbit { border-color: var(--home-aqua) var(--brand-sky) var(--brand-green-soft) var(--home-leaf); }
-.is-busy .wearable-orbit { border-style: dashed; }
-.wearable-bluetooth { position: absolute; right: 49px; bottom: 15px; display: grid; place-items: center; width: 43px; height: 43px; border: 3px solid var(--wh); border-radius: 50%; background: linear-gradient(130deg, var(--brand-blue-mid), var(--home-aqua)); color: var(--wh); font-size: 26px; }
-.wearable-bluetooth ion-spinner { width: 23px; height: 23px; color: var(--wh); }
-.wearable-leaf { position: absolute; z-index: -1; bottom: 15px; width: 73px; height: 108px; border-radius: 95% 0 95% 0; background: linear-gradient(140deg, var(--home-leaf), var(--home-aqua) 65%, var(--brand-green-soft)); opacity: .8; }
-.wearable-leaf::after { content: ''; position: absolute; inset: 20px 15px -15px; border-radius: inherit; background: linear-gradient(160deg, var(--home-leaf), var(--brand-green-soft)); transform: rotate(45deg); opacity: .6; }
-.wearable-leaf-left { left: 10px; transform: rotate(-75deg); }
-.wearable-leaf-right { right: 5px; transform: rotate(15deg); }
-.wearable-showcase h2 { margin: 13px 0 4px; font-size: 15px; font-weight: 750; color: var(--brand-navy); }
-.wearable-showcase p { margin: 0 auto; max-width: 320px; color: var(--mu); font-size: 12px; line-height: 1.5; }
-.wearable-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; margin: 0 16px 16px; padding: 10px; border: 1px solid var(--wh); border-radius: 22px; background: color-mix(in srgb, var(--wh) 85%, transparent); box-shadow: 0 5px 18px color-mix(in srgb, var(--home-sky) 40%, transparent); }
-.wearable-summary-item { display: flex; align-items: center; flex-direction: column; gap: 5px; padding: 6px 2px; border: 1px solid var(--home-mist); border-radius: 18px; background: linear-gradient(var(--wh), var(--home-mist)); box-shadow: 0 2px 3px var(--home-sky); color: var(--brand-navy); font-size: 9px; text-align: center; min-width: 0; }
-.wearable-summary-icon { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(130deg, var(--home-mist), var(--home-sky)); color: var(--brand-blue-mid); font-size: 22px; }
-.wearable-summary-item strong { font-size: 12px; overflow-wrap: anywhere; }
-.wearable-summary-item small { min-height: 10px; font-size: 9px; color: var(--mu); }
-.wearable-sync { margin: 0 20px 16px; }
-.wearable-reference ion-button.bt-primary { --background: linear-gradient(110deg, var(--brand-navy-deep), var(--brand-green-soft)); --border-radius: 999px; min-height: 48px; }
-.wearable-reference .watch-pair { padding-top: 0; }
-.wearable-reference .watch-diagnostics { margin-top: 16px; border-radius: 22px; box-shadow: 0 5px 15px color-mix(in srgb, var(--home-sky) 40%, transparent); }
-.wearable-reference .group-item { --background: var(--wh); }
-.wearable-reference .dev-card { border-radius: 22px; border: 1px solid var(--wh); background: linear-gradient(120deg, var(--wh), var(--home-mist)); box-shadow: 0 5px 18px color-mix(in srgb, var(--home-sky) 30%, transparent); }
-.wearable-reference .watch-metric { border-radius: 20px; background: var(--wh); }
-.wearable-reference .vital-hero { border-radius: 24px; }
+.wearable-brand {
+  margin: 0 24px 24px;
+}
+.wearable-brand img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+.wearable-brand strong {
+  font-size: 20px;
+}
+.wearable-brand small {
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+.wearable-reference .page-head {
+  padding: 0 24px;
+  background: transparent;
+  color: var(--brand-navy);
+  border: 0;
+}
+.wearable-reference .page-head-title {
+  color: var(--brand-navy);
+  font-size: 32px;
+}
+.wearable-reference .page-head-kicker {
+  color: var(--brand-blue-mid);
+  letter-spacing: 1.8px;
+  font-size: 10px;
+}
+.wearable-reference .page-head-sub {
+  color: var(--mu);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.wearable-reference .status-pill {
+  gap: 5px;
+  padding: 8px;
+  font-size: 10px;
+  background: var(--wh);
+  color: var(--brand-navy);
+  border: 4px solid var(--home-mist);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--home-aqua) 20%, transparent);
+}
+.wearable-battery {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--brand-green-soft);
+  margin-left: 4px;
+}
+.wearable-battery ion-icon {
+  font-size: 17px;
+}
+.wearable-showcase {
+  text-align: center;
+  padding: 8px 20px 18px;
+}
+.wearable-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 290px;
+  max-width: 100%;
+  height: 188px;
+  margin: auto;
+  isolation: isolate;
+}
+.wearable-orbit {
+  display: grid;
+  place-items: center;
+  width: 170px;
+  height: 170px;
+  border: 8px solid var(--home-sky);
+  outline: 5px solid var(--wh);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--wh) 40%, var(--home-mist));
+  box-shadow:
+    0 0 0 10px color-mix(in srgb, var(--home-sky) 25%, transparent),
+    0 12px 25px color-mix(in srgb, var(--brand-sky) 20%, transparent);
+}
+.is-connected .wearable-orbit {
+  border-color: var(--home-aqua) var(--brand-sky) var(--brand-green-soft)
+    var(--home-leaf);
+}
+.is-busy .wearable-orbit {
+  border-style: dashed;
+}
+.wearable-bluetooth {
+  position: absolute;
+  right: 49px;
+  bottom: 15px;
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 3px solid var(--wh);
+  border-radius: 50%;
+  background: linear-gradient(130deg, var(--brand-blue-mid), var(--home-aqua));
+  color: var(--wh);
+  font-size: 26px;
+}
+.wearable-bluetooth ion-spinner {
+  width: 23px;
+  height: 23px;
+  color: var(--wh);
+}
+.wearable-leaf {
+  position: absolute;
+  z-index: -1;
+  bottom: 15px;
+  width: 73px;
+  height: 108px;
+  border-radius: 95% 0 95% 0;
+  background: linear-gradient(
+    140deg,
+    var(--home-leaf),
+    var(--home-aqua) 65%,
+    var(--brand-green-soft)
+  );
+  opacity: 0.8;
+}
+.wearable-leaf::after {
+  content: "";
+  position: absolute;
+  inset: 20px 15px -15px;
+  border-radius: inherit;
+  background: linear-gradient(
+    160deg,
+    var(--home-leaf),
+    var(--brand-green-soft)
+  );
+  transform: rotate(45deg);
+  opacity: 0.6;
+}
+.wearable-leaf-left {
+  left: 10px;
+  transform: rotate(-75deg);
+}
+.wearable-leaf-right {
+  right: 5px;
+  transform: rotate(15deg);
+}
+.wearable-showcase h2 {
+  margin: 13px 0 4px;
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--brand-navy);
+}
+.wearable-showcase p {
+  margin: 0 auto;
+  max-width: 320px;
+  color: var(--mu);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.wearable-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0 16px 16px;
+  padding: 10px;
+  border: 1px solid var(--wh);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--wh) 85%, transparent);
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--home-sky) 40%, transparent);
+}
+.wearable-summary-item {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 2px;
+  border: 1px solid var(--home-mist);
+  border-radius: 18px;
+  background: linear-gradient(var(--wh), var(--home-mist));
+  box-shadow: 0 2px 3px var(--home-sky);
+  color: var(--brand-navy);
+  font-size: 9px;
+  text-align: center;
+  min-width: 0;
+}
+.wearable-summary-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: linear-gradient(130deg, var(--home-mist), var(--home-sky));
+  color: var(--brand-blue-mid);
+  font-size: 22px;
+}
+.wearable-summary-item strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.wearable-summary-item small {
+  min-height: 10px;
+  font-size: 9px;
+  color: var(--mu);
+}
+.wearable-sync {
+  margin: 0 20px 16px;
+}
+.wearable-reference ion-button.bt-primary {
+  --background: linear-gradient(
+    110deg,
+    var(--brand-navy-deep),
+    var(--brand-green-soft)
+  );
+  --border-radius: 999px;
+  min-height: 48px;
+}
+.wearable-reference .watch-pair {
+  padding-top: 0;
+}
+.wearable-reference .watch-diagnostics {
+  margin-top: 16px;
+  border-radius: 22px;
+  box-shadow: 0 5px 15px color-mix(in srgb, var(--home-sky) 40%, transparent);
+}
+.wearable-reference .group-item {
+  --background: var(--wh);
+}
+.wearable-reference .dev-card {
+  border-radius: 22px;
+  border: 1px solid var(--wh);
+  background: linear-gradient(120deg, var(--wh), var(--home-mist));
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--home-sky) 30%, transparent);
+}
+.wearable-reference .watch-metric {
+  border-radius: 20px;
+  background: var(--wh);
+}
+.wearable-reference .vital-hero {
+  border-radius: 24px;
+}
 @media (max-width: 359px) {
-  .wearable-reference .page-head { padding-inline: 16px; }
-  .wearable-reference .page-head-title { font-size: 27px; }
-  .wearable-reference .status-pill { font-size: 9px; padding: 5px; }
-  .wearable-summary { margin-inline: 10px; padding: 7px; gap: 4px; }
-  .wearable-summary-item strong { font-size: 11px; }
-  .wearable-brand strong { font-size: 17px; }
+  .wearable-reference .page-head {
+    padding-inline: 16px;
+  }
+  .wearable-reference .page-head-title {
+    font-size: 27px;
+  }
+  .wearable-reference .status-pill {
+    font-size: 9px;
+    padding: 5px;
+  }
+  .wearable-summary {
+    margin-inline: 10px;
+    padding: 7px;
+    gap: 4px;
+  }
+  .wearable-summary-item strong {
+    font-size: 11px;
+  }
+  .wearable-brand strong {
+    font-size: 17px;
+  }
 }
 @media (min-width: 768px) {
-  .wearable-reference .wearable-scroll { padding-inline: max(0px, calc((100% - 740px) / 2)); }
-  .wearable-summary-item { font-size: 12px; }
-  .wearable-summary-item strong { font-size: 18px; }
+  .wearable-reference .wearable-scroll {
+    padding-inline: max(0px, calc((100% - 740px) / 2));
+  }
+  .wearable-summary-item {
+    font-size: 12px;
+  }
+  .wearable-summary-item strong {
+    font-size: 18px;
+  }
 }
-.wearable-orbit { --mod-body: var(--brand-navy-deep); }
-.wearable-diagnostics-connected { margin: 0 20px 18px; }
-.wearable-diagnostic-icon { display: grid; place-items: center; width: 42px; height: 42px; margin-right: 12px; border-radius: 50%; color: var(--brand-green-soft); background: var(--home-mist); font-size: 25px; }
+.wearable-orbit {
+  --mod-body: var(--brand-navy-deep);
+}
+.wearable-diagnostics-connected {
+  margin: 0 20px 18px;
+}
+.wearable-diagnostic-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-right: 12px;
+  border-radius: 50%;
+  color: var(--brand-green-soft);
+  background: var(--home-mist);
+  font-size: 25px;
+}
 
 /* Chat: identidad clara, accesos visuales y conversación protagonista. */
-.chat-reference { background: var(--home-mist); }
+.chat-reference {
+  background: var(--home-mist);
+}
 .chat-reference .chat-premium-header {
   flex-shrink: 0;
   min-height: calc(195px + env(safe-area-inset-top, 0px));
   padding: calc(18px + env(safe-area-inset-top, 0px)) 18px 23px;
   border: 0;
-  background: radial-gradient(ellipse at 100% 0%, var(--home-aqua), transparent 55%), linear-gradient(140deg, var(--home-sky), var(--home-mist) 60%);
+  background:
+    radial-gradient(ellipse at 100% 0%, var(--home-aqua), transparent 55%),
+    linear-gradient(140deg, var(--home-sky), var(--home-mist) 60%);
 }
-.chat-reference .chat-premium-header::after { content: ''; position: absolute; right: -20px; bottom: -35px; width: 125px; height: 170px; border-radius: 100% 0 100% 0; background: linear-gradient(140deg, var(--home-leaf), var(--brand-green-soft)); opacity: .5; transform: rotate(12deg); }
-.chat-reference .chat-brand-lockup { top: calc(15px + env(safe-area-inset-top, 0px)); gap: 8px; }
-.chat-reference .chat-brand-logo { width: 42px; height: 42px; }
-.chat-reference .chat-brand-name { font-size: 17px; letter-spacing: -.4px; }
-.chat-reference .chat-brand-name sup { font-size: 8px; margin-left: 2px; }
-.chat-reference .chat-brand-kicker { font-size: 6.5px; letter-spacing: .8px; color: var(--brand-green-soft); line-height: 1.4; }
-.chat-reference .chat-hero-copy { margin-top: 70px; padding-right: 115px; align-items: center; }
-.chat-reference .chat-hero-copy h1 { font-size: clamp(23px, 6.5vw, 32px); line-height: 1.15; overflow-wrap: anywhere; }
-.chat-reference .chat-hero-copy p { font-size: 11px; margin-top: 5px; }
-.chat-reference .chat-hero-copy .chat-welcome-sub { font-size: 14px; }
-.chat-reference ion-button.chat-panic { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: 16px; }
-.chat-reference .chat-header-mascot { width: 139px; height: 155px; right: 0; bottom: -3px; z-index: 1; }
-.chat-reference .chat-quick-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex-shrink: 0; gap: 7px; margin: -8px 12px 8px; padding: 8px; min-height: 83px; border: 1px solid var(--wh); border-radius: 22px; background: var(--wh); box-shadow: 0 6px 20px color-mix(in srgb, var(--home-sky) 50%, transparent); overflow: visible; mask-image: none; -webkit-mask-image: none; z-index: 2; }
-.chat-reference .chat-quick-actions ion-button.chat-quick-action { min-width: 0; min-height: 64px; height: 64px; margin: 0; border: 1px solid var(--home-sky); border-radius: 16px; background: linear-gradient(135deg, var(--home-mist), color-mix(in srgb, var(--home-sky) 45%, var(--wh))); font-size: 10px; box-shadow: none; --border-radius: 16px; }
-.chat-reference .chat-quick-actions ion-button.chat-quick-action::part(native) { display: flex; flex-direction: column; padding: 5px 2px; gap: 5px; }
-.chat-reference .chat-quick-actions .chat-quick-icon { width: 27px; height: 27px; margin: 0; font-size: 25px; background: transparent; color: var(--brand-green-soft); }
-.chat-reference .chat-quick-action:nth-child(3) .chat-quick-icon { color: var(--brand-navy); }
-.chat-reference .chat-list { background: var(--home-mist); padding-inline: 16px; }
-.chat-reference .chat-disclaimer { padding: 8px 10px; font-size: 10px; line-height: 1.4; background: transparent; border-color: var(--home-sky); color: var(--mu); }
-.chat-reference .chat-row { gap: 9px; align-items: flex-start; margin-block: 14px; }
-.chat-reference .chat-row .chat-avatar { align-self: flex-start; flex-shrink: 0; margin: 0; width: 38px; height: 38px; border: 2px solid var(--wh); background: color-mix(in srgb, var(--home-leaf) 40%, var(--wh)); box-shadow: 0 3px 8px color-mix(in srgb, var(--home-sky) 50%, transparent); }
-.chat-reference .chat-row .chat-avatar::after { display: none; }
-.chat-reference .chat-row .chat-avatar > .chat-avatar-mascot { display: block; position: relative; width: 38px; height: 47px; margin-top: 5px; }
-.chat-reference .chat-row .chat-avatar-alert { background: var(--red-l); color: var(--panic); }
-.chat-reference .chat-row-user .chat-avatar { display: none; }
-.chat-reference .chat-msg { min-width: 0; }
-.chat-reference .chat-msg .bub { max-width: 100%; font-size: 13px; line-height: 1.55; }
-.chat-reference .chat-list .bub-bot { color: var(--brand-navy); background: linear-gradient(130deg, var(--wh), var(--home-mist)); border: 1px solid var(--wh); border-radius: 20px; box-shadow: 0 7px 18px color-mix(in srgb, var(--home-sky) 45%, transparent); }
-.chat-reference .chat-row-user { margin-left: 48px; }
-.chat-reference .chat-list .bub-usr { background: linear-gradient(130deg, var(--brand-navy-deep), var(--home-card-mid)); border-radius: 21px 21px 7px 21px; box-shadow: 0 5px 12px color-mix(in srgb, var(--home-sky) 55%, transparent); }
-.chat-reference .chat-time { color: var(--brand-sky-deep); font-size: 9px; margin-inline: 10px; }
-.chat-reference .chat-list ion-button.cta-button { --background: color-mix(in srgb, var(--home-leaf) 40%, var(--home-mist)); --color: var(--brand-navy); --border-color: transparent; --border-radius: 14px; height: auto; min-height: 48px; white-space: normal; }
-.chat-reference .chat-composer { gap: 7px; margin: 0 8px; padding: 10px 8px; border: 1px solid var(--wh); border-radius: 25px 25px 0 0; background: var(--wh); box-shadow: 0 -5px 18px color-mix(in srgb, var(--home-sky) 25%, transparent); }
-.chat-reference .chat-composer ion-button.bt-round { width: 44px; min-width: 44px; height: 44px; min-height: 44px; box-shadow: none; border: 0; }
-.chat-reference .chat-composer ion-button.chat-plus, .chat-reference .chat-composer ion-button.chat-voice { --background: var(--home-mist); --color: var(--brand-blue-mid); }
-.chat-reference .chat-composer ion-input.chat-inp { min-width: 0; min-height: 44px; border: 1px solid var(--home-sky); border-radius: 999px; font-size: 12px; --padding-start: 13px; }
+.chat-reference .chat-premium-header::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  bottom: -35px;
+  width: 125px;
+  height: 170px;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(
+    140deg,
+    var(--home-leaf),
+    var(--brand-green-soft)
+  );
+  opacity: 0.5;
+  transform: rotate(12deg);
+}
+.chat-reference .chat-brand-lockup {
+  top: calc(15px + env(safe-area-inset-top, 0px));
+  gap: 8px;
+}
+.chat-reference .chat-brand-logo {
+  width: 42px;
+  height: 42px;
+}
+.chat-reference .chat-brand-name {
+  font-size: 17px;
+  letter-spacing: -0.4px;
+}
+.chat-reference .chat-brand-name sup {
+  font-size: 8px;
+  margin-left: 2px;
+}
+.chat-reference .chat-brand-kicker {
+  font-size: 6.5px;
+  letter-spacing: 0.8px;
+  color: var(--brand-green-soft);
+  line-height: 1.4;
+}
+.chat-reference .chat-hero-copy {
+  margin-top: 70px;
+  padding-right: 115px;
+  align-items: center;
+}
+.chat-reference .chat-hero-copy h1 {
+  font-size: clamp(23px, 6.5vw, 32px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.chat-reference .chat-hero-copy p {
+  font-size: 11px;
+  margin-top: 5px;
+}
+.chat-reference .chat-hero-copy .chat-welcome-sub {
+  font-size: 14px;
+}
+.chat-reference ion-button.chat-panic {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  right: 16px;
+}
+.chat-reference .chat-header-mascot {
+  width: 139px;
+  height: 155px;
+  right: 0;
+  bottom: -3px;
+  z-index: 1;
+}
+.chat-reference .chat-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex-shrink: 0;
+  gap: 7px;
+  margin: -8px 12px 8px;
+  padding: 8px;
+  min-height: 83px;
+  border: 1px solid var(--wh);
+  border-radius: 22px;
+  background: var(--wh);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--home-sky) 50%, transparent);
+  overflow: visible;
+  mask-image: none;
+  -webkit-mask-image: none;
+  z-index: 2;
+}
+.chat-reference .chat-quick-actions ion-button.chat-quick-action {
+  min-width: 0;
+  min-height: 64px;
+  height: 64px;
+  margin: 0;
+  border: 1px solid var(--home-sky);
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    var(--home-mist),
+    color-mix(in srgb, var(--home-sky) 45%, var(--wh))
+  );
+  font-size: 10px;
+  box-shadow: none;
+  --border-radius: 16px;
+}
+.chat-reference .chat-quick-actions ion-button.chat-quick-action::part(native) {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 2px;
+  gap: 5px;
+}
+.chat-reference .chat-quick-actions .chat-quick-icon {
+  width: 27px;
+  height: 27px;
+  margin: 0;
+  font-size: 25px;
+  background: transparent;
+  color: var(--brand-green-soft);
+}
+.chat-reference .chat-quick-action:nth-child(3) .chat-quick-icon {
+  color: var(--brand-navy);
+}
+.chat-reference .chat-list {
+  background: var(--home-mist);
+  padding-inline: 16px;
+}
+.chat-reference .chat-disclaimer {
+  padding: 8px 10px;
+  font-size: 10px;
+  line-height: 1.4;
+  background: transparent;
+  border-color: var(--home-sky);
+  color: var(--mu);
+}
+.chat-reference .chat-row {
+  gap: 9px;
+  align-items: flex-start;
+  margin-block: 14px;
+}
+.chat-reference .chat-row .chat-avatar {
+  align-self: flex-start;
+  flex-shrink: 0;
+  margin: 0;
+  width: 38px;
+  height: 38px;
+  border: 2px solid var(--wh);
+  background: color-mix(in srgb, var(--home-leaf) 40%, var(--wh));
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--home-sky) 50%, transparent);
+}
+.chat-reference .chat-row .chat-avatar::after {
+  display: none;
+}
+.chat-reference .chat-row .chat-avatar > .chat-avatar-mascot {
+  display: block;
+  position: relative;
+  width: 38px;
+  height: 47px;
+  margin-top: 5px;
+}
+.chat-reference .chat-row .chat-avatar-alert {
+  background: var(--red-l);
+  color: var(--panic);
+}
+.chat-reference .chat-row-user .chat-avatar {
+  display: none;
+}
+.chat-reference .chat-msg {
+  min-width: 0;
+}
+.chat-reference .chat-msg .bub {
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.chat-reference .chat-list .bub-bot {
+  color: var(--brand-navy);
+  background: linear-gradient(130deg, var(--wh), var(--home-mist));
+  border: 1px solid var(--wh);
+  border-radius: 20px;
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--home-sky) 45%, transparent);
+}
+.chat-reference .chat-row-user {
+  margin-left: 48px;
+}
+.chat-reference .chat-list .bub-usr {
+  background: linear-gradient(
+    130deg,
+    var(--brand-navy-deep),
+    var(--home-card-mid)
+  );
+  border-radius: 21px 21px 7px 21px;
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--home-sky) 55%, transparent);
+}
+.chat-reference .chat-time {
+  color: var(--brand-sky-deep);
+  font-size: 9px;
+  margin-inline: 10px;
+}
+.chat-reference .chat-list ion-button.cta-button {
+  --background: color-mix(in srgb, var(--home-leaf) 40%, var(--home-mist));
+  --color: var(--brand-navy);
+  --border-color: transparent;
+  --border-radius: 14px;
+  height: auto;
+  min-height: 48px;
+  white-space: normal;
+}
+.chat-reference .chat-composer {
+  gap: 7px;
+  margin: 0 8px;
+  padding: 10px 8px;
+  border: 1px solid var(--wh);
+  border-radius: 25px 25px 0 0;
+  background: var(--wh);
+  box-shadow: 0 -5px 18px color-mix(in srgb, var(--home-sky) 25%, transparent);
+}
+.chat-reference .chat-composer ion-button.bt-round {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  box-shadow: none;
+  border: 0;
+}
+.chat-reference .chat-composer ion-button.chat-plus,
+.chat-reference .chat-composer ion-button.chat-voice {
+  --background: var(--home-mist);
+  --color: var(--brand-blue-mid);
+}
+.chat-reference .chat-composer ion-input.chat-inp {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--home-sky);
+  border-radius: 999px;
+  font-size: 12px;
+  --padding-start: 13px;
+}
 @media (max-width: 359px) {
-  .chat-reference .chat-hero-copy { padding-right: 95px; }
-  .chat-reference .chat-header-mascot { width: 115px; height: 140px; }
-  .chat-reference .chat-brand-name { font-size: 15px; }
-  .chat-reference .chat-brand-logo { width: 36px; height: 36px; }
-  .chat-reference .chat-quick-actions { gap: 4px; margin-inline: 8px; padding: 6px; }
-  .chat-reference .chat-quick-actions ion-button.chat-quick-action { font-size: 9px; }
-  .chat-reference .chat-composer { gap: 4px; margin-inline: 0; }
+  .chat-reference .chat-hero-copy {
+    padding-right: 95px;
+  }
+  .chat-reference .chat-header-mascot {
+    width: 115px;
+    height: 140px;
+  }
+  .chat-reference .chat-brand-name {
+    font-size: 15px;
+  }
+  .chat-reference .chat-brand-logo {
+    width: 36px;
+    height: 36px;
+  }
+  .chat-reference .chat-quick-actions {
+    gap: 4px;
+    margin-inline: 8px;
+    padding: 6px;
+  }
+  .chat-reference .chat-quick-actions ion-button.chat-quick-action {
+    font-size: 9px;
+  }
+  .chat-reference .chat-composer {
+    gap: 4px;
+    margin-inline: 0;
+  }
 }
-.kb-open .chat-reference .chat-premium-header { min-height: calc(75px + env(safe-area-inset-top, 0px)); padding-bottom: 8px; }
-.kb-open .chat-reference .chat-hero-copy, .kb-open .chat-reference .chat-header-mascot { display: none; }
-.kb-open .chat-reference .chat-quick-actions { display: none; }
+.kb-open .chat-reference .chat-premium-header {
+  min-height: calc(75px + env(safe-area-inset-top, 0px));
+  padding-bottom: 8px;
+}
+.kb-open .chat-reference .chat-hero-copy,
+.kb-open .chat-reference .chat-header-mascot {
+  display: none;
+}
+.kb-open .chat-reference .chat-quick-actions {
+  display: none;
+}
 @media (min-width: 768px) {
-  .chat-reference .chat-list { padding-inline: max(24px, calc((100% - 700px) / 2)); }
-  .chat-reference .chat-msg .bub { max-width: 560px; }
+  .chat-reference .chat-list {
+    padding-inline: max(24px, calc((100% - 700px) / 2));
+  }
+  .chat-reference .chat-msg .bub {
+    max-width: 560px;
+  }
 }
-.chat-reference .chat-quick-content { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.chat-reference .chat-hero-copy h1 { font-weight: 800; }
-.chat-reference .chat-msg { padding: 0; border: 0; background: transparent; gap: 0; cursor: auto; }
-.chat-reference .chat-row { flex-shrink: 0; }
-.chat-reference .chat-list { gap: 0; }
-.chat-reference .chat-composer { margin-bottom: var(--nav-h); flex-shrink: 0; }
-.kb-open .chat-reference .chat-composer { margin-bottom: 0; }
+.chat-reference .chat-quick-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.chat-reference .chat-hero-copy h1 {
+  font-weight: 800;
+}
+.chat-reference .chat-msg {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 0;
+  cursor: auto;
+}
+.chat-reference .chat-row {
+  flex-shrink: 0;
+}
+.chat-reference .chat-list {
+  gap: 0;
+}
+.chat-reference .chat-composer {
+  margin-bottom: var(--nav-h);
+  flex-shrink: 0;
+}
+.kb-open .chat-reference .chat-composer {
+  margin-bottom: 0;
+}
 
 /* SOS: composición de la referencia; conserva confirmación y estado real. */
-.overlay-panic.sos-reference { background: linear-gradient(145deg, var(--home-mist), var(--wh) 45%, var(--home-sky)); }
-.sos-reference .sos-topbar { position: relative; isolation: isolate; overflow: hidden; display: block; min-height: 151px; padding: 17px 22px 15px; border-radius: 0 0 24px 24px; background: linear-gradient(115deg, var(--brand-navy-deep), var(--home-card-mid) 60%, var(--home-cyan)); color: var(--wh); }
-.sos-reference .sos-topbar::before, .sos-reference .sos-topbar::after { content: ''; position: absolute; z-index: -1; right: -20px; bottom: -45px; width: 128px; height: 175px; border-radius: 100% 0 100% 0; background: linear-gradient(140deg, var(--home-leaf), var(--brand-green-soft)); transform: rotate(18deg); opacity: .8; }
-.sos-reference .sos-topbar::before { right: 30px; bottom: -70px; width: 105px; transform: rotate(-35deg); background: linear-gradient(var(--home-sky), var(--home-aqua)); opacity: .6; }
-.sos-reference .sos-brand { gap: 8px; }
-.sos-reference .sos-brand img { width: 44px; height: 44px; padding: 2px; border-radius: 50%; background: var(--wh); object-fit: contain; }
-.sos-reference .sos-brand strong { font-size: 17px; letter-spacing: -.3px; }
-.sos-reference .sos-brand sup { font-size: 8px; }
-.sos-reference .sos-brand small { margin-top: 3px; color: var(--wh); font-size: 6px; letter-spacing: .8px; line-height: 1.4; }
-.sos-reference .sos-top-close { position: absolute; top: 14px; right: 8px; --color: var(--wh); font-size: 10px; }
-.sos-greeting h1 { margin: 16px 0 3px; font-size: 25px; font-weight: 750; }
-.sos-greeting p { margin: 0; font-size: 13px; color: var(--home-mist); }
-.sos-reference .sos-protocol { width: 100%; max-width: 620px; margin-inline: auto; }
-.sos-reference .sos-scroll-body { padding: 10px 16px 12px; }
-.sos-reference.is-protocol .sos-alert-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 5px 8px; padding: 12px 10px; border: 2px solid var(--wh); border-radius: 26px; background: linear-gradient(110deg, var(--wh), var(--home-mist)); color: var(--brand-navy); box-shadow: 0 7px 18px color-mix(in srgb, var(--home-sky) 40%, transparent); }
-.sos-reference.is-protocol .sos-head { grid-column: 2; grid-row: 1; text-align: left; margin: 0; }
-.sos-reference.is-protocol .sos-head p { display: none; }
-.sos-reference.is-protocol .sos-live { font-size: 8px; padding: 4px 6px; letter-spacing: .5px; border: 0; background: var(--red-l); color: var(--panic); }
-.sos-reference.is-protocol .sos-live::before { background: var(--panic); }
-.sos-reference.is-protocol .sos-orb-wrap { grid-column: 1; grid-row: 1 / 4; width: 124px; height: 124px; margin: auto; }
-.sos-reference.is-protocol .sos-count-ring { width: 124px; height: 124px; }
-.sos-reference.is-protocol .sos-count-track { stroke: color-mix(in srgb, var(--panic) 18%, var(--wh)); stroke-width: 10px; }
-.sos-reference.is-protocol ion-button.sos-orb { inset: 13px; width: 98px; height: 98px; --background: radial-gradient(circle at 32% 20%, color-mix(in srgb, var(--panic) 75%, var(--wh)), var(--panic) 55%, color-mix(in srgb, var(--panic) 78%, var(--brand-navy))); box-shadow: 0 0 0 6px color-mix(in srgb, var(--panic) 20%, var(--wh)), inset 0 0 10px var(--wh); }
-.sos-reference.is-protocol .sos-orb b { font-size: 23px; line-height: 1; }
-.sos-reference.is-protocol .sos-orb ion-icon { font-size: 30px; }
-.sos-reference.is-protocol .sos-orb small { font-size: 9px; }
-.sos-reference.is-protocol .sos-orb-content { gap: 2px; }
-.sos-reference.is-protocol .sos-copy { grid-column: 2; grid-row: 2; text-align: left; }
-.sos-reference.is-protocol .sos-copy h1 { color: var(--brand-navy); font-size: 13px; line-height: 1.3; font-weight: 750; letter-spacing: 0; margin: 0 0 5px; }
-.sos-reference.is-protocol .sos-copy p { color: var(--mu); font-size: 10px; line-height: 1.4; margin: 0; }
-.sos-reference.is-protocol .sos-demo-note { grid-column: 2; grid-row: 3; border-radius: 12px; padding: 7px; gap: 5px; background: color-mix(in srgb, var(--home-sky) 55%, var(--wh)); color: var(--brand-blue-mid); font-size: 9px; line-height: 1.35; }
-.sos-reference .sos-network { margin-top: 12px; padding: 12px 12px 2px; border: 1px solid var(--wh); border-radius: 23px; background: color-mix(in srgb, var(--wh) 90%, var(--home-mist)); box-shadow: 0 7px 17px color-mix(in srgb, var(--home-sky) 40%, transparent); }
-.sos-reference .sos-section-heading { margin: 0 2px 8px; }
-.sos-reference .sos-section-heading small { color: var(--brand-navy); font-size: 11px; letter-spacing: 0; }
-.sos-reference .sos-section-heading h2 { font-size: 14px; color: var(--brand-blue-mid); margin-top: 4px; }
-.sos-reference ion-list.sos-feed { padding: 0; border: 0; box-shadow: none; background: transparent; }
-.sos-reference ion-item.sos-feed-row { --min-height: 56px; }
-.sos-reference .sos-feed-ico { border-radius: 50%; width: 35px; height: 35px; background: var(--home-mist); font-size: 19px; margin-right: 9px; }
-.sos-reference .sos-feed-row strong { font-size: 12px; color: var(--brand-blue-mid); }
-.sos-reference .sos-feed-row small { font-size: 10px; line-height: 1.4; }
-.sos-reference .sos-shared { margin-top: 12px; }
-.sos-reference.is-protocol .sos-shared > .sos-section-heading { display: none; }
-.sos-reference .sos-data-grid { gap: 10px; }
-.sos-reference .sos-data-card { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-content: start; gap: 4px 7px; padding: 12px 10px; border: 1px solid var(--wh); border-radius: 20px; background: var(--wh); box-shadow: 0 5px 15px color-mix(in srgb, var(--home-sky) 40%, transparent); }
-.sos-reference .sos-data-card > ion-icon { grid-row: 1 / 3; width: 22px; height: 22px; padding: 5px; border-radius: 50%; color: var(--brand-green-soft); background: var(--home-mist); }
-.sos-reference .sos-data-card h3 { margin: 0; font-size: 11px; line-height: 1.3; }
-.sos-reference .sos-data-card p { grid-column: 2; font-size: 9px; line-height: 1.4; }
-.sos-reference .sos-action-dock { border: 0; padding: 9px 16px calc(9px + env(safe-area-inset-bottom, 0px)); background: transparent; box-shadow: none; }
-.sos-reference .sos-actions { grid-template-columns: 1.25fr 1fr; gap: 9px; }
-.sos-reference .sos-actions ion-button { height: 45px; font-size: 12px; --border-radius: 999px; }
-.sos-reference ion-button.sos-act-911 { --background: linear-gradient(120deg, color-mix(in srgb, var(--panic) 85%, var(--wh)), var(--panic)); }
-.sos-reference ion-button.sos-act-fam { --background: var(--wh); --color: var(--brand-blue-mid); --border-width: 2px; --border-style: solid; --border-color: var(--home-mist); }
-.sos-reference ion-button.sos-act-ok { margin-top: 5px; height: 44px; min-height: 44px; --background: transparent; font-size: 11px; }
+.overlay-panic.sos-reference {
+  background: linear-gradient(
+    145deg,
+    var(--home-mist),
+    var(--wh) 45%,
+    var(--home-sky)
+  );
+}
+.sos-reference .sos-topbar {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: block;
+  min-height: 151px;
+  padding: 17px 22px 15px;
+  border-radius: 0 0 24px 24px;
+  background: linear-gradient(
+    115deg,
+    var(--brand-navy-deep),
+    var(--home-card-mid) 60%,
+    var(--home-cyan)
+  );
+  color: var(--wh);
+}
+.sos-reference .sos-topbar::before,
+.sos-reference .sos-topbar::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -20px;
+  bottom: -45px;
+  width: 128px;
+  height: 175px;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(
+    140deg,
+    var(--home-leaf),
+    var(--brand-green-soft)
+  );
+  transform: rotate(18deg);
+  opacity: 0.8;
+}
+.sos-reference .sos-topbar::before {
+  right: 30px;
+  bottom: -70px;
+  width: 105px;
+  transform: rotate(-35deg);
+  background: linear-gradient(var(--home-sky), var(--home-aqua));
+  opacity: 0.6;
+}
+.sos-reference .sos-brand {
+  gap: 8px;
+}
+.sos-reference .sos-brand img {
+  width: 44px;
+  height: 44px;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--wh);
+  object-fit: contain;
+}
+.sos-reference .sos-brand strong {
+  font-size: 17px;
+  letter-spacing: -0.3px;
+}
+.sos-reference .sos-brand sup {
+  font-size: 8px;
+}
+.sos-reference .sos-brand small {
+  margin-top: 3px;
+  color: var(--wh);
+  font-size: 6px;
+  letter-spacing: 0.8px;
+  line-height: 1.4;
+}
+.sos-reference .sos-top-close {
+  position: absolute;
+  top: 14px;
+  right: 8px;
+  --color: var(--wh);
+  font-size: 10px;
+}
+.sos-greeting h1 {
+  margin: 16px 0 3px;
+  font-size: 25px;
+  font-weight: 750;
+}
+.sos-greeting p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--home-mist);
+}
+.sos-reference .sos-protocol {
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+}
+.sos-reference .sos-scroll-body {
+  padding: 10px 16px 12px;
+}
+.sos-reference.is-protocol .sos-alert-card {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 5px 8px;
+  padding: 12px 10px;
+  border: 2px solid var(--wh);
+  border-radius: 26px;
+  background: linear-gradient(110deg, var(--wh), var(--home-mist));
+  color: var(--brand-navy);
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--home-sky) 40%, transparent);
+}
+.sos-reference.is-protocol .sos-head {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: left;
+  margin: 0;
+}
+.sos-reference.is-protocol .sos-head p {
+  display: none;
+}
+.sos-reference.is-protocol .sos-live {
+  font-size: 8px;
+  padding: 4px 6px;
+  letter-spacing: 0.5px;
+  border: 0;
+  background: var(--red-l);
+  color: var(--panic);
+}
+.sos-reference.is-protocol .sos-live::before {
+  background: var(--panic);
+}
+.sos-reference.is-protocol .sos-orb-wrap {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  width: 124px;
+  height: 124px;
+  margin: auto;
+}
+.sos-reference.is-protocol .sos-count-ring {
+  width: 124px;
+  height: 124px;
+}
+.sos-reference.is-protocol .sos-count-track {
+  stroke: color-mix(in srgb, var(--panic) 18%, var(--wh));
+  stroke-width: 10px;
+}
+.sos-reference.is-protocol ion-button.sos-orb {
+  inset: 13px;
+  width: 98px;
+  height: 98px;
+  --background: radial-gradient(
+    circle at 32% 20%,
+    color-mix(in srgb, var(--panic) 75%, var(--wh)),
+    var(--panic) 55%,
+    color-mix(in srgb, var(--panic) 78%, var(--brand-navy))
+  );
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--panic) 20%, var(--wh)),
+    inset 0 0 10px var(--wh);
+}
+.sos-reference.is-protocol .sos-orb b {
+  font-size: 23px;
+  line-height: 1;
+}
+.sos-reference.is-protocol .sos-orb ion-icon {
+  font-size: 30px;
+}
+.sos-reference.is-protocol .sos-orb small {
+  font-size: 9px;
+}
+.sos-reference.is-protocol .sos-orb-content {
+  gap: 2px;
+}
+.sos-reference.is-protocol .sos-copy {
+  grid-column: 2;
+  grid-row: 2;
+  text-align: left;
+}
+.sos-reference.is-protocol .sos-copy h1 {
+  color: var(--brand-navy);
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 750;
+  letter-spacing: 0;
+  margin: 0 0 5px;
+}
+.sos-reference.is-protocol .sos-copy p {
+  color: var(--mu);
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0;
+}
+.sos-reference.is-protocol .sos-demo-note {
+  grid-column: 2;
+  grid-row: 3;
+  border-radius: 12px;
+  padding: 7px;
+  gap: 5px;
+  background: color-mix(in srgb, var(--home-sky) 55%, var(--wh));
+  color: var(--brand-blue-mid);
+  font-size: 9px;
+  line-height: 1.35;
+}
+.sos-reference .sos-network {
+  margin-top: 12px;
+  padding: 12px 12px 2px;
+  border: 1px solid var(--wh);
+  border-radius: 23px;
+  background: color-mix(in srgb, var(--wh) 90%, var(--home-mist));
+  box-shadow: 0 7px 17px color-mix(in srgb, var(--home-sky) 40%, transparent);
+}
+.sos-reference .sos-section-heading {
+  margin: 0 2px 8px;
+}
+.sos-reference .sos-section-heading small {
+  color: var(--brand-navy);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.sos-reference .sos-section-heading h2 {
+  font-size: 14px;
+  color: var(--brand-blue-mid);
+  margin-top: 4px;
+}
+.sos-reference ion-list.sos-feed {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.sos-reference ion-item.sos-feed-row {
+  --min-height: 56px;
+}
+.sos-reference .sos-feed-ico {
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  background: var(--home-mist);
+  font-size: 19px;
+  margin-right: 9px;
+}
+.sos-reference .sos-feed-row strong {
+  font-size: 12px;
+  color: var(--brand-blue-mid);
+}
+.sos-reference .sos-feed-row small {
+  font-size: 10px;
+  line-height: 1.4;
+}
+.sos-reference .sos-shared {
+  margin-top: 12px;
+}
+.sos-reference.is-protocol .sos-shared > .sos-section-heading {
+  display: none;
+}
+.sos-reference .sos-data-grid {
+  gap: 10px;
+}
+.sos-reference .sos-data-card {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-content: start;
+  gap: 4px 7px;
+  padding: 12px 10px;
+  border: 1px solid var(--wh);
+  border-radius: 20px;
+  background: var(--wh);
+  box-shadow: 0 5px 15px color-mix(in srgb, var(--home-sky) 40%, transparent);
+}
+.sos-reference .sos-data-card > ion-icon {
+  grid-row: 1 / 3;
+  width: 22px;
+  height: 22px;
+  padding: 5px;
+  border-radius: 50%;
+  color: var(--brand-green-soft);
+  background: var(--home-mist);
+}
+.sos-reference .sos-data-card h3 {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.sos-reference .sos-data-card p {
+  grid-column: 2;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.sos-reference .sos-action-dock {
+  border: 0;
+  padding: 9px 16px calc(9px + env(safe-area-inset-bottom, 0px));
+  background: transparent;
+  box-shadow: none;
+}
+.sos-reference .sos-actions {
+  grid-template-columns: 1.25fr 1fr;
+  gap: 9px;
+}
+.sos-reference .sos-actions ion-button {
+  height: 45px;
+  font-size: 12px;
+  --border-radius: 999px;
+}
+.sos-reference ion-button.sos-act-911 {
+  --background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--panic) 85%, var(--wh)),
+    var(--panic)
+  );
+}
+.sos-reference ion-button.sos-act-fam {
+  --background: var(--wh);
+  --color: var(--brand-blue-mid);
+  --border-width: 2px;
+  --border-style: solid;
+  --border-color: var(--home-mist);
+}
+.sos-reference ion-button.sos-act-ok {
+  margin-top: 5px;
+  height: 44px;
+  min-height: 44px;
+  --background: transparent;
+  font-size: 11px;
+}
 @media (max-width: 359px) {
-  .sos-reference .sos-topbar { padding-left: 16px; }
-  .sos-reference .sos-brand strong { font-size: 14px; }
-  .sos-reference .sos-brand img { width: 37px; height: 37px; }
-  .sos-reference .sos-scroll-body { padding-inline: 10px; }
-  .sos-reference.is-protocol .sos-alert-card { grid-template-columns: 106px minmax(0, 1fr); }
-  .sos-reference.is-protocol .sos-orb-wrap, .sos-reference.is-protocol .sos-count-ring { width: 106px; height: 106px; }
-  .sos-reference.is-protocol ion-button.sos-orb { width: 84px; height: 84px; inset: 11px; }
+  .sos-reference .sos-topbar {
+    padding-left: 16px;
+  }
+  .sos-reference .sos-brand strong {
+    font-size: 14px;
+  }
+  .sos-reference .sos-brand img {
+    width: 37px;
+    height: 37px;
+  }
+  .sos-reference .sos-scroll-body {
+    padding-inline: 10px;
+  }
+  .sos-reference.is-protocol .sos-alert-card {
+    grid-template-columns: 106px minmax(0, 1fr);
+  }
+  .sos-reference.is-protocol .sos-orb-wrap,
+  .sos-reference.is-protocol .sos-count-ring {
+    width: 106px;
+    height: 106px;
+  }
+  .sos-reference.is-protocol ion-button.sos-orb {
+    width: 84px;
+    height: 84px;
+    inset: 11px;
+  }
 }
 @media (min-width: 768px) {
-  .sos-reference .sos-topbar { padding-inline: max(24px, calc((100% - 570px) / 2)); }
-  .sos-reference .sos-top-close { right: max(16px, calc((100% - 600px) / 2)); }
+  .sos-reference .sos-topbar {
+    padding-inline: max(24px, calc((100% - 570px) / 2));
+  }
+  .sos-reference .sos-top-close {
+    right: max(16px, calc((100% - 600px) / 2));
+  }
 }
 
 /* Citas: cabeceras azules, superficies claras y continuidad de los tres pasos. */
-.booking-reference, .appointments-reference { background: var(--home-mist); }
-.booking-reference .req-hero { display: grid; grid-template-columns: 1fr; padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 16px; border-radius: 0 0 28px 28px; background: linear-gradient(120deg, var(--brand-navy-deep), var(--home-cyan) 65%, var(--home-leaf)); min-height: 172px; }
-.booking-reference .req-hero-aurora { opacity: .3; }
-.booking-reference .req-hero::after { content: ''; position: absolute; right: -16px; bottom: -36px; width: 75px; height: 145px; transform: rotate(20deg); border-radius: 100% 0 100% 0; background: linear-gradient(var(--home-leaf), var(--brand-green-soft)); opacity: .6; }
-.booking-reference .req-hero-top { display: contents; }
-.booking-reference .req-hero-top > ion-button:first-child { position: absolute; top: calc(20px + env(safe-area-inset-top, 0px)); left: 16px; }
-.booking-reference .req-hero-top > ion-button:last-child { position: absolute; top: calc(18px + env(safe-area-inset-top, 0px)); right: 8px; }
-.booking-reference .req-hero-title { grid-row: 1; margin: 6px 25px 3px 48px; font-size: 21px; font-weight: 750; }
-.booking-reference .req-hero > .sub { grid-row: 2; margin: 0 12px 18px 48px; color: var(--wh); font-size: 11px; line-height: 1.45; }
-.booking-reference .req-hero > .kicker { display: none; }
-.booking-reference .req-hero-dots { grid-row: 3; display: grid; grid-template-columns: repeat(3, 1fr); position: relative; gap: 0; width: 100%; padding: 0; margin-top: 3px; }
-.booking-reference .req-hero-dots::before { content: ''; position: absolute; top: 16px; left: 16%; right: 16%; height: 2px; background: color-mix(in srgb, var(--wh) 75%, transparent); }
-.booking-reference .req-dot { display: flex; flex-direction: column; align-items: center; gap: 7px; width: auto; height: auto; padding: 0; border: 0; background: none; color: var(--wh); z-index: 1; }
-.booking-reference .req-dot::after { display: none; }
-.booking-reference .req-dot > span { display: grid; place-items: center; width: 33px; height: 33px; border-radius: 50%; color: var(--brand-blue-mid); background: var(--wh); font-weight: 750; border: 2px solid var(--home-mist); }
-.booking-reference .req-dot.now > span { color: var(--wh); background: var(--brand-blue-mid); outline: 3px solid color-mix(in srgb, var(--home-aqua) 65%, transparent); }
-.booking-reference .req-dot small { font-size: 10px; line-height: 1.3; }
-.booking-reference .req-dot:disabled { opacity: .85; }
-.booking-reference .req-hero .chips { grid-row: 4; margin-top: 12px; }
-.booking-reference .req-body { background: radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--home-leaf) 35%, transparent), transparent 45%), var(--home-mist); padding: 16px; }
-.booking-reference ion-radio-group.req-types { min-height: 0; grid-template-rows: auto; gap: 12px; flex: initial; }
-.booking-reference ion-radio.req-type-card { min-height: 158px; height: auto; padding: 16px 13px; border: 2px solid var(--wh); border-radius: 22px; background: var(--wh); box-shadow: 0 6px 16px color-mix(in srgb, var(--home-sky) 65%, transparent); }
-.booking-reference ion-radio.req-type-card.sel { background: var(--wh); border-color: var(--home-cyan); box-shadow: 0 0 0 2px color-mix(in srgb, var(--home-aqua) 35%, transparent); }
-.booking-reference ion-radio.req-type-card .req-type-inner { display: grid; grid-template-columns: 78px minmax(0, 1fr); grid-template-rows: auto auto; align-content: start; min-height: 120px; gap: 8px 12px; }
-.booking-reference .req-type-top { grid-column: 1; grid-row: 1; position: relative; }
-.booking-reference .req-type-ico, .booking-reference ion-radio.req-type-card.sel .req-type-ico { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, var(--home-cyan), var(--home-card-mid)) !important; color: var(--wh) !important; font-size: 36px; box-shadow: 0 0 0 7px var(--home-sky); }
-.booking-reference .ac-org .req-type-ico, .booking-reference ion-radio.ac-org.sel .req-type-ico { background: var(--panic) !important; box-shadow: 0 0 0 7px var(--red-l); }
-.booking-reference .req-type-kicker { display: none; }
-.booking-reference .req-type-check { position: absolute; right: -6px; bottom: 0; color: var(--brand-green-soft); font-size: 20px; background: var(--wh); border-radius: 50%; }
-.booking-reference .req-type-copy { grid-column: 2; align-self: center; }
-.booking-reference .req-type-copy .ct, .booking-reference ion-radio.req-type-card.sel .ct { color: var(--brand-navy); font-size: 19px; font-weight: 750; }
-.booking-reference .ac-org .req-type-copy .ct { color: var(--panic); }
-.booking-reference .req-type-copy .cs, .booking-reference ion-radio.req-type-card.sel .cs { color: var(--mu); font-size: 12px; line-height: 1.5; margin-top: 5px; white-space: normal; }
-.booking-reference .req-type-note, .booking-reference ion-radio.req-type-card.sel .req-type-note { grid-column: 1 / -1; padding: 10px; border-radius: 14px; color: var(--panic); background: var(--red-l); font-size: 11px; }
-.booking-reference .req-type-pro { grid-column: 1 / -1; background: var(--home-mist); border: 0; border-radius: 12px; padding: 8px; }
-.booking-reference ion-radio.req-type-card.sel .req-type-pro strong { color: var(--brand-navy); }
-.booking-reference ion-radio.req-type-card.sel .req-type-pro small { color: var(--mu); }
-.booking-reference .req-cal { border: 2px solid var(--wh); border-radius: 23px; background: var(--wh); box-shadow: 0 6px 18px color-mix(in srgb, var(--home-sky) 55%, transparent); padding: 13px 10px; }
-.booking-reference .req-cal-month { color: var(--brand-navy); font-size: 17px; }
-.booking-reference .req-cal-week { color: var(--brand-navy); }
-.booking-reference ion-button.req-cal-day { --border-radius: 50%; --color: var(--brand-navy); --background: transparent; border: 0; }
-.booking-reference ion-button.req-cal-day.sel { --background: var(--brand-blue-mid); --color: var(--wh); box-shadow: 0 3px 8px var(--home-sky); border-radius: 50%; }
-.booking-reference .req-cal-legend { color: var(--mu); font-size: 10px; }
-.booking-reference .req-times-title { color: var(--brand-navy); font-size: 14px; }
-.booking-reference .req-slots { gap: 7px; }
-.booking-reference ion-button.req-slot { --background: var(--home-mist); --color: var(--brand-navy); --border-radius: 14px; border: 1px solid var(--home-sky); border-radius: 14px; min-height: 44px; }
-.booking-reference ion-button.req-slot.sel { --background: var(--brand-blue-mid); --color: var(--wh); }
-.booking-reference .req-foot { background: var(--home-mist); border-top: 0; }
-.booking-reference .req-foot-row { grid-template-columns: auto 1fr; }
-.booking-reference .req-foot ion-button.bt-teal, .booking-reference .req-foot ion-button.bt-primary { --background: linear-gradient(110deg, var(--home-card-mid), var(--brand-green-soft), var(--home-leaf)); --border-radius: 999px; }
-.booking-reference .field, .booking-reference .req-modes { background: var(--wh); border-radius: 20px; padding: 13px; box-shadow: 0 4px 12px color-mix(in srgb, var(--home-sky) 35%, transparent); }
-.booking-reference .req-mode-card { border-radius: 16px; }
-.booking-reference .appt-featured { border-radius: 23px; border: 1px solid var(--wh); box-shadow: 0 6px 16px var(--home-sky); }
-.booking-reference .appt-featured-body { background: linear-gradient(125deg, var(--wh), var(--home-mist)); }
-.appointments-brand { position: relative; overflow: hidden; flex-shrink: 0; padding: calc(18px + env(safe-area-inset-top, 0px)) 22px 18px; min-height: 90px; border-radius: 0 0 22px 22px; background: linear-gradient(115deg, var(--brand-navy-deep), var(--home-cyan), var(--home-leaf)); }
-.appointments-brand img { width: 45px; height: 45px; border-radius: 50%; padding: 2px; background: var(--wh); }
-.appointments-brand strong { color: var(--wh); font-size: 18px; }
-.appointments-brand small { color: var(--wh); font-size: 6px; letter-spacing: 1px; }
-.appointments-reference .page-head { padding: 12px 20px; background: transparent; border: 0; }
-.appointments-reference .page-head-title { font-size: 25px; color: var(--brand-navy); }
-.appointments-reference .page-head-sub { font-size: 12px; color: var(--brand-sky-deep); }
-.appointments-reference .screen-scroll { background: var(--home-mist); }
-.appointments-reference .appt-featured { position: relative; overflow: hidden; border-radius: 22px; border: 2px solid var(--wh); background: linear-gradient(115deg, var(--home-aqua), var(--home-leaf) 65%, var(--home-mist)); box-shadow: 0 6px 18px color-mix(in srgb, var(--home-sky) 55%, transparent); }
-.appointments-reference .appt-featured-band { background: transparent !important; color: var(--brand-blue-mid); padding: 12px 15px 5px; font-size: 11px; }
-.appointments-reference .appt-featured-body { padding: 12px 16px 15px; background: transparent; }
-.appointments-reference .appt-featured-when { color: var(--brand-navy); font-size: 27px; }
-.appointments-reference .appt-featured-mode { color: var(--brand-blue-mid); font-size: 13px; }
-.appointments-reference .appt-featured ion-button.bt-teal { --background: linear-gradient(110deg, var(--brand-navy-deep), var(--brand-blue-mid)); --border-radius: 999px; }
-.appointments-reference .sec { color: var(--brand-navy); font-size: 14px; margin-top: 16px; }
-.appointments-reference .group-list { background: transparent; border: 0; box-shadow: none; }
-.appointments-reference .group-row { margin-bottom: 8px; padding: 12px; border: 1px solid var(--wh); border-radius: 18px; background: var(--wh); box-shadow: 0 3px 10px color-mix(in srgb, var(--home-sky) 45%, transparent); }
-.appointments-reference .next-appt-time { border-radius: 12px; padding: 8px; background: var(--home-mist); color: var(--brand-navy); }
-.appointments-reference .group-row-body strong { font-size: 13px; color: var(--brand-navy); }
-.appointments-reference .group-row-body small { font-size: 11px; color: var(--mu); }
-@media (max-width: 359px) {
-  .booking-reference .req-hero-title { font-size: 18px; }
-  .booking-reference .req-type-copy .ct { font-size: 16px; }
-  .booking-reference ion-radio.req-type-card .req-type-inner { grid-template-columns: 67px minmax(0, 1fr); }
-  .booking-reference .req-type-ico { width: 56px; height: 56px; }
+.booking-reference,
+.appointments-reference {
+  background: var(--home-mist);
 }
-.booking-reference .req-reference-detail { display: block; margin-top: 8px; color: var(--mu); font-size: 11px; line-height: 1.45; white-space: normal; }
-.booking-reference ion-radio.req-type-card .req-type-inner { min-height: 126px; }
-.booking-reference .req-foot ion-button { --border-radius: 999px; }
-.booking-reference .appt-featured-band { background: linear-gradient(110deg, var(--brand-blue-mid), var(--home-cyan)) !important; }
-.booking-reference ion-radio.req-type-card { height: auto; }
-.booking-reference .req-hero-top > ion-button:first-child { --background: color-mix(in srgb, var(--wh) 18%, transparent); }
-.appointments-reference .next-appt-time { min-width: 62px; flex-shrink: 0; }
-.appointments-reference .next-appt-time strong { white-space: nowrap; font-size: 13px; }
-.appointments-reference .appt-featured-body { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 10px 12px; }
-.appointments-reference .appt-featured-when { grid-column: 1; grid-row: 1 / 3; display: grid; place-items: center; min-height: 84px; margin: 0; border-radius: 17px; background: color-mix(in srgb, var(--wh) 90%, transparent); font-size: 24px; }
-.appointments-reference .appt-featured-mode { grid-column: 2; margin: 0; font-size: 12px; }
-.appointments-reference .appt-featured-body > div:nth-child(3) { grid-column: 2; margin-bottom: 0 !important; font-size: 12px; }
-.appointments-reference .appt-featured-body > div:nth-child(4), .appointments-reference .appt-featured-body > ion-button { grid-column: 1 / -1; }
-.appointments-reference .appt-featured-body .avatar { flex-shrink: 0; }
-.appointments-reference .appt-featured::after { content: ''; position: absolute; right: -12px; top: -36px; width: 55px; height: 110px; border-radius: 100% 0 100% 0; background: linear-gradient(150deg, var(--brand-green-soft), var(--home-aqua)); opacity: .2; pointer-events: none; }
+.booking-reference .req-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 16px;
+  border-radius: 0 0 28px 28px;
+  background: linear-gradient(
+    120deg,
+    var(--brand-navy-deep),
+    var(--home-cyan) 65%,
+    var(--home-leaf)
+  );
+  min-height: 172px;
+}
+.booking-reference .req-hero-aurora {
+  opacity: 0.3;
+}
+.booking-reference .req-hero::after {
+  content: "";
+  position: absolute;
+  right: -16px;
+  bottom: -36px;
+  width: 75px;
+  height: 145px;
+  transform: rotate(20deg);
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(var(--home-leaf), var(--brand-green-soft));
+  opacity: 0.6;
+}
+.booking-reference .req-hero-top {
+  display: contents;
+}
+.booking-reference .req-hero-top > ion-button:first-child {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top, 0px));
+  left: 16px;
+}
+.booking-reference .req-hero-top > ion-button:last-child {
+  position: absolute;
+  top: calc(18px + env(safe-area-inset-top, 0px));
+  right: 8px;
+}
+.booking-reference .req-hero-title {
+  grid-row: 1;
+  margin: 6px 25px 3px 48px;
+  font-size: 21px;
+  font-weight: 750;
+}
+.booking-reference .req-hero > .sub {
+  grid-row: 2;
+  margin: 0 12px 18px 48px;
+  color: var(--wh);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.booking-reference .req-hero > .kicker {
+  display: none;
+}
+.booking-reference .req-hero-dots {
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  position: relative;
+  gap: 0;
+  width: 100%;
+  padding: 0;
+  margin-top: 3px;
+}
+.booking-reference .req-hero-dots::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 16%;
+  right: 16%;
+  height: 2px;
+  background: color-mix(in srgb, var(--wh) 75%, transparent);
+}
+.booking-reference .req-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wh);
+  z-index: 1;
+}
+.booking-reference .req-dot::after {
+  display: none;
+}
+.booking-reference .req-dot > span {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+  color: var(--brand-blue-mid);
+  background: var(--wh);
+  font-weight: 750;
+  border: 2px solid var(--home-mist);
+}
+.booking-reference .req-dot.now > span {
+  color: var(--wh);
+  background: var(--brand-blue-mid);
+  outline: 3px solid color-mix(in srgb, var(--home-aqua) 65%, transparent);
+}
+.booking-reference .req-dot small {
+  font-size: 10px;
+  line-height: 1.3;
+}
+.booking-reference .req-dot:disabled {
+  opacity: 0.85;
+}
+.booking-reference .req-hero .chips {
+  grid-row: 4;
+  margin-top: 12px;
+}
+.booking-reference .req-body {
+  background:
+    radial-gradient(
+      ellipse at 100% 100%,
+      color-mix(in srgb, var(--home-leaf) 35%, transparent),
+      transparent 45%
+    ),
+    var(--home-mist);
+  padding: 16px;
+}
+.booking-reference ion-radio-group.req-types {
+  min-height: 0;
+  grid-template-rows: auto;
+  gap: 12px;
+  flex: initial;
+}
+.booking-reference ion-radio.req-type-card {
+  min-height: 158px;
+  height: auto;
+  padding: 16px 13px;
+  border: 2px solid var(--wh);
+  border-radius: 22px;
+  background: var(--wh);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--home-sky) 65%, transparent);
+}
+.booking-reference ion-radio.req-type-card.sel {
+  background: var(--wh);
+  border-color: var(--home-cyan);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--home-aqua) 35%, transparent);
+}
+.booking-reference ion-radio.req-type-card .req-type-inner {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: start;
+  min-height: 120px;
+  gap: 8px 12px;
+}
+.booking-reference .req-type-top {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+}
+.booking-reference .req-type-ico,
+.booking-reference ion-radio.req-type-card.sel .req-type-ico {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--home-cyan),
+    var(--home-card-mid)
+  ) !important;
+  color: var(--wh) !important;
+  font-size: 36px;
+  box-shadow: 0 0 0 7px var(--home-sky);
+}
+.booking-reference .ac-org .req-type-ico,
+.booking-reference ion-radio.ac-org.sel .req-type-ico {
+  background: var(--panic) !important;
+  box-shadow: 0 0 0 7px var(--red-l);
+}
+.booking-reference .req-type-kicker {
+  display: none;
+}
+.booking-reference .req-type-check {
+  position: absolute;
+  right: -6px;
+  bottom: 0;
+  color: var(--brand-green-soft);
+  font-size: 20px;
+  background: var(--wh);
+  border-radius: 50%;
+}
+.booking-reference .req-type-copy {
+  grid-column: 2;
+  align-self: center;
+}
+.booking-reference .req-type-copy .ct,
+.booking-reference ion-radio.req-type-card.sel .ct {
+  color: var(--brand-navy);
+  font-size: 19px;
+  font-weight: 750;
+}
+.booking-reference .ac-org .req-type-copy .ct {
+  color: var(--panic);
+}
+.booking-reference .req-type-copy .cs,
+.booking-reference ion-radio.req-type-card.sel .cs {
+  color: var(--mu);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 5px;
+  white-space: normal;
+}
+.booking-reference .req-type-note,
+.booking-reference ion-radio.req-type-card.sel .req-type-note {
+  grid-column: 1 / -1;
+  padding: 10px;
+  border-radius: 14px;
+  color: var(--panic);
+  background: var(--red-l);
+  font-size: 11px;
+}
+.booking-reference .req-type-pro {
+  grid-column: 1 / -1;
+  background: var(--home-mist);
+  border: 0;
+  border-radius: 12px;
+  padding: 8px;
+}
+.booking-reference ion-radio.req-type-card.sel .req-type-pro strong {
+  color: var(--brand-navy);
+}
+.booking-reference ion-radio.req-type-card.sel .req-type-pro small {
+  color: var(--mu);
+}
+.booking-reference .req-cal {
+  border: 2px solid var(--wh);
+  border-radius: 23px;
+  background: var(--wh);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--home-sky) 55%, transparent);
+  padding: 13px 10px;
+}
+.booking-reference .req-cal-month {
+  color: var(--brand-navy);
+  font-size: 17px;
+}
+.booking-reference .req-cal-week {
+  color: var(--brand-navy);
+}
+.booking-reference ion-button.req-cal-day {
+  --border-radius: 50%;
+  --color: var(--brand-navy);
+  --background: transparent;
+  border: 0;
+}
+.booking-reference ion-button.req-cal-day.sel {
+  --background: var(--brand-blue-mid);
+  --color: var(--wh);
+  box-shadow: 0 3px 8px var(--home-sky);
+  border-radius: 50%;
+}
+.booking-reference .req-cal-legend {
+  color: var(--mu);
+  font-size: 10px;
+}
+.booking-reference .req-times-title {
+  color: var(--brand-navy);
+  font-size: 14px;
+}
+.booking-reference .req-slots {
+  gap: 7px;
+}
+.booking-reference ion-button.req-slot {
+  --background: var(--home-mist);
+  --color: var(--brand-navy);
+  --border-radius: 14px;
+  border: 1px solid var(--home-sky);
+  border-radius: 14px;
+  min-height: 44px;
+}
+.booking-reference ion-button.req-slot.sel {
+  --background: var(--brand-blue-mid);
+  --color: var(--wh);
+}
+.booking-reference .req-foot {
+  background: var(--home-mist);
+  border-top: 0;
+}
+.booking-reference .req-foot-row {
+  grid-template-columns: auto 1fr;
+}
+.booking-reference .req-foot ion-button.bt-teal,
+.booking-reference .req-foot ion-button.bt-primary {
+  --background: linear-gradient(
+    110deg,
+    var(--home-card-mid),
+    var(--brand-green-soft),
+    var(--home-leaf)
+  );
+  --border-radius: 999px;
+}
+.booking-reference .field,
+.booking-reference .req-modes {
+  background: var(--wh);
+  border-radius: 20px;
+  padding: 13px;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--home-sky) 35%, transparent);
+}
+.booking-reference .req-mode-card {
+  border-radius: 16px;
+}
+.booking-reference .appt-featured {
+  border-radius: 23px;
+  border: 1px solid var(--wh);
+  box-shadow: 0 6px 16px var(--home-sky);
+}
+.booking-reference .appt-featured-body {
+  background: linear-gradient(125deg, var(--wh), var(--home-mist));
+}
+.appointments-brand {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 22px 18px;
+  min-height: 90px;
+  border-radius: 0 0 22px 22px;
+  background: linear-gradient(
+    115deg,
+    var(--brand-navy-deep),
+    var(--home-cyan),
+    var(--home-leaf)
+  );
+}
+.appointments-brand img {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  padding: 2px;
+  background: var(--wh);
+}
+.appointments-brand strong {
+  color: var(--wh);
+  font-size: 18px;
+}
+.appointments-brand small {
+  color: var(--wh);
+  font-size: 6px;
+  letter-spacing: 1px;
+}
+.appointments-reference .page-head {
+  padding: 12px 20px;
+  background: transparent;
+  border: 0;
+}
+.appointments-reference .page-head-title {
+  font-size: 25px;
+  color: var(--brand-navy);
+}
+.appointments-reference .page-head-sub {
+  font-size: 12px;
+  color: var(--brand-sky-deep);
+}
+.appointments-reference .screen-scroll {
+  background: var(--home-mist);
+}
+.appointments-reference .appt-featured {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 2px solid var(--wh);
+  background: linear-gradient(
+    115deg,
+    var(--home-aqua),
+    var(--home-leaf) 65%,
+    var(--home-mist)
+  );
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--home-sky) 55%, transparent);
+}
+.appointments-reference .appt-featured-band {
+  background: transparent !important;
+  color: var(--brand-blue-mid);
+  padding: 12px 15px 5px;
+  font-size: 11px;
+}
+.appointments-reference .appt-featured-body {
+  padding: 12px 16px 15px;
+  background: transparent;
+}
+.appointments-reference .appt-featured-when {
+  color: var(--brand-navy);
+  font-size: 27px;
+}
+.appointments-reference .appt-featured-mode {
+  color: var(--brand-blue-mid);
+  font-size: 13px;
+}
+.appointments-reference .appt-featured ion-button.bt-teal {
+  --background: linear-gradient(
+    110deg,
+    var(--brand-navy-deep),
+    var(--brand-blue-mid)
+  );
+  --border-radius: 999px;
+}
+.appointments-reference .sec {
+  color: var(--brand-navy);
+  font-size: 14px;
+  margin-top: 16px;
+}
+.appointments-reference .group-list {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.appointments-reference .group-row {
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid var(--wh);
+  border-radius: 18px;
+  background: var(--wh);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--home-sky) 45%, transparent);
+}
+.appointments-reference .next-appt-time {
+  border-radius: 12px;
+  padding: 8px;
+  background: var(--home-mist);
+  color: var(--brand-navy);
+}
+.appointments-reference .group-row-body strong {
+  font-size: 13px;
+  color: var(--brand-navy);
+}
+.appointments-reference .group-row-body small {
+  font-size: 11px;
+  color: var(--mu);
+}
+@media (max-width: 359px) {
+  .booking-reference .req-hero-title {
+    font-size: 18px;
+  }
+  .booking-reference .req-type-copy .ct {
+    font-size: 16px;
+  }
+  .booking-reference ion-radio.req-type-card .req-type-inner {
+    grid-template-columns: 67px minmax(0, 1fr);
+  }
+  .booking-reference .req-type-ico {
+    width: 56px;
+    height: 56px;
+  }
+}
+.booking-reference .req-reference-detail {
+  display: block;
+  margin-top: 8px;
+  color: var(--mu);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: normal;
+}
+.booking-reference ion-radio.req-type-card .req-type-inner {
+  min-height: 126px;
+}
+.booking-reference .req-foot ion-button {
+  --border-radius: 999px;
+}
+.booking-reference .appt-featured-band {
+  background: linear-gradient(
+    110deg,
+    var(--brand-blue-mid),
+    var(--home-cyan)
+  ) !important;
+}
+.booking-reference ion-radio.req-type-card {
+  height: auto;
+}
+.booking-reference .req-hero-top > ion-button:first-child {
+  --background: color-mix(in srgb, var(--wh) 18%, transparent);
+}
+.appointments-reference .next-appt-time {
+  min-width: 62px;
+  flex-shrink: 0;
+}
+.appointments-reference .next-appt-time strong {
+  white-space: nowrap;
+  font-size: 13px;
+}
+.appointments-reference .appt-featured-body {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 10px 12px;
+}
+.appointments-reference .appt-featured-when {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  min-height: 84px;
+  margin: 0;
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--wh) 90%, transparent);
+  font-size: 24px;
+}
+.appointments-reference .appt-featured-mode {
+  grid-column: 2;
+  margin: 0;
+  font-size: 12px;
+}
+.appointments-reference .appt-featured-body > div:nth-child(3) {
+  grid-column: 2;
+  margin-bottom: 0 !important;
+  font-size: 12px;
+}
+.appointments-reference .appt-featured-body > div:nth-child(4),
+.appointments-reference .appt-featured-body > ion-button {
+  grid-column: 1 / -1;
+}
+.appointments-reference .appt-featured-body .avatar {
+  flex-shrink: 0;
+}
+.appointments-reference .appt-featured::after {
+  content: "";
+  position: absolute;
+  right: -12px;
+  top: -36px;
+  width: 55px;
+  height: 110px;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(
+    150deg,
+    var(--brand-green-soft),
+    var(--home-aqua)
+  );
+  opacity: 0.2;
+  pointer-events: none;
+}
+/* Vista de foco de medición: el modal ocupa toda la pantalla y solo muestra
+   lo que se está midiendo (pasos, progreso honesto, valor en vivo y cierre). */
+.measure-focus-modal {
+  --width: 100%;
+  --height: 100%;
+  --border-radius: 0;
+}
+.mfocus-wrap {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: calc(var(--ion-safe-area-top, 0px) + 24px) 20px
+    calc(var(--ion-safe-area-bottom, 0px) + 24px);
+  background: var(--wh);
+  color: var(--navy);
+}
+.mfocus-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.mfocus-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--g1);
+  color: var(--ice-d);
+}
+.mfocus-step.is-active {
+  background: var(--navy);
+  color: var(--wh);
+}
+.mfocus-step.is-done {
+  background: var(--teal-l);
+  color: var(--teal-d);
+}
+.mfocus-step ion-icon {
+  font-size: 16px;
+}
+.mfocus-stepval {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mfocus-step strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+.mfocus-step span {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+.mfocus-live {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  min-height: 64px;
+  color: var(--navy);
+}
+.mfocus-live strong {
+  font-size: 88px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+}
+.mfocus-live span {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ice-d);
+}
+.mfocus-wait {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice-d);
+}
+/* En foco la tarjeta va desnuda: sin fondo ni bordes, solo mensaje, % y barra. */
+.mfocus-wrap .measure-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+.measure-bare-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.measure-bare-top strong {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.3;
+}
+.mfocus-wrap .measure-bare-top strong {
+  color: var(--navy);
+}
+.mfocus-wrap .measure-timer {
+  color: var(--navy);
+}
+.mfocus-wrap .measure-timer small {
+  color: var(--ice-d);
+}
+.mfocus-wrap .measure-bar {
+  background: var(--g1);
+}
+.mfocus-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--navy);
+}
+.mfocus-result > ion-icon {
+  font-size: 64px;
+}
+.mfocus-result.is-ok > ion-icon {
+  color: var(--teal);
+}
+.mfocus-result.is-err > ion-icon {
+  color: var(--org);
+}
+.mfocus-metric {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ice-d);
+}
+.mfocus-value {
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+}
+.mfocus-result p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tx);
+}
+.mfocus-result .bt {
+  width: 100%;
+}
+/* Fase de volcado: barra indeterminada honesta (la duración del dump no se
+   conoce, no se inventa un porcentaje). */
+.measure-bar.is-busy {
+  margin-top: 10px;
+}
+.measure-bar.is-busy > i {
+  width: 40%;
+  animation: mfocus-slide 1.4s ease-in-out infinite;
+}
+@keyframes mfocus-slide {
+  0% {
+    margin-left: -40%;
+  }
+  100% {
+    margin-left: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .measure-bar.is-busy > i {
+    animation: none;
+  }
+}
+/* Resumen final: una fila por valor (icono + etiqueta + número grande). */
+.mfocus-summary-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--g0);
+  border: 1px solid color-mix(in srgb, var(--bd) 55%, var(--wh));
+  border-radius: 18px;
+  overflow: hidden;
+}
+.mfocus-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+.mfocus-summary-row + .mfocus-summary-row {
+  border-top: 1px solid color-mix(in srgb, var(--bd) 55%, var(--wh));
+}
+.mfocus-summary-ico {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--teal) 10%, var(--wh));
+  color: var(--teal-d);
+}
+.mfocus-summary-ico ion-icon {
+  font-size: 22px;
+}
+.mfocus-summary-row .mfocus-metric {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ice-d);
+}
+.mfocus-summary-row .mfocus-value {
+  font-size: 34px;
+  text-align: right;
+  white-space: nowrap;
+}
+.mfocus-summary-row .mfocus-value-unit {
+  font-size: 14px;
+  margin-left: 6px;
+}
+.mfocus-value-unit {
+  font-size: 22px;
+  font-weight: 700;
+  margin-left: 8px;
+  letter-spacing: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mfocus-live strong,
+  .mfocus-value {
+    letter-spacing: 0;
+  }
+}
+/* Visuales vivas de la vista de foco: icono grande pulsante + animación por
+   métrica (ECG real en FC, burbujas en SpO2, onda en presión). */
+.mfocus-bigico {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--blue-l);
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--wh));
+}
+.mfocus-bigico ion-icon {
+  font-size: 36px;
+  color: var(--blue);
+  animation: mfocus-beat 1s ease-in-out infinite;
+}
+@keyframes mfocus-beat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.18);
+  }
+  45% {
+    transform: scale(1.05);
+  }
+}
+.mfocus-ecg {
+  width: 100%;
+  --ecg-trace: var(--teal-d);
+  --ecg-grid: color-mix(in srgb, var(--teal) 16%, var(--wh));
+}
+.mmo-spo2 {
+  width: 76px;
+  height: 84px;
+  margin: 0 auto;
+  display: block;
+}
+.mmo-spo2 .mmo-drop {
+  fill: var(--blue-l);
+  stroke: var(--cyan);
+  stroke-width: 2.5;
+}
+.mmo-spo2 .mmo-bubble {
+  fill: var(--wh);
+  stroke: var(--cyan);
+  stroke-width: 1;
+  opacity: 0;
+  animation: mmo-rise 3s ease-in infinite;
+}
+.mmo-spo2 .mmo-b2 {
+  animation-delay: 1s;
+}
+.mmo-spo2 .mmo-b3 {
+  animation-delay: 2s;
+}
+@keyframes mmo-rise {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-22px);
+    opacity: 0;
+  }
+}
+.mmo-bp {
+  width: 100%;
+  max-width: 240px;
+  height: 52px;
+  margin: 0 auto;
+  display: block;
+}
+.mmo-bp .mmo-wave-path {
+  stroke: var(--teal);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: mmo-draw 2.6s linear infinite;
+}
+@keyframes mmo-draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mfocus-bigico ion-icon,
+  .mmo-spo2 .mmo-bubble,
+  .mmo-bp .mmo-wave-path {
+    animation: none;
+  }
+  .mmo-spo2 .mmo-bubble {
+    opacity: 0.7;
+  }
+}

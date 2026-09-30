@@ -27,12 +27,20 @@ import {
   footstepsOutline,
   moonOutline,
   pulseOutline,
+  refresh,
   trashOutline,
   waterOutline,
 } from "ionicons/icons";
 import { WatchIcon3D } from "../components/icons3d";
 import logoIcon from "../assets/LogoIndividual.png";
 import { EcgTrace } from "../components/EcgTrace";
+import {
+  MeasureFocusOverlay,
+  MeasureSyncOverlay,
+  type FocusResult,
+  type FocusSessionValue,
+  type FocusStep,
+} from "../components/MeasureFocusOverlay";
 import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
@@ -40,7 +48,13 @@ import { useWearable } from "../context/WearableContext";
 import { describeServices, formatEntry } from "../devices/diagnostics";
 import { useI18n } from "../i18n/I18nContext";
 import { useElapsed } from "../hooks/useElapsed";
-import { measurePhase, measurePhaseLabel } from "../utils/measure";
+import {
+  FLASH_LAST_MS,
+  FLASH_MS,
+  formatMeasureReading,
+  measurePhase,
+  measurePhaseLabel,
+} from "../utils/measure";
 import { useDoubleTap } from "../hooks/useDoubleTap";
 import { agoLabel, formatSleep } from "../utils/wearable";
 import type {
@@ -66,7 +80,8 @@ const ERROR_KEYS: Record<WearableErrorCode, string> = {
 };
 
 /** Red de seguridad de la UI: si el driver nunca avisa, se libera el botón. */
-const MEASURE_SAFETY_MS = 45_000;
+/** Margen sobre la ventana del driver para la red de seguridad de la UI. */
+const MEASURE_SAFETY_MARGIN_MS = 15_000;
 
 /** Hora local de hoy (para que la muestra de sueño parezca "de anoche"). */
 function todayAt(hours: number, minutes: number): number {
@@ -173,6 +188,8 @@ export function WearablePage() {
     measureKinds,
     measure,
     measurePolicy,
+    stopMeasure,
+    cancelSync,
     syncing,
     syncStage,
     lastSyncAt,
@@ -192,6 +209,15 @@ export function WearablePage() {
     kind: MetricKind;
     since: number;
   } | null>(null);
+  /** Espejo de las muestras para leer el valor final al cerrar la medida. */
+  const samplesRef = useRef(samples);
+  samplesRef.current = samples;
+  /** Cierre visible en la vista de foco (éxito con el número o fallo). */
+  const [focusResult, setFocusResult] = useState<FocusResult | null>(null);
+  /** Valores logrados en esta sesión (bandeja: solo FC y SpO2). */
+  const [sessionValues, setSessionValues] = useState<FocusSessionValue[]>([]);
+  /** Métricas completadas de la secuencia en curso (pasos hechos). */
+  const [focusDone, setFocusDone] = useState<MetricKind[]>([]);
   /** Cola de "Medir todo": se ejecuta una métrica tras otra. */
   const measureQueue = useRef<MetricKind[]>([]);
   const [queued, setQueued] = useState(0);
@@ -207,17 +233,32 @@ export function WearablePage() {
   const startRef = useRef<(kind: MetricKind) => void>(() => undefined);
   /** Temporizador que libera la medida si el driver no llama a onDone. */
   const measureSafety = useRef<number | undefined>(undefined);
+  /**
+   * Destello del 100 %: al llegar la lectura la tarjeta se queda un instante
+   * en 100 % antes de mostrar el resultado y avanzar la cola.
+   */
+  const [flashKind, setFlashKind] = useState<MetricKind | null>(null);
+  const flashTimer = useRef<number | undefined>(undefined);
+  const clearFlash = useCallback(() => {
+    if (flashTimer.current !== undefined) {
+      window.clearTimeout(flashTimer.current);
+      flashTimer.current = undefined;
+    }
+    setFlashKind(null);
+  }, []);
   const announced = useRef(false);
 
-  /** Fase del cronómetro de la medida en curso (ventana real del driver). */
+  /** Fase del cronómetro de la medida en curso (ritmo esperado por métrica). */
   const measureProgress = measurePhase(
     elapsed * 1000,
     measuring ? measurePolicy(measuring.kind) : undefined,
+    measuring?.kind,
   );
   /** Fase del sync (medidas que dispara "Sincronizar ahora"). */
   const syncProgress = measurePhase(
     syncElapsed * 1000,
     syncStage ? measurePolicy(syncStage.kind) : undefined,
+    syncStage?.kind,
   );
 
   const scanning = phase === "scanning";
@@ -306,16 +347,24 @@ export function WearablePage() {
   }, [reconnect, savedDevice, wearableConnected]);
 
   // Al salir de la pantalla no queda ningún temporizador de medida vivo.
+  // (clearFlash es estable: no entra en las dependencias.)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(
     () => () => {
       if (measureSafety.current !== undefined) {
         window.clearTimeout(measureSafety.current);
         measureSafety.current = undefined;
       }
+      if (flashTimer.current !== undefined) {
+        window.clearTimeout(flashTimer.current);
+        flashTimer.current = undefined;
+      }
     },
     [],
   );
 
+  /** Métricas cuya última medida falló: la tarjeta ofrece Reintentar. */
+  const [failedKinds, setFailedKinds] = useState<MetricKind[]>([]);
   /** Cierra la medida en curso y encadena la siguiente de la cola, si hay. */
   const finishMeasure = useCallback(
     (kind: MetricKind, ok: boolean, reason: MeasureOutcome) => {
@@ -324,41 +373,103 @@ export function WearablePage() {
         measureSafety.current = undefined;
       }
       setMeasuring((current) => (current?.kind === kind ? null : current));
-      if (!ok) {
+      // Cancelación del usuario desde la vista de foco: sin toast y sin
+      // avanzar la cola (cancelFocus ya la vació).
+      if (!ok && reason === "cancelled") return;
+      if (ok) {
+        // El número entra YA a la tira y vuela a su paso durante el destello
+        // del 100 %; al terminar se avanza la cola sin cambiar de vista. La
+        // última se queda más para leer la tira completa antes de salir.
+        const reading = formatMeasureReading(kind, samplesRef.current[kind]);
+        if (reading) {
+          const unit = t(reading.unit);
+          const entry = { kind, value: reading.value, unit };
+          setSessionValues((prev) =>
+            prev.some((item) => item.kind === kind)
+              ? prev.map((item) => (item.kind === kind ? entry : item))
+              : [...prev, entry],
+          );
+        }
+        setFocusDone((prev) => (prev.includes(kind) ? prev : [...prev, kind]));
+        setFailedKinds((prev) => prev.filter((failed) => failed !== kind));
+        setFlashKind(kind);
+        const last = measureQueue.current.length === 0;
+        flashTimer.current = window.setTimeout(
+          () => {
+            flashTimer.current = undefined;
+            setFlashKind(null);
+            setMeasuring((current) =>
+              current?.kind === kind ? null : current,
+            );
+            const next = measureQueue.current.shift();
+            syncQueue();
+            if (next) startRef.current(next);
+            else {
+              // Secuencia completa: la vista se cierra sola con la tira llena.
+              setFocusResult(null);
+              setFocusDone([]);
+              setSessionValues([]);
+              setFailedKinds([]);
+            }
+          },
+          last ? FLASH_LAST_MS : FLASH_MS,
+        );
+        return;
+      }
+      {
         // Mensaje por causa real, no un genérico: el driver distingue entre
-        // rechazo del sensor, fallo por contacto/movimiento y silencio.
+        // rechazo del sensor, fallo por contacto/movimiento, silencio total y
+        // el resto de cierres. En secuencia se frena aquí (sin auto-avance):
+        // la vista de foco ofrece Reintentar esa métrica.
         const message =
           reason === "refused"
             ? t("El wearable rechazó esta medición.")
             : reason === "failed"
               ? t("La medición falló por falta de contacto o movimiento.")
-              : t(
-                  "La medición no se completó. Mantén el wearable en contacto e inténtalo de nuevo.",
-                );
+              : reason === "no-signal"
+                ? t(
+                    "Sin señal del anillo. Ajusta el anillo, quédate quieto e inténtalo de nuevo.",
+                  )
+                : t(
+                    "La medición no se completó. Mantén el wearable en contacto e inténtalo de nuevo.",
+                  );
+        setFocusResult({ ok: false, kind, message });
+        setFailedKinds((prev) =>
+          prev.includes(kind) ? prev : [...prev, kind],
+        );
         showToast(message, "err");
       }
-      const next = measureQueue.current.shift();
-      syncQueue();
-      if (next) startRef.current(next);
     },
-    [showToast, syncHistory, syncQueue, t],
+    [showToast, syncQueue, t],
   );
 
   const startMeasure = useCallback(
     (kind: MetricKind) => {
+      clearFlash();
       setMeasuring({ kind, since: Date.now() });
+      setFailedKinds((prev) => prev.filter((failed) => failed !== kind));
       // Si el driver no avisa (bug o hardware mudo), la UI se libera sola:
       // antes el botón quedaba "midiendo" para siempre y bloqueaba los demás.
+      // El tope sale de la ventana REAL del driver + margen: con un fijo (45 s)
+      // la UI "cerraba" el SpO2 del anillo (ventana 90 s) a la mitad y el
+      // re-toque apilaba una medida sobre el driver aún midiendo (toast tras
+      // toast sin que pareciera intentarlo).
       if (measureSafety.current !== undefined) {
         window.clearTimeout(measureSafety.current);
       }
-      measureSafety.current = window.setTimeout(
-        () => finishMeasure(kind, false, "timeout"),
-        MEASURE_SAFETY_MS,
-      );
+      // La FC del anillo persiste hasta 5 ventanas en el driver (re-enganche
+      // en borde de ventana, sin cortes a mitad de ciclo): cortarla aquí a
+      // los 30 s mostraría un error falso mientras el sensor aún calienta.
+      // El resto conserva su red.
+      if (kind !== "heart_rate") {
+        measureSafety.current = window.setTimeout(
+          () => finishMeasure(kind, false, "timeout"),
+          (measurePolicy(kind)?.windowMs ?? 30_000) + MEASURE_SAFETY_MARGIN_MS,
+        );
+      }
       measure(kind, (ok, reason) => finishMeasure(kind, ok, reason));
     },
-    [finishMeasure, measure],
+    [finishMeasure, measure, measurePolicy, clearFlash],
   );
   startRef.current = startMeasure;
 
@@ -388,22 +499,104 @@ export function WearablePage() {
   const isMeasuringKind = (kind: MetricKind) => activeMeasure?.kind === kind;
   /** % de la ventana consumida por la medida de esa métrica (barra en la tarjeta). */
   const measurePct = (kind: MetricKind) =>
-    isMeasuringKind(kind)
-      ? Math.round((activeMeasure?.progress.progress ?? 0) * 100)
-      : 0;
+    flashKind === kind
+      ? 100
+      : isMeasuringKind(kind)
+        ? Math.round((activeMeasure?.progress.progress ?? 0) * 100)
+        : 0;
 
-  /** Medir todo: sincroniza historial y luego FC → SpO2 → presión. */
+  /** Medir todo: solo mide FC → SpO2 → presión (sin volcado; el historial va
+   * por "Sincronizar ahora"). Medir justo tras un volcado dejaba al sensor
+   * mudo, así que ya no se encadenan. */
   const measureAll = () => {
     if (measuring || queued > 0 || syncing) return;
-    void (async () => {
-      await syncHistory();
-      const [first, ...rest] = measureKinds;
-      if (!first) return;
-      measureQueue.current = rest;
-      syncQueue();
-      startMeasure(first);
-    })();
+    setFocusDone([]);
+    setFocusResult(null);
+    setSessionValues([]);
+    setFailedKinds([]);
+    const [first, ...rest] = measureKinds;
+    if (!first) return;
+    measureQueue.current = rest;
+    syncQueue();
+    startMeasure(first);
   };
+
+  /**
+   * Cancelar desde la vista de foco: vacía la cola, para el sensor en el
+   * driver y cierra el foco. El onDone(false, "cancelled") que llega después
+   * no muestra toast ni avanza nada (ver finishMeasure).
+   */
+  const cancelFocus = useCallback(() => {
+    clearFlash();
+    if (measureSafety.current !== undefined) {
+      window.clearTimeout(measureSafety.current);
+      measureSafety.current = undefined;
+    }
+    measureQueue.current = [];
+    syncQueue();
+    if (measuring !== null) stopMeasure();
+    else if (syncStage !== null || syncing) cancelSync();
+    setMeasuring(null);
+    setFocusResult(null);
+    setFocusDone([]);
+    setSessionValues([]);
+  }, [
+    measuring,
+    syncStage,
+    syncing,
+    stopMeasure,
+    cancelSync,
+    syncQueue,
+    clearFlash,
+  ]);
+
+  /** Reintentar la métrica fallida desde la vista de foco. */
+  const retryFocus = useCallback((kind: MetricKind) => {
+    setFocusResult(null);
+    startRef.current(kind);
+  }, []);
+
+  /** Cierre manual de la vista de foco (tras el fallo). */
+  const closeFocus = useCallback(() => {
+    setFocusResult(null);
+    setFocusDone([]);
+    setSessionValues([]);
+  }, []);
+
+  /** Métrica en foco + pasos de la secuencia para la vista de foco. */
+  const focusKind = measuring?.kind ?? syncStage?.kind ?? null;
+  /** Valor de bandeja por métrica (los pasos hechos muestran su número). */
+  const sessionValueOf = useMemo(() => {
+    const byKind = new Map<MetricKind, FocusSessionValue>();
+    for (const item of sessionValues) byKind.set(item.kind, item);
+    return byKind;
+  }, [sessionValues]);
+  const focusSteps: FocusStep[] =
+    focusKind === null
+      ? []
+      : [
+          ...focusDone
+            .filter((kind) => kind !== focusKind)
+            .map((kind) => ({
+              kind,
+              state: "done" as const,
+              ...sessionValueOf.get(kind),
+            })),
+          {
+            kind: focusKind,
+            state: "active" as const,
+            ...sessionValueOf.get(focusKind),
+          },
+          ...queuedKinds
+            .filter((kind) => kind !== focusKind)
+            .map((kind) => ({ kind, state: "queued" as const })),
+        ];
+  const focusPhase = measuring ? measureProgress : syncProgress;
+  const focusElapsed = measuring ? elapsed : syncElapsed;
+  const focusReading =
+    focusKind !== null
+      ? formatMeasureReading(focusKind, samples[focusKind])
+      : null;
 
   const copyDiagnostics = () => {
     const text = [describeServices(gatt), "", ...log.map(formatEntry)].join(
@@ -427,73 +620,194 @@ export function WearablePage() {
     connect(device);
   };
 
+  /**
+   * Meta honesta de una medición puntual: una muestra del volcado (historial)
+   * nunca dice "En vivo" — el slot del RTC puede traerla con marca fresca
+   * aunque la lectura sea de hace horas. Si su marca es claramente vieja se
+   * muestra la edad; si no, se etiqueta "Del historial".
+   */
+  const pointMeta = (sample: HealthSample | undefined): string =>
+    sample?.source === "history"
+      ? Date.now() - sample.ts > 120_000
+        ? agoLabel(sample.ts, t)
+        : t("Del historial")
+      : agoLabel(sample?.ts, t);
+
   const liveHint =
     info.wearing === false
       ? t("Coloca el wearable para medir")
       : hr
-        ? agoLabel(hrSample?.ts, t)
+        ? pointMeta(hrSample)
         : t("Sin datos aún");
 
   const diagnosticsControl = (
-            <IonList className="group-list watch-diagnostics" lines="none">
-              <IonItem className="group-item">
-                <span className="wearable-diagnostic-icon" slot="start" aria-hidden="true"><IonIcon icon={pulseOutline} /></span>
-                <IonLabel>
-                  <h3>{t("Modo diagnóstico")}</h3>
-                  <p>
-                    {t("Muestra todos los dispositivos y el detalle GATT.")}
-                  </p>
-                </IonLabel>
-                <IonToggle
-                  slot="end"
-                  aria-label={t("Modo diagnóstico")}
-                  checked={diagnostics}
-                  onIonChange={(event) => setDiagnostics(event.detail.checked)}
-                />
-              </IonItem>
-            </IonList>
+    <IonList className="group-list watch-diagnostics" lines="none">
+      <IonItem className="group-item">
+        <span
+          className="wearable-diagnostic-icon"
+          slot="start"
+          aria-hidden="true"
+        >
+          <IonIcon icon={pulseOutline} />
+        </span>
+        <IonLabel>
+          <h3>{t("Modo diagnóstico")}</h3>
+          <p>{t("Muestra todos los dispositivos y el detalle GATT.")}</p>
+        </IonLabel>
+        <IonToggle
+          slot="end"
+          aria-label={t("Modo diagnóstico")}
+          checked={diagnostics}
+          onIonChange={(event) => setDiagnostics(event.detail.checked)}
+        />
+      </IonItem>
+    </IonList>
   );
 
   return (
     <Screen className="wearable-reference">
       <Scroll className="wearable-scroll">
-      <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD"><img src={logoIcon} alt="" /><div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div></div>
-      <PageHeader
-        kicker={t("Biometría en vivo")}
-        title={t("Wearable")}
-        sub={
-          wearableConnected
-            ? `${info.name || wearableName} · ${t("datos en tiempo real")}`
-            : t("Empareja un dispositivo para ver FC, sueño y SpO2")
-        }
-        trailing={
-          <span className={`status-pill ${connOn ? "on" : ""}`}>
-            <span className="dot" style={{ background: connDot }} />
-            {connLabel}
-            {connOn && info.battery !== undefined && <span className="wearable-battery"><IonIcon icon={batteryHalfOutline} />{info.battery}%</span>}
-          </span>
-        }
-      />
-
-      <section className={`wearable-showcase ${connOn ? 'is-connected' : ''} ${connConnecting ? 'is-busy' : ''}`}>
-        <div className="wearable-art" aria-hidden="true">
-          <span className="wearable-leaf wearable-leaf-left" /><span className="wearable-leaf wearable-leaf-right" />
-          <div className="wearable-orbit"><WatchIcon3D size={132} /></div>
-          <span className="wearable-bluetooth">{connConnecting ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}</span>
+        <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD">
+          <img src={logoIcon} alt="" />
+          <div>
+            <strong>
+              COPP-ADRESD<sup>®</sup>
+            </strong>
+            <small>
+              COMPREHENSIVE OBESITY
+              <br />
+              PREVENTION PROGRAM
+            </small>
+          </div>
         </div>
-        <h2 aria-live="polite">{connOn ? t('Tu dispositivo está conectado') : connecting || sessionStale ? t('Conectando…') : scanning ? t('Buscando cerca de ti…') : t('Conecta tu wearable')}</h2>
-        <p>{connOn ? t('Tu salud en tiempo real, más cerca de ti.') : connecting || sessionStale ? t('Estableciendo sesión con el dispositivo…') : t('Mantén el wearable desbloqueado y cerca del teléfono.')}</p>
-      </section>
-      <div className="wearable-summary">
-        {[
-          {label: 'FC', icon: heart, value: connOn && hr != null ? Math.round(hr) : '—', unit: 'lpm'},
-          {label: 'SpO2', icon: waterOutline, value: connOn && spo2 != null ? Math.round(spo2) + '%' : '—', unit: ''},
-          {label: 'Presión', icon: pulseOutline, value: connOn && blood ? Math.round(blood.value) + '/' + (blood.value2 == null ? '—' : Math.round(blood.value2)) : '—', unit: 'mmHg'},
-          {label: 'Sueño', icon: moonOutline, value: connOn && sleepMinutes != null ? formatSleep(sleepMinutes, t) : '—', unit: ''},
-          {label: 'Pasos', icon: footstepsOutline, value: connOn && steps != null ? Math.round(steps).toLocaleString(locale) : '—', unit: ''},
-        ].map(metric => <div className="wearable-summary-item" key={metric.label}><span className="wearable-summary-icon"><IonIcon icon={metric.icon} aria-hidden="true" /></span><span>{t(metric.label)}</span><strong>{metric.value}</strong><small>{metric.unit === 'lpm' ? t('lpm') : metric.unit}</small></div>)}
-      </div>
-      {wearableConnected && <div className="wearable-sync"><IonButton expand="block" className="bt bt-primary" onClick={() => void syncHistory()} disabled={!connOn || syncing || measuring !== null || queued > 0}>{syncing ? <IonSpinner name="crescent" slot="start" /> : <IonIcon icon={bluetooth} slot="start" />}{t('Sincronizar ahora')}<IonIcon icon={chevronForward} slot="end" /></IonButton></div>}
+        <PageHeader
+          kicker={t("Biometría en vivo")}
+          title={t("Wearable")}
+          sub={
+            wearableConnected
+              ? `${info.name || wearableName} · ${t("datos en tiempo real")}`
+              : t("Empareja un dispositivo para ver FC, sueño y SpO2")
+          }
+          trailing={
+            <span className={`status-pill ${connOn ? "on" : ""}`}>
+              <span className="dot" style={{ background: connDot }} />
+              {connLabel}
+              {connOn && info.battery !== undefined && (
+                <span className="wearable-battery">
+                  <IonIcon icon={batteryHalfOutline} />
+                  {info.battery}%
+                </span>
+              )}
+            </span>
+          }
+        />
+
+        <section
+          className={`wearable-showcase ${connOn ? "is-connected" : ""} ${connConnecting ? "is-busy" : ""}`}
+        >
+          <div className="wearable-art" aria-hidden="true">
+            <span className="wearable-leaf wearable-leaf-left" />
+            <span className="wearable-leaf wearable-leaf-right" />
+            <div className="wearable-orbit">
+              <WatchIcon3D size={132} />
+            </div>
+            <span className="wearable-bluetooth">
+              {connConnecting ? (
+                <IonSpinner name="crescent" />
+              ) : (
+                <IonIcon icon={bluetooth} />
+              )}
+            </span>
+          </div>
+          <h2 aria-live="polite">
+            {connOn
+              ? t("Tu dispositivo está conectado")
+              : connecting || sessionStale
+                ? t("Conectando…")
+                : scanning
+                  ? t("Buscando cerca de ti…")
+                  : t("Conecta tu wearable")}
+          </h2>
+          <p>
+            {connOn
+              ? t("Tu salud en tiempo real, más cerca de ti.")
+              : connecting || sessionStale
+                ? t("Estableciendo sesión con el dispositivo…")
+                : t("Mantén el wearable desbloqueado y cerca del teléfono.")}
+          </p>
+        </section>
+        <div className="wearable-summary">
+          {[
+            {
+              label: "FC",
+              icon: heart,
+              value: connOn && hr != null ? Math.round(hr) : "—",
+              unit: "lpm",
+            },
+            {
+              label: "SpO2",
+              icon: waterOutline,
+              value: connOn && spo2 != null ? Math.round(spo2) + "%" : "—",
+              unit: "",
+            },
+            {
+              label: "Presión",
+              icon: pulseOutline,
+              value:
+                connOn && blood
+                  ? Math.round(blood.value) +
+                    "/" +
+                    (blood.value2 == null ? "—" : Math.round(blood.value2))
+                  : "—",
+              unit: "mmHg",
+            },
+            {
+              label: "Sueño",
+              icon: moonOutline,
+              value:
+                connOn && sleepMinutes != null
+                  ? formatSleep(sleepMinutes, t)
+                  : "—",
+              unit: "",
+            },
+            {
+              label: "Pasos",
+              icon: footstepsOutline,
+              value:
+                connOn && steps != null
+                  ? Math.round(steps).toLocaleString(locale)
+                  : "—",
+              unit: "",
+            },
+          ].map((metric) => (
+            <div className="wearable-summary-item" key={metric.label}>
+              <span className="wearable-summary-icon">
+                <IonIcon icon={metric.icon} aria-hidden="true" />
+              </span>
+              <span>{t(metric.label)}</span>
+              <strong>{metric.value}</strong>
+              <small>{metric.unit === "lpm" ? t("lpm") : metric.unit}</small>
+            </div>
+          ))}
+        </div>
+        {wearableConnected && (
+          <div className="wearable-sync">
+            <IonButton
+              expand="block"
+              className="bt bt-primary"
+              onClick={() => void syncHistory()}
+              disabled={!connOn || syncing || measuring !== null || queued > 0}
+            >
+              {syncing ? (
+                <IonSpinner name="crescent" slot="start" />
+              ) : (
+                <IonIcon icon={bluetooth} slot="start" />
+              )}
+              {t("Sincronizar ahora")}
+              <IonIcon icon={chevronForward} slot="end" />
+            </IonButton>
+          </div>
+        )}
         {!wearableConnected ? (
           <div className="watch-pair">
             {phase === "error" && error && (
@@ -602,7 +916,9 @@ export function WearablePage() {
           </div>
         ) : (
           <>
-            <div className="wearable-diagnostics-connected">{diagnosticsControl}</div>
+            <div className="wearable-diagnostics-connected">
+              {diagnosticsControl}
+            </div>
             {/* Estado del dispositivo + acciones, en una sola tarjeta. */}
             <section className="card dev-card">
               <div className="dev-card-top">
@@ -614,9 +930,7 @@ export function WearablePage() {
                     {info.name || wearableName}
                   </div>
                   <div className="watch-live-meta">
-                    {hr
-                      ? agoLabel(hrSample?.ts, t)
-                      : t("Bluetooth · sincronizando")}
+                    {hr ? pointMeta(hrSample) : t("Bluetooth · sincronizando")}
                   </div>
                 </div>
                 {info.battery !== undefined && (
@@ -672,6 +986,23 @@ export function WearablePage() {
                   <i style={{ width: `${measurePct("heart_rate")}%` }} />
                 </span>
               )}
+              {failedKinds.includes("heart_rate") &&
+                !isMeasuringKind("heart_rate") &&
+                connOn && (
+                  <button
+                    type="button"
+                    className="watch-retry"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (cardMeasurable("heart_rate")) {
+                        startMeasure("heart_rate");
+                      }
+                    }}
+                  >
+                    <IonIcon icon={refresh} aria-hidden="true" />
+                    {t("Reintentar")}
+                  </button>
+                )}
               {queuedKinds.includes("heart_rate") && (
                 <span className="watch-metric-queue">{t("En cola")}</span>
               )}
@@ -698,13 +1029,28 @@ export function WearablePage() {
                   <div className="watch-metric-meta">
                     {isMeasuringKind("spo2")
                       ? measurePhaseLabel("spo2", measureProgress, t)
-                      : agoLabel(spo2Sample?.ts, t)}
+                      : pointMeta(spo2Sample)}
                   </div>
                   {isMeasuringKind("spo2") && (
                     <span className="watch-measure-bar" aria-hidden="true">
                       <i style={{ width: `${measurePct("spo2")}%` }} />
                     </span>
                   )}
+                  {failedKinds.includes("spo2") &&
+                    !isMeasuringKind("spo2") &&
+                    connOn && (
+                      <button
+                        type="button"
+                        className="watch-retry"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (cardMeasurable("spo2")) startMeasure("spo2");
+                        }}
+                      >
+                        <IonIcon icon={refresh} aria-hidden="true" />
+                        {t("Reintentar")}
+                      </button>
+                    )}
                   {queuedKinds.includes("spo2") && (
                     <span className="watch-metric-queue">{t("En cola")}</span>
                   )}
@@ -731,7 +1077,7 @@ export function WearablePage() {
                   <div className="watch-metric-meta">
                     {isMeasuringKind("blood_pressure")
                       ? measurePhaseLabel("blood_pressure", measureProgress, t)
-                      : agoLabel(bloodSample?.ts, t)}
+                      : pointMeta(bloodSample)}
                   </div>
                   {isMeasuringKind("blood_pressure") && (
                     <span className="watch-measure-bar" aria-hidden="true">
@@ -740,6 +1086,23 @@ export function WearablePage() {
                       />
                     </span>
                   )}
+                  {failedKinds.includes("blood_pressure") &&
+                    !isMeasuringKind("blood_pressure") &&
+                    connOn && (
+                      <button
+                        type="button"
+                        className="watch-retry"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (cardMeasurable("blood_pressure")) {
+                            startMeasure("blood_pressure");
+                          }
+                        }}
+                      >
+                        <IonIcon icon={refresh} aria-hidden="true" />
+                        {t("Reintentar")}
+                      </button>
+                    )}
                   {queuedKinds.includes("blood_pressure") && (
                     <span className="watch-metric-queue">{t("En cola")}</span>
                   )}
@@ -956,6 +1319,35 @@ export function WearablePage() {
         ]}
         onDidDismiss={() => setConfirmOff(false)}
       />
+      {(() => {
+        const overlayKind = focusKind ?? focusResult?.kind ?? null;
+        if (overlayKind === null) {
+          // Fase de volcado: el foco abre AL TOCAR sincronizar, no cuando
+          // arranca el primer barrido (el dump previo dejaba ~20 s de UI muerta).
+          if (syncing) {
+            return <MeasureSyncOverlay isOpen onCancel={cancelFocus} />;
+          }
+          return null;
+        }
+        const showingResult = focusKind === null ? focusResult : null;
+        return (
+          <MeasureFocusOverlay
+            isOpen
+            kind={overlayKind}
+            phase={focusPhase}
+            elapsedSec={focusElapsed}
+            liveValue={focusReading?.value ?? null}
+            liveUnit={focusReading ? t(focusReading.unit) : ""}
+            steps={focusSteps}
+            queue={queuedKinds.length}
+            result={showingResult}
+            complete={flashKind !== null}
+            onCancel={cancelFocus}
+            onRetry={() => retryFocus(overlayKind)}
+            onClose={closeFocus}
+          />
+        );
+      })()}
     </Screen>
   );
 }

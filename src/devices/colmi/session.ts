@@ -21,6 +21,7 @@ import type {
   ColmiMeasureType,
 } from "./protocol";
 import { heartRateFromPayload, parseRealtimeFrame } from "./realtime";
+import { formatMeasureTiming } from "../measure-timing";
 import type {
   DeviceDescriptor,
   DeviceSession,
@@ -45,9 +46,14 @@ const MEASURE_TARGET = 3;
 /**
  * Política por métrica. La presión es un barrido lento cuyo primer intento se
  * va en "enganchar" (por eso antes había que pulsar dos veces): se le da más
- * ventana y un reintento automático. FC y SpO2 mantienen 30 s.
+ * ventana y un reintento automático. La FC tiene 40 s porque el calentamiento
+ * tardío es real (lectura real a los 25 s verificada; con 30 s cerraba por
+ * timeout honesto con 2 de 3). SpO2 mantiene 30 s (su lectura real llega ~26 s).
  */
 const MEASURE_POLICY: Partial<Record<MetricKind, MeasurePolicy>> = {
+  // FC: 2 lecturas distintas bastan (el eco es bit-idéntico; dos distintas
+  // prueban enganche) y 3 dejaba fuera calentamientos tardíos reales.
+  heart_rate: { windowMs: 40_000, target: 2 },
   blood_pressure: { windowMs: 60_000, retryMs: 15_000 },
 };
 const DEFAULT_MEASURE_POLICY: MeasurePolicy = { windowMs: MEASURE_TIMEOUT_MS };
@@ -86,7 +92,21 @@ export class ColmiSession implements DeviceSession {
   private measureRetryTimer?: number;
   private measureType: ColmiMeasureType | null = null;
   private measureCount = 0;
+  /** Objetivo de lecturas de la medida en curso (de su política o 3). */
+  private measureTarget = MEASURE_TARGET;
+  /** Tramas del barrido en curso (decodifiquen o no): hay radio, el sensor trabaja. */
+  private measureFrames = 0;
+  /**
+   * Último valor de FC contado hacia el objetivo: la repetición exacta no
+   * cuenta (el firmware repite bytes constantes de estado entre barridos, no
+   * una medición; las rampas reales de calentamiento siempre varían).
+   */
+  private measureLastHrValue: number | null = null;
   private measureDone?: MeasureCallback;
+  /** Instrumentación de tiempos (Registro BLE): métrica, inicio y primer dato. */
+  private measureKind: MetricKind | null = null;
+  private measureStartedAt = 0;
+  private measureFirstAt = 0;
   private lastHeartRateAt = 0;
   private declaredCapabilities: ColmiCapabilities | null = null;
   private readonly history: ColmiHistory;
@@ -156,12 +176,7 @@ export class ColmiSession implements DeviceSession {
 
   /** Vuelve a pedir la batería (la pantalla la refresca al abrirse). */
   requestInfo(): void {
-    if (
-      this.stopped ||
-      !this.appActive ||
-      this.measureType !== null
-    )
-      return;
+    if (this.stopped || !this.appActive || this.measureType !== null) return;
     void this.send(CMD.BATTERY).catch(() => undefined);
   }
 
@@ -265,9 +280,16 @@ export class ColmiSession implements DeviceSession {
     if (this.measureType !== null) this.finishMeasure(false, "replaced");
     const policy = MEASURE_POLICY[kind] ?? DEFAULT_MEASURE_POLICY;
     this.measureType = type;
+    this.measureKind = kind;
+    this.measureStartedAt = Date.now();
+    this.measureFirstAt = 0;
     this.measureCount = 0;
+    this.measureFrames = 0;
+    this.measureLastHrValue = null;
+    this.measureTarget = policy.target ?? MEASURE_TARGET;
     this.measureDone = onDone;
     this.clearMeasureTimer();
+    this.note(formatMeasureTiming({ device: "colmi", kind, event: "start" }));
     this.measureTimer = window.setTimeout(
       () => this.finishMeasure(false, "timeout"),
       policy.windowMs,
@@ -294,11 +316,30 @@ export class ColmiSession implements DeviceSession {
    */
   private finishMeasure(ok: boolean, reason: MeasureOutcome): void {
     const type = this.measureType;
+    const kind = this.measureKind;
+    const startedAt = this.measureStartedAt;
+    const readings = this.measureCount;
     const done = this.measureDone;
     this.measureType = null;
+    this.measureKind = null;
+    this.measureFirstAt = 0;
     this.measureDone = undefined;
     this.measureCount = 0;
+    this.measureFrames = 0;
+    this.measureLastHrValue = null;
     this.clearMeasureTimer();
+    if (kind !== null) {
+      this.note(
+        formatMeasureTiming({
+          device: "colmi",
+          kind,
+          event: "done",
+          elapsedMs: Date.now() - startedAt,
+          readings,
+          outcome: ok ? "completada" : reason,
+        }),
+      );
+    }
     done?.(ok, reason);
     if (type === null || this.stopped || !this.appActive) return;
     void (async () => {
@@ -306,11 +347,7 @@ export class ColmiSession implements DeviceSession {
         await this.send(CMD.STOP_REALTIME, [type, 0, 0]);
         // El re-arme de la FC SOLO si no hay otra medida en curso: si se cuela
         // después del START nuevo, cancela su barrido (era el bug de presión).
-        if (
-          !this.stopped &&
-          this.appActive &&
-          this.measureType === null
-        ) {
+        if (!this.stopped && this.appActive && this.measureType === null) {
           await this.startHeartRate();
         }
       } catch {
@@ -320,23 +357,36 @@ export class ColmiSession implements DeviceSession {
   }
 
   /**
-   * Reintento del barrido: la presión (y a veces el SpO2) se va en enganchar en
-   * el primer intento. Si a mitad de la ventana no llegó ninguna muestra, se
-   * repite STOP+START una sola vez sin que el usuario pulse de nuevo.
+   * Detiene la medida en curso: equivale a cancelarla por decisión del
+   * usuario (avisa `onDone(false, "cancelled")` una sola vez y re-arme el
+   * pulso continuo como cualquier otro cierre).
+   */
+  stopMeasure(): void {
+    if (this.measureType !== null) this.finishMeasure(false, "cancelled");
+  }
+
+  /**
+   * Reintento del barrido: solo en silencio total de radio. Si el sensor emite
+   * tramas (aunque aún no decodifiquen a lectura, como la curva de estimación
+   * de la presión) está trabajando y un STOP+START lo reiniciaría, regalando
+   * ~12 s como se vio en la comparativa contra la app oficial (30 s → 41 s).
    */
   private retryMeasure(): void {
     const type = this.measureType;
     if (
       type === null ||
       this.measureCount > 0 ||
+      this.measureFrames > 0 ||
       this.stopped ||
       !this.appActive
-    ) return;
+    )
+      return;
     this.note(`[colmi] ${MEASURE_NOTE[type] ?? type}: reintento de barrido`);
     void (async () => {
       try {
         await this.send(CMD.STOP_REALTIME, [type, 0, 0]);
-        if (this.stopped || !this.appActive || this.measureType !== type) return;
+        if (this.stopped || !this.appActive || this.measureType !== type)
+          return;
         await this.send(CMD.START_REALTIME, [type, 1]);
       } catch {
         // Sin conexión: nada que reintentar.
@@ -451,6 +501,11 @@ export class ColmiSession implements DeviceSession {
   }
 
   private handleRealtime(frame: ColmiFrame): void {
+    // Tramas del barrido en curso, decodifiquen o no: cuentan como radio para
+    // el reintento (ver retryMeasure).
+    if (this.measureType !== null && frame.payload[0] === this.measureType) {
+      this.measureFrames += 1;
+    }
     const samples = parseRealtimeFrame(frame, this.deviceId);
     if (!samples.length) {
       // Presión sin lectura plausible: se vuelca la trama cruda una vez para
@@ -466,11 +521,38 @@ export class ColmiSession implements DeviceSession {
         this.lastHeartRateAt = Date.now();
         this.noteHrLayout(frame.payload);
       }
+      // Primer dato de la medida en curso: cuánto tardó el sensor en enganchar.
+      if (
+        this.measureType !== null &&
+        this.measureFirstAt === 0 &&
+        MEASURE_TYPE_BY_METRIC[sample.metric] === this.measureType
+      ) {
+        this.measureFirstAt = Date.now();
+        this.note(
+          formatMeasureTiming({
+            device: "colmi",
+            kind: this.measureKind ?? String(this.measureType),
+            event: "first",
+            elapsedMs: this.measureFirstAt - this.measureStartedAt,
+          }),
+        );
+      }
       this.onSample?.(sample);
     }
     if (this.measureType !== null && type === this.measureType) {
+      // FC: solo cuenta si el valor cambió respecto al último contado. Un
+      // sensor óptico real nunca repite el valor al bit en tramas seguidas;
+      // el eco de estado sí (`27 03` idéntico en FC/SpO2/presión). Sin esto,
+      // 3 ecos cerraban el barrido en 1.6 s con un número inventado.
+      if (this.measureKind === "heart_rate") {
+        const hr = samples.find(
+          (sample) => sample.metric === "heart_rate",
+        )?.value;
+        if (hr === undefined || hr === this.measureLastHrValue) return;
+        this.measureLastHrValue = hr;
+      }
       this.measureCount += 1;
-      if (this.measureCount >= MEASURE_TARGET) {
+      if (this.measureCount >= this.measureTarget) {
         this.finishMeasure(true, "completed");
       }
     }

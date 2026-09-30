@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   ExerciseItemDto,
   NutritionMealDto,
@@ -45,10 +45,7 @@ import {
 import { MISSION_PHOTOS } from "../../data/missionPhotos";
 import { EcgTrace } from "../../components/EcgTrace";
 import type { MetricKind } from "../../devices/types";
-import { useElapsed } from "../../hooks/useElapsed";
 import { useWearable } from "../../context/WearableContext";
-import { measurePhase, measurePhaseLabel } from "../../utils/measure";
-import { DOUBLE_TAP_MS, isDoubleTap } from "../../hooks/useDoubleTap";
 import {
   hoursFromMinutes,
   minutesFromHours,
@@ -300,77 +297,14 @@ export function VitalsLesson({
   onComplete: (vitals: VitalsPayload) => void;
 }) {
   const { t, lang } = useI18n();
-  const {
-    samples,
-    today,
-    syncAll,
-    syncStage,
-    measurePolicy,
-    measure,
-    measureKinds,
-    canMeasure,
-    info,
-    phase,
-    sessionStale,
-    lastSyncAt,
-  } = useWearable();
+  const { samples, today, syncHistory, info, phase, sessionStale, lastSyncAt } =
+    useWearable();
   const [vals, setVals] = useState<Record<string, string>>({});
   const [syncing, setSyncing] = useState(false);
-  /**
-   * Campos cuyo dato aún no ha llegado: la tarjeta mantiene su animación de
-   * carga hasta que el valor existe (no solo mientras dura el sync).
-   */
+  /** Tarjetas esperando dato del volcado: carga hasta que el valor existe. */
   const [pendingFields, setPendingFields] = useState<Record<string, number>>(
     {},
   );
-  /** Tarjetas medidas en este sync que aún esperan su turno ("En cola"). */
-  const [queuedFields, setQueuedFields] = useState<string[]>([]);
-  /** Instante de inicio del sync: solo cuentan las muestras posteriores. */
-  const syncStartedAtRef = useRef(0);
-  /** Última etapa de medida vista: al cambiar, se vuelca su métrica. */
-  const lastStageKindRef = useRef<MetricKind | null>(null);
-  // Cronómetro del sync: refleja la medida puntual en curso (si la hay).
-  const syncElapsed = useElapsed(syncStage?.startedAt);
-  const syncProgress = measurePhase(
-    syncElapsed * 1000,
-    syncStage ? measurePolicy(syncStage.kind) : undefined,
-  );
-  /** Marca del último toque por tarjeta (doble toque = medir esa métrica). */
-  const tileTapRef = useRef<Record<string, number>>({});
-  const handleTileTap = (fieldId: string, kind: MetricKind) => {
-    const now = Date.now();
-    if (isDoubleTap(tileTapRef.current[fieldId] ?? 0, now, DOUBLE_TAP_MS)) {
-      tileTapRef.current[fieldId] = 0;
-      startCardMeasure(kind);
-      return;
-    }
-    tileTapRef.current[fieldId] = now;
-  };
-
-  /** Medida lanzada desde la tarjeta (doble clic en su icono). */
-  const [cardMeasure, setCardMeasure] = useState<{
-    kind: MetricKind;
-    since: number;
-    /** ts de la última muestra al tocar: solo entra una ESTRICTAMENTE más nueva. */
-    prevTs: number;
-  } | null>(null);
-  const cardElapsed = useElapsed(cardMeasure?.since);
-  const cardProgress = measurePhase(
-    cardElapsed * 1000,
-    cardMeasure ? measurePolicy(cardMeasure.kind) : undefined,
-  );
-  // La tarjeta de la métrica en curso muestra la carga en su lugar.
-  const measuringFieldId = cardMeasure
-    ? MEASURE_FIELD_BY_KIND[cardMeasure.kind]
-    : syncStage
-      ? MEASURE_FIELD_BY_KIND[syncStage.kind]
-      : null;
-  // El cronómetro visible sale de la medida en curso (tarjeta o sync).
-  const activeProgress = cardMeasure ? cardProgress : syncProgress;
-  const activeKind = cardMeasure?.kind ?? syncStage?.kind ?? null;
-  // Espejos: tras `await syncAll()` el autollenado debe leer los valores
-  // frescos (el cierre del intervalo capturaría los del render anterior).
-  const wearableValuesRef = useRef<Record<string, string>>({});
 
   /**
    * El autollenado usa la sesión BLE activa. Nunca toma mediciones antiguas
@@ -393,7 +327,6 @@ export function VitalsLesson({
       res.sueno = String(hoursFromMinutes(today.sleepMinutes));
     return res;
   }, [samples, today]);
-  wearableValuesRef.current = wearableValues;
 
   // El valor escrito apaga la carga de su tarjeta.
   useEffect(() => {
@@ -423,53 +356,21 @@ export function VitalsLesson({
       const kind = VITAL_MEASURE_KIND[id];
       if (kind) {
         const sample = samples[kind];
-        // Una muestra vale si es "viva" (mismo umbral que "En vivo"). Las
-        // marcas del sync caducaban en secuencias largas (FC→presión→SpO2) y
-        // el número no entraba aunque el driver ya lo hubiera entregado.
-        if (!sample || now - sample.ts > LIVE_SAMPLE_MS) continue;
+        // Solo datos recientes de esta sesión: el volcado (historial) nunca
+        // autollena — su slot del RTC puede traer una lectura vieja con marca
+        // fresca — y lo más viejo de 5 min tampoco.
+        if (
+          !sample ||
+          sample.source === "history" ||
+          now - sample.ts > FRESH_ENOUGH_MS
+        ) {
+          continue;
+        }
       }
       next[id] = value;
     }
     if (Object.keys(next).length) setVals((prev) => ({ ...prev, ...next }));
   }, [pendingFields, samples, wearableValues]);
-
-  // Cada tarjeta muestra su número cuando SU medida termina (animación primero,
-  // número después): al cambiar de etapa se vuelca solo la métrica completada, y
-  // únicamente si su muestra nació en este sync (nunca una lectura vieja).
-  useEffect(() => {
-    const previous = lastStageKindRef.current;
-    lastStageKindRef.current = syncStage?.kind ?? null;
-    if (!previous || previous === syncStage?.kind) return;
-    const fieldId = MEASURE_FIELD_BY_KIND[previous];
-    const sample = samples[previous];
-    if (!fieldId || !sample || sample.ts < syncStartedAtRef.current) return;
-    const value = wearableValuesRef.current[fieldId];
-    if (!value) return;
-    setVals((prev) =>
-      prev[fieldId] === value ? prev : { ...prev, [fieldId]: value },
-    );
-  }, [syncStage, samples]);
-
-  // La medida de una tarjeta termina con SU muestra fresca: el número entra
-  // en ese momento y la tarjeta deja de cargar.
-  useEffect(() => {
-    if (!cardMeasure) return;
-    const sample = samples[cardMeasure.kind];
-    if (
-      !sample ||
-      sample.ts <= cardMeasure.prevTs ||
-      sample.ts < cardMeasure.since
-    )
-      return;
-    const fieldId = MEASURE_FIELD_BY_KIND[cardMeasure.kind];
-    const value = fieldId ? wearableValuesRef.current[fieldId] : undefined;
-    if (fieldId && value) {
-      setVals((prev) =>
-        prev[fieldId] === value ? prev : { ...prev, [fieldId]: value },
-      );
-    }
-    setCardMeasure(null);
-  }, [cardMeasure, samples]);
 
   /**
    * Valor mostrado en la tarjeta: SOLO lo capturado en esta sesión (lo que
@@ -574,99 +475,29 @@ export function VitalsLesson({
   );
 
   /**
-   * Tope de la animación por tarjeta: la ventana REAL del driver + su reintento
-   * + margen. Con la banda, presión tarda 60 s + reintento a los 15 s.
+   * Solo volcado de historial: trae lo que el anillo ya registró (pasos,
+   * sueño, muestras guardadas) y deja que el stream en vivo rellene el
+   * resto. Aquí NO se mide nada: medir es trabajo de la vista Reloj.
    */
-  const pendingCapFor = (kind: MetricKind) => {
-    const policy = measurePolicy(kind);
-    // SpO2: el barrido del anillo fija la lectura al final y puede llegar por
-    // el volcado extra, así que su tarjeta espera más.
-    const margin = kind === "spo2" ? 40_000 : 20_000;
-    return (policy?.windowMs ?? 30_000) + (policy?.retryMs ?? 0) + margin;
-  };
-
-  // Cada etapa del sync enciende la carga de SU tarjeta (una a la vez): la
-  // tarjeta se llena cuando llega el dato de esa medida, no todas a la vez.
-  useEffect(() => {
-    if (!syncStage) return;
-    const id = MEASURE_FIELD_BY_KIND[syncStage.kind];
-    if (!id) return;
-    // Su turno llegó: sale de la cola y pasa a "Midiendo/Ajustando el sensor…".
-    setQueuedFields((prev) =>
-      prev.includes(id) ? prev.filter((field) => field !== id) : prev,
-    );
-    if (!displayVal(id).trim())
-      markPending([id], pendingCapFor(syncStage.kind));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncStage, markPending]);
-
-  /** Vuelve a medir una métrica desde su tarjeta (doble clic en el icono). */
-  const startCardMeasure = (kind: MetricKind) => {
-    if (
-      done ||
-      !wearableConnected ||
-      !canMeasure ||
-      !measureKinds.includes(kind) ||
-      cardMeasure !== null ||
-      syncStage !== null ||
-      syncing
-    ) {
-      return;
-    }
-    const fieldId = MEASURE_FIELD_BY_KIND[kind];
-    if (fieldId && !displayVal(fieldId).trim()) {
-      markPending([fieldId], pendingCapFor(kind));
-    }
-    // Anti-eco: la banda a veces re-emite el mismo valor al instante; solo vale
-    // una muestra estrictamente más nueva que la que había al tocar.
-    setCardMeasure({ kind, since: Date.now(), prevTs: samples[kind]?.ts ?? 0 });
-    measure(kind, (ok) => {
-      if (ok) return;
-      setCardMeasure(null);
-      if (fieldId) clearPending(fieldId);
-    });
-  };
-
   const sync = async () => {
     if (done || syncing) return;
-    syncStartedAtRef.current = Date.now();
-    lastStageKindRef.current = null;
     setSyncing(true);
-    // Pasos y sueño llegan con el volcado de historial: se marcan desde ya.
+    // Todo lo vacío del wearable se marca mientras llega el volcado.
     markPending(
       VITAL_FIELDS.filter(
         (f) =>
-          !displayVal(f.id).trim() && (f.id === "pasos" || f.id === "sueno"),
+          !displayVal(f.id).trim() &&
+          (f.id === "pasos" ||
+            f.id === "sueno" ||
+            f.id === "fc" ||
+            f.id === "pa" ||
+            f.id === "spo2"),
       ).map((f) => f.id),
       PENDING_AGGREGATE_MS,
     );
-    // Medidas de este sync: FC (si su tarjeta sigue vacía, o sea el primer
-    // sync de la sesión), presión y SpO2 SIEMPRE. Las tarjetas entran a la cola
-    // y pasan a "Midiendo…/Ajustando…" cuando arranca su etapa.
-    const force: MetricKind[] = ["blood_pressure", "spo2"];
-    if (!displayVal("fc").trim()) force.unshift("heart_rate");
-    const queued = force
-      .map((kind) => MEASURE_FIELD_BY_KIND[kind])
-      .filter((id): id is string => id !== undefined && !displayVal(id).trim());
-    // Solo se encolan: el brillo y la etiqueta de fase empiezan cuando llega
-    // su turno (el efecto de etapa las marca). Así no hay varias tarjetas con
-    // "Ajustando el sensor…" a la vez.
-    setQueuedFields(queued);
     try {
-      await syncAll({ forceMeasure: force });
-      // La FC no se mide en el sync, pero el driver PAUSA su stream mientras
-      // mide presión/SpO2 y lo reanuda al terminar: se marca AL FINAL para que
-      // la primera lectura reanudada llene la tarjeta (marcarla al inicio
-      // expiraba antes de que el stream volviera y quedaba vacía). La
-      // temperatura queda fuera: este anillo no la emite en vivo.
-      markPending(
-        VITAL_FIELDS.filter(
-          (f) => !displayVal(f.id).trim() && f.id === "fc",
-        ).map((f) => f.id),
-        PENDING_STREAM_MS,
-      );
+      await syncHistory();
     } finally {
-      setQueuedFields([]);
       setSyncing(false);
     }
   };
@@ -695,18 +526,28 @@ export function VitalsLesson({
         ? t("Conectando…")
         : t("Sin wearable");
 
-  const pulseAge = hrSample ? agoLabel(hrSample.ts, t) : "";
-  const pulseSummary = hrSample
-    ? `${t("Pulso en vivo · {bpm} lpm", {
-        bpm: String(Math.round(hrSample.value)),
-      })} · ${
-        pulseAge === t("En vivo")
-          ? pulseAge
-          : t("Actualizado {when}", {
-              when: `${pulseAge.charAt(0).toLowerCase()}${pulseAge.slice(1)}`,
-            })
-      }`
-    : t("Conecta el wearable para ver tu pulso en vivo");
+  const pulseAge = hrSample
+    ? hrSample.source === "history"
+      ? t("Del historial")
+      : agoLabel(hrSample.ts, t)
+    : "";
+  /** Solo una lectura de esta sesión (no historial) puede decir "en vivo". */
+  const pulseIsLive = hrSample !== undefined && hrSample.source !== "history";
+  const pulseSummary =
+    info.wearing === false
+      ? t("Coloca el wearable para medir")
+      : hrSample
+        ? `${t(
+            pulseIsLive ? "Pulso en vivo · {bpm} lpm" : "Pulso · {bpm} lpm",
+            { bpm: String(Math.round(hrSample.value)) },
+          )} · ${
+            pulseAge === t("En vivo")
+              ? pulseAge
+              : t("Actualizado {when}", {
+                  when: `${pulseAge.charAt(0).toLowerCase()}${pulseAge.slice(1)}`,
+                })
+          }`
+        : t("Conecta el wearable para ver tu pulso en vivo");
 
   return (
     <div className="lsn-stack vt-lesson">
@@ -768,7 +609,7 @@ export function VitalsLesson({
         <button
           type="button"
           className="vt-sync"
-          disabled={syncing || syncStage !== null}
+          disabled={syncing}
           onClick={() => void sync()}
         >
           <span className="vt-sync-orb">
@@ -814,35 +655,29 @@ export function VitalsLesson({
           const st = vitalStatus(n, f.lo, f.hi, t, f.goal);
           const hasReading = v.trim() !== "" && !Number.isNaN(n);
           const bar = vitalBar(n, f);
-          const isMeasuring = measuringFieldId === f.id;
           const isLoading = pendingFields[f.id] !== undefined;
           const measureKind = VITAL_MEASURE_KIND[f.id];
+          // Sin dato del wearable: tocar la tarjeta lleva al Reloj a medir
+          // (aquí no se mide; esta vista solo lee).
+          const needsWearable = !hasReading && measureKind && !done;
           return (
             <article
               key={f.id}
               className={`vt-tile vt-${f.id} ${st.cls} ${v ? "has" : ""} ${
-                isMeasuring
-                  ? "is-measuring"
-                  : pendingFields[f.id]
-                    ? "is-loading"
-                    : ""
-              } ${queuedFields.includes(f.id) ? "is-queued" : ""}`}
-              onClick={(event) => {
-                if (!measureKind) return;
-                const target = event.target as HTMLElement | null;
-                // Tocar el input del valor no debe disparar una medida.
-                if (target?.closest("ion-input, input, textarea")) return;
-                handleTileTap(f.id, measureKind);
-              }}
+                pendingFields[f.id] ? "is-loading" : ""
+              }${needsWearable ? " is-link" : ""}`}
+              onClick={
+                needsWearable
+                  ? (event) => {
+                      const target = event.target as HTMLElement | null;
+                      if (target?.closest("ion-input, input, textarea")) return;
+                      onOpenWearable();
+                    }
+                  : undefined
+              }
             >
-              {queuedFields.includes(f.id) && (
-                <span className="watch-metric-queue">{t("En cola")}</span>
-              )}
               <div className="vt-row-main">
-                <span
-                  className={`vt-icon ${measureKind ? "is-measurable" : ""}`}
-                  aria-hidden="true"
-                >
+                <span className="vt-icon" aria-hidden="true">
                   <IonIcon icon={vitalIconFor(f.id)} />
                 </span>
                 <div className="vt-reading">
@@ -850,20 +685,12 @@ export function VitalsLesson({
                     <span className="vt-label" title={t(f.label)}>
                       {t(VITAL_SHORT_LABEL[f.id] ?? f.label)}
                     </span>
-                    <span
-                      className={`vt-status ${
-                        isMeasuring ? "is-live" : st.cls || ""
-                      }`}
-                    >
-                      {isMeasuring && activeKind
-                        ? measurePhaseLabel(activeKind, activeProgress, t)
-                        : pendingFields[f.id]
-                          ? f.id === "pasos" || f.id === "sueno"
-                            ? t("Sincronizando…")
-                            : t("Ajustando el sensor…")
-                          : connState !== "on" && measureKind
-                            ? t("Sin wearable")
-                            : st.label}
+                    <span className={`vt-status ${st.cls || ""}`}>
+                      {pendingFields[f.id]
+                        ? t("Sincronizando…")
+                        : connState !== "on" && measureKind
+                          ? t("Sin wearable")
+                          : st.label}
                     </span>
                   </header>
                   <div className="vt-value">
@@ -882,9 +709,7 @@ export function VitalsLesson({
                         }))
                       }
                     />
-                    <em className={isMeasuring || isLoading ? "is-empty" : ""}>
-                      {t(f.unit)}
-                    </em>
+                    <em className={isLoading ? "is-empty" : ""}>{t(f.unit)}</em>
                   </div>
                   {f.scale && !Number.isNaN(n) && (
                     <span className="vt-sub">{formatSleep(n, t)}</span>
@@ -892,42 +717,25 @@ export function VitalsLesson({
                 </div>
               </div>
               <div className="vt-row-detail">
-                {isMeasuring ? (
-                  <div
-                    className="vt-measure"
-                    role="progressbar"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.round(activeProgress.progress * 100)}
-                    aria-label={t("Progreso de la medición")}
-                  >
-                    <i
+                <div
+                  className={`vt-range ${f.kind === "goal" ? "is-goal" : ""}`}
+                  aria-hidden="true"
+                >
+                  {(f.kind !== "goal" || hasReading) && (
+                    <b
                       style={{
-                        width: `${Math.round(activeProgress.progress * 100)}%`,
+                        left: `${bar.bandLeft}%`,
+                        width: `${bar.bandWidth}%`,
                       }}
                     />
-                  </div>
-                ) : (
-                  <div
-                    className={`vt-range ${f.kind === "goal" ? "is-goal" : ""}`}
-                    aria-hidden="true"
-                  >
-                    {(f.kind !== "goal" || hasReading) && (
-                      <b
-                        style={{
-                          left: `${bar.bandLeft}%`,
-                          width: `${bar.bandWidth}%`,
-                        }}
-                      />
-                    )}
-                    <i
-                      style={{
-                        left: hasReading ? `${bar.pct}%` : "-8px",
-                        opacity: hasReading ? 1 : 0,
-                      }}
-                    />
-                  </div>
-                )}
+                  )}
+                  <i
+                    style={{
+                      left: hasReading ? `${bar.pct}%` : "-8px",
+                      opacity: hasReading ? 1 : 0,
+                    }}
+                  />
+                </div>
               </div>
             </article>
           );
@@ -957,23 +765,17 @@ export function VitalsLesson({
   );
 }
 
-/** Medida puntual del wearable → tarjeta de signos que se pone "en carga". */
 /** Tope de la animación de carga por tarjeta (si el dato nunca llega). */
 const PENDING_MAX_MS = 60_000;
 /** Tope para pasos/sueño: salen del volcado de historial (watchdogs de 6/12 s). */
 const PENDING_AGGREGATE_MS = 30_000;
-/** Tope para las métricas del stream en vivo (FC/temperatura) tras el sync. */
-const PENDING_STREAM_MS = 30_000;
-/** Una muestra cuenta como "viva" dentro de este margen (igual que "En vivo"). */
-const LIVE_SAMPLE_MS = 120_000;
+/**
+ * Frescura para autollenar el check-in: solo datos de los últimos 5 minutos.
+ * Más viejos no entran (la vista histórica vive en el Reloj).
+ */
+const FRESH_ENOUGH_MS = 300_000;
 
-const MEASURE_FIELD_BY_KIND: Partial<Record<MetricKind, string>> = {
-  heart_rate: "fc",
-  spo2: "spo2",
-  blood_pressure: "pa",
-};
-
-/** Métricas remedibles desde la tarjeta (doble clic en su icono). */
+/** Campos con dato de wearable (los únicos que mandan al Reloj a medir). */
 const VITAL_MEASURE_KIND: Partial<Record<string, MetricKind>> = {
   fc: "heart_rate",
   pa: "blood_pressure",

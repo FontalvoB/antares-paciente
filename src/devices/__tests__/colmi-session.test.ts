@@ -227,6 +227,24 @@ describe("ColmiSession.measure — contrato de fin", () => {
     await stopping;
   });
 
+  it("la FC cierra con 2 lecturas distintas (no 3)", async () => {
+    // Dos distintas prueban enganche; el eco bit-idéntico nunca llega a 2.
+    const { session, outcomes } = await startedSession();
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+
+    await vi.advanceTimersByTimeAsync(100);
+    emit([1, 0, 66, ...zeros(11)]);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(outcomes).toEqual([]);
+    emit([1, 0, 67, ...zeros(11)]);
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(outcomes).toEqual([[true, "completed"]]);
+    const stopping = session.stop();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await stopping;
+  });
+
   it("cierra con timeout si la banda no manda muestras", async () => {
     const { session, outcomes } = await startedSession();
     session.measure("spo2", (ok, reason) => outcomes.push([ok, reason]));
@@ -285,7 +303,9 @@ describe("ColmiSession.measure — contrato de fin", () => {
   it("la presión reintenta el barrido una vez si no llega ninguna muestra", async () => {
     const { session, outcomes } = await startedSession();
     hoisted.writes = [];
-    session.measure("blood_pressure", (ok, reason) => outcomes.push([ok, reason]));
+    session.measure("blood_pressure", (ok, reason) =>
+      outcomes.push([ok, reason]),
+    );
 
     await vi.advanceTimersByTimeAsync(16_000);
     expect(
@@ -312,7 +332,9 @@ describe("ColmiSession.measure — contrato de fin", () => {
   it("no reintenta si el barrido ya entregó muestras", async () => {
     const { session, outcomes } = await startedSession();
     hoisted.writes = [];
-    session.measure("blood_pressure", (ok, reason) => outcomes.push([ok, reason]));
+    session.measure("blood_pressure", (ok, reason) =>
+      outcomes.push([ok, reason]),
+    );
 
     emit([2, 0, 66, 125, 76, ...zeros(9)]);
     emit([2, 0, 67, 124, 75, ...zeros(9)]);
@@ -324,6 +346,86 @@ describe("ColmiSession.measure — contrato de fin", () => {
     expect(
       hoisted.writes.filter((bytes) => bytes[0] === 0x69 && bytes[1] === 2),
     ).toHaveLength(1);
+    const stopping = session.stop();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await stopping;
+  });
+
+  it("stopMeasure cancela el barrido con cancelled y para el sensor", async () => {
+    const { session, outcomes } = await startedSession();
+    hoisted.writes = [];
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+    await vi.advanceTimersByTimeAsync(100);
+
+    session.stopMeasure();
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(outcomes).toEqual([[false, "cancelled"]]);
+    // STOP realtime enviado una vez; sin reintentos ni re-arme después.
+    expect(hoisted.writes.filter((bytes) => bytes[0] === 0x6a)).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(31_000);
+    expect(outcomes).toHaveLength(1);
+
+    // Sin medida en curso es un no-op silencioso.
+    session.stopMeasure();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(outcomes).toHaveLength(1);
+    const stopping = session.stop();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await stopping;
+  });
+
+  it("la FC repetida al bit no cuenta (eco de estado, no medición)", async () => {
+    // Captura real: `27 03` idéntico en cada trama durante 30+ s y en los tres
+    // tipos de medida. Un óptico real varía entre tramas; el eco no. Sin este
+    // gate, 3 ecos cerraban el barrido en 1.6 s con un número inventado.
+    const { session, outcomes } = await startedSession();
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+
+    for (let frame = 0; frame < 5; frame++) {
+      emit([1, 0, 0, 0, 0, 0x27, 0x03, ...zeros(7)]);
+      await vi.advanceTimersByTimeAsync(200);
+    }
+    expect(outcomes).toEqual([]);
+
+    // En cuanto el valor cambia (sensor real enganchando), sí cuenta.
+    emit([1, 0, 0, 0, 0, 0x9e, 0x03, ...zeros(7)]);
+    emit([1, 0, 0, 0, 0, 0xf5, 0x03, ...zeros(7)]);
+    emit([1, 0, 0, 0, 0, 0x35, 0x04, ...zeros(7)]);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(outcomes).toEqual([[true, "completed"]]);
+    const stopping = session.stop();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await stopping;
+  });
+
+  it("no reintenta si hay radio aunque nada decodifique (curva de estimación en curso)", async () => {
+    // Captura real: la banda emite tramas de presión sin lectura plausible
+    // durante ~26 s y el resultado llega al final. Un STOP+START a los 15 s
+    // reiniciaría esa estimación (oficial 30 s → nuestro 41 s).
+    const { session, outcomes } = await startedSession();
+    hoisted.writes = [];
+    hoisted.notes = [];
+    session.measure("blood_pressure", (ok, reason) =>
+      outcomes.push([ok, reason]),
+    );
+
+    // Radio sin lectura aceptada: 20 tramas seguidas (no avanzan el reloj para
+    // no mezclar el fondo del volcado con lo que se verifica).
+    for (let frame = 0; frame < 20; frame++) {
+      emit([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    }
+    await vi.advanceTimersByTimeAsync(16_000);
+    expect(
+      hoisted.writes.filter(
+        (bytes) => bytes[0] === 0x69 && bytes[1] === 2 && bytes[2] === 1,
+      ),
+    ).toHaveLength(1);
+    expect(
+      hoisted.notes.some((line) => line.includes("reintento de barrido")),
+    ).toBe(false);
+    expect(outcomes).toEqual([]);
+
     const stopping = session.stop();
     await vi.advanceTimersByTimeAsync(1_000);
     await stopping;
