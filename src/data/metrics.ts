@@ -40,10 +40,10 @@ const FALLBACK_UNIT: Record<MetricId, string> = {
  *  explica QUÉ completará el dato — jamás un genérico que suene a error.
  *  pts nunca cae en requires-data: el balance real siempre existe. */
 const REQUIRES_DATA_NOTE: Record<MetricId, string> = {
-  imc: "Se completa con tu primera medición",
-  hba1c: "Aparece cuando tu equipo registra tu primer análisis/bioimpedancia",
-  fat: "Aparece cuando tu equipo registra tu primer análisis/bioimpedancia",
-  adh: "Se completa con tu primera semana de adherencia",
+  imc: "Sin datos",
+  hba1c: "Sin datos",
+  fat: "Sin datos",
+  adh: "Sin datos",
   pts: "Sin datos",
 };
 
