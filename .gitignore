@@ -85,3 +85,9 @@ scripts/*.tmp.*
 !src/assets/**
 !public/**
 
+# Firebase: el JSON del service account contiene la private_key (NUNCA commitear)
+*firebase-adminsdk*.json
+# El google-services.json CLIENTE vive en la raíz (commiteado) y scripts/
+# protect-package-swift.mjs lo copia a android/app/ en cada sync (android/ está
+# ignorado completo, así que no hace falta excepción).
+
