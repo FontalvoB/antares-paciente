@@ -1,5 +1,7 @@
 # ANTARES Paciente — Guía de Agentes (frontend)
 
+> **Contexto compartido del workspace**: lee `../.coppadresd-context/` (estado actual, arquitectura, decisiones, ítems abiertos, runbook y checklist TestFlight) ANTES de modificar código. Branch de release/TestFlight: `main` (hoy == `dev`, commit f34bc86). Última verificación: 2026-09-30.
+
 App móvil **React 19 + Ionic 8.8 + Capacitor 8 + Vite + TS** del programa COPP-ADRESD. En transición demo→producción: auth, citas, perfil, programa, tests de salud, nutrición/Food AI, chat IA, comunidad y push YA consumen el backend real (vía Gateway `:5080`, JWT `aud=app`); quedan módulos mock listados en `docs/integracion/01-FASE-0-AUDITORIA.md`.
 
 ## Integración con el backend (LEER PRIMERO para tareas de conexión)
