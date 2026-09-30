@@ -66,11 +66,11 @@ import {
 
 const STEPS = [
   {
-    title: "¿Qué necesitas?",
-    sub: "Elige el área y te mostramos quién te atiende",
+    title: "Agendar tu cita",
+    sub: "Selecciona el área de atención que necesitas",
   },
-  { title: "Agenda tu cita", sub: "Toca un día con cupo y elige la hora" },
-  { title: "Confirma los datos", sub: "Motivo, modalidad y resumen" },
+  { title: "Agendar tu cita", sub: "Elige la fecha y la hora que mejor se ajuste a ti" },
+  { title: "Agendar tu cita", sub: "Revisa los datos y confirma tu solicitud" },
 ] as const;
 
 const TOTAL = STEPS.length;
@@ -513,6 +513,8 @@ export function RequestAppointmentWizard({
           <span className="req-type-copy">
             <span className="ct">{title}</span>
             {desc ? <span className="cs">{desc}</span> : null}
+            {opt.code === "FAMILY_MEDICINE" && <span className="req-reference-detail">{t("Consulta con tu equipo de salud para el seguimiento y cuidado integral.")}</span>}
+            {display.sosNote && <span className="req-reference-detail">{t("Si presentas una situación de emergencia, acude de inmediato o comunícate con el 911.")}</span>}
           </span>
           {display.sosNote ? (
             <span className="req-type-note">
@@ -549,7 +551,7 @@ export function RequestAppointmentWizard({
   // catálogo → loading; catálogo vacío/fallido → error recuperable.
   if (realMode && specialties === null) {
     return (
-      <div className="req-page">
+      <div className="req-page booking-reference">
         <div className="req-empty" role="status" aria-live="polite">
           <IonSpinner name="crescent" aria-hidden="true" />
           <strong>{t("Cargando tipos de atención…")}</strong>
@@ -559,7 +561,7 @@ export function RequestAppointmentWizard({
   }
   if (realMode && (!careOptions || careOptions.length === 0)) {
     return (
-      <div className="req-page">
+      <div className="req-page booking-reference">
         <div className="req-empty" role="alert">
           <strong>{t("No se pudieron cargar los tipos de atención")}</strong>
           <p>{t("Revisa tu conexión e inténtalo de nuevo.")}</p>
@@ -578,7 +580,7 @@ export function RequestAppointmentWizard({
   }
 
   return (
-    <div className="req-page">
+    <div className="req-page booking-reference">
       <header className="req-hero">
         <div className="req-hero-aurora" aria-hidden="true" />
         <div className="req-hero-top">
@@ -596,15 +598,15 @@ export function RequestAppointmentWizard({
               total: String(TOTAL),
             })}
           >
-            {STEPS.map((s, i) => (
+            {STEPS.map((_, i) => (
               <button
-                key={s.title}
+                key={i}
                 type="button"
                 className={`req-dot ${i + 1 < step || done ? "done" : i + 1 === step ? "now" : ""}`}
-                aria-label={t(s.title)}
+                aria-label={t(["Área de atención", "Fecha y hora", "Confirmación"][i])}
                 disabled={i + 1 > step}
                 onClick={() => i + 1 < step && go(i + 1)}
-              />
+              ><span>{i + 1}</span><small>{t(["Área de atención", "Fecha y hora", "Confirmación"][i])}</small></button>
             ))}
           </div>
           <IonButton

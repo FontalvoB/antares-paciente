@@ -19,6 +19,8 @@ import {
   IonToggle,
 } from "@ionic/react";
 import {
+  heart,
+  chevronForward,
   batteryHalfOutline,
   bluetooth,
   copyOutline,
@@ -28,6 +30,8 @@ import {
   trashOutline,
   waterOutline,
 } from "ionicons/icons";
+import { WatchIcon3D } from "../components/icons3d";
+import logoIcon from "../assets/LogoIndividual.png";
 import { EcgTrace } from "../components/EcgTrace";
 import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
@@ -430,8 +434,30 @@ export function WearablePage() {
         ? agoLabel(hrSample?.ts, t)
         : t("Sin datos aún");
 
+  const diagnosticsControl = (
+            <IonList className="group-list watch-diagnostics" lines="none">
+              <IonItem className="group-item">
+                <span className="wearable-diagnostic-icon" slot="start" aria-hidden="true"><IonIcon icon={pulseOutline} /></span>
+                <IonLabel>
+                  <h3>{t("Modo diagnóstico")}</h3>
+                  <p>
+                    {t("Muestra todos los dispositivos y el detalle GATT.")}
+                  </p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  aria-label={t("Modo diagnóstico")}
+                  checked={diagnostics}
+                  onIonChange={(event) => setDiagnostics(event.detail.checked)}
+                />
+              </IonItem>
+            </IonList>
+  );
+
   return (
-    <Screen>
+    <Screen className="wearable-reference">
+      <Scroll className="wearable-scroll">
+      <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD"><img src={logoIcon} alt="" /><div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div></div>
       <PageHeader
         kicker={t("Biometría en vivo")}
         title={t("Wearable")}
@@ -444,53 +470,37 @@ export function WearablePage() {
           <span className={`status-pill ${connOn ? "on" : ""}`}>
             <span className="dot" style={{ background: connDot }} />
             {connLabel}
+            {connOn && info.battery !== undefined && <span className="wearable-battery"><IonIcon icon={batteryHalfOutline} />{info.battery}%</span>}
           </span>
         }
       />
 
-      <Scroll>
+      <section className={`wearable-showcase ${connOn ? 'is-connected' : ''} ${connConnecting ? 'is-busy' : ''}`}>
+        <div className="wearable-art" aria-hidden="true">
+          <span className="wearable-leaf wearable-leaf-left" /><span className="wearable-leaf wearable-leaf-right" />
+          <div className="wearable-orbit"><WatchIcon3D size={132} /></div>
+          <span className="wearable-bluetooth">{connConnecting ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}</span>
+        </div>
+        <h2 aria-live="polite">{connOn ? t('Tu dispositivo está conectado') : connecting || sessionStale ? t('Conectando…') : scanning ? t('Buscando cerca de ti…') : t('Conecta tu wearable')}</h2>
+        <p>{connOn ? t('Tu salud en tiempo real, más cerca de ti.') : connecting || sessionStale ? t('Estableciendo sesión con el dispositivo…') : t('Mantén el wearable desbloqueado y cerca del teléfono.')}</p>
+      </section>
+      <div className="wearable-summary">
+        {[
+          {label: 'FC', icon: heart, value: connOn && hr != null ? Math.round(hr) : '—', unit: 'lpm'},
+          {label: 'SpO2', icon: waterOutline, value: connOn && spo2 != null ? Math.round(spo2) + '%' : '—', unit: ''},
+          {label: 'Presión', icon: pulseOutline, value: connOn && blood ? Math.round(blood.value) + '/' + (blood.value2 == null ? '—' : Math.round(blood.value2)) : '—', unit: 'mmHg'},
+          {label: 'Sueño', icon: moonOutline, value: connOn && sleepMinutes != null ? formatSleep(sleepMinutes, t) : '—', unit: ''},
+          {label: 'Pasos', icon: footstepsOutline, value: connOn && steps != null ? Math.round(steps).toLocaleString(locale) : '—', unit: ''},
+        ].map(metric => <div className="wearable-summary-item" key={metric.label}><span className="wearable-summary-icon"><IonIcon icon={metric.icon} aria-hidden="true" /></span><span>{t(metric.label)}</span><strong>{metric.value}</strong><small>{metric.unit === 'lpm' ? t('lpm') : metric.unit}</small></div>)}
+      </div>
+      {wearableConnected && <div className="wearable-sync"><IonButton expand="block" className="bt bt-primary" onClick={() => void syncHistory()} disabled={!connOn || syncing || measuring !== null || queued > 0}>{syncing ? <IonSpinner name="crescent" slot="start" /> : <IonIcon icon={bluetooth} slot="start" />}{t('Sincronizar ahora')}<IonIcon icon={chevronForward} slot="end" /></IonButton></div>}
         {!wearableConnected ? (
           <div className="watch-pair">
-            <div
-              className={`watch-radar ${scanning ? "is-scanning" : ""}`}
-              aria-hidden="true"
-            >
-              <span className="watch-ring" />
-              <span className="watch-ring" />
-              <span className="watch-ring" />
-              <div className="watch-face">
-                <IonIcon icon={bluetooth} />
-              </div>
-            </div>
-
-            <h2 className="watch-pair-title">
-              {scanning ? t("Buscando cerca de ti…") : t("Conecta tu wearable")}
-            </h2>
-            <p className="watch-pair-copy">
-              {connecting
-                ? t("Estableciendo sesión con el dispositivo…")
-                : scanning
-                  ? t("Mantén el wearable desbloqueado y cerca del teléfono.")
-                  : t(
-                      "Recibiremos frecuencia cardíaca, sueño, presión, SpO2 y pasos.",
-                    )}
-            </p>
-
             {phase === "error" && error && (
               <p className="watch-pair-copy" style={{ color: "var(--red)" }}>
                 {t(ERROR_KEYS[error])}
               </p>
             )}
-
-            <div className="watch-caps">
-              {["FC", "SpO2", "Presión", "Sueño", "Pasos", "Movilidad"].map(
-                (item) => (
-                  <span key={item} className="chip chip-teal">
-                    {t(item)}
-                  </span>
-                ),
-              )}
-            </div>
 
             {/* Último guardado + encontrados al buscar, en una sola lista. */}
             {deviceList.length > 0 && (
@@ -588,24 +598,11 @@ export function WearablePage() {
               </div>
             )}
 
-            <IonList className="group-list watch-diagnostics" lines="none">
-              <IonItem className="group-item">
-                <IonLabel>
-                  <h3>{t("Modo diagnóstico")}</h3>
-                  <p>
-                    {t("Muestra todos los dispositivos y el detalle GATT.")}
-                  </p>
-                </IonLabel>
-                <IonToggle
-                  slot="end"
-                  checked={diagnostics}
-                  onIonChange={(event) => setDiagnostics(event.detail.checked)}
-                />
-              </IonItem>
-            </IonList>
+            {diagnosticsControl}
           </div>
         ) : (
           <>
+            <div className="wearable-diagnostics-connected">{diagnosticsControl}</div>
             {/* Estado del dispositivo + acciones, en una sola tarjeta. */}
             <section className="card dev-card">
               <div className="dev-card-top">

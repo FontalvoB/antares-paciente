@@ -8,7 +8,7 @@ import {
 } from "@ionic/react";
 import { CameraSource } from "@capacitor/camera";
 import {
-  add,
+  attachOutline,
   cameraOutline,
   closeCircle,
   documentOutline,
@@ -21,7 +21,6 @@ import {
   pulseOutline,
   trendingUpOutline,
   send as sendIcon,
-  sparkles,
 } from "ionicons/icons";
 import { motion } from "framer-motion";
 import {
@@ -325,13 +324,13 @@ export function ChatPage() {
   };
 
   return (
-    <Screen className="chat-kb">
+    <Screen className="chat-kb chat-reference">
       <header className="chat-premium-header">
         <div className="chat-brand-lockup">
           <img src={logoIcon} alt="" className="chat-brand-logo" />
           <div>
-            <span className="chat-brand-name">COPP-ADRESD</span>
-            <span className="chat-brand-kicker">{t("Asistente de salud")}</span>
+            <span className="chat-brand-name">COPP-ADRESD<sup>®</sup></span>
+            <span className="chat-brand-kicker">COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</span>
           </div>
         </div>
         <div className="chat-hero-copy">
@@ -339,6 +338,7 @@ export function ChatPage() {
             <h1 className="display">
               {t("Hola, {nombre} 👋", { nombre: user.nombre || t("Paciente") })}
             </h1>
+            <p className="chat-welcome-sub">{t("Estoy aquí para ayudarte")}</p>
             <p>{t("Tu asistente de IA en salud y bienestar")}</p>
           </div>
           <IonButton
@@ -368,10 +368,12 @@ export function ChatPage() {
             className="qrchip chat-quick-action"
             onClick={() => send(t(q))}
           >
-            <span className="chat-quick-icon" aria-hidden="true">
-              <IonIcon icon={icon} />
+            <span className="chat-quick-content">
+              <span className="chat-quick-icon" aria-hidden="true">
+                <IonIcon icon={icon} />
+              </span>
+              <span>{t(l)}</span>
             </span>
-            {t(l)}
           </IonButton>
         ))}
       </div>
@@ -430,7 +432,7 @@ export function ChatPage() {
                 {m.role === "alert" ? (
                   "!"
                 ) : (
-                  <IonIcon icon={sparkles} style={{ fontSize: 15 }} />
+                  <Mascot pose="welcome" float={false} className="chat-avatar-mascot" />
                 )}
               </div>
             ) : !isUser ? (
@@ -520,7 +522,7 @@ export function ChatPage() {
         {uploading && (
           <div className="chat-row">
             <div className="chat-avatar" aria-hidden="true">
-              <IonIcon icon={sparkles} style={{ fontSize: 15 }} />
+              <Mascot pose="thinking" float={false} className="chat-avatar-mascot" />
             </div>
             <div className="chat-msg">
               <div className="bub bub-bot chat-uploading">
@@ -571,7 +573,7 @@ export function ChatPage() {
           disabled={uploading}
           onClick={() => setAttachSheetOpen(true)}
         >
-          <IonIcon icon={add} style={{ fontSize: 22 }} />
+          <IonIcon icon={attachOutline} style={{ fontSize: 22 }} />
         </IonButton>
         <IonButton
           className="bt bt-round chat-voice"
@@ -583,6 +585,7 @@ export function ChatPage() {
         </IonButton>
         <IonInput
           className="chat-inp"
+          aria-label={t("Escribe un mensaje…")}
           value={text}
           disabled={uploading}
           onIonInput={(e) => setText(e.detail.value ?? "")}

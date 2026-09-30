@@ -640,7 +640,7 @@ export function ProgramPage() {
   ]);
 
   return (
-    <Screen>
+    <Screen className="pg-reference">
       <Scroll className="pg-scroll">
         {productMessage && (
           <div

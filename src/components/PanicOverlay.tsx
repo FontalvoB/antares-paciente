@@ -40,6 +40,8 @@ import {
   type SosAlertDto,
 } from "../services/sos/sos-service";
 
+import logoIcon from "../assets/LogoIndividual.png";
+
 type SosView = "protocol" | "confirm" | "call911" | "callFamily";
 type CallPhase = "dialing" | "ringing" | "connected";
 
@@ -383,7 +385,7 @@ export function PanicOverlay() {
                 first?.shadowRoot?.querySelector("button")?.focus();
               }
             }}
-            className={`overlay overlay-panic sos-screen sos-modern ${sosActive ? "is-hot" : ""} ${inCall ? "is-call" : ""} ${calling911 ? "is-call-911" : ""} ${callingFam ? "is-call-fam" : ""}`}
+            className={`overlay overlay-panic sos-screen sos-modern sos-reference ${view === "protocol" ? "is-protocol" : ""} ${sosActive ? "is-hot" : ""} ${inCall ? "is-call" : ""} ${calling911 ? "is-call-911" : ""} ${callingFam ? "is-call-fam" : ""}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -391,14 +393,10 @@ export function PanicOverlay() {
           >
             <header className="sos-topbar">
               <div className="sos-brand">
-                <span>
-                  <IonIcon icon={medkit} aria-hidden="true" />
-                </span>
-                <div>
-                  <strong>SOS</strong>
-                  <small>{t("Asistencia de emergencia")}</small>
-                </div>
+                <img src={logoIcon} alt="" />
+                <div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div>
               </div>
+              <div className="sos-greeting"><h1>{t('Hola, {nombre} 👋', { nombre: user.nombre || t('Paciente') })}</h1><p>{t('Tu salud es nuestra prioridad')}</p></div>
               <IonButton
                 fill="clear"
                 className="sos-top-close"
@@ -415,7 +413,7 @@ export function PanicOverlay() {
                 {inCall ? t("Volver") : sosActive ? t("Cerrar") : t("Cancelar")}
               </IonButton>
             </header>
-            <div className="sos-demo-note">
+            {view !== "protocol" && (            <div className="sos-demo-note">
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
                 {sosEnabled
@@ -424,7 +422,7 @@ export function PanicOverlay() {
                     )
                   : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
               </span>
-            </div>
+            </div>)}
 
             <AnimatePresence initial={false}>
               {!inCall && view !== "confirm" ? (
@@ -502,7 +500,7 @@ export function PanicOverlay() {
                             ) : rateLimitSecs > 0 ? (
                               <IonIcon icon={hourglass} aria-hidden="true" />
                             ) : (
-                              <b>SOS</b>
+                              <><IonIcon icon={medkit} aria-hidden="true" /><b>SOS</b></>
                             )}
                             <small>
                               {sosActive
@@ -525,10 +523,20 @@ export function PanicOverlay() {
                           {sosActive
                             ? `${activeCopy} ${locationCopy}`
                             : t(
-                                "Toca el círculo y confirma. 911, tu familiar y el médico se notifican juntos.",
+                                "Toca SOS y confirma para solicitar ayuda a tu contacto de emergencia y a tu equipo clínico.",
                               )}
                         </p>
                       </div>
+            <div className="sos-demo-note">
+              <IonIcon icon={informationCircleOutline} aria-hidden="true" />
+              <span>
+                {sosEnabled
+                  ? t(
+                      "Alerta real: se enviará SMS a tu contacto de emergencia.",
+                    )
+                  : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
+              </span>
+            </div>
                     </section>
 
                     <section className="sos-network">

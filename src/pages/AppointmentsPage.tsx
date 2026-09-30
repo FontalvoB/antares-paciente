@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { IonAlert, IonButton, IonIcon, IonModal } from "@ionic/react";
 import { calendarOutline } from "ionicons/icons";
+import logoIcon from "../assets/LogoIndividual.png";
 import { PageHeader } from "../components/PageHeader";
 import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
 import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard";
@@ -80,10 +81,11 @@ export function AppointmentsPage() {
     realMode && a.status === "Confirmed" && !!a.professionalId;
 
   return (
-    <Screen>
+    <Screen className="appointments-reference">
+      <div className="appointments-brand hm-wordmark"><img src={logoIcon} alt="" /><div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div></div>
       <PageHeader
-        title={t("Citas")}
-        sub={t("Agenda con el equipo COPP-ADRESD")}
+        title={t("Mis citas")}
+        sub={t("Tu acompañamiento, paso a paso")}
         trailing={
           <IonButton
             className="bt bt-mini bt-primary"
@@ -217,7 +219,7 @@ export function AppointmentsPage() {
           </article>
         ) : null}
 
-        <div className="sec">{t("Siguientes")}</div>
+        <div className="sec">{t("Próximas citas")}</div>
         {rest.length === 0 ? (
           <div className="req-empty" style={{ margin: "0 16px 8px" }}>
             <strong>{t("No hay más citas")}</strong>
@@ -269,7 +271,7 @@ export function AppointmentsPage() {
           </div>
         )}
 
-        <div className="sec">{t("Anteriores")}</div>
+        <div className="sec">{t("Historial de citas")}</div>
         <div className="group-list" style={{ marginBottom: 20 }}>
           {past.length === 0 ? (
             <div className="req-empty" style={{ margin: "0 16px" }}>

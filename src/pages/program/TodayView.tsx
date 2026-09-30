@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import { IonButton, IonIcon } from '@ionic/react'
 import { motion } from 'framer-motion'
-import { checkmark, gift, sparkles, trophy } from 'ionicons/icons'
+import { checkmark, chevronForward, gift, heartOutline, leaf, sparkles, trophy } from 'ionicons/icons'
 import {
   DAY_BONUS_PTS,
   PROGRAM_TASKS,
@@ -261,14 +261,16 @@ export function TodayView({
               </span>
               {current && !done && <span className="pcard-next">{t('Siguiente')}</span>}
               <span className="pcard-panel">
+                <span className="pcard-action-icon" aria-hidden="true"><IonIcon icon={done ? checkmark : task.icon} /></span>
                 <span className="pcard-copy">
                   <strong>{t(task.title)}</strong>
                   <small>{done ? t('Completada') : subtitle}</small>
                 </span>
                 <span className="pcard-side">
-                  <span className="pcard-pts">+{task.pts}</span>
+                  <span className="pcard-pts">+{task.pts} XP</span>
                   {tail && <span className="pcard-meta">{tail}</span>}
                 </span>
+                <IonIcon className="pcard-chevron" icon={chevronForward} aria-hidden="true" />
               </span>
             </motion.button>
           )
@@ -293,10 +295,16 @@ export function TodayView({
               </small>
             </span>
             <span className="pcard-side">
-              <span className="pcard-pts">+{chest.amount}</span>
+              <span className="pcard-pts">+{chest.amount} XP</span>
             </span>
           </span>
         </motion.div>
+      </div>
+
+      <div className="pg-encouragement">
+        <IonIcon icon={leaf} aria-hidden="true" />
+        <div><strong>{t('¡Cada acción cuenta!')}</strong><p>{t('Tu esfuerzo de hoy construye una mejor versión de ti.')}</p></div>
+        <IonIcon icon={heartOutline} aria-hidden="true" />
       </div>
 
       <div className="stitle">{t('Nutracéutico')}</div>
