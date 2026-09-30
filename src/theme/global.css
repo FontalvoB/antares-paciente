@@ -25724,7 +25724,10 @@ ion-segment.plan-seg ion-segment-button {
   }
 }
 .chat-row-user {
-  flex-direction: row-reverse;
+  /* DOM: [chat-msg][avatar] → orden normal = avatar a la DERECHA del
+     mensaje del usuario (estilo WhatsApp/Instagram), nunca del lado del
+     agente. El flex:1 del msg empuja la burbuja hacia el borde. */
+  flex-direction: row;
 }
 .chat-msg {
   flex: 1;
@@ -25774,7 +25777,7 @@ ion-segment.plan-seg ion-segment-button {
 .chat-avatar-user {
   background: var(--blue-l);
   color: var(--blue);
-  border: 1px solid #b5d4f4;
+  border: 1px solid color-mix(in srgb, var(--ice) 40%, var(--wh));
   box-shadow: none;
 }
 
@@ -25788,7 +25791,7 @@ ion-segment.plan-seg ion-segment-button {
   padding: 10px 12px;
   border-radius: 16px;
   background: var(--blue-l);
-  border: 1px solid #b5d4f4;
+  border: 1px solid color-mix(in srgb, var(--ice) 40%, var(--wh));
   font-size: 12px;
   line-height: 1.5;
   color: var(--blue);
@@ -27492,10 +27495,10 @@ ion-button.chat-panic {
   z-index: 2;
   right: 14px;
   top: calc(12px + env(safe-area-inset-top, 0px));
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
 }
 .chat-header-mascot {
   position: absolute;
@@ -27775,5 +27778,179 @@ ion-button.vc-hang ion-icon {
   .vc-orb::after,
   .vc-orb-dots {
     animation: none !important;
+  }
+}
+
+/* Pulido final del chat: superficies táctiles y jerarquía de conversación. */
+.chat-quick-actions {
+  padding-block: 11px 12px;
+  gap: 10px;
+  border-bottom-color: color-mix(in srgb, var(--bd) 78%, var(--wh));
+}
+.chat-quick-actions ion-button.chat-quick-action {
+  min-width: max-content;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--navy) 8%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+}
+.chat-quick-actions ion-button.chat-quick-action::part(native) {
+  padding-inline: 11px 14px;
+}
+.chat-quick-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 7px;
+}
+.chat-quick-actions ion-button.chat-quick-action:active {
+  transform: scale(0.98);
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--navy) 8%, transparent);
+}
+.chat-list .bub-bot {
+  border-color: color-mix(in srgb, var(--bd) 62%, var(--wh));
+  border-radius: 18px 18px 18px 7px;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--navy) 7%, transparent);
+}
+.chat-list .bub-usr {
+  border-radius: 20px 20px 7px 20px;
+  background: linear-gradient(145deg, var(--navy), var(--navy-2));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--navy) 24%, transparent);
+}
+.chat-list ion-button.cta-button {
+  margin: 10px 0 0;
+  --background: var(--ice-l);
+  --color: var(--blue);
+  --border-color: color-mix(in srgb, var(--ice) 40%, var(--wh));
+  --border-width: 1px;
+  --border-style: solid;
+  --border-radius: 14px;
+  border-radius: 14px;
+  min-height: 44px;
+  height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--navy) 4%, transparent);
+  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+}
+.chat-list ion-button.cta-button:active {
+  transform: scale(0.98);
+}
+.chat-row .chat-avatar:not(.chat-avatar-user) {
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--navy) 14%, transparent);
+}
+.chat-row .chat-avatar-user {
+  box-shadow: 0 2px 7px color-mix(in srgb, var(--blue) 12%, transparent);
+}
+.chat-time {
+  margin-top: 4px;
+  font-size: 10px;
+  opacity: 0.72;
+}
+.chat-fb {
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top-style: solid;
+  border-top-color: color-mix(in srgb, var(--bd) 80%, var(--wh));
+}
+.chat-fb-q {
+  font-size: 12px;
+  font-weight: 600;
+}
+ion-button.chat-fb-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --background-activated: var(--ice-l);
+  border-radius: 50%;
+  transition: transform 150ms var(--ease), background 150ms var(--ease);
+}
+ion-button.chat-fb-btn:active {
+  transform: scale(0.96);
+}
+.chat-composer {
+  gap: 9px;
+  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top-color: color-mix(in srgb, var(--bd) 72%, var(--wh));
+  background: color-mix(in srgb, var(--wh) 96%, var(--ice-l));
+  box-shadow: 0 -7px 20px color-mix(in srgb, var(--navy) 6%, transparent);
+}
+.chat-composer ion-button.bt-round {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  min-height: 46px;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--bd) 72%, var(--wh));
+  border-radius: 50%;
+  background: var(--wh);
+  box-shadow: 0 5px 13px color-mix(in srgb, var(--navy) 9%, transparent);
+  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease), opacity 150ms var(--ease);
+}
+.chat-composer ion-button.chat-plus {
+  --background: var(--wh);
+  --color: var(--navy);
+}
+.chat-composer ion-button.chat-voice {
+  --background: var(--ice-l);
+  --color: var(--blue);
+}
+.chat-composer ion-button.chat-send {
+  border: 0;
+  background: transparent;
+  --background: var(--navy);
+  --background-activated: var(--navy-2);
+  --color: var(--wh);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--navy) 28%, transparent);
+}
+.chat-composer ion-button.bt-round:not([disabled]):active {
+  transform: scale(0.98);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--navy) 10%, transparent);
+}
+.chat-composer ion-button.chat-send[disabled] {
+  opacity: 0.45;
+  box-shadow: none;
+}
+.chat-composer ion-input.chat-inp {
+  min-height: 46px;
+  --background: var(--wh);
+  --placeholder-color: var(--mu);
+  border-color: color-mix(in srgb, var(--bd) 92%, var(--wh));
+  background: var(--wh);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--navy) 3%, transparent);
+  transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease), background 150ms var(--ease);
+}
+.composer ion-input.chat-inp.has-focus {
+  border-color: var(--brand-green-soft);
+  background: var(--wh);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-green-soft) 16%, transparent);
+}
+.vc-controls,
+ion-button.vc-btn,
+.vc-status {
+  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease), opacity 150ms var(--ease);
+}
+ion-button.vc-btn:active {
+  transform: scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-quick-actions ion-button.chat-quick-action,
+  .chat-list ion-button.cta-button,
+  ion-button.chat-fb-btn,
+  .chat-composer ion-button.bt-round,
+  .chat-composer ion-input.chat-inp,
+  .vc-controls,
+  ion-button.vc-btn,
+  .vc-status {
+    transition: none;
   }
 }
