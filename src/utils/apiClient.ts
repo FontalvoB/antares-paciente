@@ -13,8 +13,8 @@
 
 import {
   getAccessToken,
-  persistAccessToken,
   clearSessionAndNotify,
+  sharedRefresh,
 } from "./authApi";
 import { getApiBaseUrl, getAuthBaseUrl } from "./apiBaseUrl";
 
@@ -60,49 +60,26 @@ export class ApiError extends Error {
 
 // --- Single-flight refresh (DESIGN §apiClient) ---
 
-let refreshPromise: Promise<boolean> | null = null;
-
 /**
- * Perform a single refresh attempt.
- * Returns true if refresh succeeded, false otherwise.
- * All concurrent 401 callers share the same promise.
+ * Refresh con single-flight COMPARTIDO (authApi.sharedRefresh): además de
+ * coalescer los 401 concurrentes de apiFetch, se coalesce con restoreSession
+ * (boot/AppContext/GraphQL) y scores-service.attemptRefresh. Tres promesas
+ * independientes contra /api/auth/refresh con la misma cookie hacen que el
+ * backend rote el token y el perdedor reciba 401 "already claimed" matando
+ * la sesión (bug de TestFlight 2026-09-30). NUNCA llamar a /api/auth/refresh
+ * por fuera de authApi.sharedRefresh.
  */
 function doRefresh(): Promise<boolean> {
-  if (!refreshPromise) {
-    refreshPromise = fetch(resolveUrl("/api/auth/refresh"), {
-      method: "POST",
-      credentials: "include",
-      // No Bearer token — refresh uses HttpOnly cookie only.
-      // Timeout propio: si el refresh se cuelga, el 401 que lo disparó espera
-      // para siempre y bloquea apiFetch (y con él, syncs y POSTs de métricas).
-      signal: AbortSignal.timeout(10_000),
-    })
-      .then(async (res) => {
-        // 401 (cookie ausente o inválida) = la sesión ya no es recuperable:
-        // se limpia el token y se notifica (el listener de AppContext
-        // devuelve al login). No se espera al próximo 401.
-        if (res.status === 401) {
-          clearSessionAndNotify();
-          return false;
-        }
-        if (!res.ok) return false;
-        // Rotación: el access token nuevo viene en el body. Sin persistirlo,
-        // el retry de apiFetch seguiría mandando el token vencido.
-        const body = (await res.json().catch(() => null)) as {
-          accessToken?: string;
-        } | null;
-        if (!body?.accessToken) return false;
-        persistAccessToken(body.accessToken);
-        return true;
-      })
-      // Fallo de red: la sesión se conserva (modo offline); el watcher de
-      // expiración reintentará cuando haya conectividad.
-      .catch(() => false)
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
-  return refreshPromise;
+  return sharedRefresh().then(({ status, result }) => {
+    // 401 (cookie ausente o inválida) = la sesión ya no es recuperable:
+    // se limpia el token y se notifica (el listener de AppContext
+    // devuelve al login). No se espera al próximo 401.
+    if (status === 401) {
+      clearSessionAndNotify();
+      return false;
+    }
+    return result !== null;
+  });
 }
 
 /**
