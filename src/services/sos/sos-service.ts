@@ -40,6 +40,13 @@ export interface SosAlertDto {
    * entrega al contacto de emergencia.
    */
   smsChannelStatus?: string | null;
+  /**
+   * Estado del canal de voz reportado por el backend (llamada TTS al contacto):
+   * "Enviado" | "Fallido" | "Timeout" | "NoConfigurado" | "Pendiente".
+   * La UI lo usa para copy honesto (BUG-01): solo con "Enviado" se afirma
+   * que se realizó la llamada.
+   */
+  voiceChannelStatus?: string | null;
   /** Ubicación persistida de la alerta. Null = no compartida (BUG-01 b). */
   location?: { latitude: number; longitude: number } | null;
 }

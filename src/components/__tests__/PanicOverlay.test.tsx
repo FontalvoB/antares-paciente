@@ -335,20 +335,23 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
 
     await activate();
 
-    // Mensaje principal honesto de degradación.
+    // Mensaje principal honesto de degradación (SMS y voz sin confirmar).
     expect(
       screen.getByText(
-        "Alerta registrada para tu equipo clínico. SMS no disponible en este momento. Sin ubicación en esta alerta.",
+        "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento. Sin ubicación en esta alerta.",
       ),
     ).toBeTruthy();
     const copy = document.querySelector(".sos-copy p");
     expect(copy?.textContent).not.toContain("GPS");
     expect(copy?.textContent).not.toContain("signos vitales");
     expect(copy?.textContent).not.toContain("Ambulancia");
-    // Fila familiar: canal degradado, sin afirmar "Alerta enviada"/"SMS enviado".
-    expect(screen.getByText("SMS no disponible en este momento")).toBeTruthy();
+    // Fila familiar: canal degradado, sin afirmar entrega por llamada ni SMS.
+    expect(
+      screen.getByText("Canal de contacto no disponible en este momento"),
+    ).toBeTruthy();
     expect(screen.queryByText("Alerta enviada · 000")).toBeNull();
     expect(screen.queryByText("SMS enviado · 000")).toBeNull();
+    expect(screen.queryByText("Llamada realizada · 000")).toBeNull();
   });
 
   it("canal Enviado + location: sí afirma SMS al contacto y ubicación compartida", async () => {
@@ -400,8 +403,91 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
 
     expect(
       screen.getByText(
-        "Alerta registrada para tu equipo clínico. SMS no disponible en este momento. Sin ubicación en esta alerta.",
+        "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento. Sin ubicación en esta alerta.",
       ),
     ).toBeTruthy();
+  });
+
+  it("voz Enviado + SMS Enviado: afirma llamada y SMS al contacto", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+
+    await activate();
+
+    const copy = document.querySelector(".sos-copy p");
+    expect(copy?.textContent).toBe(
+      "Llamada y SMS enviados a tu contacto de emergencia. Sin ubicación en esta alerta.",
+    );
+    expect(screen.getByText("Llamada y SMS enviados · 000")).toBeTruthy();
+  });
+
+  it("solo voz Enviado (SMS degradado): afirma la llamada sin afirmar SMS", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-5",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "NoConfigurado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-5",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "NoConfigurado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+
+    await activate();
+
+    const copy = document.querySelector(".sos-copy p");
+    expect(copy?.textContent).toBe(
+      "Llamada realizada a tu contacto de emergencia. Sin ubicación en esta alerta.",
+    );
+    expect(screen.getByText("Llamada realizada · 000")).toBeTruthy();
+    expect(screen.queryByText("SMS enviado · 000")).toBeNull();
+  });
+
+  it("voz Fallida sin SMS enviado: degradación sin afirmar llamada", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-6",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Pendiente",
+      voiceChannelStatus: "Fallido",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-6",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Pendiente",
+      voiceChannelStatus: "Fallido",
+      location: null,
+    });
+
+    await activate();
+
+    expect(
+      screen.getByText(
+        "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento. Sin ubicación en esta alerta.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("Llamada realizada · 000")).toBeNull();
   });
 });

@@ -272,19 +272,35 @@ export function PanicOverlay() {
     !!smsStatus &&
     smsStatus !== "Enviado" &&
     smsStatus !== "Pendiente";
+  const voiceStatus = realAlert?.voiceChannelStatus ?? null;
+  const voiceSent = sosEnabled && voiceStatus === "Enviado";
+  // Mismo criterio para el canal de voz: distinto de Enviado/Pendiente.
+  const voiceDegraded =
+    sosEnabled &&
+    !!voiceStatus &&
+    voiceStatus !== "Enviado" &&
+    voiceStatus !== "Pendiente";
+  /** Al menos un canal de contacto (voz o SMS) confirmó entrega. */
+  const contactSent = voiceSent || smsSent;
+  /** Algún canal de contacto degradó y ninguno confirmó entrega. */
+  const contactDegraded = voiceDegraded || smsDegraded;
   const locationShared = sosEnabled && realAlert?.location != null;
 
   const activeCopy = !sosEnabled
     ? t(
         "Protocolo activado en modo simulación: no se envió ninguna alerta real.",
       )
-    : smsSent
-      ? t("SMS enviado a tu contacto de emergencia.")
-      : smsDegraded
-        ? t(
-            "Alerta registrada para tu equipo clínico. SMS no disponible en este momento.",
-          )
-        : t("Alerta registrada para tu equipo clínico.");
+    : voiceSent && smsSent
+      ? t("Llamada y SMS enviados a tu contacto de emergencia.")
+      : voiceSent
+        ? t("Llamada realizada a tu contacto de emergencia.")
+        : smsSent
+          ? t("SMS enviado a tu contacto de emergencia.")
+          : contactDegraded
+            ? t(
+                "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento.",
+              )
+            : t("Alerta registrada para tu equipo clínico.");
   const locationCopy = locationShared
     ? t("Tu ubicación fue compartida con tu equipo.")
     : t("Sin ubicación en esta alerta.");
@@ -312,13 +328,17 @@ export function PanicOverlay() {
       key: "fam",
       ico: people,
       title: family,
-      sub: smsSent
-        ? t("SMS enviado · {phone}", { phone: familyCel })
-        : sosActive && smsDegraded
-          ? t("SMS no disponible en este momento")
-          : `${familyRole} · ${familyCel}`,
+      sub: voiceSent && smsSent
+        ? t("Llamada y SMS enviados · {phone}", { phone: familyCel })
+        : voiceSent
+          ? t("Llamada realizada · {phone}", { phone: familyCel })
+          : smsSent
+            ? t("SMS enviado · {phone}", { phone: familyCel })
+            : sosActive && contactDegraded
+              ? t("Canal de contacto no disponible en este momento")
+              : `${familyRole} · ${familyCel}`,
       tone: "ice",
-      on: smsSent,
+      on: contactSent,
     },
     {
       key: "doc",
@@ -418,7 +438,7 @@ export function PanicOverlay() {
               <span>
                 {sosEnabled
                   ? t(
-                      "Alerta real: se enviará SMS a tu contacto de emergencia.",
+                      "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
                     )
                   : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
               </span>
@@ -532,7 +552,7 @@ export function PanicOverlay() {
               <span>
                 {sosEnabled
                   ? t(
-                      "Alerta real: se enviará SMS a tu contacto de emergencia.",
+                      "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
                     )
                   : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
               </span>
@@ -762,13 +782,23 @@ export function PanicOverlay() {
                           ? t(
                               "Unidad en despacho. Quédate en el teléfono y no cuelgues.",
                             )
-                          : smsSent
-                            ? t("{name} ya recibió tu alerta SMS.", {
-                                name: family.split(" ")[0],
-                              })
-                            : t(
-                                "{name} no recibió SMS (canal no disponible). La alerta sigue activa para tu equipo clínico.",
-                              )}
+                          : voiceSent && smsSent
+                            ? t(
+                                "{name} ya recibió tu alerta por llamada y SMS.",
+                                { name: family.split(" ")[0] },
+                              )
+                            : voiceSent
+                              ? t("{name} ya recibió tu alerta por llamada.", {
+                                  name: family.split(" ")[0],
+                                })
+                              : smsSent
+                                ? t("{name} ya recibió tu alerta SMS.", {
+                                    name: family.split(" ")[0],
+                                  })
+                                : t(
+                                    "{name} no recibió el aviso (canal no disponible). La alerta sigue activa para tu equipo clínico.",
+                                    { name: family.split(" ")[0] },
+                                  )}
                       </p>
                     )}
                   </div>
