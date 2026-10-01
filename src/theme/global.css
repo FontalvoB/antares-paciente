@@ -29478,15 +29478,41 @@ ion-button.vc-btn:active {
   grid-row: 4;
   margin-top: 12px;
 }
-.booking-reference .req-body {
-  background:
+/* Scroll real de los modales de citas (wizard + reprogramar): el contenido
+   scrollea dentro de IonContent (WKWebView no movía el div overflow custom)
+   y el footer deja de ser overlay absoluto — el grid reparte
+   hero / scroll / footer, así nada queda bajo la barra. */
+ion-modal.request-modal .req-page {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+ion-modal.request-modal .req-foot {
+  position: static;
+}
+ion-modal.request-modal ion-content.req-body {
+  --background: var(--g0);
+  --padding-top: 16px;
+  --padding-end: 16px;
+  --padding-bottom: 16px;
+  --padding-start: 16px;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+/* Con el teclado abierto (useKeyboardInset, nativo iOS) la caja del modal
+   encoge: el área de scroll pierde altura y el footer sube por encima del
+   teclado en lugar de quedar tapado. */
+.kb-open ion-modal.request-modal .req-page {
+  padding-bottom: var(--kb, 0px);
+}
+.booking-reference ion-content.req-body {
+  --background:
     radial-gradient(
       ellipse at 100% 100%,
       color-mix(in srgb, var(--home-leaf) 35%, transparent),
       transparent 45%
     ),
     var(--home-mist);
-  padding: 16px;
 }
 .booking-reference ion-radio-group.req-types {
   min-height: 0;

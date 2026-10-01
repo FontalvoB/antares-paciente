@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   IonButton,
+  IonContent,
   IonIcon,
   IonRadio,
   IonRadioGroup,
@@ -149,7 +150,7 @@ export function RequestAppointmentWizard({
   const [retryTick, setRetryTick] = useState(0);
   const [{ year, month }, setCursor] = useState(() => isoYearMonth(today));
   const dir = useRef(1);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLIonContentElement>(null);
 
   // Opciones de atención desde el catálogo (null = aún no cargado),
   // restringidas a la entrada directa de Decisión 5 (REQ-APP-02).
@@ -333,7 +334,9 @@ export function RequestAppointmentWizard({
   ]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
+    // IonContent (scroll nativo de Ionic) en vez del div overflow custom:
+    // en WKWebView el scroller casero no respondía al gesto.
+    scrollRef.current?.scrollToTop();
   }, [step, done]);
 
   const pickType = (id: ConsultTypeId) => {
@@ -664,7 +667,7 @@ export function RequestAppointmentWizard({
         )}
       </header>
 
-      <div className="req-body" ref={scrollRef}>
+      <IonContent className="req-body" ref={scrollRef} scrollY>
         <AnimatePresence mode="wait" initial={false}>
           {done && professional && consultType ? (
             <motion.div
@@ -1281,7 +1284,7 @@ export function RequestAppointmentWizard({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </IonContent>
 
       <div className="req-foot">
         {done ? (
