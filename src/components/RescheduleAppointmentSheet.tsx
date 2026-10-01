@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   IonButton,
+  IonContent,
   IonDatetime,
   IonIcon,
   IonModal,
@@ -116,7 +117,11 @@ export function RescheduleAppointmentSheet({
   };
 
   return (
-    <IonModal isOpen={!!appointment} onDidDismiss={onClose}>
+    <IonModal
+      isOpen={!!appointment}
+      onDidDismiss={onClose}
+      className="request-modal"
+    >
       {appointment && (
         <div className="req-page">
           <header className="req-hero">
@@ -128,7 +133,7 @@ export function RescheduleAppointmentSheet({
             </p>
           </header>
 
-          <div className="req-body">
+          <IonContent className="req-body" scrollY>
             {!canQuery ? (
               <div className="req-empty" role="alert">
                 <strong>{t("No se puede reprogramar esta cita")}</strong>
@@ -275,7 +280,7 @@ export function RescheduleAppointmentSheet({
                 )}
               </>
             )}
-          </div>
+          </IonContent>
 
           <div className="req-foot">
             <div className="req-foot-row">
