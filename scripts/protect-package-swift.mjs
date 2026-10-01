@@ -51,9 +51,8 @@ try {
     console.log(
       "[protect-package-swift] Package.swift corregido (backslashes -> forward slashes).",
     );
-  } else {
-    console.log("[protect-package-swift] Package.swift ya estaba correcto.");
   }
+  // Sin else: el caso normal (nada que corregir) no imprime nada.
 } catch (err) {
   // Best-effort: si el archivo no existe (proyecto sin iOS), no romper el sync.
   console.warn(`[protect-package-swift] omitido: ${err?.message ?? err}`);
