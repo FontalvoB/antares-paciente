@@ -42,15 +42,18 @@ import {
   entryPointCareOptions,
   groupCareOptionsByCategory,
   isCatalogBookingDate,
-  professionalsForSpecialty,
   splitSlotViews,
   toAvailableSlotViews,
   type CareOption,
 } from "../data/careOptions";
 import {
   fetchAvailabilitySlots,
+  fetchAvailableProfessionals,
+  fetchProfessionalsCatalogPage,
   type AvailabilitySlotDto,
+  type ProfessionalCatalogItem,
 } from "../utils/appointmentsApi";
+import { ProfessionalPickerModal } from "./ProfessionalPickerModal";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import {
@@ -118,7 +121,6 @@ export function RequestAppointmentWizard({
     teamProfessional,
     realMode,
     specialties,
-    professionalsCatalog,
     patientCareContext,
     refreshAppointments,
     submitAppointmentRequest,
@@ -149,6 +151,17 @@ export function RequestAppointmentWizard({
   // Reintento manual de disponibilidad (botón "Reintentar").
   const [retryTick, setRetryTick] = useState(0);
   const [{ year, month }, setCursor] = useState(() => isoYearMonth(today));
+  // Picker de profesional: el select muestra un top (con cupo primero) y el
+  // modal busca en todo el catálogo server-side (escala a cientos).
+  const [proPickerOpen, setProPickerOpen] = useState(false);
+  const [quickPros, setQuickPros] = useState<ProfessionalCatalogItem[] | null>(
+    null,
+  );
+  const [quickProsTotal, setQuickProsTotal] = useState(0);
+  const [availablePros, setAvailablePros] = useState<Set<string>>(new Set());
+  const [selectedPro, setSelectedPro] = useState<ProfessionalCatalogItem | null>(
+    null,
+  );
   const dir = useRef(1);
   const scrollRef = useRef<HTMLIonContentElement>(null);
 
@@ -167,15 +180,51 @@ export function RequestAppointmentWizard({
   );
   const selectedCare: CareOption | null =
     careOptions?.find((o) => o.specialtyId === specialtyId) ?? null;
-  const eligibleProfessionals = useMemo(
-    () =>
-      useCatalogPath && specialtyId
-        ? (professionalsForSpecialty(professionalsCatalog, specialtyId) ?? [])
-        : [],
-    [useCatalogPath, specialtyId, professionalsCatalog],
-  );
-  const selectedProfessional =
-    eligibleProfessionals.find((p) => p.id === professionalId) ?? null;
+  // Top de la especialidad para el select (6). El resto vive en el picker.
+  useEffect(() => {
+    if (!useCatalogPath || !specialtyId) {
+      setQuickPros(null);
+      setQuickProsTotal(0);
+      return;
+    }
+    const ctrl = new AbortController();
+    setQuickPros(null);
+    void fetchProfessionalsCatalogPage({
+      specialtyId,
+      status: "Active",
+      page: 1,
+      pageSize: 6,
+      signal: ctrl.signal,
+    })
+      .then((res) => {
+        if (ctrl.signal.aborted) return;
+        setQuickPros(res.data);
+        setQuickProsTotal(res.total);
+      })
+      .catch(() => {
+        if (!ctrl.signal.aborted) {
+          setQuickPros([]);
+          setQuickProsTotal(0);
+        }
+      });
+    return () => ctrl.abort();
+  }, [useCatalogPath, specialtyId]);
+
+  // Con cupo primero (orden estable), luego alfabético.
+  const quickProsSorted = useMemo(() => {
+    return [...(quickPros ?? [])].sort((a, b) => {
+      const aCupo = availablePros.has(a.id) ? 1 : 0;
+      const bCupo = availablePros.has(b.id) ? 1 : 0;
+      if (aCupo !== bCupo) return bCupo - aCupo;
+      return a.fullName.localeCompare(b.fullName);
+    });
+  }, [quickPros, availablePros]);
+
+  const selectedProfessional = useMemo(() => {
+    if (!professionalId) return null;
+    if (selectedPro?.id === professionalId) return selectedPro;
+    return quickPros?.find((p) => p.id === professionalId) ?? null;
+  }, [professionalId, selectedPro, quickPros]);
 
   const range = bookingWindow();
   const professional = typeId ? teamProfessional(typeId) : null;
@@ -339,6 +388,29 @@ export function RequestAppointmentWizard({
     scrollRef.current?.scrollToTop();
   }, [step, done]);
 
+  // Cupo por profesional (best-effort: sin badge si falla/no hay organización).
+  useEffect(() => {
+    if (!useCatalogPath || !specialtyId || !orgId) {
+      setAvailablePros(new Set());
+      return;
+    }
+    const ctrl = new AbortController();
+    void fetchAvailableProfessionals(
+      { specialtyId, organizationId: orgId },
+      { signal: ctrl.signal },
+    )
+      .then((res) => {
+        if (ctrl.signal.aborted) return;
+        setAvailablePros(
+          new Set(res.professionals.map((p) => p.professionalId)),
+        );
+      })
+      .catch(() => {
+        /* badge best-effort */
+      });
+    return () => ctrl.abort();
+  }, [useCatalogPath, specialtyId, orgId]);
+
   const pickType = (id: ConsultTypeId) => {
     setTypeId(id);
   };
@@ -349,6 +421,7 @@ export function RequestAppointmentWizard({
     // hasta que el paciente elija explícitamente (veredicto D1). La fecha y
     // el slot los resuelve la búsqueda de disponibilidad del Paso 2.
     setProfessionalId("");
+    setSelectedPro(null);
     setSlotStart("");
     setTime("");
   };
@@ -794,26 +867,43 @@ export function RequestAppointmentWizard({
                         }}
                         value={professionalId}
                         aria-label={t("Profesional (opcional)")}
-                        onIonChange={(e) =>
-                          setProfessionalId(e.detail.value as string)
-                        }
+                        onIonChange={(e) => {
+                          const value = e.detail.value as string;
+                          if (value === "__all__") {
+                            setProPickerOpen(true);
+                            return;
+                          }
+                          setProfessionalId(value);
+                          setSelectedPro(
+                            value
+                              ? (quickPros?.find((p) => p.id === value) ?? null)
+                              : null,
+                          );
+                        }}
                       >
                         <IonIcon
                           slot="start"
+                          className="req-pro-ico"
                           icon={personOutline}
                           aria-hidden="true"
                         />
                         <IonSelectOption value="">
                           {t("Cualquier profesional")}
                         </IonSelectOption>
-                        {eligibleProfessionals.map((p) => (
+                        {quickProsSorted.map((p) => (
                           <IonSelectOption key={p.id} value={p.id}>
                             {p.fullName}
                           </IonSelectOption>
                         ))}
+                        {quickProsTotal > quickProsSorted.length ? (
+                          <IonSelectOption value="__all__">
+                            {t("Ver todos ({count})", {
+                              count: String(quickProsTotal),
+                            })}
+                          </IonSelectOption>
+                        ) : null}
                       </IonSelect>
-                      {professionalsCatalog !== null &&
-                      eligibleProfessionals.length === 0 ? (
+                      {quickPros !== null && quickProsTotal === 0 ? (
                         <span className="req-hint">
                           {t(
                             "Sin profesionales listados. El equipo te asignará.",
@@ -1158,7 +1248,7 @@ export function RequestAppointmentWizard({
                       <div className="field">
                         <label>{t("Profesional (opcional)")}</label>
                         <div className="req-pick">
-                          <IonIcon icon={personOutline} />
+                          <IonIcon className="req-pro-ico" icon={personOutline} />
                           <span>
                             {selectedProfessional?.fullName ??
                               t("Cualquier profesional disponible")}
@@ -1317,6 +1407,21 @@ export function RequestAppointmentWizard({
           </div>
         )}
       </div>
+
+      {useCatalogPath && specialtyId ? (
+        <ProfessionalPickerModal
+          isOpen={proPickerOpen}
+          specialtyId={specialtyId}
+          organizationId={orgId}
+          selectedId={professionalId}
+          onClose={() => setProPickerOpen(false)}
+          onSelect={(pro) => {
+            setProfessionalId(pro.id);
+            setSelectedPro(pro);
+            setProPickerOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

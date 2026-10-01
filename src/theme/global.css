@@ -29762,17 +29762,22 @@ ion-modal.request-modal ion-content.req-body {
   height: 16px;
   color: var(--brand-blue-mid);
 }
-.booking-reference ion-select.fld.req-pro-pick-input > ion-icon[slot="start"] {
+/* Icono de profesional (select del paso 1, resumen del paso 3 y picker):
+   círculo de marca compartido para no duplicar estilos. */
+.booking-reference .req-pro-ico,
+.pro-picker-ico {
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
-  margin-inline-end: 10px;
   border-radius: 50%;
   border: 3px solid var(--home-sky);
   background: linear-gradient(135deg, var(--home-cyan), var(--home-card-mid));
   color: var(--wh);
   font-size: 16px;
+}
+.booking-reference ion-select.fld.req-pro-pick-input > ion-icon[slot="start"] {
+  margin-inline-end: 10px;
   pointer-events: none;
 }
 .booking-reference .req-mode-card {
@@ -29931,6 +29936,98 @@ ion-modal.request-modal ion-content.req-body {
 }
 .booking-reference .req-foot ion-button {
   --border-radius: 999px;
+}
+
+/* Picker de profesional: modal con búsqueda server-side y badge de cupo.
+   Se usa cuando la especialidad tiene más profesionales de los que caben en
+   el select del paso 1. */
+ion-modal.pro-picker-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 430px;
+  --border-radius: 0;
+  --background: var(--wh);
+}
+ion-modal.pro-picker-modal::part(content) {
+  display: flex;
+  flex-direction: column;
+}
+ion-modal.pro-picker-modal .pro-picker-head {
+  box-shadow: none;
+  border-bottom: 1px solid var(--bd);
+}
+ion-modal.pro-picker-modal ion-toolbar {
+  --background: var(--wh);
+  --color: var(--brand-navy);
+  --border-width: 0;
+}
+ion-modal.pro-picker-modal ion-title {
+  color: var(--brand-navy);
+  font-weight: 750;
+}
+ion-modal.pro-picker-modal ion-searchbar.pro-picker-search {
+  --background: var(--home-mist);
+  --border-radius: 14px;
+  --box-shadow: none;
+  --color: var(--brand-navy);
+  --placeholder-color: var(--mu);
+  --icon-color: var(--mu);
+  padding: 4px 12px 12px;
+}
+ion-modal.pro-picker-modal ion-content.pro-picker-body {
+  --background: var(--home-mist);
+  --padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+ion-modal.pro-picker-modal .pro-picker-list {
+  background: transparent;
+  padding: 10px 12px 0;
+}
+ion-modal.pro-picker-modal ion-item.pro-picker-row {
+  --background: var(--wh);
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  --min-height: 62px;
+  margin-bottom: 8px;
+  border: 2px solid var(--wh);
+  border-radius: 18px;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--home-sky) 45%, transparent);
+  font-size: 15px;
+}
+ion-modal.pro-picker-modal ion-item.pro-picker-row.sel {
+  border-color: var(--home-cyan);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--home-aqua) 35%, transparent);
+}
+ion-modal.pro-picker-modal .pro-picker-copy strong,
+ion-modal.pro-picker-modal .pro-picker-copy small {
+  display: block;
+}
+ion-modal.pro-picker-modal .pro-picker-copy strong {
+  color: var(--brand-navy);
+  font-size: 15px;
+  font-weight: 700;
+}
+ion-modal.pro-picker-modal .pro-picker-copy small {
+  color: var(--mu);
+  font-size: 12px;
+}
+ion-modal.pro-picker-modal ion-badge.pro-picker-badge {
+  --background: var(--teal-l);
+  --color: var(--teal-d);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+ion-modal.pro-picker-modal .pro-picker-check {
+  color: var(--teal);
+  font-size: 20px;
+  margin-inline-start: 8px;
+}
+ion-modal.pro-picker-modal .pro-picker-total {
+  margin: 4px 16px 12px;
+  color: var(--mu);
+  font-size: 11px;
+  text-align: center;
 }
 .booking-reference .appt-featured-band {
   background: linear-gradient(

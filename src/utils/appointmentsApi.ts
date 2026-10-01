@@ -399,6 +399,40 @@ export function sendRoomChatMessage(
   return api("/api/v1/professionals-catalog?page=1&pageSize=100");
 }
 
+/** Página del catálogo de profesionales con filtros server-side. */
+export interface ProfessionalsCatalogPageDto {
+  data: ProfessionalCatalogItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * Página del catálogo de profesionales (`search`/`specialtyId`/`status` los
+ * resuelve el backend; pageSize máx. 100). Base del picker con búsqueda: con
+ * cientos de profesionales no se carga el catálogo completo en memoria.
+ */
+export function fetchProfessionalsCatalogPage(params: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  specialtyId?: string;
+  status?: string;
+  signal?: AbortSignal;
+} = {}): Promise<ProfessionalsCatalogPageDto> {
+  const qs = new URLSearchParams();
+  qs.set("page", String(params.page ?? 1));
+  qs.set("pageSize", String(params.pageSize ?? 20));
+  if (params.search?.trim()) qs.set("search", params.search.trim());
+  if (params.specialtyId) qs.set("specialtyId", params.specialtyId);
+  if (params.status) qs.set("status", params.status);
+  return apiGet<ProfessionalsCatalogPageDto>(
+    `/api/v1/professionals-catalog?${qs.toString()}`,
+    params.signal ? { signal: params.signal } : undefined,
+  );
+}
+
 /**
  * Catálogo de especialidades del ERP (`erp.specialties`), ordenado por el
  * backend por categoría y `sort_order`. Reutiliza el endpoint existente —
@@ -460,6 +494,53 @@ export function fetchAvailabilitySlots(
   qs.set("date", query.date);
   return apiGet<AvailabilityResponseDto>(
     `/api/v1/appointments/availability?${qs.toString()}`,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/** Profesional con cupo dentro de la ventana consultada (picker de la app). */
+export interface AvailableProfessionalDto {
+  professionalId: string;
+  /** Primera ranura libre en ISO/UTC. */
+  nextAvailableStart: string;
+  /** Días de la ventana con al menos una ranura libre. */
+  availableDays: number;
+}
+
+/** Respuesta 200 de `availability/professionals` (ids + ventana UTC). */
+export interface AvailableProfessionalsResponseDto {
+  specialtyId: string;
+  from: string;
+  to: string;
+  timezoneOffset: string;
+  professionals: AvailableProfessionalDto[];
+}
+
+/**
+ * Profesionales con al menos una ranura libre en la ventana (default backend:
+ * hoy + 13 días). El picker lo usa para ordenar los que tienen cupo primero y
+ * pintar el badge, sin consultar día por día.
+ */
+export function fetchAvailableProfessionals(
+  query: {
+    specialtyId: string;
+    organizationId: string;
+    clinicId?: string;
+    locationId?: string;
+    from?: string;
+    to?: string;
+  },
+  opts?: { signal?: AbortSignal },
+): Promise<AvailableProfessionalsResponseDto> {
+  const qs = new URLSearchParams();
+  qs.set("specialtyId", query.specialtyId);
+  qs.set("organizationId", query.organizationId);
+  if (query.clinicId) qs.set("clinicId", query.clinicId);
+  if (query.locationId) qs.set("locationId", query.locationId);
+  if (query.from) qs.set("from", query.from);
+  if (query.to) qs.set("to", query.to);
+  return apiGet<AvailableProfessionalsResponseDto>(
+    `/api/v1/appointments/availability/professionals?${qs.toString()}`,
     opts?.signal ? { signal: opts.signal } : undefined,
   );
 }
