@@ -26497,6 +26497,31 @@ sin cambios en los datos. */
     inset 0 1px 2px color-mix(in srgb, var(--wh) 40%, transparent),
     0 5px 10px color-mix(in srgb, var(--brand-sky) 28%, transparent);
 }
+/* Misma superficie que las cards de indicadores: degradado azul y brillo superior. */
+.home .hm-quick-btn,
+.home .hm-appt {
+  border: 1px solid color-mix(in srgb, var(--wh) 60%, transparent);
+  background:
+    radial-gradient(ellipse at 90% 0%, var(--home-card-light), transparent 85%),
+    linear-gradient(145deg, var(--home-card-mid), var(--home-card-deep));
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--wh) 40%, transparent),
+    0 5px 10px color-mix(in srgb, var(--brand-sky) 28%, transparent);
+}
+.home .hm-quick-ico,
+.home .hm-appt-tele {
+  border-radius: 50%;
+  color: var(--wh);
+  background: radial-gradient(
+    circle at 30% 20%,
+    var(--home-aqua),
+    var(--mod-appt)
+  );
+  border: 1px solid var(--home-sky);
+  box-shadow:
+    inset 0 0 5px var(--home-sky),
+    0 0 8px color-mix(in srgb, var(--home-aqua) 45%, transparent);
+}
 .hm-metric-icon {
   width: 30px;
   height: 30px;
