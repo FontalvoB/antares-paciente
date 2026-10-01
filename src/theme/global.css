@@ -6453,9 +6453,24 @@ ion-select-popover ion-item {
 ion-select-popover ion-radio {
   --color-checked: var(--teal);
 }
-/* Popover del select de profesional: ancho legible para nombres completos. */
+/* Popover del select de profesional: ancho legible, pegado y alineado al
+   borde del campo (side/alignment van en interfaceOptions), sin la flecha
+   flotante que trae Ionic por defecto. */
 ion-popover.req-pro-popover {
-  --width: min(88vw, 340px);
+  /* Mismo ancho que la fila: 100vw - 58px (16px de padding a cada lado del
+     body + 13px de padding a cada lado de la card). Tope 372px = fila en el
+     modal máximo de 430px. */
+  --width: min(calc(100vw - 58px), 372px);
+  /* Ionic ancla el popover al wrapper interno del texto, no a la fila: el
+     icono (50px) vs el chevron (18px) lo corren +24px a la derecha, y el
+     hueco de la flecha oculta (10px) lo sube 17px. Compensación fija
+     verificada a 375/393/430px de viewport. */
+  --offset-x: -24px;
+  --offset-y: 21px;
+  --box-shadow: 0 10px 24px color-mix(in srgb, var(--brand-navy) 18%, transparent);
+}
+ion-popover.req-pro-popover::part(arrow) {
+  display: none;
 }
 ion-textarea.fld {
   min-height: 70px;
@@ -29708,33 +29723,13 @@ ion-modal.request-modal ion-content.req-body {
   box-shadow: 0 4px 12px color-mix(in srgb, var(--home-sky) 35%, transparent);
 }
 /* Profesional (opcional): fila de selección con icono, no la caja blanca
-   genérica de IonSelect (rompía con la piel de citas). */
-.booking-reference .req-pro-pick {
-  position: relative;
-  margin-top: 8px;
-}
-.booking-reference .req-pro-pick > ion-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--home-cyan), var(--home-card-mid));
-  color: var(--wh);
-  font-size: 17px;
-  box-shadow: 0 0 0 4px var(--home-sky);
-  pointer-events: none;
-  /* ion-select crea stacking context con z-index 2 (shadow CSS de Ionic). */
-  z-index: 3;
-}
+   genérica de IonSelect (rompía con la piel de citas). El icono va en el
+   slot start de IonSelect (no absoluto): así el popover, que Ionic ancla al
+   wrapper interno, queda centrado con la fila. */
 .booking-reference ion-select.fld.req-pro-pick-input {
   --background: var(--home-mist);
   --border-radius: 16px;
-  --padding-start: 56px;
+  --padding-start: 10px;
   --padding-end: 18px;
   --padding-top: 0;
   --padding-bottom: 0;
@@ -29766,6 +29761,19 @@ ion-modal.request-modal ion-content.req-body {
   width: 16px;
   height: 16px;
   color: var(--brand-blue-mid);
+}
+.booking-reference ion-select.fld.req-pro-pick-input > ion-icon[slot="start"] {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-inline-end: 10px;
+  border-radius: 50%;
+  border: 3px solid var(--home-sky);
+  background: linear-gradient(135deg, var(--home-cyan), var(--home-card-mid));
+  color: var(--wh);
+  font-size: 16px;
+  pointer-events: none;
 }
 .booking-reference .req-mode-card {
   border-radius: 16px;

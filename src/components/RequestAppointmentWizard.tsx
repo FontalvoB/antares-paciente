@@ -784,28 +784,34 @@ export function RequestAppointmentWizard({
                   {specialtyId && (
                     <div className="field">
                       <label>{t("Profesional (opcional)")}</label>
-                      <div className="req-pro-pick">
-                        <IonIcon icon={personOutline} aria-hidden="true" />
-                        <IonSelect
-                          className="fld req-pro-pick-input"
-                          interface="popover"
-                          interfaceOptions={{ cssClass: "req-pro-popover" }}
-                          value={professionalId}
-                          aria-label={t("Profesional (opcional)")}
-                          onIonChange={(e) =>
-                            setProfessionalId(e.detail.value as string)
-                          }
-                        >
-                          <IonSelectOption value="">
-                            {t("Cualquier profesional")}
+                      <IonSelect
+                        className="fld req-pro-pick-input"
+                        interface="popover"
+                        interfaceOptions={{
+                          cssClass: "req-pro-popover",
+                          side: "bottom",
+                          alignment: "center",
+                        }}
+                        value={professionalId}
+                        aria-label={t("Profesional (opcional)")}
+                        onIonChange={(e) =>
+                          setProfessionalId(e.detail.value as string)
+                        }
+                      >
+                        <IonIcon
+                          slot="start"
+                          icon={personOutline}
+                          aria-hidden="true"
+                        />
+                        <IonSelectOption value="">
+                          {t("Cualquier profesional")}
+                        </IonSelectOption>
+                        {eligibleProfessionals.map((p) => (
+                          <IonSelectOption key={p.id} value={p.id}>
+                            {p.fullName}
                           </IonSelectOption>
-                          {eligibleProfessionals.map((p) => (
-                            <IonSelectOption key={p.id} value={p.id}>
-                              {p.fullName}
-                            </IonSelectOption>
-                          ))}
-                        </IonSelect>
-                      </div>
+                        ))}
+                      </IonSelect>
                       {professionalsCatalog !== null &&
                       eligibleProfessionals.length === 0 ? (
                         <span className="req-hint">
