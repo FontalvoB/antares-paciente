@@ -48,6 +48,7 @@ import {
 } from "../data/careOptions";
 import {
   fetchAvailabilitySlots,
+  fetchAvailabilitySlotsRange,
   fetchAvailableProfessionals,
   fetchProfessionalsCatalogPage,
   type AvailabilitySlotDto,
@@ -73,7 +74,10 @@ const STEPS = [
     title: "Agendar tu cita",
     sub: "Selecciona el área de atención que necesitas",
   },
-  { title: "Agendar tu cita", sub: "Elige la fecha y la hora que mejor se ajuste a ti" },
+  {
+    title: "Agendar tu cita",
+    sub: "Elige la fecha y la hora que mejor se ajuste a ti",
+  },
   { title: "Agendar tu cita", sub: "Revisa los datos y confirma tu solicitud" },
 ] as const;
 
@@ -159,9 +163,8 @@ export function RequestAppointmentWizard({
   );
   const [quickProsTotal, setQuickProsTotal] = useState(0);
   const [availablePros, setAvailablePros] = useState<Set<string>>(new Set());
-  const [selectedPro, setSelectedPro] = useState<ProfessionalCatalogItem | null>(
-    null,
-  );
+  const [selectedPro, setSelectedPro] =
+    useState<ProfessionalCatalogItem | null>(null);
   const dir = useRef(1);
   const scrollRef = useRef<HTMLIonContentElement>(null);
 
@@ -244,8 +247,28 @@ export function RequestAppointmentWizard({
     [useCatalogPath, specialtyId, professionalId, orgId],
   );
 
+  // Parámetros del modo rango (mismos modos, sin `date`): la búsqueda del
+  // primer día con cupo viaja en UNA llamada from/to (máx. 14 días) y el
+  // backend batchea las consultas.
+  const buildAvailabilityRangeQuery = useCallback(
+    (desde: string) => {
+      if (!useCatalogPath || !specialtyId) return null;
+      if (professionalId)
+        return { professionalId, from: desde, to: addDaysToISO(desde, 13) };
+      if (!orgId) return null;
+      return {
+        specialtyId,
+        organizationId: orgId,
+        from: desde,
+        to: addDaysToISO(desde, 13),
+      };
+    },
+    [useCatalogPath, specialtyId, professionalId, orgId],
+  );
+
   // Búsqueda del primer día con cupo al entrar al Paso 2 o cambiar la
-  // selección (máx. 14 días, cancelable). Cachea cada día consultado.
+  // selección (máx. 14 días, cancelable). UNA llamada en modo rango: la
+  // respuesta trae days[] completo y se cachea de una vez.
   useEffect(() => {
     if (step !== 2 || !useCatalogPath || !specialtyId) return;
     // El modo especialidad exige organización (contrato 400): sin ella no
@@ -265,41 +288,47 @@ export function RequestAppointmentWizard({
     setSlotStart("");
     setTime("");
     void (async () => {
-      for (let i = 0; i < 14; i++) {
-        if (ctrl.signal.aborted) return;
-        const iso = addDaysToISO(toLocalISODate(), i);
-        if (!isCatalogBookingDate(iso)) continue;
-        const q = buildAvailabilityQuery(iso);
-        if (!q) break;
-        try {
-          const res = await fetchAvailabilitySlots(q, {
-            signal: ctrl.signal,
-          });
-          if (ctrl.signal.aborted) return;
-          setDaySlots((prev) => ({ ...prev, [iso]: res.slots }));
-          if (res.slots.some((s) => s.isAvailable)) {
-            setDate(iso);
-            setCursor(isoYearMonth(iso));
-            break;
-          }
-        } catch (err) {
-          if (ctrl.signal.aborted) return;
-          setDayError(
-            err instanceof Error
-              ? err.message
-              : "No se pudo cargar la disponibilidad",
-          );
-          break;
+      try {
+        const desde = toLocalISODate();
+        const rangeQuery = buildAvailabilityRangeQuery(desde);
+        if (!rangeQuery) {
+          setProbing(false);
+          return;
         }
+        const res = await fetchAvailabilitySlotsRange(rangeQuery, {
+          signal: ctrl.signal,
+        });
+        if (ctrl.signal.aborted) return;
+        // Caché solo de días agendables (mismo criterio que la sonda por día),
+        // para no pintar puntos del calendario fuera del horizonte.
+        const agendables = res.days.filter((d) => isCatalogBookingDate(d.date));
+        setDaySlots(
+          Object.fromEntries(agendables.map((d) => [d.date, d.slots])),
+        );
+        const primerDia = agendables.find((d) =>
+          d.slots.some((s) => s.isAvailable),
+        );
+        if (primerDia) {
+          setDate(primerDia.date);
+          setCursor(isoYearMonth(primerDia.date));
+        }
+        setProbing(false);
+      } catch (err) {
+        if (ctrl.signal.aborted) return;
+        setDayError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo cargar la disponibilidad",
+        );
+        setProbing(false);
       }
-      if (!ctrl.signal.aborted) setProbing(false);
     })();
     return () => ctrl.abort();
   }, [
     step,
     useCatalogPath,
     specialtyId,
-    buildAvailabilityQuery,
+    buildAvailabilityRangeQuery,
     retryTick,
     t,
     professionalId,
@@ -589,8 +618,20 @@ export function RequestAppointmentWizard({
           <span className="req-type-copy">
             <span className="ct">{title}</span>
             {desc ? <span className="cs">{desc}</span> : null}
-            {opt.code === "FAMILY_MEDICINE" && <span className="req-reference-detail">{t("Consulta con tu equipo de salud para el seguimiento y cuidado integral.")}</span>}
-            {display.sosNote && <span className="req-reference-detail">{t("Si presentas una situación de emergencia, acude de inmediato o comunícate con el 911.")}</span>}
+            {opt.code === "FAMILY_MEDICINE" && (
+              <span className="req-reference-detail">
+                {t(
+                  "Consulta con tu equipo de salud para el seguimiento y cuidado integral.",
+                )}
+              </span>
+            )}
+            {display.sosNote && (
+              <span className="req-reference-detail">
+                {t(
+                  "Si presentas una situación de emergencia, acude de inmediato o comunícate con el 911.",
+                )}
+              </span>
+            )}
           </span>
           {display.sosNote ? (
             <span className="req-type-note">
@@ -679,10 +720,17 @@ export function RequestAppointmentWizard({
                 key={i}
                 type="button"
                 className={`req-dot ${i + 1 < step || done ? "done" : i + 1 === step ? "now" : ""}`}
-                aria-label={t(["Área de atención", "Fecha y hora", "Confirmación"][i])}
+                aria-label={t(
+                  ["Área de atención", "Fecha y hora", "Confirmación"][i],
+                )}
                 disabled={i + 1 > step}
                 onClick={() => i + 1 < step && go(i + 1)}
-              ><span>{i + 1}</span><small>{t(["Área de atención", "Fecha y hora", "Confirmación"][i])}</small></button>
+              >
+                <span>{i + 1}</span>
+                <small>
+                  {t(["Área de atención", "Fecha y hora", "Confirmación"][i])}
+                </small>
+              </button>
             ))}
           </div>
           <IonButton
@@ -1248,7 +1296,10 @@ export function RequestAppointmentWizard({
                       <div className="field">
                         <label>{t("Profesional (opcional)")}</label>
                         <div className="req-pick">
-                          <IonIcon className="req-pro-ico" icon={personOutline} />
+                          <IonIcon
+                            className="req-pro-ico"
+                            icon={personOutline}
+                          />
                           <span>
                             {selectedProfessional?.fullName ??
                               t("Cualquier profesional disponible")}

@@ -413,14 +413,16 @@ export interface ProfessionalsCatalogPageDto {
  * resuelve el backend; pageSize máx. 100). Base del picker con búsqueda: con
  * cientos de profesionales no se carga el catálogo completo en memoria.
  */
-export function fetchProfessionalsCatalogPage(params: {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  specialtyId?: string;
-  status?: string;
-  signal?: AbortSignal;
-} = {}): Promise<ProfessionalsCatalogPageDto> {
+export function fetchProfessionalsCatalogPage(
+  params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    specialtyId?: string;
+    status?: string;
+    signal?: AbortSignal;
+  } = {},
+): Promise<ProfessionalsCatalogPageDto> {
   const qs = new URLSearchParams();
   qs.set("page", String(params.page ?? 1));
   qs.set("pageSize", String(params.pageSize ?? 20));
@@ -493,6 +495,57 @@ export function fetchAvailabilitySlots(
   if (query.locationId) qs.set("locationId", query.locationId);
   qs.set("date", query.date);
   return apiGet<AvailabilityResponseDto>(
+    `/api/v1/appointments/availability?${qs.toString()}`,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/** Modo rango de `GET /api/v1/appointments/availability` (from/to, máx. 14 días). */
+export interface AvailabilityRangeQuery {
+  professionalId?: string;
+  specialtyId?: string;
+  organizationId?: string;
+  clinicId?: string;
+  locationId?: string;
+  /** Inicio del rango en `YYYY-MM-DD` (inclusive, interpretado en UTC). */
+  from: string;
+  /** Fin del rango en `YYYY-MM-DD` (inclusive; el backend limita a 14 días). */
+  to: string;
+}
+
+/** Disponibilidad de un día del rango (slots ya filtrados por el backend, B4). */
+export interface AvailabilityDayDto {
+  date: string;
+  slots: AvailabilitySlotDto[];
+}
+
+/** Respuesta 200 del modo rango: days[] completo (días sin cupo con slots vacíos). */
+export interface AvailabilityRangeResponseDto {
+  professionalId: string | null;
+  specialtyId: string | null;
+  timezoneOffset: string;
+  days: AvailabilityDayDto[];
+}
+
+/**
+ * Disponibilidad en modo rango: UNA llamada para toda la ventana del wizard
+ * (contrato from/to). El backend batchea las consultas (número constante de
+ * queries respecto a los días), así que reemplaza la sonda día por día.
+ * Cancelable con `AbortSignal` (QA-009).
+ */
+export function fetchAvailabilitySlotsRange(
+  query: AvailabilityRangeQuery,
+  opts?: { signal?: AbortSignal },
+): Promise<AvailabilityRangeResponseDto> {
+  const qs = new URLSearchParams();
+  if (query.professionalId) qs.set("professionalId", query.professionalId);
+  if (query.specialtyId) qs.set("specialtyId", query.specialtyId);
+  if (query.organizationId) qs.set("organizationId", query.organizationId);
+  if (query.clinicId) qs.set("clinicId", query.clinicId);
+  if (query.locationId) qs.set("locationId", query.locationId);
+  qs.set("from", query.from);
+  qs.set("to", query.to);
+  return apiGet<AvailabilityRangeResponseDto>(
     `/api/v1/appointments/availability?${qs.toString()}`,
     opts?.signal ? { signal: opts.signal } : undefined,
   );
