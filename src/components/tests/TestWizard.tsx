@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { IonButton, IonIcon, IonProgressBar, IonTextarea } from "@ionic/react";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import {
   arrowBackOutline,
   checkmarkCircle,
@@ -589,11 +590,10 @@ function isStepAnswered(
   return typeof answers[step.index] === "number";
 }
 
-async function tapHaptic() {
-  try {
-    const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
-    await Haptics.impact({ style: ImpactStyle.Light });
-  } catch {
+/** Haptics ya viaja en el bundle (SlideCtaButton lo importa estático): el
+    import dinámico no separaba chunk y rompía el build con warning. */
+function tapHaptic() {
+  void Haptics.impact({ style: ImpactStyle.Light }).catch(() => {
     /* web: sin háptica */
-  }
+  });
 }
