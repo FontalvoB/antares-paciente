@@ -6444,6 +6444,19 @@ ion-select.fld::part(icon) {
   height: 14px;
   color: var(--mu);
 }
+/* Popover de IonSelect (interface="popover"): filas al tono del design system. */
+ion-select-popover ion-item {
+  --min-height: 48px;
+  font-size: 15px;
+  color: var(--brand-navy);
+}
+ion-select-popover ion-radio {
+  --color-checked: var(--teal);
+}
+/* Popover del select de profesional: ancho legible para nombres completos. */
+ion-popover.req-pro-popover {
+  --width: min(88vw, 340px);
+}
 ion-textarea.fld {
   min-height: 70px;
   /* El wrapper del textarea iOS tiene padding-top/bottom fijos en 0 (no consume
@@ -29693,6 +29706,66 @@ ion-modal.request-modal ion-content.req-body {
   border-radius: 20px;
   padding: 13px;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--home-sky) 35%, transparent);
+}
+/* Profesional (opcional): fila de selección con icono, no la caja blanca
+   genérica de IonSelect (rompía con la piel de citas). */
+.booking-reference .req-pro-pick {
+  position: relative;
+  margin-top: 8px;
+}
+.booking-reference .req-pro-pick > ion-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--home-cyan), var(--home-card-mid));
+  color: var(--wh);
+  font-size: 17px;
+  box-shadow: 0 0 0 4px var(--home-sky);
+  pointer-events: none;
+  /* ion-select crea stacking context con z-index 2 (shadow CSS de Ionic). */
+  z-index: 3;
+}
+.booking-reference ion-select.fld.req-pro-pick-input {
+  --background: var(--home-mist);
+  --border-radius: 16px;
+  --padding-start: 56px;
+  --padding-end: 18px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: 54px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  color: var(--brand-navy);
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: none;
+  transition: box-shadow 0.18s var(--ease);
+}
+.booking-reference ion-select.fld.req-pro-pick-input.has-focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--home-aqua) 45%, transparent);
+}
+/* El inner/native-wrapper de IonSelect no crece por defecto: sin esto el
+   chevron queda pegado al texto en vez del extremo derecho de la fila. */
+.booking-reference ion-select.fld.req-pro-pick-input::part(inner),
+.booking-reference ion-select.fld.req-pro-pick-input::part(container) {
+  flex: 1;
+  min-width: 0;
+}
+.booking-reference ion-select.fld.req-pro-pick-input::part(text) {
+  text-align: start;
+}
+.booking-reference ion-select.fld.req-pro-pick-input::part(icon) {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-blue-mid);
 }
 .booking-reference .req-mode-card {
   border-radius: 16px;
