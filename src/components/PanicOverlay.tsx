@@ -14,6 +14,7 @@ import {
 } from "@ionic/react";
 import {
   call,
+  chatbubbles,
   checkmarkCircle,
   close,
   heart,
@@ -48,6 +49,8 @@ type CallPhase = "dialing" | "ringing" | "connected";
 const RING = 2 * Math.PI * 78;
 /** Sondeo ligero del estado real de la alerta (REQ-SOS-07). */
 const ACTIVE_POLL_MS = 15_000;
+/** Signos vitales demo: aún no hay fuente real en el dispositivo. */
+const DEMO_VITALS = { heartRate: 140, spo2: 94, bloodPressure: "160/110" };
 
 function mmss(sec: number) {
   const s = Math.max(0, Math.floor(sec));
@@ -86,6 +89,8 @@ export function PanicOverlay() {
   const [activating, setActivating] = useState(false);
   /** Cuenta regresiva 429 (segundos de Retry-After) que bloquea el orbe. */
   const [rateLimitSecs, setRateLimitSecs] = useState(0);
+  /** Sondeo rápido (3 s) durante el primer minuto tras activar. */
+  const [fastPoll, setFastPoll] = useState(false);
 
   // Overlay de emergencia custom: conserva el foco al cerrar. Los controles
   // siguen siendo componentes Ionic.
@@ -121,6 +126,7 @@ export function PanicOverlay() {
       setRealAlert(null);
       setActivating(false);
       setRateLimitSecs(0);
+      setFastPoll(false);
     }
   }, [panicOpen]);
 
@@ -151,13 +157,24 @@ export function PanicOverlay() {
         /* sondeo best-effort: el próximo tick reintenta */
       }
     };
-    const id = window.setInterval(() => void poll(), ACTIVE_POLL_MS);
+    const id = window.setInterval(
+      () => void poll(),
+      fastPoll ? 3_000 : ACTIVE_POLL_MS,
+    );
     void poll();
     return () => {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [sosEnabled, sosActive, panicOpen, closePanic, showToast, t]);
+  }, [sosEnabled, sosActive, panicOpen, closePanic, showToast, t, fastPoll]);
+
+  // Refresco rápido (3 s) durante el primer minuto tras activar: el estado
+  // real de entrega (SMS/llamada) suele resolverse en segundos.
+  useEffect(() => {
+    if (!fastPoll) return;
+    const id = window.setTimeout(() => setFastPoll(false), 60_000);
+    return () => window.clearTimeout(id);
+  }, [fastPoll]);
 
   // Cuenta regresiva del 429 (Retry-After): bloquea el orbe hasta expirar.
   useEffect(() => {
@@ -210,11 +227,12 @@ export function PanicOverlay() {
     try {
       const coords = await getCoordinatesBestEffort();
       if (sosEnabled) {
-        const alert: SosAlertDto = await activateSosAlert(coords);
+        const alert: SosAlertDto = await activateSosAlert(coords, DEMO_VITALS);
         setAlertId(alert.id);
         // La respuesta real del backend alimenta el copy (BUG-01):
         // smsChannelStatus + location deciden qué se puede afirmar.
         setRealAlert(alert);
+        setFastPoll(true);
       }
       activateSos();
     } catch (err) {
@@ -228,6 +246,25 @@ export function PanicOverlay() {
             }),
             "err",
           );
+        } else if (err.status === 409) {
+          // Ya existe una alerta activa: adoptarla en vez de fallar. El aviso
+          // (llamada/SMS) ya se disparó al crearla; para re-notificar hay que
+          // cancelarla con "Estoy bien" y activar de nuevo.
+          const active = await fetchActiveSosAlert();
+          if (active) {
+            setAlertId(active.id);
+            setRealAlert(active);
+            setFastPoll(true);
+            activateSos();
+            showToast(
+              t(
+                "Ya tenías una alerta SOS activa. Mostrándola; pulsa Estoy bien para cancelarla.",
+              ),
+              "ok",
+            );
+          } else {
+            showToast(err.message, "err");
+          }
         } else {
           showToast(err.message, "err");
         }
@@ -272,22 +309,108 @@ export function PanicOverlay() {
     !!smsStatus &&
     smsStatus !== "Enviado" &&
     smsStatus !== "Pendiente";
+  const voiceStatus = realAlert?.voiceChannelStatus ?? null;
+  const voiceSent = sosEnabled && voiceStatus === "Enviado";
+  // Mismo criterio para el canal de voz: distinto de Enviado/Pendiente.
+  const voiceDegraded =
+    sosEnabled &&
+    !!voiceStatus &&
+    voiceStatus !== "Enviado" &&
+    voiceStatus !== "Pendiente";
+  /** Al menos un canal de contacto (voz o SMS) confirmó entrega. */
+  const contactSent = voiceSent || smsSent;
+  /** Algún canal de contacto degradó y ninguno confirmó entrega. */
+  const contactDegraded = voiceDegraded || smsDegraded;
   const locationShared = sosEnabled && realAlert?.location != null;
 
   const activeCopy = !sosEnabled
     ? t(
         "Protocolo activado en modo simulación: no se envió ninguna alerta real.",
       )
-    : smsSent
-      ? t("SMS enviado a tu contacto de emergencia.")
-      : smsDegraded
-        ? t(
-            "Alerta registrada para tu equipo clínico. SMS no disponible en este momento.",
-          )
-        : t("Alerta registrada para tu equipo clínico.");
+    : voiceSent && smsSent
+      ? t("Llamada y SMS enviados a tu contacto de emergencia.")
+      : voiceSent
+        ? t("Llamada realizada a tu contacto de emergencia.")
+        : smsSent
+          ? t("SMS enviado a tu contacto de emergencia.")
+          : contactDegraded
+            ? t(
+                "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento.",
+              )
+            : t("Alerta registrada para tu equipo clínico.");
   const locationCopy = locationShared
     ? t("Tu ubicación fue compartida con tu equipo.")
     : t("Sin ubicación en esta alerta.");
+
+  /** Duración de llamada en formato m:ss (65 → "1:05"). */
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.max(0, Math.floor(seconds % 60));
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
+  /** Estado de entrega por canal (solo modo real): refleja lo reportado. */
+  const deliveryLabel = (
+    status: string | null,
+    okLabel: string,
+    deliveryStatus?: string | null,
+    answeredBy?: string | null,
+    durationSeconds?: number | null,
+  ) => {
+    // Entrega real reportada por Twilio (statusCallback), tiene prioridad
+    // sobre el estado de aceptación del envío.
+    if (deliveryStatus === "delivered") return t("Entregado");
+    if (deliveryStatus === "undelivered") return t("No entregado");
+    if (deliveryStatus === "completed") {
+      if (answeredBy === "machine_start") return t("Buzón de voz");
+      const label = t("Contestada");
+      return durationSeconds && durationSeconds > 0
+        ? `${label} · ${formatDuration(durationSeconds)}`
+        : label;
+    }
+    if (deliveryStatus === "no-answer") return t("No contestada");
+    if (deliveryStatus === "busy") return t("Ocupado");
+    if (deliveryStatus === "canceled") return t("Cancelada");
+    if (deliveryStatus === "failed") return t("Falló");
+    if (status === "Enviado") return okLabel;
+    if (!status) return t("Pendiente");
+    if (status === "Pendiente") return t("Enviando…");
+    if (status === "NoConfigurado") return t("No disponible");
+    if (status === "Timeout") return t("Sin respuesta");
+    return t("Falló");
+  };
+  const deliveryRows = [
+    {
+      key: "voice",
+      ico: call,
+      title: t("Llamada al contacto"),
+      status: voiceStatus,
+      okLabel: t("Realizada"),
+      deliveryStatus: realAlert?.voiceCallStatus ?? null,
+      answeredBy: realAlert?.voiceAnsweredBy ?? null,
+      durationSeconds: realAlert?.voiceDurationSeconds ?? null,
+    },
+    {
+      key: "sms",
+      ico: chatbubbles,
+      title: t("SMS al contacto"),
+      status: smsStatus,
+      okLabel: t("Enviado"),
+      deliveryStatus: realAlert?.smsDeliveryStatus ?? null,
+      answeredBy: null,
+      durationSeconds: null,
+    },
+    {
+      key: "push",
+      ico: people,
+      title: t("Equipo clínico"),
+      status: realAlert?.pushChannelStatus ?? null,
+      deliveryStatus: null,
+      answeredBy: null,
+      durationSeconds: null,
+      okLabel: t("Notificado"),
+    },
+  ];
 
   const rows: {
     key: string;
@@ -312,13 +435,17 @@ export function PanicOverlay() {
       key: "fam",
       ico: people,
       title: family,
-      sub: smsSent
-        ? t("SMS enviado · {phone}", { phone: familyCel })
-        : sosActive && smsDegraded
-          ? t("SMS no disponible en este momento")
-          : `${familyRole} · ${familyCel}`,
+      sub: voiceSent && smsSent
+        ? t("Llamada y SMS enviados · {phone}", { phone: familyCel })
+        : voiceSent
+          ? t("Llamada realizada · {phone}", { phone: familyCel })
+          : smsSent
+            ? t("SMS enviado · {phone}", { phone: familyCel })
+            : sosActive && contactDegraded
+              ? t("Canal de contacto no disponible en este momento")
+              : `${familyRole} · ${familyCel}`,
       tone: "ice",
-      on: smsSent,
+      on: contactSent,
     },
     {
       key: "doc",
@@ -418,7 +545,7 @@ export function PanicOverlay() {
               <span>
                 {sosEnabled
                   ? t(
-                      "Alerta real: se enviará SMS a tu contacto de emergencia.",
+                      "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
                     )
                   : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
               </span>
@@ -532,11 +659,65 @@ export function PanicOverlay() {
               <span>
                 {sosEnabled
                   ? t(
-                      "Alerta real: se enviará SMS a tu contacto de emergencia.",
+                      "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
                     )
                   : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
               </span>
             </div>
+                    {sosActive && sosEnabled && (
+                      <div className="sos-delivery">
+                        <div className="sos-delivery-head">
+                          <small>{t("ESTADO DE LA ENTREGA")}</small>
+                          <h2>{t("Confirmación de canales")}</h2>
+                        </div>
+                        <ul className="sos-delivery-list">
+                          {deliveryRows.map((d) => {
+                            const label = deliveryLabel(
+                              d.status,
+                              d.okLabel,
+                              d.deliveryStatus,
+                              d.answeredBy,
+                              d.durationSeconds,
+                            );
+                            const isVoicemail =
+                              d.deliveryStatus === "completed" &&
+                              d.answeredBy === "machine_start";
+                            // Sin estados "esperando": si el canal ya se
+                            // despachó, se muestra como realizado aunque el
+                            // callback tarde (esto es una emergencia).
+                            const finalNegative =
+                              d.deliveryStatus === "no-answer" ||
+                              d.deliveryStatus === "busy" ||
+                              d.deliveryStatus === "canceled" ||
+                              d.deliveryStatus === "failed" ||
+                              d.deliveryStatus === "undelivered";
+                            const okDelivery =
+                              !isVoicemail &&
+                              !finalNegative &&
+                              (d.deliveryStatus === "delivered" ||
+                                d.deliveryStatus === "completed" ||
+                                d.status === "Enviado");
+                            const pendingDelivery =
+                              isVoicemail || !d.status || d.status === "Pendiente";
+                            const tone = okDelivery
+                              ? "ok"
+                              : pendingDelivery
+                                ? "pending"
+                                : "bad";
+                            return (
+                              <li
+                                key={d.key}
+                                className={`sos-delivery-row ${tone}`}
+                              >
+                                <IonIcon icon={d.ico} aria-hidden="true" />
+                                <span>{d.title}</span>
+                                <b>{label}</b>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
                     </section>
 
                     <section className="sos-network">
@@ -762,13 +943,23 @@ export function PanicOverlay() {
                           ? t(
                               "Unidad en despacho. Quédate en el teléfono y no cuelgues.",
                             )
-                          : smsSent
-                            ? t("{name} ya recibió tu alerta SMS.", {
-                                name: family.split(" ")[0],
-                              })
-                            : t(
-                                "{name} no recibió SMS (canal no disponible). La alerta sigue activa para tu equipo clínico.",
-                              )}
+                          : voiceSent && smsSent
+                            ? t(
+                                "{name} ya recibió tu alerta por llamada y SMS.",
+                                { name: family.split(" ")[0] },
+                              )
+                            : voiceSent
+                              ? t("{name} ya recibió tu alerta por llamada.", {
+                                  name: family.split(" ")[0],
+                                })
+                              : smsSent
+                                ? t("{name} ya recibió tu alerta SMS.", {
+                                    name: family.split(" ")[0],
+                                  })
+                                : t(
+                                    "{name} no recibió el aviso (canal no disponible). La alerta sigue activa para tu equipo clínico.",
+                                    { name: family.split(" ")[0] },
+                                  )}
                       </p>
                     )}
                   </div>

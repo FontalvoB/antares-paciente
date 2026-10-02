@@ -142,6 +142,24 @@ describe("activateSosAlert — POST /api/v1/sos/alerts", () => {
     expect(JSON.parse(capturedBody)).toEqual({});
   });
 
+  it("incluye los signos vitales cuando se envían", async () => {
+    let capturedBody = "";
+    mockFetch((_url, options) => {
+      capturedBody = String(options?.body);
+      return jsonRes(201, { id: "a-2", status: "Activa", createdAt: "" });
+    });
+
+    await activateSosAlert(
+      { latitude: 4.6, longitude: -74.1 },
+      { heartRate: 140, spo2: 94, bloodPressure: "160/110" },
+    );
+    expect(JSON.parse(capturedBody)).toEqual({
+      latitude: 4.6,
+      longitude: -74.1,
+      vitals: { heartRate: 140, spo2: 94, bloodPressure: "160/110" },
+    });
+  });
+
   it("429 expone Retry-After en SosServiceError", async () => {
     mockFetch(() =>
       jsonRes(429, { detail: "cooldown" }, { "Retry-After": "40" }),
