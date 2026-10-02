@@ -166,7 +166,10 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-          MATCH_GIT_URL: ${{ vars.MATCH_GIT_URL }}
+          # OJO: si la variable de repo no existe, `vars.X` llega como cadena
+          # vacía y fastlane la prioriza sobre el Matchfile (rompe el clone).
+          # Por eso SIEMPRE tiene que resolver a una URL no vacía.
+          MATCH_GIT_URL: "${{ vars.MATCH_GIT_URL || 'https://github.com/diomedescerda/antares-paciente-certificates.git' }}"
           MATCH_READONLY: "true"
           BUILD_NUMBER: ${{ inputs.build_number }}
           WAIT_FOR_PROCESSING: "true"
