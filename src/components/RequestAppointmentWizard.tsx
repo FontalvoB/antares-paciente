@@ -69,6 +69,7 @@ import {
   shiftMonth,
   toLocalISODate,
 } from "../utils/dates";
+import { availabilityViewState } from "../utils/availabilityViewState";
 
 const STEPS = [
   {
@@ -381,6 +382,13 @@ export function RequestAppointmentWizard({
           .map(([iso]) => iso),
       ),
     [daySlots],
+  );
+  // Estado de la sección de horarios (decisión pura testeable). Ventana
+  // completa (14 días) sin cupo o rango fallido ya no giran indefinidamente
+  // en "Buscando horarios disponibles…" (QA TestFlight 2026-10-02).
+  const viewState = useMemo(
+    () => availabilityViewState(probing, dayLoading, dayError, date, daySlots),
+    [probing, dayLoading, dayError, date, daySlots],
   );
   const cells = monthGrid(year, month);
   const meta = STEPS[step - 1] ?? STEPS[0];
@@ -1151,7 +1159,7 @@ export function RequestAppointmentWizard({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2, ease: EASE }}
                       >
-                        {probing || dayLoading || !date ? (
+                        {viewState === "loading" ? (
                           <div
                             className="req-empty"
                             role="status"
@@ -1160,13 +1168,77 @@ export function RequestAppointmentWizard({
                             <IonSpinner name="crescent" aria-hidden="true" />
                             <strong>
                               {t(
-                                !date
-                                  ? "Buscando horarios disponibles…"
-                                  : "Cargando horarios…",
+                                dayLoading
+                                  ? "Cargando horarios…"
+                                  : "Buscando horarios disponibles…",
                               )}
                             </strong>
                           </div>
-                        ) : dayError ? (
+                        ) : viewState === "empty" ? (
+                          // Resultado vacío explícito con salida guiada: la
+                          // ventana de 14 días se escaneó completa sin cupo.
+                          // Reemplaza el spinner infinito (QA TestFlight).
+                          <div
+                            className="req-empty"
+                            role="status"
+                            aria-live="polite"
+                          >
+                            <IonIcon
+                              className="req-empty-ico"
+                              icon={calendarOutline}
+                              aria-hidden="true"
+                              style={{ color: "var(--teal)" }}
+                            />
+                            <strong>
+                              {t(
+                                "{name} no tiene cupos en los próximos 14 días",
+                                {
+                                  name: proShort,
+                                },
+                              )}
+                            </strong>
+                            <p>
+                              {t(
+                                professionalId
+                                  ? "Puedes probar con cualquier profesional del equipo o volver más tarde."
+                                  : "Ningún profesional de esta área tiene cupo por ahora; vuelve más tarde.",
+                              )}
+                            </p>
+                            {professionalId ? (
+                              <>
+                                <IonButton
+                                  className="bt bt-sm bt-teal"
+                                  onClick={() => {
+                                    // Vuelve al modo "cualquiera" (especialidad):
+                                    // el efecto reescanea la ventana en un paso.
+                                    setProfessionalId("");
+                                    setSelectedPro(null);
+                                    setSlotStart("");
+                                    setTime("");
+                                  }}
+                                >
+                                  {t("Probar con cualquier profesional")}
+                                </IonButton>
+                                <IonButton
+                                  className="bt bt-sm bt-ghost"
+                                  onClick={() => setProPickerOpen(true)}
+                                >
+                                  {t("Ver todos los profesionales")}
+                                </IonButton>
+                              </>
+                            ) : (
+                              <IonButton
+                                className="bt bt-sm bt-ghost"
+                                onClick={() => setRetryTick((n) => n + 1)}
+                              >
+                                {t("Reintentar")}
+                              </IonButton>
+                            )}
+                          </div>
+                        ) : viewState === "error" ? (
+                          // El error precede al placeholder neutro: un rango
+                          // fallido con date vacío muestra su causa, no gira
+                          // (era la otra mitad del spinner infinito original).
                           <div className="req-empty" role="alert">
                             <strong>
                               {t("No se pudo cargar la disponibilidad")}
@@ -1178,6 +1250,18 @@ export function RequestAppointmentWizard({
                             >
                               {t("Reintentar")}
                             </IonButton>
+                          </div>
+                        ) : viewState === "chooseDay" ? (
+                          // Residual: sin fecha y sin rango en caché (contrato
+                          // days[] completo nunca debería llegar vacío).
+                          <div
+                            className="req-empty"
+                            role="status"
+                            aria-live="polite"
+                          >
+                            <strong>
+                              {t("Elige un día para ver los horarios")}
+                            </strong>
                           </div>
                         ) : slotViews.length === 0 ? (
                           <div className="req-empty">
