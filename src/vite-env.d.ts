@@ -7,6 +7,12 @@ interface ImportMetaEnv {
   readonly VITE_APPLICATION_CODE?: string;
   /** Feature flag: integración API del programa (progress). */
   readonly VITE_PROGRAM_API_ENABLED?: string;
+  /**
+   * Feature flag: SOS real contra `POST /api/v1/sos/alerts` (change
+   * sos-panic-real). Default `false`: simulación local con doble
+   * confirmación; solo en `"true"` se despacha al backend.
+   */
+  readonly VITE_SOS_ENABLED?: string;
   /** `"true"` habilita las herramientas de dev en un build de pruebas (`sync:dev`). */
   readonly VITE_DEV_TOOLS?: string;
 }

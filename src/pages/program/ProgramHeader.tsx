@@ -1,6 +1,9 @@
-import { IonIcon, IonSegment, IonSegmentButton } from '@ionic/react'
+import { useState } from 'react'
+import { IonButton, IonIcon, IonItem, IonList, IonPopover, IonSegment, IonSegmentButton } from '@ionic/react'
 import { motion } from 'framer-motion'
-import { chevronForward, gift } from 'ionicons/icons'
+import { calendarOutline, chevronForward, flame, gift, menuOutline, notificationsOutline, star, trophyOutline, locateOutline } from 'ionicons/icons'
+import logoIcon from '../../assets/LogoIndividual.png'
+import { NotificationsModal } from '../../components/notifications/NotificationsModal'
 import { RingProgress } from '../../components/RingProgress'
 import { useT } from '../../i18n/I18nContext'
 import { CountUp } from './visuals'
@@ -34,9 +37,30 @@ export function ProgramHeader({
   onOpenChests: () => void
 }) {
   const t = useT()
+  const [menuEvent, setMenuEvent] = useState<Event>()
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   return (
     <header className="pgh">
+      <div className="pgh-topbar">
+        <div className="hm-wordmark" aria-label="COPP-ADRESD">
+          <img src={logoIcon} alt="" />
+          <div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div>
+        </div>
+        <div className="pgh-actions">
+          <IonButton fill="clear" aria-label={t('Notificaciones')} onClick={() => setNotificationsOpen(true)}><IonIcon slot="icon-only" icon={notificationsOutline} /></IonButton>
+          <IonButton fill="clear" aria-label={t('Menú')} onClick={(event) => setMenuEvent(event.nativeEvent)}><IonIcon slot="icon-only" icon={menuOutline} /></IonButton>
+        </div>
+      </div>
+      <IonPopover isOpen={!!menuEvent} event={menuEvent} onDidDismiss={() => setMenuEvent(undefined)} dismissOnSelect>
+        <IonList>
+          <IonItem button onClick={() => onTab('hoy')}>{t('Hoy')}</IonItem>
+          <IonItem button onClick={() => onTab('racha')}>{t('Racha')}</IonItem>
+          <IonItem button onClick={() => onTab('liga')}>{t('Liga')}</IonItem>
+          <IonItem button onClick={() => onTab('evo')}>{t('Evo')}</IonItem>
+        </IonList>
+      </IonPopover>
+      {notificationsOpen && <NotificationsModal isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />}
       {readyChests > 0 && (
         <motion.button
           type="button"
@@ -54,10 +78,11 @@ export function ProgramHeader({
 
       <div className="pgh-unit">
         <RingProgress
-          value={doneCount / total}
-          size={58}
-          stroke={4}
-          trackColor="#e3e9f1"
+          value={total > 0 ? doneCount / total : 0}
+          size={68}
+          stroke={6}
+          trackColor="var(--home-sky)"
+          gradient={['var(--home-aqua)', 'var(--brand-green-soft)']}
           color="var(--brand-green)"
         >
           <b>
@@ -76,14 +101,15 @@ export function ProgramHeader({
               : `${pointsToday} / ${pointsMax} XP`}
           </small>
         </div>
+        <span className="pgh-progress-label"><IonIcon icon={locateOutline} aria-hidden="true" />{t('Tu progreso hoy')}</span>
       </div>
 
       <div className="pgh-tabs">
         <IonSegment value={tab} onIonChange={(e) => onTab((e.detail.value as ProgramTab) || 'hoy')}>
-          <IonSegmentButton value="hoy">{t('Hoy')}</IonSegmentButton>
-          <IonSegmentButton value="racha">{t('Racha')}</IonSegmentButton>
-          <IonSegmentButton value="liga">{t('Liga')}</IonSegmentButton>
-          <IonSegmentButton value="evo">{t('Evo')}</IonSegmentButton>
+          <IonSegmentButton layout="icon-start" value="hoy"><IonIcon icon={calendarOutline} />{t('Hoy')}</IonSegmentButton>
+          <IonSegmentButton layout="icon-start" value="racha"><IonIcon icon={flame} />{t('Racha')}</IonSegmentButton>
+          <IonSegmentButton layout="icon-start" value="liga"><IonIcon icon={trophyOutline} />{t('Liga')}</IonSegmentButton>
+          <IonSegmentButton layout="icon-start" value="evo"><IonIcon icon={star} />{t('Evo')}</IonSegmentButton>
         </IonSegment>
       </div>
     </header>

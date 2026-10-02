@@ -1,5 +1,6 @@
 import { getAccessToken } from "./authApi";
 import { getGatewayBaseUrl } from "./apiBaseUrl";
+import { apiGet, apiPost } from "./apiClient";
 
 /**
  * Cliente del módulo de citas/telemedicina del paciente contra el API Gateway
@@ -126,6 +127,8 @@ export interface AppointmentRequestDto {
   status: AppointmentRequestStatus;
   createdAt: string;
   rejectionReason: string | null;
+  /** "Normal" | "Urgent" (Urgencia de la app). */
+  priority?: "Normal" | "Urgent";
 }
 
 export interface PaginatedResult<T> {
@@ -145,6 +148,21 @@ export interface ProfessionalCatalogItem {
   locations: Array<{ id: string; name: string }>;
   clinicIds: string[];
   status: string;
+}
+
+/**
+ * Especialidad del catálogo ERP (`erp.specialties`, vía
+ * `GET /api/v1/specialties`). `category` es el área clínica de agrupación
+ * (ej. "Medicina") y cada especialidad activa es un tipo de atención
+ * agendable. Agregar especialidades no requiere cambios de código.
+ */
+export interface SpecialtyDto {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  description: string | null;
+  isActive: boolean;
 }
 
 export interface PatientContextDto {
@@ -194,6 +212,8 @@ export interface CreateRequestInput {
   locationId?: string;
   preferredStart?: string;
   reason: string;
+  /** "Urgent" = entrada directa Urgencia (prioridad de triage del staff). */
+  priority?: "Normal" | "Urgent";
 }
 
 /** ¿Hay una sesión real (JWT) o modo demo? */
@@ -381,4 +401,234 @@ export function sendRoomChatMessage(
   totalPages: number;
 }> {
   return api("/api/v1/professionals-catalog?page=1&pageSize=100");
+}
+
+/** Página del catálogo de profesionales con filtros server-side. */
+export interface ProfessionalsCatalogPageDto {
+  data: ProfessionalCatalogItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * Página del catálogo de profesionales (`search`/`specialtyId`/`status` los
+ * resuelve el backend; pageSize máx. 100). Base del picker con búsqueda: con
+ * cientos de profesionales no se carga el catálogo completo en memoria.
+ */
+export function fetchProfessionalsCatalogPage(
+  params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    specialtyId?: string;
+    status?: string;
+    signal?: AbortSignal;
+  } = {},
+): Promise<ProfessionalsCatalogPageDto> {
+  const qs = new URLSearchParams();
+  qs.set("page", String(params.page ?? 1));
+  qs.set("pageSize", String(params.pageSize ?? 20));
+  if (params.search?.trim()) qs.set("search", params.search.trim());
+  if (params.specialtyId) qs.set("specialtyId", params.specialtyId);
+  if (params.status) qs.set("status", params.status);
+  return apiGet<ProfessionalsCatalogPageDto>(
+    `/api/v1/professionals-catalog?${qs.toString()}`,
+    params.signal ? { signal: params.signal } : undefined,
+  );
+}
+
+/**
+ * Catálogo de especialidades del ERP (`erp.specialties`), ordenado por el
+ * backend por categoría y `sort_order`. Reutiliza el endpoint existente —
+ * no inventa endpoints. La UI agrupa por `category` y trata cada
+ * especialidad activa como tipo de atención agendable.
+ */
+export function fetchSpecialties(): Promise<SpecialtyDto[]> {
+  return api<SpecialtyDto[]>("/api/v1/specialties");
+}
+
+// ── Disponibilidad real (contrato `/availability`, change citas-e2e-app-erp) ─
+
+/** Parámetros de `GET /api/v1/appointments/availability` (ambos modos). */
+export interface AvailabilityQuery {
+  professionalId?: string;
+  specialtyId?: string;
+  organizationId?: string;
+  clinicId?: string;
+  locationId?: string;
+  /** Día pedido en `YYYY-MM-DD` (el backend lo interpreta en UTC). */
+  date: string;
+}
+
+/** Ranura del día (todos los slots con flags, ver B4: filtrar `isAvailable`). */
+export interface AvailabilitySlotDto {
+  start: string;
+  end: string;
+  durationMinutes: number;
+  isAvailable: boolean;
+  conflictReason: string | null;
+  availableProfessionalCount: number;
+}
+
+/** Respuesta 200 de disponibilidad (slots UTC + offset local). */
+export interface AvailabilityResponseDto {
+  professionalId: string | null;
+  specialtyId: string | null;
+  date: string;
+  timezoneOffset: string;
+  slots: AvailabilitySlotDto[];
+}
+
+/**
+ * Disponibilidad real vía Gateway (`/api/v1/appointments/*` → Telemedicina).
+ * Modo profesional (`professionalId`) o modo especialidad (`specialtyId` +
+ * `organizationId` requerido, unión sin asignar). Cliente común: timeout +
+ * retry de sesión; cancelable con `AbortSignal` (QA-009).
+ */
+export function fetchAvailabilitySlots(
+  query: AvailabilityQuery,
+  opts?: { signal?: AbortSignal },
+): Promise<AvailabilityResponseDto> {
+  const qs = new URLSearchParams();
+  if (query.professionalId) qs.set("professionalId", query.professionalId);
+  if (query.specialtyId) qs.set("specialtyId", query.specialtyId);
+  if (query.organizationId) qs.set("organizationId", query.organizationId);
+  if (query.clinicId) qs.set("clinicId", query.clinicId);
+  if (query.locationId) qs.set("locationId", query.locationId);
+  qs.set("date", query.date);
+  return apiGet<AvailabilityResponseDto>(
+    `/api/v1/appointments/availability?${qs.toString()}`,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/** Modo rango de `GET /api/v1/appointments/availability` (from/to, máx. 14 días). */
+export interface AvailabilityRangeQuery {
+  professionalId?: string;
+  specialtyId?: string;
+  organizationId?: string;
+  clinicId?: string;
+  locationId?: string;
+  /** Inicio del rango en `YYYY-MM-DD` (inclusive, interpretado en UTC). */
+  from: string;
+  /** Fin del rango en `YYYY-MM-DD` (inclusive; el backend limita a 14 días). */
+  to: string;
+}
+
+/** Disponibilidad de un día del rango (slots ya filtrados por el backend, B4). */
+export interface AvailabilityDayDto {
+  date: string;
+  slots: AvailabilitySlotDto[];
+}
+
+/** Respuesta 200 del modo rango: days[] completo (días sin cupo con slots vacíos). */
+export interface AvailabilityRangeResponseDto {
+  professionalId: string | null;
+  specialtyId: string | null;
+  timezoneOffset: string;
+  days: AvailabilityDayDto[];
+}
+
+/**
+ * Disponibilidad en modo rango: UNA llamada para toda la ventana del wizard
+ * (contrato from/to). El backend batchea las consultas (número constante de
+ * queries respecto a los días), así que reemplaza la sonda día por día.
+ * Cancelable con `AbortSignal` (QA-009).
+ */
+export function fetchAvailabilitySlotsRange(
+  query: AvailabilityRangeQuery,
+  opts?: { signal?: AbortSignal },
+): Promise<AvailabilityRangeResponseDto> {
+  const qs = new URLSearchParams();
+  if (query.professionalId) qs.set("professionalId", query.professionalId);
+  if (query.specialtyId) qs.set("specialtyId", query.specialtyId);
+  if (query.organizationId) qs.set("organizationId", query.organizationId);
+  if (query.clinicId) qs.set("clinicId", query.clinicId);
+  if (query.locationId) qs.set("locationId", query.locationId);
+  qs.set("from", query.from);
+  qs.set("to", query.to);
+  return apiGet<AvailabilityRangeResponseDto>(
+    `/api/v1/appointments/availability?${qs.toString()}`,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/** Profesional con cupo dentro de la ventana consultada (picker de la app). */
+export interface AvailableProfessionalDto {
+  professionalId: string;
+  /** Primera ranura libre en ISO/UTC. */
+  nextAvailableStart: string;
+  /** Días de la ventana con al menos una ranura libre. */
+  availableDays: number;
+}
+
+/** Respuesta 200 de `availability/professionals` (ids + ventana UTC). */
+export interface AvailableProfessionalsResponseDto {
+  specialtyId: string;
+  from: string;
+  to: string;
+  timezoneOffset: string;
+  professionals: AvailableProfessionalDto[];
+}
+
+/**
+ * Profesionales con al menos una ranura libre en la ventana (default backend:
+ * hoy + 13 días). El picker lo usa para ordenar los que tienen cupo primero y
+ * pintar el badge, sin consultar día por día.
+ */
+export function fetchAvailableProfessionals(
+  query: {
+    specialtyId: string;
+    organizationId: string;
+    clinicId?: string;
+    locationId?: string;
+    from?: string;
+    to?: string;
+  },
+  opts?: { signal?: AbortSignal },
+): Promise<AvailableProfessionalsResponseDto> {
+  const qs = new URLSearchParams();
+  qs.set("specialtyId", query.specialtyId);
+  qs.set("organizationId", query.organizationId);
+  if (query.clinicId) qs.set("clinicId", query.clinicId);
+  if (query.locationId) qs.set("locationId", query.locationId);
+  if (query.from) qs.set("from", query.from);
+  if (query.to) qs.set("to", query.to);
+  return apiGet<AvailableProfessionalsResponseDto>(
+    `/api/v1/appointments/availability/professionals?${qs.toString()}`,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/** Entrada de `POST /api/v1/appointments/{id}/reschedule` (modo paciente). */
+export interface RescheduleInput {
+  /** Nuevo inicio en ISO (idealmente el `start` de un slot disponible). */
+  newStart: string;
+  durationMinutes?: number | null;
+  reason?: string | null;
+}
+
+/**
+ * Reprogramación directa del paciente (contrato 1.4): el servidor ignora el
+ * `RequestedBy` del body y fuerza `Patient`; valida propiedad, estado
+ * `Confirmed`, `reschedule_count < MaxReschedules`, anticipación mínima y
+ * no-solapamiento. Negocio inválido → 409.
+ */
+export function rescheduleAppointment(
+  id: string,
+  input: RescheduleInput,
+  opts?: { signal?: AbortSignal },
+): Promise<AppointmentDto> {
+  return apiPost<AppointmentDto>(
+    `/api/v1/appointments/${id}/reschedule`,
+    {
+      newStart: input.newStart,
+      durationMinutes: input.durationMinutes ?? null,
+      reason: input.reason ?? null,
+      requestedBy: "Patient",
+    },
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
 }

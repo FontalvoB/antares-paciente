@@ -67,7 +67,7 @@ describe("ProfilePage — Mi Avatar abre Perfil corporal", () => {
         <ProfilePage />
       </QueryClientProvider>,
     );
-    fireEvent.click(screen.getByText("Mi Avatar"));
+    fireEvent.click(screen.getByLabelText("Mi Avatar"));
     expect(navigateMock).toHaveBeenCalledWith("body");
     expect(navigateMock).not.toHaveBeenCalledWith("avatar");
   });

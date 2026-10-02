@@ -2,6 +2,10 @@ import { useMemo, useState } from "react";
 import {
   IonAvatar,
   IonBadge,
+  IonButton,
+  IonPopover,
+  IonList,
+  IonItem,
   IonIcon,
   IonProgressBar,
   IonSkeletonText,
@@ -10,6 +14,15 @@ import { useI18n } from "../i18n/I18nContext";
 import {
   add,
   bodyOutline,
+  calendarOutline,
+  chevronForward,
+  clipboardOutline,
+  menuOutline,
+  personOutline,
+  scaleOutline,
+  waterOutline,
+  checkmarkCircleOutline,
+  trophyOutline,
   chatbubbleEllipsesOutline,
   flame,
   medkitOutline,
@@ -78,6 +91,7 @@ export function HomePage() {
   const { snapshot } = useProgram();
   const { unreadCount } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [menuEvent, setMenuEvent] = useState<Event>();
   const { lang, t } = useI18n();
 
   // Verdad clínica de las tarjetas: metrics-history (bmi/hba1c/fat) +
@@ -301,13 +315,6 @@ export function HomePage() {
   );
   const weekOnTarget = weekGoals.filter((g) => g.pct >= 80).length;
   const first = user.nombre.split(" ")[0];
-  const initials =
-    user.nombre
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("") || "ME";
   const today = new Date().toLocaleDateString(
     lang === "en" ? "en-US" : "es-ES",
     { weekday: "long", day: "numeric", month: "long" },
@@ -403,18 +410,24 @@ export function HomePage() {
     <Screen>
       <Scroll className="home">
         <header className="hm-head">
-          <Mascot pose="success" className="mascot-home" />
+          {/* Fondo de identidad decorativo, sin interacción ni datos. */}
+          <div className="hm-landscape" aria-hidden="true">
+            <i className="hm-leaf hm-leaf-one" />
+            <i className="hm-leaf hm-leaf-two" />
+            <i className="hm-leaf hm-leaf-three" />
+            <Mascot pose="success" className="mascot-home" float={false} />
+          </div>
           <div className="hm-head-top">
-            <button
-              type="button"
-              className="hm-avatar"
-              onClick={() => navigate("prof")}
-              aria-label={t("Abrir perfil")}
-            >
-              {initials}
-            </button>
+            <div className="hm-wordmark" aria-label="COPP-ADRESD">
+              <img src={logoIcon} alt="" />
+              <span>
+                <strong>COPP-ADRESD<sup>®</sup></strong>
+                <small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small>
+              </span>
+            </div>
             <div className="hm-head-actions">
-              <button
+              <IonButton
+                fill="clear"
                 type="button"
                 className="hm-icon-btn hm-bell"
                 onClick={() => setNotificationsOpen(true)}
@@ -432,34 +445,60 @@ export function HomePage() {
                     {unreadCount > 99 ? "99+" : String(unreadCount)}
                   </IonBadge>
                 )}
-              </button>
-              {/* Atajo directo al perfil corporal: es el módulo que más se
-                  consulta y estaba a dos toques desde el inicio. */}
-              <button
-                type="button"
+              </IonButton>
+              <LanguageToggle />
+              <IonButton
+                fill="clear"
                 className="hm-icon-btn"
-                onClick={() => navigate("body")}
-                aria-label={t("Abrir visualización del perfil")}
+                aria-label={t("Abrir menú")}
+                aria-haspopup="dialog"
+                aria-expanded={Boolean(menuEvent)}
+                onClick={(event) => setMenuEvent(event.nativeEvent)}
               >
-                <IonIcon icon={bodyOutline} />
-              </button>
-              <img src={logoIcon} alt="COPP-ADRESD" className="hm-brand" />
+                <IonIcon icon={menuOutline} />
+              </IonButton>
+              <IonPopover
+                isOpen={Boolean(menuEvent)}
+                event={menuEvent}
+                onDidDismiss={() => setMenuEvent(undefined)}
+                dismissOnSelect
+              >
+                <IonList>
+                  <IonItem button onClick={() => navigate("prof")}>
+                    <IonIcon slot="start" icon={personOutline} />
+                    {t("Mi perfil")}
+                  </IonItem>
+                  <IonItem button onClick={() => navigate("body")}>
+                    <IonIcon slot="start" icon={bodyOutline} />
+                    {t("Visualización del perfil")}
+                  </IonItem>
+                </IonList>
+              </IonPopover>
             </div>
           </div>
 
           <h1 className="hm-hello">
-            {t("Hola,")} {first}
+            {t("Hola,")} <span>{first}</span> <span aria-hidden="true">👋</span>
           </h1>
-          <div className="hm-date">{today}</div>
+          <p className="hm-purpose">{t("Tu salud, nuestro propósito.")}</p>
 
-          <div className="hm-chips">
-            <span className="hm-chip navy">
-              {t("Semana {cur} de {total}", {
-                cur: String(activeProgramWeek),
-                total: String(activeTotalWeeks),
-              })}
-            </span>
-            <LanguageToggle />
+          <div className="hm-day-panel">
+            <IonIcon icon={calendarOutline} aria-hidden="true" />
+            <div className="hm-day-copy">
+              <span>{t("Hoy es")}</span>
+              <strong className="hm-date">{today}</strong>
+              <span className="hm-chip navy">
+                {t("Semana {cur} de {total}", {
+                  cur: String(activeProgramWeek),
+                  total: String(activeTotalWeeks),
+                })}
+              </span>
+            </div>
+            <IonButton fill="clear" className="hm-day-link" onClick={() => navigate("prog")}>
+              <IonIcon icon={clipboardOutline} aria-hidden="true" />
+              <span>{t("Protocolo diario")}</span>
+              <IonIcon icon={chevronForward} aria-hidden="true" />
+            </IonButton>
           </div>
         </header>
 
@@ -509,6 +548,16 @@ export function HomePage() {
                   label: t(meta.label),
                 })}
               >
+                <span className="hm-metric-icon" aria-hidden="true">
+                  {meta.id === "fat" ? "%" : (
+                    <IonIcon icon={{
+                      imc: scaleOutline,
+                      hba1c: waterOutline,
+                      adh: checkmarkCircleOutline,
+                      pts: trophyOutline,
+                    }[meta.id]} />
+                  )}
+                </span>
                 {state === "loading" ? (
                   // S4: skeleton honesto mientras carga la fuente — sin nota
                   // requires-data (patrón de la tarjeta de cita).

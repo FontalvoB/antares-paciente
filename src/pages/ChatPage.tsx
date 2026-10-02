@@ -1,15 +1,25 @@
 import {
+  IonActionSheet,
   IonBadge,
   IonButton,
   IonIcon,
   IonInput,
   IonSpinner,
 } from "@ionic/react";
+import { CameraSource } from "@capacitor/camera";
 import {
-  attach,
+  attachOutline,
+  cameraOutline,
+  closeCircle,
+  documentOutline,
+  imagesOutline,
   informationCircle,
   medkit,
   mic,
+  nutritionOutline,
+  calendarOutline,
+  pulseOutline,
+  trendingUpOutline,
   send as sendIcon,
 } from "ionicons/icons";
 import { motion } from "framer-motion";
@@ -20,20 +30,21 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { PageHeader } from "../components/PageHeader";
 import { Screen } from "../components/Screen";
+import { Mascot } from "../components/Mascot";
 import { ChatRichText } from "../components/ChatRichText";
 import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
+import { captureChatImage } from "../services/media/camera-service";
+import logoIcon from "../assets/LogoIndividual.png";
 
 const quick = [
-  ["¿Qué comer?", "¿Qué debo comer hoy según mi plan?"],
-  ["Síntomas", "Tengo dolor en el pecho, ¿qué hago?"],
-  ["Agendar", "Agenda una cita con el médico para hoy"],
-  ["Progreso", "¿Cómo va mi progreso esta semana?"],
-  ["Meditar", "Quiero meditar y calmar mi ansiedad"],
+  ["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline],
+  ["Síntomas", "Tengo dolor en el pecho, ¿qué hago?", pulseOutline],
+  ["Agendar", "Agenda una cita con el médico para hoy", calendarOutline],
+  ["Progreso", "¿Cómo va mi progreso esta semana?", trendingUpOutline],
 ];
 
 /** Mensajes visibles por tramo del historial progresivo. */
@@ -58,6 +69,15 @@ export function ChatPage() {
   } = useApp();
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
+  // Progressive disclosure del compositor (+): hoja de acciones de adjuntos.
+  const [attachSheetOpen, setAttachSheetOpen] = useState(false);
+  // Imagen conversacional pendiente (agente-asistente-citas D3): miniatura
+  // removible en el compositor; viaja con el próximo mensaje como multimodal.
+  const [pendingImage, setPendingImage] = useState<{
+    base64: string;
+    mimeType: string;
+    dataUrl: string;
+  } | null>(null);
   // Paginación server-driven: `hasMore`/`nextCursor` los define el backend y
   // `loadingMore` cubre la carga del tramo anterior al llegar al tope.
   const [hasMore, setHasMore] = useState(false);
@@ -229,8 +249,27 @@ export function ChatPage() {
     if (uploading) return;
     const v = msg.trim();
     if (!v) return;
-    sendChat(v);
+    sendChat(v, pendingImage ?? undefined);
+    setPendingImage(null);
     setText("");
+  };
+
+  /**
+   * Adjunto conversacional desde el ActionSheet del compositor (+).
+   * REUTILIZA `captureChatImage` (una sola configuración de captura: Base64
+   * q75, ancho 1280, orientación corregida) para mantener el payload
+   * multimodal en el presupuesto del backend; la fuente (cámara o galería)
+   * la elige la hoja de acciones del propio chat. Cancelación o permiso
+   * denegado → silencioso (nunca rompe el compositor).
+   */
+  const attachFromSource = async (source: CameraSource) => {
+    if (uploading) return;
+    try {
+      const photo = await captureChatImage(source);
+      if (photo) setPendingImage(photo);
+    } catch {
+      // El usuario canceló: no mostrar ruido.
+    }
   };
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,13 +324,25 @@ export function ChatPage() {
   };
 
   return (
-    <Screen className="chat-kb">
-      <PageHeader
-        title={t("Chat")}
-        sub={t("Copp Adresd AI · en línea 24/7")}
-        trailing={
+    <Screen className="chat-kb chat-reference">
+      <header className="chat-premium-header">
+        <div className="chat-brand-lockup">
+          <img src={logoIcon} alt="" className="chat-brand-logo" />
+          <div>
+            <span className="chat-brand-name">COPP-ADRESD<sup>®</sup></span>
+            <span className="chat-brand-kicker">COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</span>
+          </div>
+        </div>
+        <div className="chat-hero-copy">
+          <div>
+            <h1 className="display">
+              {t("Hola, {nombre} 👋", { nombre: user.nombre || t("Paciente") })}
+            </h1>
+            <p className="chat-welcome-sub">{t("Estoy aquí para ayudarte")}</p>
+            <p>{t("Tu asistente de IA en salud y bienestar")}</p>
+          </div>
           <IonButton
-            className="bt bt-round"
+            className="bt bt-round chat-panic"
             style={
               {
                 "--background": "var(--red-l)",
@@ -303,30 +354,33 @@ export function ChatPage() {
           >
             <IonIcon icon={medkit} />
           </IonButton>
-        }
-      />
-      <div className="chip-scroll">
-        {quick.map(([l, q]) => (
-          <button
+        </div>
+        <Mascot pose="welcome" className="chat-header-mascot" />
+      </header>
+      <div
+        className="chip-scroll chat-quick-actions"
+        aria-label={t("Acciones rápidas del chat")}
+      >
+        {quick.map(([l, q, icon]) => (
+          <IonButton
             key={l}
-            type="button"
-            className="qrchip"
+            fill="clear"
+            className="qrchip chat-quick-action"
             onClick={() => send(t(q))}
           >
-            {t(l)}
-          </button>
+            <span className="chat-quick-content">
+              <span className="chat-quick-icon" aria-hidden="true">
+                <IonIcon icon={icon} />
+              </span>
+              <span>{t(l)}</span>
+            </span>
+          </IonButton>
         ))}
       </div>
       <div
         ref={listRef}
-        className="screen-scroll"
+        className="screen-scroll chat-list"
         onScroll={handleScroll}
-        style={{
-          padding: "12px 16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
       >
         {/* Disclaimer clínico preventivo (Fase 9): no invasivo, siempre
             visible al inicio del listado. No sustituye atención de urgencia:
@@ -361,27 +415,50 @@ export function ChatPage() {
             <span>{t("Inicio de la conversación")}</span>
           </div>
         ) : null}
-        {chat.map((m) => (
+        {chat.map((m, index) => {
+          const isLastInGroup =
+            index === chat.length - 1 || chat[index + 1].role !== m.role;
+          const isUser = m.role === "user";
+          return (
           <div
             key={m.id}
-            className={`chat-row${m.role === "user" ? " chat-row-user" : ""}`}
+            className={`chat-row${isUser ? " chat-row-user" : ""}${isLastInGroup ? " chat-row-group-end" : " chat-row-group-middle"}`}
           >
-            {m.role !== "user" ? (
+            {!isUser && isLastInGroup ? (
               <div
                 className={`chat-avatar${m.role === "alert" ? " chat-avatar-alert" : ""}`}
                 aria-hidden="true"
               >
-                {m.role === "alert" ? "!" : "AI"}
+                {m.role === "alert" ? (
+                  "!"
+                ) : (
+                  <Mascot pose="welcome" float={false} className="chat-avatar-mascot" />
+                )}
               </div>
-            ) : (
-              <div className="chat-avatar chat-avatar-user" aria-hidden="true">
-                {userInitial}
-              </div>
-            )}
+            ) : !isUser ? (
+              <div className="chat-avatar chat-avatar-spacer" aria-hidden="true" />
+            ) : null}
             <div className="chat-msg">
               <div
-                className={`bub ${m.role === "user" ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
+                className={`bub ${isUser ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
               >
+                {m.role === "user" && m.image && (
+                  // Miniatura de la imagen conversacional adjunta (D3):
+                  // ancho acotado, radius de marca, sin recargar el hilo.
+                  <img
+                    src={m.image.dataUrl}
+                    alt={t("Imagen adjunta")}
+                    style={{
+                      display: "block",
+                      maxWidth: 220,
+                      maxHeight: 220,
+                      width: "100%",
+                      objectFit: "cover",
+                      borderRadius: 12,
+                      marginBottom: m.text ? 8 : 0,
+                    }}
+                  />
+                )}
                 {m.role === "user" ? m.text : <ChatRichText text={m.text} />}
                 {m.role === "alert" && (
                   <IonButton
@@ -434,28 +511,21 @@ export function ChatPage() {
               </div>
               <div className="chat-time">{m.time}</div>
             </div>
+            {isUser && (isLastInGroup ? (
+              <div className="chat-avatar chat-avatar-user" aria-hidden="true">
+                {userInitial}
+              </div>
+              ) : <div className="chat-avatar chat-avatar-spacer" aria-hidden="true" />)}
           </div>
-        ))}
+          );
+        })}
         {uploading && (
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              flexDirection: "row",
-            }}
-          >
+          <div className="chat-row">
             <div className="chat-avatar" aria-hidden="true">
-              AI
+              <Mascot pose="thinking" float={false} className="chat-avatar-mascot" />
             </div>
-            <div>
-              <div
-                className="bub bub-bot"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+            <div className="chat-msg">
+              <div className="bub bub-bot chat-uploading">
                 <IonSpinner name="crescent" style={{ width: 16, height: 16 }} />
                 <span>{t("Analizando examen de laboratorio…")}</span>
               </div>
@@ -464,7 +534,32 @@ export function ChatPage() {
         )}
         <div ref={end} />
       </div>
-      <div className="composer">
+      {pendingImage && (
+        // Miniatura removible del adjunto pendiente (D3): preview + descarte,
+        // sobre el composer (patrón ChatGPT) para que el adjunto se vea
+        // junto al mensaje que lo llevará.
+        <div
+          className="chat-pending-image"
+          role="status"
+          aria-label={t("Imagen lista para enviar")}
+        >
+          <img src={pendingImage.dataUrl} alt={t("Imagen adjunta")} />
+          <span>{t("Imagen lista para enviar")}</span>
+          <IonButton
+            size="small"
+            fill="clear"
+            className="chat-pending-remove"
+            aria-label={t("Quitar imagen adjunta")}
+            onClick={() => setPendingImage(null)}
+          >
+            <IonIcon icon={closeCircle} style={{ fontSize: 22 }} />
+          </IonButton>
+        </div>
+      )}
+      {/* Compositor ChatGPT-style: [+ adjuntos] [voz] [entrada] [enviar].
+          El + abre la hoja de acciones (progressive disclosure) con las
+          fuentes de adjuntos; los mismos handlers subyacentes. */}
+      <div className="composer chat-composer">
         <input
           type="file"
           ref={fileInputRef}
@@ -473,35 +568,24 @@ export function ChatPage() {
           onChange={handleFileSelected}
         />
         <IonButton
-          className="bt bt-round"
-          style={
-            {
-              "--background": "var(--blue-l)",
-              "--color": "var(--blue)",
-            } as CSSProperties
-          }
+          className="bt bt-round chat-plus"
+          aria-label={t("Adjuntar al chat")}
+          disabled={uploading}
+          onClick={() => setAttachSheetOpen(true)}
+        >
+          <IonIcon icon={attachOutline} style={{ fontSize: 22 }} />
+        </IonButton>
+        <IonButton
+          className="bt bt-round chat-voice"
           aria-label={t("Agente de voz")}
           disabled={uploading}
           onClick={openVoice}
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
         </IonButton>
-        <IonButton
-          className="bt bt-round"
-          style={
-            {
-              "--background": "var(--blue-l)",
-              "--color": "var(--blue)",
-            } as CSSProperties
-          }
-          aria-label={t("Adjuntar examen")}
-          disabled={uploading}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <IonIcon icon={attach} style={{ fontSize: 20 }} />
-        </IonButton>
         <IonInput
           className="chat-inp"
+          aria-label={t("Escribe un mensaje…")}
           value={text}
           disabled={uploading}
           onIonInput={(e) => setText(e.detail.value ?? "")}
@@ -514,13 +598,7 @@ export function ChatPage() {
           transition={{ duration: 0.15 }}
         >
           <IonButton
-            className="bt bt-round"
-            style={
-              {
-                "--background": "var(--navy)",
-                "--color": "#fff",
-              } as CSSProperties
-            }
+            className="bt bt-round chat-send"
             aria-label={t("Enviar")}
             disabled={uploading}
             onClick={() => send()}
@@ -529,6 +607,29 @@ export function ChatPage() {
           </IonButton>
         </motion.span>
       </div>
+      <IonActionSheet
+        isOpen={attachSheetOpen}
+        onDidDismiss={() => setAttachSheetOpen(false)}
+        header={t("Adjuntar al chat")}
+        buttons={[
+          {
+            text: t("Tomar foto"),
+            icon: cameraOutline,
+            handler: () => void attachFromSource(CameraSource.Camera),
+          },
+          {
+            text: t("Fotos"),
+            icon: imagesOutline,
+            handler: () => void attachFromSource(CameraSource.Photos),
+          },
+          {
+            text: t("Archivo"),
+            icon: documentOutline,
+            handler: () => fileInputRef.current?.click(),
+          },
+          { text: t("Cancelar"), role: "cancel" as const },
+        ]}
+      />
     </Screen>
   );
 }

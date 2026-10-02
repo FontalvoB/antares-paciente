@@ -54,6 +54,18 @@ export interface ChatSuggestion {
   urgency?: string;
 }
 
+/**
+ * Imagen adjunta a un turno conversacional (agente-asistente-citas, D3).
+ * `base64` viaja en el body del chat (`image_data`), `mimeType` acompaña
+ * (`image_mime_type`) y `dataUrl` solo vive en la app para pintar la
+ * miniatura/burbuja sin re-decodificar.
+ */
+export interface ChatImageAttachment {
+  base64: string;
+  mimeType: string;
+  dataUrl: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "bot" | "user" | "alert";
@@ -69,6 +81,8 @@ export interface ChatMessage {
   executionId?: string;
   /** CTA adjunto al mensaje del bot (ej. sugerencia de agendar cita). */
   cta?: ChatSuggestion | null;
+  /** Imagen adjunta del remitente (solo burbujas user; vista local). */
+  image?: { dataUrl: string } | null;
   /** Marcador local: el bot respondió a un examen de laboratorio procesado. */
   kind?: "lab-exam";
 }

@@ -53,7 +53,8 @@ function sample(
   ts: number,
   extra: Partial<HealthSample> = {},
 ): HealthSample {
-  return { metric, value, unit, ts, deviceId, ...extra };
+  // Los decoders de este archivo son del volcado del historial del anillo.
+  return { metric, value, unit, ts, deviceId, source: "history", ...extra };
 }
 
 /** Corta el buffer en registros de tamaño fijo (descarta el resto corto). */

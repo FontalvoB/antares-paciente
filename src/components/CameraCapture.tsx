@@ -9,6 +9,7 @@ import {
   refreshOutline,
 } from "ionicons/icons";
 import { useT } from "../i18n/I18nContext";
+import { dataUrlToBlob } from "../services/media/camera-service";
 
 /**
  * Captura de comida en tres modos según plataforma:
@@ -124,15 +125,20 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
     setError(null);
     try {
       const photo = await Camera.getPhoto({
-        quality: 90,
+        // DataUrl + quality 85: el plugin transcodea SIEMPRE a JPEG (también
+        // picks HEIC de galería en iPhone). Con Uri se entregaba el archivo
+        // ORIGINAL (HEIC) y el filename forzado `.jpg` causaba 400 del
+        // backend (extensión no permitida / firma mágica).
+        quality: 85,
         allowEditing: false,
         saveToGallery: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.DataUrl,
         source,
       });
-      if (!photo.webPath) throw new Error("empty");
-      const res = await fetch(photo.webPath);
-      const blob = await res.blob();
+      if (!photo.dataUrl) throw new Error("empty");
+      // Los bytes ya son JPEG (transcodeo del plugin); el Blob se declara
+      // image/jpeg para que nombre, MIME y firma mágica coincidan.
+      const blob = dataUrlToBlob(photo.dataUrl, "image/jpeg");
       stopCamera();
       onCapture(blob, `comida-${Date.now()}.jpg`);
     } catch (err) {

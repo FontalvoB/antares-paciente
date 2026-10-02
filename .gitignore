@@ -7,10 +7,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.playwright-mcp
+
 node_modules
 dist
 dist-ssr
 *.local
+
+GoogleService-Info.plist
 
 # Environment & local notes
 .env
@@ -107,4 +111,15 @@ fastlane/.env*
 ios/App/output/
 # Respaldo temporal del pbxproj que crea el lane `beta`/`build` (se restaura solo)
 ios/App/App.xcodeproj/project.pbxproj.fastlane-bak
+
+# Firebase: el JSON del service account contiene la private_key (NUNCA commitear)
+*firebase-adminsdk*.json
+# Configs de CLIENTE Firebase: solo viven en disco, fuera de git (decisión del
+# dueño). Ubicación operativa:
+#   - android/app/google-services.json  (copia automática desde la raíz en cada
+#     sync por scripts/protect-package-swift.mjs)
+#   - ios/App/App/GoogleService-Info.plist
+# Proyecto: coppadresd01. Se obtienen de Firebase Console si se pierden.
+google-services.json
+GoogleService-Info.plist
 

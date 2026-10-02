@@ -34,6 +34,12 @@ export interface HealthSample {
    * aditiva del historial (varios registros por día).
    */
   agg?: "sum" | "max";
+  /**
+   * Procedencia: `history` = volcado del propio registro del dispositivo (una
+   * lectura puede ser vieja aunque el slot del RTC la marque como reciente);
+   * `live` (por defecto) = stream en vivo o medida puntual de esta sesión.
+   */
+  source?: "live" | "history";
 }
 
 /** Familia de protocolo detectada para un dispositivo. */
@@ -78,6 +84,8 @@ export type InfoSink = (info: DeviceInfo) => void;
  * - `failed`: el anillo reportó `04 0e` con resultado 2 (contacto/movimiento).
  * - `cancelled`: el anillo canceló la medida (u otra la reemplazó).
  * - `timeout`: se agotó la ventana sin ninguna lectura.
+ * - `no-signal`: se agotó la ventana sin NI SIQUIERA tramas del sensor (el
+ *   anillo estuvo mudo: probable falta de contacto, no lentitud).
  * - `disconnected`: la sesión se cerró con la medida en curso.
  */
 export type MeasureOutcome =
@@ -87,6 +95,7 @@ export type MeasureOutcome =
   | "cancelled"
   | "replaced"
   | "timeout"
+  | "no-signal"
   | "disconnected";
 
 export type MeasureCallback = (ok: boolean, reason: MeasureOutcome) => void;
@@ -99,6 +108,12 @@ export type MeasureCallback = (ok: boolean, reason: MeasureOutcome) => void;
 export interface MeasurePolicy {
   windowMs: number;
   retryMs?: number;
+  /**
+   * Lecturas aceptadas para cerrar (por defecto 3). La FC de la banda usa 2:
+   * dos lecturas distintas ya prueban enganche (el eco es bit-idéntico), y 3
+   * dejaba fuera calentamientos tardíos reales.
+   */
+  target?: number;
 }
 
 /** Sesión activa con un dispositivo. La implementa cada driver. */
@@ -115,6 +130,12 @@ export interface DeviceSession {
    * `onDone(false, reason)` = la medida no produjo lectura.
    */
   measure?(kind: MetricKind, onDone?: MeasureCallback): void;
+  /**
+   * Detiene la medida en curso (botón Cancelar de la vista de foco): para el
+   * sensor, limpia temporizadores y avisa `onDone(false, "cancelled")` una
+   * sola vez. Sin medida en curso no hace nada.
+   */
+  stopMeasure?(): void;
   /** Ventana/umbral de la medida de una métrica (para el cronómetro de la UI). */
   measurePolicy?(kind: MetricKind): MeasurePolicy | undefined;
   /** Vuelve a pedir info del dispositivo (batería/firmware) si aplica. */

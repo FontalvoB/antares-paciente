@@ -36,6 +36,9 @@ function u32(value: number): number[] {
 function setup() {
   // Aísla cada test: HistorySync persiste los tipos bloqueados (0xFC) por
   // dispositivo en localStorage, así que un test no debe ver lo del anterior.
+  // El constructor de HistorySync hidrata `blocked` desde localStorage: sin
+  // limpiar, el test 0xFC contamina a los siguientes (deuda preexistente
+  // ycbt-history: SLEEP bloqueado → sends[0] era SPO2 en vez de SLEEP).
   localStorage.clear();
   const sends: Array<{ type: number; payload: number[] }> = [];
   const samples: HealthSample[] = [];

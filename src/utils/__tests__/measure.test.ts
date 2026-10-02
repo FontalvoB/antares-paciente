@@ -25,18 +25,30 @@ describe("measurePhase", () => {
     expect(phase.windowMs).toBe(60_000);
   });
 
-  it("cruza a 'adjusting' justo en el umbral de reintento", () => {
+  it("cruza a 'adjusting' justo al agotar lo esperado", () => {
     expect(measurePhase(14_999, policy).phase).toBe("measuring");
     const adjusting = measurePhase(15_000, policy);
     expect(adjusting.phase).toBe("adjusting");
-    expect(adjusting.remainingMs).toBe(45_000);
+    expect(adjusting.remainingMs).toBe(0);
   });
 
-  it("el progreso se acota a 1 y el restante nunca es negativo", () => {
+  it("el progreso topa en 99 % si tarda más de lo esperado (el 100 % lo pone la lectura)", () => {
     const phase = measurePhase(90_000, policy);
-    expect(phase.progress).toBe(1);
+    expect(phase.progress).toBe(0.99);
     expect(phase.remainingMs).toBe(0);
     expect(phase.phase).toBe("adjusting");
+  });
+
+  it("el ritmo sale de la métrica: FC 12 s, SpO2 36 s", () => {
+    expect(measurePhase(0, { windowMs: 30_000 }, "heart_rate").expectedMs).toBe(
+      12_000,
+    );
+    expect(measurePhase(0, { windowMs: 90_000 }, "spo2").expectedMs).toBe(
+      36_000,
+    );
+    expect(
+      measurePhase(0, { windowMs: 60_000 }, "blood_pressure").expectedMs,
+    ).toBe(15_000);
   });
 
   it("sin política usa los valores de respaldo (umbral al 40 %)", () => {
@@ -64,7 +76,11 @@ describe("measurePhaseLabel", () => {
   const policy = { windowMs: 60_000, retryMs: 15_000 };
 
   it("nombra la métrica durante la fase de medida (sin cifras)", () => {
-    const label = measurePhaseLabel("blood_pressure", measurePhase(0, policy), t);
+    const label = measurePhaseLabel(
+      "blood_pressure",
+      measurePhase(0, policy),
+      t,
+    );
     expect(label).toBe("Midiendo Presión…");
   });
 

@@ -154,3 +154,15 @@ img {
 ion-app {
   background: transparent;
 }
+
+:root {
+  /* Superficies del Home inspiradas en la referencia visual. */
+  --home-sky: #c9e8fa;
+  --home-mist: #f0fbff;
+  --home-aqua: #7bd9e9;
+  --home-leaf: #a9dcb5;
+  --home-card-light: #3e71b8;
+  --home-card-mid: #174e91;
+  --home-card-deep: #00295e;
+  --home-cyan: #29c9f0;
+}

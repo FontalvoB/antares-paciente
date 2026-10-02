@@ -135,7 +135,10 @@ function loadTwilioVideo(): Promise<TwilioVideoSdk> {
 }
 
 /** Habilita/deshabilita los tracks de un mapa (mic o cámara del local). */
-function setTracksEnabled(tracks: TwilioTrackMap | undefined, enabled: boolean) {
+function setTracksEnabled(
+  tracks: TwilioTrackMap | undefined,
+  enabled: boolean,
+) {
   tracks?.forEach((publication) => {
     const track = publication.track;
     if (!track) return;
@@ -404,7 +407,9 @@ export function VirtualRoomPage() {
         // finalizada vs ventana cerrada).
         if (!reconnectAttemptedRef.current) {
           reconnectAttemptedRef.current = true;
-          console.warn("[room] Conexión perdida; reconectando con token nuevo…");
+          console.warn(
+            "[room] Conexión perdida; reconectando con token nuevo…",
+          );
           void connectRef.current?.(true);
           return;
         }
@@ -456,16 +461,20 @@ export function VirtualRoomPage() {
         const status = err instanceof ApiClientError ? err.status : 0;
         const message =
           twilioErrorMessageKey(err) ??
-          (status === 409
-            ? t(
-                "La sala no está disponible en este momento. Actualiza tus citas e inténtalo más tarde.",
-              )
-            : err instanceof Error &&
-                /No se pudo cargar el SDK/.test(err.message)
-              ? t("No se pudo cargar el video. Verifica tu conexión.")
-              : err instanceof Error && err.message
-                ? err.message
-                : t("No se pudo entrar a la sala"));
+          // REQ-APP-03 bugfix: el 404 (sala aún no creada o id sin cita)
+          // jamás muestra "Error del servidor (404)" en la UI.
+          (status === 404
+            ? t("La sala todavía no está abierta")
+            : status === 409
+              ? t(
+                  "La sala no está disponible en este momento. Actualiza tus citas e inténtalo más tarde.",
+                )
+              : err instanceof Error &&
+                  /No se pudo cargar el SDK/.test(err.message)
+                ? t("No se pudo cargar el video. Verifica tu conexión.")
+                : err instanceof Error && err.message
+                  ? err.message
+                  : t("No se pudo entrar a la sala"));
         setError(message);
         setPhase("error");
       }
@@ -648,7 +657,10 @@ export function VirtualRoomPage() {
             <strong>{t("No se pudo entrar a la sala")}</strong>
             <p>{error}</p>
             {windowOpen ? (
-              <IonButton className="bt bt-primary" onClick={() => void connect()}>
+              <IonButton
+                className="bt bt-primary"
+                onClick={() => void connect()}
+              >
                 {t("Reintentar")}
               </IonButton>
             ) : (
@@ -707,7 +719,9 @@ export function VirtualRoomPage() {
               </div>
             ) : windowState === "after" ? (
               <div className="room-notice">
-                <strong>{t("La ventana de acceso a la sala ya terminó")}</strong>
+                <strong>
+                  {t("La ventana de acceso a la sala ya terminó")}
+                </strong>
                 <span>
                   {t("Cerró el {fecha}", {
                     fecha: formatRoomMoment(
@@ -762,7 +776,9 @@ export function VirtualRoomPage() {
               onClick={() => void connect()}
             >
               <IonIcon icon={callOutline} slot="start" />
-              {audioOnly ? t("Unirme solo con audio") : t("Entrar a la consulta")}
+              {audioOnly
+                ? t("Unirme solo con audio")
+                : t("Entrar a la consulta")}
             </IonButton>
             {mediaProbe && !devicesReady ? (
               <IonButton
@@ -778,7 +794,9 @@ export function VirtualRoomPage() {
         ) : phase === "ended" ? (
           <div className="room-empty">
             <IonIcon
-              icon={endCause === "session-ended" ? callOutline : videocamOffOutline}
+              icon={
+                endCause === "session-ended" ? callOutline : videocamOffOutline
+              }
             />
             <strong>{t(roomEndTitleKey(endCause))}</strong>
             <p>
@@ -789,10 +807,7 @@ export function VirtualRoomPage() {
                   : t("La sala ya no está disponible.")}
             </p>
             {endCause === "network" && windowOpen ? (
-              <IonButton
-                className="bt bt-teal"
-                onClick={() => void connect()}
-              >
+              <IonButton className="bt bt-teal" onClick={() => void connect()}>
                 <IonIcon icon={refreshOutline} slot="start" />
                 {t("Reintentar conexión")}
               </IonButton>

@@ -209,27 +209,22 @@ async function restoreSessionOnce(): Promise<LoginResult | null> {
   // Token local previo: si el refresh falla por red caída, la sesión se
   // conserva (modo offline) con este token hasta que el watcher la revalide.
   const existingToken = getAccessToken();
-  try {
-    const result = await postJson<LoginResult>(
-      `${getAuthBaseUrl()}/api/auth/refresh`,
-    );
-    persistAccessToken(result.accessToken);
-    return result;
-  } catch (err) {
-    if (err instanceof HttpStatusError && err.status === 401) {
-      clearSessionAndNotify();
-      return null;
-    }
-    if (existingToken) {
-      return {
-        accessToken: existingToken,
-        tokenType: "Bearer",
-        expiresIn: 3600,
-      };
-    }
-    clearAccessToken();
+  const { status, result } = await sharedRefresh();
+  if (status === 401) {
+    clearSessionAndNotify();
     return null;
   }
+  if (result) return result;
+  // Fallo de red (status 0): la sesión se conserva con el token local previo.
+  if (existingToken) {
+    return {
+      accessToken: existingToken,
+      tokenType: "Bearer",
+      expiresIn: 3600,
+    };
+  }
+  clearAccessToken();
+  return null;
 }
 
 /**
@@ -323,4 +318,58 @@ export async function ensureFreshAccessToken(): Promise<string | null> {
   if (token && !isAccessTokenExpired()) return token;
   const restored = await restoreSession();
   return restored?.accessToken ?? null;
+}
+
+// --- Single-flight de refresh COMPARTIDO por toda la app ---
+
+/**
+ * Resultado del refresh compartido: `status` HTTP del backend (0 = fallo de
+ * red sin respuesta) y el `LoginResult` si el refresh fue exitoso.
+ */
+export interface SharedRefreshResult {
+  status: number;
+  result: LoginResult | null;
+}
+
+/**
+ * ÚNICO punto de refresh para toda la app (login por cookie HttpOnly).
+ *
+ * El backend rota el refresh token con reclamación atómica: dos POST
+ * concurrentes con la misma cookie compiten y el perdedor recibe 401
+ * ("already claimed"), lo que mata la sesión aunque la ganadora la dejó
+ * válida. Histórico en producción (TestFlight): sesiones cerradas justo
+ * después del login por refreshes simultáneos de caminos independientes.
+ * Por eso TODO caller (apiClient.doRefresh, scores-service.attemptRefresh,
+ * restoreSession) DEBE pasar por esta promesa única: mientras hay un refresh
+ * en vuelo, los demás se coalescen a la misma respuesta.
+ */
+let sharedRefreshPromise: Promise<SharedRefreshResult> | null = null;
+
+export function sharedRefresh(): Promise<SharedRefreshResult> {
+  if (!sharedRefreshPromise) {
+    sharedRefreshPromise = performSharedRefresh().finally(() => {
+      sharedRefreshPromise = null;
+    });
+  }
+  return sharedRefreshPromise;
+}
+
+async function performSharedRefresh(): Promise<SharedRefreshResult> {
+  try {
+    // Timeout defensivo (10 s), igual que postJson: en WebView nativo una
+    // IP inalcanzable puede dejar el fetch colgado para siempre.
+    const res = await fetch(`${getAuthBaseUrl()}/api/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return { status: res.status, result: null };
+    const result = (await res.json()) as LoginResult;
+    // Rotación: persistir el access token nuevo para los callers que solo
+    // esperaban `true` (antes solo restoreSession lo persistía).
+    persistAccessToken(result.accessToken);
+    return { status: res.status, result };
+  } catch {
+    return { status: 0, result: null };
+  }
 }

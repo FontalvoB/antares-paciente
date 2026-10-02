@@ -107,12 +107,22 @@ describe("parseRealtimeFrame — FC", () => {
     expect(samples[0]).toMatchObject({ metric: "spo2", value: 98 });
   });
 
-  it("el SpO2 también acepta el layout en décimas", () => {
-    const samples = parseRealtimeFrame(
-      frame([3, 0, 0, 0, 0, 0xda, 0x03, ...zeros(7)]),
-      DEVICE,
-    );
-    expect(samples[0]).toMatchObject({ metric: "spo2", value: 99 });
+  it("el SpO2 ignora el layout en décimas (eco de estado, no medición)", () => {
+    // Los bytes 5–6 llevan un campo constante del firmware (`27 03`/`79 02`
+    // idéntico en tramas de FC, SpO2 y presión): aceptarlo cerraba barridos
+    // en 1.6 s con 63–81 % inventados. Solo vale el byte clásico.
+    expect(
+      parseRealtimeFrame(
+        frame([3, 0, 0, 0, 0, 0xda, 0x03, ...zeros(7)]),
+        DEVICE,
+      ),
+    ).toEqual([]);
+    expect(
+      parseRealtimeFrame(
+        frame([3, 0, 0, 0, 0, 0x27, 0x03, ...zeros(7)]),
+        DEVICE,
+      ),
+    ).toEqual([]);
   });
 
   it("descarta un SpO2 en décimas imposible", () => {
@@ -122,5 +132,28 @@ describe("parseRealtimeFrame — FC", () => {
         DEVICE,
       ),
     ).toEqual([]);
+  });
+
+  it("descarta un SpO2 bajo aunque el crudo pase (fantasma `79 02` → 63 %)", () => {
+    // Captura real: campo constante `79 02` en cada trama = 633 crudo = 63 %.
+    // Sin gate final el barrido cerraba en 1.6 s con basura.
+    expect(
+      parseRealtimeFrame(
+        frame([3, 0, 0, 0, 0, 0x79, 0x02, ...zeros(7)]),
+        DEVICE,
+      ),
+    ).toEqual([]);
+    expect(parseRealtimeFrame(frame([3, 0, 65, ...zeros(11)]), DEVICE)).toEqual(
+      [],
+    );
+  });
+
+  it("descarta una FC clásica fuera del rango humano", () => {
+    expect(
+      parseRealtimeFrame(frame([1, 0, 250, ...zeros(11)]), DEVICE),
+    ).toEqual([]);
+    expect(parseRealtimeFrame(frame([1, 0, 25, ...zeros(11)]), DEVICE)).toEqual(
+      [],
+    );
   });
 });

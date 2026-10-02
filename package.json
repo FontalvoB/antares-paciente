@@ -11,8 +11,9 @@
     "test": "vitest run",
     "i18n:check": "node scripts/i18n-scan.mjs",
     "preview": "vite preview",
-    "sync": "npm run build && npx cap sync",
-    "sync:dev": "npm run build:dev && npx cap sync",
+    "sync": "npm run build && npx cap sync && npm run protect:ios-spm",
+    "sync:dev": "npm run build:dev && npx cap sync && npm run protect:ios-spm",
+    "protect:ios-spm": "node scripts/protect-package-swift.mjs",
     "release:check": "node -e \"const s=require('fs').readFileSync('ios/App/App/Info.plist','utf8'); if(s.includes('NSAllowsArbitraryLoads')||s.includes('NSAllowsLocalNetworking')){console.error('FALLA: Info.plist tiene ATS de desarrollo; revertir antes de archivar.');process.exit(1)} console.log('Info.plist OK para release (sin ATS de desarrollo).')\""
   },
   "dependencies": {
@@ -27,6 +28,7 @@
     "@capacitor/keyboard": "^8.0.5",
     "@capacitor/push-notifications": "^8.1.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@elevenlabs/react": "^1.16.0",
     "@ionic/react": "^8.8.18",
     "@react-three/drei": "10.7.8",
     "@react-three/fiber": "9.7.0",

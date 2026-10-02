@@ -35,10 +35,13 @@ import {
   fetchMyContext,
   fetchMyRequests,
   fetchProfessionalsCatalog,
+  fetchSpecialties,
   hasRealSession,
+  rescheduleAppointment as rescheduleAppointmentApi,
   type AppointmentDto,
   type AppointmentRequestDto,
   type ProfessionalCatalogItem,
+  type SpecialtyDto,
 } from "../utils/appointmentsApi";
 import {
   buildRealAppointments,
@@ -49,6 +52,7 @@ import {
 } from "../data/appointments";
 import { useT } from "../i18n/I18nContext";
 import type {
+  ChatImageAttachment,
   ChatMessage,
   ChatSuggestion,
   Flow,
@@ -106,7 +110,17 @@ interface AppState {
   activateSos: () => void;
   openVoice: () => void;
   closeVoice: () => void;
-  sendChat: (text: string) => void;
+  sendChat: (text: string, image?: ChatImageAttachment) => void;
+  /**
+   * Turno de chat para el agente de voz (agente-asistente-citas D4): mismo
+   * pipeline que `sendChat` (streaming + fallbacks + persistencia en la
+   * lista) pero retornando el mensaje final del bot para vocalizarlo.
+   * `null` = el asistente no respondió (la UI de voz lo comunica).
+   */
+  sendVoiceMessage: (
+    text: string,
+    image?: ChatImageAttachment,
+  ) => Promise<ChatMessage | null>;
   /** Hay mensajes del bot sin ver en el thread (dot en la tab Chat). */
   chatUnread: boolean;
   /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
@@ -150,17 +164,61 @@ interface AppState {
    * activos. Nunca contiene nombres inventados.
    */
   teamProfessionals: TeamProfessional[] | null;
+  /**
+   * Catálogo de especialidades del ERP (`erp.specialties`, null = aún no
+   * cargado). Fuente del Paso 1 del wizard en modo real.
+   */
+  specialties: SpecialtyDto[] | null;
+  /** Catálogo crudo de profesionales (null = aún no cargado). */
+  professionalsCatalog: ProfessionalCatalogItem[] | null;
+  /**
+   * Contexto asistencial del paciente (ids para disponibilidad/solicitudes,
+   * null = aún no cargado). `orgId` vacío = backend sin organización
+   * resuelta (el modo especialidad lo exige: el wizard lo comunica).
+   */
+  patientCareContext: {
+    patientId: string | null;
+    orgId: string;
+    clinicId: string | null;
+    locationId: string | null;
+  } | null;
   refreshAppointments: () => Promise<void>;
   /** Envía la solicitud contra el backend (modo real). Devuelve éxito. */
   submitAppointmentRequest: (input: {
-    typeId: string;
+    /** Ruta legacy por tipo mock (demo/compatibilidad). */
+    typeId?: string;
+    /** Ruta por catálogo: especialidad elegida (veredicto D1). */
+    specialtyId?: string;
+    /**
+     * Profesional elegido por id exacto; `null` = "cualquier profesional
+     * disponible" (solicitud sin asignar, la gestiona el ERP). En la ruta
+     * legacy se ignora (se resolvía por regex, pendiente de retirar).
+     */
+    professionalId?: string | null;
     date: string;
     time: string;
+    /**
+     * Inicio exacto en ISO (start de un slot disponible). Si se provee, se
+     * envía tal cual como `preferred_start` (2.A.4); si no, se reconstruye
+     * desde `date`+`time` (legado).
+     */
+    preferredStart?: string;
     reason: string;
     mode: string;
+    /** "Urgent" = entrada directa Urgencia (prioridad de triage del staff). */
+    priority?: "Normal" | "Urgent";
   }) => Promise<boolean>;
   /** Cancela una cita real. Devuelve éxito. */
   cancelAppointmentById: (id: string, reason: string) => Promise<boolean>;
+  /**
+   * Reprograma una cita confirmada al inicio indicado (ISO de un slot
+   * disponible). El 409 del backend (límite, anticipación, conflicto) vuelve
+   * como mensaje presentable. 2.A.5.
+   */
+  rescheduleAppointmentById: (
+    id: string,
+    input: { newStart: string; reason?: string | null },
+  ) => Promise<{ ok: boolean; error?: string }>;
   /** Abre la sala virtual de una cita. */
   openRoom: (appointment: ListedAppointment) => void;
   closeRoom: () => void;
@@ -327,9 +385,12 @@ export function AppProvider({
   const [catalog, setCatalog] = useState<ProfessionalCatalogItem[] | null>(
     null,
   );
+  const [specialties, setSpecialties] = useState<SpecialtyDto[] | null>(null);
   const [patientCtx, setPatientCtx] = useState<{
     patientId: string | null;
     orgId: string;
+    clinicId: string | null;
+    locationId: string | null;
   } | null>(null);
   const [appointments, setAppointments] = useState<AppointmentDto[] | null>(
     null,
@@ -360,16 +421,25 @@ export function AppProvider({
       // Sin organizations/tree: el org id REAL del paciente viene del
       // /telemedicine/me (resuelto por el backend desde su clínica ERP).
       // Llamar al árbol ERP con aud=app daba 403 en cada arranque.
-      const [me, appts, reqs, catalogData] = await Promise.all([
+      // Núcleo crítico (citas/solicitudes/contexto) en paralelo; catálogos
+      // best-effort independientes para que su fallo no tumbe la vista
+      // (QA-010): el wizard degrada a "cualquiera"/reintento en ese caso.
+      const [me, appts, reqs] = await Promise.all([
         fetchMyContext(),
         fetchMyAppointments({ pageSize: 100 }),
         fetchMyRequests(),
-        fetchProfessionalsCatalog(),
       ]);
-      setCatalog(catalogData.data);
+      const [catalogData, specialtiesData] = await Promise.all([
+        fetchProfessionalsCatalog().catch(() => null),
+        fetchSpecialties().catch(() => null),
+      ]);
+      setCatalog(catalogData?.data ?? null);
+      setSpecialties(specialtiesData);
       setPatientCtx({
         patientId: me.patient?.id ?? null,
         orgId: me.patient?.organizationId ?? "",
+        clinicId: me.patient?.clinicId ?? null,
+        locationId: me.patient?.locationId ?? null,
       });
       setAppointments(appts.items);
       setRequests(reqs);
@@ -383,14 +453,22 @@ export function AppProvider({
     }
   }, []);
 
-  // Con sesión real, refresca citas/catálogo al entrar a la app (Home o Citas)
-  // y cuando la pantalla de citas se vuelve visible. No en la sala (la cita
-  // activa vive en el contexto).
+  // Con sesión real, refresca al entrar a Citas (design §3.2: refresco por
+  // visibilidad) y tras cada mutación (los handlers llaman a refresh).
+  // No en la sala (la cita activa vive en el contexto). QA-010.
   useEffect(() => {
-    if (realMode && screen !== "room" && !appointments) {
+    if (realMode && screen === "book") {
       void refreshAppointments();
     }
-  }, [realMode, screen, appointments, refreshAppointments]);
+  }, [realMode, screen, refreshAppointments]);
+
+  // Carga inicial una sola vez para los demás consumidores (equipo del
+  // perfil, sala): sin esto el catálogo solo existiría tras visitar Citas.
+  useEffect(() => {
+    if (realMode && appointments === null && !appointmentsLoading) {
+      void refreshAppointments();
+    }
+  }, [realMode, appointments, appointmentsLoading, refreshAppointments]);
 
   useEffect(() => {
     if (!realMode) return;
@@ -452,13 +530,59 @@ export function AppProvider({
 
   const submitAppointmentRequest = useCallback(
     async (input: {
-      typeId: string;
+      typeId?: string;
+      specialtyId?: string;
+      professionalId?: string | null;
       date: string;
       time: string;
+      preferredStart?: string;
       reason: string;
       mode: string;
+      priority?: "Normal" | "Urgent";
     }): Promise<boolean> => {
-      if (!patientCtx?.patientId || !catalog) return false;
+      if (!patientCtx?.patientId) return false;
+
+      // Ruta por catálogo (veredicto D1): especialidad elegida + profesional
+      // opcional por id exacto. `professionalId = null` = "cualquier
+      // profesional disponible" (el ERP asigna después; no exige catálogo).
+      // Sin regex.
+      if (input.specialtyId) {
+        const selected =
+          input.professionalId != null && catalog
+            ? catalog.find((p) => p.id === input.professionalId)
+            : undefined;
+        // Id explícito que no existe en el catálogo → no inventar: abortar.
+        if (input.professionalId != null && !selected) return false;
+        try {
+          await createRequest({
+            patientId: patientCtx.patientId,
+            organizationId: patientCtx.orgId,
+            specialtyId: input.specialtyId,
+            ...(selected
+              ? {
+                  professionalId: selected.id,
+                  clinicId: selected.clinicIds[0],
+                  locationId: selected.locations[0]?.id,
+                }
+              : {}),
+            // 2.A.4: el slot elegido viaja como preferred_start exacto.
+            preferredStart:
+              input.preferredStart ??
+              new Date(`${input.date}T${input.time}:00`).toISOString(),
+            reason: input.reason.trim(),
+            priority: input.priority,
+          });
+          await refreshAppointments();
+          return true;
+        } catch (err) {
+          console.warn("[appointments] No se pudo enviar la solicitud:", err);
+          return false;
+        }
+      }
+
+      // Ruta legacy por tipo (solo demo sin sesión): conserva el
+      // comportamiento anterior con los mocks de tipos/equipo.
+      if (!input.typeId || !catalog) return false;
       const professional = realProfessionalByType(
         input.typeId as "medica" | "psicologia" | "nutricion" | "urgencia",
         catalog,
@@ -500,6 +624,29 @@ export function AppProvider({
       } catch (err) {
         console.warn("[appointments] No se pudo cancelar la cita:", err);
         return false;
+      }
+    },
+    [refreshAppointments],
+  );
+
+  const rescheduleAppointmentById = useCallback(
+    async (
+      id: string,
+      input: { newStart: string; reason?: string | null },
+    ): Promise<{ ok: boolean; error?: string }> => {
+      try {
+        await rescheduleAppointmentApi(id, {
+          newStart: input.newStart,
+          reason: input.reason ?? null,
+        });
+        await refreshAppointments();
+        return { ok: true };
+      } catch (err) {
+        console.warn("[appointments] No se pudo reprogramar la cita:", err);
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : undefined,
+        };
       }
     },
     [refreshAppointments],
@@ -606,6 +753,141 @@ export function AppProvider({
   const chatUserId = useCallback(
     () => (user.id || user.cedula || user.email || "").trim(),
     [user.id, user.cedula, user.email],
+  );
+
+  /**
+   * Turno completo de conversación con el asistente (change
+   * agente-asistente-citas D1.2): pinta el mensaje del usuario, hace
+   * streaming del bot token a token y, al finalizar, SOBREESCRIBE el texto
+   * del turno con la respuesta canónica (`answer`) para que las pasadas
+   * duplicadas alrededor de tool-calls jamás queden en la burbuja. Ante
+   * fallo sin tokens pintados cae a la vía bloqueante y luego al fallback
+   * local. Usado por `sendChat` (fire-and-forget) y por el agente de voz
+   * (`sendVoiceMessage`), que necesita el mensaje final para vocalizarlo.
+   */
+  const runChatTurn = useCallback(
+    async (
+      text: string,
+      image?: ChatImageAttachment,
+    ): Promise<ChatMessage | null> => {
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        text,
+        time: nowLabel(),
+        threadId,
+        image: image ? { dataUrl: image.dataUrl } : undefined,
+      };
+
+      // Si solo estaba el saludo inicial, se remueve para dar paso a la conversación
+      setChat((prev) => {
+        const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
+        return isOnlyWelcome ? [userMsg] : [...prev, userMsg];
+      });
+
+      // Vía bloqueante como respaldo del streaming (misma respuesta final).
+      const tryBlockingChat = async (): Promise<ChatMessage | null> => {
+        try {
+          const result = await sendChatMessage(text, threadId, image);
+          const suggestion = result.suggestions?.find(
+            (s) => s.type === "appointment",
+          );
+          return {
+            id: crypto.randomUUID(),
+            role: "bot",
+            text: result.answer ?? result.reply,
+            time: nowLabel(),
+            threadId: result.threadId || threadId,
+            cta: suggestion,
+            executionId: result.executionId,
+          };
+        } catch {
+          return null;
+        }
+      };
+
+      // Mensaje de voz/fallback compartido: devuelve el mensaje del bot
+      // creado por este turno (o null) para que la voz lo vocalice.
+      let turnBotMessage: ChatMessage | null = null;
+
+      const emitBotMessage = (msg: ChatMessage) => {
+        turnBotMessage = msg;
+        setChat((prev) => {
+          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
+          return isOnlyWelcome ? [msg] : [...prev, msg];
+        });
+      };
+
+      // Streaming: el mensaje del bot se crea vacío y se rellena token
+      // a token. Si el stream falla sin haber pintado nada, se intenta
+      // la vía bloqueante y al final el fallback local.
+      const liveId = crypto.randomUUID();
+      let painted = "";
+      setChat((prev) => [
+        ...prev,
+        { id: liveId, role: "bot", text: "", time: nowLabel(), threadId },
+      ]);
+      const appendToken = (piece: string) => {
+        painted += piece;
+        const snapshot = painted;
+        setChat((prev) =>
+          prev.map((m) => (m.id === liveId ? { ...m, text: snapshot } : m)),
+        );
+      };
+      try {
+        const result = await streamChatMessage(
+          text,
+          threadId,
+          { onToken: appendToken },
+          image,
+        );
+        const suggestion = result.suggestions?.find(
+          (s) => s.type === "appointment",
+        );
+        // Consolidación canónica (agente-asistente-citas D1.2): el texto
+        // final del turno SIEMPRE se sustituye por `answer` (respuesta del
+        // modelo); así las pasadas duplicadas del stream jamás quedan en la
+        // burbuja, ni siquiera con desincronización de red.
+        const canonical = result.answer ?? result.reply;
+        const finalBot: ChatMessage = {
+          id: liveId,
+          role: "bot",
+          text: canonical,
+          time: nowLabel(),
+          threadId: result.threadId || threadId,
+          cta: suggestion,
+          executionId: result.executionId,
+        };
+        setChat((prev) => prev.map((m) => (m.id === liveId ? finalBot : m)));
+        turnBotMessage = finalBot;
+      } catch (err) {
+        if (!painted) {
+          // Sin streaming ni respuesta: se retira el vacío y va el fallback.
+          setChat((prev) => prev.filter((m) => m.id !== liveId));
+          const reply = await tryBlockingChat();
+          if (reply) {
+            emitBotMessage(reply);
+          } else {
+            // Safari serializa Error como {}: loguear el mensaje para ver
+            // el status real (p. ej. "Error al enviar mensaje (401)").
+            console.warn(
+              "[chat] Falló respuesta del AI service, usando fallback:",
+              err instanceof Error ? err.message : err,
+            );
+            const local = botReply(text, t);
+            emitBotMessage({
+              id: crypto.randomUUID(),
+              role: local.role,
+              text: local.text,
+              time: nowLabel(),
+              threadId,
+            });
+          }
+        }
+      }
+      return turnBotMessage;
+    },
+    [threadId, t],
   );
 
   /**
@@ -807,109 +1089,10 @@ export function AppProvider({
       activateSos: () => setSosActive(true),
       openVoice: () => setVoiceOpen(true),
       closeVoice: () => setVoiceOpen(false),
-      sendChat: (text) => {
-        const userMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "user",
-          text,
-          time: nowLabel(),
-          threadId,
-        };
-
-        // Si solo estaba el saludo inicial, se remueve para dar paso a la conversación
-        setChat((prev) => {
-          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
-          return isOnlyWelcome ? [userMsg] : [...prev, userMsg];
-        });
-
-        // Vía bloqueante como respaldo del streaming (misma respuesta final).
-        const tryBlockingChat = async (): Promise<ChatMessage | null> => {
-          try {
-            const result = await sendChatMessage(text, threadId);
-            const suggestion = result.suggestions?.find(
-              (s) => s.type === "appointment",
-            );
-            return {
-              id: crypto.randomUUID(),
-              role: "bot",
-              text: result.reply,
-              time: nowLabel(),
-              threadId: result.threadId || threadId,
-              cta: suggestion,
-              executionId: result.executionId,
-            };
-          } catch {
-            return null;
-          }
-        };
-
-        void (async () => {
-          // Streaming: el mensaje del bot se crea vacío y se rellena token
-          // a token. Si el stream falla sin haber pintado nada, se intenta
-          // la vía bloqueante y al final el fallback local.
-          const liveId = crypto.randomUUID();
-          let painted = "";
-          setChat((prev) => [
-            ...prev,
-            { id: liveId, role: "bot", text: "", time: nowLabel(), threadId },
-          ]);
-          const appendToken = (piece: string) => {
-            painted += piece;
-            const snapshot = painted;
-            setChat((prev) =>
-              prev.map((m) => (m.id === liveId ? { ...m, text: snapshot } : m)),
-            );
-          };
-          try {
-            const result = await streamChatMessage(text, threadId, {
-              onToken: appendToken,
-            });
-            const suggestion = result.suggestions?.find(
-              (s) => s.type === "appointment",
-            );
-            setChat((prev) =>
-              prev.map((m) =>
-                m.id === liveId
-                  ? {
-                      ...m,
-                      text: result.reply,
-                      threadId: result.threadId || threadId,
-                      cta: suggestion,
-                      executionId: result.executionId,
-                    }
-                  : m,
-              ),
-            );
-          } catch (err) {
-            if (!painted) {
-              // Sin streaming ni respuesta: se retira el vacío y va el fallback.
-              setChat((prev) => prev.filter((m) => m.id !== liveId));
-              const reply = await tryBlockingChat();
-              if (reply) {
-                setChat((prev) => [...prev, reply]);
-              } else {
-                // Safari serializa Error como {}: loguear el mensaje para ver
-                // el status real (p. ej. "Error al enviar mensaje (401)").
-                console.warn(
-                  "[chat] Falló respuesta del AI service, usando fallback:",
-                  err instanceof Error ? err.message : err,
-                );
-                const local = botReply(text, t);
-                setChat((prev) => [
-                  ...prev,
-                  {
-                    id: crypto.randomUUID(),
-                    role: local.role,
-                    text: local.text,
-                    time: nowLabel(),
-                    threadId,
-                  },
-                ]);
-              }
-            }
-          }
-        })();
+      sendChat: (text, image) => {
+        void runChatTurn(text, image);
       },
+      sendVoiceMessage: (text, image) => runChatTurn(text, image),
       hydrateChat: (messages) => {
         // Historial del thread (conversación completa o, con backends viejos,
         // el último mensaje inyectado). Si el chat solo tiene el mensaje de
@@ -1011,9 +1194,13 @@ export function AppProvider({
       appointmentsError,
       teamProfessional,
       teamProfessionals,
+      specialties,
+      professionalsCatalog: catalog,
+      patientCareContext: patientCtx,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
+      rescheduleAppointmentById,
       openRoom: (appointment) => {
         setRoomAppointment(appointment);
         setScreen("room");
@@ -1052,9 +1239,13 @@ export function AppProvider({
       appointmentsError,
       teamProfessional,
       teamProfessionals,
+      specialties,
+      catalog,
+      patientCtx,
       refreshAppointments,
       submitAppointmentRequest,
       cancelAppointmentById,
+      rescheduleAppointmentById,
       roomAppointment,
     ],
   );

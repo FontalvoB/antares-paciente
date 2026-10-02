@@ -165,13 +165,27 @@ describe("YcbtSession.measure", () => {
     expect(outcomes).toEqual([[true, "completed"]]);
   });
 
-  it("una lectura tardía dentro de la ventana cuenta como éxito", async () => {
+  it("el silencio total agota la ventana como falta de señal (no lentitud)", async () => {
     const session = await connectedSession();
     const outcomes: Array<[boolean, MeasureOutcome]> = [];
     session.measure("spo2", (ok, reason) => outcomes.push([ok, reason]));
 
-    // Sin lecturas: la ventana se agota → timeout.
-    await vi.advanceTimersByTimeAsync(61_000);
+    // Sin ni siquiera tramas: la ventana (90 s) se agota → no-signal.
+    await vi.advanceTimersByTimeAsync(91_000);
+    expect(outcomes).toEqual([[false, "no-signal"]]);
+  });
+
+  it("con tramas pero sin lecturas agota la ventana como timeout", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    session.measure("spo2", (ok, reason) => outcomes.push([ok, reason]));
+
+    // Live-status en ceros: hay radio pero nada decodifica → timeout, no señal.
+    for (let second = 0; second < 88; second++) {
+      emitOnC3(0x0600, [0, 0, 0, 0, 0, 0]);
+      await vi.advanceTimersByTimeAsync(1_000);
+    }
+    await vi.advanceTimersByTimeAsync(3_000);
     expect(outcomes).toEqual([[false, "timeout"]]);
   });
 
@@ -254,8 +268,62 @@ describe("YcbtSession.syncHistory — sueño pese al bitmap", () => {
     expect(sleep?.value).toBe(30);
     expect(sleep?.unit).toBe("min");
   });
+
+  it("el volcado por defecto no pide SpO2 (05 1a sin respuesta en capturas)", async () => {
+    const session = await connectedSession();
+    writes.length = 0;
+
+    const syncing = session.syncHistory();
+    // Todos los tipos agotan su watchdog sin responder: el dump completo.
+    await vi.advanceTimersByTimeAsync(120_000);
+    await syncing;
+
+    const queried = sentFrames().map((f) => f.type);
+    expect(queried).toContain(0x0502);
+    expect(queried).toContain(0x0504);
+    expect(queried).not.toContain(0x051a);
+  });
 });
-describe("YcbtSession.measure — reintento único del anillo", () => {
+describe("YcbtSession.stopMeasure", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    sinks.clear();
+    writes.length = 0;
+    collected.length = 0;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("para el barrido con cancelled y manda el disable de su modo", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    session.stopMeasure();
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(outcomes).toEqual([[false, "cancelled"]]);
+    expect(sentFrames()).toContainEqual({ type: 0x032f, payload: [0, 0] });
+    // Sin reintento ni cierre tardío después de cancelar.
+    await vi.advanceTimersByTimeAsync(31_000);
+    expect(outcomes).toHaveLength(1);
+  });
+
+  it("sin medida en curso es un no-op silencioso", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    session.stopMeasure();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(outcomes).toEqual([]);
+    expect(sentFrames()).toEqual([]);
+  });
+});
+
+describe("YcbtSession.measure — re-enganche persistente de la FC", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
@@ -267,7 +335,7 @@ describe("YcbtSession.measure — reintento único del anillo", () => {
     vi.useRealTimers();
   });
 
-  it("sin lecturas antes del reintento, re-arma el barrido una sola vez y luego cierra", async () => {
+  it("el SpO2 sin reintento espera la lectura hasta la ventana y luego cierra", async () => {
     const session = await connectedSession();
     const outcomes: Array<[boolean, MeasureOutcome]> = [];
     const done = new Promise<void>((resolve) => {
@@ -278,9 +346,11 @@ describe("YcbtSession.measure — reintento único del anillo", () => {
     });
 
     await vi.advanceTimersByTimeAsync(21_000);
-    // Inicial + el reintento único (no más).
-    expect(sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1).length).toBe(2);
-    expect(sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1 && f.payload[1] === 2).length).toBe(2);
+    // Solo el enable inicial: sin re-arme a los 20 s.
+    expect(
+      sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1)
+        .length,
+    ).toBe(1);
     expect(outcomes).toEqual([]);
 
     emitOnC3(0x0602, [97]);
@@ -301,7 +371,105 @@ describe("YcbtSession.measure — reintento único del anillo", () => {
     await vi.advanceTimersByTimeAsync(21_000);
 
     expect(outcomes).toEqual([[true, "completed"]]);
-    expect(sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1).length).toBe(1);
+    expect(
+      sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1)
+        .length,
+    ).toBe(1);
+  });
+
+  it("la FC no se toca a mitad de ventana: re-enganche solo en el borde", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    const done = new Promise<void>((resolve) => {
+      session.measure("heart_rate", (ok, reason) => {
+        outcomes.push([ok, reason]);
+        resolve();
+      });
+    });
+    const enables = () =>
+      sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 1)
+        .length;
+    const disables = () =>
+      sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 0)
+        .length;
+
+    // A los 10 s (y 20 s) sin nada: el sensor sigue calentando, ni un STOP.
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(enables()).toBe(1);
+    expect(disables()).toBe(0);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(enables()).toBe(1);
+    expect(disables()).toBe(0);
+    expect(outcomes).toEqual([]);
+    // Al agotarse la ventana (30 s): STOP primero…
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(enables()).toBe(1);
+    expect(disables()).toBe(1);
+    expect(outcomes).toEqual([]);
+    // …pausa de 3 s sin re-arme todavía…
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(enables()).toBe(1);
+    // …y luego el START de nuevo (una sola vez, sin duplicados).
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(enables()).toBe(2);
+    expect(disables()).toBe(1);
+    expect(outcomes).toEqual([]);
+
+    // Con lecturas cierra normal y no hay más re-enganches.
+    emitOnC3(0x0601, [72]);
+    emitOnC3(0x0601, [73]);
+    emitOnC3(0x0601, [74]);
+    await done;
+    expect(outcomes).toEqual([[true, "completed"]]);
+    await vi.advanceTimersByTimeAsync(40_000);
+    expect(enables()).toBe(2);
+    // El segundo STOP es el cierre de la propia medida, no otro re-enganche.
+    expect(disables()).toBe(2);
+  });
+
+  it("la FC extiende ventanas mudas y completa al medir en la segunda", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+
+    // Más allá de la ventana de 30 s sin nada: sigue midiendo, sin cierre.
+    await vi.advanceTimersByTimeAsync(34_000);
+    expect(outcomes).toEqual([]);
+
+    emitOnC3(0x0601, [72]);
+    emitOnC3(0x0601, [73]);
+    emitOnC3(0x0601, [74]);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(outcomes).toEqual([[true, "completed"]]);
+  });
+
+  it("la FC muda 5 ventanas cierra con falta de señal (sin tramas)", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+
+    // 4 ventanas extendidas sin nada: sigue abierta…
+    await vi.advanceTimersByTimeAsync(149_000);
+    expect(outcomes).toEqual([]);
+    // …y al agotarse la quinta cierra honesto, con su STOP.
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(outcomes).toEqual([[false, "no-signal"]]);
+    expect(
+      sentFrames().filter((f) => f.type === 0x032f && f.payload[0] === 0)
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("la FC con tramas pero sin lecturas cierra como timeout al tope", async () => {
+    const session = await connectedSession();
+    const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+
+    // Live-status en ceros: hay radio pero nada decodifica a FC.
+    for (let second = 0; second < 151; second++) {
+      emitOnC3(0x0600, [0, 0, 0, 0, 0, 0]);
+      await vi.advanceTimersByTimeAsync(1_000);
+    }
+    expect(outcomes).toEqual([[false, "timeout"]]);
   });
 });
-
