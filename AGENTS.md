@@ -106,10 +106,19 @@ silencio (hoy no hay `App.entitlements`).
 **Recarga en vivo** (opcional, dev): `npm run dev` + `CAP_LIVE_RELOAD=1 npx cap sync ios`
 (el device carga `http://10.50.30.99:5173`; requiere los extras iOS de arriba).
 
-**Checklist TestFlight**: `git pull` en main → `yarn install` → `npm run sync`
-→ subir `CURRENT_PROJECT_VERSION` (`cd ios/App && xcrun agvtool new-version -all N`)
-→ Xcode: scheme `App`, Any iOS Device, Product ▸ Archive ▸ Distribute App ▸
-App Store Connect ▸ Upload → esperar _Processing_ en TestFlight → grupo de testers.
+**Deploy a TestFlight (automatizado)**: push/merge a `dev` dispara
+`.github/workflows/ios-testflight.yml` (lint/tests/i18n/build → firma con
+fastlane Match → archive Release → IPA → upload a App Store Connect). Manual
+local: `bundle exec fastlane ios beta` (dry run sin upload:
+`bundle exec fastlane ios build`; primera firma: `bundle exec fastlane ios
+signing`). El build number se calcula solo (último de TestFlight + 1); la
+versión comercial se cambia a mano en Xcode. Guía completa: `docs/IOS_CICD_TESTFLIGHT.md`.
+
+**Checklist TestFlight manual (fallback sin CI)**: `git pull` en main →
+`yarn install` → `npm run sync` → subir `CURRENT_PROJECT_VERSION`
+(`cd ios/App && xcrun agvtool new-version -all N`) → Xcode: scheme `App`, Any
+iOS Device, Product ▸ Archive ▸ Distribute App ▸ App Store Connect ▸ Upload →
+esperar _Processing_ en TestFlight → grupo de testers.
 
 ## BEFORE CODING (obligatorio)
 
