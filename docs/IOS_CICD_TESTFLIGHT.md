@@ -220,14 +220,14 @@ bundle exec fastlane ios beta       # flujo COMPLETO hasta TestFlight
 
 Parámetros útiles (como opciones o variables de entorno):
 
-| Opción / variable                                      | Efecto                                                     |
-| ------------------------------------------------------ | ---------------------------------------------------------- |
-| `skip_web_build:true` / `FASTLANE_SKIP_WEB_BUILD=true` | No compila el bundle web (se usa el `dist/` existente)     |
-| `BUILD_NUMBER=42`                                      | Fuerza el número de build                                  |
-| `MATCH_READONLY=false`                                 | Permite a Match crear/renovar assets (solo lane `signing`) |
-| `WAIT_FOR_PROCESSING=false`                            | No esperar el procesamiento de Apple al subir              |
-| `TESTFLIGHT_GROUPS=Internos,Beta`                      | Asignar la build a grupos de testers                       |
-| `TESTFLIGHT_CHANGELOG="..."`                           | Texto "Qué probar" en TestFlight                           |
+| Opción / variable                                      | Efecto                                                                                                      |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `skip_web_build:true` / `FASTLANE_SKIP_WEB_BUILD=true` | No compila el bundle web (se usa el `dist/` existente)                                                      |
+| `BUILD_NUMBER=42`                                      | Fuerza el número de build                                                                                   |
+| `MATCH_READONLY=false`                                 | Permite a Match crear/renovar assets en `build`/`beta` si faltan (el lane `signing` ya escribe por defecto) |
+| `WAIT_FOR_PROCESSING=false`                            | No esperar el procesamiento de Apple al subir                                                               |
+| `TESTFLIGHT_GROUPS=Internos,Beta`                      | Asignar la build a grupos de testers                                                                        |
+| `TESTFLIGHT_CHANGELOG="..."`                           | Texto "Qué probar" en TestFlight                                                                            |
 
 El IPA y los dSYMs quedan en `ios/App/output/` (ignorado por git).
 
@@ -301,9 +301,9 @@ Actions ▸ **iOS · TestFlight** ▸ **Run workflow** ▸ elegir rama (normalme
 ### Renovar certificado / perfil (expiran ~1 año)
 
 ```bash
-MATCH_READONLY=false bundle exec fastlane ios signing
-# si Apple exige recrear desde cero:
-FORCE_SIGNING=true MATCH_READONLY=false bundle exec fastlane ios signing
+bundle exec fastlane ios signing
+# si Apple exige recrear desde cero (rota el certificado):
+FORCE_SIGNING=true bundle exec fastlane ios signing
 ```
 
 ### Rotar credenciales
@@ -313,7 +313,7 @@ FORCE_SIGNING=true MATCH_READONLY=false bundle exec fastlane ios signing
 | API Key (`.p8`)  | App Store Connect ▸ Integrations ▸ revocar key vieja ▸ crear nueva (App Manager) ▸ actualizar secretos `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` |
 | `MATCH_PASSWORD` | `bundle exec fastlane match change_password` (re-cifra el repo con la nueva) ▸ actualizar el secreto y el gestor de contraseñas                                                               |
 | PAT de lectura   | GitHub ▸ Settings ▸ Developer settings ▸ Fine-grained tokens ▸ regenerar ▸ recalcular `MATCH_GIT_BASIC_AUTHORIZATION`                                                                         |
-| Certificado      | lane `signing` con `MATCH_READONLY=false` (y `FORCE_SIGNING=true` si aplica); funciona aunque el cert viejo exista                                                                            |
+| Certificado      | `bundle exec fastlane ios signing` (con `FORCE_SIGNING=true` para recrearlo desde cero)                                                                                                       |
 
 ### Detener temporalmente el autodespliegue
 
@@ -333,7 +333,7 @@ FORCE_SIGNING=true MATCH_READONLY=false bundle exec fastlane ios signing
 
 | Síntoma                                                        | Causa / solución                                                                                                                                               |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Couldn't find a matching provisioning profile` en `gym`       | No se ejecutó `fastlane ios signing` o el repo de certs está vacío. Ejecutarlo con `MATCH_READONLY=false`                                                      |
+| `Couldn't find a matching provisioning profile` en `gym`       | No se ejecutó `fastlane ios signing` o el repo de certs está vacío. Ejecutar `bundle exec fastlane ios signing`                                                |
 | `No profiles for 'com.coppadresd.mobile' were found`           | Match no pudo clonar/descifrar: revisar `MATCH_PASSWORD` y `MATCH_GIT_BASIC_AUTHORIZATION`                                                                     |
 | `Failed to get matching certificates` / límite de certificados | Revocar certs viejos en [developer.apple.com](https://developer.apple.com/account/resources/certificates) ▸ Certificates, o regenerar con `FORCE_SIGNING=true` |
 | `ERROR ITMS-4238: Redundant Binary Upload`                     | Build number duplicado: el workflow usa `concurrency` y TestFlight+1; forzar `BUILD_NUMBER` o esperar a que Apple registre el build previo                     |

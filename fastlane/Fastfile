@@ -65,10 +65,10 @@ def match_profile_name
 end
 
 # Instala certificado + provisioning profile desde el repo de Match.
-# readonly=true (default): solo descarga; readonly=false solo para crear/renovar
-# (lane `signing`).
-def install_signing_assets(api_key)
-  readonly = ENV.fetch("MATCH_READONLY", "true") == "true"
+# - readonly: true (default) solo descarga (CI); el lane `signing` pasa false
+#   para crear/renovar. Se puede sobreescribir con MATCH_READONLY.
+# - force: recrea los assets aunque existan (rota el certificado; FORCE_SIGNING=1).
+def install_signing_assets(api_key, readonly: ENV.fetch("MATCH_READONLY", "true") == "true", force: false)
   if ENV["CI"] == "true" && ENV["MATCH_PASSWORD"].to_s.empty?
     UI.user_error!("MATCH_PASSWORD no configurado (GitHub Secret requerido en CI).")
   end
@@ -78,6 +78,7 @@ def install_signing_assets(api_key)
     app_identifier: APP_IDENTIFIER,
     team_id: apple_team_id,
     readonly: readonly,
+    force: force,
     api_key: api_key
   )
 end
@@ -205,7 +206,7 @@ platform :ios do
 
   desc "Crea o renueva el certificado 'Apple Distribution' y el profile App Store en el repo de Match"
   lane :signing do
-    install_signing_assets(asc_api_key)
+    install_signing_assets(asc_api_key, readonly: false, force: ENV["FORCE_SIGNING"] == "true")
     UI.success("✅ Firma de distribución lista (Match). Profile: #{match_profile_name}")
   end
 
