@@ -246,6 +246,25 @@ export function PanicOverlay() {
             }),
             "err",
           );
+        } else if (err.status === 409) {
+          // Ya existe una alerta activa: adoptarla en vez de fallar. El aviso
+          // (llamada/SMS) ya se disparó al crearla; para re-notificar hay que
+          // cancelarla con "Estoy bien" y activar de nuevo.
+          const active = await fetchActiveSosAlert();
+          if (active) {
+            setAlertId(active.id);
+            setRealAlert(active);
+            setFastPoll(true);
+            activateSos();
+            showToast(
+              t(
+                "Ya tenías una alerta SOS activa. Mostrándola; pulsa Estoy bien para cancelarla.",
+              ),
+              "ok",
+            );
+          } else {
+            showToast(err.message, "err");
+          }
         } else {
           showToast(err.message, "err");
         }

@@ -487,6 +487,81 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(screen.getByText("En curso…")).toBeTruthy();
   });
 
+  it("409 alerta activa: adopta la alerta existente en vez de fallar", async () => {
+    const { SosServiceError } = await import("../../services/sos/sos-service");
+    sosMock.activate.mockRejectedValue(
+      new SosServiceError(409, "Ya tienes una alerta SOS activa."),
+    );
+    const active = {
+      id: "a-8",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      voiceCallStatus: "in-progress",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.fetchActive.mockResolvedValue(active);
+
+    const { rerender } = render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    await flush();
+    // Adopta la alerta existente: el overlay queda activo con sus estados.
+    context.sosActive = true;
+    rerender(<PanicOverlay />);
+    await flush();
+
+    expect(context.activateSos).toHaveBeenCalledTimes(1);
+    expect(context.showToast).toHaveBeenCalledWith(
+      "Ya tenías una alerta SOS activa. Mostrándola; pulsa Estoy bien para cancelarla.",
+      "ok",
+    );
+    expect(screen.getByText("En curso…")).toBeTruthy();
+  });
+
+  it("409 alerta activa: adopta la alerta existente en vez de fallar", async () => {
+    const { SosServiceError } = await import("../../services/sos/sos-service");
+    sosMock.activate.mockRejectedValue(
+      new SosServiceError(409, "Ya tienes una alerta SOS activa."),
+    );
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-9",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      smsDeliveryStatus: "delivered",
+      voiceCallStatus: "completed",
+      voiceAnsweredBy: "human",
+      voiceDurationSeconds: 12,
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    });
+
+    const { rerender } = render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    await flush();
+    await flush();
+
+    // Adopta la alerta existente: activa el estado local y avisa sin error.
+    expect(context.activateSos).toHaveBeenCalledTimes(1);
+    expect(context.showToast).toHaveBeenCalledWith(
+      "Ya tenías una alerta SOS activa. Mostrándola; pulsa Estoy bien para cancelarla.",
+      "ok",
+    );
+    context.sosActive = true;
+    rerender(<PanicOverlay />);
+    await flush();
+    expect(screen.getByText("Contestada · 0:12")).toBeTruthy();
+  });
+
   it("canal Fallido: mensaje de degradación idéntico al NoConfigurado", async () => {
     sosMock.activate.mockResolvedValue({
       id: "a-3",
