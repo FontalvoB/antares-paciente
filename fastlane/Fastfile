@@ -92,11 +92,24 @@ def match_git_basic_authorization
   Base64.strict_encode64("#{user}:#{clean}")
 end
 
+# fastlane lee MATCH_PASSWORD directo de la env var para descifrar; si viene
+# con espacios o saltos de línea al borde (típico de un pbcopy al pegar el
+# secreto) falla con "Couldn't decrypt the repo". Se sanea en caliente.
+def sanitize_match_password!
+  raw = ENV["MATCH_PASSWORD"].to_s
+  clean = raw.strip
+  return if raw.empty? || clean == raw
+
+  UI.important("MATCH_PASSWORD tenía espacios/saltos de línea al borde; se saneó antes de descifrar.")
+  ENV["MATCH_PASSWORD"] = clean
+end
+
 # Instala certificado + provisioning profile desde el repo de Match.
 # - readonly: true (default) solo descarga (CI); el lane `signing` pasa false
 #   para crear/renovar. Se puede sobreescribir con MATCH_READONLY.
 # - force: recrea los assets aunque existan (rota el certificado; FORCE_SIGNING=1).
 def install_signing_assets(api_key, readonly: ENV.fetch("MATCH_READONLY", "true") == "true", force: false)
+  sanitize_match_password!
   if ENV["CI"] == "true" && ENV["MATCH_PASSWORD"].to_s.empty?
     UI.user_error!("MATCH_PASSWORD no configurado (GitHub Secret requerido en CI).")
   end
