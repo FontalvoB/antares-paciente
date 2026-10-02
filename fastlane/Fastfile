@@ -87,7 +87,7 @@ def match_git_basic_authorization
   end
   return clean if decoded&.include?(":")
 
-  user = ENV["MATCH_GIT_USER"].to_s.empty? ? "diomedescerda" : ENV["MATCH_GIT_USER"]
+  user = ENV["MATCH_GIT_USER"].to_s.empty? ? "FontalvoB" : ENV["MATCH_GIT_USER"]
   UI.important("MATCH_GIT_BASIC_AUTHORIZATION no es base64('usuario:token'); se interpreta como token crudo de #{user}.")
   Base64.strict_encode64("#{user}:#{clean}")
 end
