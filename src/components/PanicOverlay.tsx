@@ -324,7 +324,30 @@ export function PanicOverlay() {
     : t("Sin ubicación en esta alerta.");
 
   /** Estado de entrega por canal (solo modo real): refleja lo reportado. */
-  const deliveryLabel = (status: string | null, okLabel: string) => {
+  const deliveryLabel = (
+    status: string | null,
+    okLabel: string,
+    deliveryStatus?: string | null,
+    answeredBy?: string | null,
+    durationSeconds?: number | null,
+  ) => {
+    // Entrega real reportada por Twilio (statusCallback), tiene prioridad
+    // sobre el estado de aceptación del envío.
+    if (deliveryStatus === "delivered") return t("Entregado");
+    if (deliveryStatus === "undelivered") return t("No entregado");
+    if (deliveryStatus === "completed") {
+      const label =
+        answeredBy === "machine_start"
+          ? t("Contestada (buzón)")
+          : t("Contestada");
+      return durationSeconds && durationSeconds > 0
+        ? `${label} · ${durationSeconds} s`
+        : label;
+    }
+    if (deliveryStatus === "no-answer") return t("No contestada");
+    if (deliveryStatus === "busy") return t("Ocupado");
+    if (deliveryStatus === "canceled") return t("Cancelada");
+    if (deliveryStatus === "failed") return t("Falló");
     if (status === "Enviado") return okLabel;
     if (!status) return t("Pendiente");
     if (status === "Pendiente") return t("Enviando…");
@@ -339,6 +362,9 @@ export function PanicOverlay() {
       title: t("Llamada al contacto"),
       status: voiceStatus,
       okLabel: t("Realizada"),
+      deliveryStatus: realAlert?.voiceCallStatus ?? null,
+      answeredBy: realAlert?.voiceAnsweredBy ?? null,
+      durationSeconds: realAlert?.voiceDurationSeconds ?? null,
     },
     {
       key: "sms",
@@ -346,12 +372,18 @@ export function PanicOverlay() {
       title: t("SMS al contacto"),
       status: smsStatus,
       okLabel: t("Enviado"),
+      deliveryStatus: realAlert?.smsDeliveryStatus ?? null,
+      answeredBy: null,
+      durationSeconds: null,
     },
     {
       key: "push",
       ico: people,
       title: t("Equipo clínico"),
       status: realAlert?.pushChannelStatus ?? null,
+      deliveryStatus: null,
+      answeredBy: null,
+      durationSeconds: null,
       okLabel: t("Notificado"),
     },
   ];
@@ -616,12 +648,27 @@ export function PanicOverlay() {
                         </div>
                         <ul className="sos-delivery-list">
                           {deliveryRows.map((d) => {
-                            const tone =
-                              d.status === "Enviado"
-                                ? "ok"
-                                : !d.status || d.status === "Pendiente"
-                                  ? "pending"
-                                  : "bad";
+                            const label = deliveryLabel(
+                              d.status,
+                              d.okLabel,
+                              d.deliveryStatus,
+                              d.answeredBy,
+                              d.durationSeconds,
+                            );
+                            const okDelivery =
+                              d.deliveryStatus === "delivered" ||
+                              d.deliveryStatus === "completed" ||
+                              (!d.deliveryStatus && d.status === "Enviado");
+                            const pendingDelivery =
+                              !d.status ||
+                              d.status === "Pendiente" ||
+                              d.deliveryStatus === "sent" ||
+                              d.deliveryStatus === "queued";
+                            const tone = okDelivery
+                              ? "ok"
+                              : pendingDelivery
+                                ? "pending"
+                                : "bad";
                             return (
                               <li
                                 key={d.key}
@@ -629,7 +676,7 @@ export function PanicOverlay() {
                               >
                                 <IonIcon icon={d.ico} aria-hidden="true" />
                                 <span>{d.title}</span>
-                                <b>{deliveryLabel(d.status, d.okLabel)}</b>
+                                <b>{label}</b>
                               </li>
                             );
                           })}

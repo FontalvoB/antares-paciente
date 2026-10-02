@@ -63,6 +63,14 @@ export interface SosAlertDto {
    * "Timeout" | "NoConfigurado" | "Pendiente".
    */
   pushChannelStatus?: string | null;
+  /** Entrega reportada por Twilio (statusCallback SMS): "delivered" | "undelivered" | "failed" | "sent" | "queued". */
+  smsDeliveryStatus?: string | null;
+  /** Estado de la llamada reportado por Twilio: "completed" | "no-answer" | "busy" | "failed" | "canceled" | "in-progress" | "ringing" | "initiated" | "queued". */
+  voiceCallStatus?: string | null;
+  /** Respuesta detectada por Twilio (si hay detección de máquina): "human" | "machine_start". */
+  voiceAnsweredBy?: string | null;
+  /** Duración de la llamada en segundos (reportada al completarse). */
+  voiceDurationSeconds?: number | null;
   /** Ubicación persistida de la alerta. Null = no compartida (BUG-01 b). */
   location?: { latitude: number; longitude: number } | null;
 }

@@ -421,6 +421,30 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(screen.getByText("No disponible")).toBeTruthy();
   });
 
+  it("tarjeta de entrega: muestra llamada contestada y SMS entregado", async () => {
+    const outcome = {
+      id: "a-5",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      smsDeliveryStatus: "delivered",
+      voiceCallStatus: "completed",
+      voiceAnsweredBy: "human",
+      voiceDurationSeconds: 12,
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    // Phase 2: el callback de Twilio reporta el resultado real del canal.
+    expect(screen.getByText("Contestada · 12 s")).toBeTruthy();
+    expect(screen.getByText("Entregado")).toBeTruthy();
+  });
+
   it("canal Fallido: mensaje de degradación idéntico al NoConfigurado", async () => {
     sosMock.activate.mockResolvedValue({
       id: "a-3",
