@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { motion, MotionConfig } from "framer-motion";
 import {
   IonActionSheet,
+  IonList, IonItem, IonLabel, IonSkeletonText,
   IonButton,
   IonIcon,
   IonModal,
@@ -10,7 +11,7 @@ import {
   IonSegmentButton,
   IonSpinner,
 } from "@ionic/react";
-import { cameraOutline, imageOutline } from "ionicons/icons";
+import { cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline } from "ionicons/icons";
 import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
 import { MealFoodFlow } from "../components/MealFoodFlow";
@@ -25,6 +26,7 @@ import {
   queueHydration,
 } from "../services/offline/offline-queue-service";
 import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
+import { NutritionMetrics, NutritionWeek, NutritionWeightChart } from "../components/nutrition/NutritionInsights";
 import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { useProgram } from "../hooks/useProgram";
 import { useProgramScores } from "../hooks/useProgramScores";
@@ -46,7 +48,6 @@ import {
   deriveIntakeTotals,
   deriveMealSource,
   derivePlanTargets,
-  deriveTrend,
   deriveWaterGlasses,
   findMealLog,
 } from "../utils/nutritionIntake";
@@ -84,8 +85,8 @@ export function NutritionPage() {
   // (serie weight/bmi/hba1c). Queries compartidas con ProgramPage/Home —
   // TanStack deduplica por queryKey; errores degradan a estados vacíos
   // honestos (R5.2), nunca a toasts.
-  const { scores, isLoading: scoresLoading } = useProgramScores();
-  const { history: metricsHistory, isLoading: metricsLoading } =
+  const { scores, isLoading: scoresLoading, isError: scoresFailed, refetch: refetchScores } = useProgramScores();
+  const { history: metricsHistory, isLoading: metricsLoading, isError: metricsFailed, refetch: refetchMetrics } =
     useMetricsHistory();
   const { today: deviceToday } = useWearable();
   // Plan alimentario asignado (self-service, sin inscripción): metas clínicas
@@ -100,6 +101,11 @@ export function NutritionPage() {
   const [tab, setTab] = useState<
     "hoy" | "semana" | "indicaciones" | "historial"
   >("hoy");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const changeTab = (value: typeof tab) => {
+    setTab(value);
+    scrollRef.current?.scrollTo({ top: 0 });
+  };
 
   // S3: locale activo para números (es-ES coma decimal / en-US punto).
   const locale = lang === "en" ? "en-US" : "es-ES";
@@ -186,14 +192,6 @@ export function NutritionPage() {
   const hs = scores?.health_score ?? scores?.healthScore;
   const weekNutrition = hs?.dimensions?.nutrition ?? null;
   const weekPrevious = hs?.dimensions_previous?.nutrition ?? null;
-  const weekTrend = deriveTrend(weekNutrition, weekPrevious);
-  const weekTrendColor =
-    weekTrend === "up"
-      ? "var(--teal)"
-      : weekTrend === "down"
-        ? "var(--org)"
-        : "var(--mu)";
-
   // Historial (server): serie de peso real + subtítulos bmi/hba1c por fecha.
   const weightSeries = metricsHistory?.metrics.find(
     (m) => m.code.toLowerCase() === "weight",
@@ -531,13 +529,13 @@ export function NutritionPage() {
   }
 
   return (
-    <Screen>
-      <PageHeader title={t("Nutrición")} sub={t(planTitle)} />
+    <MotionConfig reducedMotion="user"><Screen className="ntr-screen">
+      <PageHeader title={t("Nutrición")} sub={nutritionPlan?.name || planTitle} />
 
       <IonSegment
-        className="plan-seg"
+        className="plan-seg ntr-tabs"
         value={tab}
-        onIonChange={(e) => setTab((e.detail.value as typeof tab) ?? "hoy")}
+        onIonChange={(e) => changeTab((e.detail.value as typeof tab) ?? "hoy")}
       >
         <IonSegmentButton value="hoy">{t("Hoy")}</IonSegmentButton>
         <IonSegmentButton value="semana">{t("Semana")}</IonSegmentButton>
@@ -546,7 +544,9 @@ export function NutritionPage() {
       </IonSegment>
 
       {/* Todo lo demás hace scroll: analizador + resumen + contenido del tab. */}
-      <Scroll>
+      <Scroll ref={scrollRef} className="ntr-scroll">
+        {(tab === "indicaciones" || tab === "historial") && <NutritionMetrics metrics={metricsHistory?.metrics ?? []} loading={metricsLoading} locale={locale} />}
+        {(tab === "hoy" || tab === "historial") && <>
         {/* ── Analizador de comida con IA (flujo real) ── */}
         <div
           className="card nut-ai-card"
@@ -559,8 +559,8 @@ export function NutritionPage() {
         >
           {flow === null && (
             <>
-              <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
-                📸 {t("Analiza tu comida con IA")}
+              <div className="ntr-ai-title">
+                <IonIcon icon={cameraOutline} aria-hidden="true" /> {t("Analiza tu comida con IA")}
               </div>
               <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
                 {t("Toma una foto y recibe calorías, macros y porción reales.")}
@@ -590,7 +590,8 @@ export function NutritionPage() {
           )}
         </div>
 
-        <div className="nut-goals-card">
+        </>}
+        {tab === "hoy" && <div className="nut-goals-card">
           <div className="nut-goals-head">
             <div className="nut-kicker">{t("Tu progreso de hoy")}</div>
             {kcalRatio != null && (
@@ -698,7 +699,7 @@ export function NutritionPage() {
               </span>
             </div>
           )}
-        </div>
+        </div>}
 
         {tab === "hoy" && (
           <>
@@ -874,88 +875,7 @@ export function NutritionPage() {
           </>
         )}
 
-        {tab === "semana" && (
-          <div style={{ padding: "12px 0" }}>
-            <div className="card" style={{ margin: "0 14px 12px" }}>
-              <div style={{ fontWeight: 700, marginBottom: 12 }}>
-                {t("📊 Adherencia semanal")}
-              </div>
-              {weekNutrition == null ? (
-                scoresLoading ? null : (
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: "var(--mu)",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {t("Sin datos de adherencia esta semana todavía")}
-                  </div>
-                )
-              ) : (
-                <div style={{ display: "flex", gap: 10 }}>
-                  <div
-                    style={{
-                      flex: 1,
-                      background: "var(--blue-l)",
-                      borderRadius: 12,
-                      padding: 12,
-                    }}
-                  >
-                    <div style={{ fontSize: 11, color: "var(--mu)" }}>
-                      {t("Esta semana")}
-                    </div>
-                    <div
-                      className="display"
-                      style={{
-                        fontSize: 22,
-                        fontWeight: 800,
-                        color: "var(--blue)",
-                      }}
-                    >
-                      {formatMetricValue(weekNutrition, 0, locale)}%
-                      {weekPrevious != null && (
-                        <span
-                          style={{
-                            fontSize: 16,
-                            marginLeft: 6,
-                            color: weekTrendColor,
-                          }}
-                        >
-                          {weekTrend === "up"
-                            ? "↑"
-                            : weekTrend === "down"
-                              ? "↓"
-                              : "—"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {weekPrevious != null && (
-                    <div
-                      style={{
-                        flex: 1,
-                        background: "var(--g0)",
-                        borderRadius: 12,
-                        padding: 12,
-                      }}
-                    >
-                      <div style={{ fontSize: 11, color: "var(--mu)" }}>
-                        {t("Semana anterior")}
-                      </div>
-                      <div
-                        className="display"
-                        style={{ fontSize: 22, fontWeight: 800 }}
-                      >
-                        {formatMetricValue(weekPrevious, 0, locale)}%
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {tab === "semana" && <NutritionWeek current={weekNutrition} previous={weekPrevious} loading={scoresLoading} failed={scoresFailed} onRetry={() => void refetchScores()} locale={locale} />}
 
         {tab === "indicaciones" && (
           <NutritionPlanTab
@@ -969,7 +889,21 @@ export function NutritionPage() {
         )}
 
         {tab === "historial" && (
-          <div className="card" style={{ margin: 14, padding: 0 }}>
+          <div className="ntr-history-view">
+            <section className="ntr-card ntr-meal-history">
+              <div className="ntr-section-title"><IonIcon icon={restaurantOutline} /><h2>{t("Historial de comidas")}</h2></div>
+              <p className="ntr-muted">{t("Registros disponibles de hoy")}</p>
+              <IonList lines="none">
+                {(nutContent?.nutritionIntakeLogs ?? []).filter(log => log.mealCode !== 'agua').map(log => <IonItem key={log.mealCode} button detail={false} onClick={() => setFlow({ meal: log.mealCode as Exclude<MealCode, "agua">, mode: "detail", startAt: "detail" })}>
+                  <span className="ntr-log-icon" slot="start"><IonIcon icon={restaurantOutline} /></span>
+                  <IonLabel><h3>{t(MEAL_LABELS[log.mealCode])}</h3><p>{formatDateForDisplay(log.localDate)}</p><p>{[log.calories != null ? formatMetricValue(log.calories, 0, locale) + ' kcal' : '', log.proteinG != null ? formatMetricValue(log.proteinG, 0, locale) + 'g P' : '', log.carbsG != null ? formatMetricValue(log.carbsG, 0, locale) + 'g C' : '', log.fatG != null ? formatMetricValue(log.fatG, 0, locale) + 'g G' : ''].filter(Boolean).join(' · ')}</p></IonLabel>
+                  <IonIcon icon={chevronForwardOutline} slot="end" />
+                </IonItem>)}
+              </IonList>
+              {!(nutContent?.nutritionIntakeLogs ?? []).some(log => log.mealCode !== 'agua') && <div className="ntr-empty">{t("Aún no has registrado comidas hoy.")}<IonButton fill="clear" onClick={() => changeTab('hoy')}>{t("Registrar comida")}</IonButton></div>}
+            </section>
+            <div className="ntr-card ntr-weight-history">
+            {weightSeries && weightSeries.points.length > 0 && <NutritionWeightChart series={weightSeries} locale={locale} />}
             <div
               style={{
                 background: "var(--navy)",
@@ -978,7 +912,7 @@ export function NutritionPage() {
                 fontWeight: 700,
               }}
             >
-              {t("📉 Evolución de peso")}
+              {t("Mediciones")}
             </div>
             {weightSeries && weightSeries.points.length > 0 ? (
               <>
@@ -1010,7 +944,7 @@ export function NutritionPage() {
                       }}
                     >
                       <div
-                        style={{ width: 48, fontSize: 11, color: "var(--mu)" }}
+                        style={{ width: 74, flexShrink: 0, fontSize: 10, color: "var(--mu)", whiteSpace: "nowrap" }}
                       >
                         {formatDateForDisplay(row.date)}
                       </div>
@@ -1051,7 +985,7 @@ export function NutritionPage() {
                   );
                 })}
                 {weightTarget && (
-                  <div style={{ padding: 12, background: "#F8FBF8" }}>
+                  <div style={{ padding: 12, background: "var(--teal-l)" }}>
                     <div style={{ fontSize: 11, color: "var(--mu)" }}>
                       {t("Meta")}
                     </div>
@@ -1059,7 +993,7 @@ export function NutritionPage() {
                   </div>
                 )}
               </>
-            ) : metricsLoading ? null : (
+            ) : metricsLoading ? <IonSkeletonText animated className="ntr-skeleton" /> : (
               <div
                 style={{
                   padding: 16,
@@ -1069,8 +1003,10 @@ export function NutritionPage() {
                 }}
               >
                 {t("Aún no hay mediciones registradas")}
+                {metricsFailed && <IonButton fill="clear" onClick={() => void refetchMetrics()}>{t("Reintentar")}</IonButton>}
               </div>
             )}
+          </div>
           </div>
         )}
       </Scroll>
@@ -1148,6 +1084,6 @@ export function NutritionPage() {
           )}
         </div>
       </IonModal>
-    </Screen>
+    </Screen></MotionConfig>
   );
 }

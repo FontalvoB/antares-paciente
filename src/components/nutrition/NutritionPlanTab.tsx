@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { useMemo } from "react";
-import { IonButton, IonSkeletonText } from "@ionic/react";
+import { IonButton, IonSkeletonText, IonIcon } from "@ionic/react";
+import { leafOutline, waterOutline, restaurantOutline, timeOutline } from "ionicons/icons";
+import { RingProgress } from "../RingProgress";
 import { useT } from "../../i18n/I18nContext";
 import { formatMetricValue } from "../../data/metrics";
 import { mealTypeToCode } from "../../utils/mealTypeToCode";
@@ -171,8 +173,9 @@ export function NutritionPlanTab({
 
   if (plan) {
     return (
-      <>
-        <div className="card nut-plan-card">
+      <div className="ntr-plan-view">
+        <div className="ntr-card ntr-plan-overview">
+          <div className="ntr-section-title"><IonIcon icon={leafOutline} /><h2>{t("Tu plan nutricional")}</h2></div>
           {plan.name && <div className="nut-plan-name">{plan.name}</div>}
           {plan.targetCondition && (
             <div className="nut-plan-cond">
@@ -182,7 +185,10 @@ export function NutritionPlanTab({
           {plan.description && (
             <div className="nut-plan-desc">{plan.description}</div>
           )}
-          {goalRows.map((row) => (
+          <div className="ntr-plan-targets">
+          {plan.dailyCalorieTarget != null && <div className="ntr-calorie-target"><RingProgress value={1} size={132} stroke={11} trackColor="var(--blue-l)" gradient={['var(--blue)', 'var(--teal)']}><strong>{formatMetricValue(plan.dailyCalorieTarget, 0, locale)} kcal</strong></RingProgress><b>{t("Calorías diarias")}</b><span>{t("Objetivo del plan")}</span></div>}
+          <div className="ntr-target-list">
+          {goalRows.filter(row => row.label !== 'Calorías diarias').map((row) => (
             <div key={row.label} className="nut-plan-row">
               <span className="nut-plan-ico" aria-hidden="true">
                 {row.emoji}
@@ -191,22 +197,30 @@ export function NutritionPlanTab({
               <span className="nut-plan-val">{row.value}</span>
             </div>
           ))}
+          </div>
+          </div>
+          <p className="ntr-plan-caption">{t("Metas diarias indicadas por tu nutricionista.")}</p>
+        </div>
+        {(waterMl != null || plan.mealTiming) && <section className="ntr-card">
+          <div className="ntr-section-title"><IonIcon icon={restaurantOutline} /><h2>{t("Objetivos del día")}</h2></div>
+          <div className="ntr-daily-goals">
           {waterMl != null && (
-            <div className="nut-plan-row">
-              <span className="nut-plan-ico" aria-hidden="true">
-                💧
-              </span>
-              <span className="nut-plan-label">{t("Agua diaria")}</span>
-              <span className="nut-plan-val">
+            <div className="ntr-daily-goal">
+              <IonIcon icon={waterOutline} aria-hidden="true" />
+              <span>{t("Agua diaria")}</span>
+              <strong>
                 {formatMetricValue(waterMl, 0, locale)} ml
-              </span>
+              </strong>
             </div>
           )}
-        </div>
+          {plan.mealTiming && <div className="ntr-daily-goal"><IonIcon icon={timeOutline} aria-hidden="true" /><span>{t("Horario sugerido")}</span><strong>{plan.mealTiming}</strong></div>}
+          </div>
+        </section>}
+        {mealCards.length > 0 && <div className="ntr-meals-heading"><span className="ntr-eyebrow">{t("Recomendaciones personalizadas")}</span><h2>{t("Tu alimentación, paso a paso")}</h2></div>}
         {mealCards.map((m, idx) => (
           <motion.article
             key={m.key}
-            className="meal-card"
+            className="meal-card ntr-prescribed-meal"
             initial={{ opacity: 0, y: 18 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-32px" }}
@@ -218,7 +232,7 @@ export function NutritionPlanTab({
           >
             <div className="meal-hdr">
               <span className="meal-ico" aria-hidden="true">
-                {m.emoji}
+                <IonIcon icon={restaurantOutline} />
               </span>
               <span className="meal-title">
                 {m.labelIsKey ? t(m.label) : m.label}
@@ -260,7 +274,7 @@ export function NutritionPlanTab({
             </div>
           </motion.article>
         ))}
-      </>
+      </div>
     );
   }
 
