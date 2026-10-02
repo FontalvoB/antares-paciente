@@ -441,8 +441,50 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     await activate();
 
     // Phase 2: el callback de Twilio reporta el resultado real del canal.
-    expect(screen.getByText("Contestada · 12 s")).toBeTruthy();
+    expect(screen.getByText("Contestada · 0:12")).toBeTruthy();
     expect(screen.getByText("Entregado")).toBeTruthy();
+  });
+
+  it("tarjeta de entrega: muestra buzón de voz cuando contestó una máquina", async () => {
+    const outcome = {
+      id: "a-6",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      smsDeliveryStatus: "delivered",
+      voiceCallStatus: "completed",
+      voiceAnsweredBy: "machine_start",
+      voiceDurationSeconds: 20,
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    expect(screen.getByText("Buzón de voz")).toBeTruthy();
+    expect(screen.getByText("Entregado")).toBeTruthy();
+  });
+
+  it("tarjeta de entrega: muestra llamada en curso antes del resultado final", async () => {
+    const outcome = {
+      id: "a-7",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      voiceCallStatus: "in-progress",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    expect(screen.getByText("En curso…")).toBeTruthy();
   });
 
   it("canal Fallido: mensaje de degradación idéntico al NoConfigurado", async () => {

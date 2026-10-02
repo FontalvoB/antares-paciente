@@ -323,6 +323,13 @@ export function PanicOverlay() {
     ? t("Tu ubicación fue compartida con tu equipo.")
     : t("Sin ubicación en esta alerta.");
 
+  /** Duración de llamada en formato m:ss (65 → "1:05"). */
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.max(0, Math.floor(seconds % 60));
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
   /** Estado de entrega por canal (solo modo real): refleja lo reportado. */
   const deliveryLabel = (
     status: string | null,
@@ -336,13 +343,18 @@ export function PanicOverlay() {
     if (deliveryStatus === "delivered") return t("Entregado");
     if (deliveryStatus === "undelivered") return t("No entregado");
     if (deliveryStatus === "completed") {
-      const label =
-        answeredBy === "machine_start"
-          ? t("Contestada (buzón)")
-          : t("Contestada");
+      if (answeredBy === "machine_start") return t("Buzón de voz");
+      const label = t("Contestada");
       return durationSeconds && durationSeconds > 0
-        ? `${label} · ${durationSeconds} s`
+        ? `${label} · ${formatDuration(durationSeconds)}`
         : label;
+    }
+    if (
+      deliveryStatus === "in-progress" ||
+      deliveryStatus === "initiated" ||
+      deliveryStatus === "ringing"
+    ) {
+      return t("En curso…");
     }
     if (deliveryStatus === "no-answer") return t("No contestada");
     if (deliveryStatus === "busy") return t("Ocupado");
@@ -655,15 +667,23 @@ export function PanicOverlay() {
                               d.answeredBy,
                               d.durationSeconds,
                             );
+                            const isVoicemail =
+                              d.deliveryStatus === "completed" &&
+                              d.answeredBy === "machine_start";
                             const okDelivery =
-                              d.deliveryStatus === "delivered" ||
-                              d.deliveryStatus === "completed" ||
-                              (!d.deliveryStatus && d.status === "Enviado");
+                              !isVoicemail &&
+                              (d.deliveryStatus === "delivered" ||
+                                d.deliveryStatus === "completed" ||
+                                (!d.deliveryStatus && d.status === "Enviado"));
                             const pendingDelivery =
+                              isVoicemail ||
                               !d.status ||
                               d.status === "Pendiente" ||
                               d.deliveryStatus === "sent" ||
-                              d.deliveryStatus === "queued";
+                              d.deliveryStatus === "queued" ||
+                              d.deliveryStatus === "in-progress" ||
+                              d.deliveryStatus === "initiated" ||
+                              d.deliveryStatus === "ringing";
                             const tone = okDelivery
                               ? "ok"
                               : pendingDelivery
