@@ -368,13 +368,6 @@ export function PanicOverlay() {
         ? `${label} · ${formatDuration(durationSeconds)}`
         : label;
     }
-    if (
-      deliveryStatus === "in-progress" ||
-      deliveryStatus === "initiated" ||
-      deliveryStatus === "ringing"
-    ) {
-      return t("En curso…");
-    }
     if (deliveryStatus === "no-answer") return t("No contestada");
     if (deliveryStatus === "busy") return t("Ocupado");
     if (deliveryStatus === "canceled") return t("Cancelada");
@@ -689,20 +682,23 @@ export function PanicOverlay() {
                             const isVoicemail =
                               d.deliveryStatus === "completed" &&
                               d.answeredBy === "machine_start";
+                            // Sin estados "esperando": si el canal ya se
+                            // despachó, se muestra como realizado aunque el
+                            // callback tarde (esto es una emergencia).
+                            const finalNegative =
+                              d.deliveryStatus === "no-answer" ||
+                              d.deliveryStatus === "busy" ||
+                              d.deliveryStatus === "canceled" ||
+                              d.deliveryStatus === "failed" ||
+                              d.deliveryStatus === "undelivered";
                             const okDelivery =
                               !isVoicemail &&
+                              !finalNegative &&
                               (d.deliveryStatus === "delivered" ||
                                 d.deliveryStatus === "completed" ||
-                                (!d.deliveryStatus && d.status === "Enviado"));
+                                d.status === "Enviado");
                             const pendingDelivery =
-                              isVoicemail ||
-                              !d.status ||
-                              d.status === "Pendiente" ||
-                              d.deliveryStatus === "sent" ||
-                              d.deliveryStatus === "queued" ||
-                              d.deliveryStatus === "in-progress" ||
-                              d.deliveryStatus === "initiated" ||
-                              d.deliveryStatus === "ringing";
+                              isVoicemail || !d.status || d.status === "Pendiente";
                             const tone = okDelivery
                               ? "ok"
                               : pendingDelivery

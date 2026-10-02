@@ -468,7 +468,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(screen.getByText("Entregado")).toBeTruthy();
   });
 
-  it("tarjeta de entrega: muestra llamada en curso antes del resultado final", async () => {
+  it("tarjeta de entrega: sin resultado final muestra realizada (sin espera)", async () => {
     const outcome = {
       id: "a-7",
       status: "Activa",
@@ -484,7 +484,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
 
     await activate();
 
-    expect(screen.getByText("En curso…")).toBeTruthy();
+    expect(screen.getByText("Realizada")).toBeTruthy();
   });
 
   it("409 alerta activa: adopta la alerta existente en vez de fallar", async () => {
@@ -520,7 +520,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
       "Ya tenías una alerta SOS activa. Mostrándola; pulsa Estoy bien para cancelarla.",
       "ok",
     );
-    expect(screen.getByText("En curso…")).toBeTruthy();
+    expect(screen.getByText("Realizada")).toBeTruthy();
   });
 
   it("409 alerta activa: adopta la alerta existente en vez de fallar", async () => {
