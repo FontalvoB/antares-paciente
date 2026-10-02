@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "base64"
+
 # =============================================================================
 # Fastfile — ANTARES Paciente (Ionic + Capacitor 8, iOS)
 #
@@ -64,6 +66,30 @@ def match_profile_name
   "match AppStore #{APP_IDENTIFIER}"
 end
 
+# Valor saneado de MATCH_GIT_BASIC_AUTHORIZATION: base64("usuario:token").
+# - Quita saltos de línea/espacios: `printf ... | base64 | pbcopy` arrastra un
+#   "\n" final y GitHub responde 400 (header Authorization malformado).
+# - Valida que decodifique a "usuario:token" y falla con instrucciones claras.
+# Se pasa como parámetro explícito a `match` para que gane a la env var.
+def match_git_basic_authorization
+  raw = ENV["MATCH_GIT_BASIC_AUTHORIZATION"].to_s
+  return nil if raw.strip.empty?
+
+  clean = raw.gsub(/\s+/, "")
+  decoded = begin
+    Base64.strict_decode64(clean)
+  rescue ArgumentError
+    nil
+  end
+  unless decoded&.include?(":")
+    UI.user_error!(
+      "MATCH_GIT_BASIC_AUTHORIZATION inválido: debe ser base64 de 'usuario:token'. " \
+      "Generalo con: printf 'usuario:PAT' | base64 | tr -d '\\n' | pbcopy"
+    )
+  end
+  clean
+end
+
 # Instala certificado + provisioning profile desde el repo de Match.
 # - readonly: true (default) solo descarga (CI); el lane `signing` pasa false
 #   para crear/renovar. Se puede sobreescribir con MATCH_READONLY.
@@ -73,14 +99,18 @@ def install_signing_assets(api_key, readonly: ENV.fetch("MATCH_READONLY", "true"
     UI.user_error!("MATCH_PASSWORD no configurado (GitHub Secret requerido en CI).")
   end
 
-  match(
+  match_options = {
     type: "appstore",
     app_identifier: APP_IDENTIFIER,
     team_id: apple_team_id,
     readonly: readonly,
     force: force,
     api_key: api_key
-  )
+  }
+  git_auth = match_git_basic_authorization
+  match_options[:git_basic_authorization] = git_auth if git_auth
+
+  match(match_options)
 end
 
 # CFBundleVersion = último build en TestFlight + 1 (o BUILD_NUMBER explícito).
