@@ -185,9 +185,7 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     // Una pareja de botones por comida pendiente (4 tarjetas estructurales).
     const registrarBtns = screen.getAllByText("Registrar");
     expect(registrarBtns.length).toBe(4);
-    const fotoBtns = screen.getAllByText(
-      (_, el) => el?.tagName === "BUTTON" && el.textContent === "📸 Foto IA",
-    );
+    const fotoBtns = screen.getAllByText("Foto IA");
     expect(fotoBtns.length).toBe(4);
     // El doble de IonModal monta el contenido al abrir (isOpen).
     fireEvent.click(registrarBtns[0]!);

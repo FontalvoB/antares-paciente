@@ -30580,3 +30580,95 @@ ion-modal.pro-picker-modal .pro-picker-total {
 .ntr-ai-title ion-icon { font-size: 22px; flex-shrink: 0; }
 .ntr-prescribed-meal .meal-title { color: var(--navy); }
 .ntr-prescribed-meal .meal-kcal { color: var(--teal); background: var(--wh); }
+
+/* Hoy — fotografía editorial, balance y registro de comidas. */
+.ntd-today { display: flex; flex-direction: column; gap: 16px; padding-inline: 14px; padding-top: 4px; }
+.ntd-today > * { flex-shrink: 0; }
+.ntd-hero { position: relative; isolation: isolate; min-height: 220px; overflow: hidden; border-radius: 25px; background: var(--teal-l); order: 0; }
+.ntd-hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% center; z-index: -2; }
+.ntd-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, color-mix(in srgb, var(--ice-l) 96%, transparent), color-mix(in srgb, var(--ice-l) 75%, transparent) 38%, transparent 72%); }
+.ntd-hero-copy { padding: 23px 20px 30px; max-width: 66%; }
+.ntd-eyebrow { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 750; letter-spacing: .8px; color: var(--teal); }
+.ntd-eyebrow ion-icon { font-size: 15px; flex-shrink: 0; }
+.ntd-hero h2 { margin: 12px 0 9px; color: var(--navy); font: 700 29px/1.08 'Space Grotesk', sans-serif; letter-spacing: -1.3px; }
+.ntd-hero p { margin: 0 0 15px; font-size: 11px; line-height: 1.6; color: var(--blue); max-width: 145px; }
+.ntd-date { display: inline-block; padding: 5px 8px; border-radius: 7px; background: color-mix(in srgb, var(--wh) 80%, transparent); color: var(--blue); font-size: 10px; font-weight: 650; }
+.ntd-photo-note { position: absolute; bottom: 10px; right: 10px; color: var(--wh); background: color-mix(in srgb, var(--cosmos) 70%, transparent); padding: 4px 7px; border-radius: 6px; font-size: 9px; letter-spacing: .1px; }
+.ntd-today .ntd-progress { order: 1; margin: 0; border-radius: 24px; padding: 20px; background: var(--wh); box-shadow: 0 5px 20px color-mix(in srgb, var(--blue) 5%, transparent); border: 1px solid var(--bd); }
+.ntd-heading { font-size: 18px; letter-spacing: -.5px; margin: 5px 0 0; color: var(--navy); }
+.ntd-progress .nut-goals-head { margin-bottom: 18px; align-items: center; }
+.ntd-progress .nut-goals-pct { color: var(--teal); background: var(--teal-l); padding: 8px 10px; border-radius: 12px; font-size: 13px; }
+.ntd-progress .nut-goals-body { gap: 18px; }
+.ntd-progress .nut-ring { background: var(--ice-l); border-radius: 50%; padding: 4px; }
+.ntd-progress .nut-ring-value { color: var(--navy); }
+.ntd-progress .nut-ring-target { color: var(--mu); }
+.ntd-progress-caption { color: var(--mu); font-size: 10px; margin: 0 0 12px; line-height: 1.4; }
+.ntd-progress .nut-macro-top { gap: 4px; }
+.ntd-progress .nut-macro-label { font-size: 11px; }
+.ntd-progress .nut-macro-val { font-size: 10px; }
+.ntd-progress .nut-macro-empty { font-size: 12px; line-height: 1.6; }
+.ntd-today .nut-ai-card { order: 3; margin: 0 !important; box-shadow: none; }
+.ntd-today .ntd-hydration { order: 2; margin: 0; padding: 20px; border-radius: 24px; background: linear-gradient(135deg, var(--ice-l), var(--blue-l)); border: 1px solid color-mix(in srgb, var(--ice) 35%, var(--wh)); box-shadow: none; }
+.ntd-hyd-kicker { display: flex; align-items: center; gap: 7px; font-size: 15px; color: var(--blue); font-weight: 750; margin-bottom: 9px; }
+.ntd-hyd-kicker ion-icon { font-size: 23px; flex-shrink: 0; }
+.ntd-hyd-detail { font-size: 11px; font-weight: 500; color: var(--mu); line-height: 1.5; display: block; }
+.ntd-hydration .nut-hyd-badge { color: var(--blue); background: var(--wh); border: none; }
+.ntd-hydration .nut-hyd-sub { color: var(--blue); margin-top: 12px; font-size: 14px; font-weight: 700; }
+.ntd-hydration .nut-hyd-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin-top: 16px; }
+ion-button.ntd-glass { margin: 0; height: 48px; min-width: 0; --padding-start: 8px; --padding-end: 8px; --background: color-mix(in srgb, var(--wh) 85%, transparent); --color: var(--cyan); --border-radius: 13px; --box-shadow: none; }
+ion-button.ntd-glass.full { --background: var(--blue); --color: var(--wh); }
+.ntd-glass ion-icon { font-size: 20px; margin-right: 6px; }
+.ntd-glass span { font-size: 12px; font-weight: 650; }
+.ntd-hyd-hint { color: var(--blue); font-size: 10px; line-height: 1.6; margin: 12px 0 0; }
+.ntd-meals-section { order: 4; }
+.ntd-meals-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 5px 3px 17px; }
+.ntd-meals-heading h2 { margin: 5px 0 0; font: 700 22px/1.2 'Space Grotesk', sans-serif; letter-spacing: -.7px; }
+.ntd-meal-count { font-size: 10px; color: var(--teal); background: var(--teal-l); padding: 7px 9px; border-radius: 10px; max-width: 100px; line-height: 1.5; text-align: center; }
+.ntd-meals-grid { display: grid; gap: 16px; }
+.ntd-meals-grid .ntd-meal { margin: 0; overflow: hidden; background: var(--wh); border: 1px solid var(--bd); border-radius: 23px; box-shadow: 0 5px 18px color-mix(in srgb,var(--blue) 4%,transparent); }
+.ntd-meal-photo { position: relative; height: 148px; overflow: hidden; background: var(--ice-l); }
+.ntd-meal-photo > img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 52%; transition: transform .5s var(--ease); }
+.ntd-meal:nth-child(even) .ntd-meal-photo > img { object-position: 80% 55%; }
+.ntd-meal-step { position: absolute; top: 12px; left: 14px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--wh); color: var(--blue); font: 700 13px 'Space Grotesk', sans-serif; }
+.ntd-meal-state { position: absolute; top: 14px; right: 12px; display: flex; align-items: center; gap: 5px; background: var(--wh); color: var(--blue); padding: 6px 9px; border-radius: 9px; font-size: 10px; font-weight: 700; }
+.ntd-meal-state.done { color: var(--wh); background: var(--teal); }
+.ntd-meal .meal-hdr { padding: 16px 17px 10px; background: var(--wh); border: none; }
+.ntd-meal .meal-title { color: var(--navy); font-size: 18px; }
+.ntd-meal .meal-ico { display: none; }
+.ntd-meal .meal-kcal { background: var(--ice-l); color: var(--blue); font-size: 11px; }
+.ntd-meal .food-item { display: flex; flex-wrap: wrap; padding: 4px 17px 15px; border: none; }
+.ntd-meal .food-main { flex: 1 1 100%; }
+.ntd-meal .food-name { font-size: 13px; line-height: 1.55; }
+.ntd-meal .food-desc { font-size: 11px; margin-top: 7px; line-height: 1.6; }
+.ntd-meal .food-macros { flex-direction: row; flex-wrap: wrap; margin-top: 10px; }
+.ntd-meal .meal-empty { padding: 5px 17px 16px; font-size: 12px; }
+.ntd-meal .meal-empty-ico { display: none; }
+.ntd-meal .meal-actions { padding: 0 17px 17px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: none; }
+.ntd-meal .meal-actions ion-button { min-height: 46px; margin: 0; --border-radius: 12px; font-size: 12px; font-weight: 700; --box-shadow: none; }
+.ntd-register { --background: var(--navy); --color: var(--wh); }
+.ntd-camera { --border-color: var(--bd); --color: var(--blue); --border-width: 1px; }
+.ntd-meal .meal-logged { margin: 0 17px 17px; border-radius: 14px; background: var(--teal-l); padding: 12px; }
+.ntd-meal .meal-logged-btn { min-height: 44px; }
+@media (min-width: 700px) { .ntd-meals-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (min-width: 1000px) {
+  .ntr-screen .ntd-today { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-content: start; align-items: start; }
+  .ntd-hero { grid-column: 1 / -1; min-height: 260px; }
+  .ntd-hero > img { object-position: center 55%; }
+  .ntd-hero-copy { padding: 30px; }
+  .ntd-hero h2 { font-size: 42px; max-width: 300px; }
+  .ntd-hero p { max-width: 300px; font-size: 13px; }
+  .ntd-today .ntd-progress { min-height: 296px; }
+  .ntd-today .nut-ai-card, .ntd-meals-section { grid-column: 1 / -1; }
+  .ntd-today .ntd-hydration { min-height: 296px; }
+  .ntd-meal-photo { height: 190px; }
+}
+@media (max-width: 360px) {
+  .ntd-hero-copy { padding: 19px 16px 30px; max-width: 70%; }
+  .ntd-hero h2 { font-size: 27px; }
+  .ntd-today .ntd-progress, .ntd-today .ntd-hydration { padding: 16px; }
+  .ntd-progress .nut-goals-body { gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .ntd-meal-photo > img { transition: none; } }
+@media (min-width: 1000px) {
+  .ntr-screen .ntd-today { grid-auto-rows: max-content; }
+}

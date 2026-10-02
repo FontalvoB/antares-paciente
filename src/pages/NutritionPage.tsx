@@ -11,7 +11,9 @@ import {
   IonSegmentButton,
   IonSpinner,
 } from "@ionic/react";
-import { cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline } from "ionicons/icons";
+import { cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline } from "ionicons/icons";
+import dailyMediterranean from "../assets/nutrition/daily-mediterranean.jpg";
+import dailyBreakfast from "../assets/nutrition/daily-breakfast.jpg";
 import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
 import { MealFoodFlow } from "../components/MealFoodFlow";
@@ -253,8 +255,8 @@ export function NutritionPage() {
         return {
           id,
           emoji,
-          title: `${m.mealType}${m.calories ? ` · ${m.calories} kcal` : ""}`,
-          kcal: m.calories || 0,
+          title: m.mealType,
+          kcal: m.calories ?? null,
           items: [
             [
               "🍽️",
@@ -528,27 +530,8 @@ export function NutritionPage() {
     );
   }
 
-  return (
-    <MotionConfig reducedMotion="user"><Screen className="ntr-screen">
-      <PageHeader title={t("Nutrición")} sub={nutritionPlan?.name || planTitle} />
-
-      <IonSegment
-        className="plan-seg ntr-tabs"
-        value={tab}
-        onIonChange={(e) => changeTab((e.detail.value as typeof tab) ?? "hoy")}
-      >
-        <IonSegmentButton value="hoy">{t("Hoy")}</IonSegmentButton>
-        <IonSegmentButton value="semana">{t("Semana")}</IonSegmentButton>
-        <IonSegmentButton value="indicaciones">{t("Plan")}</IonSegmentButton>
-        <IonSegmentButton value="historial">{t("Historial")}</IonSegmentButton>
-      </IonSegment>
-
-      {/* Todo lo demás hace scroll: analizador + resumen + contenido del tab. */}
-      <Scroll ref={scrollRef} className="ntr-scroll">
-        {(tab === "indicaciones" || tab === "historial") && <NutritionMetrics metrics={metricsHistory?.metrics ?? []} loading={metricsLoading} locale={locale} />}
-        {(tab === "hoy" || tab === "historial") && <>
-        {/* ── Analizador de comida con IA (flujo real) ── */}
-        <div
+  const captureCard = (
+<div
           className="card nut-ai-card"
           style={{
             margin: "10px 14px 0",
@@ -589,11 +572,35 @@ export function NutritionPage() {
             </>
           )}
         </div>
+  );
 
-        </>}
-        {tab === "hoy" && <div className="nut-goals-card">
+  return (
+    <MotionConfig reducedMotion="user"><Screen className="ntr-screen">
+      <PageHeader title={t("Nutrición")} sub={nutritionPlan?.name || planTitle} />
+
+      <IonSegment
+        className="plan-seg ntr-tabs"
+        value={tab}
+        onIonChange={(e) => changeTab((e.detail.value as typeof tab) ?? "hoy")}
+      >
+        <IonSegmentButton value="hoy">{t("Hoy")}</IonSegmentButton>
+        <IonSegmentButton value="semana">{t("Semana")}</IonSegmentButton>
+        <IonSegmentButton value="indicaciones">{t("Plan")}</IonSegmentButton>
+        <IonSegmentButton value="historial">{t("Historial")}</IonSegmentButton>
+      </IonSegment>
+
+      {/* Todo lo demás hace scroll: analizador + resumen + contenido del tab. */}
+      <Scroll ref={scrollRef} className={`ntr-scroll${tab === 'hoy' ? ' ntd-today' : ''}`}>
+        {tab === 'hoy' && <section className="ntd-hero">
+          <img src={dailyMediterranean} alt="" fetchPriority="high" />
+          <div className="ntd-hero-copy"><span className="ntd-eyebrow"><IonIcon icon={leafOutline} />{t('Tu alimentación de hoy')}</span><h2>{t('Tu día, bien nutrido.')}</h2><p>{t('Un momento para ti. Una comida a la vez.')}</p><span className="ntd-date">{formatDateForDisplay(snapshot.todayLocalDate)}</span></div>
+          <span className="ntd-photo-note">{t('Imagen ilustrativa')}</span>
+        </section>}
+        {(tab === "indicaciones" || tab === "historial") && <NutritionMetrics metrics={metricsHistory?.metrics ?? []} loading={metricsLoading} locale={locale} />}
+        {tab === "historial" && captureCard}
+        {tab === "hoy" && <div className="nut-goals-card ntd-progress">
           <div className="nut-goals-head">
-            <div className="nut-kicker">{t("Tu progreso de hoy")}</div>
+            <div><div className="ntd-eyebrow">{t('BALANCE DIARIO')}</div><h2 className="ntd-heading">{t("Tu progreso de hoy")}</h2></div>
             {kcalRatio != null && (
               <span className="nut-goals-pct">
                 {Math.round(kcalRatio * 100)} %
@@ -650,6 +657,7 @@ export function NutritionPage() {
               </div>
             </div>
             <div className="nut-macro-list">
+              <p className="ntd-progress-caption">{t('Registrado / objetivo diario')}</p>
               {macroBars.length > 0 ? (
                 macroBars.map((b, i) => (
                   <div
@@ -704,14 +712,12 @@ export function NutritionPage() {
         {tab === "hoy" && (
           <>
             <div
-              className="card nut-hyd-card"
-              style={{
-                background: "var(--blue-l)",
-                borderColor: "#B5D4F4",
-              }}
+              className="card nut-hyd-card ntd-hydration"
             >
               <div className="nut-hyd-head">
                 <div className="nut-hyd-title">
+                  <span className="ntd-hyd-kicker"><IonIcon icon={waterOutline} />{t('Tu pausa de hidratación')}</span>
+                  <span className="ntd-hyd-detail">
                   {planWaterMl != null && planWaterMl !== 2000
                     ? t(
                         "💧 Hidratación · {glasses} vasos · meta {goal} vasos ({liters} L)",
@@ -730,7 +736,7 @@ export function NutritionPage() {
                         {
                           glasses: String(displayedGlasses),
                         },
-                      )}
+                      )}</span>
                 </div>
                 <span className="nut-hyd-badge" aria-hidden="true">
                   {displayedGlasses}/{waterGoalGlasses}
@@ -752,28 +758,33 @@ export function NutritionPage() {
               />
               <div className="nut-hyd-grid">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <motion.button
+                  <IonButton
                     key={i}
                     type="button"
-                    className={`hyd-glass ${i < displayedGlasses ? "full" : ""}`}
+                    fill="clear"
+                    className={`ntd-glass ${i < displayedGlasses ? "full" : ""}`}
                     disabled={!canMutate}
-                    aria-pressed={i < displayedGlasses}
+                    aria-pressed={i < displayedGlasses ? 'true' : 'false'}
                     aria-label={t("Vaso {n} de {goal}", {
                       n: String(i + 1),
                       goal: String(8),
                     })}
                     onClick={() => tapGlass(i + 1)}
-                    whileTap={canMutate ? { scale: 0.9 } : undefined}
                   >
-                    {i < displayedGlasses ? "💧" : "🥛"}
-                  </motion.button>
+                    <IonIcon icon={i < displayedGlasses ? waterOutline : addOutline} aria-hidden="true" /><span>{i + 1}</span>
+                  </IonButton>
                 ))}
               </div>
+              <p className="ntd-hyd-hint">{t('Cada vaso registra 250 ml. Toca el total que llevas hoy.')}</p>
             </div>
+            {captureCard}
+            <section className="ntd-meals-section">
+            <div className="ntd-meals-heading"><div><span className="ntd-eyebrow">{t('A TU RITMO')}</span><h2>{t('Tus comidas de hoy')}</h2></div><span className="ntd-meal-count">{t('{done} de {total} registradas', { done: String(displayMeals.filter(m => loggedSet.has(m.id)).length), total: String(displayMeals.length) })}</span></div>
+            <div className="ntd-meals-grid">
             {displayMeals.map((m, idx) => (
               <motion.article
                 key={m.id}
-                className="meal-card"
+                className={`meal-card ntd-meal${loggedSet.has(m.id) ? ' is-logged' : ''}`}
                 initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-32px" }}
@@ -783,21 +794,19 @@ export function NutritionPage() {
                   ease: [0.22, 1, 0.36, 1],
                 }}
               >
+                <div className="ntd-meal-photo"><img src={m.id === 'des' || m.id === 'mer' ? dailyBreakfast : dailyMediterranean} alt="" loading="lazy" /><span className="ntd-meal-step">{String(idx + 1).padStart(2, '0')}</span><span className={`ntd-meal-state${loggedSet.has(m.id) ? ' done' : ''}`}><IonIcon icon={loggedSet.has(m.id) ? checkmarkOutline : restaurantOutline} />{loggedSet.has(m.id) ? t('Registrado') : t('Por registrar')}</span><span className="ntd-photo-note">{t('Imagen ilustrativa')}</span></div>
                 <div className="meal-hdr">
                   <span className="meal-ico" aria-hidden="true">
-                    {m.emoji}
+                    <IonIcon icon={restaurantOutline} />
                   </span>
                   <span className="meal-title">{t(m.title)}</span>
                   {m.kcal != null && (
-                    <span className="meal-kcal">{m.kcal} kcal</span>
+                    <span className="meal-kcal">{formatMetricValue(m.kcal, 0, locale)} kcal</span>
                   )}
                 </div>
                 {m.items.length > 0 ? (
                   m.items.map((it) => (
                     <div key={it[1]} className="food-item">
-                      <span className="food-ico" aria-hidden="true">
-                        {it[0]}
-                      </span>
                       <div className="food-main">
                         <div className="food-name">{t(it[1])}</div>
                         <div className="food-desc">{t(it[2])}</div>
@@ -840,21 +849,21 @@ export function NutritionPage() {
                   />
                 ) : (
                   <div className="meal-actions">
-                    <motion.button
+                    <IonButton
                       type="button"
-                      className="meal-btn meal-btn-reg"
+                      className="ntd-register"
                       onClick={() =>
                         canMutate &&
                         openRegister(m.id as Exclude<MealCode, "agua">)
                       }
                       disabled={!canMutate}
-                      whileTap={canMutate ? { scale: 0.97 } : undefined}
                     >
                       {t("Registrar")}
-                    </motion.button>
-                    <motion.button
+                    </IonButton>
+                    <IonButton
                       type="button"
-                      className="meal-btn meal-btn-ia"
+                      fill="outline"
+                      className="ntd-camera"
                       onClick={() =>
                         canMutate &&
                         setFlow({
@@ -864,14 +873,15 @@ export function NutritionPage() {
                         })
                       }
                       disabled={!canMutate}
-                      whileTap={canMutate ? { scale: 0.97 } : undefined}
                     >
-                      📸 {t("Foto IA")}
-                    </motion.button>
+                      <IonIcon icon={cameraOutline} slot="start" />{t("Foto IA")}
+                    </IonButton>
                   </div>
                 )}
               </motion.article>
             ))}
+            </div>
+            </section>
           </>
         )}
 
