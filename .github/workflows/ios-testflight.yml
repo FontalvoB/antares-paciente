@@ -1,0 +1,192 @@
+# =============================================================================
+# iOS · TestFlight — CI/CD de ANTARES Paciente (Ionic + Capacitor 8)
+#
+# Flujo: push/merge a `dev` → validaciones (lint, tests, i18n, build web)
+#        → firma (fastlane match) → archive Release → IPA → TestFlight.
+#
+# Manual: Actions ▸ "iOS · TestFlight" ▸ Run workflow (con opción dry-run).
+#
+# Requisitos (una sola vez): secretos APP_STORE_CONNECT_*, APPLE_TEAM_ID,
+# MATCH_PASSWORD y MATCH_GIT_BASIC_AUTHORIZATION, más el repo privado de
+# certificados. Paso a paso: docs/IOS_CICD_TESTFLIGHT.md
+# =============================================================================
+
+name: iOS · TestFlight
+
+on:
+  push:
+    branches: [dev]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".agents/**"
+      - "android/**"
+  # En PRs hacia dev solo corre el job de validaciones (sin secretos ni upload).
+  pull_request:
+    branches: [dev]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".agents/**"
+      - "android/**"
+  # Para desplegar también desde `main` (cuando se promueva):
+  #   branches: [dev, main]
+  workflow_dispatch:
+    inputs:
+      skip_upload:
+        description: "Dry run: compilar/archivar sin subir a TestFlight"
+        type: boolean
+        default: false
+      build_number:
+        description: "Forzar número de build (vacío = último de TestFlight + 1)"
+        type: string
+        required: false
+
+# Nunca dos despliegues en paralelo (evita números de build duplicados).
+concurrency:
+  group: ios-testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  LC_ALL: en_US.UTF-8
+  LANG: en_US.UTF-8
+  # fastlane/xcodebuild: evita timeouts largos consultando build settings.
+  FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "10"
+  FASTLANE_XCODE_LIST_TIMEOUT: "60"
+  FASTLANE_SKIP_UPDATE_CHECK: "true"
+  FASTLANE_OPT_OUT_USAGE: "true"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) Validaciones + build web de producción (rápido, en Linux).
+  # ---------------------------------------------------------------------------
+  quality:
+    name: Validaciones (lint · tests · i18n · build web)
+    # Imagen fija (no `ubuntu-latest`): evita migraciones sorpresa de runner.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: yarn
+
+      - name: Instalar dependencias (yarn.lock)
+        run: yarn install --frozen-lockfile
+
+      - name: Lint (oxlint)
+        run: npm run lint
+
+      - name: Tests (vitest)
+        run: npm test
+
+      - name: i18n (es/en)
+        run: npm run i18n:check
+
+      - name: Guardas de release (Info.plist sin ATS de desarrollo)
+        run: npm run release:check
+
+      - name: Build web de producción (vite)
+        run: npm run build
+
+      - name: Publicar `dist/` para el job de firma
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-web
+          path: dist/
+          retention-days: 3
+
+  # ---------------------------------------------------------------------------
+  # 2) Firma + archive + IPA + upload a TestFlight (macOS con Xcode).
+  # ---------------------------------------------------------------------------
+  testflight:
+    name: iOS → TestFlight
+    needs: quality
+    # Los PRs solo validan: nunca suben builds (los secretos y el upload
+    # ocurren en push/merge a dev o vía workflow_dispatch).
+    if: github.event_name != 'pull_request'
+    runs-on: macos-26
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Xcode 26.6 (fijado para builds reproducibles)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.6"
+
+      - name: Ruby 3.4 + Bundler (cache de gems)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: yarn
+
+      - name: Instalar dependencias JS (para Capacitor/SPM y cap sync)
+        run: yarn install --frozen-lockfile
+
+      - name: Descargar `dist/` ya validado (no se recompila el bundle)
+        uses: actions/download-artifact@v7
+        with:
+          name: dist-web
+          path: dist
+
+      - name: Preparar App Store Connect API Key (.p8)
+        env:
+          ASC_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+        run: |
+          set -euo pipefail
+          KEY_DIR="$RUNNER_TEMP/asc_private_keys"
+          mkdir -p "$KEY_DIR"
+          printf '%s' "$ASC_KEY_B64" | base64 --decode > "$KEY_DIR/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$KEY_DIR"/AuthKey_*.p8
+          echo "APP_STORE_CONNECT_API_KEY_PATH=$KEY_DIR/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
+
+      - name: Capacitor sync (ios)
+        run: npx cap sync ios
+
+      - name: Fastlane (firma + archive + IPA + TestFlight)
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_GIT_URL: ${{ vars.MATCH_GIT_URL }}
+          MATCH_READONLY: "true"
+          BUILD_NUMBER: ${{ inputs.build_number }}
+          WAIT_FOR_PROCESSING: "true"
+          SKIP_UPLOAD: ${{ inputs.skip_upload }}
+        run: |
+          set -euo pipefail
+          if [ "$SKIP_UPLOAD" = "true" ]; then
+            echo "▶️  Dry run: solo archive (sin upload)"
+            bundle exec fastlane ios build skip_web_build:true
+          else
+            bundle exec fastlane ios beta skip_web_build:true
+          fi
+
+      - name: Subir IPA / dSYMs como artefacto
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-artifacts-${{ github.run_number }}
+          path: |
+            ios/App/output/*.ipa
+            ios/App/output/*.dSYM.zip
+          if-no-files-found: ignore
+          retention-days: 7

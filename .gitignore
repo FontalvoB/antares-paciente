@@ -20,6 +20,9 @@ GoogleService-Info.plist
 .env
 .env.*
 !.env.example
+# .env.production SÍ se versiona: solo contiene variables VITE_* públicas que
+# necesita el CI para compilar el bundle de producción. NUNCA agregar secretos.
+!.env.production
 
 # Editor directories and files
 .vscode/*
@@ -86,6 +89,28 @@ scripts/*.tmp.*
 # Preservar assets legítimos de producción de la app
 !src/assets/**
 !public/**
+
+# --- CI/CD iOS (fastlane / firmas / artefactos) ---
+# Credenciales Apple: JAMÁS al repo (ver docs/IOS_CICD_TESTFLIGHT.md).
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+*.key
+# Gems de fastlane instaladas localmente por Bundler
+/vendor/bundle
+# Salidas y reportes de fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+fastlane/screenshots/
+fastlane/.env*
+# Artefactos de build iOS
+*.ipa
+*.xcarchive
+ios/App/output/
+# Respaldo temporal del pbxproj que crea el lane `beta`/`build` (se restaura solo)
+ios/App/App.xcodeproj/project.pbxproj.fastlane-bak
 
 # Firebase: el JSON del service account contiene la private_key (NUNCA commitear)
 *firebase-adminsdk*.json
