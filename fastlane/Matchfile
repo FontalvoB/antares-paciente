@@ -1,24 +1,27 @@
 # frozen_string_literal: true
 
 # =============================================================================
-# Matchfile — repositorio PRIVADO de certificados/perfiles cifrados.
+# Matchfile — certificados/perfiles iOS cifrados (fastlane match).
 #
-# fastlane match guarda aquí (cifrado con MATCH_PASSWORD, AES-256-GCM) el
-# certificado "Apple Distribution" y el provisioning profile "App Store".
-# El repo NUNCA debe ser público ni contener secretos en claro.
+# Por defecto viven en la rama `match-certificates` del propio repo de la app
+# (FontalvoB/antares-paciente). Son solo blobs cifrados con MATCH_PASSWORD
+# (AES-256-GCM): el patrón estándar de match para no versionar secretos en claro.
 #
-# Configuración local: usa las credenciales git del equipo (gh/git).
-# GitHub Actions: clona con MATCH_GIT_BASIC_AUTHORIZATION (secreto) y
-# MATCH_READONLY=true.
+# Si preferís un repo privado aparte (más hermético), definí las variables
+# MATCH_GIT_URL y MATCH_GIT_BRANCH (GitHub ▸ Variables, o entorno local) sin
+# tocar este archivo, y restaurá la credencial PAT en el workflow.
 #
-# Para migrar el repo de certificados a otra cuenta/organización basta con
-# definir MATCH_GIT_URL (variable/secret) sin tocar este archivo.
+# Local: usa las credenciales git del equipo (gh/git).
+# GitHub Actions: clona con el GITHUB_TOKEN del workflow (solo lectura).
 # =============================================================================
 
-git_url(ENV["MATCH_GIT_URL"].to_s.empty? ? "https://github.com/diomedescerda/antares-paciente-certificates.git" : ENV["MATCH_GIT_URL"])
+git_url(ENV["MATCH_GIT_URL"].to_s.empty? ? "https://github.com/FontalvoB/antares-paciente.git" : ENV["MATCH_GIT_URL"])
 
 storage_mode("git")
 type("appstore")
-git_branch(ENV["MATCH_GIT_BRANCH"].to_s.empty? ? "main" : ENV["MATCH_GIT_BRANCH"])
+git_branch(ENV["MATCH_GIT_BRANCH"].to_s.empty? ? "match-certificates" : ENV["MATCH_GIT_BRANCH"])
+# La rama ya existe: clonar solo esa rama evita traer el historial completo de
+# la app (rápido en CI) y sigue permitiendo hacer push al renovar certificados.
+clone_branch_directly(true)
 app_identifier("com.coppadresd.mobile")
 team_id(ENV["APPLE_TEAM_ID"].to_s.empty? ? "XZSSM34MU6" : ENV["APPLE_TEAM_ID"])

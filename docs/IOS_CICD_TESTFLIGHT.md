@@ -94,7 +94,7 @@ distribución) → el pipeline se rompe a las pocas corridas.
 
 **Solución**: [fastlane match](https://docs.fastlane.tools/actions/match/)
 (`type: appstore`) guarda **una sola vez** el certificado `Apple Distribution` y
-el perfil `App Store` en un **repo privado**, cifrados con `MATCH_PASSWORD`
+el perfil `App Store` en una **rama del propio repo** (`match-certificates`), cifrados con `MATCH_PASSWORD`
 (AES-256-GCM). En cada ejecución:
 
 1. `match` clona el repo de certificados y los importa (CI: `readonly: true`).
@@ -127,20 +127,20 @@ lanes no lo modifican de forma permanente.
 Configurar en: **GitHub ▸ repo `FontalvoB/antares-paciente` ▸ Settings ▸ Secrets
 and variables ▸ Actions ▸ New repository secret**.
 
-| Secreto                         | Contenido                                      | Cómo obtenerlo                                                                                                                                                                                                                         |
-| ------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APP_STORE_CONNECT_KEY_ID`      | Key ID de la API Key (10 caracteres)           | App Store Connect ▸ Users and Access ▸ Integrations ▸ Team Keys (columna **Key ID**)                                                                                                                                                   |
-| `APP_STORE_CONNECT_ISSUER_ID`   | Issuer ID (UUID)                               | Misma pantalla (arriba: **Issuer ID**)                                                                                                                                                                                                 |
-| `APP_STORE_CONNECT_API_KEY`     | **Base64** del archivo `.p8`                   | `base64 -i ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8 \| pbcopy`                                                                                                                                                              |
-| `APPLE_TEAM_ID`                 | `XZSSM34MU6`                                   | Ya verificado en `project.pbxproj`                                                                                                                                                                                                     |
-| `MATCH_PASSWORD`                | Contraseña de cifrado del repo de certificados | Generada al poner en marcha (guardar en gestor de contraseñas)                                                                                                                                                                         |
-| `MATCH_GIT_BASIC_AUTHORIZATION` | `base64("usuario:token")` **o el token crudo** | Fine-grained PAT con permiso **Contents: Read** solo sobre el repo de certificados. Forma explícita: `printf 'usuario:TOKEN' \| base64 \| tr -d '\n' \| pbcopy`; si pegás el token crudo (`github_pat_…`) el Fastfile lo codifica solo |
+| Secreto                         | Contenido                                      | Cómo obtenerlo                                                                                                                                                                    |
+| ------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_STORE_CONNECT_KEY_ID`      | Key ID de la API Key (10 caracteres)           | App Store Connect ▸ Users and Access ▸ Integrations ▸ Team Keys (columna **Key ID**)                                                                                              |
+| `APP_STORE_CONNECT_ISSUER_ID`   | Issuer ID (UUID)                               | Misma pantalla (arriba: **Issuer ID**)                                                                                                                                            |
+| `APP_STORE_CONNECT_API_KEY`     | **Base64** del archivo `.p8`                   | `base64 -i ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8 \| pbcopy`                                                                                                         |
+| `APPLE_TEAM_ID`                 | `XZSSM34MU6`                                   | Ya verificado en `project.pbxproj`                                                                                                                                                |
+| `MATCH_PASSWORD`                | Contraseña de cifrado del repo de certificados | Generada al poner en marcha (guardar en gestor de contraseñas)                                                                                                                    |
+| `MATCH_GIT_BASIC_AUTHORIZATION` | _(Opcional, no configurado)_                   | Solo para un repo privado aparte: `base64("usuario:token")` o el token crudo. Por defecto el CI clona la rama interna con el `GITHUB_TOKEN` del workflow y este secreto no se usa |
 
 Opcional (Settings ▸ Secrets and variables ▸ Actions ▸ **Variables**):
 
-| Variable        | Contenido                                                                                                                                                |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MATCH_GIT_URL` | URL del repo de certificados, si se migra a otra cuenta/organización (por defecto: `https://github.com/diomedescerda/antares-paciente-certificates.git`) |
+| Variable                             | Contenido                                                                                                                                                  |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MATCH_GIT_URL` y `MATCH_GIT_BRANCH` | _(Opcionales)_ Repo/rama alternativos para los certificados si se migran a un repo privado aparte. Por defecto: este mismo repo, rama `match-certificates` |
 
 > ℹ️ El repo es **público**: los secretos de Actions nunca se exponen a PRs de
 > forks ni se imprimen en logs (GitHub los enmascara). Aun así, restringir quién
@@ -150,14 +150,18 @@ Opcional (Settings ▸ Secrets and variables ▸ Actions ▸ **Variables**):
 
 ## 6. Puesta en marcha (pasos humanos, una sola vez)
 
-### 6.1 Repo privado de certificados (si no existe)
+### 6.1 Certificados de firma — ya configurado
 
-Debe ser **privado** (contiene el certificado de distribución cifrado):
+Los blobs cifrados de match (certificado `Apple Distribution` + profile
+`App Store`) viven en la rama **`match-certificates`** de este mismo repo.
+No hace falta crear ni configurar nada más: el workflow los clona con su propio
+`GITHUB_TOKEN` y `MATCH_PASSWORD` los descifra.
 
-1. GitHub ▸ **New repository** ▸ nombre `antares-paciente-certificates` ▸
-   **Private** ▸ Create.
-2. Si se crea en otra cuenta/organización, actualizar la variable `MATCH_GIT_URL`
-   o la URL por defecto del `fastlane/Matchfile`.
+> Opcional avanzado (más hermético): moverlos a un **repo privado aparte**.
+> En ese caso: crear el repo privado, copiar la rama `match-certificates` allí,
+> definir las variables `MATCH_GIT_URL`/`MATCH_GIT_BRANCH` y restaurar la
+> credencial `MATCH_GIT_BASIC_AUTHORIZATION` (fine-grained PAT con **Contents:
+> Read**) en el step de fastlane del workflow.
 
 ### 6.2 App Store Connect API Key
 
@@ -312,7 +316,7 @@ FORCE_SIGNING=true bundle exec fastlane ios signing
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API Key (`.p8`)  | App Store Connect ▸ Integrations ▸ revocar key vieja ▸ crear nueva (App Manager) ▸ actualizar secretos `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` |
 | `MATCH_PASSWORD` | `bundle exec fastlane match change_password` (re-cifra el repo con la nueva) ▸ actualizar el secreto y el gestor de contraseñas                                                               |
-| PAT de lectura   | GitHub ▸ Settings ▸ Developer settings ▸ Fine-grained tokens ▸ regenerar ▸ recalcular `MATCH_GIT_BASIC_AUTHORIZATION`                                                                         |
+| PAT de lectura   | Solo si migrás los certificados a un repo privado aparte: GitHub ▸ Settings ▸ Developer settings ▸ Fine-grained tokens ▸ regenerar ▸ recalcular `MATCH_GIT_BASIC_AUTHORIZATION`               |
 | Certificado      | `bundle exec fastlane ios signing` (con `FORCE_SIGNING=true` para recrearlo desde cero)                                                                                                       |
 
 ### Detener temporalmente el autodespliegue
@@ -345,7 +349,7 @@ FORCE_SIGNING=true bundle exec fastlane ios signing
 | `errSecInternalComponent` / prompts de keychain en CI                                           | `setup_ci` crea el keychain temporal; verificar que el lane corre con `CI=true`                                                                                                                                                                                                      |
 | `Error cloning certificates repo` + `fatal: The empty string is not a valid path`               | `MATCH_GIT_URL` llegó **vacío** (p. ej. variable de repo inexistente): fastlane prioriza la env var aunque sea vacía y pisa el Matchfile. Definir la variable con una URL o no pasarla (el workflow trae fallback)                                                                   |
 | `unable to access ...: The requested URL returned error: 400` al clonar el repo de certificados | `MATCH_GIT_BASIC_AUTHORIZATION` con formato raro (p. ej. un `\n` final del `pbcopy`). El Fastfile quita espacios y acepta tanto `base64('usuario:token')` como el token crudo; si el error persiste, regenerar el valor con `printf 'usuario:PAT' \| base64 \| tr -d '\n' \| pbcopy` |
-| `fatal: Authentication failed` al clonar el repo de certificados                                | El PAT no tiene acceso: verificar que sea _Fine-grained_ con **Contents: Read** sobre `antares-paciente-certificates` y que no haya expirado; regenerarlo y actualizar el secreto                                                                                                    |
+| `fatal: Authentication failed` al clonar los certificados                                       | Con la rama interna no debería pasar (GITHUB_TOKEN). Si migraste a un repo privado aparte: verificar que el PAT sea _Fine-grained_ con **Contents: Read** sobre ese repo y que no haya expirado                                                                                      |
 | Cambió el Xcode del runner y falla el build                                                     | El workflow fija `xcode-version: "26.6"` en una imagen `macos-26`; si GitHub retira esa versión, actualizar el pin en el workflow                                                                                                                                                    |
 | `Mixing lockfiles` en el log de Yarn                                                            | Ruido por `package-lock.json`/`pnpm-lock.yaml` obsoletos; no rompe el build (recomendado eliminarlos)                                                                                                                                                                                |
 
@@ -357,7 +361,9 @@ FORCE_SIGNING=true bundle exec fastlane ios signing
   `fastlane/.env*`, IPAs y artefactos.
 - El `.p8` y `MATCH_PASSWORD` viven **solo** en: keychain/gestor de contraseñas
   del equipo, GitHub Secrets y (para el `.p8`) `~/.appstoreconnect/`.
-- `fastlane match` cifra los certificados antes de subirlos al repo privado.
+- `fastlane match` cifra los certificados antes de subirlos (rama
+  `match-certificates` del repo, o repo privado aparte si se configura).
+- El workflow clona los certificados con su **`GITHUB_TOKEN`** (solo lectura).
 - `.env.production` sí se versiona **a propósito**: solo contiene variables
   `VITE_*` públicas que Vite incrusta en el bundle. Nunca poner secretos ahí.
 - Historial del repo: sin secretos (auditado; no se encontraron `.p8/.p12/
@@ -367,12 +373,12 @@ FORCE_SIGNING=true bundle exec fastlane ios signing
 
 ## 13. Archivos que componen el pipeline
 
-| Archivo                                | Rol                                                      |
-| -------------------------------------- | -------------------------------------------------------- |
-| `fastlane/Fastfile`                    | Lanes `check`, `signing`, `build`, `beta`                |
-| `fastlane/Appfile`                     | Bundle ID + Team ID                                      |
-| `fastlane/Matchfile`                   | Repo de certificados (`MATCH_GIT_URL`)                   |
-| `Gemfile` / `Gemfile.lock`             | Versión exacta de fastlane                               |
-| `.github/workflows/ios-testflight.yml` | CI/CD en GitHub Actions                                  |
-| `.env.production`                      | Config pública del bundle de producción (versionada)     |
-| `ios/App/App.xcodeproj`                | Proyecto real (bundle id, team, versiones) — sin cambios |
+| Archivo                                | Rol                                                            |
+| -------------------------------------- | -------------------------------------------------------------- |
+| `fastlane/Fastfile`                    | Lanes `check`, `signing`, `build`, `beta`                      |
+| `fastlane/Appfile`                     | Bundle ID + Team ID                                            |
+| `fastlane/Matchfile`                   | Repo/rama de certificados (`MATCH_GIT_URL`/`MATCH_GIT_BRANCH`) |
+| `Gemfile` / `Gemfile.lock`             | Versión exacta de fastlane                                     |
+| `.github/workflows/ios-testflight.yml` | CI/CD en GitHub Actions                                        |
+| `.env.production`                      | Config pública del bundle de producción (versionada)           |
+| `ios/App/App.xcodeproj`                | Proyecto real (bundle id, team, versiones) — sin cambios       |
