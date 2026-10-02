@@ -58,6 +58,11 @@ export interface SosAlertDto {
    * que se realizó la llamada.
    */
   voiceChannelStatus?: string | null;
+  /**
+   * Estado del canal push al equipo clínico (backend): "Enviado" | "Fallido" |
+   * "Timeout" | "NoConfigurado" | "Pendiente".
+   */
+  pushChannelStatus?: string | null;
   /** Ubicación persistida de la alerta. Null = no compartida (BUG-01 b). */
   location?: { latitude: number; longitude: number } | null;
 }

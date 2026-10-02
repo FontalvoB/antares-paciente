@@ -390,6 +390,37 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     ).toBeTruthy();
   });
 
+  it("tarjeta de entrega: confirma llamada y SMS enviados", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    });
+
+    await activate();
+
+    // Estado de entrega por canal: la UI refleja lo que el backend reporta.
+    expect(screen.getByText("ESTADO DE LA ENTREGA")).toBeTruthy();
+    expect(screen.getByText("Llamada al contacto")).toBeTruthy();
+    expect(screen.getByText("SMS al contacto")).toBeTruthy();
+    expect(screen.getByText("Realizada")).toBeTruthy();
+    expect(screen.getByText("Enviado")).toBeTruthy();
+    expect(screen.getByText("No disponible")).toBeTruthy();
+  });
+
   it("canal Fallido: mensaje de degradación idéntico al NoConfigurado", async () => {
     sosMock.activate.mockResolvedValue({
       id: "a-3",

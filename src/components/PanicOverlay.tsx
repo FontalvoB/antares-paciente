@@ -14,6 +14,7 @@ import {
 } from "@ionic/react";
 import {
   call,
+  chatbubbles,
   checkmarkCircle,
   close,
   heart,
@@ -88,6 +89,8 @@ export function PanicOverlay() {
   const [activating, setActivating] = useState(false);
   /** Cuenta regresiva 429 (segundos de Retry-After) que bloquea el orbe. */
   const [rateLimitSecs, setRateLimitSecs] = useState(0);
+  /** Sondeo rápido (3 s) durante el primer minuto tras activar. */
+  const [fastPoll, setFastPoll] = useState(false);
 
   // Overlay de emergencia custom: conserva el foco al cerrar. Los controles
   // siguen siendo componentes Ionic.
@@ -123,6 +126,7 @@ export function PanicOverlay() {
       setRealAlert(null);
       setActivating(false);
       setRateLimitSecs(0);
+      setFastPoll(false);
     }
   }, [panicOpen]);
 
@@ -153,13 +157,24 @@ export function PanicOverlay() {
         /* sondeo best-effort: el próximo tick reintenta */
       }
     };
-    const id = window.setInterval(() => void poll(), ACTIVE_POLL_MS);
+    const id = window.setInterval(
+      () => void poll(),
+      fastPoll ? 3_000 : ACTIVE_POLL_MS,
+    );
     void poll();
     return () => {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [sosEnabled, sosActive, panicOpen, closePanic, showToast, t]);
+  }, [sosEnabled, sosActive, panicOpen, closePanic, showToast, t, fastPoll]);
+
+  // Refresco rápido (3 s) durante el primer minuto tras activar: el estado
+  // real de entrega (SMS/llamada) suele resolverse en segundos.
+  useEffect(() => {
+    if (!fastPoll) return;
+    const id = window.setTimeout(() => setFastPoll(false), 60_000);
+    return () => window.clearTimeout(id);
+  }, [fastPoll]);
 
   // Cuenta regresiva del 429 (Retry-After): bloquea el orbe hasta expirar.
   useEffect(() => {
@@ -217,6 +232,7 @@ export function PanicOverlay() {
         // La respuesta real del backend alimenta el copy (BUG-01):
         // smsChannelStatus + location deciden qué se puede afirmar.
         setRealAlert(alert);
+        setFastPoll(true);
       }
       activateSos();
     } catch (err) {
@@ -306,6 +322,39 @@ export function PanicOverlay() {
   const locationCopy = locationShared
     ? t("Tu ubicación fue compartida con tu equipo.")
     : t("Sin ubicación en esta alerta.");
+
+  /** Estado de entrega por canal (solo modo real): refleja lo reportado. */
+  const deliveryLabel = (status: string | null, okLabel: string) => {
+    if (status === "Enviado") return okLabel;
+    if (!status) return t("Pendiente");
+    if (status === "Pendiente") return t("Enviando…");
+    if (status === "NoConfigurado") return t("No disponible");
+    if (status === "Timeout") return t("Sin respuesta");
+    return t("Falló");
+  };
+  const deliveryRows = [
+    {
+      key: "voice",
+      ico: call,
+      title: t("Llamada al contacto"),
+      status: voiceStatus,
+      okLabel: t("Realizada"),
+    },
+    {
+      key: "sms",
+      ico: chatbubbles,
+      title: t("SMS al contacto"),
+      status: smsStatus,
+      okLabel: t("Enviado"),
+    },
+    {
+      key: "push",
+      ico: people,
+      title: t("Equipo clínico"),
+      status: realAlert?.pushChannelStatus ?? null,
+      okLabel: t("Notificado"),
+    },
+  ];
 
   const rows: {
     key: string;
@@ -559,6 +608,34 @@ export function PanicOverlay() {
                   : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
               </span>
             </div>
+                    {sosActive && sosEnabled && (
+                      <div className="sos-delivery">
+                        <div className="sos-delivery-head">
+                          <small>{t("ESTADO DE LA ENTREGA")}</small>
+                          <h2>{t("Confirmación de canales")}</h2>
+                        </div>
+                        <ul className="sos-delivery-list">
+                          {deliveryRows.map((d) => {
+                            const tone =
+                              d.status === "Enviado"
+                                ? "ok"
+                                : !d.status || d.status === "Pendiente"
+                                  ? "pending"
+                                  : "bad";
+                            return (
+                              <li
+                                key={d.key}
+                                className={`sos-delivery-row ${tone}`}
+                              >
+                                <IonIcon icon={d.ico} aria-hidden="true" />
+                                <span>{d.title}</span>
+                                <b>{deliveryLabel(d.status, d.okLabel)}</b>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
                     </section>
 
                     <section className="sos-network">

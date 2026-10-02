@@ -30246,3 +30246,62 @@ ion-button.vc-btn:active {
     opacity: 0.7;
   }
 }
+
+/* Fase 1 SOS: tarjeta de estado de entrega (SMS / llamada / equipo). */
+.sos-delivery {
+  margin: 14px 0 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+.sos-delivery-head small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #64748b;
+}
+.sos-delivery-head h2 {
+  margin: 2px 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.sos-delivery-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.sos-delivery-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #0f172a;
+}
+.sos-delivery-row ion-icon {
+  font-size: 18px;
+  color: #64748b;
+}
+.sos-delivery-row span {
+  flex: 1;
+}
+.sos-delivery-row b {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+.sos-delivery-row.ok b,
+.sos-delivery-row.ok ion-icon {
+  color: #16a34a;
+}
+.sos-delivery-row.pending b {
+  color: #d97706;
+}
+.sos-delivery-row.bad b,
+.sos-delivery-row.bad ion-icon {
+  color: #dc2626;
+}
