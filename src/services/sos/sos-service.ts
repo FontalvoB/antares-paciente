@@ -25,6 +25,17 @@ export interface SosCoordinates {
   longitude: number;
 }
 
+/**
+ * Signos vitales incluidos en la alerta. Por ahora el cliente envía valores
+ * demo (constantes del overlay); cuando exista una fuente real (wearable o
+ * telemetría) se reemplazan aquí sin tocar el backend.
+ */
+export interface SosVitalsDto {
+  heartRate?: number | null;
+  spo2?: number | null;
+  bloodPressure?: string | null;
+}
+
 /** Alerta SOS (DTO mínimo según REQ-SOS-01/03; campos extra ignorados). */
 export interface SosAlertDto {
   id: string;
@@ -161,6 +172,7 @@ async function readDetail(res: Response): Promise<string | undefined> {
  */
 export async function activateSosAlert(
   coords?: SosCoordinates | null,
+  vitals?: SosVitalsDto | null,
 ): Promise<SosAlertDto> {
   const token = getAccessToken();
   const res = await fetch(`${getApiBaseUrl()}/api/v1/sos/alerts`, {
@@ -176,6 +188,7 @@ export async function activateSosAlert(
       ...(coords
         ? { latitude: coords.latitude, longitude: coords.longitude }
         : {}),
+      ...(vitals ? { vitals } : {}),
     }),
   });
 

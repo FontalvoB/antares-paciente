@@ -205,10 +205,13 @@ describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => 
     fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
     await flush();
     await flush();
-    expect(sosMock.activate).toHaveBeenCalledWith({
-      latitude: 4.6,
-      longitude: -74.1,
-    });
+    expect(sosMock.activate).toHaveBeenCalledWith(
+      {
+        latitude: 4.6,
+        longitude: -74.1,
+      },
+      { heartRate: 140, spo2: 94, bloodPressure: "160/110" },
+    );
     expect(context.activateSos).toHaveBeenCalledTimes(1);
   });
 
@@ -225,7 +228,11 @@ describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => 
     fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
     await flush();
     await flush();
-    expect(sosMock.activate).toHaveBeenCalledWith(null);
+    expect(sosMock.activate).toHaveBeenCalledWith(null, {
+      heartRate: 140,
+      spo2: 94,
+      bloodPressure: "160/110",
+    });
     expect(context.activateSos).toHaveBeenCalledTimes(1);
   });
 

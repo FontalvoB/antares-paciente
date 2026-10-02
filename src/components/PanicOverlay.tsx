@@ -48,6 +48,8 @@ type CallPhase = "dialing" | "ringing" | "connected";
 const RING = 2 * Math.PI * 78;
 /** Sondeo ligero del estado real de la alerta (REQ-SOS-07). */
 const ACTIVE_POLL_MS = 15_000;
+/** Signos vitales demo: aún no hay fuente real en el dispositivo. */
+const DEMO_VITALS = { heartRate: 140, spo2: 94, bloodPressure: "160/110" };
 
 function mmss(sec: number) {
   const s = Math.max(0, Math.floor(sec));
@@ -210,7 +212,7 @@ export function PanicOverlay() {
     try {
       const coords = await getCoordinatesBestEffort();
       if (sosEnabled) {
-        const alert: SosAlertDto = await activateSosAlert(coords);
+        const alert: SosAlertDto = await activateSosAlert(coords, DEMO_VITALS);
         setAlertId(alert.id);
         // La respuesta real del backend alimenta el copy (BUG-01):
         // smsChannelStatus + location deciden qué se puede afirmar.
