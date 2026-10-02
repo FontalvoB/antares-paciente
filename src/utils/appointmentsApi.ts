@@ -127,6 +127,8 @@ export interface AppointmentRequestDto {
   status: AppointmentRequestStatus;
   createdAt: string;
   rejectionReason: string | null;
+  /** "Normal" | "Urgent" (Urgencia de la app). */
+  priority?: "Normal" | "Urgent";
 }
 
 export interface PaginatedResult<T> {
@@ -210,6 +212,8 @@ export interface CreateRequestInput {
   locationId?: string;
   preferredStart?: string;
   reason: string;
+  /** "Urgent" = entrada directa Urgencia (prioridad de triage del staff). */
+  priority?: "Normal" | "Urgent";
 }
 
 /** ¿Hay una sesión real (JWT) o modo demo? */

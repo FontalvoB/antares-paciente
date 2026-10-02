@@ -205,6 +205,8 @@ interface AppState {
     preferredStart?: string;
     reason: string;
     mode: string;
+    /** "Urgent" = entrada directa Urgencia (prioridad de triage del staff). */
+    priority?: "Normal" | "Urgent";
   }) => Promise<boolean>;
   /** Cancela una cita real. Devuelve éxito. */
   cancelAppointmentById: (id: string, reason: string) => Promise<boolean>;
@@ -536,6 +538,7 @@ export function AppProvider({
       preferredStart?: string;
       reason: string;
       mode: string;
+      priority?: "Normal" | "Urgent";
     }): Promise<boolean> => {
       if (!patientCtx?.patientId) return false;
 
@@ -567,6 +570,7 @@ export function AppProvider({
               input.preferredStart ??
               new Date(`${input.date}T${input.time}:00`).toISOString(),
             reason: input.reason.trim(),
+            priority: input.priority,
           });
           await refreshAppointments();
           return true;

@@ -26,6 +26,7 @@ import {
   videocamOutline,
   warningOutline,
 } from "ionicons/icons";
+import { DIRECT_ENTRY_DISPLAY } from "../data/careEntryPoints";
 import {
   CONSULT_TYPES,
   buildRequestedAppointment,
@@ -504,6 +505,8 @@ export function RequestAppointmentWizard({
       // Modo sesión real: la solicitud viaja al backend y la lista se refresca.
       if (useCatalogPath) {
         if (!specialtyId || !selectedCare || !slotStart) return;
+        // Urgencia = solicitud prioritaria (triage del staff), no SOS.
+        const isUrgent = selectedCare.code === "URGENT_CARE";
         const payload = {
           specialtyId,
           professionalId: professionalId || null,
@@ -513,6 +516,7 @@ export function RequestAppointmentWizard({
           preferredStart: slotStart,
           reason,
           mode,
+          priority: isUrgent ? ("Urgent" as const) : ("Normal" as const),
         };
         const summaryName =
           selectedProfessional?.fullName ?? "Equipo COPP-ADRESD";
@@ -648,8 +652,12 @@ export function RequestAppointmentWizard({
   const showAreaHeaders = careGroups.length > 1;
 
   // Resumen del paso 3 (ruta por catálogo: datos del backend, sin mocks).
+  // Entradas directas muestran su título de app ("Medicina General"/"Urgencia"),
+  // no el nombre clínico del ERP ("Family Medicine"/"Urgent Care").
   const summaryLabel = useCatalogPath
-    ? (selectedCare?.name ?? "")
+    ? (DIRECT_ENTRY_DISPLAY[selectedCare?.code ?? ""]?.titleKey ??
+      selectedCare?.name ??
+      "")
     : (consultType?.label ?? "");
   const summaryProName = useCatalogPath
     ? (selectedProfessional?.fullName ?? "Equipo COPP-ADRESD")
@@ -761,7 +769,10 @@ export function RequestAppointmentWizard({
                 className="chip chip-glass"
                 onClick={() => go(1)}
               >
-                {t(selectedCare.name)}
+                {t(
+                  DIRECT_ENTRY_DISPLAY[selectedCare.code]?.titleKey ??
+                    selectedCare.name,
+                )}
               </button>
             )}
             {!useCatalogPath && consultType && (
@@ -1392,6 +1403,9 @@ export function RequestAppointmentWizard({
                         <div className="appt-featured-mode">
                           {date ? formatDateForDisplay(date) : "—"} ·{" "}
                           {t(summaryLabel)}
+                          {selectedCare?.code === "URGENT_CARE"
+                            ? ` · ${t("Atención prioritaria")}`
+                            : ""}
                         </div>
                         <div
                           style={{
