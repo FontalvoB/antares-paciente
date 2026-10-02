@@ -205,10 +205,13 @@ describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => 
     fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
     await flush();
     await flush();
-    expect(sosMock.activate).toHaveBeenCalledWith({
-      latitude: 4.6,
-      longitude: -74.1,
-    });
+    expect(sosMock.activate).toHaveBeenCalledWith(
+      {
+        latitude: 4.6,
+        longitude: -74.1,
+      },
+      { heartRate: 140, spo2: 94, bloodPressure: "160/110" },
+    );
     expect(context.activateSos).toHaveBeenCalledTimes(1);
   });
 
@@ -225,7 +228,11 @@ describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => 
     fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
     await flush();
     await flush();
-    expect(sosMock.activate).toHaveBeenCalledWith(null);
+    expect(sosMock.activate).toHaveBeenCalledWith(null, {
+      heartRate: 140,
+      spo2: 94,
+      bloodPressure: "160/110",
+    });
     expect(context.activateSos).toHaveBeenCalledTimes(1);
   });
 
@@ -335,20 +342,23 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
 
     await activate();
 
-    // Mensaje principal honesto de degradación.
+    // Mensaje principal honesto de degradación (SMS y voz sin confirmar).
     expect(
       screen.getByText(
-        "Alerta registrada para tu equipo clínico. SMS no disponible en este momento. Sin ubicación en esta alerta.",
+        "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento. Sin ubicación en esta alerta.",
       ),
     ).toBeTruthy();
     const copy = document.querySelector(".sos-copy p");
     expect(copy?.textContent).not.toContain("GPS");
     expect(copy?.textContent).not.toContain("signos vitales");
     expect(copy?.textContent).not.toContain("Ambulancia");
-    // Fila familiar: canal degradado, sin afirmar "Alerta enviada"/"SMS enviado".
-    expect(screen.getByText("SMS no disponible en este momento")).toBeTruthy();
+    // Fila familiar: canal degradado, sin afirmar entrega por llamada ni SMS.
+    expect(
+      screen.getByText("Canal de contacto no disponible en este momento"),
+    ).toBeTruthy();
     expect(screen.queryByText("Alerta enviada · 000")).toBeNull();
     expect(screen.queryByText("SMS enviado · 000")).toBeNull();
+    expect(screen.queryByText("Llamada realizada · 000")).toBeNull();
   });
 
   it("canal Enviado + location: sí afirma SMS al contacto y ubicación compartida", async () => {
@@ -380,6 +390,178 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     ).toBeTruthy();
   });
 
+  it("tarjeta de entrega: confirma llamada y SMS enviados", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    });
+
+    await activate();
+
+    // Estado de entrega por canal: la UI refleja lo que el backend reporta.
+    expect(screen.getByText("ESTADO DE LA ENTREGA")).toBeTruthy();
+    expect(screen.getByText("Llamada al contacto")).toBeTruthy();
+    expect(screen.getByText("SMS al contacto")).toBeTruthy();
+    expect(screen.getByText("Realizada")).toBeTruthy();
+    expect(screen.getByText("Enviado")).toBeTruthy();
+    expect(screen.getByText("No disponible")).toBeTruthy();
+  });
+
+  it("tarjeta de entrega: muestra llamada contestada y SMS entregado", async () => {
+    const outcome = {
+      id: "a-5",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      smsDeliveryStatus: "delivered",
+      voiceCallStatus: "completed",
+      voiceAnsweredBy: "human",
+      voiceDurationSeconds: 12,
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    // Phase 2: el callback de Twilio reporta el resultado real del canal.
+    expect(screen.getByText("Contestada · 0:12")).toBeTruthy();
+    expect(screen.getByText("Entregado")).toBeTruthy();
+  });
+
+  it("tarjeta de entrega: muestra buzón de voz cuando contestó una máquina", async () => {
+    const outcome = {
+      id: "a-6",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      smsDeliveryStatus: "delivered",
+      voiceCallStatus: "completed",
+      voiceAnsweredBy: "machine_start",
+      voiceDurationSeconds: 20,
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    expect(screen.getByText("Buzón de voz")).toBeTruthy();
+    expect(screen.getByText("Entregado")).toBeTruthy();
+  });
+
+  it("tarjeta de entrega: sin resultado final muestra realizada (sin espera)", async () => {
+    const outcome = {
+      id: "a-7",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      voiceCallStatus: "in-progress",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    expect(screen.getByText("Realizada")).toBeTruthy();
+  });
+
+  it("409 alerta activa: adopta la alerta existente en vez de fallar", async () => {
+    const { SosServiceError } = await import("../../services/sos/sos-service");
+    sosMock.activate.mockRejectedValue(
+      new SosServiceError(409, "Ya tienes una alerta SOS activa."),
+    );
+    const active = {
+      id: "a-8",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      voiceCallStatus: "in-progress",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.fetchActive.mockResolvedValue(active);
+
+    const { rerender } = render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    await flush();
+    // Adopta la alerta existente: el overlay queda activo con sus estados.
+    context.sosActive = true;
+    rerender(<PanicOverlay />);
+    await flush();
+
+    expect(context.activateSos).toHaveBeenCalledTimes(1);
+    expect(context.showToast).toHaveBeenCalledWith(
+      "Ya tenías una alerta SOS activa. Mostrándola; pulsa Estoy bien para cancelarla.",
+      "ok",
+    );
+    expect(screen.getByText("Realizada")).toBeTruthy();
+  });
+
+  it("409 alerta activa: adopta la alerta existente en vez de fallar", async () => {
+    const { SosServiceError } = await import("../../services/sos/sos-service");
+    sosMock.activate.mockRejectedValue(
+      new SosServiceError(409, "Ya tienes una alerta SOS activa."),
+    );
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-9",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      smsDeliveryStatus: "delivered",
+      voiceCallStatus: "completed",
+      voiceAnsweredBy: "human",
+      voiceDurationSeconds: 12,
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    });
+
+    const { rerender } = render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    await flush();
+    await flush();
+
+    // Adopta la alerta existente: activa el estado local y avisa sin error.
+    expect(context.activateSos).toHaveBeenCalledTimes(1);
+    expect(context.showToast).toHaveBeenCalledWith(
+      "Ya tenías una alerta SOS activa. Mostrándola; pulsa Estoy bien para cancelarla.",
+      "ok",
+    );
+    context.sosActive = true;
+    rerender(<PanicOverlay />);
+    await flush();
+    expect(screen.getByText("Contestada · 0:12")).toBeTruthy();
+  });
+
   it("canal Fallido: mensaje de degradación idéntico al NoConfigurado", async () => {
     sosMock.activate.mockResolvedValue({
       id: "a-3",
@@ -400,8 +582,91 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
 
     expect(
       screen.getByText(
-        "Alerta registrada para tu equipo clínico. SMS no disponible en este momento. Sin ubicación en esta alerta.",
+        "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento. Sin ubicación en esta alerta.",
       ),
     ).toBeTruthy();
+  });
+
+  it("voz Enviado + SMS Enviado: afirma llamada y SMS al contacto", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-4",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+
+    await activate();
+
+    const copy = document.querySelector(".sos-copy p");
+    expect(copy?.textContent).toBe(
+      "Llamada y SMS enviados a tu contacto de emergencia. Sin ubicación en esta alerta.",
+    );
+    expect(screen.getByText("Llamada y SMS enviados · 000")).toBeTruthy();
+  });
+
+  it("solo voz Enviado (SMS degradado): afirma la llamada sin afirmar SMS", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-5",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "NoConfigurado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-5",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "NoConfigurado",
+      voiceChannelStatus: "Enviado",
+      location: null,
+    });
+
+    await activate();
+
+    const copy = document.querySelector(".sos-copy p");
+    expect(copy?.textContent).toBe(
+      "Llamada realizada a tu contacto de emergencia. Sin ubicación en esta alerta.",
+    );
+    expect(screen.getByText("Llamada realizada · 000")).toBeTruthy();
+    expect(screen.queryByText("SMS enviado · 000")).toBeNull();
+  });
+
+  it("voz Fallida sin SMS enviado: degradación sin afirmar llamada", async () => {
+    sosMock.activate.mockResolvedValue({
+      id: "a-6",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Pendiente",
+      voiceChannelStatus: "Fallido",
+      location: null,
+    });
+    sosMock.fetchActive.mockResolvedValue({
+      id: "a-6",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Pendiente",
+      voiceChannelStatus: "Fallido",
+      location: null,
+    });
+
+    await activate();
+
+    expect(
+      screen.getByText(
+        "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento. Sin ubicación en esta alerta.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("Llamada realizada · 000")).toBeNull();
   });
 });

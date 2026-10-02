@@ -25,6 +25,17 @@ export interface SosCoordinates {
   longitude: number;
 }
 
+/**
+ * Signos vitales incluidos en la alerta. Por ahora el cliente envía valores
+ * demo (constantes del overlay); cuando exista una fuente real (wearable o
+ * telemetría) se reemplazan aquí sin tocar el backend.
+ */
+export interface SosVitalsDto {
+  heartRate?: number | null;
+  spo2?: number | null;
+  bloodPressure?: string | null;
+}
+
 /** Alerta SOS (DTO mínimo según REQ-SOS-01/03; campos extra ignorados). */
 export interface SosAlertDto {
   id: string;
@@ -40,6 +51,26 @@ export interface SosAlertDto {
    * entrega al contacto de emergencia.
    */
   smsChannelStatus?: string | null;
+  /**
+   * Estado del canal de voz reportado por el backend (llamada TTS al contacto):
+   * "Enviado" | "Fallido" | "Timeout" | "NoConfigurado" | "Pendiente".
+   * La UI lo usa para copy honesto (BUG-01): solo con "Enviado" se afirma
+   * que se realizó la llamada.
+   */
+  voiceChannelStatus?: string | null;
+  /**
+   * Estado del canal push al equipo clínico (backend): "Enviado" | "Fallido" |
+   * "Timeout" | "NoConfigurado" | "Pendiente".
+   */
+  pushChannelStatus?: string | null;
+  /** Entrega reportada por Twilio (statusCallback SMS): "delivered" | "undelivered" | "failed" | "sent" | "queued". */
+  smsDeliveryStatus?: string | null;
+  /** Estado de la llamada reportado por Twilio: "completed" | "no-answer" | "busy" | "failed" | "canceled" | "in-progress" | "ringing" | "initiated" | "queued". */
+  voiceCallStatus?: string | null;
+  /** Respuesta detectada por Twilio (si hay detección de máquina): "human" | "machine_start". */
+  voiceAnsweredBy?: string | null;
+  /** Duración de la llamada en segundos (reportada al completarse). */
+  voiceDurationSeconds?: number | null;
   /** Ubicación persistida de la alerta. Null = no compartida (BUG-01 b). */
   location?: { latitude: number; longitude: number } | null;
 }
@@ -154,6 +185,7 @@ async function readDetail(res: Response): Promise<string | undefined> {
  */
 export async function activateSosAlert(
   coords?: SosCoordinates | null,
+  vitals?: SosVitalsDto | null,
 ): Promise<SosAlertDto> {
   const token = getAccessToken();
   const res = await fetch(`${getApiBaseUrl()}/api/v1/sos/alerts`, {
@@ -169,6 +201,7 @@ export async function activateSosAlert(
       ...(coords
         ? { latitude: coords.latitude, longitude: coords.longitude }
         : {}),
+      ...(vitals ? { vitals } : {}),
     }),
   });
 
