@@ -252,7 +252,9 @@ export async function getMe(): Promise<CurrentUser | null> {
 export async function logoutUser(): Promise<void> {
   clearAccessToken();
   try {
-    await postJson<{ message: string }>(`${getAuthBaseUrl()}/api/auth/logout`);
+    await postJson<{ message: string }>(`${getAuthBaseUrl()}/api/auth/logout`, {
+      application: getApplicationCode(),
+    });
   } catch {
     /* el logout es idempotente: sin cookie también responde 200 */
   }
@@ -358,9 +360,14 @@ async function performSharedRefresh(): Promise<SharedRefreshResult> {
   try {
     // Timeout defensivo (10 s), igual que postJson: en WebView nativo una
     // IP inalcanzable puede dejar el fetch colgado para siempre.
+    // `application` selecciona la cookie propia de la app (copp_refresh_token_app)
+    // y evita restaurar la sesión de otra aplicación que comparta el host
+    // (p. ej. el ERP en localhost durante el desarrollo).
     const res = await fetch(`${getAuthBaseUrl()}/api/auth/refresh`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
+      body: JSON.stringify({ application: getApplicationCode() }),
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return { status: res.status, result: null };
