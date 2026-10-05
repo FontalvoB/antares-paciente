@@ -260,6 +260,39 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
+/**
+ * Pide al Auth Service un código opaco de un solo uso (vida de segundos) para
+ * abrir la web de eliminación de cuenta. La web lo canjea por un token propio:
+ * ningún token viaja en la URL. Reintenta una vez tras renovar si el access
+ * token venció justo en ese momento.
+ */
+export async function createAccountDeletionHandoff(): Promise<string> {
+  const call = (token: string) =>
+    fetch(`${getAuthBaseUrl()}/api/auth/account/deletion-handoff`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+      signal: AbortSignal.timeout(10000),
+    });
+
+  const token = await ensureFreshAccessToken();
+  if (!token) throw new ApiError({ status: 401, message: "Sesión no válida" });
+
+  let res = await call(token);
+  if (res.status === 401) {
+    const { result } = await sharedRefresh();
+    if (result) res = await call(result.accessToken);
+  }
+  if (!res.ok) {
+    throw new ApiError({
+      status: res.status,
+      message: `No se pudo preparar la eliminación de la cuenta (${res.status})`,
+    });
+  }
+  const body = (await res.json()) as { code: string };
+  return body.code;
+}
+
 export function getAccessToken(): string | null {
   return (
     sessionStorage.getItem(ACCESS_TOKEN_KEY) ??

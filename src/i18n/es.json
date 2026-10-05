@@ -2405,5 +2405,9 @@
   "A TU RITMO": "A TU RITMO",
   "Tus comidas de hoy": "Tus comidas de hoy",
   "{done} de {total} registradas": "{done} de {total} registradas",
-  "Por registrar": "Por registrar"
+  "Por registrar": "Por registrar",
+  "Eliminar cuenta": "Eliminar cuenta",
+  "Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación. Tus datos se conservarán 90 días antes de borrarse de forma definitiva.": "Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación. Tus datos se conservarán 90 días antes de borrarse de forma definitiva.",
+  "Continuar en la web": "Continuar en la web",
+  "No se pudo abrir el sitio web. Inténtalo más tarde.": "No se pudo abrir el sitio web. Inténtalo más tarde."
 }

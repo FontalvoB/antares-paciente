@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonButton, IonIcon, IonInput, IonItem, IonLabel, IonList, IonSkeletonText, IonToggle } from "@ionic/react";
+import { IonAccordion, IonAccordionGroup, IonAlert, IonAvatar, IonButton, IonIcon, IonInput, IonItem, IonLabel, IonList, IonSkeletonText, IonToggle } from "@ionic/react";
 import { MotionConfig, motion, useReducedMotion } from "framer-motion";
 import {
   bodyOutline,
@@ -9,6 +9,7 @@ import {
   languageOutline,
   leafOutline,
   logOutOutline,
+  trashOutline,
   medkit,
   schoolOutline,
   arrowForward,
@@ -39,6 +40,9 @@ import { formatMetricValue } from "../data/metrics";
 import { updateLeaguePreferences } from "../services/program/league-service";
 import { programKeys } from "../hooks/queryKeys";
 import { ApiError } from "../utils/apiClient";
+import { getWebBaseUrl } from "../utils/apiBaseUrl";
+import { Browser } from "@capacitor/browser";
+import { createAccountDeletionHandoff, restoreSession } from "../utils/authApi";
 import { updateMyPatientProfile } from "../utils/patientProfileApi";
 import { isValidNickname } from "../utils/league";
 import type { LeagueResponseDto } from "../services/program/types";
@@ -291,6 +295,39 @@ export function ProfilePage() {
   const reduce = useReducedMotion();
   const accountRef = useRef<HTMLElement>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  // La eliminación de la cuenta se completa en el microfrontend web. La app NO pone
+  // ningún token en la URL: pide al backend un código opaco de un solo uso (vida de
+  // segundos) y la web lo canjea por una cookie de sesión HttpOnly. El código va en
+  // el fragmento (#), que no se envía al servidor, y la web lo retira al leerlo.
+  // Se abre en el navegador integrado (SFSafariViewController / Chrome Custom Tabs):
+  // el usuario no sale de la app y las cookies quedan aisladas de ella.
+  const openDeleteAccountWeb = async () => {
+    const webBase = getWebBaseUrl();
+    if (!webBase) {
+      showToast(t("No se pudo abrir el sitio web. Inténtalo más tarde."), "err");
+      return;
+    }
+    try {
+      const code = await createAccountDeletionHandoff();
+      const hash = new URLSearchParams({ code, lang }).toString();
+      await Browser.open({ url: `${webBase}/eliminar-cuenta#${hash}`, presentationStyle: "popover" });
+    } catch {
+      showToast(t("No se pudo abrir el sitio web. Inténtalo más tarde."), "err");
+    }
+  };
+
+  // Al cerrar el navegador integrado se revalida la sesión: si la cuenta se
+  // eliminó, el refresh responde 401 y la app vuelve al login (onSessionInvalid).
+  useEffect(() => {
+    const listener = Browser.addListener("browserFinished", () => {
+      void restoreSession();
+    });
+    return () => {
+      void listener.then((l) => l.remove());
+    };
+  }, []);
+
   const initials = user.nombre.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toLocaleUpperCase(locale);
 
   const go = (s: ScreenId) => navigate(s);
@@ -496,12 +533,25 @@ export function ProfilePage() {
                 <IonButton fill="clear" expand="block" className="pf-logout" onClick={() => { logout(); showToast(t("Sesión cerrada"), "ok"); }}>
                   <IonIcon icon={logOutOutline} slot="start" />{t("Cerrar sesión")}
                 </IonButton>
+                <IonButton fill="clear" expand="block" className="pf-delete-account" onClick={() => setDeleteOpen(true)}>
+                  <IonIcon icon={trashOutline} slot="start" />{t("Eliminar cuenta")}
+                </IonButton>
                 <div className="pf-signature"><span aria-hidden="true" /><span>COPP ADRESD</span><span aria-hidden="true" /></div>
                 <p className="pf-closing">{t("Tu bienestar empieza contigo.")}</p>
               </section>
             </div>
           </div>
         </Scroll>
+        <IonAlert
+          isOpen={deleteOpen}
+          onDidDismiss={() => setDeleteOpen(false)}
+          header={t("Eliminar cuenta")}
+          message={t("Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación. Tus datos se conservarán 90 días antes de borrarse de forma definitiva.")}
+          buttons={[
+            { text: t("Cancelar"), role: "cancel" },
+            { text: t("Continuar en la web"), role: "destructive", handler: openDeleteAccountWeb },
+          ]}
+        />
         {notificationsOpen && <NotificationsModal isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />}
       </Screen>
     </MotionConfig>

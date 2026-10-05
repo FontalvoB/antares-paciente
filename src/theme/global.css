@@ -23188,6 +23188,17 @@ ion-modal.previsit-modal::part(content) {
 .pf-logout ion-icon {
   font-size: 18px;
 }
+.pf-delete-account {
+  margin: 4px 0 0;
+  height: 44px;
+  --color: var(--panic);
+  --border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.pf-delete-account ion-icon {
+  font-size: 18px;
+}
 .pf-signature {
   display: flex;
   align-items: center;

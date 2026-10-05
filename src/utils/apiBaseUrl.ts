@@ -39,6 +39,22 @@ function gatewayOrigin(): string {
   return "";
 }
 
+/**
+ * Origen de la web pública (coppadresdWeb), donde se completa la eliminación
+ * de la cuenta. `VITE_WEB_BASE_URL` manda; sin ella solo hay valor por defecto
+ * en desarrollo (localhost / alias del host en Android). En producción, vacío
+ * = no configurada: la UI avisa en lugar de abrir una URL inventada.
+ */
+export function getWebBaseUrl(): string {
+  const fromEnv = import.meta.env.VITE_WEB_BASE_URL;
+  if (fromEnv) return trimTrailingSlash(fromEnv);
+  if (!import.meta.env.DEV) return "";
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() !== "ios") {
+    return "http://10.0.2.2:5174";
+  }
+  return "http://localhost:5174";
+}
+
 /** Base URL de la API principal — siempre vía gateway. */
 export function getApiBaseUrl(): string {
   return gatewayOrigin();

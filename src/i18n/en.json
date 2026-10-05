@@ -2495,5 +2495,9 @@
   "A TU RITMO": "AT YOUR PACE",
   "Tus comidas de hoy": "Today's meals",
   "{done} de {total} registradas": "{done} of {total} logged",
-  "Por registrar": "Not logged yet"
+  "Por registrar": "Not logged yet",
+  "Eliminar cuenta": "Delete account",
+  "Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación. Tus datos se conservarán 90 días antes de borrarse de forma definitiva.": "To delete your account we will take you to our website, where you will review what it involves and confirm the deletion. Your data will be kept for 90 days before it is permanently erased.",
+  "Continuar en la web": "Continue on the web",
+  "No se pudo abrir el sitio web. Inténtalo más tarde.": "We could not open the website. Please try again later."
 }
