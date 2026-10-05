@@ -141,7 +141,7 @@ export function LoginPage() {
       setBusy(false);
       showToast(
         t("Código enviado por {channel}", {
-          channel: c.type === "Email" ? "correo electrónico" : "SMS",
+          channel: c.type === "Email" ? t("correo electrónico") : "SMS",
         }),
         "ok",
       );
@@ -515,7 +515,7 @@ export function LoginPage() {
                                 {t("Enviar código por {channel}", {
                                   channel:
                                     c.type === "Email"
-                                      ? "correo electrónico"
+                                      ? t("correo electrónico")
                                       : "SMS",
                                 })}
                               </small>
