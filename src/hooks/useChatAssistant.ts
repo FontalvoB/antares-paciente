@@ -12,7 +12,8 @@
  *   mensaje amigable (502/503) con `retryLastMessage` para reintentar.
  * - `loadOlderMessages`: antepone la página anterior (`fetchThreadHistory`
  *   con cursor `before`); con backends sin `messages` cae al `lastMessage`.
- * - `sendFeedback`: delega a `sendChatFeedback` enlazado al `executionId`.
+ * - `sendFeedback`: delega a `sendChatFeedback` enlazado al `executionId` y
+ *   al hilo actual.
  *
  * El paciente se resuelve en el backend desde el JWT (anti-IDOR): el hook
  * solo maneja `threadId`. Al cambiar de hilo el estado se reinicia (el
@@ -182,8 +183,8 @@ export function useChatAssistant(
       try {
         await sendChatFeedback(
           comment != null
-            ? { executionId, rating, comment }
-            : { executionId, rating },
+            ? { executionId, threadId: threadRef.current, rating, comment }
+            : { executionId, threadId: threadRef.current, rating },
         );
       } catch (err) {
         setError(toErrorMessage(err));

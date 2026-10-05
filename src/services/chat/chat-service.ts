@@ -81,7 +81,8 @@ export async function sendChatMessage(
 
 /**
  * Registra la calificación de una respuesta del bot enlazada a su
- * `executionId` (1-5 estrellas; pulgar arriba = 5, pulgar abajo = 1).
+ * `executionId` y `threadId` (1-5 estrellas; pulgar arriba = 5, pulgar
+ * abajo = 1).
  *
  * @throws ApiError — 401 sesión inválida, 502/503 con mensaje amigable,
  *   resto propagado. Error de validación local via `Error` sin status.
@@ -91,6 +92,9 @@ export async function sendChatFeedback(
 ): Promise<FeedbackResult> {
   if (!feedback.executionId.trim()) {
     throw new Error("El executionId no puede estar vacío.");
+  }
+  if (!feedback.threadId.trim()) {
+    throw new Error("El threadId no puede estar vacío.");
   }
   if (
     !Number.isInteger(feedback.rating) ||
@@ -104,6 +108,7 @@ export async function sendChatFeedback(
       method: "POST",
       body: {
         executionId: feedback.executionId,
+        threadId: feedback.threadId,
         rating: feedback.rating,
         ...(feedback.comment != null ? { comment: feedback.comment } : {}),
       },

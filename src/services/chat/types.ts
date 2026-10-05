@@ -34,6 +34,8 @@ export interface ChatResult {
 export interface FeedbackRequest {
   /** Id de ejecución de la respuesta calificada (viene en `ChatResult`). */
   executionId: string;
+  /** Id del hilo al que pertenece la respuesta calificada. */
+  threadId: string;
   /** Calificación 1-5 (5 = útil, 1 = no útil). */
   rating: number;
   /** Comentario opcional del paciente. */

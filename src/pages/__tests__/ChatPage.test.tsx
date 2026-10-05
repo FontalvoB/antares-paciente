@@ -66,6 +66,7 @@ const mockState = vi.hoisted(() => ({
     role: "bot" | "user" | "alert";
     text: string;
     time: string;
+    threadId?: string;
     kind?: "lab-exam";
     executionId?: string;
     cta?: { type: string; ctaText: string } | null;
@@ -525,6 +526,7 @@ describe("ChatPage — disclaimer clínico y feedback (Fase 9)", () => {
         role: "bot",
         text: "Tu plan es dieta mediterránea.",
         time: "10:05 AM",
+        threadId: "thread-1",
         executionId: "exec-1",
       },
     ];
@@ -539,6 +541,7 @@ describe("ChatPage — disclaimer clínico y feedback (Fase 9)", () => {
     await waitFor(() => {
       expect(sendChatFeedback).toHaveBeenCalledWith({
         executionId: "exec-1",
+        threadId: "thread-1",
         rating: 5,
       });
     });
