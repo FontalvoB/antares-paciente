@@ -6,14 +6,48 @@ import {
   fetchActiveSosAlert,
   getCoordinatesBestEffort,
   hasGeolocation,
-  isSosRealEnabled,
 } from "../sos-service";
 
 /**
  * REQ-SOS-01/02/05 — cliente SOS de la app: Idempotency-Key obligatoria,
  * GPS best-effort con validación de rango, manejo 404/409/422/429 con
  * Retry-After, cancelación del dueño. La identidad SIEMPRE viaja por JWT.
+ * Flujo exclusivamente real: sin flag ni simulación local; los fallos se
+ * propagan tal cual (nunca se fabrica un éxito simulado).
  */
+
+/**
+ * Node 26 expone `localStorage`/`sessionStorage` pero, sin
+ * `--localstorage-file`, devuelven `undefined` y happy-dom no logra
+ * instalarlos. Polyfill en memoria (solo si faltan) para que
+ * `getAccessToken()` pueda aportar el Bearer en estos tests.
+ */
+function memoryStorage(): Storage {
+  const store = new Map<string, string>();
+  return {
+    get length() {
+      return store.size;
+    },
+    clear: () => store.clear(),
+    getItem: (key: string) => store.get(key) ?? null,
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    setItem: (key: string, value: string) => {
+      store.set(key, String(value));
+    },
+  };
+}
+for (const name of ["localStorage", "sessionStorage"] as const) {
+  if (!(globalThis as Record<string, unknown>)[name]) {
+    Object.defineProperty(globalThis, name, {
+      value: memoryStorage(),
+      configurable: true,
+      writable: true,
+    });
+  }
+}
 
 const originalFetch = globalThis.fetch;
 
@@ -38,26 +72,6 @@ function jsonRes(
   } as Response;
   return res;
 }
-
-describe("isSosRealEnabled — feature flag (default false)", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it("false sin variable de entorno", () => {
-    vi.stubEnv("VITE_SOS_ENABLED", "");
-    expect(isSosRealEnabled()).toBe(false);
-  });
-
-  it("true solo con el valor 'true'", () => {
-    vi.stubEnv("VITE_SOS_ENABLED", "true");
-    expect(isSosRealEnabled()).toBe(true);
-    vi.stubEnv("VITE_SOS_ENABLED", "false");
-    expect(isSosRealEnabled()).toBe(false);
-    vi.stubEnv("VITE_SOS_ENABLED", "TRUE");
-    expect(isSosRealEnabled()).toBe(true);
-  });
-});
 
 describe("getCoordinatesBestEffort — GPS best-effort (REQ-SOS-01/D6)", () => {
   afterEach(() => {
@@ -184,6 +198,16 @@ describe("activateSosAlert — POST /api/v1/sos/alerts", () => {
     expect((err as SosServiceError).message).toBe(
       "Configura un contacto de emergencia válido.",
     );
+  });
+
+  it("fallo de red se propaga tal cual (sin éxito simulado)", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(new TypeError("Failed to fetch"));
+
+    const err = await activateSosAlert().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(TypeError);
+    expect((err as Error).message).toBe("Failed to fetch");
   });
 });
 

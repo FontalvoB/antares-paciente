@@ -3,7 +3,7 @@ import { getApiBaseUrl } from "../../utils/apiBaseUrl";
 
 /**
  * Cliente SOS real (change sos-panic-real, REQ-SOS-01/02/05 — app móvil).
- * Contrato del backend (cuando se despliegue):
+ * Contrato del backend:
  *  - POST   /api/v1/sos/alerts            → activa (aud=app), exige encabezado
  *    `Idempotency-Key` UUIDv4; 201 crea, 200 idempotente, 409 conflicto,
  *    422 contacto sin teléfono E.164, 400 payload/coords inválidas,
@@ -15,9 +15,9 @@ import { getApiBaseUrl } from "../../utils/apiBaseUrl";
  * cliente nunca envía patientId. El destinatario/contenido del SMS viven
  * solo en el servidor; la app nunca los envía.
  *
- * Feature flag `VITE_SOS_ENABLED` (default false): mientras el módulo SOS
- * del backend no esté desplegado, la app conserva la simulación local
- * (con doble confirmación deliberada) y no llama a la red.
+ * Flujo exclusivamente real: no existe simulación local. Cada operación
+ * llama al backend y cualquier fallo se propaga tal cual (`SosServiceError`
+ * o error de red); la app nunca fabrica una alerta ni un éxito simulado.
  */
 
 export interface SosCoordinates {
@@ -92,11 +92,6 @@ export class SosServiceError extends Error {
     this.retryAfterSeconds = options?.retryAfterSeconds;
     this.detail = options?.detail;
   }
-}
-
-/** Feature flag del módulo SOS real (default false: backend sin desplegar). */
-export function isSosRealEnabled(): boolean {
-  return (import.meta.env.VITE_SOS_ENABLED ?? "").toLowerCase() === "true";
 }
 
 /** `true` cuando el navegador expone geolocalización usable. */

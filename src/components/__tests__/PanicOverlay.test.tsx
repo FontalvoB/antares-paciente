@@ -12,14 +12,13 @@ import { PanicOverlay } from "../PanicOverlay";
  * Tests de REQ-SOS-07 (change sos-panic-real):
  * 1) la inactividad (>5 s) NUNCA activa SOS (sin temporizador de auto-disparo);
  * 2) la activación exige doble confirmación deliberada (orbe → confirmar);
- * 3) la rama real (VITE_SOS_ENABLED) despacha al backend y refleja el ciclo;
+ * 3) el flujo es SIEMPRE real: despacha al backend y refleja el ciclo;
  * 4) BUG-01: el copy afirma SOLO lo que el estado real de la alerta respalda
  *    (smsChannelStatus de POST /alerts y GET /active; location).
  */
 
-// Mock del servicio SOS: controla el flag y captura las llamadas de red.
+// Mock del servicio SOS: captura las llamadas de red.
 const sosMock = vi.hoisted(() => ({
-  enabled: false,
   activate: vi.fn(),
   fetchActive: vi.fn(),
   cancel: vi.fn(),
@@ -27,7 +26,6 @@ const sosMock = vi.hoisted(() => ({
 }));
 
 vi.mock("../../services/sos/sos-service", () => ({
-  isSosRealEnabled: () => sosMock.enabled,
   activateSosAlert: sosMock.activate,
   fetchActiveSosAlert: sosMock.fetchActive,
   cancelSosAlert: sosMock.cancel,
@@ -128,8 +126,11 @@ afterEach(() => {
 
 describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () => {
   beforeEach(() => {
-    sosMock.enabled = false;
-    sosMock.activate.mockReset();
+    sosMock.activate.mockReset().mockResolvedValue({
+      id: "a-1",
+      status: "Activa",
+      createdAt: "",
+    });
     sosMock.fetchActive.mockReset();
     sosMock.cancel.mockReset();
     sosMock.coords.mockReset().mockResolvedValue(null);
@@ -154,15 +155,16 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
     expect(context.activateSos).not.toHaveBeenCalled();
   });
 
-  it("segundo paso afirmativo activa SOS una sola vez (modo local)", async () => {
+  it("segundo paso afirmativo activa SOS real una sola vez", async () => {
     render(<PanicOverlay />);
     fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
     await screen.findByText("¿Activar tu alerta SOS real?");
     fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
     await flush();
+    await flush();
+    // Flujo exclusivamente real: siempre despacha al backend.
+    expect(sosMock.activate).toHaveBeenCalledTimes(1);
     expect(context.activateSos).toHaveBeenCalledTimes(1);
-    // Modo local (flag off): no hay llamada al backend.
-    expect(sosMock.activate).not.toHaveBeenCalled();
   });
 
   it('"No, volver" regresa al protocolo sin activar nada', async () => {
@@ -182,9 +184,8 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
   });
 });
 
-describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => {
+describe("SOS real — despacho y ciclo de vida", () => {
   beforeEach(() => {
-    sosMock.enabled = true;
     sosMock.activate.mockReset();
     sosMock.fetchActive.mockReset();
     sosMock.cancel.mockReset();
@@ -301,7 +302,6 @@ describe("SOS real (flag VITE_SOS_ENABLED) — despacho y ciclo de vida", () => 
 
 describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
   beforeEach(() => {
-    sosMock.enabled = true;
     sosMock.activate.mockReset();
     sosMock.fetchActive.mockReset();
     sosMock.cancel.mockReset();

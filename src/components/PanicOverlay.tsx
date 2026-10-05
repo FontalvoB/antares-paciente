@@ -37,7 +37,6 @@ import {
   cancelSosAlert,
   fetchActiveSosAlert,
   getCoordinatesBestEffort,
-  isSosRealEnabled,
   type SosAlertDto,
 } from "../services/sos/sos-service";
 
@@ -77,11 +76,10 @@ export function PanicOverlay() {
   const [phase, setPhase] = useState<CallPhase>("dialing");
   const [callSec, setCallSec] = useState(0);
   const [speakerOn, setSpeakerOn] = useState(true);
-  // SOS real (change sos-panic-real): flag por env. Con false el flujo es
-  // simulación local; en ambos casos la activación SIEMPRE exige doble
-  // confirmación deliberada (REQ-SOS-07: nunca auto-activación por
-  // inactividad — el temporizador de 5 s se elimina).
-  const sosEnabled = isSosRealEnabled();
+  // SOS real (change sos-panic-real): flujo exclusivamente real, sin
+  // simulación local. La activación SIEMPRE exige doble confirmación
+  // deliberada (REQ-SOS-07: nunca auto-activación por inactividad — el
+  // temporizador de 5 s se elimina).
   const [alertId, setAlertId] = useState<string | null>(null);
   /** Alerta real (POST /api/v1/sos/alerts o GET /alerts/active): fuente del
    * copy honesto — estado del canal SMS y ubicación efectiva (BUG-01). */
@@ -140,7 +138,7 @@ export function PanicOverlay() {
   // (REQ-SOS-07) y el estado vivo de los canales (BUG-01). Una alerta que ya
   // no está activa saca al paciente de la vista de emergencia automáticamente.
   useEffect(() => {
-    if (!sosEnabled || !sosActive || !panicOpen) return;
+    if (!sosActive || !panicOpen) return;
     let cancelled = false;
     const poll = async () => {
       try {
@@ -166,7 +164,7 @@ export function PanicOverlay() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [sosEnabled, sosActive, panicOpen, closePanic, showToast, t, fastPoll]);
+  }, [sosActive, panicOpen, closePanic, showToast, t, fastPoll]);
 
   // Refresco rápido (3 s) durante el primer minuto tras activar: el estado
   // real de entrega (SMS/llamada) suele resolverse en segundos.
@@ -216,9 +214,9 @@ export function PanicOverlay() {
 
   /**
    * Confirmación deliberada (segundo paso de la doble confirmación):
-   * GPS best-effort → activación real (flag on) o local (flag off) →
-   * estado visual "SOS ACTIVO". Los errores del backend se presentan sin
-   * bloquear el protocolo visual.
+   * GPS best-effort → activación real en el backend → estado visual
+   * "SOS ACTIVO". Los errores del backend se presentan sin bloquear el
+   * protocolo visual.
    */
   const confirmActivation = async () => {
     setView("protocol");
@@ -226,14 +224,12 @@ export function PanicOverlay() {
     setActivating(true);
     try {
       const coords = await getCoordinatesBestEffort();
-      if (sosEnabled) {
-        const alert: SosAlertDto = await activateSosAlert(coords, DEMO_VITALS);
-        setAlertId(alert.id);
-        // La respuesta real del backend alimenta el copy (BUG-01):
-        // smsChannelStatus + location deciden qué se puede afirmar.
-        setRealAlert(alert);
-        setFastPoll(true);
-      }
+      const alert: SosAlertDto = await activateSosAlert(coords, DEMO_VITALS);
+      setAlertId(alert.id);
+      // La respuesta real del backend alimenta el copy (BUG-01):
+      // smsChannelStatus + location deciden qué se puede afirmar.
+      setRealAlert(alert);
+      setFastPoll(true);
       activateSos();
     } catch (err) {
       if (err instanceof SosServiceError) {
@@ -278,7 +274,7 @@ export function PanicOverlay() {
 
   /** "Estoy bien": cancela la alerta real si existe (best-effort) y cierra. */
   const imOk = () => {
-    if (sosEnabled && alertId) {
+    if (alertId) {
       void cancelSosAlert(alertId).catch(() => {
         /* la alerta real se atiende igual; el cierre local no depende de esto */
       });
@@ -301,19 +297,15 @@ export function PanicOverlay() {
   // ── Copy honesto según el estado REAL de la alerta (BUG-01) ────────────────
   // Fuente: respuesta de POST /api/v1/sos/alerts y sondeo de GET /alerts/active.
   const smsStatus = realAlert?.smsChannelStatus ?? null;
-  const smsSent = sosEnabled && smsStatus === "Enviado";
+  const smsSent = smsStatus === "Enviado";
   // Degradación: canal reportado distinto de Enviado/Pendiente (Fallido,
   // Timeout, NoConfigurado). Sin afirmar entrega ni GPS.
   const smsDegraded =
-    sosEnabled &&
-    !!smsStatus &&
-    smsStatus !== "Enviado" &&
-    smsStatus !== "Pendiente";
+    !!smsStatus && smsStatus !== "Enviado" && smsStatus !== "Pendiente";
   const voiceStatus = realAlert?.voiceChannelStatus ?? null;
-  const voiceSent = sosEnabled && voiceStatus === "Enviado";
+  const voiceSent = voiceStatus === "Enviado";
   // Mismo criterio para el canal de voz: distinto de Enviado/Pendiente.
   const voiceDegraded =
-    sosEnabled &&
     !!voiceStatus &&
     voiceStatus !== "Enviado" &&
     voiceStatus !== "Pendiente";
@@ -321,23 +313,19 @@ export function PanicOverlay() {
   const contactSent = voiceSent || smsSent;
   /** Algún canal de contacto degradó y ninguno confirmó entrega. */
   const contactDegraded = voiceDegraded || smsDegraded;
-  const locationShared = sosEnabled && realAlert?.location != null;
+  const locationShared = realAlert?.location != null;
 
-  const activeCopy = !sosEnabled
-    ? t(
-        "Protocolo activado en modo simulación: no se envió ninguna alerta real.",
-      )
-    : voiceSent && smsSent
-      ? t("Llamada y SMS enviados a tu contacto de emergencia.")
-      : voiceSent
-        ? t("Llamada realizada a tu contacto de emergencia.")
-        : smsSent
-          ? t("SMS enviado a tu contacto de emergencia.")
-          : contactDegraded
-            ? t(
-                "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento.",
-              )
-            : t("Alerta registrada para tu equipo clínico.");
+  const activeCopy = voiceSent && smsSent
+    ? t("Llamada y SMS enviados a tu contacto de emergencia.")
+    : voiceSent
+      ? t("Llamada realizada a tu contacto de emergencia.")
+      : smsSent
+        ? t("SMS enviado a tu contacto de emergencia.")
+        : contactDegraded
+          ? t(
+              "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento.",
+            )
+          : t("Alerta registrada para tu equipo clínico.");
   const locationCopy = locationShared
     ? t("Tu ubicación fue compartida con tu equipo.")
     : t("Sin ubicación en esta alerta.");
@@ -349,7 +337,7 @@ export function PanicOverlay() {
     return `${m}:${String(s).padStart(2, "0")}`;
   };
 
-  /** Estado de entrega por canal (solo modo real): refleja lo reportado. */
+  /** Estado de entrega por canal: refleja lo reportado por el backend. */
   const deliveryLabel = (
     status: string | null,
     okLabel: string,
@@ -452,21 +440,17 @@ export function PanicOverlay() {
       ico: pulse,
       title: t("Dr. Ramírez"),
       sub:
-        sosActive && sosEnabled
+        sosActive
           ? t("Alerta registrada para tu equipo clínico")
           : t("Médico de cabecera"),
       tone: "blue",
-      on: sosActive && sosEnabled,
+      on: sosActive,
     },
     {
       key: "gps",
       ico: location,
       title: t("Ubicación GPS"),
-      sub: sosActive
-        ? sosEnabled
-          ? locationCopy
-          : t("Simulación: no se comparte ubicación")
-        : t("Se comparte al activar"),
+      sub: sosActive ? locationCopy : t("Se comparte al activar"),
       tone: "teal",
       on: locationShared,
     },
@@ -543,11 +527,9 @@ export function PanicOverlay() {
             {view !== "protocol" && (            <div className="sos-demo-note">
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
-                {sosEnabled
-                  ? t(
-                      "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
-                    )
-                  : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
+                {t(
+                  "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
+                )}
               </span>
             </div>)}
 
@@ -657,14 +639,12 @@ export function PanicOverlay() {
             <div className="sos-demo-note">
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
-                {sosEnabled
-                  ? t(
-                      "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
-                    )
-                  : t("Simulación SOS: no realiza llamadas ni envía alertas.")}
+                {t(
+                  "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
+                )}
               </span>
             </div>
-                    {sosActive && sosEnabled && (
+                    {sosActive && (
                       <div className="sos-delivery">
                         <div className="sos-delivery-head">
                           <small>{t("ESTADO DE LA ENTREGA")}</small>
@@ -845,13 +825,9 @@ export function PanicOverlay() {
                           {t("¿Activar tu alerta SOS real?")}
                         </h1>
                         <p>
-                          {sosEnabled
-                            ? t(
-                                "Se enviará una alerta a tu contacto de emergencia y a tu equipo médico, con tu ubicación si la compartes.",
-                              )
-                            : t(
-                                "Modo simulación: no se enviará ninguna alerta real.",
-                              )}
+                          {t(
+                            "Se enviará una alerta a tu contacto de emergencia y a tu equipo médico, con tu ubicación si la compartes.",
+                          )}
                         </p>
                       </div>
                     </section>
@@ -928,9 +904,7 @@ export function PanicOverlay() {
                         <IonIcon icon={location} />{" "}
                         {locationShared
                           ? t("Ubicación compartida")
-                          : sosEnabled
-                            ? t("Sin ubicación")
-                            : t("Simulación")}
+                          : t("Sin ubicación")}
                       </span>
                       <span>
                         <IonIcon icon={heart} /> {t("Sin signos vitales")}
