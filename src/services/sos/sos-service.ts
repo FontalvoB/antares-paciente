@@ -63,6 +63,12 @@ export interface SosAlertDto {
    * "Timeout" | "NoConfigurado" | "Pendiente".
    */
   pushChannelStatus?: string | null;
+  /**
+   * Estado del canal de correo al contacto de emergencia (backend):
+   * "Enviado" | "Fallido" | "Timeout" | "NoConfigurado" | "Pendiente" |
+   * "SinDestino" (el contacto no tiene correo registrado: no se envía nada).
+   */
+  emailChannelStatus?: string | null;
   /** Entrega reportada por Twilio (statusCallback SMS): "delivered" | "undelivered" | "failed" | "sent" | "queued". */
   smsDeliveryStatus?: string | null;
   /** Estado de la llamada reportado por Twilio: "completed" | "no-answer" | "busy" | "failed" | "canceled" | "in-progress" | "ringing" | "initiated" | "queued". */

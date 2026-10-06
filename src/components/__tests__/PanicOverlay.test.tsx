@@ -443,6 +443,50 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(screen.getByText("No disponible")).toBeTruthy();
   });
 
+  it("tarjeta de entrega: correo Enviado muestra la fila de correo", async () => {
+    const outcome = {
+      id: "a-4b",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      emailChannelStatus: "Enviado",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    const emailRow = screen.getByText("Correo al contacto").closest("li");
+    expect(emailRow?.textContent).toContain("Enviado");
+    expect(emailRow?.className).toContain("ok");
+  });
+
+  it("tarjeta de entrega: sin correo registrado el canal queda neutro, sin envío", async () => {
+    const outcome = {
+      id: "a-4c",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      emailChannelStatus: "SinDestino",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    // Sin correo el backend no envía nada y la fila NO se pinta como fallo.
+    const emailRow = screen.getByText("Correo al contacto").closest("li");
+    expect(emailRow?.textContent).toContain("Sin correo registrado");
+    expect(emailRow?.className).toContain("pending");
+    expect(emailRow?.className).not.toContain("bad");
+  });
+
   it("tarjeta de entrega: muestra llamada contestada y SMS entregado", async () => {
     const outcome = {
       id: "a-5",
