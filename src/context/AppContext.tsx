@@ -100,6 +100,11 @@ interface AppState {
   finishLogin: (seed?: Partial<UserProfile>, next?: Flow) => void;
   backToLogin: () => void;
   finishOnboarding: (user: UserProfile) => void;
+  /**
+   * Re-hidrata el user del contexto desde `/me/patient-profile`
+   * (best-effort): lo usa el editor de contacto de emergencia tras guardar.
+   */
+  refreshPatientProfile: () => Promise<void>;
   finishTests: () => void;
   skipTests: () => void;
   openTests: () => void;
@@ -1067,6 +1072,7 @@ export function AppProvider({
         setUser(u);
         setFlow("tests");
       },
+      refreshPatientProfile: () => hydratePatientProfile(() => true),
       finishTests: () => setFlow("app"),
       skipTests: () => setFlow("app"),
       // Reabre la batería de evaluación desde la app (un paciente que ya pasó
@@ -1247,6 +1253,7 @@ export function AppProvider({
       cancelAppointmentById,
       rescheduleAppointmentById,
       roomAppointment,
+      hydratePatientProfile,
     ],
   );
 
