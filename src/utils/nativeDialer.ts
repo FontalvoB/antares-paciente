@@ -1,8 +1,9 @@
 /**
  * Marcador nativo del teléfono: abre `tel:` para llamar desde iOS, Android o
- * el navegador. Los botones "Llamar 911" / "Llamar familiar" del SOS abren la
- * app de teléfono del dispositivo (antes simulaban una llamada dentro de la
- * app); la llamada automática al contacto la hace el backend con Twilio.
+ * el navegador. Los botones de llamada del SOS (emergencias del país —
+ * 123/911 — y contacto familiar) abren la app de teléfono del dispositivo
+ * (antes simulaban una llamada dentro de la app); la llamada automática al
+ * contacto la hace el backend con Twilio.
  */
 
 /** Conserva el prefijo `+` y deja solo dígitos; vacío si no hay número. */
