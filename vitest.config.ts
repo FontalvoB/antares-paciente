@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     include: ['src/**/__tests__/**/*.test.{ts,tsx}'],
+    setupFiles: ['./src/test/setup.ts'],
     restoreMocks: true,
     clearMocks: true,
     // Hardening 4.4: un `.only`/`.skip` commiteado rompe el pipeline en vez

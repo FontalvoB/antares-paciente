@@ -506,7 +506,10 @@ export function ChatPage() {
                 {/* Feedback clínico (Fase 9): solo en respuestas reales del
                     backend con executionId; fallbacks locales no se califican. */}
                 {m.role === "bot" && m.executionId && (
-                  <ChatFeedbackAction executionId={m.executionId} />
+                  <ChatFeedbackAction
+                    executionId={m.executionId}
+                    threadId={m.threadId ?? threadId}
+                  />
                 )}
               </div>
               <div className="chat-time">{m.time}</div>

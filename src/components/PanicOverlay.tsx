@@ -22,10 +22,8 @@ import {
   medkit,
   people,
   pulse,
-  volumeHigh,
   shieldCheckmarkOutline,
   informationCircleOutline,
-  arrowBack,
   hourglass,
 } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
@@ -39,11 +37,13 @@ import {
   getCoordinatesBestEffort,
   type SosAlertDto,
 } from "../services/sos/sos-service";
+import { openNativeDialer } from "../utils/nativeDialer";
 
 import logoIcon from "../assets/LogoIndividual.png";
 
-type SosView = "protocol" | "confirm" | "call911" | "callFamily";
-type CallPhase = "dialing" | "ringing" | "connected";
+type SosView = "protocol" | "confirm";
+/** Botones de llamada manual: 911 o el contacto de emergencia (tel: nativo). */
+type DialTarget = "call911" | "callFamily";
 
 const RING = 2 * Math.PI * 78;
 /** Sondeo ligero del estado real de la alerta (REQ-SOS-07). */
@@ -51,20 +51,6 @@ const ACTIVE_POLL_MS = 15_000;
 /** Signos vitales demo: aún no hay fuente real en el dispositivo. */
 const DEMO_VITALS = { heartRate: 140, spo2: 94, bloodPressure: "160/110" };
 
-function mmss(sec: number) {
-  const s = Math.max(0, Math.floor(sec));
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-}
-
-function Waveform({ live }: { live: boolean }) {
-  return (
-    <div className={`sos-wave ${live ? "live" : ""}`} aria-hidden="true">
-      {Array.from({ length: 14 }, (_, i) => (
-        <span key={i} style={{ animationDelay: `${i * 0.08}s` }} />
-      ))}
-    </div>
-  );
-}
 
 export function PanicOverlay() {
   const { panicOpen, sosActive, closePanic, activateSos, user, showToast } =
@@ -73,9 +59,6 @@ export function PanicOverlay() {
   const reduce = useReducedMotion();
   const overlayRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<SosView>("protocol");
-  const [phase, setPhase] = useState<CallPhase>("dialing");
-  const [callSec, setCallSec] = useState(0);
-  const [speakerOn, setSpeakerOn] = useState(true);
   // SOS real (change sos-panic-real): flujo exclusivamente real, sin
   // simulación local. La activación SIEMPRE exige doble confirmación
   // deliberada (REQ-SOS-07: nunca auto-activación por inactividad — el
@@ -107,19 +90,10 @@ export function PanicOverlay() {
   const family = user.fam1Nombre;
   const familyRole = user.fam1Parentesco;
   const familyCel = user.fam1Cel;
-  const initials = family
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
 
   useEffect(() => {
     if (!panicOpen) {
       setView("protocol");
-      setPhase("dialing");
-      setCallSec(0);
-      setSpeakerOn(true);
       setAlertId(null);
       setRealAlert(null);
       setActivating(false);
@@ -183,33 +157,23 @@ export function PanicOverlay() {
     return () => window.clearInterval(id);
   }, [rateLimitSecs]);
 
-  useEffect(() => {
-    if (view !== "call911" && view !== "callFamily") return;
-    setPhase("dialing");
-    setCallSec(0);
-    const t1 = window.setTimeout(() => setPhase("ringing"), 800);
-    const t2 = window.setTimeout(() => setPhase("connected"), 2600);
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
-  }, [view]);
+  /**
+   * Llamada nativa (tel:): abre el marcador del teléfono con 911 o con el
+   * número del contacto de emergencia. REQ-SOS-07: abrir una llamada ya NO
+   * activa SOS implícitamente. Sin número configurado se avisa y no se navega.
+   */
+  const startCall = (target: DialTarget) => {
+    if (target === "call911") {
+      openNativeDialer("911");
+      return;
+    }
 
-  useEffect(() => {
-    if (phase !== "connected") return;
-    const id = window.setInterval(() => setCallSec((s) => s + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [phase]);
-
-  const startCall = (next: SosView) => {
-    // REQ-SOS-07: abrir una llamada ya NO activa SOS implícitamente.
-    setView(next);
-  };
-
-  const hangUp = () => {
-    setView("protocol");
-    setPhase("dialing");
-    setCallSec(0);
+    if (!openNativeDialer(familyCel)) {
+      showToast(
+        t("No hay un contacto de emergencia con teléfono configurado."),
+        "err",
+      );
+    }
   };
 
   /**
@@ -284,15 +248,6 @@ export function PanicOverlay() {
   };
 
   const ringPct = sosActive ? 1 : 0;
-  const calling911 = view === "call911";
-  const callingFam = view === "callFamily";
-  const inCall = calling911 || callingFam;
-  const phaseLabel =
-    phase === "dialing"
-      ? t("Marcando…")
-      : phase === "ringing"
-        ? t("Sonando…")
-        : t("En llamada");
 
   // ── Copy honesto según el estado REAL de la alerta (BUG-01) ────────────────
   // Fuente: respuesta de POST /api/v1/sos/alerts y sondeo de GET /alerts/active.
@@ -496,7 +451,7 @@ export function PanicOverlay() {
                 first?.shadowRoot?.querySelector("button")?.focus();
               }
             }}
-            className={`overlay overlay-panic sos-screen sos-modern sos-reference ${view === "protocol" ? "is-protocol" : ""} ${sosActive ? "is-hot" : ""} ${inCall ? "is-call" : ""} ${calling911 ? "is-call-911" : ""} ${callingFam ? "is-call-fam" : ""}`}
+            className={`overlay overlay-panic sos-screen sos-modern sos-reference ${view === "protocol" ? "is-protocol" : ""} ${sosActive ? "is-hot" : ""}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -511,17 +466,13 @@ export function PanicOverlay() {
               <IonButton
                 fill="clear"
                 className="sos-top-close"
-                onClick={inCall ? hangUp : imOk}
+                onClick={imOk}
                 aria-label={
-                  inCall
-                    ? t("Volver al protocolo")
-                    : sosActive
-                      ? t("Estoy bien")
-                      : t("Cancelar activación")
+                  sosActive ? t("Estoy bien") : t("Cancelar activación")
                 }
               >
-                <IonIcon icon={inCall ? arrowBack : close} slot="start" />
-                {inCall ? t("Volver") : sosActive ? t("Cerrar") : t("Cancelar")}
+                <IonIcon icon={close} slot="start" />
+                {sosActive ? t("Cerrar") : t("Cancelar")}
               </IonButton>
             </header>
             {view !== "protocol" && (            <div className="sos-demo-note">
@@ -534,7 +485,7 @@ export function PanicOverlay() {
             </div>)}
 
             <AnimatePresence initial={false}>
-              {!inCall && view !== "confirm" ? (
+              {view !== "confirm" ? (
                 <motion.div
                   key="protocol"
                   className="sos-protocol"
@@ -803,7 +754,7 @@ export function PanicOverlay() {
                     </IonButton>
                   </footer>
                 </motion.div>
-              ) : view === "confirm" ? (
+              ) : (
                 <motion.div
                   key="confirm"
                   className="sos-protocol"
@@ -853,130 +804,6 @@ export function PanicOverlay() {
                         {t("No, volver")}
                       </IonButton>
                     </div>
-                  </footer>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={view}
-                  className={`sos-call ${calling911 ? "tone-911" : "tone-fam"}`}
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div className="sos-call-body">
-                    <div className="sos-call-kicker">
-                      {calling911
-                        ? t("EMERGENCIAS 911")
-                        : t("CONTACTO DE EMERGENCIA")}
-                    </div>
-
-                    <div className="sos-call-orb">
-                      <span className="sos-call-halo h1" />
-                      <span className="sos-call-halo h2" />
-                      <span className="sos-call-halo h3" />
-                      <span className="sos-call-face">
-                        {calling911 ? <IonIcon icon={medkit} /> : initials}
-                      </span>
-                    </div>
-
-                    <h2>{calling911 ? "911" : family}</h2>
-                    {!calling911 && (
-                      <em className="sos-call-role">{familyRole}</em>
-                    )}
-                    <p className="sos-call-sub">
-                      {calling911
-                        ? phase === "connected"
-                          ? t("Operador de emergencias · Miami-Dade")
-                          : t("Central de emergencias")
-                        : familyCel}
-                    </p>
-                    <div className={`sos-call-phase ${phase}`}>
-                      <i />
-                      {phase === "connected" ? mmss(callSec) : phaseLabel}
-                    </div>
-                    <Waveform live={phase === "connected"} />
-
-                    <div className="sos-call-chips">
-                      {/* BUG-01: chips honestos — solo se afirma lo que la
-                          alerta real respalda; nunca GPS ni signos vitales. */}
-                      <span>
-                        <IonIcon icon={location} />{" "}
-                        {locationShared
-                          ? t("Ubicación compartida")
-                          : t("Sin ubicación")}
-                      </span>
-                      <span>
-                        <IonIcon icon={heart} /> {t("Sin signos vitales")}
-                      </span>
-                    </div>
-
-                    {phase === "connected" && (
-                      <p className="sos-call-note">
-                        {calling911
-                          ? t(
-                              "Unidad en despacho. Quédate en el teléfono y no cuelgues.",
-                            )
-                          : voiceSent && smsSent
-                            ? t(
-                                "{name} ya recibió tu alerta por llamada y SMS.",
-                                { name: family.split(" ")[0] },
-                              )
-                            : voiceSent
-                              ? t("{name} ya recibió tu alerta por llamada.", {
-                                  name: family.split(" ")[0],
-                                })
-                              : smsSent
-                                ? t("{name} ya recibió tu alerta SMS.", {
-                                    name: family.split(" ")[0],
-                                  })
-                                : t(
-                                    "{name} no recibió el aviso (canal no disponible). La alerta sigue activa para tu equipo clínico.",
-                                    { name: family.split(" ")[0] },
-                                  )}
-                      </p>
-                    )}
-                  </div>
-                  <footer className="sos-call-controls">
-                    <div className="sos-call-bar">
-                      <IonButton
-                        className={`bt bt-round-lg sos-side ${speakerOn ? "on" : ""}`}
-                        aria-label={
-                          speakerOn
-                            ? t("Altavoz encendido")
-                            : t("Altavoz apagado")
-                        }
-                        aria-pressed={speakerOn ? "true" : "false"}
-                        onClick={() => setSpeakerOn((v) => !v)}
-                      >
-                        <IonIcon icon={volumeHigh} slot="icon-only" />
-                      </IonButton>
-                      <IonButton
-                        className="bt sos-hang"
-                        aria-label={t("Colgar")}
-                        onClick={hangUp}
-                      >
-                        <IonIcon icon={call} slot="icon-only" />
-                      </IonButton>
-                      <IonButton
-                        className="bt bt-round-lg sos-side"
-                        aria-label={t("Volver al protocolo")}
-                        onClick={hangUp}
-                      >
-                        <IonIcon
-                          icon={shieldCheckmarkOutline}
-                          slot="icon-only"
-                        />
-                      </IonButton>
-                    </div>
-                    <div className="sos-control-labels">
-                      <span>{t("Altavoz")}</span>
-                      <span>{t("Colgar")}</span>
-                      <span>{t("Protocolo")}</span>
-                    </div>
-                    <span className="sos-hang-lbl">
-                      {t("Colgar y volver al protocolo")}
-                    </span>
                   </footer>
                 </motion.div>
               )}

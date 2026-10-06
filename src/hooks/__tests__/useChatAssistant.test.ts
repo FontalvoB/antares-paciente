@@ -250,6 +250,7 @@ describe("useChatAssistant — feedback", () => {
 
     expect(sendChatFeedbackMock).toHaveBeenCalledWith({
       executionId: "exec-1",
+      threadId: "thread-1",
       rating: 5,
       comment: "Muy útil",
     });

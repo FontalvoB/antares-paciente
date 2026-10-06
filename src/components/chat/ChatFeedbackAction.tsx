@@ -3,7 +3,8 @@
  *
  * Componente de dominio: compone `IonButton` + `IonIcon` (Ionic-first, sin
  * HTML custom para botones) y delega el envío a `sendChatFeedback` enlazado
- * al `executionId` de la respuesta. Sin `executionId` no se renderiza nada.
+ * al `executionId` y `threadId` de la respuesta. Sin ambos ids no se renderiza
+ * nada.
  *
  * - Pulgar arriba = rating 5, pulgar abajo = rating 1.
  * - Micro-feedback visual: spinner al enviar, check + agradecimiento sutil al
@@ -21,6 +22,8 @@ import { sendChatFeedback } from "../../services/chat/chat-service";
 interface ChatFeedbackActionProps {
   /** Id de ejecución de la respuesta del bot. Sin él no se renderiza. */
   executionId?: string | null;
+  /** Id del hilo de la respuesta del bot. Sin él no se renderiza. */
+  threadId?: string | null;
   /** Callback opcional tras registrar el feedback (rating enviado). */
   onSent?: (rating: number) => void;
 }
@@ -32,6 +35,7 @@ const RATING_DOWN = 1;
 
 export function ChatFeedbackAction({
   executionId,
+  threadId,
   onSent,
 }: ChatFeedbackActionProps) {
   const t = useT();
@@ -41,10 +45,10 @@ export function ChatFeedbackAction({
   const sending = status === "sending";
 
   const rate = async (rating: number) => {
-    if (!executionId || sending) return;
+    if (!executionId || !threadId || sending) return;
     setStatus("sending");
     try {
-      await sendChatFeedback({ executionId, rating });
+      await sendChatFeedback({ executionId, threadId, rating });
       setSentRating(rating);
       setStatus("sent");
       onSent?.(rating);
@@ -55,7 +59,7 @@ export function ChatFeedbackAction({
     }
   };
 
-  if (!executionId) return null;
+  if (!executionId || !threadId) return null;
 
   if (status === "sent") {
     return (

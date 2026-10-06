@@ -114,12 +114,16 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
     apiFetchMock.mockReset();
   });
 
-  it("envía executionId + rating y devuelve ok", async () => {
+  it("envía executionId + threadId + rating y devuelve ok", async () => {
     apiFetchMock.mockResolvedValue({ ok: true });
-    const result = await sendChatFeedback({ executionId: "exec-1", rating: 5 });
+    const result = await sendChatFeedback({
+      executionId: "exec-1",
+      threadId: "thread-1",
+      rating: 5,
+    });
     expect(apiFetchMock).toHaveBeenCalledWith("/api/v1/chat/feedback", {
       method: "POST",
-      body: { executionId: "exec-1", rating: 5 },
+      body: { executionId: "exec-1", threadId: "thread-1", rating: 5 },
     });
     expect(result.ok).toBe(true);
   });
@@ -128,6 +132,7 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
     apiFetchMock.mockResolvedValue({ ok: true });
     await sendChatFeedback({
       executionId: "exec-1",
+      threadId: "thread-1",
       rating: 4,
       comment: "Muy clara la explicación.",
     });
@@ -135,6 +140,7 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
       method: "POST",
       body: {
         executionId: "exec-1",
+        threadId: "thread-1",
         rating: 4,
         comment: "Muy clara la explicación.",
       },
@@ -143,10 +149,14 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
 
   it("rechaza rating fuera de 1-5 sin llamar a la red", async () => {
     await expect(
-      sendChatFeedback({ executionId: "exec-1", rating: 0 }),
+      sendChatFeedback({
+        executionId: "exec-1",
+        threadId: "thread-1",
+        rating: 0,
+      }),
     ).rejects.toThrow("La calificación debe ser un entero entre 1 y 5.");
     await expect(
-      sendChatFeedback({ executionId: "exec-1", rating: 6 }),
+      sendChatFeedback({ executionId: "exec-1", threadId: "thread-1", rating: 6 }),
     ).rejects.toThrow("La calificación debe ser un entero entre 1 y 5.");
     expect(apiFetchMock).not.toHaveBeenCalled();
   });
@@ -156,7 +166,7 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
       new ApiError({ message: "Bad Gateway", status: 502 }),
     );
     await expect(
-      sendChatFeedback({ executionId: "exec-1", rating: 5 }),
+      sendChatFeedback({ executionId: "exec-1", threadId: "thread-1", rating: 5 }),
     ).rejects.toThrow(CHAT_UNAVAILABLE_MESSAGE);
   });
 
@@ -165,7 +175,7 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
       new ApiError({ message: "Unauthorized", status: 401 }),
     );
     await expect(
-      sendChatFeedback({ executionId: "exec-1", rating: 1 }),
+      sendChatFeedback({ executionId: "exec-1", threadId: "thread-1", rating: 1 }),
     ).rejects.toMatchObject({ status: 401 });
   });
 });
