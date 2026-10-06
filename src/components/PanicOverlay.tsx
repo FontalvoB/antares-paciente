@@ -19,6 +19,7 @@ import {
   close,
   heart,
   location,
+  mailOutline,
   medkit,
   people,
   pulse,
@@ -264,6 +265,8 @@ export function PanicOverlay() {
     !!voiceStatus &&
     voiceStatus !== "Enviado" &&
     voiceStatus !== "Pendiente";
+  /** Correo al contacto: canal opcional. SinDestino = no hay correo (no se envía). */
+  const emailStatus = realAlert?.emailChannelStatus ?? null;
   /** Al menos un canal de contacto (voz o SMS) confirmó entrega. */
   const contactSent = voiceSent || smsSent;
   /** Algún canal de contacto degradó y ninguno confirmó entrega. */
@@ -316,8 +319,10 @@ export function PanicOverlay() {
     if (deliveryStatus === "canceled") return t("Cancelada");
     if (deliveryStatus === "failed") return t("Falló");
     if (status === "Enviado") return okLabel;
+    if (status === "SinDatos") return t("Sin datos");
     if (!status) return t("Pendiente");
     if (status === "Pendiente") return t("Enviando…");
+    if (status === "SinDestino") return t("Sin correo registrado");
     if (status === "NoConfigurado") return t("No disponible");
     if (status === "Timeout") return t("Sin respuesta");
     return t("Falló");
@@ -340,6 +345,18 @@ export function PanicOverlay() {
       status: smsStatus,
       okLabel: t("Enviado"),
       deliveryStatus: realAlert?.smsDeliveryStatus ?? null,
+      answeredBy: null,
+      durationSeconds: null,
+    },
+    {
+      key: "email",
+      ico: mailOutline,
+      title: t("Correo al contacto"),
+      // Backend viejo (sin emailChannelStatus en el DTO): "Sin datos" en vez
+      // de un falso "Pendiente" — el correo pudo haberse enviado igual.
+      status: emailStatus ?? "SinDatos",
+      okLabel: t("Enviado"),
+      deliveryStatus: null,
       answeredBy: null,
       durationSeconds: null,
     },
@@ -629,7 +646,13 @@ export function PanicOverlay() {
                                 d.deliveryStatus === "completed" ||
                                 d.status === "Enviado");
                             const pendingDelivery =
-                              isVoicemail || !d.status || d.status === "Pendiente";
+                              isVoicemail ||
+                              !d.status ||
+                              d.status === "Pendiente" ||
+                              // Sin correo registrado no es fallo: neutro.
+                              d.status === "SinDestino" ||
+                              // Backend sin el campo de correo: tampoco es fallo.
+                              d.status === "SinDatos";
                             const tone = okDelivery
                               ? "ok"
                               : pendingDelivery

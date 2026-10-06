@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProfilePage } from "../ProfilePage";
@@ -11,6 +11,43 @@ vi.mock("../../components/Screen", () => ({
   Scroll: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+// framer-motion mockeado: las animaciones WAAPI en happy-dom generan
+// AbortError/Unhandled Rejection que marcan el run como fallido aunque los
+// tests pasen (mismo criterio que PanicOverlay.test.tsx).
+vi.mock("framer-motion", async () => {
+  const React = await import("react");
+  const strip = (props: Record<string, unknown>) => {
+    const {
+      initial: _initial,
+      animate: _animate,
+      exit: _exit,
+      transition: _transition,
+      whileTap: _whileTap,
+      whileHover: _whileHover,
+      variants: _variants,
+      ...rest
+    } = props;
+    return rest;
+  };
+  const motionProxy = new Proxy(
+    {},
+    {
+      get: (_target, tag: string) =>
+        function MotionComponent(props: Record<string, unknown>) {
+          return React.createElement(tag, strip(props));
+        },
+    },
+  );
+  return {
+    AnimatePresence: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
+    MotionConfig: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
+    motion: motionProxy,
+    useReducedMotion: () => false,
+  };
+});
+
 // Estado mutable compartido con los mocks (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   lang: "es" as "es" | "en",
@@ -21,12 +58,30 @@ const mockState = vi.hoisted(() => ({
   metrics: null as unknown,
 }));
 
+// Mock del endpoint de perfil: el guardado del contacto de emergencia.
+const profileMock = vi.hoisted(() => ({
+  update: vi.fn(),
+  refresh: vi.fn(),
+}));
+
+vi.mock("../../utils/patientProfileApi", () => ({
+  updateMyPatientProfile: profileMock.update,
+}));
+
 vi.mock("../../context/AppContext", () => ({
   useApp: () => ({
     user: {
       nombre: "Marta Ríos",
       cedula: "10247381",
       email: "marta.rios@example.com",
+      celular: "3001234567",
+      dob: "1990-01-01",
+      seguro: "",
+      poliza: "",
+      fam1Nombre: "Ana Torres",
+      fam1Parentesco: "Madre",
+      fam1Cel: "3009876543",
+      fam1Email: "ana@example.com",
     },
     navigate: vi.fn(),
     openPanic: vi.fn(),
@@ -35,6 +90,7 @@ vi.mock("../../context/AppContext", () => ({
     logout: vi.fn(),
     openTests: vi.fn(),
     teamProfessionals: mockState.teamProfessionals,
+    refreshPatientProfile: profileMock.refresh,
   }),
 }));
 
@@ -146,6 +202,8 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     mockState.isMockFallback = false;
     mockState.metrics = metricsFixture;
     mockState.teamProfessionals = [realProfessionalFixture];
+    profileMock.update.mockReset().mockResolvedValue({});
+    profileMock.refresh.mockReset().mockResolvedValue(undefined);
   });
 
   it("renderiza la semana real del programa en el header", () => {
@@ -227,5 +285,48 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
 
     expect(screen.queryByText(/Semana 7/)).toBeNull();
     expect(screen.queryByText("Semanas")).toBeNull();
+  });
+
+  it("edita el contacto de emergencia y refresca el perfil tras guardar", async () => {
+    renderPage();
+
+    const emailInput = document.getElementById("pf-emg-mail");
+    expect(emailInput).toBeTruthy();
+    fireEvent(
+      emailInput!,
+      new CustomEvent("ionInput", { detail: { value: "nuevo@correo.com" } }),
+    );
+    fireEvent.click(screen.getByText("Guardar contacto de emergencia"));
+
+    await waitFor(() => expect(profileMock.update).toHaveBeenCalledTimes(1));
+    expect(profileMock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emergencyName: "Ana Torres",
+        emergencyPhone: "3009876543",
+        emergencyEmail: "nuevo@correo.com",
+      }),
+    );
+    // El user del contexto se re-hidrata (PanicOverlay lee fam1* para SOS).
+    expect(profileMock.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("no guarda un correo suelto sin nombre ni teléfono del contacto", async () => {
+    renderPage();
+
+    fireEvent(
+      document.getElementById("pf-emg-name")!,
+      new CustomEvent("ionInput", { detail: { value: "" } }),
+    );
+    fireEvent(
+      document.getElementById("pf-emg-cel")!,
+      new CustomEvent("ionInput", { detail: { value: "" } }),
+    );
+    fireEvent(
+      document.getElementById("pf-emg-mail")!,
+      new CustomEvent("ionInput", { detail: { value: "solo@correo.com" } }),
+    );
+    fireEvent.click(screen.getByText("Guardar contacto de emergencia"));
+
+    await waitFor(() => expect(profileMock.update).not.toHaveBeenCalled());
   });
 });
