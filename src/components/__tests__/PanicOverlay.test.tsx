@@ -47,6 +47,13 @@ vi.mock("../../services/sos/sos-service", () => ({
   },
 }));
 
+// Marcador nativo: se verifica la intención de llamada sin navegar en jsdom.
+const dialMock = vi.hoisted(() => vi.fn(() => true));
+
+vi.mock("../../utils/nativeDialer", () => ({
+  openNativeDialer: dialMock,
+}));
+
 const context = vi.hoisted(() => ({
   panicOpen: true,
   sosActive: false,
@@ -117,6 +124,8 @@ beforeEach(() => {
   context.activateSos.mockClear();
   context.closePanic.mockClear();
   context.showToast.mockClear();
+  dialMock.mockClear();
+  dialMock.mockReturnValue(true);
 });
 
 afterEach(() => {
@@ -177,10 +186,23 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
     await screen.findByText("Estamos para ayudarte");
   });
 
-  it("las llamadas 911/familiar ya no activan SOS implícitamente", () => {
+  it("las llamadas 911/familiar abren el marcador nativo sin activar SOS", () => {
     render(<PanicOverlay />);
     fireEvent.click(screen.getByLabelText("Llamar 911"));
+    expect(dialMock).toHaveBeenCalledWith("911");
+    fireEvent.click(screen.getByLabelText("Llamar familiar"));
+    expect(dialMock).toHaveBeenCalledWith("000");
     expect(context.activateSos).not.toHaveBeenCalled();
+  });
+
+  it("sin teléfono del contacto avisa y no abre el marcador", () => {
+    dialMock.mockReturnValueOnce(false);
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Llamar familiar"));
+    expect(context.showToast).toHaveBeenCalledWith(
+      "No hay un contacto de emergencia con teléfono configurado.",
+      "err",
+    );
   });
 });
 
