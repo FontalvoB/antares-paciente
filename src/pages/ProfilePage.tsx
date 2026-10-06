@@ -50,6 +50,7 @@ import { useLeague } from "../hooks/useLeague";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useProgram } from "../hooks/useProgram";
 import { formatMetricValue } from "../data/metrics";
+import { PARENTESCO } from "../data/emergencyContact";
 import { updateLeaguePreferences } from "../services/program/league-service";
 import { programKeys } from "../hooks/queryKeys";
 import { ApiError } from "../utils/apiClient";
@@ -147,6 +148,164 @@ function ContactSection() {
         onClick={() => void save()}
       >
         {saving ? t("Guardando…") : t("Guardar contacto")}
+      </IonButton>
+    </div>
+  );
+}
+
+/**
+ * Contacto de emergencia editable post-onboarding (mismo JSON
+ * {name, relationship, phone, email} del onboarding). Es el destinatario real
+ * de la alerta SOS (llamada, SMS y correo): sin esta tarjeta, un paciente que
+ * ya pasó el onboarding no podía agregar/corregir el correo y el canal de
+ * correo quedaba SinDestino para siempre.
+ * Reglas del backend espejadas antes de enviar: nombre exige teléfono; un
+ * correo solo (sin nombre ni teléfono) no persiste el contacto.
+ */
+function EmergencyContactSection() {
+  const { user, showToast, refreshPatientProfile } = useApp();
+  const t = useT();
+  const [name, setName] = useState(user.fam1Nombre ?? "");
+  const [relationship, setRelationship] = useState(user.fam1Parentesco ?? "");
+  const [phone, setPhone] = useState(user.fam1Cel ?? "");
+  const [email, setEmail] = useState(user.fam1Email ?? "");
+  const [saving, setSaving] = useState(false);
+  const preSaveRef = useRef({ name, relationship, phone, email });
+
+  useEffect(() => {
+    setName(user.fam1Nombre ?? "");
+    setRelationship(user.fam1Parentesco ?? "");
+    setPhone(user.fam1Cel ?? "");
+    setEmail(user.fam1Email ?? "");
+  }, [user.fam1Nombre, user.fam1Parentesco, user.fam1Cel, user.fam1Email]);
+
+  const trimmedName = name.trim();
+  const trimmedRelationship = relationship.trim();
+  const trimmedPhone = phone.trim();
+  const trimmedEmail = email.trim();
+  const dirty =
+    trimmedName !== (user.fam1Nombre ?? "") ||
+    trimmedRelationship !== (user.fam1Parentesco ?? "") ||
+    trimmedPhone !== (user.fam1Cel ?? "") ||
+    trimmedEmail !== (user.fam1Email ?? "");
+
+  const save = async () => {
+    if (saving) return;
+    if (trimmedName && !trimmedPhone) {
+      showToast(t("El contacto de emergencia requiere teléfono."), "err");
+      return;
+    }
+    if (!trimmedName && !trimmedPhone && trimmedEmail) {
+      showToast(t("El correo requiere nombre y teléfono del contacto."), "err");
+      return;
+    }
+    preSaveRef.current = { name, relationship, phone, email };
+    setSaving(true);
+    try {
+      await updateMyPatientProfile({
+        dateOfBirth: user.dob || null,
+        email: user.email,
+        phone: user.celular,
+        emergencyName: trimmedName,
+        emergencyRelationship: trimmedRelationship,
+        emergencyPhone: trimmedPhone,
+        emergencyEmail: trimmedEmail,
+        insurerId: user.seguro || null,
+        memberId: user.poliza,
+      });
+      await refreshPatientProfile();
+      showToast(t("Contacto de emergencia actualizado"), "ok");
+    } catch (err) {
+      setName(preSaveRef.current.name);
+      setRelationship(preSaveRef.current.relationship);
+      setPhone(preSaveRef.current.phone);
+      setEmail(preSaveRef.current.email);
+      showToast(
+        err instanceof Error
+          ? err.message
+          : t("No se pudo actualizar el contacto de emergencia"),
+        "err",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="pf-contact" style={{ marginTop: 18 }}>
+      <div className="h3" style={{ margin: "0 0 6px" }}>
+        {t("Contacto de emergencia")}
+      </div>
+      <p style={{ margin: "0 0 10px", color: "var(--mu)", fontSize: 13 }}>
+        {t("A quién avisamos al activar SOS: llamada, SMS y correo.")}
+      </p>
+      <div className="field" style={{ marginBottom: 10 }}>
+        <label htmlFor="pf-emg-name">{t("Nombre")}</label>
+        <IonInput
+          id="pf-emg-name"
+          className="fld"
+          value={name}
+          autocomplete="name"
+          enterkeyhint="next"
+          onIonInput={(e) => setName(String(e.detail.value ?? ""))}
+        />
+      </div>
+      <div className="field" style={{ marginBottom: 10 }}>
+        <label>{t("Parentesco")}</label>
+        <div className="chips" style={{ marginTop: 0, marginBottom: 4 }}>
+          {PARENTESCO.map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={`chip ${relationship === p ? "chip-teal" : "chip-glass"}`}
+              style={
+                relationship === p
+                  ? undefined
+                  : {
+                      background: "var(--g0)",
+                      border: "1px solid var(--bd)",
+                      color: "var(--mu)",
+                    }
+              }
+              aria-pressed={relationship === p}
+              onClick={() => setRelationship(p)}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="field" style={{ marginBottom: 10 }}>
+        <label htmlFor="pf-emg-cel">{t("Celular")}</label>
+        <IonInput
+          id="pf-emg-cel"
+          className="fld"
+          type="tel"
+          inputmode="tel"
+          enterkeyhint="next"
+          value={phone}
+          onIonInput={(e) => setPhone(String(e.detail.value ?? ""))}
+        />
+      </div>
+      <div className="field" style={{ marginBottom: 12 }}>
+        <label htmlFor="pf-emg-mail">{t("Correo (opcional)")}</label>
+        <IonInput
+          id="pf-emg-mail"
+          className="fld"
+          type="email"
+          inputmode="email"
+          enterkeyhint="done"
+          value={email}
+          onIonInput={(e) => setEmail(String(e.detail.value ?? ""))}
+        />
+      </div>
+      <IonButton
+        expand="block"
+        className="bt bt-primary"
+        disabled={saving || !dirty}
+        onClick={() => void save()}
+      >
+        {saving ? t("Guardando…") : t("Guardar contacto de emergencia")}
       </IonButton>
     </div>
   );
@@ -808,6 +967,7 @@ export function ProfilePage() {
                   />
                 </div>
                 <ContactSection />
+                <EmergencyContactSection />
                 <IonAccordionGroup className="pf-league">
                   <IonAccordion value="league">
                     <IonItem slot="header" className="pf-menu-row" lines="none">

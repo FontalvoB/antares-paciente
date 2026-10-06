@@ -42,16 +42,8 @@ import {
   updateMyPatientProfile,
 } from "../utils/patientProfileApi";
 import { setFirstPassword } from "../utils/authApi";
+import { PARENTESCO } from "../data/emergencyContact";
 import type { UserProfile } from "../types";
-
-const PARENTESCO = [
-  "Esposo/a",
-  "Padre/Madre",
-  "Cuidador/a",
-  "Hijo/a",
-  "Hermano/a",
-  "Amigo/a",
-] as const;
 
 export function OnboardingPage() {
   const { finishOnboarding, showToast, backToLogin } = useApp();
