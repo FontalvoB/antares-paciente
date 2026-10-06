@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IonAccordion, IonAccordionGroup, IonAlert, IonAvatar, IonButton, IonIcon, IonInput, IonItem, IonLabel, IonList, IonSkeletonText, IonToggle } from "@ionic/react";
+import {
+  IonAccordion,
+  IonAccordionGroup,
+  IonAlert,
+  IonAvatar,
+  IonButton,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonSkeletonText,
+  IonToggle,
+} from "@ionic/react";
 import { MotionConfig, motion, useReducedMotion } from "framer-motion";
 import {
   bodyOutline,
@@ -191,7 +204,9 @@ function LeagueSection() {
       // el refetch traiga entries/isMe/myRank frescos — un paciente recién
       // opt-in debe aparecer en SU ranking sin esperar el staleTime.
       queryClient.setQueryData<LeagueResponseDto>(programKeys.league, (old) =>
-        old ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } } : old,
+        old
+          ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } }
+          : old,
       );
       void queryClient.invalidateQueries({ queryKey: programKeys.league });
       showToast(t("Preferencias guardadas"), "ok");
@@ -240,7 +255,11 @@ function LeagueSection() {
       <div className="league-prefs-row">
         <div>
           <strong>{t("Aparecer en la Liga")}</strong>
-          <small>{t("Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.")}</small>
+          <small>
+            {t(
+              "Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.",
+            )}
+          </small>
         </div>
         <IonToggle
           checked={optedIn}
@@ -265,10 +284,17 @@ function LeagueSection() {
           />
           {nickname && !nicknameValid && (
             <small className="league-prefs-err">
-              {t("El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.")}
+              {t(
+                "El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.",
+              )}
             </small>
           )}
-          <IonButton expand="block" className="bt bt-teal" disabled={!canSave} onClick={() => void save()}>
+          <IonButton
+            expand="block"
+            className="bt bt-teal"
+            disabled={!canSave}
+            onClick={() => void save()}
+          >
             {saving ? t("Guardando…") : t("Guardar")}
           </IonButton>
         </div>
@@ -305,15 +331,27 @@ export function ProfilePage() {
   const openDeleteAccountWeb = async () => {
     const webBase = getWebBaseUrl();
     if (!webBase) {
-      showToast(t("No se pudo abrir el sitio web. Inténtalo más tarde."), "err");
+      showToast(
+        t("No se pudo abrir el sitio web. Inténtalo más tarde."),
+        "err",
+      );
       return;
     }
     try {
       const code = await createAccountDeletionHandoff();
       const hash = new URLSearchParams({ code, lang }).toString();
-      await Browser.open({ url: `${webBase}/eliminar-cuenta#${hash}`, presentationStyle: "popover" });
+      // Cache-buster en la query: el navegador integrado comparte caché HTTP con
+      // Safari/Chrome y reutiliza la página previamente visitada, incluso
+      // descartando el fragment (#) — un ?cb distinto fuerza una carga fresca.
+      await Browser.open({
+        url: `${webBase}/eliminar-cuenta?cb=${Date.now()}#${hash}`,
+        presentationStyle: "popover",
+      });
     } catch {
-      showToast(t("No se pudo abrir el sitio web. Inténtalo más tarde."), "err");
+      showToast(
+        t("No se pudo abrir el sitio web. Inténtalo más tarde."),
+        "err",
+      );
     }
   };
 
@@ -328,7 +366,14 @@ export function ProfilePage() {
     };
   }, []);
 
-  const initials = user.nombre.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toLocaleUpperCase(locale);
+  const initials = user.nombre
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toLocaleUpperCase(locale);
 
   const go = (s: ScreenId) => navigate(s);
 
@@ -338,7 +383,9 @@ export function ProfilePage() {
   const programWeek = isMockFallback
     ? undefined
     : snapshot?.template?.currentWeekNumber;
-  const totalWeeks = isMockFallback ? undefined : snapshot?.template?.totalWeeks;
+  const totalWeeks = isMockFallback
+    ? undefined
+    : snapshot?.template?.totalWeeks;
   const weekSub =
     programWeek != null && totalWeeks != null
       ? t("Semana {cur} de {total}", {
@@ -347,9 +394,10 @@ export function ProfilePage() {
         })
       : undefined;
 
-  const programProgress = programWeek != null && totalWeeks != null && totalWeeks > 0
-    ? Math.max(0, Math.min(1, programWeek / totalWeeks))
-    : null;
+  const programProgress =
+    programWeek != null && totalWeeks != null && totalWeeks > 0
+      ? Math.max(0, Math.min(1, programWeek / totalWeeks))
+      : null;
 
   // Delta de peso real (metrics-history): primera → última medición. Sin dos
   // puntos reales no hay tarjeta — nunca un delta inventado.
@@ -383,15 +431,46 @@ export function ProfilePage() {
                 <div className="pf-topbar">
                   <div className="hm-wordmark" aria-label="COPP-ADRESD">
                     <img src={logoIcon} alt="" />
-                    <span><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></span>
+                    <span>
+                      <strong>
+                        COPP-ADRESD<sup>®</sup>
+                      </strong>
+                      <small>
+                        COMPREHENSIVE OBESITY
+                        <br />
+                        PREVENTION PROGRAM
+                      </small>
+                    </span>
                   </div>
                   <div className="pf-header-actions">
-                    <IonButton fill="clear" aria-label={t("Notificaciones")} onClick={() => setNotificationsOpen(true)}><IonIcon icon={notificationsOutline} /></IonButton>
-                    <IonButton fill="clear" onClick={toggleLang} aria-label={t("Idioma")}><IonIcon icon={globeOutline} /><span>{lang === "es" ? "ES" : "EN"}</span></IonButton>
-                    <IonButton fill="clear" aria-label={t("Ir a ajustes de cuenta")} onClick={() => {
-                      accountRef.current?.scrollIntoView({ behavior: reduce ? "instant" : "smooth", block: "start" });
-                      accountRef.current?.focus({ preventScroll: true });
-                    }}><IonIcon icon={menuOutline} /></IonButton>
+                    <IonButton
+                      fill="clear"
+                      aria-label={t("Notificaciones")}
+                      onClick={() => setNotificationsOpen(true)}
+                    >
+                      <IonIcon icon={notificationsOutline} />
+                    </IonButton>
+                    <IonButton
+                      fill="clear"
+                      onClick={toggleLang}
+                      aria-label={t("Idioma")}
+                    >
+                      <IonIcon icon={globeOutline} />
+                      <span>{lang === "es" ? "ES" : "EN"}</span>
+                    </IonButton>
+                    <IonButton
+                      fill="clear"
+                      aria-label={t("Ir a ajustes de cuenta")}
+                      onClick={() => {
+                        accountRef.current?.scrollIntoView({
+                          behavior: reduce ? "instant" : "smooth",
+                          block: "start",
+                        });
+                        accountRef.current?.focus({ preventScroll: true });
+                      }}
+                    >
+                      <IonIcon icon={menuOutline} />
+                    </IonButton>
                   </div>
                 </div>
                 <h1>{t("Perfil")}</h1>
@@ -399,47 +478,131 @@ export function ProfilePage() {
               </header>
 
               {/* Tarjeta de identidad: composición editorial de dominio, sin equivalente Ionic. */}
-              <motion.section className="pf-identity" aria-label={t("Tu perfil")}
-                initial={{ opacity: 0, y: reduce ? 0 : 16 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: reduce ? 0 : 0.55 }}>
+              <motion.section
+                className="pf-identity"
+                aria-label={t("Tu perfil")}
+                initial={{ opacity: 0, y: reduce ? 0 : 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: reduce ? 0 : 0.55 }}
+              >
                 <div className="pf-identity-body">
-                  <IonAvatar className="pf-monogram" aria-hidden="true">{initials || <IonIcon icon={bodyOutline} />}</IonAvatar>
+                  <IonAvatar className="pf-monogram" aria-hidden="true">
+                    {initials || <IonIcon icon={bodyOutline} />}
+                  </IonAvatar>
                   <div className="pf-person">
                     <h2>{user.nombre}</h2>
-                    <p className="pf-patient-label"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />{t("Mi perfil de salud")}</p>
-                    {weekSub && <div className="pf-membership"><IonIcon icon={calendarOutline} aria-hidden="true" />{weekSub}</div>}
-                    {user.cedula && <p className="pf-doc"><span>{t("Documento")}</span>{user.cedula}</p>}
-                    {user.ciudad && <p className="pf-city"><IonIcon icon={locationOutline} aria-hidden="true" />{user.ciudad}</p>}
+                    <p className="pf-patient-label">
+                      <IonIcon
+                        icon={shieldCheckmarkOutline}
+                        aria-hidden="true"
+                      />
+                      {t("Mi perfil de salud")}
+                    </p>
+                    {weekSub && (
+                      <div className="pf-membership">
+                        <IonIcon icon={calendarOutline} aria-hidden="true" />
+                        {weekSub}
+                      </div>
+                    )}
+                    {user.cedula && (
+                      <p className="pf-doc">
+                        <span>{t("Documento")}</span>
+                        {user.cedula}
+                      </p>
+                    )}
+                    {user.ciudad && (
+                      <p className="pf-city">
+                        <IonIcon icon={locationOutline} aria-hidden="true" />
+                        {user.ciudad}
+                      </p>
+                    )}
                   </div>
                   {/* Anillo de dominio: avance del programa real, no un score clínico inventado. */}
-                  <div className="pf-program-ring" aria-label={t("Avance del programa")}>
+                  <div
+                    className="pf-program-ring"
+                    aria-label={t("Avance del programa")}
+                  >
                     <svg viewBox="0 0 100 100" aria-hidden="true">
-                      <circle className="pf-ring-track" cx="50" cy="50" r="42" />
-                      {programProgress !== null && <circle className="pf-ring-value" cx="50" cy="50" r="42" pathLength="100" strokeDasharray={String(programProgress * 100) + " 100"} />}
+                      <circle
+                        className="pf-ring-track"
+                        cx="50"
+                        cy="50"
+                        r="42"
+                      />
+                      {programProgress !== null && (
+                        <circle
+                          className="pf-ring-value"
+                          cx="50"
+                          cy="50"
+                          r="42"
+                          pathLength="100"
+                          strokeDasharray={
+                            String(programProgress * 100) + " 100"
+                          }
+                        />
+                      )}
                     </svg>
                     <span>{t("Tu programa")}</span>
-                    <strong>{programProgress === null ? "—" : String(Math.round(programProgress * 100)) + "%"}</strong>
+                    <strong>
+                      {programProgress === null
+                        ? "—"
+                        : String(Math.round(programProgress * 100)) + "%"}
+                    </strong>
                     <IonIcon icon={leafOutline} aria-hidden="true" />
                   </div>
                 </div>
               </motion.section>
 
-              <motion.div initial={{ opacity: 0, y: reduce ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: reduce ? 0 : 0.12, duration: reduce ? 0 : 0.45 }}>
-                <IonButton className="pf-avatar-feature" aria-label={t("Mi Avatar")} fill="clear" expand="block" onClick={() => go("body")}>
+              <motion.div
+                initial={{ opacity: 0, y: reduce ? 0 : 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: reduce ? 0 : 0.12,
+                  duration: reduce ? 0 : 0.45,
+                }}
+              >
+                <IonButton
+                  className="pf-avatar-feature"
+                  aria-label={t("Mi Avatar")}
+                  fill="clear"
+                  expand="block"
+                  onClick={() => go("body")}
+                >
                   <span className="pf-avatar-copy">
                     <strong>{t("Personaliza tu avatar")}</strong>
-                    <span className="pf-feature-description">{t("Haz que tu experiencia sea única.")}</span>
+                    <span className="pf-feature-description">
+                      {t("Haz que tu experiencia sea única.")}
+                    </span>
                   </span>
                   <Mascot pose="success" className="pf-mascot" float={false} />
-                  <span className="pf-avatar-next"><IonIcon icon={chevronForward} aria-hidden="true" /></span>
+                  <span className="pf-avatar-next">
+                    <IonIcon icon={chevronForward} aria-hidden="true" />
+                  </span>
                 </IonButton>
               </motion.div>
               <div className="pf-metrics" aria-label={t("Tu recorrido")}>
                 {heroMetrics.map(([value, label]) => (
-                  <div className={"pf-metric pf-metric-" + (label === "Peso" ? "weight" : "program")} key={label}>
-                    <span className="pf-stat-icon"><IonIcon icon={label === "Semanas" ? calendarOutline : label === "Peso" ? scaleOutline : star} aria-hidden="true" /></span>
-                    <strong>{value}</strong><span>{t(label)}</span>
+                  <div
+                    className={
+                      "pf-metric pf-metric-" +
+                      (label === "Peso" ? "weight" : "program")
+                    }
+                    key={label}
+                  >
+                    <span className="pf-stat-icon">
+                      <IonIcon
+                        icon={
+                          label === "Semanas"
+                            ? calendarOutline
+                            : label === "Peso"
+                              ? scaleOutline
+                              : star
+                        }
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <strong>{value}</strong>
+                    <span>{t(label)}</span>
                     <span className="pf-stat-underline" aria-hidden="true" />
                   </div>
                 ))}
@@ -448,19 +611,73 @@ export function ProfilePage() {
 
             <div className="pf-content">
               <section className="pf-care" aria-labelledby="pf-care-title">
-                <div className="pf-section-title"><div><h2 id="pf-care-title">{t("Mi plan")}</h2><p>{t("Tu salud en equilibrio, todos los días.")}</p></div></div>
+                <div className="pf-section-title">
+                  <div>
+                    <h2 id="pf-care-title">{t("Mi plan")}</h2>
+                    <p>{t("Tu salud en equilibrio, todos los días.")}</p>
+                  </div>
+                </div>
                 <IonList className="pf-menu" lines="none">
                   {[
-                    { icon: clipboardOutline, title: "Historia clínica", sub: "Diagnósticos · Lab · Medicamentos", tone: "sky", action: () => go("hc") },
-                    { icon: bodyOutline, title: "Visualización del perfil", sub: "Índices y mediciones corporales", tone: "mint", action: () => go("body") },
-                    { icon: clipboardOutline, title: "Batería de evaluación", sub: "Tests de salud pendientes", tone: "lilac", action: () => openTests() },
-                    { icon: calendarOutline, title: "Calendario de citas", sub: "Agenda, control y telemedicina", tone: "sand", action: () => go("book") },
-                    { icon: leafOutline, title: "Plan nutricional", sub: "Alimentación que te acompaña", tone: "mint", action: () => go("nut") },
-                  ].map(item => (
-                    <IonItem button detail={false} key={item.title} onClick={item.action} className={"pf-menu-row pf-plan-" + item.tone}>
-                      <span slot="start" className={"pf-menu-icon " + item.tone}><IonIcon icon={item.icon} aria-hidden="true" /></span>
-                      <IonLabel><h3>{t(item.title)}</h3><p>{t(item.sub)}</p></IonLabel>
-                      <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                    {
+                      icon: clipboardOutline,
+                      title: "Historia clínica",
+                      sub: "Diagnósticos · Lab · Medicamentos",
+                      tone: "sky",
+                      action: () => go("hc"),
+                    },
+                    {
+                      icon: bodyOutline,
+                      title: "Visualización del perfil",
+                      sub: "Índices y mediciones corporales",
+                      tone: "mint",
+                      action: () => go("body"),
+                    },
+                    {
+                      icon: clipboardOutline,
+                      title: "Batería de evaluación",
+                      sub: "Tests de salud pendientes",
+                      tone: "lilac",
+                      action: () => openTests(),
+                    },
+                    {
+                      icon: calendarOutline,
+                      title: "Calendario de citas",
+                      sub: "Agenda, control y telemedicina",
+                      tone: "sand",
+                      action: () => go("book"),
+                    },
+                    {
+                      icon: leafOutline,
+                      title: "Plan nutricional",
+                      sub: "Alimentación que te acompaña",
+                      tone: "mint",
+                      action: () => go("nut"),
+                    },
+                  ].map((item) => (
+                    <IonItem
+                      button
+                      detail={false}
+                      key={item.title}
+                      onClick={item.action}
+                      className={"pf-menu-row pf-plan-" + item.tone}
+                    >
+                      <span
+                        slot="start"
+                        className={"pf-menu-icon " + item.tone}
+                      >
+                        <IonIcon icon={item.icon} aria-hidden="true" />
+                      </span>
+                      <IonLabel>
+                        <h3>{t(item.title)}</h3>
+                        <p>{t(item.sub)}</p>
+                      </IonLabel>
+                      <IonIcon
+                        slot="end"
+                        className="pf-chevron"
+                        icon={chevronForward}
+                        aria-hidden="true"
+                      />
                     </IonItem>
                   ))}
                 </IonList>
@@ -468,76 +685,214 @@ export function ProfilePage() {
 
               {teamProfessionals !== null && (
                 <section className="pf-team" aria-labelledby="pf-team-title">
-                  <div className="pf-section-title"><div><h2 id="pf-team-title">{t("Equipo Copp Adresd")}</h2><p>{t("Profesionales que te acompañan")}</p></div></div>
+                  <div className="pf-section-title">
+                    <div>
+                      <h2 id="pf-team-title">{t("Equipo Copp Adresd")}</h2>
+                      <p>{t("Profesionales que te acompañan")}</p>
+                    </div>
+                  </div>
                   {teamProfessionals.length > 0 ? (
                     <div className="pf-team-grid">
-                      {teamProfessionals.map(pro => (
-                        <IonButton fill="clear" key={pro.id} className="pf-team-card" onClick={() => showToast(t("Contactando a {name}…", { name: pro.name }), "info")}>
+                      {teamProfessionals.map((pro) => (
+                        <IonButton
+                          fill="clear"
+                          key={pro.id}
+                          className="pf-team-card"
+                          onClick={() =>
+                            showToast(
+                              t("Contactando a {name}…", { name: pro.name }),
+                              "info",
+                            )
+                          }
+                        >
                           <span className="pf-team-inner">
-                            <span className="pf-team-top"><IonAvatar className="pf-pro-avatar" aria-hidden="true">{pro.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("")}</IonAvatar><IonIcon icon={arrowForward} aria-hidden="true" /></span>
-                            <strong>{pro.name}</strong><small>{pro.role}</small>
+                            <span className="pf-team-top">
+                              <IonAvatar
+                                className="pf-pro-avatar"
+                                aria-hidden="true"
+                              >
+                                {pro.name
+                                  .trim()
+                                  .split(/\s+/)
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .map((part) => part[0])
+                                  .join("")}
+                              </IonAvatar>
+                              <IonIcon icon={arrowForward} aria-hidden="true" />
+                            </span>
+                            <strong>{pro.name}</strong>
+                            <small>{pro.role}</small>
                           </span>
                         </IonButton>
                       ))}
                     </div>
-                  ) : <p className="pf-empty">{t("Aún no hay profesionales asignados a tu equipo.")}</p>}
+                  ) : (
+                    <p className="pf-empty">
+                      {t("Aún no hay profesionales asignados a tu equipo.")}
+                    </p>
+                  )}
                 </section>
               )}
 
-              <section className="pf-discover" aria-labelledby="pf-discover-title">
-                <div className="pf-section-title"><div><span className="pf-eyebrow">{t("MÁS PARA TI")}</span><h2 id="pf-discover-title">{t("Crece a tu ritmo")}</h2></div><span className="pf-section-mark" aria-hidden="true">{teamProfessionals !== null ? '03' : '02'}</span></div>
+              <section
+                className="pf-discover"
+                aria-labelledby="pf-discover-title"
+              >
+                <div className="pf-section-title">
+                  <div>
+                    <span className="pf-eyebrow">{t("MÁS PARA TI")}</span>
+                    <h2 id="pf-discover-title">{t("Crece a tu ritmo")}</h2>
+                  </div>
+                  <span className="pf-section-mark" aria-hidden="true">
+                    {teamProfessionals !== null ? "03" : "02"}
+                  </span>
+                </div>
                 <div className="pf-discover-grid">
-                  <IonButton fill="clear" className="pf-discover-card pf-academy" onClick={() => go("edu")}>
+                  <IonButton
+                    fill="clear"
+                    className="pf-discover-card pf-academy"
+                    onClick={() => go("edu")}
+                  >
                     <span className="pf-discover-content">
-                      <IonIcon className="pf-discover-symbol" icon={schoolOutline} aria-hidden="true" />
+                      <IonIcon
+                        className="pf-discover-symbol"
+                        icon={schoolOutline}
+                        aria-hidden="true"
+                      />
                       <span className="pf-discover-kicker">{t("APRENDE")}</span>
-                      <strong>{t("Academia BIO")}</strong><small>{t("Conocimiento para cuidarte.")}</small>
-                      <span className="pf-discover-arrow"><IonIcon icon={arrowForward} aria-hidden="true" /></span>
+                      <strong>{t("Academia BIO")}</strong>
+                      <small>{t("Conocimiento para cuidarte.")}</small>
+                      <span className="pf-discover-arrow">
+                        <IonIcon icon={arrowForward} aria-hidden="true" />
+                      </span>
                     </span>
                   </IonButton>
-                  <IonButton fill="clear" className="pf-discover-card pf-infinito" onClick={() => go("infinito")}>
+                  <IonButton
+                    fill="clear"
+                    className="pf-discover-card pf-infinito"
+                    onClick={() => go("infinito")}
+                  >
                     <span className="pf-discover-content">
-                      <IonIcon className="pf-discover-symbol" icon={infinite} aria-hidden="true" />
+                      <IonIcon
+                        className="pf-discover-symbol"
+                        icon={infinite}
+                        aria-hidden="true"
+                      />
                       <span className="pf-discover-kicker">{t("CONECTA")}</span>
-                      <strong>INFINITO</strong><small>{t("Consciencia · Bienestar")}</small>
-                      <span className="pf-discover-arrow"><IonIcon icon={arrowForward} aria-hidden="true" /></span>
+                      <strong>INFINITO</strong>
+                      <small>{t("Consciencia · Bienestar")}</small>
+                      <span className="pf-discover-arrow">
+                        <IonIcon icon={arrowForward} aria-hidden="true" />
+                      </span>
                     </span>
                   </IonButton>
                 </div>
               </section>
 
-              <section className="pf-account" ref={accountRef} tabIndex={-1} aria-labelledby="pf-account-title">
-                <div className="pf-section-title"><div><span className="pf-eyebrow">{t("A TU MANERA")}</span><h2 id="pf-account-title">{t("Cuenta y preferencias")}</h2></div><IonIcon className="pf-section-settings" icon={optionsOutline} aria-hidden="true" /></div>
+              <section
+                className="pf-account"
+                ref={accountRef}
+                tabIndex={-1}
+                aria-labelledby="pf-account-title"
+              >
+                <div className="pf-section-title">
+                  <div>
+                    <span className="pf-eyebrow">{t("A TU MANERA")}</span>
+                    <h2 id="pf-account-title">{t("Cuenta y preferencias")}</h2>
+                  </div>
+                  <IonIcon
+                    className="pf-section-settings"
+                    icon={optionsOutline}
+                    aria-hidden="true"
+                  />
+                </div>
                 <ContactSection />
                 <IonAccordionGroup className="pf-league">
                   <IonAccordion value="league">
                     <IonItem slot="header" className="pf-menu-row" lines="none">
-                      <span slot="start" className="pf-menu-icon sand"><IonIcon icon={trophyOutline} aria-hidden="true" /></span>
-                      <IonLabel><h3>{t("Privacidad en la Liga")}</h3><p>{t("Elige cómo participas")}</p></IonLabel>
+                      <span slot="start" className="pf-menu-icon sand">
+                        <IonIcon icon={trophyOutline} aria-hidden="true" />
+                      </span>
+                      <IonLabel>
+                        <h3>{t("Privacidad en la Liga")}</h3>
+                        <p>{t("Elige cómo participas")}</p>
+                      </IonLabel>
                     </IonItem>
-                    <div slot="content"><LeagueSection /></div>
+                    <div slot="content">
+                      <LeagueSection />
+                    </div>
                   </IonAccordion>
                 </IonAccordionGroup>
                 <IonList className="pf-menu pf-account-menu" lines="none">
-                  <IonItem button detail={false} className="pf-menu-row" onClick={toggleLang}>
-                    <span slot="start" className="pf-menu-icon neutral"><IonIcon icon={languageOutline} aria-hidden="true" /></span>
-                    <IonLabel><h3>{t("Idioma")}</h3><p>{t("Elige cómo quieres leernos")}</p></IonLabel>
-                    <span slot="end" className="pf-language">{lang === "es" ? "ES" : "EN"}<IonIcon icon={chevronForward} aria-hidden="true" /></span>
+                  <IonItem
+                    button
+                    detail={false}
+                    className="pf-menu-row"
+                    onClick={toggleLang}
+                  >
+                    <span slot="start" className="pf-menu-icon neutral">
+                      <IonIcon icon={languageOutline} aria-hidden="true" />
+                    </span>
+                    <IonLabel>
+                      <h3>{t("Idioma")}</h3>
+                      <p>{t("Elige cómo quieres leernos")}</p>
+                    </IonLabel>
+                    <span slot="end" className="pf-language">
+                      {lang === "es" ? "ES" : "EN"}
+                      <IonIcon icon={chevronForward} aria-hidden="true" />
+                    </span>
                   </IonItem>
-                  <IonItem button detail={false} className="pf-menu-row pf-sos-row" onClick={openPanic}>
-                    <span slot="start" className="pf-menu-icon alert"><IonIcon icon={medkit} aria-hidden="true" /></span>
-                    <IonLabel><h3>{t("Botón de pánico SOS")}</h3><p>{t("Acceso al protocolo de emergencia")}</p></IonLabel>
-                    <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                  <IonItem
+                    button
+                    detail={false}
+                    className="pf-menu-row pf-sos-row"
+                    onClick={openPanic}
+                  >
+                    <span slot="start" className="pf-menu-icon alert">
+                      <IonIcon icon={medkit} aria-hidden="true" />
+                    </span>
+                    <IonLabel>
+                      <h3>{t("Botón de pánico SOS")}</h3>
+                      <p>{t("Acceso al protocolo de emergencia")}</p>
+                    </IonLabel>
+                    <IonIcon
+                      slot="end"
+                      className="pf-chevron"
+                      icon={chevronForward}
+                      aria-hidden="true"
+                    />
                   </IonItem>
                 </IonList>
-                <IonButton fill="clear" expand="block" className="pf-logout" onClick={() => { logout(); showToast(t("Sesión cerrada"), "ok"); }}>
-                  <IonIcon icon={logOutOutline} slot="start" />{t("Cerrar sesión")}
+                <IonButton
+                  fill="clear"
+                  expand="block"
+                  className="pf-logout"
+                  onClick={() => {
+                    logout();
+                    showToast(t("Sesión cerrada"), "ok");
+                  }}
+                >
+                  <IonIcon icon={logOutOutline} slot="start" />
+                  {t("Cerrar sesión")}
                 </IonButton>
-                <IonButton fill="clear" expand="block" className="pf-delete-account" onClick={() => setDeleteOpen(true)}>
-                  <IonIcon icon={trashOutline} slot="start" />{t("Eliminar cuenta")}
+                <IonButton
+                  fill="clear"
+                  expand="block"
+                  className="pf-delete-account"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <IonIcon icon={trashOutline} slot="start" />
+                  {t("Eliminar cuenta")}
                 </IonButton>
-                <div className="pf-signature"><span aria-hidden="true" /><span>COPP ADRESD</span><span aria-hidden="true" /></div>
-                <p className="pf-closing">{t("Tu bienestar empieza contigo.")}</p>
+                <div className="pf-signature">
+                  <span aria-hidden="true" />
+                  <span>COPP ADRESD</span>
+                  <span aria-hidden="true" />
+                </div>
+                <p className="pf-closing">
+                  {t("Tu bienestar empieza contigo.")}
+                </p>
               </section>
             </div>
           </div>
@@ -546,13 +901,24 @@ export function ProfilePage() {
           isOpen={deleteOpen}
           onDidDismiss={() => setDeleteOpen(false)}
           header={t("Eliminar cuenta")}
-          message={t("Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación. Tus datos se conservarán 90 días antes de borrarse de forma definitiva.")}
+          message={t(
+            "Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación. Tus datos se conservarán 90 días antes de borrarse de forma definitiva.",
+          )}
           buttons={[
             { text: t("Cancelar"), role: "cancel" },
-            { text: t("Continuar en la web"), role: "destructive", handler: openDeleteAccountWeb },
+            {
+              text: t("Continuar en la web"),
+              role: "destructive",
+              handler: openDeleteAccountWeb,
+            },
           ]}
         />
-        {notificationsOpen && <NotificationsModal isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />}
+        {notificationsOpen && (
+          <NotificationsModal
+            isOpen={notificationsOpen}
+            onClose={() => setNotificationsOpen(false)}
+          />
+        )}
       </Screen>
     </MotionConfig>
   );
