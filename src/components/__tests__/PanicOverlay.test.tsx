@@ -487,6 +487,28 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(emailRow?.className).not.toContain("bad");
   });
 
+  it("tarjeta de entrega: backend sin campo de correo muestra Sin datos, no Pendiente", async () => {
+    const outcome = {
+      id: "a-4d",
+      status: "Activa",
+      createdAt: "",
+      smsChannelStatus: "Enviado",
+      voiceChannelStatus: "Enviado",
+      pushChannelStatus: "NoConfigurado",
+      location: null,
+    };
+    sosMock.activate.mockResolvedValue(outcome);
+    sosMock.fetchActive.mockResolvedValue(outcome);
+
+    await activate();
+
+    // DTO viejo (sin emailChannelStatus): la app no puede afirmar "Pendiente".
+    const emailRow = screen.getByText("Correo al contacto").closest("li");
+    expect(emailRow?.textContent).toContain("Sin datos");
+    expect(emailRow?.className).toContain("pending");
+    expect(emailRow?.className).not.toContain("bad");
+  });
+
   it("tarjeta de entrega: muestra llamada contestada y SMS entregado", async () => {
     const outcome = {
       id: "a-5",

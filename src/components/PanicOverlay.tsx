@@ -319,6 +319,7 @@ export function PanicOverlay() {
     if (deliveryStatus === "canceled") return t("Cancelada");
     if (deliveryStatus === "failed") return t("Falló");
     if (status === "Enviado") return okLabel;
+    if (status === "SinDatos") return t("Sin datos");
     if (!status) return t("Pendiente");
     if (status === "Pendiente") return t("Enviando…");
     if (status === "SinDestino") return t("Sin correo registrado");
@@ -351,7 +352,9 @@ export function PanicOverlay() {
       key: "email",
       ico: mailOutline,
       title: t("Correo al contacto"),
-      status: emailStatus,
+      // Backend viejo (sin emailChannelStatus en el DTO): "Sin datos" en vez
+      // de un falso "Pendiente" — el correo pudo haberse enviado igual.
+      status: emailStatus ?? "SinDatos",
       okLabel: t("Enviado"),
       deliveryStatus: null,
       answeredBy: null,
@@ -647,7 +650,9 @@ export function PanicOverlay() {
                               !d.status ||
                               d.status === "Pendiente" ||
                               // Sin correo registrado no es fallo: neutro.
-                              d.status === "SinDestino";
+                              d.status === "SinDestino" ||
+                              // Backend sin el campo de correo: tampoco es fallo.
+                              d.status === "SinDatos";
                             const tone = okDelivery
                               ? "ok"
                               : pendingDelivery
