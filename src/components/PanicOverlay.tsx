@@ -26,7 +26,7 @@ import {
   informationCircleOutline,
   hourglass,
 } from "ionicons/icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import {
@@ -38,12 +38,14 @@ import {
   type SosAlertDto,
 } from "../services/sos/sos-service";
 import { openNativeDialer } from "../utils/nativeDialer";
+import { resolveEmergencyNumber } from "../utils/emergencyNumbers";
 
 import logoIcon from "../assets/LogoIndividual.png";
 
 type SosView = "protocol" | "confirm";
-/** Botones de llamada manual: 911 o el contacto de emergencia (tel: nativo). */
-type DialTarget = "call911" | "callFamily";
+/** Botones de llamada manual: emergencias del país (911/123) o el contacto
+ * de emergencia (tel: nativo). */
+type DialTarget = "callEmergency" | "callFamily";
 
 const RING = 2 * Math.PI * 78;
 /** Sondeo ligero del estado real de la alerta (REQ-SOS-07). */
@@ -90,6 +92,9 @@ export function PanicOverlay() {
   const family = user.fam1Nombre;
   const familyRole = user.fam1Parentesco;
   const familyCel = user.fam1Cel;
+  // Número de emergencias del país del dispositivo (123 en Colombia, 911 en
+  // EE. UU.): se resuelve una vez por apertura del overlay.
+  const emergencyNumber = useMemo(() => resolveEmergencyNumber(), []);
 
   useEffect(() => {
     if (!panicOpen) {
@@ -158,13 +163,14 @@ export function PanicOverlay() {
   }, [rateLimitSecs]);
 
   /**
-   * Llamada nativa (tel:): abre el marcador del teléfono con 911 o con el
-   * número del contacto de emergencia. REQ-SOS-07: abrir una llamada ya NO
-   * activa SOS implícitamente. Sin número configurado se avisa y no se navega.
+   * Llamada nativa (tel:): abre el marcador del teléfono con el número de
+   * emergencias del país (123 en Colombia, 911 en EE. UU.) o con el número
+   * del contacto de emergencia. REQ-SOS-07: abrir una llamada ya NO activa
+   * SOS implícitamente. Sin número configurado se avisa y no se navega.
    */
   const startCall = (target: DialTarget) => {
-    if (target === "call911") {
-      openNativeDialer("911");
+    if (target === "callEmergency") {
+      openNativeDialer(emergencyNumber);
       return;
     }
 
@@ -367,9 +373,12 @@ export function PanicOverlay() {
     {
       key: "amb",
       ico: medkit,
-      title: t("Emergencias 911"),
+      title: t("Emergencias {numero}", { numero: emergencyNumber }),
       sub: sosActive
-        ? t("El SOS no marca al 911 automáticamente. Usa el botón Llamar 911.")
+        ? t(
+            "El SOS no marca al {numero} automáticamente. Usa el botón Llamar {numero}.",
+            { numero: emergencyNumber },
+          )
         : t("En espera de activación"),
       tone: "red",
       on: false,
@@ -723,11 +732,13 @@ export function PanicOverlay() {
                     <div className="sos-actions">
                       <IonButton
                         className="bt sos-act-911"
-                        aria-label={t("Llamar 911")}
-                        onClick={() => startCall("call911")}
+                        aria-label={t("Llamar {numero}", {
+                          numero: emergencyNumber,
+                        })}
+                        onClick={() => startCall("callEmergency")}
                       >
                         <IonIcon icon={call} slot="start" />
-                        {t("Llamar 911")}
+                        {t("Llamar {numero}", { numero: emergencyNumber })}
                       </IonButton>
                       <IonButton
                         className="bt sos-act-fam"

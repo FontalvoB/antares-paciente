@@ -186,10 +186,28 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
     await screen.findByText("Estamos para ayudarte");
   });
 
-  it("las llamadas 911/familiar abren el marcador nativo sin activar SOS", () => {
+  it("la llamada de emergencia en Colombia abre el marcador con el 123", () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+      timeZone: "America/Bogota",
+    } as Intl.ResolvedDateTimeFormatOptions);
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Llamar 123"));
+    expect(dialMock).toHaveBeenCalledWith("123");
+    expect(context.activateSos).not.toHaveBeenCalled();
+  });
+
+  it("la llamada de emergencia en EE. UU. abre el marcador con el 911", () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+      timeZone: "America/New_York",
+    } as Intl.ResolvedDateTimeFormatOptions);
     render(<PanicOverlay />);
     fireEvent.click(screen.getByLabelText("Llamar 911"));
     expect(dialMock).toHaveBeenCalledWith("911");
+    expect(context.activateSos).not.toHaveBeenCalled();
+  });
+
+  it("la llamada al familiar abre el marcador nativo sin activar SOS", () => {
+    render(<PanicOverlay />);
     fireEvent.click(screen.getByLabelText("Llamar familiar"));
     expect(dialMock).toHaveBeenCalledWith("000");
     expect(context.activateSos).not.toHaveBeenCalled();
