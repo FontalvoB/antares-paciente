@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import {
+  arrowBack,
   callOutline,
   videocamOutline,
   videocamOffOutline,
   micOutline,
   micOffOutline,
-  close,
   chatbubbleEllipsesOutline,
   refreshOutline,
+  shieldCheckmarkOutline,
 } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
 import {
@@ -157,6 +158,16 @@ function stopLocalTracks(room: TwilioRoom | null) {
 type Phase =
   "loading" | "ready" | "connecting" | "connected" | "ended" | "error";
 
+/** Iniciales del nombre para el placeholder de video apagado (estilo ERP). */
+function nameInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export function VirtualRoomPage() {
   const { roomAppointment, closeRoom, navigate, user } = useApp();
   const t = useT();
@@ -177,6 +188,8 @@ export function VirtualRoomPage() {
     initialMediaProbe(),
   );
   const [chatOpen, setChatOpen] = useState(false);
+  /** Video remoto suscrito: placeholder con iniciales cuando está apagado. */
+  const [remoteVideoOn, setRemoteVideoOn] = useState(false);
   /** Pre-consulta de la cita (F4) desde el prejoin: editable solo Confirmed. */
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -310,8 +323,14 @@ export function VirtualRoomPage() {
    * Sin esto los contenedores quedan vacíos (pantalla negra en consulta).
    */
   const setupParticipant = useCallback(
-    (participant: TwilioParticipant, container: HTMLElement | null) => {
+    (
+      participant: TwilioParticipant,
+      container: HTMLElement | null,
+      onVideoChange?: (on: boolean) => void,
+    ) => {
       const el = container ?? null;
+      const isVideoTrack = (track: TwilioTrack) =>
+        (track as { kind?: string }).kind === "video";
       participant.on("trackSubscribed", (p) => {
         const track = p as TwilioTrack;
         if (
@@ -321,6 +340,7 @@ export function VirtualRoomPage() {
         ) {
           (track as TwilioTrack).attach(el);
         }
+        if (onVideoChange && isVideoTrack(track)) onVideoChange(true);
       });
       participant.on("trackUnsubscribed", (p) => {
         const track = p as TwilioTrack;
@@ -331,6 +351,7 @@ export function VirtualRoomPage() {
         ) {
           (track as TwilioTrack).detach(el);
         }
+        if (onVideoChange && isVideoTrack(track)) onVideoChange(false);
       });
       attachParticipant(participant, container);
     },
@@ -357,7 +378,7 @@ export function VirtualRoomPage() {
         setParticipants((prev) =>
           prev.includes(p.identity) ? prev : [...prev, p.identity],
         );
-        setupParticipant(p, remoteRef.current);
+        setupParticipant(p, remoteRef.current, setRemoteVideoOn);
       });
 
       room.on("participantConnected", (p) => {
@@ -367,7 +388,7 @@ export function VirtualRoomPage() {
             ? prev
             : [...prev, participant.identity],
         );
-        setupParticipant(participant, remoteRef.current);
+        setupParticipant(participant, remoteRef.current, setRemoteVideoOn);
       });
       room.on("participantDisconnected", (p) => {
         const participant = p as TwilioParticipant;
@@ -628,15 +649,16 @@ export function VirtualRoomPage() {
     <div className="room-screen">
       <header className="room-header">
         <IonButton
-          className="bt bt-round room-close"
-          aria-label={t("Salir")}
+          className="bt bt-round room-back"
+          aria-label={t("Volver a mis citas")}
           onClick={hangUp}
         >
-          <IonIcon slot="icon-only" icon={close} />
+          <IonIcon slot="icon-only" icon={arrowBack} />
         </IonButton>
         <div className="room-header-copy">
+          <span className="room-eyebrow">{t("Consulta virtual")}</span>
           <strong>{roomAppointment.name}</strong>
-          <span>
+          <span className="room-sub">
             {phase === "connected"
               ? `${t("En consulta")} · ${duration}`
               : phase === "connecting"
@@ -644,180 +666,210 @@ export function VirtualRoomPage() {
                 : `${roomAppointment.motivo} · ${roomAppointment.time} ${t(roomAppointment.day)}`}
           </span>
         </div>
-        <span
-          className={`room-dot ${phase === "connected" ? "live" : ""}`}
-          aria-hidden="true"
-        />
+        {phase === "connected" ? (
+          <span className="room-status live">
+            <span className="room-dot" aria-hidden="true" />
+            {t("En curso")}
+          </span>
+        ) : null}
       </header>
 
       <main className="room-stage">
         {phase === "error" ? (
-          <div className="room-empty">
-            <IonIcon icon={videocamOffOutline} />
-            <strong>{t("No se pudo entrar a la sala")}</strong>
-            <p>{error}</p>
-            {windowOpen ? (
-              <IonButton
-                className="bt bt-primary"
-                onClick={() => void connect()}
-              >
-                {t("Reintentar")}
-              </IonButton>
-            ) : (
-              <p>
-                {windowState === "before"
-                  ? t("La sala todavía no está abierta")
-                  : t("La ventana de acceso a la sala ya terminó")}
-              </p>
-            )}
+          <div className="room-empty room-panel">
+            <section className="room-card">
+              <span className="room-card-icon">
+                <IonIcon icon={videocamOffOutline} />
+              </span>
+              <strong>{t("No se pudo entrar a la sala")}</strong>
+              <p>{error}</p>
+              {windowOpen ? (
+                <IonButton
+                  className="bt bt-primary"
+                  onClick={() => void connect()}
+                >
+                  {t("Reintentar")}
+                </IonButton>
+              ) : (
+                <p>
+                  {windowState === "before"
+                    ? t("La sala todavía no está abierta")
+                    : t("La ventana de acceso a la sala ya terminó")}
+                </p>
+              )}
+            </section>
           </div>
         ) : phase === "ready" ? (
-          <div className="room-empty">
-            <IonIcon icon={videocamOutline} />
-            <strong>{t("Sala virtual lista")}</strong>
-            <div className="room-info">
-              <span>
-                <b>{t("Paciente")}</b>
-                <span>{user.nombre}</span>
+          <div className="room-empty room-panel">
+            <section className="room-card">
+              <span className="room-card-icon">
+                <IonIcon icon={videocamOutline} />
               </span>
-              <span>
-                <b>{t("Profesional")}</b>
-                <span>{roomAppointment.name}</span>
-              </span>
-              <span>
-                <b>{t("Especialidad")}</b>
-                <span>{t(roomAppointment.motivo)}</span>
-              </span>
-              <span>
-                <b>{t("Fecha y hora")}</b>
+              <strong>{t("Sala virtual lista")}</strong>
+              <div className="room-info">
                 <span>
-                  {roomAppointment.time} · {t(roomAppointment.day)}
+                  <b>{t("Paciente")}</b>
+                  <span>{user.nombre}</span>
                 </span>
-              </span>
-              <span>
-                <b>{t("Código de cita")}</b>
-                <span title={roomAppointment.id}>
-                  {roomAppointment.id.slice(0, 8).toUpperCase()}
-                </span>
-              </span>
-              <span>
-                <b>{t("Estado")}</b>
-                <span>{t(statusLabel)}</span>
-              </span>
-            </div>
-            {windowState === "before" ? (
-              <div className="room-notice">
-                <strong>{t("La sala todavía no está abierta")}</strong>
                 <span>
-                  {t("Abre el {fecha}", {
-                    fecha: formatRoomMoment(
-                      roomAppointment.roomOpensAt,
-                      locale,
-                    ),
-                  })}
+                  <b>{t("Profesional")}</b>
+                  <span>{roomAppointment.name}</span>
+                </span>
+                <span>
+                  <b>{t("Especialidad")}</b>
+                  <span>{t(roomAppointment.motivo)}</span>
+                </span>
+                <span>
+                  <b>{t("Fecha y hora")}</b>
+                  <span>
+                    {roomAppointment.time} · {t(roomAppointment.day)}
+                  </span>
+                </span>
+                <span>
+                  <b>{t("Código de cita")}</b>
+                  <span title={roomAppointment.id}>
+                    {roomAppointment.id.slice(0, 8).toUpperCase()}
+                  </span>
+                </span>
+                <span>
+                  <b>{t("Estado")}</b>
+                  <span>{t(statusLabel)}</span>
                 </span>
               </div>
-            ) : windowState === "after" ? (
-              <div className="room-notice">
-                <strong>
-                  {t("La ventana de acceso a la sala ya terminó")}
-                </strong>
-                <span>
-                  {t("Cerró el {fecha}", {
-                    fecha: formatRoomMoment(
-                      roomAppointment.roomClosesAt,
-                      locale,
-                    ),
-                  })}
+              {windowState === "before" ? (
+                <div className="room-notice">
+                  <strong>{t("La sala todavía no está abierta")}</strong>
+                  <span>
+                    {t("Abre el {fecha}", {
+                      fecha: formatRoomMoment(
+                        roomAppointment.roomOpensAt,
+                        locale,
+                      ),
+                    })}
+                  </span>
+                </div>
+              ) : windowState === "after" ? (
+                <div className="room-notice">
+                  <strong>
+                    {t("La ventana de acceso a la sala ya terminó")}
+                  </strong>
+                  <span>
+                    {t("Cerró el {fecha}", {
+                      fecha: formatRoomMoment(
+                        roomAppointment.roomClosesAt,
+                        locale,
+                      ),
+                    })}
+                  </span>
+                </div>
+              ) : (
+                <p className="room-note">
+                  {t(
+                    "Entra cuando el profesional esté disponible (hasta 10 min antes de la cita).",
+                  )}
+                </p>
+              )}
+            </section>
+            <section className="room-card">
+              <span className="room-eyebrow">
+                <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
+                {t("Atención segura")}
+              </span>
+              <div className="room-devices" aria-live="polite">
+                <span className={`room-device${cameraReady ? " ok" : ""}`}>
+                  <IonIcon
+                    icon={cameraReady ? videocamOutline : videocamOffOutline}
+                  />
+                  <span>{t(mediaStatusLabelKey(cameraStatus, "camera"))}</span>
+                </span>
+                <span className={`room-device${microphoneReady ? " ok" : ""}`}>
+                  <IonIcon
+                    icon={microphoneReady ? micOutline : micOffOutline}
+                  />
+                  <span>
+                    {t(mediaStatusLabelKey(microphoneStatus, "microphone"))}
+                  </span>
                 </span>
               </div>
-            ) : (
-              <p>
-                {t(
-                  "Entra cuando el profesional esté disponible (hasta 10 min antes de la cita).",
-                )}
-              </p>
-            )}
-            <div className="room-devices" aria-live="polite">
-              <span className={`room-device${cameraReady ? " ok" : ""}`}>
-                <IonIcon
-                  icon={cameraReady ? videocamOutline : videocamOffOutline}
-                />
-                <span>{t(mediaStatusLabelKey(cameraStatus, "camera"))}</span>
-              </span>
-              <span className={`room-device${microphoneReady ? " ok" : ""}`}>
-                <IonIcon icon={microphoneReady ? micOutline : micOffOutline} />
-                <span>
-                  {t(mediaStatusLabelKey(microphoneStatus, "microphone"))}
-                </span>
-              </span>
-            </div>
-            {mediaBlocked ? (
-              <p className="room-device-hint">
-                {t(
-                  "Revisa los permisos de cámara y micrófono en los ajustes del sistema.",
-                )}
-              </p>
-            ) : null}
-            {intakeVisible ? (
+              {mediaBlocked ? (
+                <p className="room-device-hint">
+                  {t(
+                    "Revisa los permisos de cámara y micrófono en los ajustes del sistema.",
+                  )}
+                </p>
+              ) : null}
+              {intakeVisible ? (
+                <IonButton
+                  fill="clear"
+                  className="room-intake"
+                  onClick={() => setIntakeOpen(true)}
+                >
+                  {intakeEditable
+                    ? t("Completar mi pre-consulta")
+                    : t("Ver mi pre-consulta")}
+                </IonButton>
+              ) : null}
               <IonButton
-                fill="clear"
-                className="room-intake"
-                onClick={() => setIntakeOpen(true)}
+                className="bt bt-teal"
+                disabled={!joinAllowed}
+                onClick={() => void connect()}
               >
-                {intakeEditable
-                  ? t("Completar mi pre-consulta")
-                  : t("Ver mi pre-consulta")}
+                <IonIcon icon={callOutline} slot="start" />
+                {audioOnly
+                  ? t("Unirme solo con audio")
+                  : t("Entrar a la consulta")}
               </IonButton>
-            ) : null}
-            <IonButton
-              className="bt bt-teal"
-              disabled={!joinAllowed}
-              onClick={() => void connect()}
-            >
-              <IonIcon icon={callOutline} slot="start" />
-              {audioOnly
-                ? t("Unirme solo con audio")
-                : t("Entrar a la consulta")}
-            </IonButton>
-            {mediaProbe && !devicesReady ? (
-              <IonButton
-                fill="clear"
-                className="room-device-retry"
-                onClick={() => setMediaProbe(null)}
-              >
-                <IonIcon icon={refreshOutline} slot="start" />
-                {t("Volver a comprobar")}
-              </IonButton>
-            ) : null}
+              {mediaProbe && !devicesReady ? (
+                <IonButton
+                  fill="clear"
+                  className="room-device-retry"
+                  onClick={() => setMediaProbe(null)}
+                >
+                  <IonIcon icon={refreshOutline} slot="start" />
+                  {t("Volver a comprobar")}
+                </IonButton>
+              ) : null}
+              <p className="room-note">
+                {t("Tu información se mantiene protegida durante la consulta.")}
+              </p>
+            </section>
           </div>
         ) : phase === "ended" ? (
-          <div className="room-empty">
-            <IonIcon
-              icon={
-                endCause === "session-ended" ? callOutline : videocamOffOutline
-              }
-            />
-            <strong>{t(roomEndTitleKey(endCause))}</strong>
-            <p>
-              {endCause === "network"
-                ? t("No pudimos restablecer la conexión.")
-                : endCause === "session-ended"
-                  ? t("El profesional finalizó la consulta.")
-                  : t("La sala ya no está disponible.")}
-            </p>
-            {endCause === "network" && windowOpen ? (
-              <IonButton className="bt bt-teal" onClick={() => void connect()}>
-                <IonIcon icon={refreshOutline} slot="start" />
-                {t("Reintentar conexión")}
+          <div className="room-empty room-panel">
+            <section className="room-card">
+              <span className="room-card-icon">
+                <IonIcon
+                  icon={
+                    endCause === "session-ended"
+                      ? callOutline
+                      : videocamOffOutline
+                  }
+                />
+              </span>
+              <strong>{t(roomEndTitleKey(endCause))}</strong>
+              <p>
+                {endCause === "network"
+                  ? t("No pudimos restablecer la conexión.")
+                  : endCause === "session-ended"
+                    ? t("El profesional finalizó la consulta.")
+                    : t("La sala ya no está disponible.")}
+              </p>
+              {endCause === "network" && windowOpen ? (
+                <IonButton
+                  className="bt bt-teal"
+                  onClick={() => void connect()}
+                >
+                  <IonIcon icon={refreshOutline} slot="start" />
+                  {t("Reintentar conexión")}
+                </IonButton>
+              ) : null}
+              <IonButton
+                className="bt bt-primary"
+                onClick={() => navigate("book")}
+              >
+                {t("Volver a mis citas")}
               </IonButton>
-            ) : null}
-            <IonButton
-              className="bt bt-primary"
-              onClick={() => navigate("book")}
-            >
-              {t("Volver a mis citas")}
-            </IonButton>
+            </section>
           </div>
         ) : (
           // Los contenedores de video se montan DESDE connecting: los tracks
@@ -825,19 +877,41 @@ export function VirtualRoomPage() {
           // deben existir en ese momento (si no, el attach se pierde y la
           // pantalla queda vacía).
           <div className="room-video">
-            <div className="room-remote" ref={remoteRef}>
-              {phase === "connecting" ? (
-                <div className="room-connecting">
-                  <IonSpinner name="crescent" />
-                  <strong>{t("Entrando a la sala…")}</strong>
-                </div>
-              ) : participants.length <= 1 ? (
-                <span className="room-waiting">
-                  {t("Esperando al profesional…")}
+            <div className="room-tile room-tile-remote">
+              <div className="room-tile-media" ref={remoteRef}>
+                {phase === "connecting" ? (
+                  <div className="room-connecting">
+                    <IonSpinner name="crescent" />
+                    <strong>{t("Entrando a la sala…")}</strong>
+                  </div>
+                ) : participants.length <= 1 ? (
+                  <span className="room-waiting">
+                    {t("Esperando al profesional…")}
+                  </span>
+                ) : null}
+              </div>
+              {phase === "connected" ? (
+                <span className="room-tile-name">{roomAppointment.name}</span>
+              ) : null}
+              {phase === "connected" &&
+              !remoteVideoOn &&
+              participants.length > 1 ? (
+                <span className="room-tile-initials" aria-hidden="true">
+                  {nameInitials(roomAppointment.name)}
                 </span>
               ) : null}
             </div>
-            <div className="room-local" ref={localRef} />
+            <div className="room-tile room-tile-local">
+              <div className="room-tile-media" ref={localRef} />
+              {phase === "connected" && !camOn ? (
+                <span className="room-tile-initials" aria-hidden="true">
+                  {nameInitials(user.nombre)}
+                </span>
+              ) : null}
+              {phase === "connected" ? (
+                <span className="room-tile-name">{user.nombre}</span>
+              ) : null}
+            </div>
             {phase === "connected" ? (
               <div className="room-pill">
                 <IonIcon icon={micOn ? micOutline : micOffOutline} />
