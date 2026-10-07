@@ -22,6 +22,7 @@ import {
   locationOutline,
   medkit,
   personOutline,
+  searchOutline,
   sparkles,
   videocamOutline,
   warningOutline,
@@ -924,52 +925,64 @@ export function RequestAppointmentWizard({
                   {specialtyId && (
                     <div className="field">
                       <label>{t("Profesional (opcional)")}</label>
-                      <IonSelect
-                        className="fld req-pro-pick-input"
-                        interface="popover"
-                        interfaceOptions={{
-                          cssClass: "req-pro-popover",
-                          side: "bottom",
-                          alignment: "center",
-                        }}
-                        value={professionalId}
-                        aria-label={t("Profesional (opcional)")}
-                        onIonChange={(e) => {
-                          const value = e.detail.value as string;
-                          if (value === "__all__") {
-                            setProPickerOpen(true);
-                            return;
-                          }
-                          setProfessionalId(value);
-                          setSelectedPro(
-                            value
-                              ? (quickPros?.find((p) => p.id === value) ?? null)
-                              : null,
-                          );
-                        }}
-                      >
-                        <IonIcon
-                          slot="start"
-                          className="req-pro-ico"
-                          icon={personOutline}
-                          aria-hidden="true"
-                        />
-                        <IonSelectOption value="">
-                          {t("Cualquier profesional")}
-                        </IonSelectOption>
-                        {quickProsSorted.map((p) => (
-                          <IonSelectOption key={p.id} value={p.id}>
-                            {p.fullName}
+                      <div className="req-pro-row">
+                        <IonSelect
+                          className="fld req-pro-pick-input"
+                          interface="popover"
+                          interfaceOptions={{
+                            cssClass: "req-pro-popover",
+                            side: "bottom",
+                            alignment: "center",
+                          }}
+                          value={professionalId}
+                          aria-label={t("Profesional (opcional)")}
+                          onIonChange={(e) => {
+                            const value = e.detail.value as string;
+                            if (value === "__all__") {
+                              setProPickerOpen(true);
+                              return;
+                            }
+                            setProfessionalId(value);
+                            setSelectedPro(
+                              value
+                                ? (quickPros?.find((p) => p.id === value) ?? null)
+                                : null,
+                            );
+                          }}
+                        >
+                          <IonIcon
+                            slot="start"
+                            className="req-pro-ico"
+                            icon={personOutline}
+                            aria-hidden="true"
+                          />
+                          <IonSelectOption value="">
+                            {t("Cualquier profesional")}
                           </IonSelectOption>
-                        ))}
-                        {quickProsTotal > quickProsSorted.length ? (
-                          <IonSelectOption value="__all__">
-                            {t("Ver todos ({count})", {
-                              count: String(quickProsTotal),
-                            })}
-                          </IonSelectOption>
-                        ) : null}
-                      </IonSelect>
+                          {quickProsSorted.map((p) => (
+                            <IonSelectOption key={p.id} value={p.id}>
+                              {p.fullName}
+                            </IonSelectOption>
+                          ))}
+                          {quickProsTotal > quickProsSorted.length ? (
+                            <IonSelectOption value="__all__">
+                              {t("Buscar profesional…")}
+                            </IonSelectOption>
+                          ) : null}
+                        </IonSelect>
+                        <IonButton
+                          fill="clear"
+                          className="req-pro-search"
+                          aria-label={t("Buscar profesional…")}
+                          onClick={() => setProPickerOpen(true)}
+                        >
+                          <IonIcon
+                            slot="icon-only"
+                            icon={searchOutline}
+                            aria-hidden="true"
+                          />
+                        </IonButton>
+                      </div>
                       {quickPros !== null && quickProsTotal === 0 ? (
                         <span className="req-hint">
                           {t(

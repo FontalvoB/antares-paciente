@@ -16453,6 +16453,395 @@ ion-button.com-input-send.bt-pur {
   font-size: 12px;
 }
 
+/* ── Sala virtual · look ERP (claro, tarjetas y píldoras) ────────────────── */
+.room-screen {
+  background: #f4f6fb;
+  color: #0f172a;
+}
+
+.room-header {
+  gap: 10px;
+  padding: 12px 14px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+.room-back {
+  --background: #ffffff !important;
+  --background-hover: #f1f5f9 !important;
+  --color: #0f172a !important;
+  --border-radius: 50%;
+  --border-width: 1px;
+  --border-style: solid;
+  --border-color: #e2e8f0;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+}
+
+.room-eyebrow,
+.room-header-copy .room-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.room-header-copy .room-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.room-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.room-status.live {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
+  color: #047857;
+}
+
+.room-status .room-dot {
+  width: 8px;
+  height: 8px;
+  background: #cbd5e1;
+}
+
+.room-status.live .room-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+
+.room-stage {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.room-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  margin: auto 0;
+}
+
+.room-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 18px 16px;
+  border-radius: 22px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  text-align: center;
+}
+
+.room-card-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(13, 148, 136, 0.1);
+  color: var(--teal);
+}
+
+.room-card-icon ion-icon {
+  font-size: 24px;
+}
+
+.room-card strong {
+  font-size: 17px;
+  color: #0f172a;
+}
+
+.room-empty {
+  color: #0f172a;
+}
+
+.room-empty p {
+  color: #64748b;
+}
+
+.room-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  font-size: 12px;
+  text-align: left;
+}
+
+.room-info > span {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid #eef2f7;
+  background: #f8fafc;
+}
+
+.room-info b {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.room-info > span > span {
+  text-align: left;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.room-notice {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+  text-align: left;
+}
+
+.room-notice span {
+  color: #b45309;
+}
+
+.room-note {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.room-devices {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #eef2f7;
+  background: #f8fafc;
+}
+
+.room-device {
+  color: #b45309;
+}
+
+.room-device.ok {
+  color: #047857;
+}
+
+.room-device-hint {
+  color: #b45309;
+}
+
+.room-device-retry {
+  --color: #64748b !important;
+}
+
+.room-video {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 8px;
+  border-radius: 26px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.room-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #0f172a;
+}
+
+.room-tile-remote {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.room-tile-local {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  width: 96px;
+  height: 128px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+}
+
+.room-tile-media {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-tile-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-tile-name {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #f8fafc;
+  font-size: 11.5px;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+}
+
+.room-tile-initials {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background: #1e293b;
+  color: rgba(248, 250, 252, 0.9);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.room-tile-local .room-tile-initials {
+  font-size: 20px;
+}
+
+.room-connecting {
+  color: #e2e8f0;
+}
+
+.room-waiting {
+  color: #cbd5e1;
+}
+
+.room-pill {
+  z-index: 3;
+  background: rgba(15, 23, 42, 0.75);
+  color: #f8fafc;
+  backdrop-filter: blur(6px);
+}
+
+.room-foot {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid #e2e8f0;
+  backdrop-filter: blur(10px);
+}
+
+.room-ctrls {
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.room-toggle {
+  --background: #ffffff !important;
+  --background-hover: #f1f5f9 !important;
+  --color: #0f172a !important;
+  --border-radius: 50%;
+  --border-width: 2px;
+  --border-style: solid;
+  --border-color: #e2e8f0;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+}
+
+.room-toggle.off {
+  --background: rgba(220, 38, 38, 0.08) !important;
+  --color: #dc2626 !important;
+  --border-color: rgba(220, 38, 38, 0.3);
+}
+
+.room-hint {
+  color: #64748b;
+}
+
+/* Chat de la consulta en claro (sobre la sala ERP) */
+.room-chat-modal {
+  --background: #ffffff;
+}
+
+.room-chat {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.room-chat-head {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.room-chat-close {
+  --color: #0f172a !important;
+}
+
+.room-chat-bubble {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.room-chat-meta {
+  color: #94a3b8;
+}
+
+.room-chat-foot {
+  border-top: 1px solid #e2e8f0;
+}
+
+.room-chat-input {
+  --background: #f8fafc;
+  --color: #0f172a;
+  --placeholder-color: #94a3b8;
+}
+
+.room-chat-empty {
+  color: #94a3b8;
+}
+
+.room-chat-disabled {
+  color: #94a3b8;
+}
+
 /* Chat de la consulta (sheet inferior sobre la sala) */
 .room-chat-modal {
   --background: #0b0f24;
@@ -29790,6 +30179,32 @@ ion-modal.request-modal ion-content.req-body {
 .booking-reference ion-select.fld.req-pro-pick-input > ion-icon[slot="start"] {
   margin-inline-end: 10px;
   pointer-events: none;
+}
+/* Fila del profesional: select + botón de búsqueda que abre el picker
+   completo (búsqueda server-side) sin entrar a la opción del popover. */
+.booking-reference .req-pro-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.booking-reference .req-pro-row ion-select.fld.req-pro-pick-input {
+  flex: 1;
+  min-width: 0;
+}
+.booking-reference .req-pro-search {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  margin: 0;
+  --background: var(--home-mist);
+  --border-radius: 16px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--brand-blue-mid);
+  font-size: 20px;
+}
+.booking-reference .req-pro-search::part(native) {
+  border-radius: 16px;
 }
 .booking-reference .req-mode-card {
   border-radius: 16px;
