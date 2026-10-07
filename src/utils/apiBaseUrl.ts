@@ -8,13 +8,14 @@ import { Capacitor } from "@capacitor/core";
  * cada microservicio (Auth, Api, Telemedicina, Comunidad, Storage).
  *
  * Prioridad de resolución (todos los helpers):
- *   1. Variable de entorno `VITE_*` (ver `.env` / `.env.example`).
- *   2. App nativa (Capacitor) sin env: iOS Simulator comparte la red del
+ *   1. Web en desarrollo: rutas relativas al proxy de Vite; `VITE_*`
+ *      selecciona el gateway destino en vite.config.ts, sin exigir CORS.
+ *   2. Producción o app nativa: variable de entorno `VITE_*`.
+ *   3. App nativa (Capacitor) sin env: iOS Simulator comparte la red del
  *      Mac → `localhost` funciona; el emulador Android usa `10.0.2.2`
  *      (alias del loopback del host). En iPhone físico hay que definir
  *      `VITE_GATEWAY_BASE_URL` con la IP LAN del Mac.
- *   3. Web (Vite dev): cadena vacía → el fetch usa rutas relativas (`/api/...`)
- *      y el proxy de Vite las enruta al gateway local.
+ *   4. Sin configuración en web: rutas relativas al origen actual.
  *
  * En producción, `VITE_GATEWAY_BASE_URL` apunta al gateway público real
  * (p. ej. https://api.coppaddresd.com).
@@ -29,6 +30,7 @@ function trimTrailingSlash(url: string): string {
 
 /** Origen (sin path) del gateway. */
 function gatewayOrigin(): string {
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return "";
   const fromEnv = import.meta.env.VITE_GATEWAY_BASE_URL;
   if (fromEnv) return trimTrailingSlash(fromEnv);
   if (Capacitor.isNativePlatform()) {
@@ -72,7 +74,7 @@ export function getGatewayBaseUrl(): string {
 
 /**
  * URL del GraphQL de la comunidad — vía gateway (ruta /api/v1/community).
- * En web dev sin env cae a la ruta relativa y la resuelve el proxy de Vite.
+ * En web dev usa la ruta relativa y la resuelve el proxy de Vite.
  */
 export function getCommunityApiUrl(): string {
   const origin = gatewayOrigin();
@@ -91,7 +93,8 @@ export function getCommunityWsUrl(): string {
     }
     return `${origin}${COMMUNITY_WS_PATH}`;
   }
-  return `ws://localhost:5080${COMMUNITY_WS_PATH}`;
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.host}${COMMUNITY_WS_PATH}`;
 }
 
 /**

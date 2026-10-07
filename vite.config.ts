@@ -96,6 +96,12 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: 5173,
       proxy: {
+        // La ruta WS específica debe preceder los prefijos HTTP generales.
+        "/api/v1/community/subscriptions": {
+          target: gatewayWsTarget,
+          changeOrigin: true,
+          ws: true,
+        },
         // Comunidad GraphQL + storage vía gateway (el gateway enruta
         // /api/v1/community y /storage hacia el servicio Community en :5200).
         // Debe declararse ANTES de '/api' para no caer en el proxy genérico.
@@ -113,12 +119,6 @@ export default defineConfig(({ mode }) => {
         "/storage": {
           target: gatewayTarget,
           changeOrigin: true,
-        },
-        // WebSocket de GraphQL de la comunidad vía gateway (YARP reenvía WS al servicio :5200).
-        "/api/v1/community/subscriptions": {
-          target: gatewayWsTarget,
-          changeOrigin: true,
-          ws: true,
         },
       },
     },
