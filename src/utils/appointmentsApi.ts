@@ -59,6 +59,8 @@ export type TelemedicineSessionStatus =
   "Created" | "Waiting" | "Active" | "Ended" | "Expired" | "Failed";
 
 export interface RoomParticipantDto {
+  displayName?: string | null;
+  role?: "Patient" | "Professional" | "Supervisor" | null;
   participantSid: string;
   identity: string;
   isConnected: boolean;

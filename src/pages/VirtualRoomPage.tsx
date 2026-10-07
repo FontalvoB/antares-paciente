@@ -1,3 +1,4 @@
+import { attachRoomTrack, detachRoomTrack } from "../utils/roomTracks";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import {
@@ -55,8 +56,10 @@ import { useI18n, useT } from "../i18n/I18nContext";
 
 // Tipos mínimos del SDK (se carga por CDN; sin dependencia npm).
 interface TwilioTrack {
-  attach(el: HTMLElement): HTMLElement;
-  detach(el: HTMLElement): HTMLElement;
+  kind?: string;
+  isEnabled?: boolean;
+  attach(): HTMLMediaElement;
+  detach(): HTMLMediaElement[];
   enable?(): void;
   disable?(): void;
   stop?(): void;
@@ -169,6 +172,7 @@ function nameInitials(name: string): string {
 }
 
 export function VirtualRoomPage() {
+  const [participantRoster, setParticipantRoster] = useState<import("../utils/appointmentsApi").RoomParticipantDto[]>([]);
   const { roomAppointment, closeRoom, navigate, user } = useApp();
   const t = useT();
   const { lang } = useI18n();
@@ -302,7 +306,7 @@ export function VirtualRoomPage() {
   );
 
   const attachParticipant = useCallback(
-    (participant: TwilioParticipant, container: HTMLElement | null) => {
+    (participant: TwilioParticipant, container: HTMLElement | null, local = false) => {
       if (!container) return;
       participant.tracks.forEach((publication) => {
         const track = publication.track;
@@ -310,7 +314,7 @@ export function VirtualRoomPage() {
           track &&
           typeof (track as { attach?: unknown }).attach === "function"
         ) {
-          (track as TwilioTrack).attach(container);
+          attachRoomTrack(track as TwilioTrack, container, local);
         }
       });
     },
@@ -327,6 +331,7 @@ export function VirtualRoomPage() {
       participant: TwilioParticipant,
       container: HTMLElement | null,
       onVideoChange?: (on: boolean) => void,
+      local = false,
     ) => {
       const el = container ?? null;
       const isVideoTrack = (track: TwilioTrack) =>
@@ -338,7 +343,7 @@ export function VirtualRoomPage() {
           el &&
           typeof (track as { attach?: unknown }).attach === "function"
         ) {
-          (track as TwilioTrack).attach(el);
+          attachRoomTrack(track, el, local);
         }
         if (onVideoChange && isVideoTrack(track)) onVideoChange(true);
       });
@@ -349,11 +354,14 @@ export function VirtualRoomPage() {
           el &&
           typeof (track as { detach?: unknown }).detach === "function"
         ) {
-          (track as TwilioTrack).detach(el);
+          detachRoomTrack(track);
         }
         if (onVideoChange && isVideoTrack(track)) onVideoChange(false);
       });
-      attachParticipant(participant, container);
+      attachParticipant(participant, container, local);
+      participant.tracks.forEach(({ track }) => {
+        if (track && isVideoTrack(track)) onVideoChange?.(track.isEnabled !== false);
+      });
     },
     [attachParticipant],
   );
@@ -369,7 +377,7 @@ export function VirtualRoomPage() {
       setHasLocalVideo(plan.video);
 
       // Local: los tracks de cámara/mic llegan vía trackSubscribed tras connect.
-      setupParticipant(room.localParticipant, localRef.current);
+      setupParticipant(room.localParticipant, localRef.current, undefined, true);
       setPhase("connected");
       setParticipants([room.localParticipant.identity]);
 
@@ -402,7 +410,7 @@ export function VirtualRoomPage() {
             track &&
             typeof (track as { detach?: unknown }).detach === "function"
           ) {
-            (track as TwilioTrack).detach(container);
+            detachRoomTrack(track);
           }
         });
         setParticipants((prev) =>
@@ -570,6 +578,7 @@ export function VirtualRoomPage() {
       try {
         const room = await fetchAppointmentRoom(apptId);
         if (cancelled || !mountedRef.current) return;
+        setParticipantRoster(room.participants);
         const ended =
           room.status === "Ended" ||
           room.status === "Expired" ||
@@ -642,6 +651,13 @@ export function VirtualRoomPage() {
   const devicesReady = cameraReady && microphoneReady;
   // Si la cámara no está pero el micrófono sí, la entrada se degrada a audio.
   const audioOnly = mediaProbe !== null && !cameraReady && microphoneReady;
+  const remoteIdentity = participants[1];
+  const remoteParticipant = participantRoster.find(p => p.identity === remoteIdentity);
+  const remoteLabel = remoteParticipant?.displayName || t(
+    remoteParticipant?.role === "Supervisor" ? "Supervisor" :
+    remoteParticipant?.role === "Professional" ? "Profesional" :
+    remoteParticipant?.role === "Patient" ? "Paciente" : "Participante"
+  );
   const joinAllowed = windowOpen && canJoinWithMedia(mediaProbe);
   const mediaBlocked = mediaProbe !== null && !canJoinWithMedia(mediaProbe);
 
@@ -891,13 +907,13 @@ export function VirtualRoomPage() {
                 ) : null}
               </div>
               {phase === "connected" ? (
-                <span className="room-tile-name">{roomAppointment.name}</span>
+                <span className="room-tile-name">{remoteLabel}</span>
               ) : null}
               {phase === "connected" &&
               !remoteVideoOn &&
               participants.length > 1 ? (
                 <span className="room-tile-initials" aria-hidden="true">
-                  {nameInitials(roomAppointment.name)}
+                  {nameInitials(remoteLabel)}
                 </span>
               ) : null}
             </div>
