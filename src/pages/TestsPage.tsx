@@ -4,23 +4,18 @@ import {
   IonButton,
   IonIcon,
   IonLoading,
+  IonList,
+  IonItem,
+  IonLabel,
   IonProgressBar,
   IonSpinner,
 } from "@ionic/react";
 import {
-  calendar,
   checkmarkCircle,
   chevronBack,
   chevronForward,
-  link,
-  person,
   sparkles,
-  star,
 } from "ionicons/icons";
-import { TESTS_META } from "../data/tests";
-import { HEALTH_PROFILE } from "../data/healthProfile";
-import { RingProgress } from "../components/RingProgress";
-import { RadarChart } from "../components/tests/RadarChart";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import {
@@ -36,7 +31,6 @@ import {
 import { TestWizard, type WizardExtras } from "../components/tests/TestWizard";
 import {
   buildBackendSteps,
-  buildDemoSteps,
   FALLBACK_THEME,
   PATIENT_TITLES,
   themeFor,
@@ -45,18 +39,6 @@ import {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const MIN_REQUIRED_TESTS = 3;
-
-const CODE_TO_DEMO: Record<string, number> = {
-  "historia-clinica": 1,
-  temperamento: 2,
-  nutricional: 3,
-  movimiento: 4,
-  sueno: 5,
-  "iac-adresd": 6,
-  orp: 7,
-  ers: 8,
-  "bateria-antares": 9,
-};
 
 function stateLabel(status: MeAssignment["status"]): string {
   if (status === "completed") return "Completado";
@@ -81,11 +63,14 @@ function mergeAssignmentList(
   const retained = (previous ?? []).filter(
     (a) => a.status === "completed" && !incomingIds.has(a.id),
   );
-  return [...incoming.filter(isListedAssignment), ...retained];
+  return [...incoming.filter(isListedAssignment).map(a => {
+    const confirmed = previous?.find(p => p.id === a.id && p.status === "completed");
+    return confirmed && (a.status === "pending" || a.status === "in_progress") ? confirmed : a;
+  }), ...retained];
 }
 
 export function TestsPage() {
-  const { testsDone, markTest, skipTests, finishTests, showToast, navigate } =
+  const { skipTests, finishTests, showToast, navigate } =
     useApp();
   const t = useT();
   const reduce = useReducedMotion();
@@ -93,7 +78,11 @@ export function TestsPage() {
   const [assignments, setAssignments] = useState<MeAssignment[] | null>(null);
   const [openQuestions, setOpenQuestions] = useState<MeQuestion[] | null>(null);
   const [backendResults, setBackendResults] = useState<MeResult[] | null>(null);
+  const [resultsError, setResultsError] = useState(false);
   const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(true);
+  const [assignmentsError, setAssignmentsError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [openId, setOpenId] = useState<number | null>(null);
   const [openAssignmentId, setOpenAssignmentId] = useState<string | null>(null);
@@ -107,10 +96,10 @@ export function TestsPage() {
   const [loading, setLoading] = useState(false);
 
   const listedAssignments = assignments?.filter(isListedAssignment) ?? null;
-  const totalTests = listedAssignments ? listedAssignments.length : 9;
+  const totalTests = listedAssignments?.length ?? 0;
   const completed = listedAssignments
     ? listedAssignments.filter((a) => a.status === "completed").length
-    : testsDone.length;
+    : 0;
   const pct = Math.round((completed / Math.max(totalTests, 1)) * 100);
 
   useEffect(() => {
@@ -120,24 +109,19 @@ export function TestsPage() {
         if (!cancelled)
           setAssignments((prev) => mergeAssignmentList(prev, list));
       })
-      .catch(() => {});
+      .catch(() => { if (!cancelled) setAssignmentsError(true); })
+      .finally(() => { if (!cancelled) setAssignmentsLoading(false); });
     fetchMyResults()
       .then((results) => {
-        if (!cancelled) setBackendResults(results);
+        if (!cancelled) { setBackendResults(results); setResultsError(false); }
       })
-      .catch(() => {});
+      .catch(() => { if (!cancelled) setResultsError(true); });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   const listItems = useMemo(() => {
-    const nextDemo = (): number => {
-      const remaining = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(
-        (n) => !testsDone.includes(n),
-      );
-      return remaining.length === 0 ? -1 : remaining[0];
-    };
     if (assignments) {
       return assignments.filter(isListedAssignment).map((a, idx) => {
         const visual = themeFor(a.testCode ?? "");
@@ -160,28 +144,12 @@ export function TestsPage() {
         };
       });
     }
-    return TESTS_META.map((test) => {
-      const visual = themeFor(null, test.id);
-      return {
-        key: String(test.id),
-        id: test.id,
-        assignmentId: null as string | null,
-        title: test.title,
-        sub: test.sub,
-        emoji: test.emoji,
-        bg: visual.accentSoft,
-        accent: visual.accent,
-        mood: visual.mood,
-        code: null as string | null,
-        done: testsDone.includes(test.id),
-        activeNow: !testsDone.includes(test.id) && test.id === nextDemo(),
-      };
-    });
-  }, [assignments, testsDone]);
+    return [];
+  }, [assignments]);
 
   const theme: TestTheme =
     openId !== null
-      ? themeFor(openCode, assignments ? undefined : openId)
+      ? themeFor(openCode)
       : FALLBACK_THEME;
 
   const openTest = async (item: (typeof listItems)[number]) => {
@@ -198,9 +166,13 @@ export function TestsPage() {
       setQuestionsLoading(true);
       try {
         const detail = await fetchMyTest(item.assignmentId);
+        if (!detail.questions.length) throw new Error("No questions");
         setOpenQuestions(detail.questions);
       } catch {
+        setOpenId(null);
+        setOpenAssignmentId(null);
         setOpenQuestions(null);
+        showToast(t("No se pudieron cargar las preguntas. Intenta nuevamente."), "err");
       } finally {
         setQuestionsLoading(false);
       }
@@ -215,7 +187,7 @@ export function TestsPage() {
   };
 
   const saveTest = async () => {
-    if (openId === null) return;
+    if (loading || openId === null || !openAssignmentId || !openQuestions?.length) return;
 
     if (openAssignmentId) {
       setLoading(true);
@@ -248,9 +220,8 @@ export function TestsPage() {
             },
           ];
         });
-        await startMyTest(openAssignmentId).catch(() => null);
+        await startMyTest(openAssignmentId);
         await submitMyTest(openAssignmentId, answersPayload);
-        markTest(openId);
         setAssignments((prev) =>
           prev
             ? prev.map((a) =>
@@ -266,65 +237,27 @@ export function TestsPage() {
         );
         const list = await fetchMyAssignments().catch(() => null);
         if (list) setAssignments((prev) => mergeAssignmentList(prev, list));
+        const results = await fetchMyResults().catch(() => null);
+        if (results) { setBackendResults(results); setResultsError(false); }
+        else setResultsError(true);
         showToast(t("Evaluación guardada"), "ok");
+        closeTest();
       } catch {
         showToast(t("No se pudo guardar la evaluación"), "err");
       } finally {
         setLoading(false);
-        closeTest();
       }
       return;
     }
 
-    markTest(openId);
-    showToast(t("Evaluación guardada"), "ok");
-    closeTest();
   };
 
-  const openIA = () => {
-    setShowResult(true);
-    setLoading(true);
-    window.setTimeout(() => setLoading(false), 1600);
-  };
+  const openIA = () => setShowResult(true);
 
   const steps = useMemo(() => {
-    if (openId === null) return [];
-    if (openAssignmentId && openQuestions) {
-      return buildBackendSteps(openQuestions, openTitle, theme);
-    }
-    if (openAssignmentId && questionsLoading) return [];
-    const demoId = openCode ? (CODE_TO_DEMO[openCode] ?? openId) : openId;
-    return buildDemoSteps(
-      demoId,
-      openTitle || TESTS_META.find((x) => x.id === demoId)?.title || "",
-    );
-  }, [
-    openId,
-    openAssignmentId,
-    openQuestions,
-    openTitle,
-    theme,
-    questionsLoading,
-    openCode,
-  ]);
-
-  const resultScores = useMemo(() => {
-    if (backendResults && backendResults.length > 0) {
-      return backendResults
-        .filter((r) => r.resultType === "subscale" || r.resultType === "score")
-        .slice(0, HEALTH_PROFILE.dims.length)
-        .map((r) => ({
-          label: r.label,
-          value: Math.min(100, Math.round(r.value)),
-          color: "var(--cyan)",
-        }));
-    }
-    return HEALTH_PROFILE.dims.map((d) => ({
-      label: d.label,
-      value: d.value,
-      color: d.color,
-    }));
-  }, [backendResults]);
+    if (openId === null || !openAssignmentId || !openQuestions) return [];
+    return buildBackendSteps(openQuestions, openTitle, theme);
+  }, [openId, openAssignmentId, openQuestions, openTitle, theme]);
 
   const currentAnswers = openId !== null ? (answers[openId] ?? {}) : {};
   const canSkip = completed >= MIN_REQUIRED_TESTS;
@@ -436,7 +369,8 @@ export function TestsPage() {
 
       {showResult ? (
         <HealthResult
-          scores={resultScores}
+          results={backendResults ?? []}
+          error={resultsError}
           onEnter={finishTests}
           onCommunity={() => {
             finishTests();
@@ -451,6 +385,12 @@ export function TestsPage() {
               { n: String(MIN_REQUIRED_TESTS) },
             )}
           </p>
+          {assignmentsLoading ? <IonSpinner name="crescent" /> : assignmentsError ? (
+            <div role="alert">
+              <p>{t("No se pudieron cargar tus evaluaciones.")}</p>
+              <IonButton onClick={() => { setAssignmentsError(false); setAssignmentsLoading(true); setRefreshKey(k => k + 1); }}>{t("Reintentar")}</IonButton>
+            </div>
+          ) : listItems.length === 0 ? <p>{t("No tienes evaluaciones asignadas.")}</p> : null}
           {listItems.map((test, i) => (
             <motion.button
               key={test.key}
@@ -498,7 +438,7 @@ export function TestsPage() {
               )}
             </motion.button>
           ))}
-          {canSkip && (
+          {completed > 0 && (
             <>
               <IonButton
                 expand="block"
@@ -506,10 +446,10 @@ export function TestsPage() {
                 style={{ marginTop: 12 }}
                 onClick={openIA}
               >
-                {t("Ver mi perfil de salud Copp Adresd · IA")}
+                {t("Resultados de tus evaluaciones")}
                 <IonIcon icon={sparkles} slot="end" />
               </IonButton>
-              {completed < totalTests && (
+              {canSkip && completed < totalTests && (
                 <IonButton
                   expand="block"
                   fill="outline"
@@ -568,289 +508,33 @@ export function TestsPage() {
       <IonLoading
         className="app-loading"
         isOpen={loading}
-        message={t("Analizando tu perfil…")}
+        message={t("Guardando evaluación…")}
       />
     </div>
   );
 }
 
-function HealthResult({
-  scores,
-  onEnter,
-  onCommunity,
-}: {
-  scores: { label: string; value: number; color: string }[];
+function HealthResult({ results, error, onEnter, onCommunity }: {
+  error: boolean;
+  results: MeResult[];
   onEnter: () => void;
   onCommunity: () => void;
 }) {
   const t = useT();
-  const reduce = useReducedMotion();
-
-  const p = useMemo(() => {
-    const dims = HEALTH_PROFILE.dims.map((d, i) =>
-      scores[i]
-        ? {
-            ...d,
-            label: String(scores[i].label),
-            value: scores[i].value,
-            color: String(scores[i].color),
-          }
-        : d,
-    );
-    return { ...HEALTH_PROFILE, dims };
-  }, [scores]);
-
-  const fade = (i: number) => ({
-    initial: reduce ? false : ({ opacity: 0, y: 16 } as const),
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.45, delay: reduce ? 0 : i * 0.07, ease: EASE },
-  });
-
   return (
     <div className="screen-scroll no-nav ht-result htp-page">
-      <motion.div className="htp-hero" {...fade(0)}>
-        <div className="htp-hero-orbs" aria-hidden="true" />
-        <div className="htp-hero-top">
-          <RingProgress
-            value={p.ahs / 100}
-            size={92}
-            stroke={10}
-            gradient={["#3d7b72", "#87aeca"]}
-          >
-            <b>{p.ahs}</b>
-            <small>/100</small>
-          </RingProgress>
-          <div className="htp-hero-info">
-            <div className="htp-hero-kicker">{t("Mi Perfil Copp Adresd")}</div>
-            <div className="htp-hero-badges">
-              <span className="htp-hero-cond">🫀 {t(p.condition)}</span>
-              <span className="htp-hero-ahs">
-                <IonIcon icon={star} />
-                {t("AHS {score}/100", { score: String(p.ahs) })} ·{" "}
-                {t(p.summary)}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="htp-chips">
-          {p.chips.map((c) => (
-            <span key={c.text} className="htp-chip">
-              <span className="htp-chip-ico">{c.ico}</span>
-              {t(c.text)}
-            </span>
+      <h2>{t("Resultados de tus evaluaciones")}</h2>
+      {error ? <p role="alert">{t("No se pudieron cargar los resultados.")}</p> : results.length === 0 ? <p>{t("Aún no hay resultados calculados disponibles.")}</p> : (
+        <IonList>
+          {results.map(result => (
+            <IonItem key={result.id}>
+              <IonLabel><h3>{result.label}</h3><p>{result.value} {result.qualifier ?? ""}</p></IonLabel>
+            </IonItem>
           ))}
-        </div>
-      </motion.div>
-
-      <motion.div className="htp-banner" {...fade(1)}>
-        <div className="htp-banner-ico">🩸</div>
-        <div>
-          <div className="htp-banner-title">{t(p.banner.title)}</div>
-          <div className="htp-banner-text">{t(p.banner.text)}</div>
-        </div>
-      </motion.div>
-
-      <motion.div className="htp-sec" {...fade(2)}>
-        <span className="htp-sec-ico">📊</span>
-        {t("Tus indicadores calculados")}
-      </motion.div>
-      <motion.div className="htp-metrics" {...fade(3)}>
-        {p.indicators.map((m) => (
-          <div key={m.label} className={`htp-metric ${m.tone}`}>
-            <div className="htp-metric-ico">{m.ico}</div>
-            <div className="htp-metric-value">{m.value}</div>
-            <div className="htp-metric-unit">{t(m.unit)}</div>
-            <span className="htp-metric-q">{t(m.qualifier)}</span>
-            <div className="htp-metric-label">{t(m.label)}</div>
-          </div>
-        ))}
-      </motion.div>
-      <motion.p className="htp-footnote" {...fade(4)}>
-        {t(p.footnote)}
-      </motion.p>
-
-      <motion.div className="htp-ai" {...fade(5)}>
-        <div className="htp-ai-avatar">
-          <IonIcon icon={sparkles} />
-        </div>
-        <div className="htp-ai-body">
-          <div className="htp-ai-label">{t(p.ai.label)}</div>
-          <p>{t(p.ai.message)}</p>
-        </div>
-      </motion.div>
-
-      <motion.div className="htp-sec" {...fade(6)}>
-        <span className="htp-sec-ico">📡</span>
-        {t("Radar de 7 dimensiones")}
-      </motion.div>
-      <motion.div className="htp-card htp-radar" {...fade(7)}>
-        <RadarChart dims={p.dims} />
-        <div className="htp-dims">
-          {p.dims.map((d) => (
-            <div key={d.label} className="htp-dim">
-              <span
-                className="htp-dim-ico"
-                style={{ background: `${d.color}1f` }}
-              >
-                {d.ico}
-              </span>
-              <div className="htp-dim-body">
-                <div className="htp-dim-top">
-                  <span>{t(d.label)}</span>
-                  <strong>{d.value}</strong>
-                </div>
-                <div className="htp-dim-track">
-                  <motion.div
-                    className="htp-dim-fill"
-                    style={{ background: d.color }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${d.value}%` }}
-                    transition={{ duration: reduce ? 0 : 0.8, ease: EASE }}
-                  />
-                </div>
-                {d.note && <div className="htp-dim-note">{t(d.note)}</div>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      <motion.div className="htp-sec" {...fade(8)}>
-        <span className="htp-sec-ico">🧭</span>
-        {t("Análisis DOFA")}
-      </motion.div>
-      <motion.div className="htp-dofa" {...fade(9)}>
-        <div className="htp-dofa-card ok">
-          <div className="htp-dofa-h">
-            <span>✅</span>
-            {t("Fortalezas")}
-          </div>
-          {p.dofa.f.map((x) => (
-            <div className="htp-dofa-item" key={x}>
-              {t(x)}
-            </div>
-          ))}
-        </div>
-        <div className="htp-dofa-card bad">
-          <div className="htp-dofa-h">
-            <span>⚠️</span>
-            {t("Debilidades")}
-          </div>
-          {p.dofa.d.map((x) => (
-            <div className="htp-dofa-item" key={x}>
-              {t(x)}
-            </div>
-          ))}
-        </div>
-        <div className="htp-dofa-card op">
-          <div className="htp-dofa-h">
-            <span>🌟</span>
-            {t("Oportunidades")}
-          </div>
-          {p.dofa.o.map((x) => (
-            <div className="htp-dofa-item" key={x}>
-              {t(x)}
-            </div>
-          ))}
-        </div>
-        <div className="htp-dofa-card th">
-          <div className="htp-dofa-h">
-            <span>🚨</span>
-            {t("Amenazas")}
-          </div>
-          {p.dofa.a.map((x) => (
-            <div className="htp-dofa-item" key={x}>
-              {t(x)}
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      <motion.div className="htp-sec" {...fade(10)}>
-        <span className="htp-sec-ico">🔗</span>
-        {t("Correlaciones detectadas")}
-      </motion.div>
-      {p.correlations.map((c, i) => (
-        <motion.div
-          key={c.title}
-          className="htp-card htp-corr"
-          style={{ borderLeftColor: c.color }}
-          {...fade(11 + i)}
-        >
-          <div className="htp-corr-top">
-            <IonIcon icon={link} style={{ color: c.color }} />
-            <strong>{t(c.title)}</strong>
-          </div>
-          <p>{t(c.text)}</p>
-        </motion.div>
-      ))}
-
-      <motion.div className="htp-sec" {...fade(13)}>
-        <span className="htp-sec-ico">🎯</span>
-        {t("Plan de intervención priorizado")}
-      </motion.div>
-      <motion.div className="htp-plan" {...fade(14)}>
-        {p.plan.map((item, i) => {
-          const inner = (
-            <>
-              <span className="htp-plan-num" style={{ background: item.color }}>
-                {i + 1}
-              </span>
-              <div className="htp-plan-body">
-                <div className="htp-plan-title">{t(item.title)}</div>
-                <div className="htp-plan-meta">
-                  <span
-                    className="htp-plan-spec"
-                    style={{ color: item.color, background: `${item.color}1a` }}
-                  >
-                    {t(item.specialty)}
-                  </span>
-                  {item.prof && (
-                    <span className="htp-plan-prof">
-                      <IonIcon icon={person} />
-                      {t(item.prof)}
-                    </span>
-                  )}
-                  {item.week && (
-                    <span className="htp-plan-week">
-                      <IonIcon icon={calendar} />
-                      {t(item.week)}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {item.action ? (
-                <span className="htp-plan-cta">{t("Ver en comunidad")}</span>
-              ) : (
-                <IonIcon icon={chevronForward} className="htp-plan-chev" />
-              )}
-            </>
-          );
-          return item.action ? (
-            <button
-              key={item.title}
-              type="button"
-              className="htp-plan-item"
-              onClick={onCommunity}
-            >
-              {inner}
-            </button>
-          ) : (
-            <div key={item.title} className="htp-plan-item">
-              {inner}
-            </div>
-          );
-        })}
-      </motion.div>
-
-      <IonButton
-        expand="block"
-        className="bt bt-gold ht-cta"
-        style={{ marginTop: 14 }}
-        onClick={onEnter}
-      >
-        {t("Entrar a mi programa Copp Adresd")}
-      </IonButton>
+        </IonList>
+      )}
+      <IonButton expand="block" onClick={onEnter}>{t("Continuar")}</IonButton>
+      <IonButton expand="block" fill="outline" onClick={onCommunity}>{t("Comunidad")}</IonButton>
     </div>
   );
 }
