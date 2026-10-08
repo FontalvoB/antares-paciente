@@ -12,6 +12,8 @@ vi.mock('../../components/tests/TestWizard', () => ({ TestWizard: ({ onComplete 
 vi.mock('@ionic/react', () => ({
   IonButton: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => <button onClick={onClick}>{children}</button>,
   IonIcon: () => null, IonLoading: () => null, IonProgressBar: () => null, IonSpinner: () => <span>Loading</span>,
+  IonAccordionGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  IonAccordion: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonItem: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonLabel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -73,7 +75,7 @@ describe('real assessment flow', () => {
   });
   it('shows only backend results without static health-profile claims', async () => {
     api.fetchMyAssignments.mockResolvedValue([{ ...assigned[0], status: 'completed' }]);
-    api.fetchMyResults.mockResolvedValue([{ id: 'r1', label: 'Backend score', value: 140, qualifier: null }]);
+    api.fetchMyResults.mockResolvedValue([{ id: 'r1', evaluationId: 'eval-1', resultType: 'score', code: 'qa', label: 'Backend score', value: 140, qualifier: null }]);
     render(<TestsPage />);
     fireEvent.click(await screen.findByText('Resultados de tus evaluaciones'));
     await screen.findByText('Backend score');
