@@ -82,4 +82,20 @@ describe('real assessment flow', () => {
     expect(screen.getByText('140')).toBeTruthy();
     expect(screen.queryByText('Análisis DOFA')).toBeNull();
   });
+  it('keeps the total classification but omits legacy dimension labels', async () => {
+    api.fetchMyAssignments.mockResolvedValue([{ ...assigned[0], status: 'completed' }]);
+    api.fetchMyResults.mockResolvedValue([
+      { id: 'total', evaluationId: 'evaluation', resultType: 'score', code: 'temperamento', label: 'Temperamento', value: 20, qualifier: 'alto', severity: 'high' },
+      { id: 'detail', evaluationId: 'evaluation', resultType: 'subscale', code: 'dimension', label: 'Análisis y detalle', value: 4, qualifier: 'bajo', severity: 'low' },
+    ]);
+    render(<TestsPage />);
+    fireEvent.click(await screen.findByText('Resultados de tus evaluaciones'));
+    await screen.findByText('Análisis y detalle');
+    expect(screen.getByText('20')).toBeTruthy();
+    expect(screen.getByText('4')).toBeTruthy();
+    expect(screen.getByText('alto')).toBeTruthy();
+    expect(screen.queryByText('bajo')).toBeNull();
+    expect(screen.getByText('Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.')).toBeTruthy();
+  });
+
 });

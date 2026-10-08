@@ -5,7 +5,12 @@ export function groupAssessmentResults(results: MeResult[]) {
   const groups = new Map<string, MeResult[]>();
   for (const result of results) {
     const key = result.evaluationId || result.id;
-    groups.set(key, [...(groups.get(key) ?? []), result]);
+    // Compatibilidad con respuestas históricas/servidores anteriores: los
+    // rangos del total no son válidos para las dimensiones individuales.
+    const displayed = result.resultType === "subscale"
+      ? { ...result, qualifier: null, severity: null }
+      : result;
+    groups.set(key, [...(groups.get(key) ?? []), displayed]);
   }
   return Array.from(groups, ([id, items]) => ({
     id,

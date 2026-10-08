@@ -72,3 +72,7 @@ Sin fallback mock: los `backendResults` (20-22 filas por paciente) alimentan la 
 
 **FASE 4 COMPLETADA** → siguiente: FASE 5 (Home + Programa/Infinito — retirar mocks de
 homeCards/adherencia/puntos, ya tiene 3 tests en rojo que apuntan ahí).
+
+## Corrección de clasificación por dimensión (2026-10-08)
+
+Los resultados `subscale` conservan sus puntos pero omiten `qualifier` y `severity` en la presentación, incluso si llegan de una versión anterior del backend. Los rangos actuales pertenecen al total del instrumento y no permiten interpretar cada dimensión. El total conserva la clasificación configurada; no se inventan porcentajes ni umbrales clínicos.

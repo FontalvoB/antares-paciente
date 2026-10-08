@@ -45,6 +45,7 @@ export function AssessmentResults({ results, error, onEnter, onCommunity }: {
                   </IonItem>
                   <div slot="content" className="ar-card-details">
                     <div className="ar-detail-kicker">{t("Detalle de la evaluación")}</div>
+                    {details.some(result => result.resultType === "subscale") && <p className="ar-scale-note">{t("Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.")}</p>}
                     {details.length > 0 ? <IonList lines="none" className="ar-detail-list">
                       {details.map(result => <IonItem key={result.id} className="ar-detail-row">
                         <IonLabel><h4>{result.label}</h4>{result.qualifier && <p>{t(result.qualifier)}</p>}</IonLabel>

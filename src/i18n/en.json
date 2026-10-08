@@ -2536,5 +2536,6 @@
   "Volver a mi perfil": "Back to my profile",
   "bajo": "low",
   "moderado": "moderate",
-  "alto": "high"
+  "alto": "high",
+  "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.": "Dimensions show scores without level labels because no dimension-specific ranges are configured."
 }
