@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import type { InAppNotification } from "../../../services/notifications/types";
 
@@ -57,7 +57,10 @@ vi.mock("@ionic/react", () => ({
   }) => <button onClick={onClick}>{children}</button>,
   IonContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   IonIcon: () => <span />,
-  IonModal: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  IonModal: ({ children, isOpen, onWillPresent }: { children?: ReactNode; isOpen?: boolean; onWillPresent?: () => void }) => {
+    useEffect(() => { if (isOpen) onWillPresent?.(); }, [isOpen, onWillPresent]);
+    return <div>{children}</div>;
+  },
   IonSkeletonText: () => <span />,
 }));
 
@@ -168,6 +171,16 @@ describe("NotificationsModal — agrupación y acciones", () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it("recarga los avisos al reabrir el centro sin reiniciar la app", () => {
+    const view = render(<NotificationsModal isOpen={false} onClose={() => {}} />);
+    expect(hookState.refresh).not.toHaveBeenCalled();
+    view.rerender(<NotificationsModal isOpen onClose={() => {}} />);
+    expect(hookState.refresh).toHaveBeenCalledOnce();
+    view.rerender(<NotificationsModal isOpen={false} onClose={() => {}} />);
+    view.rerender(<NotificationsModal isOpen onClose={() => {}} />);
+    expect(hookState.refresh).toHaveBeenCalledTimes(2);
   });
 
   it("agrupa en Hoy (24 h) y Esta semana", () => {
