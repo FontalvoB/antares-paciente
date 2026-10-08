@@ -14,4 +14,14 @@ describe('assessment result grouping', () => {
     const item = result('indicator', 'evaluation', 'indicator', 5.9);
     expect(groupAssessmentResults([item])).toEqual([{ id: 'evaluation', score: item, details: [] }]);
   });
+  it('clears historical subscale classifications without modifying the source result', () => {
+    const saved = { ...result('dimension', 'evaluation', 'subscale', 4), qualifier: 'bajo', severity: 'low' };
+    const displayed = groupAssessmentResults([saved])[0].score;
+    expect(displayed.value).toBe(4);
+    expect(displayed.qualifier).toBeNull();
+    expect(displayed.severity).toBeNull();
+    expect(saved.qualifier).toBe('bajo');
+    expect(saved.severity).toBe('low');
+  });
+
 });
