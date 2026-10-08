@@ -2537,5 +2537,7 @@
   "bajo": "low",
   "moderado": "moderate",
   "alto": "high",
-  "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.": "Dimensions show scores without level labels because no dimension-specific ranges are configured."
+  "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.": "Dimensions show scores without level labels because no dimension-specific ranges are configured.",
+  "No se pudo guardar el comentario. Intenta de nuevo.": "Could not save your comment. Please try again.",
+  "No se pudo actualizar el repost. Intenta de nuevo.": "Could not update the repost. Please try again."
 }

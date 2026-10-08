@@ -971,3 +971,8 @@ export const GROUP_CHANGED = /* GraphQL */ `
     }
   }
 `
+
+export const COMMENT_ADDED_SUBSCRIPTION = /* GraphQL */ `
+  subscription CommentAdded { commentAdded { ...CommentFields } }
+  ${COMMENT_FRAGMENT}
+`

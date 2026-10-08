@@ -12,6 +12,9 @@ import {
   send,
 } from 'ionicons/icons'
 import { useEffect, useRef, useState } from 'react'
+import { useQuery, useSubscription } from 'urql'
+import { COMMENT_ADDED_SUBSCRIPTION, POST_QUERY, type PostResult } from '../../graphql/community'
+import { mergeCommunityComments } from '../../utils/community-comments'
 import type { Comment, Post, Profile, RepostRef } from '../../graphql/community'
 import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, timeAgo } from './community'
@@ -229,6 +232,7 @@ export function PostDetailModal({
   dark?: boolean
 }) {
   const [comments, setComments] = useState<Comment[]>(post?.comments ?? [])
+  const commentsSinceOpen = useRef<Comment[]>([])
   const [draft, setDraft] = useState('')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
   const [sending, setSending] = useState(false)
@@ -240,6 +244,12 @@ export function PostDetailModal({
   // (animación nativa de dismiss de Ionic), en vez de desmontarse de golpe.
   const [view, setView] = useState<Post | null>(post)
   const [modalOpen, setModalOpen] = useState(!!post)
+
+  // Reabre con datos del servidor y recibe comentarios ERP → app mientras está abierto.
+  const [freshPost] = useQuery<PostResult>({ query: POST_QUERY,
+    variables: { id: post?.id ?? '' }, pause: !post, requestPolicy: 'network-only' })
+  const [incomingComment] = useSubscription<{ commentAdded: Comment }>({
+    query: COMMENT_ADDED_SUBSCRIPTION, pause: !post })
 
   // --- Estado: reporte ---
   const [reportOpen, setReportOpen] = useState(false)
@@ -265,10 +275,26 @@ export function PostDetailModal({
     setView(post)
     setModalOpen(true)
     setComments(post.comments)
+    commentsSinceOpen.current = []
     setDraft('')
     setReplyTarget(null)
     setFreshId(null)
   }, [post?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const updated = freshPost.data?.post
+    if (freshPost.fetching || !post || !updated || updated.id !== post.id) return
+    setView(updated)
+    setComments(mergeCommunityComments(updated.comments, commentsSinceOpen.current))
+  }, [freshPost.data, freshPost.fetching, post?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const comment = incomingComment.data?.commentAdded
+    if (!post || !comment || comment.postId !== post.id) return
+    commentsSinceOpen.current = mergeCommunityComments(commentsSinceOpen.current, [comment])
+    setComments((current) => mergeCommunityComments(current, [comment]))
+    setFreshId(comment.id)
+  }, [incomingComment.data, post?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al quitar el post (✕, swiper o backdrop), cierra con animación.
   useEffect(() => {
@@ -309,25 +335,15 @@ export function PostDetailModal({
     if (!text || sending) return
     setSending(true)
     try {
-      if (replyTarget) {
-        const r = await onReply(replyTarget.id, text)
-        if (r) {
-          const rootId = replyTarget.parentCommentId ?? replyTarget.id
-          setComments((prev) =>
-            prev.map((c) => (c.id === rootId ? { ...c, replies: [...c.replies, r] } : c)),
-          )
-          setFreshId(r.id)
-        }
-        setReplyTarget(null)
-        onToast(t('Respuesta publicada'), 'ok')
-      } else {
-        const c = await onAddComment(postId, text)
-        if (c) {
-          setComments((prev) => [c, ...prev])
-          setFreshId(c.id)
-        }
-        onToast(t('Comentario publicado'), 'ok')
-      }
+      const result = replyTarget
+        ? await onReply(replyTarget.id, text)
+        : await onAddComment(postId, text)
+      if (!result) throw new Error(t('No se pudo guardar el comentario. Intenta de nuevo.'))
+      commentsSinceOpen.current = mergeCommunityComments(commentsSinceOpen.current, [result])
+      setComments((current) => mergeCommunityComments(current, [result]))
+      setFreshId(result.id)
+      onToast(replyTarget ? t('Respuesta publicada') : t('Comentario publicado'), 'ok')
+      setReplyTarget(null)
       setDraft('')
     } catch (e) {
       onToast((e as Error).message, 'err')
@@ -339,7 +355,9 @@ export function PostDetailModal({
   async function handleRepost() {
     if (!onToggleRepost || !view) return
     try {
-      await onToggleRepost(view)
+      const updated = await onToggleRepost(view)
+      if (!updated) throw new Error(t('No se pudo actualizar el repost. Intenta de nuevo.'))
+      setView((current) => current ? { ...current, reposts: updated.reposts } : current)
       onToast(repostedByMe ? t('Repost eliminado') : t('Reposteado'), 'ok')
     } catch (e) {
       onToast((e as Error).message, 'err')
