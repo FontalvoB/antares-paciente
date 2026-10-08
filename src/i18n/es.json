@@ -2439,5 +2439,7 @@
   "bajo": "bajo",
   "moderado": "moderado",
   "alto": "alto",
-  "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.": "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados."
+  "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.": "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.",
+  "No se pudo guardar el comentario. Intenta de nuevo.": "No se pudo guardar el comentario. Intenta de nuevo.",
+  "No se pudo actualizar el repost. Intenta de nuevo.": "No se pudo actualizar el repost. Intenta de nuevo."
 }
