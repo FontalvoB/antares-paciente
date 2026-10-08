@@ -1,3 +1,4 @@
+import { countCommunityComments } from "../../utils/community-comments"
 import { CommunityVideo } from "./CommunityVideo";
 import { IonAlert, IonIcon, IonModal } from '@ionic/react'
 import {
@@ -317,7 +318,7 @@ export function PostCard({
         </button>
         <button type="button" className="com-act-btn" onClick={() => onOpen(post)} aria-label={t('Ver comentarios')}>
           <IonIcon className="com-react-ico" icon={chatbubbleEllipsesOutline} />
-          <span className="com-react-count">{post.comments.length}</span>
+          <span className="com-react-count">{countCommunityComments(post.comments)}</span>
         </button>
         {onToggleRepost && (
           <button
@@ -345,7 +346,7 @@ export function PostCard({
         </button>
       </div>
 
-      {post.comments.length > 0 && (
+      {countCommunityComments(post.comments) > 0 && (
         <div className="com-post-thread">
           {post.comments.slice(0, 2).map((c) => {
             const cLiked = myId != null && c.likes.some((l) => l.profileId === myId)
@@ -377,9 +378,9 @@ export function PostCard({
               </div>
             )
           })}
-          {post.comments.length > 2 && (
+          {countCommunityComments(post.comments) > 2 && (
             <button type="button" className="com-thread-more" onClick={() => onOpen(post)}>
-              {t('Ver los {count} comentarios', { count: String(post.comments.length) })}
+              {t('Ver los {count} comentarios', { count: String(countCommunityComments(post.comments)) })}
             </button>
           )}
         </div>

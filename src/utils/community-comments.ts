@@ -19,3 +19,16 @@ export function mergeCommunityComments(current: Comment[], incoming: Comment[]):
   }
   return roots
 }
+
+/** Total visible de comentarios y respuestas, deduplicado entre eventos y snapshots. */
+export function countCommunityComments(comments: Comment[]): number {
+  const seen = new Set<string>()
+  const queue = [...comments]
+  while (queue.length) {
+    const comment = queue.pop()!
+    if (seen.has(comment.id)) continue
+    seen.add(comment.id)
+    queue.push(...(comment.replies ?? []))
+  }
+  return seen.size
+}
