@@ -95,6 +95,7 @@ export function ProgramPage() {
   >([]);
   const [podPlaying, setPodPlaying] = useState(false);
   const [podProgress, setPodProgress] = useState(0);
+  const [podDuration, setPodDuration] = useState<number | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [exRunning, setExRunning] = useState(false);
@@ -258,15 +259,14 @@ export function ProgramPage() {
   const taskTitle = serverActiveTask?.title || (task ? t(task.title) : "");
   const taskHint = useMemo(() => {
     if (active === "podcast" && serverActiveTask?.content?.title) {
-      const durationMin = serverActiveTask.content.durationSecs
-        ? Math.round(serverActiveTask.content.durationSecs / 60)
-        : null;
+      const seconds = podDuration ?? serverActiveTask.content.durationSecs;
+      const durationMin = seconds ? Math.round(seconds / 60) : null;
       return durationMin
         ? `${serverActiveTask.content.title} · ${durationMin} min`
         : serverActiveTask.content.title;
     }
     return serverActiveTask?.short || (task ? t(task.hint) : "");
-  }, [active, serverActiveTask, task, t]);
+  }, [active, serverActiveTask, task, t, podDuration]);
   const taskPts = serverActiveTask?.points ?? task?.pts ?? 0;
 
   const first = user.nombre.split(" ")[0];
@@ -508,6 +508,7 @@ export function ProgramPage() {
     const url = serverActiveTask?.content?.mediaUrl ?? null;
     if (url && podProgressForUrl.current !== url) {
       setPodProgress(0);
+      setPodDuration(null);
       setPodPlaying(false);
       if (audioRef.current) {
         audioRef.current.pause();
@@ -543,7 +544,17 @@ export function ProgramPage() {
         audioRef.current.pause();
       }
       const audio = new Audio(mediaUrl);
+      // El archivo es la fuente del reloj, no la duración registrada en el catálogo.
+      const updateDuration = () => {
+        if (audioRef.current === audio && Number.isFinite(audio.duration) && audio.duration > 0) {
+          setPodDuration(audio.duration);
+        }
+      };
+      audio.onloadedmetadata = updateDuration;
+      audio.ondurationchange = updateDuration;
       audio.ontimeupdate = () => {
+        if (audioRef.current !== audio) return;
+        updateDuration();
         if (
           audio.duration &&
           Number.isFinite(audio.duration) &&
@@ -789,7 +800,7 @@ export function ProgramPage() {
                   title={serverActiveTask?.content?.title}
                   author={serverActiveTask?.content?.author}
                   description={serverActiveTask?.content?.description}
-                  durationSecs={serverActiveTask?.content?.durationSecs}
+                  durationSecs={podDuration ?? serverActiveTask?.content?.durationSecs}
                   mediaUrl={serverActiveTask?.content?.mediaUrl}
                   coverUrl={serverActiveTask?.content?.thumbnailUrl}
                   audioError={audioError}

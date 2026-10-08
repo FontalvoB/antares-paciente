@@ -144,7 +144,10 @@ export function PodcastLesson({
   const podBlurb = description || "";
   const podChapters =
     chapters && chapters.length > 0
-      ? chapters.map((c) => ({ at: c.atSeconds, label: c.label }))
+      ? chapters
+          .filter((c) => Number.isFinite(c.atSeconds) && c.atSeconds >= 0 && typeof c.label === "string" && c.label.trim().length > 0)
+          .map((c) => ({ at: c.atSeconds, label: c.label }))
+          .sort((a, b) => a.at - b.at)
       : [];
   const podTakeaways = takeaways && takeaways.length > 0 ? takeaways : [];
 

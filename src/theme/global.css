@@ -20794,11 +20794,7 @@ ion-button.bt-teal {
 }
 
 ion-button.bt-gold {
-  --background: linear-gradient(
-    135deg,
-    var(--brand-sky-deep),
-    var(--brand-sky)
-  );
+  --background: linear-gradient(135deg, var(--brand-blue-mid), var(--brand-green-soft));
   --color: #fff;
 }
 
@@ -31213,3 +31209,28 @@ ion-button.ntd-glass.full { --background: var(--blue); --color: var(--wh); }
 .ar-empty { text-align: center; padding: 36px 20px; border-radius: 20px; background: var(--wh); border: 1px solid var(--bd); }
 .ar-empty > ion-icon { font-size: 36px; color: var(--teal); }
 .ar-empty h2 { font-size: 18px; line-height: 1.5; margin: 18px 0 0; }
+
+/* Controles legibles: deshabilitado se distingue por superficie, no por transparencia. */
+ion-button.button-disabled {
+  opacity: 1;
+  --opacity: 1;
+  --background: var(--g1);
+  --color: var(--brand-navy);
+  --box-shadow: none;
+}
+ion-button.button-disabled::part(native) {
+  background: var(--g1);
+  color: var(--brand-navy);
+  opacity: 1;
+}
+button:disabled {
+  background: var(--g1);
+  opacity: 1;
+  color: var(--brand-navy);
+  cursor: not-allowed;
+}
+.lsn-chip:disabled {
+  background: var(--g1);
+  color: var(--brand-navy);
+  opacity: 1;
+}
