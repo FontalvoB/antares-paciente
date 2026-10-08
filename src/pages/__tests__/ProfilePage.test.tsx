@@ -87,6 +87,7 @@ vi.mock("../../context/AppContext", () => ({
     openPanic: vi.fn(),
     showToast: vi.fn(),
     pointsTotal: mockState.pointsTotal,
+    realMode: true,
     logout: vi.fn(),
     openTests: vi.fn(),
     teamProfessionals: mockState.teamProfessionals,
@@ -164,6 +165,7 @@ const metricsFixture = {
 } as MetricsHistoryDto;
 
 const snapshotFixture = {
+  xp: { balance: 365 },
   template: { currentWeekNumber: 7, totalWeeks: 24 },
 };
 
@@ -258,8 +260,15 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
   it("mantiene el valor real de puntos en el hero", () => {
     renderPage();
 
-    expect(screen.getByText("4820")).toBeTruthy();
+    expect(screen.getByText("365")).toBeTruthy();
+    expect(screen.queryByText("4820")).toBeNull();
     expect(screen.getByText("Puntos")).toBeTruthy();
+  });
+
+  it("sin snapshot no sustituye el saldo persistido con puntos locales", () => {
+    mockState.snapshot = null;
+    renderPage();
+    expect(screen.queryByText("4820")).toBeNull();
   });
 
   it("renderiza el delta real de peso desde metrics-history", () => {

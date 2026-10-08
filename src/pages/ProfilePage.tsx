@@ -469,6 +469,7 @@ export function ProfilePage() {
     openPanic,
     showToast,
     pointsTotal,
+    realMode,
     logout,
     openTests,
     teamProfessionals,
@@ -578,7 +579,7 @@ export function ProfilePage() {
   const heroMetrics: Array<[string, string]> = [];
   if (programWeek != null) heroMetrics.push([String(programWeek), "Semanas"]);
   if (weightDelta) heroMetrics.push([weightDelta, "Peso"]);
-  heroMetrics.push([String(pointsTotal), "Puntos"]);
+  heroMetrics.push([snapshot?.xp?.balance != null && !isMockFallback ? String(snapshot.xp.balance) : realMode ? "—" : String(pointsTotal), "Puntos"]);
 
   return (
     <MotionConfig reducedMotion="user">

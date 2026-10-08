@@ -46,7 +46,6 @@ import type { Screen } from "../../types";
  * conteo. Todo texto visible pasa por `t()` (skill `i18n-translations`).
  */
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Destino clínico por prefijo del código de aviso. null = sin navegación. */
 export function resolveNotificationTarget(type: string): Screen | null {
@@ -125,7 +124,7 @@ export function NotificationsModal({
   onClose,
 }: NotificationsModalProps) {
   const { t } = useI18n();
-  const { navigate } = useApp();
+  const { navigate, openTests } = useApp();
   const {
     notifications,
     unreadCount,
@@ -136,17 +135,20 @@ export function NotificationsModal({
     refresh,
   } = useNotifications();
 
-  const { today, week } = useMemo(() => {
-    const now = Date.now();
-    const recent: InAppNotification[] = [];
-    const older: InAppNotification[] = [];
+  const groups = useMemo(() => {
+    if (!isOpen) return [];
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const weekStart = new Date(dayStart);
+    weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+    const buckets: Record<string, InAppNotification[]> = { Hoy: [], "Esta semana": [], Anteriores: [] };
     for (const item of notifications) {
       const sent = new Date(item.sentAt).getTime();
-      if (!Number.isNaN(sent) && now - sent <= DAY_MS) recent.push(item);
-      else older.push(item);
+      const key = sent >= dayStart ? "Hoy" : sent >= weekStart.getTime() ? "Esta semana" : "Anteriores";
+      buckets[key].push(item);
     }
-    return { today: recent, week: older };
-  }, [notifications]);
+    return Object.entries(buckets).filter(([, items]) => items.length > 0);
+  }, [notifications, isOpen]);
 
   // Con cache previa, un refetch fallido conserva la lista (patrón
   // useMetricsHistory): loading/error a pantalla completa solo sin datos.
@@ -158,7 +160,8 @@ export function NotificationsModal({
     void markAsRead(item.id).catch(() => {});
     const target = resolveNotificationTarget(item.type);
     onClose();
-    if (target) navigate(target);
+    if (item.type === "health_test_reminder") openTests();
+    else if (target) navigate(target);
   };
 
   const handleMarkAll = () => {
@@ -248,34 +251,14 @@ export function NotificationsModal({
             </div>
           ) : (
             <>
-              {today.length > 0 && (
-                <section aria-label={t("Hoy")}>
-                  <h3 className="nt-section">{t("Hoy")}</h3>
+              {groups.map(([label, items]) => (
+                <section key={label} aria-label={t(label)}>
+                  <h3 className="nt-section">{t(label)}</h3>
                   <div className="nt-list">
-                    {today.map((item) => (
-                      <NotificationCard
-                        key={item.id}
-                        item={item}
-                        onSelect={handleSelect}
-                      />
-                    ))}
+                    {items.map((item) => <NotificationCard key={item.id} item={item} onSelect={handleSelect} />)}
                   </div>
                 </section>
-              )}
-              {week.length > 0 && (
-                <section aria-label={t("Esta semana")}>
-                  <h3 className="nt-section">{t("Esta semana")}</h3>
-                  <div className="nt-list">
-                    {week.map((item) => (
-                      <NotificationCard
-                        key={item.id}
-                        item={item}
-                        onSelect={handleSelect}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
+              ))}
             </>
           )}
         </div>

@@ -28,13 +28,15 @@ import {
   lookupId,
   sendOtp,
   verifyOtp,
+  sendRecoveryCode,
+  recoverPassword,
   type ContactMethod,
   type IdLookupResult,
 } from "../utils/authApi";
 import logoLetras from "../assets/LogoConLetras.png";
 import type { UserProfile } from "../types";
 
-type LoginMode = "login" | "first";
+type LoginMode = "login" | "first" | "recovery";
 type FirstStep = "id" | "contacts" | "otp";
 
 /** Transición compartida por los paneles de modo/paso del acceso. */
@@ -55,6 +57,8 @@ export function LoginPage() {
   const [documentNumber, setDocumentNumber] = useState("");
   const [pwd, setPwd] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [remember, setRemember] = useState(true);
 
   // Primer inicio de sesión (ID → contactos → OTP)
@@ -132,7 +136,9 @@ export function LoginPage() {
     startAction();
     setBusyMessage(t("Enviando tu código…"));
     try {
-      const result = await sendOtp(idInput.trim(), c.id);
+      const result = mode === "recovery"
+        ? await sendRecoveryCode(idInput.trim(), c.id)
+        : await sendOtp(idInput.trim(), c.id);
       setContact(c);
       setDevCode(result.devCode ?? null);
       setOtp(["", "", "", "", "", ""]);
@@ -165,9 +171,20 @@ export function LoginPage() {
       showToast(t("Ingresa el código de 6 dígitos"), "warn");
       return;
     }
+    if (mode === "recovery" && (newPassword.length < 8 || newPassword !== confirmPassword)) {
+      showToast(t("Usa al menos 8 caracteres y confirma la misma contraseña."), "warn"); return;
+    }
     startAction();
     setBusyMessage(t("Verificando tu código…"));
     try {
+      if (mode === "recovery") {
+        if (!contact) throw new Error(t("Selecciona un método de contacto."));
+        await recoverPassword(idInput.trim(), contact.id, code, newPassword);
+        setBusy(false); setMode("login"); setPwd(""); setDocumentNumber(idInput.trim());
+        setNewPassword(""); setConfirmPassword("");
+        showToast(t("Contraseña actualizada. Inicia sesión con tu nueva contraseña."), "ok");
+        return;
+      }
       await verifyOtp(idInput.trim(), code, remember);
       setBusy(false);
       const seed: Partial<UserProfile> = lookup
@@ -212,8 +229,9 @@ export function LoginPage() {
     if (el instanceof HTMLInputElement) el.focus();
   };
 
-  const goFirst = () => {
-    setMode("first");
+  const goFirst = (recover = false) => {
+    setMode(recover ? "recovery" : "first");
+    setNewPassword(""); setConfirmPassword("");
     setFirstStep("id");
     setIdInput("");
     setLookup(null);
@@ -346,12 +364,7 @@ export function LoginPage() {
                     type="button"
                     fill="clear"
                     className="auth-link-btn"
-                    onClick={() =>
-                      showToast(
-                        t("Demo: recuperación de contraseña no disponible"),
-                        "info",
-                      )
-                    }
+                    onClick={() => goFirst(true)}
                   >
                     {t("¿Olvidaste tu contraseña?")}
                   </IonButton>
@@ -374,7 +387,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   className="auth-alt-link"
-                  onClick={goFirst}
+                  onClick={() => goFirst()}
                 >
                   {t("Activa tu cuenta")}
                 </button>
@@ -392,7 +405,7 @@ export function LoginPage() {
                   <IonIcon icon={arrowBackOutline} />
                 </button>
                 <div>
-                  <h1 className="auth-head-title">{t("Activa tu cuenta")}</h1>
+                  <h1 className="auth-head-title">{t(mode === "recovery" ? "Recupera tu contraseña" : "Activa tu cuenta")}</h1>
                   <p className="auth-head-sub">
                     {firstStep === "id" &&
                       t("Verifica tu identidad para completar tu perfil")}
@@ -591,10 +604,17 @@ export function LoginPage() {
                         )}
                       </div>
 
+                      {mode === "recovery" && <div className="auth-field">
+                        <label htmlFor="recovery-password">{t("Nueva contraseña")}</label>
+                        <input id="recovery-password" className="auth-input" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                        <label htmlFor="recovery-confirm">{t("Confirmar contraseña")}</label>
+                        <input id="recovery-confirm" className="auth-input" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                        <p className="auth-hint">{t("Usa mayúsculas, minúsculas, números y un símbolo. Tu contraseña debe tener al menos 8 caracteres.")}</p>
+                      </div>}
                       {busyBar}
 
                       <SlideCtaButton
-                        label={t("Verificar y entrar")}
+                        label={t(mode === "recovery" ? "Actualizar contraseña" : "Verificar y entrar")}
                         busyLabel={t("Verificando…")}
                         busy={busy}
                         disabled={busy || otp.join("").length !== 6}

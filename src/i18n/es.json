@@ -2441,5 +2441,15 @@
   "alto": "alto",
   "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.": "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.",
   "No se pudo guardar el comentario. Intenta de nuevo.": "No se pudo guardar el comentario. Intenta de nuevo.",
-  "No se pudo actualizar el repost. Intenta de nuevo.": "No se pudo actualizar el repost. Intenta de nuevo."
+  "No se pudo actualizar el repost. Intenta de nuevo.": "No se pudo actualizar el repost. Intenta de nuevo.",
+  "Contraseña actualizada. Inicia sesión con tu nueva contraseña.": "Contraseña actualizada. Inicia sesión con tu nueva contraseña.",
+  "Selecciona un método de contacto.": "Selecciona un método de contacto.",
+  "Usa al menos 8 caracteres y confirma la misma contraseña.": "Usa al menos 8 caracteres y confirma la misma contraseña.",
+  "Usa mayúsculas, minúsculas, números y un símbolo. Tu contraseña debe tener al menos 8 caracteres.": "Usa mayúsculas, minúsculas, números y un símbolo. Tu contraseña debe tener al menos 8 caracteres.",
+  "Actualizar contraseña": "Actualizar contraseña",
+  "Recupera tu contraseña": "Recupera tu contraseña",
+  "Pendiente vencida": "Pendiente vencida",
+  "Sin completar": "Sin completar",
+  "Semana {n}": "Semana {n}",
+  "No se pudo reproducir este video. El archivo puede no estar disponible o tener un formato incompatible.": "No se pudo reproducir este video. El archivo puede no estar disponible o tener un formato incompatible."
 }

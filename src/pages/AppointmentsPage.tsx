@@ -280,14 +280,14 @@ export function AppointmentsPage() {
           ) : (
             past.map((a) => {
               // 2.A.6: el chip refleja el estado final real (nunca todo verde).
-              const chip = pastAppointmentChip(a.status);
+              const chip = a.requestStatus === "Pending" ? { label: "Pendiente vencida", className: "chip chip-org" } : pastAppointmentChip(a.status);
               return (
                 <div key={a.id} className="group-row">
                   <span className="group-row-ico">{a.emoji}</span>
                   <span className="group-row-body">
                     <strong>{a.name}</strong>
                     <small>
-                      {a.time} · {t(a.when)}
+                      {a.day} · {a.time} · {t(a.when)}
                     </small>
                     {a.cancellationReason?.trim() ? (
                       <small>

@@ -1,3 +1,4 @@
+import { CommunityVideo } from "./CommunityVideo";
 import { IonButton, IonIcon, IonModal } from '@ionic/react'
 import { close, expand } from 'ionicons/icons'
 import { useI18n } from '../../i18n/I18nContext'
@@ -26,7 +27,7 @@ export function MediaLightbox({
         {url && (
           <div className="mbl-body" onClick={(e) => e.stopPropagation()}>
             {isVideo ? (
-              <video className="mbl-media" src={url} controls autoPlay playsInline />
+              <CommunityVideo className="mbl-media" src={url} controls autoPlay playsInline />
             ) : (
               <img className="mbl-media" src={url} alt={t('Imagen ampliada')} />
             )}

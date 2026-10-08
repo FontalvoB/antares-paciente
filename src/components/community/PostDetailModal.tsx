@@ -1,3 +1,4 @@
+import { CommunityVideo } from "./CommunityVideo";
 import { IonAlert, IonButton, IonIcon, IonModal, IonTextarea } from '@ionic/react'
 import {
   arrowUndo,
@@ -246,10 +247,29 @@ export function PostDetailModal({
   const [modalOpen, setModalOpen] = useState(!!post)
 
   // Reabre con datos del servidor y recibe comentarios ERP → app mientras está abierto.
-  const [freshPost] = useQuery<PostResult>({ query: POST_QUERY,
+  const [freshPost, refreshPost] = useQuery<PostResult>({ query: POST_QUERY,
     variables: { id: post?.id ?? '' }, pause: !post, requestPolicy: 'network-only' })
   const [incomingComment] = useSubscription<{ commentAdded: Comment }>({
     query: COMMENT_ADDED_SUBSCRIPTION, pause: !post })
+
+  // Recupera eventos perdidos por desconexión o réplicas sin bus compartido.
+  // La consulta está acotada al detalle abierto; no toca el borrador ni la respuesta.
+  useEffect(() => {
+    if (!post) return
+    const refresh = () => {
+      if (document.visibilityState === 'visible') refreshPost({ requestPolicy: 'network-only' })
+    }
+    const timer = window.setInterval(refresh, 10000)
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('online', refresh)
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('online', refresh)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [post?.id, refreshPost]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Estado: reporte ---
   const [reportOpen, setReportOpen] = useState(false)
@@ -465,7 +485,7 @@ export function PostDetailModal({
           )}
           {view.imageUrl &&
             (view.mediaType === 'VIDEO' ? (
-              <video
+              <CommunityVideo
                 className="com-post-image"
                 src={view.imageUrl}
                 controls

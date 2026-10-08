@@ -265,8 +265,12 @@ export function ProgramPage() {
         ? `${serverActiveTask.content.title} · ${durationMin} min`
         : serverActiveTask.content.title;
     }
+    if (active === "ejercicio" && serverActiveTask?.content?.exercises?.length) {
+      const seconds = serverActiveTask.content.exercises.reduce((sum, exercise) => sum + resolveStationSec(exercise), 0);
+      return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} min · ${t("Semana {n}", { n: String(snapshot?.template.currentWeekNumber ?? "—") })}`;
+    }
     return serverActiveTask?.short || (task ? t(task.hint) : "");
-  }, [active, serverActiveTask, task, t, podDuration]);
+  }, [active, serverActiveTask, task, t, podDuration, snapshot?.template.currentWeekNumber]);
   const taskPts = serverActiveTask?.points ?? task?.pts ?? 0;
 
   const first = user.nombre.split(" ")[0];
