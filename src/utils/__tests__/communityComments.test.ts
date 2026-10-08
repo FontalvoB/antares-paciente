@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Comment } from '../../graphql/community'
-import { mergeCommunityComments } from '../community-comments'
+import { countCommunityComments, mergeCommunityComments } from '../community-comments'
 
 const comment = (id: string, parentCommentId: string | null = null, replies: Comment[] = []): Comment => ({
   id, postId: 'post', parentCommentId, body: id, createdAt: '2026-10-08T12:00:00Z',
@@ -8,6 +8,17 @@ const comment = (id: string, parentCommentId: string | null = null, replies: Com
 })
 
 describe('Community comments from mutations, snapshots and subscriptions', () => {
+  it('keeps the same total for flat API comments and nested live threads', () => {
+    const flat = [comment('root'), comment('reply1', 'root'), comment('reply2', 'root')]
+    expect(countCommunityComments(flat)).toBe(3)
+    expect(countCommunityComments(mergeCommunityComments([], flat))).toBe(3)
+    const updated = mergeCommunityComments(flat, [comment('reply3', 'root')])
+    expect(countCommunityComments(updated)).toBe(4)
+  })
+  it('counts nested descendants once when the snapshot also contains flat duplicates', () => {
+    const nested = comment('root', null, [comment('child', 'root', [comment('grandchild', 'child')])])
+    expect(countCommunityComments([nested, comment('child', 'root'), comment('grandchild', 'child')])).toBe(3)
+  })
   it('deduplicates a response received both through the mutation and WebSocket', () => {
     const root = comment('root')
     const reply = comment('reply', 'root')

@@ -15,7 +15,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useSubscription } from 'urql'
 import { COMMENT_ADDED_SUBSCRIPTION, POST_QUERY, type PostResult } from '../../graphql/community'
-import { mergeCommunityComments } from '../../utils/community-comments'
+import { countCommunityComments, mergeCommunityComments } from '../../utils/community-comments'
 import type { Comment, Post, Profile, RepostRef } from '../../graphql/community'
 import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, timeAgo } from './community'
@@ -540,7 +540,7 @@ export function PostDetailModal({
         <div className="com-detail-comments">
           <div className="com-cmt-head">
             <span className="com-cmt-title">{t('Comentarios')}</span>
-            <span className="com-cmt-count">{comments.length}</span>
+            <span className="com-cmt-count">{countCommunityComments(comments)}</span>
           </div>
           {roots.length === 0 ? (
             <div className="com-detail-msg">
