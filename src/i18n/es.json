@@ -2424,5 +2424,19 @@
   "Guardando evaluación…": "Guardando evaluación…",
   "Resultados de tus evaluaciones": "Resultados de tus evaluaciones",
   "Aún no hay resultados calculados disponibles.": "Aún no hay resultados calculados disponibles.",
-  "No se pudieron cargar los resultados.": "No se pudieron cargar los resultados."
+  "No se pudieron cargar los resultados.": "No se pudieron cargar los resultados.",
+  "TU PERFIL DE SALUD": "TU PERFIL DE SALUD",
+  "Conoce tus resultados, a tu ritmo.": "Conoce tus resultados, a tu ritmo.",
+  "Resultados guardados": "Resultados guardados",
+  "{n} evaluaciones con resultados": "{n} evaluaciones con resultados",
+  "Tus evaluaciones": "Tus evaluaciones",
+  "Explora cada evaluación para ver sus puntuaciones y detalles.": "Explora cada evaluación para ver sus puntuaciones y detalles.",
+  "Puntuación registrada": "Puntuación registrada",
+  "Detalle de la evaluación": "Detalle de la evaluación",
+  "Sin resultados adicionales para esta evaluación.": "Sin resultados adicionales para esta evaluación.",
+  "Cada evaluación tiene su propia escala. Revisa los resultados con tu equipo de salud.": "Cada evaluación tiene su propia escala. Revisa los resultados con tu equipo de salud.",
+  "Volver a mi perfil": "Volver a mi perfil",
+  "bajo": "bajo",
+  "moderado": "moderado",
+  "alto": "alto"
 }

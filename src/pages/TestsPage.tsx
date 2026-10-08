@@ -4,9 +4,6 @@ import {
   IonButton,
   IonIcon,
   IonLoading,
-  IonList,
-  IonItem,
-  IonLabel,
   IonProgressBar,
   IonSpinner,
 } from "@ionic/react";
@@ -28,6 +25,7 @@ import {
   type MeQuestion,
   type MeResult,
 } from "../utils/healthTestsApi";
+import { AssessmentResults } from "../components/tests/AssessmentResults";
 import { TestWizard, type WizardExtras } from "../components/tests/TestWizard";
 import {
   buildBackendSteps,
@@ -296,10 +294,10 @@ export function TestsPage() {
 
   return (
     <div
-      className={`screen ht-page mood-${showResult ? "cosmos" : openId !== null ? theme.mood : "list"}`}
+      className={`screen ht-page mood-${showResult ? "results" : openId !== null ? theme.mood : "list"}`}
     >
       {showResult ? (
-        <div className="hero ht-hero ht-hero-ghost">
+        <div className="hero ht-hero ar-hero">
           <div className="ht-hero-top">
             <IonButton
               fill="clear"
@@ -309,6 +307,11 @@ export function TestsPage() {
             >
               <IonIcon slot="icon-only" icon={chevronBack} />
             </IonButton>
+            <div className="ar-hero-copy">
+              <div className="ar-eyebrow">{t("TU PERFIL DE SALUD")}</div>
+              <h1>{t("Resultados de tus evaluaciones")}</h1>
+              <p>{t("Conoce tus resultados, a tu ritmo.")}</p>
+            </div>
           </div>
         </div>
       ) : (
@@ -368,10 +371,13 @@ export function TestsPage() {
       )}
 
       {showResult ? (
-        <HealthResult
+        <AssessmentResults
           results={backendResults ?? []}
           error={resultsError}
-          onEnter={finishTests}
+          onEnter={() => {
+            finishTests();
+            navigate("prof");
+          }}
           onCommunity={() => {
             finishTests();
             navigate("com");
@@ -510,31 +516,6 @@ export function TestsPage() {
         isOpen={loading}
         message={t("Guardando evaluación…")}
       />
-    </div>
-  );
-}
-
-function HealthResult({ results, error, onEnter, onCommunity }: {
-  error: boolean;
-  results: MeResult[];
-  onEnter: () => void;
-  onCommunity: () => void;
-}) {
-  const t = useT();
-  return (
-    <div className="screen-scroll no-nav ht-result htp-page">
-      <h2>{t("Resultados de tus evaluaciones")}</h2>
-      {error ? <p role="alert">{t("No se pudieron cargar los resultados.")}</p> : results.length === 0 ? <p>{t("Aún no hay resultados calculados disponibles.")}</p> : (
-        <IonList>
-          {results.map(result => (
-            <IonItem key={result.id}>
-              <IonLabel><h3>{result.label}</h3><p>{result.value} {result.qualifier ?? ""}</p></IonLabel>
-            </IonItem>
-          ))}
-        </IonList>
-      )}
-      <IonButton expand="block" onClick={onEnter}>{t("Continuar")}</IonButton>
-      <IonButton expand="block" fill="outline" onClick={onCommunity}>{t("Comunidad")}</IonButton>
     </div>
   );
 }

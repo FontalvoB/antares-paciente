@@ -2522,5 +2522,19 @@
   "Guardando evaluación…": "Saving assessment…",
   "Resultados de tus evaluaciones": "Your assessment results",
   "Aún no hay resultados calculados disponibles.": "No calculated results are available yet.",
-  "No se pudieron cargar los resultados.": "Unable to load the results."
+  "No se pudieron cargar los resultados.": "Unable to load the results.",
+  "TU PERFIL DE SALUD": "YOUR HEALTH PROFILE",
+  "Conoce tus resultados, a tu ritmo.": "Explore your results at your own pace.",
+  "Resultados guardados": "Saved results",
+  "{n} evaluaciones con resultados": "{n} assessments with results",
+  "Tus evaluaciones": "Your assessments",
+  "Explora cada evaluación para ver sus puntuaciones y detalles.": "Open an assessment to explore its scores and details.",
+  "Puntuación registrada": "Recorded score",
+  "Detalle de la evaluación": "Assessment details",
+  "Sin resultados adicionales para esta evaluación.": "No additional results for this assessment.",
+  "Cada evaluación tiene su propia escala. Revisa los resultados con tu equipo de salud.": "Each assessment has its own scale. Review your results with your care team.",
+  "Volver a mi perfil": "Back to my profile",
+  "bajo": "low",
+  "moderado": "moderate",
+  "alto": "high"
 }

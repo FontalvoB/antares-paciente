@@ -31164,3 +31164,52 @@ ion-button.ntd-glass.full { --background: var(--blue); --color: var(--wh); }
 .sos-delivery-row.bad ion-icon {
   color: #dc2626;
 }
+
+/* Resultados reales de la batería: tarjetas de dominio sobre componentes Ionic. */
+.ht-page.mood-results { --ht-bg: var(--g0); --ht-text: var(--tx); background: var(--g0); }
+.ar-hero { flex-shrink: 0; background: var(--grad-brand-v); padding: calc(22px + env(safe-area-inset-top, 0px)) 18px 26px; border-radius: 0 0 28px 28px; }
+.ar-hero .ht-hero-top { align-items: flex-start; gap: 12px; }
+.ar-hero .ht-hero-back { --background: color-mix(in srgb, var(--wh) 12%, transparent); --color: var(--wh); --border-radius: 50%; width: 44px; height: 44px; flex: 0 0 44px; margin: 0; }
+.ar-hero-copy { min-width: 0; }
+.ar-eyebrow { color: var(--wh); opacity: .78; font-size: 10px; font-weight: 700; letter-spacing: .12em; margin: 3px 0 8px; }
+.ar-hero h1 { color: var(--wh); font-family: 'Space Grotesk', sans-serif; font-size: clamp(23px, 5.6vw, 28px); letter-spacing: -.7px; line-height: 1.13; margin: 0; max-width: 340px; }
+.ar-hero p { color: var(--wh); opacity: .78; font-size: 12px; line-height: 1.5; margin: 10px 0 0; }
+.assessment-results { padding: 20px 16px calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--g0); color: var(--tx); }
+.ar-summary { display: flex; align-items: center; gap: 12px; padding: 15px 16px; background: var(--teal-l); border: 1px solid color-mix(in srgb, var(--teal) 12%, transparent); border-radius: 20px; }
+.ar-summary-icon { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; color: var(--teal); background: var(--wh); }
+.ar-summary-icon ion-icon { font-size: 24px; }
+.ar-summary strong { color: var(--teal-d); font-size: 14px; }
+.ar-summary p { color: var(--teal-d); font-size: 12px; margin: 4px 0 0; }
+.ar-section { margin: 24px 3px 14px; }
+.ar-section h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; letter-spacing: -.5px; margin: 0 0 6px; }
+.ar-section p { margin: 0; color: var(--mu); font-size: 12px; line-height: 1.6; max-width: 320px; }
+.ar-cards { display: flex; flex-direction: column; gap: 12px; }
+.ar-card { border: 1px solid var(--bd); border-radius: 20px; background: var(--wh); overflow: hidden; box-shadow: 0 4px 16px color-mix(in srgb, var(--navy) 4%, transparent); }
+.ar-card-header { --background: var(--wh); --background-hover: var(--ice-l); --color: var(--tx); --padding-start: 13px; --inner-padding-end: 12px; --min-height: 116px; --border-width: 0; }
+.ar-card-header::part(native) { align-items: center; }
+.ar-card-icon { display: grid; place-items: center; width: 42px; height: 42px; margin-inline-end: 12px; border-radius: 14px; background: var(--ar-soft, var(--ice-l)); font-size: 22px; flex-shrink: 0; }
+.ar-card-title { white-space: normal; margin: 14px 0; }
+.ar-card-title h3 { color: var(--tx); font-family: 'Space Grotesk', sans-serif; font-size: 15px; line-height: 1.25; font-weight: 700; margin: 0; }
+.ar-card-title p { color: var(--mu); font-size: 11px; line-height: 1.35; margin: 5px 0 8px; }
+.ar-classification { display: inline-flex; color: var(--teal-d); background: var(--teal-l); border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 600; line-height: 1.4; margin-top: 6px; }
+.ar-score { display: flex; flex-direction: column; align-items: center; min-width: 38px; margin-inline-start: 10px; margin-inline-end: 4px; }
+.ar-score strong { color: var(--navy); font-family: 'Space Grotesk', sans-serif; font-size: 29px; line-height: 1; letter-spacing: -1px; }
+.ar-score span { color: var(--mu); font-size: 10px; margin-top: 6px; }
+.ar-card-header .ion-accordion-toggle-icon { color: var(--mu); font-size: 16px; margin-inline-start: 5px; }
+.ar-card-details { border-top: 1px solid var(--bd); padding: 16px 14px 8px; background: var(--wh); }
+.ar-detail-kicker { color: var(--mu); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin: 0 2px 6px; }
+.ar-detail-list { background: transparent; padding: 0; }
+.ar-detail-row { --background: transparent; --padding-start: 2px; --inner-padding-end: 2px; --min-height: 64px; border-bottom: 1px solid var(--g1); }
+.ar-detail-row:last-child { border-bottom: 0; }
+.ar-detail-row ion-label { white-space: normal; }
+.ar-detail-row h4 { color: var(--tx); font-size: 13px; line-height: 1.45; margin: 0; font-weight: 500; }
+.ar-detail-row p { color: var(--mu); font-size: 11px; margin: 4px 0 0; }
+.ar-detail-value { min-width: 32px; text-align: center; color: var(--navy); background: var(--ice-l); border-radius: 10px; padding: 7px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; margin-inline-start: 12px; }
+.ar-scale-note { display: flex; align-items: flex-start; gap: 9px; color: var(--mu); font-size: 11px; line-height: 1.6; margin: 20px 5px; }
+.ar-scale-note ion-icon { flex-shrink: 0; font-size: 17px; margin-top: 2px; }
+.ar-actions { margin-top: 22px; }
+.ar-primary { --background: var(--navy); --color: var(--wh); --border-radius: 16px; --box-shadow: none; height: 52px; font-size: 14px; font-weight: 600; margin: 0; }
+.ar-community { --color: var(--teal); height: 48px; font-size: 13px; margin: 6px 0 0; }
+.ar-empty { text-align: center; padding: 36px 20px; border-radius: 20px; background: var(--wh); border: 1px solid var(--bd); }
+.ar-empty > ion-icon { font-size: 36px; color: var(--teal); }
+.ar-empty h2 { font-size: 18px; line-height: 1.5; margin: 18px 0 0; }
