@@ -579,7 +579,7 @@
   "Antecedentes familiares": "Family history",
   "Antecedentes patológicos": "Medical history",
   "Anterior": "Previous",
-  "Anteriores": "Previous",
+  "Anteriores": "Earlier",
   "Añade un comentario…": "Add a comment…",
   "Añadir": "Add",
   "Añadir miembro": "Add member",
@@ -2539,5 +2539,15 @@
   "alto": "high",
   "Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.": "Dimensions show scores without level labels because no dimension-specific ranges are configured.",
   "No se pudo guardar el comentario. Intenta de nuevo.": "Could not save your comment. Please try again.",
-  "No se pudo actualizar el repost. Intenta de nuevo.": "Could not update the repost. Please try again."
+  "No se pudo actualizar el repost. Intenta de nuevo.": "Could not update the repost. Please try again.",
+  "Contraseña actualizada. Inicia sesión con tu nueva contraseña.": "Password updated. Sign in with your new password.",
+  "Selecciona un método de contacto.": "Select a contact method.",
+  "Usa al menos 8 caracteres y confirma la misma contraseña.": "Use at least 8 characters and confirm the same password.",
+  "Usa mayúsculas, minúsculas, números y un símbolo. Tu contraseña debe tener al menos 8 caracteres.": "Use uppercase and lowercase letters, numbers and a symbol. Your password must have at least 8 characters.",
+  "Actualizar contraseña": "Update password",
+  "Recupera tu contraseña": "Recover your password",
+  "Pendiente vencida": "Overdue request",
+  "Sin completar": "Incomplete",
+  "Semana {n}": "Week {n}",
+  "No se pudo reproducir este video. El archivo puede no estar disponible o tener un formato incompatible.": "This video could not be played. The file may be unavailable or use an unsupported format."
 }

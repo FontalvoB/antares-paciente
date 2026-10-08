@@ -48,6 +48,8 @@ export interface ListedAppointment {
   pending?: boolean;
   /** Estado real de la cita (ausente en mocks/solicitudes). */
   status?: AppointmentDto["status"];
+  requestStatus?: AppointmentRequestDto["status"];
+  scheduledAt?: string | null;
   /** Ventana de la sala virtual (opcional hasta el despliegue del backend). */
   roomOpensAt?: string | null;
   roomClosesAt?: string | null;
@@ -343,6 +345,8 @@ export function mapRequestToListed(
   const preferred = req.preferredStart ? new Date(req.preferredStart) : null;
   return {
     id: `req-${req.id}`,
+    requestStatus: req.status,
+    scheduledAt: req.preferredStart,
     when,
     mode: "Telemedicina",
     accent: style.accent,
@@ -403,6 +407,7 @@ export function mapAppointmentToListed(
     motivo: appt.specialtyName ?? "Consulta",
     color: style.color,
     status: appt.status,
+    scheduledAt: appt.scheduledStart,
     roomOpensAt: appt.roomOpensAt ?? null,
     roomClosesAt: appt.roomClosesAt ?? null,
     professionalId: appt.professionalId,
@@ -422,6 +427,9 @@ export function pastAppointmentChip(
   switch (status) {
     case "Cancelled":
       return { label: "Cancelada", className: "chip chip-red" };
+    case "Confirmed":
+    case "Requested":
+      return { label: "Sin completar", className: "chip chip-org" };
     case "NoShow":
       return { label: "No asistió", className: "chip chip-org" };
     default:
@@ -439,56 +447,19 @@ export function buildRealAppointments(
 ): { upcoming: ListedAppointment[]; past: ListedAppointment[] } {
   const now = Date.now();
 
-  // Activas: Confirmada/En curso. Se conservan aunque su hora ya pasó (sigue
-  // Confirmed sin sesión iniciada — el paciente mantiene Unirse/Cancelar hasta
-  // que el profesional la finalice). Sin esto la cita "se cae" de ambas listas.
-  const active = appointments
-    .filter((a) => a.status === "Confirmed" || a.status === "InProgress")
-    .sort(
-      (a, b) =>
-        new Date(a.scheduledStart).getTime() -
-        new Date(b.scheduledStart).getTime(),
-    );
-
-  const upcomingItems: ListedAppointment[] = [];
-  // Destacada: la próxima futura; si todas pasaron, la más reciente (visible
-  // con Unirse/Cancelar mientras el profesional no la finalice).
-  const future = active.find(
-    (a) => new Date(a.scheduledStart).getTime() >= now,
-  );
-  const featuredAppointment = future ?? active[active.length - 1];
-  if (featuredAppointment)
-    upcomingItems.push(mapAppointmentToListed(featuredAppointment));
-
-  for (const a of active) {
-    if (a.id !== featuredAppointment?.id)
-      upcomingItems.push(mapAppointmentToListed(a));
-  }
-
-  const pendingRequests = requests
-    .filter((r) => r.status === "Pending" || r.status === "Approved")
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-  for (const r of pendingRequests) upcomingItems.push(mapRequestToListed(r));
-
-  if (upcomingItems[0])
-    upcomingItems[0] = { ...upcomingItems[0], featured: true };
-
-  const past = appointments
-    .filter(
-      (a) =>
-        a.status === "Completed" ||
-        a.status === "Cancelled" ||
-        a.status === "NoShow",
-    )
-    .sort(
-      (a, b) =>
-        new Date(b.scheduledStart).getTime() -
-        new Date(a.scheduledStart).getTime(),
-    )
-    .map(mapAppointmentToListed);
+  // Una cita en curso permanece visible; las citas sin iniciar y vencidas van al historial.
+  const stillActive = (a: AppointmentDto) => a.status === "InProgress" ||
+    ((a.status === "Confirmed" || a.status === "Requested") && new Date(a.scheduledEnd).getTime() >= now);
+  const active = appointments.filter(stillActive).sort((a, b) => Date.parse(a.scheduledStart) - Date.parse(b.scheduledStart));
+  // Approved ya tiene cita real: no duplica la solicitud ni conserva fechas pasadas como próximas.
+  const pendingRequests = requests.filter(r => r.status === "Pending" &&
+    (!r.preferredStart || Date.parse(r.preferredStart) >= now));
+  const upcomingItems = [...active.map(mapAppointmentToListed), ...pendingRequests.map(mapRequestToListed)].sort((a, b) => (a.scheduledAt ? Date.parse(a.scheduledAt) : Infinity) - (b.scheduledAt ? Date.parse(b.scheduledAt) : Infinity));
+  if (upcomingItems[0]) upcomingItems[0] = { ...upcomingItems[0], featured: true };
+  const past = [
+    ...appointments.filter(a => !stillActive(a)).sort((a, b) => Date.parse(b.scheduledStart) - Date.parse(a.scheduledStart)).map(mapAppointmentToListed),
+    ...requests.filter(r => r.status === "Pending" && r.preferredStart && Date.parse(r.preferredStart) < now).map(mapRequestToListed),
+  ].sort((a, b) => Date.parse(b.scheduledAt ?? "") - Date.parse(a.scheduledAt ?? ""));
 
   return { upcoming: upcomingItems, past };
 }

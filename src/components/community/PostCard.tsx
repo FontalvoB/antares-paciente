@@ -1,3 +1,4 @@
+import { CommunityVideo } from "./CommunityVideo";
 import { IonAlert, IonIcon, IonModal } from '@ionic/react'
 import {
   chatbubbleEllipsesOutline,
@@ -253,7 +254,7 @@ export function PostCard({
       {post.imageUrl && (
         <div className="com-post-media">
           {post.mediaType === 'VIDEO' ? (
-            <video
+            <CommunityVideo
               className="com-post-image"
               src={post.imageUrl}
               controls

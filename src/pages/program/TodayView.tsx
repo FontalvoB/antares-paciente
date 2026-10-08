@@ -16,6 +16,7 @@ import {
   nbWeekLabel,
   resolveNbDayOk,
 } from '../../utils/nbWeekDays'
+import { resolveStationSec } from '../../utils/exerciseSteps'
 import { TASK_ICONS } from './ui'
 
 /** Formatea un `completedAt` ISO del servidor en HH:mm del locale del device. */
@@ -91,7 +92,10 @@ export function TodayView({
         } else if (task.taskCode === 'nut' && task.content?.title) {
           shortText = task.content.title
         } else if (task.taskCode === 'ejercicio' && task.content?.title) {
-          shortText = task.content.title
+          const seconds = task.content.exercises?.reduce((sum, exercise) => sum + resolveStationSec(exercise), 0)
+          shortText = seconds ? `${task.content.title} · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} min` : task.content.title
+        } else if (task.taskCode === 'emocional') {
+          shortText = `${t('Estado psicológico')} · ${t('Semana {n}', { n: String(programWeek) })}`
         }
 
         return {
@@ -116,7 +120,7 @@ export function TodayView({
       icon: TASK_ICONS[pt.id],
       thumbnailUrl: null,
     }))
-  }, [todayTasks, program])
+  }, [todayTasks, program, programWeek, t])
 
   // --- Nutracéutico: hora real de la última completación (server truth) ---
   // `completedAt` del servidor formateado en locale del device; `takenAt` de

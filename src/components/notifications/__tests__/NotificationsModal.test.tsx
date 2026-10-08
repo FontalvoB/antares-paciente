@@ -25,13 +25,14 @@ const hookState = vi.hoisted(() => ({
 }));
 
 const navigateMock = vi.fn();
+const openTestsMock = vi.fn();
 
 vi.mock("../../../hooks/useNotifications", () => ({
   useNotifications: () => hookState,
 }));
 
 vi.mock("../../../context/AppContext", () => ({
-  useApp: () => ({ navigate: navigateMock }),
+  useApp: () => ({ navigate: navigateMock, openTests: openTestsMock }),
 }));
 
 vi.mock("../../../i18n/I18nContext", () => ({
@@ -162,6 +163,7 @@ describe("NotificationsModal — agrupación y acciones", () => {
     hookState.markAllAsRead.mockClear();
     hookState.refresh.mockClear();
     navigateMock.mockClear();
+    openTestsMock.mockClear();
   });
 
   afterEach(() => {
@@ -174,6 +176,24 @@ describe("NotificationsModal — agrupación y acciones", () => {
     expect(screen.getByText("Esta semana")).toBeTruthy();
     expect(screen.getByText("Cita hoy 3:00 PM")).toBeTruthy();
     expect(screen.getByText("Hidratación")).toBeTruthy();
+  });
+
+  it("coloca una notificación de septiembre en Anteriores en octubre", () => {
+    hookState.notifications = [notif({ id: "old", sentAt: "2026-09-24T12:00:00Z", title: "Aviso antiguo" })];
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-08T12:00:00Z"));
+    try {
+      render(<NotificationsModal isOpen onClose={() => {}} />);
+      expect(screen.getByText("Anteriores")).toBeTruthy();
+      expect(screen.queryByText("Esta semana")).toBeNull();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("el recordatorio de evaluación abre el flujo de tests", () => {
+    hookState.notifications = [notif({ id: "test", type: "health_test_reminder", title: "Evaluación pendiente" })];
+    render(<NotificationsModal isOpen onClose={() => {}} />);
+    fireEvent.click(screen.getByText("Evaluación pendiente"));
+    expect(openTestsMock).toHaveBeenCalledOnce();
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 
   it("al tocar una cita la marca como leída y navega a book", () => {

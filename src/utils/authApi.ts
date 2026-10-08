@@ -63,6 +63,7 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
     try {
       const data = await res.json();
       if (data && typeof data.message === "string") message = data.message;
+      else if (data && typeof data.detail === "string") message = data.detail;
     } catch {
       /* el cuerpo no es JSON */
     }
@@ -382,7 +383,9 @@ let sharedRefreshPromise: Promise<SharedRefreshResult> | null = null;
 
 export function sharedRefresh(): Promise<SharedRefreshResult> {
   if (!sharedRefreshPromise) {
-    sharedRefreshPromise = performSharedRefresh().finally(() => {
+    sharedRefreshPromise = (typeof navigator !== "undefined" && navigator.locks
+      ? navigator.locks.request(`copp-refresh-${getApplicationCode()}`, performSharedRefresh)
+      : performSharedRefresh()).finally(() => {
       sharedRefreshPromise = null;
     });
   }
@@ -412,4 +415,13 @@ async function performSharedRefresh(): Promise<SharedRefreshResult> {
   } catch {
     return { status: 0, result: null };
   }
+}
+
+/** Recuperación real para una cuenta existente; el código nunca inicia sesión ni crea usuarios. */
+export function sendRecoveryCode(documentNumber: string, contactId: string): Promise<SendOtpResult> {
+  return postJson(`${getAuthBaseUrl()}/api/auth/recovery-code`, { documentNumber, contactId, application: getApplicationCode() });
+}
+export async function recoverPassword(documentNumber: string, contactId: string, otp: string, newPassword: string): Promise<void> {
+  await postJson(`${getAuthBaseUrl()}/api/auth/recover-password`, { documentNumber, contactId, otp, newPassword, application: getApplicationCode() });
+  clearAccessToken();
 }

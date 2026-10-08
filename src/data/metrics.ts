@@ -235,7 +235,7 @@ function toCard(
       label: meta.label,
       color: meta.color,
       decimals: meta.decimals,
-      unit: unit ?? FALLBACK_UNIT[id],
+      unit: displayMetricUnit(unit ?? FALLBACK_UNIT[id]),
       kind: "requires-data",
       note: REQUIRES_DATA_NOTE[id],
     };
@@ -254,7 +254,7 @@ function toCard(
     label: meta.label,
     color: meta.color,
     decimals: meta.decimals,
-    unit: unit ?? FALLBACK_UNIT[id],
+    unit: displayMetricUnit(unit ?? FALLBACK_UNIT[id]),
     kind: "value",
     current,
     progress,
@@ -296,9 +296,14 @@ function resolveImcSeries(
   if (points.length === 0) return undefined;
   return {
     code: "bmi",
-    unit: bmi?.unit ?? "kg/m²",
+    unit: displayMetricUnit(bmi?.unit ?? "kg/m²"),
     target: null,
     favorableDirection: null,
     points,
   };
+}
+
+/** Unidades técnicas del contrato convertidas a notación legible. */
+export function displayMetricUnit(unit: string): string {
+  return ({ kg_m2: "kg/m²", pct: "%", mg_dl: "mg/dL", mmol_l: "mmol/L" } as Record<string, string>)[unit] ?? unit;
 }
