@@ -2417,5 +2417,12 @@
   "Continuar en la web": "Continuar en la web",
   "No se pudo abrir el sitio web. Inténtalo más tarde.": "No se pudo abrir el sitio web. Inténtalo más tarde.",
   "Supervisor": "Supervisor",
-  "Participante": "Participante"
+  "Participante": "Participante",
+  "No se pudieron cargar las preguntas. Intenta nuevamente.": "No se pudieron cargar las preguntas. Intenta nuevamente.",
+  "No se pudieron cargar tus evaluaciones.": "No se pudieron cargar tus evaluaciones.",
+  "No tienes evaluaciones asignadas.": "No tienes evaluaciones asignadas.",
+  "Guardando evaluación…": "Guardando evaluación…",
+  "Resultados de tus evaluaciones": "Resultados de tus evaluaciones",
+  "Aún no hay resultados calculados disponibles.": "Aún no hay resultados calculados disponibles.",
+  "No se pudieron cargar los resultados.": "No se pudieron cargar los resultados."
 }

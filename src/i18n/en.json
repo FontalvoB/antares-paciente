@@ -2515,5 +2515,12 @@
   "Continuar en la web": "Continue on the web",
   "No se pudo abrir el sitio web. Inténtalo más tarde.": "We could not open the website. Please try again later.",
   "Supervisor": "Supervisor",
-  "Participante": "Participant"
+  "Participante": "Participant",
+  "No se pudieron cargar las preguntas. Intenta nuevamente.": "Unable to load the questions. Please try again.",
+  "No se pudieron cargar tus evaluaciones.": "Unable to load your assessments.",
+  "No tienes evaluaciones asignadas.": "You have no assigned assessments.",
+  "Guardando evaluación…": "Saving assessment…",
+  "Resultados de tus evaluaciones": "Your assessment results",
+  "Aún no hay resultados calculados disponibles.": "No calculated results are available yet.",
+  "No se pudieron cargar los resultados.": "Unable to load the results."
 }
