@@ -175,6 +175,7 @@ export function NotificationsModal({
       initialBreakpoint={1}
       breakpoints={[0, 1]}
       handle
+      onWillPresent={refresh}
       className="notifications-modal"
       aria-label={t("Notificaciones")}
     >
