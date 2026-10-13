@@ -193,7 +193,7 @@ export function TodayView({
       : t('Seguimos monitoreando tu composición corporal.')
     return (
       <>
-        {first}, {t('tu')}{' '}
+        {first},{' '}
         <strong>
           {t('tu adherencia nutricional está en {pct}%', { pct: String(nutrition) })}
         </strong>
