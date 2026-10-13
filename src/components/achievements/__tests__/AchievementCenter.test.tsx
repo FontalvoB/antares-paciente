@@ -1,12 +1,14 @@
+import type { ReactNode } from "react";
 import { vi, it, expect } from "vitest";
-import { render, act, waitFor } from "@testing-library/react";
+import { render, act, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AchievementCenter } from "../AchievementCenter";
-import { getAchievements } from "../../../services/achievements/achievement-store";
+import { getAchievements, observeAchievements } from "../../../services/achievements/achievement-store";
 import type { ProgramSnapshotDto } from "../../../services/program/types";
 vi.mock("@ionic/react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@ionic/react")>()),
   IonToast: () => null,
+  IonModal: ({isOpen,children}: {isOpen:boolean;children:ReactNode}) => isOpen ? <div>{children}</div> : null,
 }));
 const mocks = vi.hoisted(() => ({
   snapshot: vi.fn(),
@@ -25,7 +27,7 @@ vi.mock("../../../services/achievements/native-notifications", () => ({
   notifyAchievement: (...args: unknown[]) => mocks.notify(...args),
   enableAchievementNotifications: vi.fn(),
 }));
-vi.mock("../AchievementShare", () => ({ AchievementShare: () => null }));
+vi.mock("../AchievementShare", () => ({ AchievementShare: ({achievement}: {achievement:{id:string}}) => <div data-testid="selected-achievement">{achievement.id}</div> }));
 it("notifies only on network-confirmed progress, never optimistic success or duplicate fetches", async () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -76,4 +78,16 @@ it("notifies only on network-confirmed progress, never optimistic success or dup
   expect(mocks.notify).toHaveBeenCalledTimes(1);
   view.unmount();
   client.clear();
+});
+
+it("opens the specific earned card from a chest or notification", () => {
+ const client = new QueryClient();
+ mocks.owner = "direct-share-patient";
+ observeAchievements(mocks.owner, { enrollmentId: "direct", todayLocalDate: "2026-10-13", todayBonusAvailable: true, todayTasks: [{taskCode:"exercise",status:"Completed"}], streakChests: [{days:7,granted:true}] } as unknown as ProgramSnapshotDto);
+ const view = render(<QueryClientProvider client={client}><AchievementCenter /></QueryClientProvider>);
+ act(() => window.dispatchEvent(new CustomEvent("achievements:open", {detail:{days:7}})));
+ expect(screen.getByTestId("selected-achievement").textContent).toBe("chest:direct:7");
+ act(() => window.dispatchEvent(new CustomEvent("achievements:open", {detail:{id:"task:direct:2026-10-13:exercise"}})));
+ expect(screen.getByTestId("selected-achievement").textContent).toBe("task:direct:2026-10-13:exercise");
+ view.unmount(); client.clear();
 });

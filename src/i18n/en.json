@@ -2611,5 +2611,14 @@
   "Los logros se actualizan al sincronizar tu programa. Los avisos se guardan en este dispositivo.": "Achievements update when your program syncs. Alerts are saved on this device.",
   "Mis logros y tarjetas para compartir": "My achievements and share cards",
   "Historia para redes": "Story",
-  "No pudimos confirmar la publicación. Revisa Comunidad antes de volver a publicar para evitar duplicados.": "We could not confirm the post. Check Community before posting again to avoid duplicates."
+  "No pudimos confirmar la publicación. Revisa Comunidad antes de volver a publicar para evitar duplicados.": "We could not confirm the post. Check Community before posting again to avoid duplicates.",
+  "Estamos estimando los alimentos, las porciones y sus nutrientes.": "We’re estimating the foods, portions, and nutrients.",
+  "Un plato completo. Una foto clara.": "The whole plate. One clear photo.",
+  "Análisis en curso": "Analysis in progress",
+  "Preparando tu resumen nutricional": "Preparing your nutrition summary",
+  "Esto puede tardar unos segundos.": "This may take a few seconds.",
+  "Tu foto se enviará solo cuando pulses analizar.": "Your photo is sent only when you tap analyze.",
+  "Continuar con mi foto": "Continue with my photo",
+  "Compartir logro de {days} días": "Share {days}-day achievement",
+  "Vista previa": "Preview"
 }

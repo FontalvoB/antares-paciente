@@ -1,7 +1,7 @@
-import { IonIcon, IonProgressBar } from '@ionic/react'
+import { IonButton, IonIcon, IonProgressBar } from '@ionic/react'
 import { motion } from 'framer-motion'
 import type { CSSProperties } from 'react'
-import { checkmarkCircle, gift, lockClosed } from 'ionicons/icons'
+import { checkmarkCircle, gift, lockClosed, shareSocialOutline } from 'ionicons/icons'
 import { RingProgress } from '../../components/RingProgress'
 import { useI18n } from '../../i18n/I18nContext'
 import type { StreakChestDto } from '../../services/program/types'
@@ -45,7 +45,9 @@ function ChestGlyph({ status, tone }: { status: string; tone: string }) {
 export function StreakChestsTrail({
   chests,
   streak,
+  onShare,
 }: {
+  onShare?: (days: number) => void
   chests: StreakChestDto[]
   streak: number
 }) {
@@ -73,6 +75,7 @@ export function StreakChestsTrail({
             <ChestGlyph status={status} tone={tone} />
             <b>{chest.days}d</b>
             <small>+{chest.xp.toLocaleString(numLocale)}</small>
+            {chest.granted && onShare && <IonButton className="cx-share" fill="clear" aria-label={t('Compartir logro de {days} días', { days: String(chest.days) })} onClick={() => onShare(chest.days)}><IonIcon slot="icon-only" icon={shareSocialOutline} /></IonButton>}
           </motion.div>
         )
       })}

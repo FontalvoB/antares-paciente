@@ -97,7 +97,6 @@ export function StreakView({
   return (
     <MotionConfig reducedMotion="user">
       <div className="pg-pane cpad sr-view">
-        <IonButton expand="block" fill="outline" onClick={() => window.dispatchEvent(new Event("achievements:open"))}>{t("Mis logros y tarjetas para compartir")}</IonButton>
         <motion.section
           className="pg-streak-hero sr-hero"
           initial={{ opacity: 0, scale: 0.96 }}
@@ -231,7 +230,7 @@ export function StreakView({
             {rewardTab === 'streak' && <>
               <h4>{t('Cofres de racha')}</h4>
               <p className="cx-lead">{t('Cada hito de días seguidos abre su cofre de experiencia automáticamente.')}</p>
-              <StreakChestsTrail chests={chests} streak={streak} />
+              <StreakChestsTrail chests={chests} streak={streak} onShare={(days) => window.dispatchEvent(new CustomEvent("achievements:open", { detail: { days } }))} />
               {nextStreakChest && (
                 <NextChestGoal
                   days={nextStreakChest.days}

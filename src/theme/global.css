@@ -31236,8 +31236,7 @@ button:disabled {
 }
 
 /* Food AI: revisión privada antes del envío y comparación con metas prescritas. */
-.nut-photo-review img { display:block; width:100%; max-height:340px; object-fit:contain; border-radius:24px; background:var(--g0); margin:16px 0; }
-.nut-photo-review p, .food-plan-check p { color:var(--mu); font-size:14px; line-height:1.6; }
+.food-plan-check p { color:var(--mu); font-size:14px; line-height:1.6; }
 .food-plan-check { border:1px solid var(--bd); border-radius:24px; padding:20px; margin:20px 0; background:var(--wh); }
 .food-plan-heading { display:flex; align-items:center; gap:12px; }
 .food-plan-heading > ion-icon { background:var(--teal-l); color:var(--teal); padding:12px; border-radius:16px; font-size:24px; }
@@ -31271,3 +31270,41 @@ button:disabled {
 .achievement-share ion-textarea { --background:var(--g0); --padding-start:14px; --padding-end:14px; border:1px solid var(--bd); border-radius:16px; padding:12px; }
 .achievement-privacy, .achievement-social-hint { font-size:12px; color:var(--mu); line-height:1.6; }
 .achievement-sheet ion-button { min-height:44px; }
+
+/* Food AI: misma fotografía en revisión y análisis; un único scroll Ionic. */
+.food-flow-modal { --background: var(--wh); }
+.food-flow-content { --background: var(--wh); --padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+.food-flow-content .nut-ai { padding: 12px 20px 24px; max-width: 580px; margin: 0 auto; }
+.food-flow-content .nut-flow-head { padding-top: max(8px, env(safe-area-inset-top)); }
+.food-photo-stage { min-width: 0; }
+.food-photo-heading { margin: 4px 0 18px; }
+.food-photo-brand { display: inline-flex; align-items: center; gap: 7px; color: var(--teal); font-size: 11px; letter-spacing: 1.8px; font-weight: 800; }
+.food-photo-brand ion-icon { font-size: 19px; }
+.food-photo-heading h3 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(24px, 6vw, 30px); letter-spacing: -.7px; margin: 9px 0 7px; color: var(--navy); }
+.food-photo-heading p { font-size: 14px; line-height: 1.5; color: var(--mu); margin: 0; }
+.food-photo-frame { position: relative; isolation: isolate; overflow: hidden; aspect-ratio: 4 / 3; max-height: 42svh; border-radius: 24px; background: var(--cosmos); box-shadow: var(--shadow-md); }
+.food-photo-frame img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.food-photo-frame::after { content: ''; position: absolute; inset: 60% 0 0; background: linear-gradient(transparent, color-mix(in srgb, var(--cosmos) 85%, transparent)); pointer-events: none; }
+.food-photo-corners { position: absolute; inset: 16px; border: 1px solid color-mix(in srgb, var(--wh) 50%, transparent); border-radius: 14px; pointer-events: none; }
+.food-photo-caption { position: absolute; z-index: 2; bottom: 20px; left: 24px; color: var(--wh); font-size: 12px; font-weight: 600; letter-spacing: .3px; }
+.food-photo-privacy { display: flex; align-items: center; gap: 9px; margin: 15px 2px 18px; color: var(--mu); font-size: 12px; line-height: 1.5; }
+.food-photo-privacy ion-icon { flex-shrink: 0; font-size: 19px; color: var(--teal); }
+.food-photo-actions { padding-bottom: 4px; }
+.food-photo-actions ion-button { margin: 0; min-height: 48px; font-size: 13px; font-weight: 700; --border-radius: 16px; --box-shadow: none; text-transform: none; }
+.food-photo-actions ion-button::part(native) { white-space: normal; }
+.food-photo-actions ion-button.food-photo-primary { min-height: 56px; font-size: 15px; --background: var(--grad-brand-v); --color: var(--wh); --box-shadow: var(--shadow-sm); }
+.food-photo-secondary { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; margin-top: 12px; }
+.food-photo-secondary ion-button { --padding-start: 10px; --padding-end: 10px; --border-color: var(--bd); --color: var(--navy); --background: var(--g0); }
+.food-photo-secondary ion-icon { flex-shrink: 0; font-size: 19px; }
+.food-photo-actions ion-button.food-photo-cancel { --color: var(--mu); margin-top: 4px; font-weight: 500; }
+.food-photo-status { display: flex; align-items: center; gap: 14px; background: var(--teal-l); border-radius: 20px; padding: 18px; margin-top: 18px; color: var(--teal-d); }
+.food-photo-status ion-spinner { flex-shrink: 0; width: 26px; height: 26px; color: var(--teal); }
+.food-photo-status strong { font-size: 14px; }
+.food-photo-status p { color: var(--mu); font-size: 12px; margin: 6px 0 0; line-height: 1.5; }
+.food-photo-scan { position: absolute; z-index: 1; inset: 0; pointer-events: none; animation: food-photo-sweep 2.8s ease-in-out infinite alternate; will-change: transform; }
+.food-photo-scan::before { content: ''; position: absolute; top: -25%; height: 25%; left: 0; right: 0; background: linear-gradient(transparent, color-mix(in srgb, var(--brand-green-soft) 65%, transparent)); border-bottom: 2px solid var(--wh); box-shadow: 0 6px 22px color-mix(in srgb, var(--brand-sky) 85%, transparent); }
+@keyframes food-photo-sweep { from { transform: translateY(5%); } to { transform: translateY(95%); } }
+@media (prefers-reduced-motion: reduce) { .food-photo-scan { animation: none; transform: translateY(50%); } }
+ion-button.cx-share { min-width: 44px; min-height: 44px; margin: 0; --padding-start: 9px; --padding-end: 9px; --color: var(--teal); }
+
+.nt-achievement-share { display: block; color: var(--teal); font-size: 12px; font-weight: 700; margin: 8px 0; }

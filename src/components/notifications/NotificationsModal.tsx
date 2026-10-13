@@ -161,7 +161,7 @@ export function NotificationsModal({
     const target = resolveNotificationTarget(item.type);
     onClose();
     if (item.type === "health_test_reminder") openTests();
-    else if (item.type.startsWith("achievement_")) window.dispatchEvent(new Event("achievements:open"));
+    else if (item.type.startsWith("achievement_")) window.dispatchEvent(new CustomEvent("achievements:open", { detail: { id: item.id.replace(/^local-achievement:/, "") } }));
     else if (target) navigate(target);
   };
 
@@ -295,6 +295,7 @@ function NotificationCard({
           {unread && <i className="nt-dot" aria-hidden="true" />}
         </span>
         <span className="nt-msg">{item.message}</span>
+        {item.type.startsWith("achievement_") && <span className="nt-achievement-share">{t("Compartir logro")} →</span>}
         <time className="nt-time" dateTime={item.sentAt}>
           {formatNotificationTime(item.sentAt, t)}
         </time>

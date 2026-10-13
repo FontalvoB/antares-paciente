@@ -112,7 +112,7 @@ export function AchievementShare({
     <div className="achievement-share">
       <IonButton fill="clear" disabled={busy} onClick={onBack}>
         <IonIcon slot="start" icon={arrowBackOutline} />
-        {t("Mis logros")}
+        {t("Volver")}
       </IonButton>
       <h2>{t("Tu constancia merece celebrarse")}</h2>
       <p>{t("Elige un formato y comparte tu logro a tu manera.")}</p>

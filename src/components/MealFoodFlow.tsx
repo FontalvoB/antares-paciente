@@ -1,3 +1,4 @@
+import { FoodPhotoStage } from "./nutrition/FoodPhotoStage";
 import { FoodPlanComparison } from "./nutrition/FoodPlanComparison";
 import type { MyNutritionPlanDto } from "../services/nutrition/my-nutrition-plan-service";
 import { useEffect, useState } from "react";
@@ -75,6 +76,8 @@ const FLOW_MEAL_LABELS: Record<string, string> = {
 };
 
 interface Props {
+  active?: boolean;
+  onBack?: () => void;
   plan?: MyNutritionPlanDto | null;
   planLoading?: boolean;
   planFailed?: boolean;
@@ -232,6 +235,7 @@ function NutritionSummary({
 }
 
 export function MealFoodFlow({
+  active = true, onBack,
   plan, planLoading, planFailed,
   meal,
   mode,
@@ -559,11 +563,10 @@ export function MealFoodFlow({
             : "";
 
   function goBack() {
-    if (step === "review") retake();
-    else if (step === "rereview") newRetake();
-    else if (step === "recapture") setStep("detail");
+    if (step === "review" || step === "rereview") (onBack ?? onClose)();
+    else if (step === "recapture") setStep(newResult ? "rereview" : "detail");
     else if (step === "edit" && log) setStep("detail");
-    else onClose();
+    else (onBack ?? onClose)();
   }
 
   return (
@@ -595,21 +598,9 @@ export function MealFoodFlow({
           transition={{ duration: 0.28 }}
         >
           {isAnalyzing && (step === "analyzing" ? photo : newPhoto) ? (
-            <div className="nut-ai-photo">
-              <img
-                src={(step === "analyzing" ? photo : newPhoto) as string}
-                alt={t("Fotografía de la comida")}
-              />
-              <div className="nut-ai-overlay">
-                <IonSpinner name="crescent" />
-                <div className="nut-ai-title">{t("Analizando tu comida…")}</div>
-                {step === "reanalyzing" && (
-                  <div className="nut-ai-keep">
-                    {t("Tu comida registrada se conserva.")}
-                  </div>
-                )}
-              </div>
-            </div>
+            <FoodPhotoStage src={(step === "analyzing" ? photo : newPhoto) as string} analyzing>
+              {step === "reanalyzing" && <p className="nut-ai-hint">{t("Tu comida registrada se conserva.")}</p>}
+            </FoodPhotoStage>
           ) : (
             <>
               {(step === "recapture" ? newError : analysisError) && (
@@ -623,6 +614,7 @@ export function MealFoodFlow({
                 </div>
               )}
               <CameraCapture
+                active={active}
                 key={step === "recapture" ? newCaptureKey : captureKey}
                 autoSource={step === "recapture" ? undefined : autoSource}
                 onCapture={(blob, fileName) =>
@@ -665,12 +657,6 @@ export function MealFoodFlow({
             <IonIcon icon={imageOutline} slot="start" />
             {t("Cambiar foto")}
           </IonButton>
-          <div className="nut-ai-title nut-flow-sec">
-            {t("Alimentos detectados")} ({result.foods.length})
-          </div>
-          {result.foods.map((food, i) => (
-            <FoodResultCard key={`${food.name}-${i}`} food={food} />
-          ))}
           <NutritionSummary
             calories={
               result.summary?.calories ?? result.intake?.calories ?? null
@@ -683,6 +669,13 @@ export function MealFoodFlow({
             fiber={result.summary?.fiber ?? result.intake?.fiberG ?? null}
           />
           <FoodPlanComparison result={result} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
+          <div className="nut-ai-title nut-flow-sec">
+            {t("Alimentos detectados")} ({result.foods.length})
+          </div>
+          {result.foods.map((food, i) => (
+            <FoodResultCard key={`${food.name}-${i}`} food={food} />
+          ))}
+
           {editingValues ? (
             <>
               <div className="nut-ai-title nut-flow-sec">
@@ -747,12 +740,6 @@ export function MealFoodFlow({
             <IonIcon icon={imageOutline} slot="start" />
             {t("Cambiar foto")}
           </IonButton>
-          <div className="nut-ai-title nut-flow-sec">
-            {t("Alimentos detectados")} ({newResult.foods.length})
-          </div>
-          {newResult.foods.map((food, i) => (
-            <FoodResultCard key={`${food.name}-${i}`} food={food} />
-          ))}
           <NutritionSummary
             calories={
               newResult.summary?.calories ?? newResult.intake?.calories ?? null
@@ -769,6 +756,13 @@ export function MealFoodFlow({
             fiber={newResult.summary?.fiber ?? newResult.intake?.fiberG ?? null}
           />
           <FoodPlanComparison result={newResult} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
+          <div className="nut-ai-title nut-flow-sec">
+            {t("Alimentos detectados")} ({newResult.foods.length})
+          </div>
+          {newResult.foods.map((food, i) => (
+            <FoodResultCard key={`${food.name}-${i}`} food={food} />
+          ))}
+
           {editingNewValues ? (
             <>
               <div className="nut-ai-title nut-flow-sec">

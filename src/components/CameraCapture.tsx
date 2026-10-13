@@ -4,10 +4,13 @@ import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import {
   cameraOutline,
+  scanOutline,
+  trashOutline,
   closeOutline,
   imageOutline,
   refreshOutline,
 } from "ionicons/icons";
+import { FoodPhotoStage } from "./nutrition/FoodPhotoStage";
 import { useT } from "../i18n/I18nContext";
 import { dataUrlToBlob } from "../services/media/camera-service";
 
@@ -22,6 +25,7 @@ import { dataUrlToBlob } from "../services/media/camera-service";
  *   archivo (el de cámara lleva capture="environment" y abre la cámara del SO).
  */
 interface Props {
+  active?: boolean;
   onCapture: (blob: Blob, fileName: string) => void;
   onCancel: () => void;
   /**
@@ -45,7 +49,7 @@ function canPreview(): boolean {
   );
 }
 
-export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
+export function CameraCapture({ onCapture, onCancel, autoSource, active = true }: Props) {
   const t = useT();
   const isNative = Capacitor.isNativePlatform();
   const preview = !isNative && canPreview();
@@ -82,7 +86,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
   }
 
   useEffect(() => {
-    if (!preview || selection) return;
+    if (!active || !preview || selection) return;
     let cancelled = false;
     async function start() {
       try {
@@ -125,7 +129,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
       streamRef.current = null;
     };
-  }, [preview, attempt, t, selection]);
+  }, [active, preview, attempt, t, selection]);
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((tr) => tr.stop());
@@ -236,7 +240,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
   // Apertura directa al montar (una sola vez): el flujo por comida ya sabe
   // qué fuente quiere el usuario.
   useEffect(() => {
-    if (!autoSource || autoOpened.current) return;
+    if (!active || !autoSource || autoOpened.current) return;
     autoOpened.current = true;
     if (isNative) {
       void takeNative(
@@ -247,18 +251,25 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
     } else if (!preview) {
       cameraInputRef.current?.click();
     }
-  }, [autoSource, isNative, preview]);
+  }, [active, autoSource, isNative, preview]);
 
   if (selection) return (
-    <div className="nut-photo-review">
-      <h3>{t("Revisa tu foto")}</h3>
-      <p>{t("Aún no se ha enviado. Asegúrate de que se vea el plato completo.")}</p>
-      <img src={selection.url} alt={t("Fotografía de la comida")} />
-      <IonButton expand="block" onClick={() => onCapture(selection.blob, selection.name)}>{t("Usar foto y analizar")}</IonButton>
-      <IonButton expand="block" fill="outline" onClick={() => { discardPhoto(); if (isNative) void takeNative(CameraSource.Camera); }}>{t("Volver a tomar foto")}</IonButton>
-      <IonButton expand="block" fill="clear" onClick={discardPhoto}>{t("Descartar foto")}</IonButton>
-      <IonButton expand="block" fill="clear" onClick={onCancel}>{t("Cancelar")}</IonButton>
-    </div>
+    <FoodPhotoStage src={selection.url}>
+      <div className="food-photo-actions">
+        <IonButton className="food-photo-primary" expand="block" onClick={() => onCapture(selection.blob, selection.name)}>
+          <IonIcon icon={scanOutline} slot="start" />{t("Usar foto y analizar")}
+        </IonButton>
+        <div className="food-photo-secondary">
+          <IonButton fill="outline" onClick={() => { discardPhoto(); if (isNative) void takeNative(CameraSource.Camera); }}>
+            <IonIcon icon={cameraOutline} slot="start" />{t("Volver a tomar foto")}
+          </IonButton>
+          <IonButton fill="clear" onClick={discardPhoto}>
+            <IonIcon icon={trashOutline} slot="start" />{t("Descartar foto")}
+          </IonButton>
+        </div>
+        <IonButton className="food-photo-cancel" expand="block" fill="clear" onClick={onCancel}>{t("Cancelar")}</IonButton>
+      </div>
+    </FoodPhotoStage>
   );
 
   if (state === "busy") {

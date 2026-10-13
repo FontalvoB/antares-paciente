@@ -21,6 +21,7 @@ import { programKeys } from "../../hooks/queryKeys";
 import type { ProgramSnapshotDto } from "../../services/program/types";
 import {
   observeAchievements,
+  getAchievements,
   markAchievementRead,
   type EarnedAchievement,
 } from "../../services/achievements/achievement-store";
@@ -67,6 +68,7 @@ export function AchievementCenter() {
           copy.title,
           copy.message,
           () => active && ownerRef.current === owner,
+          featured.id,
         ).catch(() => {});
       }
     });
@@ -83,8 +85,11 @@ export function AchievementCenter() {
     };
   }, [owner, queryClient, t]);
   useEffect(() => {
-    const show = () => {
-      setSelected(null);
+    const show = (event?: Event) => {
+      const detail = (event as CustomEvent<{ id?: string; days?: number }> | undefined)?.detail;
+      const achievement = getAchievements(owner).find(a => detail?.id ? a.id === detail.id : detail?.days ? a.kind === "streak" && a.value === detail.days : false);
+      if (achievement) markAchievementRead(owner, achievement.id);
+      setSelected(achievement ?? null);
       setOpen(true);
     };
     window.addEventListener("achievements:open", show);
@@ -97,7 +102,7 @@ export function AchievementCenter() {
               active &&
               action.notification.extra?.destination === "achievements"
             )
-              show();
+              show(new CustomEvent("achievements:open", { detail: { id: action.notification.extra?.achievementId } }));
           },
         )
       : null;
@@ -106,7 +111,7 @@ export function AchievementCenter() {
       window.removeEventListener("achievements:open", show);
       void listener?.then((l) => l.remove()).catch(() => {});
     };
-  }, []);
+  }, [owner]);
   return (
     <>
       <IonToast
@@ -117,7 +122,7 @@ export function AchievementCenter() {
         onDidDismiss={() => setNotice(null)}
         buttons={[
           {
-            text: t("Ver logro"),
+            text: t("Compartir logro"),
             handler: () => {
               if (notice) {
                 markAchievementRead(owner, notice.id);
@@ -155,7 +160,7 @@ export function AchievementCenter() {
               <AchievementShare
                 key={selected.id}
                 achievement={selected}
-                onBack={() => setSelected(null)}
+                onBack={() => setOpen(false)}
               />
             ) : (
               <>
@@ -194,6 +199,13 @@ export function AchievementCenter() {
                     </IonButton>
                   </div>
                 ))}
+                <p className="achievement-social-hint">
+                  {t(
+                    "Los logros se actualizan al sincronizar tu programa. Los avisos se guardan en este dispositivo.",
+                  )}
+                </p>
+              </>
+            )}
                 {Capacitor.isNativePlatform() && (
                   <IonButton
                     expand="block"
@@ -220,13 +232,6 @@ export function AchievementCenter() {
                     {t("Activar avisos de logros")}
                   </IonButton>
                 )}
-                <p className="achievement-social-hint">
-                  {t(
-                    "Los logros se actualizan al sincronizar tu programa. Los avisos se guardan en este dispositivo.",
-                  )}
-                </p>
-              </>
-            )}
           </div>
         </IonContent>
       </IonModal>

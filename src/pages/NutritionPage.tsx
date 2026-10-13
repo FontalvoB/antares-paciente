@@ -6,6 +6,7 @@ import {
   IonButton,
   IonIcon,
   IonModal,
+  IonContent,
   IonProgressBar,
   IonSegment,
   IonSegmentButton,
@@ -131,7 +132,12 @@ export function NutritionPage() {
     startAt?: "detail" | "edit";
     autoSource?: "camera" | "gallery";
   }
-  const [flow, setFlow] = useState<MealFlow | null>(null);
+  const [flow, storeFlow] = useState<MealFlow | null>(null);
+  const [flowOpen, setFlowOpen] = useState(false);
+  function setFlow(next: MealFlow | null) {
+    storeFlow(next);
+    setFlowOpen(next !== null);
+  }
   // La tarjeta IA global pide primero la comida y luego abre el flujo.
   const [mealPickerSource, setMealPickerSource] = useState<
     "camera" | "gallery" | null
@@ -540,7 +546,8 @@ export function NutritionPage() {
             color: "#fff",
           }}
         >
-          {flow === null && (
+          {!flowOpen && flow && <IonButton expand="block" onClick={() => setFlowOpen(true)}>{t("Continuar con mi foto")}</IonButton>}
+          {!flowOpen && (
             <>
               <div className="ntr-ai-title">
                 <IonIcon icon={cameraOutline} aria-hidden="true" /> {t("Analiza tu comida con IA")}
@@ -1076,10 +1083,13 @@ export function NutritionPage() {
       />
 
       {/* ── Flujo por comida (captura → revisión → detalle/edición) ── */}
-      <IonModal isOpen={flow !== null} onDidDismiss={() => setFlow(null)}>
-        <div style={{ padding: 20 }}>
+      <IonModal className="food-flow-modal" keepContentsMounted isOpen={flowOpen} onDidDismiss={() => setFlowOpen(false)}>
+        <IonContent className="food-flow-content">
           {flow && (
             <MealFoodFlow
+              key={`${flow.meal}:${flow.mode}:${flow.startAt ?? 'detail'}`}
+              active={flowOpen}
+              onBack={() => setFlowOpen(false)}
               plan={nutritionPlan}
               planLoading={planLoading}
               planFailed={Boolean(planError)}
@@ -1095,7 +1105,7 @@ export function NutritionPage() {
               }}
             />
           )}
-        </div>
+        </IonContent>
       </IonModal>
     </Screen></MotionConfig>
   );

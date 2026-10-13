@@ -10,6 +10,7 @@ export async function notifyAchievement(
   title: string,
   body: string,
   isCurrent: () => boolean,
+  achievementId?: string,
 ) {
   if (!Capacitor.isNativePlatform()) return;
   if (
@@ -23,7 +24,7 @@ export async function notifyAchievement(
         id: Math.floor(Math.random() * 2147483646) + 1,
         title,
         body,
-        extra: { destination: "achievements" },
+        extra: { destination: "achievements", achievementId },
       },
     ],
   });
