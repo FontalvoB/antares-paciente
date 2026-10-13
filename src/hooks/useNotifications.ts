@@ -1,3 +1,7 @@
+import { useAchievements } from "./useAchievements";
+import { markAchievementRead } from "../services/achievements/achievement-store";
+import { achievementCopy } from "../services/achievements/achievement-copy";
+import { useT } from "../i18n/I18nContext";
 /**
  * useNotifications — estado reactivo del centro de avisos in-app (Fase 11, tarea 2.2).
  *
@@ -58,6 +62,8 @@ export interface UseNotificationsResult {
 
 export function useNotifications(): UseNotificationsResult {
   const queryClient = useQueryClient();
+  const { owner, items: achievements } = useAchievements();
+  const t = useT();
   const key = notificationsKeys.list(LIST_PAGE, LIST_PAGE_SIZE);
 
   const query = useQuery<PaginatedNotificationsResult, ApiError>({
@@ -80,6 +86,7 @@ export function useNotifications(): UseNotificationsResult {
 
   const markAsRead = useCallback(
     async (id: string): Promise<void> => {
+      if (id.startsWith("local-achievement:")) { markAchievementRead(owner, id.slice(18)); return; }
       // Optimismo primero: el tap en el modal se refleja al instante.
       let wasUnread = false;
       queryClient.setQueryData<PaginatedNotificationsResult>(key, (prev) => {
@@ -128,10 +135,11 @@ export function useNotifications(): UseNotificationsResult {
         throw err;
       }
     },
-    [key, queryClient],
+    [key, queryClient, owner],
   );
 
   const markAllAsRead = useCallback(async (): Promise<void> => {
+    markAchievementRead(owner);
     const current = queryClient.getQueryData<PaginatedNotificationsResult>(key);
     const unreadIds = (current?.items ?? [])
       .filter((item) => item.readAt === null)
@@ -178,15 +186,18 @@ export function useNotifications(): UseNotificationsResult {
       };
     });
     throw reasonOf(unreadIds.indexOf(businessFailed[0]));
-  }, [key, queryClient]);
+  }, [key, queryClient, owner]);
 
   const refresh = useCallback(() => {
     void refetch();
   }, [refetch]);
 
   return {
-    notifications: data?.items ?? [],
-    unreadCount: data?.unreadCount ?? 0,
+    notifications: [...(data?.items ?? []), ...achievements.map(a => ({
+      id: `local-achievement:${a.id}`, type: 'achievement_earned', ...achievementCopy(a, t),
+      priority: 'normal', channel: 'local', sentAt: a.earnedAt, readAt: a.readAt,
+    }))].sort((a, b) => b.sentAt.localeCompare(a.sentAt)),
+    unreadCount: (data?.unreadCount ?? 0) + achievements.filter(a => !a.readAt).length,
     isLoading,
     isError,
     error: error ?? null,

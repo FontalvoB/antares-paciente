@@ -2039,3 +2039,25 @@ zustand@^5.0.1, zustand@^5.0.3:
   version "5.0.15"
   resolved "https://registry.npmjs.org/zustand/-/zustand-5.0.15.tgz"
   integrity sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==
+
+"@capacitor/filesystem@^8":
+  version "8.1.4"
+  resolved "https://registry.npmjs.org/@capacitor/filesystem/-/filesystem-8.1.4.tgz"
+  integrity sha512-8MXmt10cb+dGWoh8jUeO8on0U6iETQCX5k+fmdB278PZ3MYDEVGQo08+hroaOtUbK3+5stiRk4/K6QBHKepv0A==
+  dependencies:
+    "@capacitor/synapse" "^1.0.4"
+
+"@capacitor/local-notifications@^8":
+  version "8.3.1"
+  resolved "https://registry.npmjs.org/@capacitor/local-notifications/-/local-notifications-8.3.1.tgz"
+  integrity sha512-F7zu/+p/mIR958YP4axOkeI5hBKRaXDyYjbNPrAil2wWfd7OxScPSTvP9t85NpQ0eULVRu0/sntoxOg6ck477A==
+
+"@capacitor/share@^8":
+  version "8.0.3"
+  resolved "https://registry.npmjs.org/@capacitor/share/-/share-8.0.3.tgz"
+  integrity sha512-gnvZBV1NPu2B8vd1UKncR56G15ueHd0aZLqgDov++t3SmTBG9Q0VrAZ1VnHn5stxlmglVaTb4RwopMgbpLzroA==
+
+"@capacitor/synapse@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.npmjs.org/@capacitor/synapse/-/synapse-1.0.4.tgz"
+  integrity sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==

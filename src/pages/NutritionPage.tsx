@@ -1080,6 +1080,9 @@ export function NutritionPage() {
         <div style={{ padding: 20 }}>
           {flow && (
             <MealFoodFlow
+              plan={nutritionPlan}
+              planLoading={planLoading}
+              planFailed={Boolean(planError)}
               meal={flow.meal}
               mode={flow.mode}
               autoSource={flow.autoSource}

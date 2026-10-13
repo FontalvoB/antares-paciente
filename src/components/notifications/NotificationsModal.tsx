@@ -161,6 +161,7 @@ export function NotificationsModal({
     const target = resolveNotificationTarget(item.type);
     onClose();
     if (item.type === "health_test_reminder") openTests();
+    else if (item.type.startsWith("achievement_")) window.dispatchEvent(new Event("achievements:open"));
     else if (target) navigate(target);
   };
 

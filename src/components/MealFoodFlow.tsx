@@ -1,3 +1,5 @@
+import { FoodPlanComparison } from "./nutrition/FoodPlanComparison";
+import type { MyNutritionPlanDto } from "../services/nutrition/my-nutrition-plan-service";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
@@ -73,6 +75,9 @@ const FLOW_MEAL_LABELS: Record<string, string> = {
 };
 
 interface Props {
+  plan?: MyNutritionPlanDto | null;
+  planLoading?: boolean;
+  planFailed?: boolean;
   meal: Exclude<MealCode, "agua">;
   mode: MealFlowMode;
   autoSource?: "camera" | "gallery";
@@ -227,6 +232,7 @@ function NutritionSummary({
 }
 
 export function MealFoodFlow({
+  plan, planLoading, planFailed,
   meal,
   mode,
   autoSource,
@@ -676,6 +682,7 @@ export function MealFoodFlow({
             fat={result.summary?.fat ?? result.intake?.fatG ?? null}
             fiber={result.summary?.fiber ?? result.intake?.fiberG ?? null}
           />
+          <FoodPlanComparison result={result} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           {editingValues ? (
             <>
               <div className="nut-ai-title nut-flow-sec">
@@ -761,6 +768,7 @@ export function MealFoodFlow({
             fat={newResult.summary?.fat ?? newResult.intake?.fatG ?? null}
             fiber={newResult.summary?.fiber ?? newResult.intake?.fiberG ?? null}
           />
+          <FoodPlanComparison result={newResult} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           {editingNewValues ? (
             <>
               <div className="nut-ai-title nut-flow-sec">

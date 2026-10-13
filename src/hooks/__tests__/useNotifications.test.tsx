@@ -15,6 +15,8 @@ import { ApiError } from "../../utils/apiClient";
 import { notificationsKeys } from "../queryKeys";
 import type { PaginatedNotificationsResult } from "../../services/notifications/types";
 
+vi.mock('../../context/AppContext', () => ({ useApp: () => ({user:{id:'notification-test'}}) }));
+vi.mock('../../i18n/I18nContext', () => ({useT: () => (key: string) => key}));
 const fetchNotificationsMock = vi.fn();
 const markNotificationReadMock = vi.fn();
 const queueNotificationReadMock = vi.fn();

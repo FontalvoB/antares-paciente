@@ -31234,3 +31234,40 @@ button:disabled {
   color: var(--brand-navy);
   opacity: 1;
 }
+
+/* Food AI: revisión privada antes del envío y comparación con metas prescritas. */
+.nut-photo-review img { display:block; width:100%; max-height:340px; object-fit:contain; border-radius:24px; background:var(--g0); margin:16px 0; }
+.nut-photo-review p, .food-plan-check p { color:var(--mu); font-size:14px; line-height:1.6; }
+.food-plan-check { border:1px solid var(--bd); border-radius:24px; padding:20px; margin:20px 0; background:var(--wh); }
+.food-plan-heading { display:flex; align-items:center; gap:12px; }
+.food-plan-heading > ion-icon { background:var(--teal-l); color:var(--teal); padding:12px; border-radius:16px; font-size:24px; }
+.food-plan-heading h3 { margin:4px 0; font-size:19px; }
+.food-plan-heading small { color:var(--teal); font-size:10px; font-weight:700; letter-spacing:1px; }
+.food-plan-columns, .food-plan-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--bd); }
+.food-plan-columns { font-size:11px; color:var(--mu); }
+.food-plan-row { font-size:13px; }
+.food-plan-row > div > small { display:block; color:var(--mu); margin-top:5px; font-size:11px; }
+.food-plan-row > b { text-align:right; }
+.food-plan-check > small { display:block; color:var(--mu); line-height:1.6; font-size:12px; }
+.food-plan-note { padding:12px; border-radius:12px; background:var(--ice-l); }
+/* Tarjetas de logros: arte de dominio, controles Ionic y áreas seguras nativas. */
+.achievement-modal { --width: min(100%, 560px); --height:95%; --border-radius:28px 28px 0 0; }
+.achievement-sheet { padding:24px 20px calc(28px + env(safe-area-inset-bottom)); max-width:560px; margin:auto; }
+.achievement-sheet-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.achievement-sheet-head small { font-size:10px; color:var(--teal); letter-spacing:1.5px; font-weight:700; }
+.achievement-sheet-head h2 { margin:6px 0; }
+.achievement-intro { background:var(--grad-brand-v); color:var(--wh); border-radius:24px; padding:24px; margin:20px 0; }
+.achievement-intro > ion-icon { font-size:36px; }
+.achievement-intro p { line-height:1.6; margin-bottom:0; }
+.achievement-earned { display:flex; align-items:center; gap:12px; border:1px solid var(--bd); background:var(--wh); border-radius:20px; padding:16px 10px 16px 16px; margin:12px 0; }
+.achievement-earned > ion-icon { font-size:24px; color:var(--teal); flex-shrink:0; }
+.achievement-earned > div { flex:1; min-width:0; }
+.achievement-earned strong { display:block; font-size:14px; }
+.achievement-earned small { display:block; color:var(--mu); font-size:12px; line-height:1.5; margin-top:6px; }
+.achievement-share h2 { font-size:26px; line-height:1.2; }
+.achievement-share p { line-height:1.6; color:var(--mu); }
+.achievement-export { display:block; width:100%; border-radius:24px; margin:20px auto; box-shadow:0 10px 28px rgb(20 40 85 / 12%); }
+.achievement-export.story { width:min(100%, 270px); }
+.achievement-share ion-textarea { --background:var(--g0); --padding-start:14px; --padding-end:14px; border:1px solid var(--bd); border-radius:16px; padding:12px; }
+.achievement-privacy, .achievement-social-hint { font-size:12px; color:var(--mu); line-height:1.6; }
+.achievement-sheet ion-button { min-height:44px; }

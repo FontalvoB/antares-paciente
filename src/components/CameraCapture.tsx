@@ -57,9 +57,32 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
   const [state, setState] = useState<CamState>(preview ? "starting" : "ready");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [selection, setSelection] = useState<{ blob: Blob; name: string; url: string } | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => () => { if (selection) URL.revokeObjectURL(selection.url); }, [selection]);
+  // El video se monta después de conceder permiso; conectar también en ese momento.
+  useEffect(() => {
+    if (state === "ready" && !selection && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      void videoRef.current.play().catch(() => {});
+    }
+  }, [state, selection]);
+  function selectPhoto(blob: Blob, name: string) {
+    if (!mounted.current) return;
+    stopCamera();
+    setSelection({ blob, name, url: URL.createObjectURL(blob) });
+    setState("ready");
+  }
+  function discardPhoto() {
+    setSelection(null);
+    setError(null);
+    setState(preview ? "starting" : "ready");
+    setAttempt(a => a + 1);
+  }
 
   useEffect(() => {
-    if (!preview) return;
+    if (!preview || selection) return;
     let cancelled = false;
     async function start() {
       try {
@@ -102,7 +125,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
       streamRef.current = null;
     };
-  }, [preview, attempt, t]);
+  }, [preview, attempt, t, selection]);
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((tr) => tr.stop());
@@ -140,7 +163,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
       // image/jpeg para que nombre, MIME y firma mágica coincidan.
       const blob = dataUrlToBlob(photo.dataUrl, "image/jpeg");
       stopCamera();
-      onCapture(blob, `comida-${Date.now()}.jpg`);
+      selectPhoto(blob, `comida-${Date.now()}.jpg`);
     } catch (err) {
       if (isCancel(err)) {
         setState("ready");
@@ -173,7 +196,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
     canvas.toBlob(
       (blob) => {
         if (blob) {
-          onCapture(blob, `comida-${Date.now()}.jpg`);
+          selectPhoto(blob, `comida-${Date.now()}.jpg`);
         } else {
           setError(t("No se pudo leer la imagen. Intenta de nuevo."));
           setState("error");
@@ -206,7 +229,8 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     stopCamera();
-    onCapture(file, file.name);
+    e.target.value = "";
+    selectPhoto(file, file.name);
   }
 
   // Apertura directa al montar (una sola vez): el flujo por comida ya sabe
@@ -224,6 +248,18 @@ export function CameraCapture({ onCapture, onCancel, autoSource }: Props) {
       cameraInputRef.current?.click();
     }
   }, [autoSource, isNative, preview]);
+
+  if (selection) return (
+    <div className="nut-photo-review">
+      <h3>{t("Revisa tu foto")}</h3>
+      <p>{t("Aún no se ha enviado. Asegúrate de que se vea el plato completo.")}</p>
+      <img src={selection.url} alt={t("Fotografía de la comida")} />
+      <IonButton expand="block" onClick={() => onCapture(selection.blob, selection.name)}>{t("Usar foto y analizar")}</IonButton>
+      <IonButton expand="block" fill="outline" onClick={() => { discardPhoto(); if (isNative) void takeNative(CameraSource.Camera); }}>{t("Volver a tomar foto")}</IonButton>
+      <IonButton expand="block" fill="clear" onClick={discardPhoto}>{t("Descartar foto")}</IonButton>
+      <IonButton expand="block" fill="clear" onClick={onCancel}>{t("Cancelar")}</IonButton>
+    </div>
+  );
 
   if (state === "busy") {
     return (

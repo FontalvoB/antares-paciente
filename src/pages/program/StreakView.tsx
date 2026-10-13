@@ -97,6 +97,7 @@ export function StreakView({
   return (
     <MotionConfig reducedMotion="user">
       <div className="pg-pane cpad sr-view">
+        <IonButton expand="block" fill="outline" onClick={() => window.dispatchEvent(new Event("achievements:open"))}>{t("Mis logros y tarjetas para compartir")}</IonButton>
         <motion.section
           className="pg-streak-hero sr-hero"
           initial={{ opacity: 0, scale: 0.96 }}

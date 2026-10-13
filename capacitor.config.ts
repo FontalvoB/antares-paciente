@@ -51,6 +51,7 @@ const config: CapacitorConfig = {
     ],
   },
   plugins: {
+    LocalNotifications: { presentationOptions: ["banner", "list", "sound"] },
     // CapacitorHttp: en nativo, fetch pasa por HTTP nativo con el cookie jar
     // del SO — la cookie HttpOnly copp_refresh_token viaja sin importar el
     // SameSite=Lax de Development (WebView: origen http://localhost → gateway

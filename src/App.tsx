@@ -1,3 +1,4 @@
+import { AchievementCenter } from "./components/achievements/AchievementCenter";
 import { setupIonicReact, IonApp, IonSpinner } from "@ionic/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -138,6 +139,7 @@ function Router() {
 
 function Shell() {
   const {
+    user,
     flow,
     navigate,
     setActiveThreadId,
@@ -215,6 +217,7 @@ function Shell() {
         <VoiceOverlay />
         <ToastHost />
         <OfflineBanner />
+        {flow === "app" && user.id && <AchievementCenter key={user.id} />}
       </div>
     </div>
   );
