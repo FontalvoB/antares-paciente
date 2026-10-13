@@ -43,3 +43,16 @@ El orden es por **dependencia real** (login → identidad → catálogos → con
 - [ ] Tests: unit + integration (backend), vitest (APP), E2E cuando aplique
 - [ ] `dotnet build/test` + `npm run lint && npm run build` + `npm run i18n:check` en verde
 - [ ] Informe de fase con el template de `PROMPT_INICIAL_APP.md` y STOP para validación
+
+### QA 2026-10-13 — cambio de cuenta y cache
+
+Las consultas TanStack usan un cliente compartido, que ahora se limpia en login,
+logout, vuelta al login y expiración de sesión. Esto elimina resultados del paciente
+anterior y cancela consultas pendientes antes de montar la siguiente sesión. La
+regresión reproduce métricas de una cuenta y una respuesta tardía después de entrar
+con otra, comprobando que no sustituye el snapshot de la cuenta nueva.
+
+También se descartan citas, solicitudes, sala, perfil y conversación del contexto.
+Una generación de sesión impide que respuestas tardías de citas/perfil/chat
+repueblen el estado de otra cuenta. Verificado cambiando Luis → Paciente Prueba
+Video y viceversa contra el gateway productivo, sin recargar la página.

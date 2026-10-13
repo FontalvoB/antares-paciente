@@ -141,6 +141,9 @@ describe("formatNotificationTime — tiempos relativos", () => {
 
 describe("NotificationsModal — agrupación y acciones", () => {
   beforeEach(() => {
+    // Jueves fijo: hace tres días pertenece a la misma semana también en CI.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
     hookState.notifications = [
       notif({
         id: "n-today",
@@ -170,6 +173,7 @@ describe("NotificationsModal — agrupación y acciones", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
   });
 

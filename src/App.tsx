@@ -7,8 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "urql";
+import { queryClient } from "./utils/queryClient";
 import { createCommunityClient } from "./graphql/client";
 import {
   consumePendingRoomAppointmentId,
@@ -46,16 +47,6 @@ import logoLetras from "./assets/LogoConLetras.png";
 
 setupIonicReact({ mode: "ios" });
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 2,
-      refetchOnWindowFocus: true,
-      networkMode: "online",
-    },
-  },
-});
 
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 

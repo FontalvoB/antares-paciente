@@ -1,4 +1,5 @@
 import { App } from "@capacitor/app";
+import { resetSessionQueryCache } from "../utils/queryClient";
 import { Capacitor } from "@capacitor/core";
 import {
   createContext,
@@ -418,8 +419,44 @@ export function AppProvider({
   /** Pantalla anterior: detecta la entrada a "chat" para auto-limpiar. */
   const prevScreenRef = useRef<Screen>(screen);
 
+  // Invalida también respuestas que terminaron después de cambiar de paciente.
+  const sessionGeneration = useRef(0);
+  const resetPatientSession = useCallback(() => {
+    sessionGeneration.current += 1;
+    resetSessionQueryCache();
+    setUser(defaultUser);
+    setActiveThreadId(null);
+    setChat([createWelcomeMessage(defaultUser.nombre)]);
+    setChatUnread(false);
+    lastRemoteCountRef.current = null;
+    setTestsDone([]);
+    setPatientCtx(null);
+    setAppointments(null);
+    setRequests(null);
+    setCatalog(null);
+    setSpecialties(null);
+    setRoomAppointment(null);
+    setAppointmentsLoading(false);
+    setAppointmentsError(null);
+    setBookingWizardAutoOpen(false);
+    setPanicOpen(false);
+    setVoiceOpen(false);
+    setSosActive(false);
+    setToast(null);
+    setWatchConnected(false);
+    setWatchName("Copp Adresd Wearable");
+    setPointsToday(0);
+    setPointsTotal(0);
+    setProgram({ podcast: false, vitals: false, nut: false, ejercicio: false,
+      nutraceutico: false, emocional: false });
+    setWeekCheckins([false, false, false, false, false, false, false]);
+    setStreak(0);
+    setScreen("home");
+  }, []);
+
   const refreshAppointments = useCallback(async () => {
     if (!hasRealSession()) return;
+    const generation = sessionGeneration.current;
     setAppointmentsLoading(true);
     setAppointmentsError(null);
     try {
@@ -438,6 +475,7 @@ export function AppProvider({
         fetchProfessionalsCatalog().catch(() => null),
         fetchSpecialties().catch(() => null),
       ]);
+      if (generation !== sessionGeneration.current) return;
       setCatalog(catalogData?.data ?? null);
       setSpecialties(specialtiesData);
       setPatientCtx({
@@ -449,12 +487,13 @@ export function AppProvider({
       setAppointments(appts.items);
       setRequests(reqs);
     } catch (err) {
+      if (generation !== sessionGeneration.current) return;
       console.warn("[appointments] No se pudieron cargar las citas:", err);
       setAppointmentsError(
         err instanceof Error ? err.message : "No se pudieron cargar las citas",
       );
     } finally {
-      setAppointmentsLoading(false);
+      if (generation === sessionGeneration.current) setAppointmentsLoading(false);
     }
   }, []);
 
@@ -462,27 +501,27 @@ export function AppProvider({
   // visibilidad) y tras cada mutación (los handlers llaman a refresh).
   // No en la sala (la cita activa vive en el contexto). QA-010.
   useEffect(() => {
-    if (realMode && screen === "book") {
+    if (flow !== "login" && realMode && screen === "book") {
       void refreshAppointments();
     }
-  }, [realMode, screen, refreshAppointments]);
+  }, [flow, realMode, screen, refreshAppointments]);
 
   // Carga inicial una sola vez para los demás consumidores (equipo del
   // perfil, sala): sin esto el catálogo solo existiría tras visitar Citas.
   useEffect(() => {
-    if (realMode && appointments === null && !appointmentsLoading) {
+    if (flow !== "login" && realMode && appointments === null && !appointmentsLoading && !appointmentsError) {
       void refreshAppointments();
     }
-  }, [realMode, appointments, appointmentsLoading, refreshAppointments]);
+  }, [flow, realMode, appointments, appointmentsLoading, appointmentsError, refreshAppointments]);
 
   useEffect(() => {
-    if (!realMode) return;
+    if (flow === "login" || !realMode) return;
     const onFocus = () => {
       if (screen === "book") void refreshAppointments();
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [realMode, screen, refreshAppointments]);
+  }, [flow, realMode, screen, refreshAppointments]);
 
   // Hidrata el perfil REAL del paciente (contacto, aseguradora, emergencia)
   // en el user del contexto. Sin esto, un paciente sin teléfono en BD veía el
@@ -493,8 +532,9 @@ export function AppProvider({
   const hydratePatientProfile = useCallback(
     async (activeCheck: () => boolean) => {
       try {
+        const generation = sessionGeneration.current;
         const profile = await fetchMyPatientProfile();
-        if (!activeCheck()) return;
+        if (!activeCheck() || generation !== sessionGeneration.current) return;
         const real = toUserProfile(profile);
         setUser((prev) => ({
           ...prev,
@@ -660,10 +700,11 @@ export function AppProvider({
   // Listener para sesión invalidada por refresh 401
   useEffect(() => {
     return onSessionInvalid(() => {
+      resetPatientSession();
       setFlow("login");
-      setScreen("home");
+      onResetCommunityClient?.();
     });
-  }, []);
+  }, [resetPatientSession, onResetCommunityClient]);
 
   // Vigilancia proactiva de expiración del access token: si venció, se
   // intenta renovar por la cookie de refresh (single-flight compartido con
@@ -697,14 +738,16 @@ export function AppProvider({
   // Restauración automática de sesión al inicio
   useEffect(() => {
     let active = true;
+    const generation = sessionGeneration.current;
+    const isCurrent = () => active && generation === sessionGeneration.current;
 
     async function checkSession() {
       try {
         const session = await restoreSession();
-        if (session && active) {
+        if (session && isCurrent()) {
           try {
             const me = await getMe();
-            if (me && active) {
+            if (me && isCurrent()) {
               setUser((prev) => {
                 const updated: UserProfile = {
                   ...prev,
@@ -723,7 +766,8 @@ export function AppProvider({
           // Perfil real del paciente (contacto/aseguradora/emergencia) en
           // segundo término: la pantalla de Perfil y el onboarding muestran
           // la verdad de la BD, nunca el mock del defaultUser.
-          void hydratePatientProfile(() => active);
+          if (!isCurrent()) return;
+          void hydratePatientProfile(isCurrent);
 
           setFlow("app");
           onResetCommunityClient?.();
@@ -775,6 +819,7 @@ export function AppProvider({
       text: string,
       image?: ChatImageAttachment,
     ): Promise<ChatMessage | null> => {
+      const generation = sessionGeneration.current;
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
@@ -816,6 +861,7 @@ export function AppProvider({
       let turnBotMessage: ChatMessage | null = null;
 
       const emitBotMessage = (msg: ChatMessage) => {
+        if (generation !== sessionGeneration.current) return;
         turnBotMessage = msg;
         setChat((prev) => {
           const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
@@ -833,6 +879,7 @@ export function AppProvider({
         { id: liveId, role: "bot", text: "", time: nowLabel(), threadId },
       ]);
       const appendToken = (piece: string) => {
+        if (generation !== sessionGeneration.current) return;
         painted += piece;
         const snapshot = painted;
         setChat((prev) =>
@@ -853,6 +900,7 @@ export function AppProvider({
         // final del turno SIEMPRE se sustituye por `answer` (respuesta del
         // modelo); así las pasadas duplicadas del stream jamás quedan en la
         // burbuja, ni siquiera con desincronización de red.
+        if (generation !== sessionGeneration.current) return null;
         const canonical = result.answer ?? result.reply;
         const finalBot: ChatMessage = {
           id: liveId,
@@ -866,6 +914,7 @@ export function AppProvider({
         setChat((prev) => prev.map((m) => (m.id === liveId ? finalBot : m)));
         turnBotMessage = finalBot;
       } catch (err) {
+        if (generation !== sessionGeneration.current) return null;
         if (!painted) {
           // Sin streaming ni respuesta: se retira el vacío y va el fallback.
           setChat((prev) => prev.filter((m) => m.id !== liveId));
@@ -908,7 +957,9 @@ export function AppProvider({
     }
     // Solo se necesita el conteo para el dot: se pide una página de 1 para
     // no descargar el historial completo al entrar a la app.
+    const generation = sessionGeneration.current;
     const state = await fetchThreadState(threadId, uid, { limit: 1 });
+    if (generation !== sessionGeneration.current) return;
     if (!state) {
       // Fetch fallido o thread inexistente → no marcar nada.
       setChatUnread(false);
@@ -1027,6 +1078,8 @@ export function AppProvider({
       bookingWizardAutoOpen,
       clearBookingWizardAutoOpen: () => setBookingWizardAutoOpen(false),
       finishLogin: (seed, next = "onboarding") => {
+        resetPatientSession();
+        const generation = sessionGeneration.current;
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         void (async () => {
@@ -1044,6 +1097,7 @@ export function AppProvider({
           } catch {
             /* no bloqueante */
           }
+          if (generation !== sessionGeneration.current) return;
           setUser((u) => {
             const updated = {
               ...u,
@@ -1058,13 +1112,14 @@ export function AppProvider({
           // Contacto/perfil real también tras el login directo: sin esto el
           // ContactSection prefillaba el mock del defaultUser (celular fake)
           // y "Guardar contacto" lo habría persistido como dato del paciente.
-          await hydratePatientProfile(() => true);
+          await hydratePatientProfile(() => generation === sessionGeneration.current);
         })();
         setFlow(next);
         // Recrea el cliente urql para usar la cache y el WS con el token nuevo.
         onResetCommunityClient?.();
       },
       backToLogin: () => {
+        resetPatientSession();
         setFlow("login");
         setScreen("home");
       },
@@ -1184,11 +1239,9 @@ export function AppProvider({
         });
       },
       logout: () => {
+        resetPatientSession();
         setFlow("login");
         setScreen("home");
-        setActiveThreadId(null);
-        setUser(defaultUser);
-        setChat([createWelcomeMessage(defaultUser.nombre)]);
         // Cierra sesión en el servidor y luego recrea el cliente urql (cache
         // limpia + WS nuevo) para no servir datos del usuario anterior.
         void logoutUser().then(() => onResetCommunityClient?.());
@@ -1216,6 +1269,7 @@ export function AppProvider({
     }),
     [
       authLoading,
+      resetPatientSession,
       flow,
       screen,
       bookingWizardAutoOpen,
