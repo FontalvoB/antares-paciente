@@ -38,8 +38,9 @@ vi.mock("../../utils/appointmentsApi", () => ({
 import { hasRealSession, fetchMyContext } from "../../utils/appointmentsApi";
 import { queryClient } from "../../utils/queryClient";
 function Harness() {
-  const { finishLogin, logout, authLoading, patientCareContext, refreshAppointments } = useApp();
+  const { finishLogin, logout, authLoading, user, patientCareContext, refreshAppointments } = useApp();
   return <div>
+    <span data-testid="contact">{JSON.stringify(user)}</span>
     <span data-testid="patient">{patientCareContext?.patientId ?? "empty"}</span>
     <button onClick={() => void refreshAppointments()}>refresh</button>
     <span data-testid="ready">{String(!authLoading)}</span>
@@ -78,6 +79,8 @@ describe("cambio de paciente", () => {
     fireEvent.click(screen.getByText("refresh"));
     fireEvent.click(screen.getByText("logout"));
     expect(screen.getByTestId("patient").textContent).toBe("empty");
+    const blankProfile = JSON.parse(screen.getByTestId("contact").textContent!);
+    expect(Object.values(blankProfile).every(value => value === "")).toBe(true);
     vi.mocked(fetchMyContext).mockResolvedValue({ patient: { id: "segundo", organizationId: "org" } } as Awaited<ReturnType<typeof fetchMyContext>>);
     fireEvent.click(screen.getByText("login"));
     await waitFor(() => expect(screen.getByTestId("patient").textContent).toBe("segundo"));

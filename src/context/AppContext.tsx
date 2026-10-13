@@ -231,27 +231,19 @@ interface AppState {
   roomAppointment: ListedAppointment | null;
 }
 
+// No sembrar una identidad ficticia mientras llega el perfil real.
 const defaultUser: UserProfile = {
-  nombre: "María González",
-  cedula: "10247381",
-  dob: "1988-04-12",
-  seguro: "",
-  poliza: "BCB-20247381",
-  grupo: "GRP-5092",
-  email: "maria.gonzalez@email.com",
-  celular: "+1 (786) 555-0100",
-  fam1Nombre: "Pedro González",
-  fam1Parentesco: "Esposo/a",
-  fam1Cel: "+1 (786) 555-0192",
-  fam1Email: "pedro.gonzalez@email.com",
+  nombre: "", cedula: "", dob: "", seguro: "", poliza: "", grupo: "",
+  email: "", celular: "", fam1Nombre: "", fam1Parentesco: "",
+  fam1Cel: "", fam1Email: "",
 };
 
-function createWelcomeMessage(name = "María"): ChatMessage {
-  const firstName = name.trim().split(" ")[0] || "María";
+function createWelcomeMessage(name = ""): ChatMessage {
+  const firstName = name.trim().split(" ")[0];
   return {
     id: "welcome",
     role: "bot",
-    text: `Hola ${firstName} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
+    text: `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
     time: nowLabel(),
   };
 }
@@ -367,15 +359,15 @@ export function AppProvider({
     emocional: false,
   });
   // TODO: Remove after full migration
-  const [programWeek] = useState(12);
+  const [programWeek] = useState(0);
   // TODO: Remove after full migration
-  const [streak, setStreak] = useState(22);
+  const [streak, setStreak] = useState(0);
   // TODO: Remove after full migration
   const [weekCheckins, setWeekCheckins] = useState<boolean[]>([
-    true,
-    true,
-    true,
-    true,
+    false,
+    false,
+    false,
+    false,
     false,
     false,
     false,
