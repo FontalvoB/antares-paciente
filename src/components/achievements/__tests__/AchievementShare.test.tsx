@@ -44,7 +44,7 @@ it('downloads the PNG if browser file sharing is unsupported',async()=>{
 it('publishes a square Community card even while previewing an external story',async()=>{
  mocks.render.mockClear(); mocks.upload.mockResolvedValue('community/card.png'); mocks.post.mockResolvedValue({id:'confirmed'});
  show(); await waitFor(()=>expect(screen.getByRole('img')).toBeTruthy());
- fireEvent.click(screen.getByText('Instagram / Facebook'));
+ fireEvent.click(screen.getByText('Historia'));
  await waitFor(()=>expect(mocks.render).toHaveBeenLastCalledWith(expect.any(String),expect.any(String),expect.any(String),'story'));
  await waitFor(()=>expect((screen.getByRole('button',{name:'Publicar en Comunidad'}) as HTMLButtonElement).disabled).toBe(false));
  fireEvent.click(screen.getByText('Publicar en Comunidad'));

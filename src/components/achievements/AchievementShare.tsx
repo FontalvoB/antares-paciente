@@ -125,7 +125,7 @@ export function AchievementShare({
       >
         <IonSegmentButton value="square">{t("Comunidad · cuadrada")}</IonSegmentButton>
         <IonSegmentButton value="story">
-          {t("Instagram / Facebook")}
+          {t("Historia")}
         </IonSegmentButton>
       </IonSegment>
       <p className="achievement-format-hint">{t("Comunidad usa publicaciones cuadradas. El formato vertical es para historias en Instagram, Facebook y otras redes.")}</p>
