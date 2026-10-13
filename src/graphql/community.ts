@@ -106,6 +106,7 @@ export interface CreatePostResult {
 }
 
 export interface LikePostResult {
+  unlikePost?: Post | null
   likePost: Post | null
 }
 

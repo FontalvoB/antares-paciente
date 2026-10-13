@@ -2620,5 +2620,10 @@
   "Tu foto se enviará solo cuando pulses analizar.": "Your photo is sent only when you tap analyze.",
   "Continuar con mi foto": "Continue with my photo",
   "Compartir logro de {days} días": "Share {days}-day achievement",
-  "Vista previa": "Preview"
+  "Vista previa": "Preview",
+  "Comunidad · cuadrada": "Community · square",
+  "Instagram / Facebook": "Instagram / Facebook",
+  "Comunidad usa publicaciones cuadradas. El formato vertical es para historias en Instagram, Facebook y otras redes.": "Community uses square posts. The vertical format is for stories on Instagram, Facebook and other social apps.",
+  "Actualizar": "Refresh",
+  "No pudimos subir la imagen a Comunidad. Tu tarjeta está lista: puedes descargarla o compartirla en otras apps mientras se restablece el servicio.": "We couldn’t upload the image to Community. Your card is ready: download it or share it in other apps while the service is restored."
 }

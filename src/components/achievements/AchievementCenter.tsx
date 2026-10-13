@@ -208,8 +208,8 @@ export function AchievementCenter() {
             )}
                 {Capacitor.isNativePlatform() && (
                   <IonButton
-                    expand="block"
-                    fill="outline"
+                    className="achievement-notification-action"
+                    fill="clear"
                     onClick={() =>
                       void enableAchievementNotifications()
                         .then((enabled) =>

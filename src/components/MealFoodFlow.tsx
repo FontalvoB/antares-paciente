@@ -692,27 +692,30 @@ export function MealFoodFlow({
               />
             </>
           ) : (
-            <>
+            <div className="nut-review-actions">
               <IonButton
-                className="bt-teal nut-flow-primary"
+                className="nut-review-save"
                 expand="block"
                 disabled={saving}
+                aria-busy={saving}
                 onClick={() => saveReview(reviewForm)}
               >
-                <IonIcon icon={checkmarkOutline} slot="start" />
+                {saving ? <IonSpinner name="crescent" slot="start" /> : <IonIcon icon={checkmarkOutline} slot="start" />}
                 {saving
                   ? t("Guardando…")
                   : t("Guardar {meal}", { meal: mealLabel })}
               </IonButton>
               <IonButton
                 expand="block"
-                fill="outline"
+                fill="clear"
+                className="nut-review-edit"
+                disabled={saving}
                 onClick={() => setEditingValues(true)}
               >
                 <IonIcon icon={createOutline} slot="start" />
                 {t("Editar valores")}
               </IonButton>
-            </>
+            </div>
           )}
           <IonButton expand="block" fill="clear" onClick={onClose}>
             {t("Cancelar")}
@@ -779,25 +782,28 @@ export function MealFoodFlow({
               />
             </>
           ) : (
-            <>
+            <div className="nut-review-actions">
               <IonButton
-                className="bt-teal nut-flow-primary"
+                className="nut-review-save"
                 expand="block"
                 disabled={saving}
+                aria-busy={saving}
                 onClick={() => saveReanalysis(newReviewForm)}
               >
-                <IonIcon icon={checkmarkOutline} slot="start" />
+                {saving ? <IonSpinner name="crescent" slot="start" /> : <IonIcon icon={checkmarkOutline} slot="start" />}
                 {saving ? t("Guardando…") : t("Guardar cambios")}
               </IonButton>
               <IonButton
                 expand="block"
-                fill="outline"
+                fill="clear"
+                className="nut-review-edit"
+                disabled={saving}
                 onClick={() => setEditingNewValues(true)}
               >
                 <IonIcon icon={createOutline} slot="start" />
                 {t("Editar valores")}
               </IonButton>
-            </>
+            </div>
           )}
           <IonButton
             expand="block"

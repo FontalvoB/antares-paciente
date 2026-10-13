@@ -62,13 +62,8 @@ export function MealIntakeForm({
         />
       ))}
       <IonButton
+        className="nut-intake-submit"
         expand="block"
-        style={
-          {
-            marginTop: 16,
-            "--background": "var(--teal)",
-          } as React.CSSProperties
-        }
         disabled={pending}
         onClick={() => onSubmit(form)}
       >

@@ -1,3 +1,6 @@
+import { map, pipe } from 'wonka'
+import { resolveCommunityMedia } from '../utils/community-media'
+import type { Exchange } from 'urql'
 import {
   cacheExchange,
   createClient,
@@ -7,6 +10,8 @@ import {
 import { createClient as createWsClient, type Client as WsClient } from 'graphql-ws'
 import { ensureFreshAccessToken } from '../utils/authApi'
 import { getCommunityApiUrl, getCommunityWsUrl } from '../utils/apiBaseUrl'
+
+const mediaExchange: Exchange = ({ forward }) => operations => pipe(forward(operations), map(result => ({ ...result, data: resolveCommunityMedia(result.data) })))
 
 // URL del WebSocket de GraphQL de la comunidad, derivada del gateway
 // (getCommunityWsUrl → ws://<gateway>/api/v1/community/subscriptions).
@@ -56,6 +61,7 @@ export function createCommunityClient() {
     url: getCommunityApiUrl(),
     exchanges: [
       cacheExchange,
+      mediaExchange,
       subscriptionExchange({
         forwardSubscription: (operation) => ({
           subscribe: (sink) => ({

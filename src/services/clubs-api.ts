@@ -17,7 +17,7 @@ import type {
   LiveChatMessage,
   LiveSession,
 } from "../graphql/clubs";
-import { ensureFreshAccessToken } from "../utils/authApi";
+import { uploadCommunityMedia } from "../utils/community-media";
 import { getGatewayBaseUrl } from "../utils/apiBaseUrl";
 
 // Wire del backend: shape libre de la respuesta GraphQL (se mapea al D1).
@@ -257,19 +257,7 @@ export async function uploadClubImage(
   });
   const { uploadUrl } = data.createClubMediaUploadInfo;
 
-  const token = await ensureFreshAccessToken();
-  const absoluteUploadUrl = uploadUrl.startsWith("http")
-    ? uploadUrl
-    : `${getGatewayBaseUrl()}${uploadUrl}`;
-  const res = await fetch(absoluteUploadUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": file.type,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: file,
-  });
-  if (!res.ok) throw new Error(`Error subiendo la imagen (${res.status}).`);
+  await uploadCommunityMedia(uploadUrl, file);
   return data.createClubMediaUploadInfo.key;
 }
 

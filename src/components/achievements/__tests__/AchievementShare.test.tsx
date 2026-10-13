@@ -7,9 +7,10 @@ vi.mock('../../../context/AppContext',()=>({useApp:()=>({showToast:mocks.toast})
 vi.mock('../../../services/achievements/share-card',()=>({renderAchievementCard:mocks.render,shareAchievementFile:mocks.share,downloadAchievement:mocks.download}));
 vi.mock('@ionic/react',()=>({
  IonButton:({children,onClick,disabled}:{children:ReactNode;onClick:()=>void;disabled?:boolean})=><button disabled={disabled} onClick={onClick}>{children}</button>,
- IonSegment:({children}:{children:ReactNode})=><div>{children}</div>,IonSegmentButton:({children}:{children:ReactNode})=><div>{children}</div>,IonIcon:()=>null,IonSpinner:()=>null,IonTextarea:()=>null,
+ IonSegment:({children,onIonChange}:any)=><div onClick={(e:any)=>onIonChange({detail:{value:e.target.value}})}>{children}</div>,IonSegmentButton:({children,value}:any)=><button value={value}>{children}</button>,IonIcon:()=>null,IonSpinner:()=>null,IonTextarea:()=>null,
 }));
 import {AchievementShare} from '../AchievementShare';
+import {CommunityMediaUploadError} from '../../../utils/community-media';
 import {I18nProvider} from '../../../i18n/I18nContext';
 const achievement={id:'verified',kind:'streak' as const,value:7,earnedAt:'2026-10-13T12:00:00Z',readAt:null};
 beforeEach(()=>{mocks.upload.mockReset();mocks.post.mockReset();mocks.render.mockResolvedValue(new Blob(['png'],{type:'image/png'}));vi.spyOn(URL,'createObjectURL').mockReturnValue('blob:share');vi.spyOn(URL,'revokeObjectURL').mockImplementation(()=>{});});
@@ -23,9 +24,11 @@ it('uploads and publishes only after explicit tap and prevents double posting',a
  expect(mocks.post.mock.calls[0][0]).toContain('7 días de constancia');expect(mocks.post.mock.calls[0][1]).toBe('image-key');
 });
 it('never creates a post when upload fails',async()=>{
- mocks.upload.mockRejectedValue(new Error('upload failed'));show();await waitFor(()=>expect(screen.getByRole('img')).toBeTruthy());
+ mocks.upload.mockRejectedValue(new CommunityMediaUploadError(463));show();await waitFor(()=>expect(screen.getByRole('img')).toBeTruthy());
  fireEvent.click(screen.getByText('Publicar en Comunidad'));
- await waitFor(()=>expect(screen.getByRole('alert')).toBeTruthy());expect(mocks.post).not.toHaveBeenCalled();
+ await waitFor(()=>expect(screen.getByText(/No pudimos subir la imagen a Comunidad/)).toBeTruthy());expect(mocks.post).not.toHaveBeenCalled();
+ expect((screen.getByText('Publicar en Comunidad') as HTMLButtonElement).disabled).toBe(false);
+ expect((screen.getByText('Compartir en otras apps') as HTMLButtonElement).disabled).toBe(false);
 });
 it('blocks immediate retry when a post response is ambiguous',async()=>{
  mocks.upload.mockResolvedValue('key');mocks.post.mockRejectedValue(new Error('timeout'));show();await waitFor(()=>expect(screen.getByRole('img')).toBeTruthy());
@@ -36,4 +39,16 @@ it('downloads the PNG if browser file sharing is unsupported',async()=>{
  mocks.share.mockResolvedValue('unsupported');show();await waitFor(()=>expect(screen.getByRole('img')).toBeTruthy());
  fireEvent.click(screen.getByText('Compartir en otras apps'));
  await waitFor(()=>expect(mocks.download).toHaveBeenCalledTimes(1));expect(mocks.post).not.toHaveBeenCalled();
+});
+
+it('publishes a square Community card even while previewing an external story',async()=>{
+ mocks.render.mockClear(); mocks.upload.mockResolvedValue('community/card.png'); mocks.post.mockResolvedValue({id:'confirmed'});
+ show(); await waitFor(()=>expect(screen.getByRole('img')).toBeTruthy());
+ fireEvent.click(screen.getByText('Instagram / Facebook'));
+ await waitFor(()=>expect(mocks.render).toHaveBeenLastCalledWith(expect.any(String),expect.any(String),expect.any(String),'story'));
+ await waitFor(()=>expect((screen.getByRole('button',{name:'Publicar en Comunidad'}) as HTMLButtonElement).disabled).toBe(false));
+ fireEvent.click(screen.getByText('Publicar en Comunidad'));
+ await waitFor(()=>expect(mocks.post).toHaveBeenCalled());
+ expect(mocks.render).toHaveBeenLastCalledWith(expect.any(String),expect.any(String),expect.any(String),'square');
+ expect(mocks.upload.mock.calls.at(-1)?.[0].name).toBe('copp-logro-square.png');
 });

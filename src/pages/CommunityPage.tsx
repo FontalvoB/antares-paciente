@@ -1,3 +1,4 @@
+import { newestFirst } from '../utils/community-feed';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   IonAlert,
@@ -361,10 +362,14 @@ export function CommunityPage() {
   const [tab, setTab] = useState<
     "feed" | "perfil" | "chat" | "amigos" | "redes" | "clubes"
   >("feed");
-  /** Posts públicos de clubes inyectados en el feed general (mock). */
+  /** Posts públicos de clubes integrados cronológicamente en el feed general. */
   const [clubFeed, setClubFeed] = useState<
     { club: Club; view: FeedPostView }[]
   >([]);
+  const chronologicalFeed = useMemo(() => [
+    ...clubFeed.map(item => ({ ...item, key: `club-${item.view.post.id}` })),
+    ...feed.filter(view => !clubFeed.some(item => item.view.post.id === view.post.id)).map(view => ({ club: null, view, key: `post-${view.post.id}` })),
+  ].sort((a, b) => newestFirst(a.view.post, b.view.post)), [clubFeed, feed]);
   const [clubCommentDraft, setClubCommentDraft] = useState<
     Record<string, string>
   >({});
@@ -490,23 +495,18 @@ export function CommunityPage() {
     if (tab === "chat") void refetchConversations();
   }, [tab, refetchConversations]);
 
-  // Carga los posts públicos de los clubes para el feed general.
+  // Public club entries enrich the feed; a failure must not break personal posts.
   useEffect(() => {
     if (tab !== "feed") return;
-    void fetchPublicClubPosts().then((items) =>
-      setClubFeed(
-        items.map(({ club, post }) => ({
-          club,
-          view: {
-            post: toFeedPost(post),
-            likeCount: post.likes.length,
-            likedByMe: me != null && post.likes.includes(me.id),
-            repostCount: 0,
-            repostedByMe: false,
-          },
-        })),
-      ),
-    );
+    let active = true;
+    void fetchPublicClubPosts().then(items => {
+      if (active) setClubFeed(items.map(({ club, post }) => ({ club, view: {
+        post: toFeedPost(post), likeCount: post.likes.length,
+        likedByMe: me != null && post.likes.includes(me.id),
+        repostCount: 0, repostedByMe: false,
+      } })));
+    }).catch(() => { if (active) setClubFeed([]); });
+    return () => { active = false; };
   }, [tab, me]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -688,7 +688,21 @@ export function CommunityPage() {
     setViewingId(profileId);
   };
 
-  const [comDark, setComDark] = useState(false);
+  const [comDark, setComDark] = useState(() => {
+    try { return localStorage.getItem("copp:community:dark") === "true"; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    // Ionic overlays are portaled outside Screen; scope the theme to the page lifetime.
+    document.body.classList.toggle("community-dark", comDark);
+    try { localStorage.setItem("copp:community:dark", String(comDark)); } catch { /* private storage */ }
+    return () => document.body.classList.remove("community-dark");
+  }, [comDark]);
+  const showPublishedPost = () => {
+    setTab("feed"); setViewingId(null); setFeedScope("forYou");
+    setNewPostsCount(0);
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" }));
+  };
   const [themeAnim, setThemeAnim] = useState(false);
 
   const handleFab = (a: FabAction) => {
@@ -986,6 +1000,11 @@ export function CommunityPage() {
                       </div>
                     )}
 
+                    <div className="com-feed-tools">
+                      <IonButton fill="clear" disabled={feedLoading || followingFeedLoading} onClick={() => {
+                        retryFeed(); retryFollowingFeed();
+                      }}>{t("Actualizar")}</IonButton>
+                    </div>
                     {feedScope === "forYou" ? (
                       feedError && clubFeed.length === 0 ? (
                         <ErrorCard
@@ -1013,9 +1032,9 @@ export function CommunityPage() {
                         />
                       ) : (
                         <>
-                          {clubFeed.map((item) => (
+                          {chronologicalFeed.map((item, i) => item.club ? (
                             <ClubFeedItem
-                              key={`club-${item.view.post.id}`}
+                              key={item.key}
                               club={item.club}
                               view={item.view}
                               commentDraft={
@@ -1099,12 +1118,12 @@ export function CommunityPage() {
                               myId={me?.id ?? null}
                               onToast={showToast}
                             />
-                          ))}
-                          {feed.map((view, i) => (
+                          ) : (
                             <PostCard
-                              key={view.post.id}
+                              key={item.key}
                               index={i}
-                              view={view}
+                              view={item.view}
+                              onOpenProfile={openProfile}
                               onOpen={setActivePost}
                               onOpenImage={openImage}
                               onToggleLike={handleToggleLike}
@@ -1155,7 +1174,8 @@ export function CommunityPage() {
                           key={view.post.id}
                           index={i}
                           view={view}
-                          onOpen={setActivePost}
+                          onOpenProfile={openProfile}
+                              onOpen={setActivePost}
                           onOpenImage={openImage}
                           onToggleLike={handleToggleLike}
                           onToggleRepost={toggleRepost}
@@ -1941,9 +1961,11 @@ export function CommunityPage() {
             me={me}
             onPublish={async (text, mediaKey) => {
               await createPost(text, mediaKey ?? undefined);
+              showPublishedPost();
             }}
             onPublishPoll={async (question, options) => {
               await createPollPost(question, options);
+              showPublishedPost();
             }}
             onUploadMedia={async (file, contentType) => {
               return await uploadPostImage(file, contentType);

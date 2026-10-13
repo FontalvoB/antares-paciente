@@ -1,6 +1,7 @@
+import { mergePostsNewest } from '../utils/community-feed'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useClient, useMutation, useQuery, useSubscription } from 'urql'
-import { ensureFreshAccessToken } from '../utils/authApi'
+import { uploadCommunityMedia } from '../utils/community-media'
 import {
   ADD_COMMENT,
   ADD_GROUP_MEMBER,
@@ -224,6 +225,19 @@ export function useCommunity() {
 
   const me: Profile | null = meResult.data?.me ?? null
   const myProfileId = me?.id ?? null
+  // Keep server-confirmed submissions visible while the refreshed feed catches up.
+  const [publishedPosts, setPublishedPosts] = useState<Post[]>([])
+  useEffect(() => { setPublishedPosts([]) }, [myProfileId])
+  useEffect(() => {
+    const ids = new Set((feedResult.data?.feed ?? []).map(post => post.id))
+    setPublishedPosts(current => current.some(post => ids.has(post.id))
+      ? current.filter(post => !ids.has(post.id)) : current)
+  }, [feedResult.data])
+  const refreshPosts = useCallback(() => {
+    reexecuteFeed({ requestPolicy: 'network-only' })
+    reexecuteFollowingFeed({ requestPolicy: 'network-only' })
+    reexecuteMe({ requestPolicy: 'network-only' })
+  }, [reexecuteFeed, reexecuteFollowingFeed, reexecuteMe])
 
   /** Timeline del perfil actual: publicaciones propias + reposts, ordenadas
    *  cronológicamente y deduplicadas (si un post es propio y reposteado,
@@ -291,7 +305,7 @@ export function useCommunity() {
   const [, unrepostPostMutation] = useMutation<UnrepostPostResult>(UNREPOST_POST)
 
   const feed = useMemo<FeedPostView[]>(() => {
-    const list = feedResult.data?.feed ?? []
+    const list = mergePostsNewest(feedResult.data?.feed ?? [], publishedPosts)
     return list.map((post) => ({
       post,
       likeCount: post.likes.length,
@@ -299,10 +313,10 @@ export function useCommunity() {
       repostCount: post.reposts.length,
       repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
-  }, [feedResult.data, myProfileId])
+  }, [feedResult.data, myProfileId, publishedPosts])
 
   const followingFeed = useMemo<FeedPostView[]>(() => {
-    const list = followingFeedResult.data?.followingFeed ?? []
+    const list = mergePostsNewest(followingFeedResult.data?.followingFeed ?? [], [])
     return list.map((post) => ({
       post,
       likeCount: post.likes.length,
@@ -322,22 +336,26 @@ export function useCommunity() {
     async (body: string, imageKey?: string | null) => {
       const res = await createPostMutation({ body, imageKey: imageKey || undefined })
       if (res.error) throw new Error(res.error.message)
-      reexecuteFeed({ requestPolicy: 'network-only' })
-      reexecuteMe({ requestPolicy: 'network-only' })
-      return res.data?.createPost
+      const post = res.data?.createPost
+      if (!post) throw new Error('No se pudo publicar. Inténtalo de nuevo.')
+      setPublishedPosts(current => mergePostsNewest(current, [post]))
+      refreshPosts()
+      return post
     },
-    [createPostMutation, reexecuteFeed, reexecuteMe],
+    [createPostMutation, refreshPosts],
   )
 
   const createPollPost = useCallback(
     async (question: string, options: string[]) => {
       const res = await createPollPostMutation({ question, options })
       if (res.error) throw new Error(res.error.message)
-      reexecuteFeed({ requestPolicy: 'network-only' })
-      reexecuteMe({ requestPolicy: 'network-only' })
-      return res.data?.createPollPost
+      const post = res.data?.createPollPost
+      if (!post) throw new Error('No se pudo publicar. Inténtalo de nuevo.')
+      setPublishedPosts(current => mergePostsNewest(current, [post]))
+      refreshPosts()
+      return post
     },
-    [createPollPostMutation, reexecuteFeed, reexecuteMe],
+    [createPollPostMutation, refreshPosts],
   )
 
   /** Registra el voto en la encuesta y devuelve el post con resultados. */
@@ -345,10 +363,10 @@ export function useCommunity() {
     async (optionId: string) => {
       const res = await votePollMutation({ optionId })
       if (res.error) throw new Error(res.error.message)
-      reexecuteFeed({ requestPolicy: 'network-only' })
+      refreshPosts()
       return res.data?.votePoll
     },
-    [votePollMutation, reexecuteFeed],
+    [votePollMutation, refreshPosts],
   )
 
   /** Pide la info de subida (clave + URLs) para la imagen de una publicación. */
@@ -379,16 +397,7 @@ export function useCommunity() {
   const uploadProfileImage = useCallback(
     async (kind: 'AVATAR' | 'COVER', file: File) => {
       const info = await createProfileImageUpload(kind, file.name, file.type)
-      const token = await ensureFreshAccessToken()
-      const res = await fetch(info.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type,
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: await file.arrayBuffer(),
-      })
-      if (!res.ok) throw new Error('No se pudo subir la imagen. Inténtalo de nuevo.')
+      await uploadCommunityMedia(info.uploadUrl, file)
       return info
     },
     [createProfileImageUpload],
@@ -399,16 +408,7 @@ export function useCommunity() {
   const uploadPostImage = useCallback(
     async (file: File, contentType: string) => {
       const info = await createPostImageUpload(file.name, contentType)
-      const token = await ensureFreshAccessToken()
-      const res = await fetch(info.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': contentType,
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: await file.arrayBuffer(),
-      })
-      if (!res.ok) throw new Error('No se pudo subir la imagen. Inténtalo de nuevo.')
+      await uploadCommunityMedia(info.uploadUrl, file, contentType)
       return info.key
     },
     [createPostImageUpload],
@@ -420,28 +420,30 @@ export function useCommunity() {
       const mutation = liked ? unlikeMutation : likeMutation
       const res = await mutation({ postId: post.id })
       if (res.error) throw new Error(res.error.message)
-      reexecuteFeed({ requestPolicy: 'network-only' })
-      return res.data?.likePost
+      refreshPosts()
+      return liked ? res.data?.unlikePost : res.data?.likePost
     },
-    [myProfileId, likeMutation, unlikeMutation, reexecuteFeed],
+    [myProfileId, likeMutation, unlikeMutation, refreshPosts],
   )
 
   const addComment = useCallback(
     async (postId: string, body: string) => {
       const res = await addCommentMutation({ postId, body })
       if (res.error) throw new Error(res.error.message)
+      refreshPosts()
       return res.data?.addComment
     },
-    [addCommentMutation],
+    [addCommentMutation, refreshPosts],
   )
 
   const replyToComment = useCallback(
     async (commentId: string, body: string) => {
       const res = await replyMutation({ commentId, body })
       if (res.error) throw new Error(res.error.message)
+      refreshPosts()
       return res.data?.replyToComment
     },
-    [replyMutation],
+    [replyMutation, refreshPosts],
   )
 
   // --- Reportes ---
@@ -488,15 +490,15 @@ export function useCommunity() {
       if (reposted) {
         const res = await unrepostPostMutation({ postId: post.id })
         if (res.error) throw new Error(res.error.message)
-        reexecuteFeed({ requestPolicy: 'network-only' })
+        refreshPosts()
         return res.data?.unrepostPost ?? null
       }
       const res = await repostPostMutation({ postId: post.id })
       if (res.error) throw new Error(res.error.message)
-      reexecuteFeed({ requestPolicy: 'network-only' })
+      refreshPosts()
       return res.data?.repostPost ?? null
     },
-    [myProfileId, repostPostMutation, unrepostPostMutation, reexecuteFeed],
+    [myProfileId, repostPostMutation, unrepostPostMutation, refreshPosts],
   )
 
   /** Carga la lista de perfiles que repostearon una publicación. */
@@ -532,9 +534,10 @@ export function useCommunity() {
       reexecuteFollowing({ requestPolicy: 'network-only' })
       reexecuteFollowers({ requestPolicy: 'network-only' })
       reexecutePeople({ requestPolicy: 'network-only' })
+      reexecuteFollowingFeed({ requestPolicy: 'network-only' })
       return res.data?.followUser
     },
-    [followMutation, reexecuteFriends, reexecuteFollowing, reexecuteFollowers, reexecutePeople],
+    [followMutation, reexecuteFriends, reexecuteFollowing, reexecuteFollowers, reexecutePeople, reexecuteFollowingFeed],
   )
 
   const unfollowUser = useCallback(
@@ -545,9 +548,10 @@ export function useCommunity() {
       reexecuteFollowing({ requestPolicy: 'network-only' })
       reexecuteFollowers({ requestPolicy: 'network-only' })
       reexecutePeople({ requestPolicy: 'network-only' })
+      reexecuteFollowingFeed({ requestPolicy: 'network-only' })
       return res.data?.unfollowUser
     },
-    [unfollowMutation, reexecuteFriends, reexecuteFollowing, reexecuteFollowers, reexecutePeople],
+    [unfollowMutation, reexecuteFriends, reexecuteFollowing, reexecuteFollowers, reexecutePeople, reexecuteFollowingFeed],
   )
 
   const sendMessage = useCallback(

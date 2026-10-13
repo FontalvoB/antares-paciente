@@ -12939,6 +12939,7 @@ ion-modal.notifications-modal ion-content {
     fill 0.45s ease !important;
 }
 
+body.community-dark,
 .com-dark,
 .com-dark-surface {
   --com-bg: #0d1017;
@@ -12979,6 +12980,7 @@ ion-modal.notifications-modal ion-content {
   background: linear-gradient(135deg, var(--pur-l), rgba(255, 255, 255, 0.06));
 }
 
+body.community-dark,
 .com-dark,
 .com-dark-surface {
   color: var(--tx);
@@ -31308,3 +31310,103 @@ button:disabled {
 ion-button.cx-share { min-width: 44px; min-height: 44px; margin: 0; --padding-start: 9px; --padding-end: 9px; --color: var(--teal); }
 
 .nt-achievement-share { display: block; color: var(--teal); font-size: 12px; font-weight: 700; margin: 8px 0; }
+
+ion-button.nut-intake-submit { margin-top: 16px; --background: var(--teal); }
+
+/* Acciones de revisión: guardar es principal; editar mantiene menor énfasis. */
+.nut-review-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid var(--bd);
+  border-radius: 24px;
+  background: var(--wh);
+  box-shadow: var(--shadow-sm);
+}
+.nut-review-actions ion-button,
+.nut-ai ion-button.nut-intake-submit {
+  margin: 0;
+  width: 100%;
+  min-height: 52px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  --border-radius: 16px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --box-shadow: none;
+}
+.nut-review-actions ion-button::part(native),
+.nut-ai ion-button.nut-intake-submit::part(native) { white-space: normal; line-height: 1.35; }
+.nut-review-actions ion-button.nut-review-save,
+.nut-ai ion-button.nut-intake-submit {
+  min-height: 56px;
+  --background: var(--grad-brand-v);
+  --background-activated: var(--navy);
+  --color: var(--wh);
+  --box-shadow: var(--shadow-sm);
+}
+.nut-review-actions ion-button.nut-review-edit {
+  --background: var(--g0);
+  --background-activated: var(--g1);
+  --color: var(--navy);
+  --border-width: 1px;
+  --border-style: solid;
+  --border-color: var(--bd);
+  font-size: 14px;
+  font-weight: 600;
+}
+.nut-review-actions ion-icon { font-size: 21px; flex-shrink: 0; }
+.nut-review-actions ion-spinner { width: 21px; height: 21px; color: currentColor; }
+
+.nut-ai ion-button.nut-intake-submit { margin-top: 16px; }
+
+/* Community: one palette for the screen and Ionic's portaled dialogs. */
+body.community-dark {
+  color-scheme: dark;
+  --ion-background-color: var(--g0);
+  --ion-text-color: var(--tx);
+  --ion-color-dark: #f1f4fa;
+  --ion-color-medium: #b5c2d4;
+  --ion-color-primary: #a6cbe8;
+  --ion-color-primary-contrast: #142855;
+  --ion-color-step-50: #1a2130;
+  --ion-color-step-100: #232d40;
+}
+body.community-dark ion-modal { --background: var(--g0); --ion-item-background: var(--wh); }
+body.community-dark ion-alert { --background: var(--wh); }
+body.community-dark :is(.com-scope-btn.on, .cpm-type.on, .com-cmt-count, .com-reply-chip,
+  .com-c-actions button, .com-thread-more, .com-side-item.on, .com-side-item.on .com-side-ico,
+  .cpm-idea-ico, .cpm-poll-add, .com-sec-count) { color: #cdb9f4; }
+body.community-dark :is(.com-scope-btn.on, .cpm-type.on) { background: #30304c; }
+body.community-dark :is(.cpm-type, .com-scope-btn) { min-height: 44px; }
+body.community-dark :is(.com-detail-head, .com-post-name, .com-c-name, .com-c-body, .com-detail-post .com-post-body) { color: var(--tx); }
+body.community-dark ion-button[fill="clear"],
+body.community-dark ion-button[fill="outline"] { --color: #c1d9eb; }
+body.community-dark :is(ion-input, ion-textarea, ion-searchbar) {
+  --color: var(--tx); --placeholder-color: var(--mu); --background: var(--wh);
+}
+body.community-dark .com-post-time { color: #b5c2d4; }
+body.community-dark .com-post { background: var(--wh); box-shadow: 0 4px 16px rgb(0 0 0 / 20%); }
+body.community-dark .com-detail { color: var(--tx); }
+.com-detail { padding-top: calc(16px + env(safe-area-inset-top)); padding-bottom: calc(16px + env(safe-area-inset-bottom)); min-height: 0; overflow-y: auto; }
+.com-detail-head, .cpm-types, .cpm-foot { flex-shrink: 0; }
+.com-feed-tools { display: flex; align-items: center; justify-content: flex-end; padding: 4px 14px; }
+.com-feed-tools ion-button { margin: 0; min-height: 44px; }
+
+/* Achievement actions: compact two-column destinations, quiet utility row. */
+.achievement-format { margin-top: 18px; }
+.achievement-format ion-segment-button { min-width: 0; font-size: 12px; --padding-start: 8px; --padding-end: 8px; }
+.achievement-format-hint { font-size: 12px; line-height: 1.5; margin: 10px 0; }
+.achievement-share-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.achievement-share-actions ion-button { width: 100%; height: auto; min-height: 64px; margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; --border-radius: 16px; --padding-start: 10px; --padding-end: 10px; --padding-top: 12px; --padding-bottom: 12px; }
+.achievement-share-actions ion-button::part(native) { white-space: normal; line-height: 1.4; }
+.achievement-share-actions ion-icon { font-size: 21px; flex-shrink: 0; margin-inline-end: 7px; }
+.achievement-community-action { --background: var(--grad-brand-v); --color: #fff; }
+.achievement-external-action { --border-color: var(--bd); --color: var(--tx); --background: var(--g0); }
+.achievement-share-utilities { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; border-top: 1px solid var(--bd); padding-top: 8px; }
+.achievement-share-utilities ion-button { margin: 0; font-size: 12px; --padding-start: 5px; --padding-end: 5px; }
+.achievement-publish-warning { grid-column: 1 / -1; }
+.achievement-notification-action { display: block; margin: 12px auto 0; font-size: 12px; }
