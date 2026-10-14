@@ -3,15 +3,13 @@ import { Capacitor } from "@capacitor/core";
 import {
   IonButton,
   IonIcon,
-  IonSegment,
-  IonSegmentButton,
+  IonActionSheet,
   IonSpinner,
   IonTextarea,
 } from "@ionic/react";
 import {
-  arrowBackOutline,
+  checkmarkCircleOutline,
   downloadOutline,
-  copyOutline,
   peopleOutline,
   shareSocialOutline,
 } from "ionicons/icons";
@@ -25,7 +23,6 @@ import {
   downloadAchievement,
   renderAchievementCard,
   shareAchievementFile,
-  type CardFormat,
 } from "../../services/achievements/share-card";
 
 export function AchievementShare({
@@ -36,10 +33,10 @@ export function AchievementShare({
   onBack: () => void;
 }) {
   const t = useT();
-  const { showToast } = useApp();
+  const { showToast, navigate } = useApp();
   const { createPost, uploadPostImage } = useCommunity();
   const copy = achievementCopy(achievement, t);
-  const [format, setFormat] = useState<CardFormat>("square");
+  const [chooseFormat, setChooseFormat] = useState(false);
   const [caption, setCaption] = useState(copy.caption);
   const [asset, setAsset] = useState<{ file: File; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,13 +61,13 @@ export function AchievementShare({
       copy.title,
       copy.message,
       t("Un logro para celebrar"),
-      format,
+      "square",
     )
       .then((blob) => {
         if (!active) return;
         url = URL.createObjectURL(blob);
         setAsset({
-          file: new File([blob], `copp-logro-${format}.png`, {
+          file: new File([blob], "copp-logro-square.png", {
             type: "image/png",
           }),
           url,
@@ -84,7 +81,7 @@ export function AchievementShare({
       active = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [copy.title, copy.message, t, format, attempt]);
+  }, [copy.title, copy.message, t, attempt]);
   async function perform(action: () => Promise<void>) {
     if (submitting.current) return;
     submitting.current = true;
@@ -110,70 +107,57 @@ export function AchievementShare({
       if (alive.current) setBusy(false);
     }
   }
+  async function shareExternal(format: "square" | "story") {
+    await perform(async () => {
+      if (!asset) return;
+      const file = format === "square" ? asset.file : new File([
+        await renderAchievementCard(copy.title, copy.message, t("Un logro para celebrar"), "story"),
+      ], "copp-logro-story.png", { type: "image/png" });
+      const status = await shareAchievementFile(file, copy.title, caption);
+      if (status === "unsupported") {
+        downloadAchievement(file);
+        showToast(t("Tarjeta descargada. Adjunta la imagen en tu red social."));
+      }
+    });
+  }
   return (
     <div className="achievement-share">
-      <IonButton fill="clear" disabled={busy} onClick={onBack}>
-        <IonIcon slot="start" icon={arrowBackOutline} />
-        {t("Volver")}
-      </IonButton>
-      <h2>{t("Tu constancia merece celebrarse")}</h2>
-      <p>{t("Elige un formato y comparte tu logro a tu manera.")}</p>
-      <IonSegment className="achievement-format"
-        value={format}
-        disabled={busy}
-        onIonChange={(e) => setFormat(e.detail.value as CardFormat)}
-      >
-        <IonSegmentButton value="square">{t("Comunidad · cuadrada")}</IonSegmentButton>
-        <IonSegmentButton value="story">
-          {t("Historia")}
-        </IonSegmentButton>
-      </IonSegment>
-      <p className="achievement-format-hint">{t("Comunidad usa publicaciones cuadradas. El formato vertical es para historias en Instagram, Facebook y otras redes.")}</p>
-      {asset ? (
-        <img
-          className={`achievement-export ${format}`}
-          src={asset.url}
-          alt={copy.title}
-        />
-      ) : (
-        !error && <IonSpinner />
-      )}
-      <IonTextarea
-        label={t("Mensaje para compartir")}
-        labelPlacement="stacked"
-        autoGrow
-        maxlength={1200}
-        value={caption}
-        disabled={busy || published}
-        onIonInput={(e) => setCaption(e.detail.value || "")}
-      />
-      <p className="achievement-privacy">
-        {t(
-          "La tarjeta no incluye mediciones clínicas, nombre ni datos de contacto. Revisa tu mensaje antes de publicarlo.",
-        )}
-      </p>
-      {error && (
-        <div role="alert">
-          <p>{error}</p>
-          {!asset && (
-            <IonButton onClick={() => setAttempt((a) => a + 1)}>
-              {t("Reintentar")}
-            </IonButton>
-          )}
+      <div className="achievement-preview">
+        {asset ? <img className="achievement-export" src={asset.url} alt={copy.title} /> :
+          !error && <div className="achievement-preview-loading"><IonSpinner /></div>}
+        {!Capacitor.isNativePlatform() && <IonButton className="achievement-download" fill="clear"
+          aria-label={t("Descargar tarjeta")} disabled={!asset || busy}
+          onClick={() => asset && downloadAchievement(asset.file)}>
+          <IonIcon slot="icon-only" icon={downloadOutline} />
+        </IonButton>}
+      </div>
+      {published ? (
+        <div className="achievement-published" role="status">
+          <IonIcon icon={checkmarkCircleOutline} />
+          <h3>{t("Compartido con tu comunidad")}</h3>
+          <IonButton className="achievement-community-action" expand="block" onClick={() => { onBack(); navigate("com"); }}>
+            {t("Ver publicación")}
+          </IonButton>
         </div>
+      ) : (
+        <IonTextarea className="achievement-caption" label={t("Añade un mensaje")}
+          labelPlacement="stacked" autoGrow rows={2} maxlength={1200}
+          value={caption} disabled={busy}
+          onIonInput={(e) => setCaption(e.detail.value || "")} />
       )}
+      {error && <div className="achievement-share-error" role="alert">
+        <p>{error}</p>
+        {!asset && <IonButton onClick={() => setAttempt((a) => a + 1)}>{t("Reintentar")}</IonButton>}
+      </div>}
+      {uncertain && !busy && <p className="achievement-publish-warning" role="alert">
+        {t("No pudimos confirmar la publicación. Revisa Comunidad antes de volver a publicar para evitar duplicados.")}
+      </p>}
       <div className="achievement-share-actions">
-      <IonButton
-        className="achievement-community-action"
-        disabled={!asset || busy || published || uncertain || !caption.trim()}
-        onClick={() =>
-          void perform(async () => {
+        {!published && <IonButton className="achievement-community-action"
+          disabled={!asset || busy || uncertain || !caption.trim()}
+          onClick={() => void perform(async () => {
             if (!asset) return;
-            // Community has posts, not stories: always publish a square card there.
-            const communityFile = format === "square" ? asset.file : new File([
-              await renderAchievementCard(copy.title, copy.message, t("Un logro para celebrar"), "square"),
-            ], "copp-logro-square.png", { type: "image/png" });
-            const key = await uploadPostImage(communityFile, communityFile.type);
+            const key = await uploadPostImage(asset.file, asset.file.type);
             if (!alive.current) return;
             setUncertain(true);
             const post = await createPost(caption.trim(), key);
@@ -183,78 +167,22 @@ export function AchievementShare({
               setPublished(true);
               showToast(t("Logro publicado en Comunidad"), "ok");
             }
-          })
-        }
-      >
-        <IonIcon slot="start" icon={peopleOutline} />
-        {published
-          ? t("Publicado en Comunidad")
-          : busy
-            ? t("Compartiendo…")
-            : t("Publicar en Comunidad")}
-      </IonButton>
-      {uncertain && !busy && (
-        <p className="achievement-publish-warning" role="alert">
-          {t(
-            "No pudimos confirmar la publicación. Revisa Comunidad antes de volver a publicar para evitar duplicados.",
-          )}
-        </p>
-      )}
-      <IonButton
-        className="achievement-external-action"
-        fill="outline"
-        disabled={!asset || busy}
-        onClick={() =>
-          void perform(async () => {
-            if (!asset) return;
-            const status = await shareAchievementFile(
-              asset.file,
-              copy.title,
-              caption,
-            );
-            if (status === "unsupported") {
-              downloadAchievement(asset.file);
-              showToast(
-                t("Tarjeta descargada. Adjunta la imagen en tu red social."),
-              );
-            }
-          })
-        }
-      >
-        <IonIcon slot="start" icon={shareSocialOutline} />
-        {t("Compartir en otras apps")}
-      </IonButton>
-      </div>
-      <p className="achievement-social-hint">
-        {t(
-          "Instagram, WhatsApp, Facebook o X: elige una app instalada en el menú de tu teléfono. Algunas apps requieren pegar el mensaje por separado.",
-        )}
-      </p>
-      <div className="achievement-share-utilities">
-      {!Capacitor.isNativePlatform() && (
-        <IonButton
-          fill="clear"
-          disabled={!asset || busy}
-          onClick={() => asset && downloadAchievement(asset.file)}
-        >
-          <IonIcon slot="start" icon={downloadOutline} />
-          {t("Descargar tarjeta")}
+          })}>
+          <IonIcon slot="start" icon={peopleOutline} />
+          {busy ? t("Compartiendo…") : t("Publicar en Comunidad")}
+        </IonButton>}
+        <IonButton className="achievement-external-action" fill="outline"
+          disabled={!asset || busy} onClick={() => setChooseFormat(true)}>
+          <IonIcon slot="start" icon={shareSocialOutline} />
+          {t("Compartir")}
         </IonButton>
-      )}
-      <IonButton
-        fill="clear"
-        disabled={busy}
-        onClick={() =>
-          void perform(async () => {
-            await navigator.clipboard.writeText(caption);
-            showToast(t("Mensaje copiado"));
-          })
-        }
-      >
-        <IonIcon slot="start" icon={copyOutline} />
-        {t("Copiar mensaje")}
-      </IonButton>
       </div>
+      <IonActionSheet isOpen={chooseFormat} header={t("Compartir")}
+        onDidDismiss={() => setChooseFormat(false)} buttons={[
+          { text: t("Publicación"), handler: () => { void shareExternal("square"); } },
+          { text: t("Historia"), handler: () => { void shareExternal("story"); } },
+          { text: t("Cancelar"), role: "cancel" },
+        ]} />
     </div>
   );
 }

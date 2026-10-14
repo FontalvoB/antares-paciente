@@ -31410,3 +31410,21 @@ body.community-dark .com-detail { color: var(--tx); }
 .achievement-share-utilities ion-button { margin: 0; font-size: 12px; --padding-start: 5px; --padding-end: 5px; }
 .achievement-publish-warning { grid-column: 1 / -1; }
 .achievement-notification-action { display: block; margin: 12px auto 0; font-size: 12px; }
+
+/* Compartir logro: la tarjeta es protagonista, acciones y mensaje compactos. */
+.achievement-modal ion-content { --background: var(--wh); }
+.achievement-sheet-head h2 { font-size: 20px; letter-spacing: -.5px; color: var(--tx); }
+.achievement-share { padding-top: 18px; }
+.achievement-preview { position: relative; max-width: 380px; margin: 0 auto 24px; }
+.achievement-preview .achievement-export { width: 100%; margin: 0; border-radius: 22px; }
+.achievement-preview-loading { display: grid; place-items: center; aspect-ratio: 1; background: var(--g0); border-radius: 22px; }
+.achievement-download { position: absolute; right: 10px; bottom: 10px; margin: 0; width: 44px; --background: var(--wh); --color: var(--brand-navy); --border-radius: 50%; --padding-start: 0; --padding-end: 0; }
+.achievement-share ion-textarea.achievement-caption { font-size: 14px; line-height: 1.5; padding: 12px 0; --padding-top: 8px; --padding-bottom: 8px; --color: var(--tx); --background: var(--g0); }
+.achievement-share-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.achievement-share-actions ion-button { min-height: 50px; font-size: 14px; --padding-top: 12px; --padding-bottom: 12px; --border-radius: 15px; }
+.achievement-share-error { border: 1px solid var(--bd); border-radius: 14px; background: var(--g0); padding: 12px; margin-top: 14px; }
+.achievement-share-error p, .achievement-publish-warning { font-size: 13px; margin: 0; }
+.achievement-published { text-align: center; padding: 4px 0; }
+.achievement-published > ion-icon { color: var(--teal); font-size: 32px; }
+.achievement-published h3 { color: var(--tx); font-size: 18px; margin: 10px 0 16px; }
+@media (max-height: 700px) { .achievement-preview { max-width: 280px; } }

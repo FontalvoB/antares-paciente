@@ -145,8 +145,8 @@ export function AchievementCenter() {
           <div className="achievement-sheet">
             <header className="achievement-sheet-head">
               <div>
-                <small>{t("CADA PASO CUENTA")}</small>
-                <h2>{t("Mis logros")}</h2>
+                {!selected && <small>{t("CADA PASO CUENTA")}</small>}
+                <h2>{selected ? t("Comparte tu logro") : t("Mis logros")}</h2>
               </div>
               <IonButton
                 fill="clear"
@@ -206,7 +206,7 @@ export function AchievementCenter() {
                 </p>
               </>
             )}
-                {Capacitor.isNativePlatform() && (
+                {!selected && Capacitor.isNativePlatform() && (
                   <IonButton
                     className="achievement-notification-action"
                     fill="clear"
