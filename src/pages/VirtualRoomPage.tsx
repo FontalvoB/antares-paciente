@@ -211,7 +211,9 @@ export function VirtualRoomPage() {
   const outputIdRef = useRef("");
   const trackObservers = useRef(new Map<TwilioTrack, () => void>());
   /** Video remoto suscrito: placeholder con iniciales cuando está apagado. */
-  const [remoteVideoOn, setRemoteVideoOn] = useState(false);
+  const [remoteVideoByIdentity, setRemoteVideoByIdentity] = useState<Record<string, boolean>>({});
+  const [selectedRemote, setSelectedRemote] = useState<string | null>(null);
+  const remoteContainers = useRef(new Map<string, HTMLDivElement>());
   /** Pre-consulta de la cita (F4) desde el prejoin: editable solo Confirmed. */
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -270,7 +272,7 @@ export function VirtualRoomPage() {
     roomRef.current?.disconnect();
     roomRef.current = null;
     detachAll(localRef.current);
-    detachAll(remoteRef.current);
+    remoteRef.current?.querySelectorAll("audio,video").forEach(el => el.remove());
     setChatOpen(false);
     setDevicesOpen(false);
     setPhase("ended");
@@ -316,7 +318,7 @@ export function VirtualRoomPage() {
       roomRef.current?.disconnect();
       roomRef.current = null;
       detachAll(localRef.current);
-      detachAll(remoteRef.current);
+      remoteRef.current?.querySelectorAll("audio,video").forEach(el => el.remove());
       setEndCause(cause);
       setChatOpen(false);
       setPhase("ended");
@@ -325,11 +327,15 @@ export function VirtualRoomPage() {
   );
 
   const refreshRemoteVideo = useCallback(() => {
-    let visible = false;
-    roomRef.current?.participants.forEach(participant => participant.tracks.forEach(({ track }) => {
-      if (track && roomVideoIsVisible(track)) visible = true;
-    }));
-    setRemoteVideoOn(visible);
+    const visible: Record<string, boolean> = {};
+    roomRef.current?.participants.forEach(participant => {
+      visible[participant.identity] = false;
+      participant.tracks.forEach(({track}) => {
+        if (track && roomVideoIsVisible(track)) visible[participant.identity] = true;
+      });
+    });
+    setRemoteVideoByIdentity(previous => Object.keys(previous).length === Object.keys(visible).length &&
+      Object.keys(visible).every(id => previous[id] === visible[id]) ? previous : visible);
   }, []);
 
   const attachParticipant = useCallback((participant: TwilioParticipant, container: HTMLElement | null, local = false) => {
@@ -376,16 +382,16 @@ export function VirtualRoomPage() {
     const room = roomRef.current;
     if (phase !== "connected" || !room) return;
     attachParticipant(room.localParticipant, localRef.current, true);
-    room.participants.forEach(p => attachParticipant(p, remoteRef.current));
+    room.participants.forEach(p => attachParticipant(p, remoteContainers.current.get(p.identity) ?? null));
     refreshRemoteVideo();
-  }, [phase, attachParticipant, refreshRemoteVideo]);
+  }, [phase, participants, attachParticipant, refreshRemoteVideo]);
 
   /** Conecta la sala ya negociada: pinta participantes y engancha eventos. */
   const wireRoom = useCallback(
     (room: TwilioRoom, plan: { audio: boolean; video: boolean }) => {
       trackObservers.current.forEach(dispose => dispose());
       trackObservers.current.clear();
-      setRemoteVideoOn(false);
+      setRemoteVideoByIdentity({});
       roomRef.current = room;
       reconnectAttemptedRef.current = false;
       setMicOn(plan.audio);
@@ -403,7 +409,7 @@ export function VirtualRoomPage() {
         setParticipants((prev) =>
           prev.includes(p.identity) ? prev : [...prev, p.identity],
         );
-        setupParticipant(p, () => remoteRef.current);
+        setupParticipant(p, () => remoteContainers.current.get(p.identity) ?? null);
       });
 
       room.on("participantConnected", (p) => {
@@ -413,13 +419,13 @@ export function VirtualRoomPage() {
             ? prev
             : [...prev, participant.identity],
         );
-        setupParticipant(participant, () => remoteRef.current);
+        setupParticipant(participant, () => remoteContainers.current.get(participant.identity) ?? null);
       });
       room.on("participantDisconnected", (p) => {
         const participant = p as TwilioParticipant;
         // Limpieza de los tracks del que se fue (el contenedor es único y los
         // demás siguen publicados: no se vacía a ciegas).
-        const container = remoteRef.current;
+        const container = remoteContainers.current.get(participant.identity);
         participant.tracks.forEach((publication) => {
           const track = publication.track;
           if (
@@ -442,7 +448,7 @@ export function VirtualRoomPage() {
         roomRef.current = null;
         stopLocalTracks(current);
         detachAll(localRef.current);
-        detachAll(remoteRef.current);
+        remoteRef.current?.querySelectorAll("audio,video").forEach(el => el.remove());
         if (
           intentionalRef.current ||
           skipReconnectRef.current ||
@@ -733,13 +739,14 @@ export function VirtualRoomPage() {
   const devicesReady = cameraReady && microphoneReady;
   // Si la cámara no está pero el micrófono sí, la entrada se degrada a audio.
   const audioOnly = mediaProbe !== null && !cameraReady && microphoneReady;
-  const remoteIdentity = participants[1];
-  const remoteParticipant = participantRoster.find(p => p.identity === remoteIdentity);
-  const remoteLabel = remoteParticipant?.displayName || t(
-    remoteParticipant?.role === "Supervisor" ? "Supervisor" :
-    remoteParticipant?.role === "Professional" ? "Profesional" :
-    remoteParticipant?.role === "Patient" ? "Paciente" : "Participante"
-  );
+  const remoteIds = participants.slice(1);
+  const preferredRemote = participantRoster.find(p => p.role === "Professional" && remoteIds.includes(p.identity))?.identity;
+  const mainRemote = selectedRemote && remoteIds.includes(selectedRemote) ? selectedRemote : preferredRemote || remoteIds[0];
+  function remoteName(identity: string) {
+    const participant = participantRoster.find(p => p.identity === identity);
+    return participant?.displayName || t(participant?.role === "Supervisor" ? "Supervisor" :
+      participant?.role === "Professional" ? "Profesional" : "Participante");
+  }
   const joinAllowed = windowOpen && canJoinWithMedia(mediaProbe);
   const mediaBlocked = mediaProbe !== null && !canJoinWithMedia(mediaProbe);
 
@@ -975,35 +982,33 @@ export function VirtualRoomPage() {
           // deben existir en ese momento (si no, el attach se pierde y la
           // pantalla queda vacía).
           <div className={`room-video${localMain ? " room-local-main" : ""}`}>
-            <div className="room-tile room-tile-remote">
-              <div className="room-tile-media" ref={remoteRef}>
-                {phase === "connecting" ? (
-                  <div className="room-connecting">
-                    <IonSpinner name="crescent" />
-                    <strong>{t("Entrando a la sala…")}</strong>
-                  </div>
-                ) : participants.length <= 1 ? (
-                  <span className="room-waiting">
-                    {t("Esperando al profesional…")}
-                  </span>
-                ) : null}
-              </div>
-              {phase === "connected" ? (
-                <span className="room-tile-name">{remoteLabel}</span>
-              ) : null}
-              {phase === "connected" && localMain ? (
-                <IonButton className="room-swap-video" fill="clear" aria-label={t("Cambiar video principal")}
-                  onClick={() => setLocalMain(value => !value)}><IonIcon slot="icon-only" icon={swapHorizontalOutline} /></IonButton>
-              ) : null}
-              {phase === "connected" &&
-              !remoteVideoOn &&
-              participants.length > 1 ? (
-                <span className="room-tile-initials" aria-hidden="true">
-                  {nameInitials(remoteLabel)}
-                </span>
-              ) : null}
+            <div className="room-remotes" ref={remoteRef}>
+              {remoteIds.map((identity, index) => {
+                const primary = !localMain && identity === mainRemote;
+                const label = remoteName(identity);
+                const previewIndex = localMain ? index : remoteIds.filter(id => id !== mainRemote).indexOf(identity);
+                return <div key={identity} data-participant={identity}
+                  className={`room-tile room-remote-person ${primary ? "room-person-main" : "room-person-preview"}`}
+                  style={primary ? undefined : {right: `${14 + previewIndex * 106}px`}}>
+                  <div className="room-tile-media" ref={el => {
+                    if (el) remoteContainers.current.set(identity, el); else remoteContainers.current.delete(identity);
+                  }} />
+                  {!remoteVideoByIdentity[identity] && <span className="room-tile-initials" aria-hidden="true">{nameInitials(label)}</span>}
+                  <span className="room-tile-name">{label}</span>
+                  {!primary && <IonButton className="room-swap-video" fill="clear"
+                    aria-label={t("Ampliar video de {name}", {name: label})}
+                    onClick={() => { setSelectedRemote(identity); setLocalMain(false); }}>
+                    <IonIcon slot="icon-only" icon={swapHorizontalOutline} />
+                  </IonButton>}
+                </div>;
+              })}
+              {remoteIds.length === 0 && <div className="room-tile room-person-main">
+                <div className="room-connecting"><IonSpinner name="crescent" /><strong>
+                  {phase === "connecting" ? t("Entrando a la sala…") : t("Esperando al profesional…")}
+                </strong></div>
+              </div>}
             </div>
-            <div className="room-tile room-tile-local">
+            <div className={`room-tile room-tile-local ${localMain ? "room-person-main" : "room-person-preview"}`} style={localMain ? undefined : {right: `${14 + Math.max(0, remoteIds.length - 1) * 106}px`}}>
               <div className="room-tile-media" ref={localRef} />
               {phase === "connected" && !camOn ? (
                 <span className="room-tile-initials" aria-hidden="true">

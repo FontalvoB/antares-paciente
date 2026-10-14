@@ -2647,5 +2647,6 @@
   "No se pudo cambiar la salida de audio.": "Could not switch audio output.",
   "Ajustes": "Settings",
   "Cámara": "Camera",
-  "Micrófono": "Microphone"
+  "Micrófono": "Microphone",
+  "Ampliar video de {name}": "Enlarge {name}’s video"
 }

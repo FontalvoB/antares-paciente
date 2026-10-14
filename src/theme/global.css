@@ -31459,3 +31459,9 @@ ion-button.room-control.room-leave { --background: var(--red); --color: var(--wh
 @media (max-width: 360px) { .room-ctrls { grid-template-columns: repeat(3, minmax(0, 1fr)); } ion-button.room-control { height: 52px; } }
 .room-control-content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; }
 .room-control-content > span { font-size: 10px; }
+/* Cada cámara remota conserva su identidad y su propio contenedor de medios. */
+.room-remotes { display: contents; }
+.room-video .room-person-main { position: relative; flex: 1 1 auto; inset: auto; width: 100%; height: 100%; border: 0; border-radius: 20px; }
+.room-video .room-person-preview { position: absolute; bottom: 14px; top: auto; z-index: 3; width: 96px; height: 128px; flex: none; border: 2px solid var(--wh); border-radius: 14px; }
+.room-person-preview .room-tile-name { left: 4px; bottom: 4px; max-width: calc(100% - 8px); padding: 4px 6px; font-size: 10px; }
+.room-person-preview .room-tile-initials { font-size: 20px; }

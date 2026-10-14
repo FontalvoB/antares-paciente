@@ -2551,5 +2551,6 @@
   "No se pudo cambiar la salida de audio.": "No se pudo cambiar la salida de audio.",
   "Ajustes": "Ajustes",
   "Cámara": "Cámara",
-  "Micrófono": "Micrófono"
+  "Micrófono": "Micrófono",
+  "Ampliar video de {name}": "Ampliar video de {name}"
 }

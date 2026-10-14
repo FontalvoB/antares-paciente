@@ -27,3 +27,9 @@ actualizar solamente el backend no cambia el código instalado en el dispositivo
 Validación local: pruebas de tracks y pantalla conectada, build, lint e i18n. La vista aislada de diseño usa medios simulados y **no acredita E2E de audio/video**.
 
 Retest con ERP + iPhone: entrar primero con cámara ERP apagada, encenderla después y verificar video en la app; repetir apagado/encendido. Intercambiar video principal dos veces. Cambiar cámara frontal/trasera con cámara activa y apagada. Probar micrófono y auriculares disponibles, desconectar/reconectar auriculares, comprobar audio en ambas direcciones y salir sin finalizar la sesión clínica desde la app.
+
+## Tres participantes — 2026-10-14
+
+La app tenía un único contenedor para todos los tracks remotos y un nombre tomado de la primera identidad. Con supervisor + profesional + paciente se mezclaban imagen y etiqueta. Cada identidad ahora tiene contenedor, estado de cámara y nombre propios; el profesional es el video principal por defecto y las miniaturas permiten ampliarse sin mover tracks a otra identidad. La prueba de regresión conecta las tres identidades, verifica los elementos por propietario y alterna el video principal.
+
+Pendiente E2E real después de revisión/despliegue: tres cámaras diferenciadas, apagar/encender supervisor después de entrar, salir y volver a entrar, verificar nombres y audio sin duplicación en los tres dispositivos.
