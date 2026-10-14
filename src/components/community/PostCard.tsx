@@ -1,3 +1,5 @@
+import { OwnPostDeleteButton } from "./OwnPostDeleteButton";
+import { shareCommunityContent } from "../../utils/community-sharing";
 import { countCommunityComments } from "../../utils/community-comments"
 import { CommunityVideo } from "./CommunityVideo";
 import { IonAlert, IonIcon, IonModal } from '@ionic/react'
@@ -54,7 +56,9 @@ export function PostCard({
   onVotePoll,
   myId,
   onToast,
+  onDeletePost,
 }: {
+  onDeletePost?: (id: string) => Promise<void>
   view: FeedPostView
   index?: number
   onOpen: (p: Post) => void
@@ -206,11 +210,9 @@ export function PostCard({
 
   async function sharePost() {
     try {
-      await navigator.clipboard.writeText(`https://antares.bio/com/${post.id}`)
-      onToast(t('Enlace de la publicación copiado'), 'ok')
-    } catch {
-      onToast(t('Comparte la publicación con tu comunidad'), 'info')
-    }
+      const result = await shareCommunityContent(t('Comunidad Copp Adresd'), `${post.profile.displayName} · COPP-ADRESD\n\n${post.body || t('Publicación con imagen')}`)
+      if (result === 'copied') onToast(t('Contenido copiado para compartir'), 'ok')
+    } catch { onToast(t('No se pudo compartir. Inténtalo de nuevo.'), 'err') }
   }
 
   const burstStyle: CSSProperties = {
@@ -241,15 +243,7 @@ export function PostCard({
             <IonIcon icon={pin} style={{ fontSize: 12 }} /> {t('Fijado')}
           </span>
         )}
-        <button
-          type="button"
-          className="com-act-btn com-act-report"
-          onClick={() => openReport('post', post.id)}
-          aria-label={t('Reportar publicación')}
-          title={t('Reportar publicación')}
-        >
-          <IonIcon className="com-react-ico" icon={flagOutline} />
-        </button>
+        <OwnPostDeleteButton postId={post.id} authorId={post.profile.id} myId={myId} onDelete={onDeletePost} onReport={() => openReport('post', post.id)} onToast={onToast} />
       </div>
 
       {post.imageUrl && (
@@ -294,6 +288,7 @@ export function PostCard({
           className={`com-act-btn like ${likedByMe ? 'on' : ''}`}
           disabled={liking}
           onClick={() => void handleLike()}
+          aria-label={t(likedByMe ? "Quitar me gusta" : "Me gusta")}
           aria-pressed={likedByMe}
         >
           {likedByMe && heartTick > 0 && (

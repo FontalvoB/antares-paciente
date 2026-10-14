@@ -202,8 +202,6 @@ export function RoomChatPanel({ appointmentId, enabled, onClose }: Props) {
     <IonModal
       isOpen
       onDidDismiss={onClose}
-      initialBreakpoint={0.72}
-      breakpoints={[0, 0.72, 0.95]}
       className="room-chat-modal"
     >
       <div className="room-chat">

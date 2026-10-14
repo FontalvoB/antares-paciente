@@ -1,8 +1,11 @@
+import { CommunityMediaPreparationError } from "../utils/community-media";
 import { mergePostsNewest } from '../utils/community-feed'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useClient, useMutation, useQuery, useSubscription } from 'urql'
 import { uploadCommunityMedia } from '../utils/community-media'
 import {
+  DELETE_OWN_POST,
+  DELETE_OWN_COMMENT,
   ADD_COMMENT,
   ADD_GROUP_MEMBER,
   CONVERSATIONS_QUERY,
@@ -185,14 +188,18 @@ export function useGroupChangedListener(
  * de personas, mensajería y creación de publicaciones/likes.
  */
 export function useCommunity() {
+  const [feedTake, setFeedTake] = useState(PAGE_SIZE)
+  const [followingTake, setFollowingTake] = useState(PAGE_SIZE)
+  const [discoverPeople, setDiscoverPeople] = useState(false)
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [meResult, reexecuteMe] = useQuery<MeResult>({ query: ME_QUERY })
   const [feedResult, reexecuteFeed] = useQuery<FeedResult>({
     query: FEED_QUERY,
-    variables: { take: PAGE_SIZE, skip: 0 },
+    variables: { take: feedTake, skip: 0 },
   })
   const [followingFeedResult, reexecuteFollowingFeed] = useQuery<FollowingFeedResult>({
     query: FOLLOWING_FEED_QUERY,
-    variables: { take: PAGE_SIZE, skip: 0 },
+    variables: { take: followingTake, skip: 0 },
   })
   const [friendsResult, reexecuteFriends] = useQuery<FriendsResult>({
     query: FRIENDS_QUERY,
@@ -209,8 +216,8 @@ export function useCommunity() {
   const [peopleQuery, setPeopleQuery] = useState('')
   const [peopleResult, reexecutePeople] = useQuery<PeopleResult>({
     query: PEOPLE_SEARCH,
-    variables: { search: peopleQuery.trim() || null, take: 30, skip: 0 },
-    pause: peopleQuery.trim().length === 0,
+    variables: { search: peopleQuery.trim(), take: 30, skip: 0 },
+    pause: peopleQuery.trim().length === 0 && !discoverPeople,
   })
   const [conversationsResult, reexecuteConversations] = useQuery<ConversationsResult>({
     query: CONVERSATIONS_QUERY,
@@ -249,7 +256,7 @@ export function useCommunity() {
       isRepost: true,
       repostedAt: r.createdAt,
     }))
-    const merged = [...own, ...reposted]
+    const merged = [...own, ...reposted].filter(post => !deletedIds.has(post.id))
     // Deduplicar: si un post aparece como propio y reposteado, conservar la
     // versión own (isRepost: false) ya que fue creado por el usuario.
     const seen = new Set<string>()
@@ -268,7 +275,22 @@ export function useCommunity() {
       }
     }
     return deduped
-  }, [me])
+  }, [me, deletedIds])
+
+  const [, deleteCommentMutation] = useMutation<{ deleteComment: { id: string } | null }>(DELETE_OWN_COMMENT)
+  const deleteOwnComment = useCallback(async (id: string) => {
+    const result = await deleteCommentMutation({ id })
+    if (result.error || !result.data?.deleteComment) throw new Error(result.error?.message ?? 'Delete failed')
+    refreshPosts()
+  }, [deleteCommentMutation, refreshPosts])
+  const [, deletePostMutation] = useMutation<{ deletePost: { id: string } | null }>(DELETE_OWN_POST)
+  const deleteOwnPost = useCallback(async (id: string) => {
+    const result = await deletePostMutation({ id })
+    if (result.error || !result.data?.deletePost) throw new Error('No se pudo eliminar la publicación.')
+    setDeletedIds(current => new Set([...current, id]))
+    setPublishedPosts(current => current.filter(post => post.id !== id))
+    refreshPosts()
+  }, [deletePostMutation, refreshPosts])
 
   const [, createPostMutation] = useMutation<CreatePostResult>(CREATE_POST)
   const [, createPollPostMutation] = useMutation<CreatePollPostResult>(CREATE_POLL_POST)
@@ -306,25 +328,25 @@ export function useCommunity() {
 
   const feed = useMemo<FeedPostView[]>(() => {
     const list = mergePostsNewest(feedResult.data?.feed ?? [], publishedPosts)
-    return list.map((post) => ({
+    return list.filter(post => !deletedIds.has(post.id)).map((post) => ({
       post,
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
       repostCount: post.reposts.length,
       repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
-  }, [feedResult.data, myProfileId, publishedPosts])
+  }, [feedResult.data, myProfileId, publishedPosts, deletedIds])
 
   const followingFeed = useMemo<FeedPostView[]>(() => {
     const list = mergePostsNewest(followingFeedResult.data?.followingFeed ?? [], [])
-    return list.map((post) => ({
+    return list.filter(post => !deletedIds.has(post.id)).map((post) => ({
       post,
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
       repostCount: post.reposts.length,
       repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
-  }, [followingFeedResult.data, myProfileId])
+  }, [followingFeedResult.data, myProfileId, deletedIds])
 
   const friends: Profile[] = friendsResult.data?.friends ?? []
   const peopleFollowing: Profile[] = followingResult.data?.following ?? []
@@ -373,7 +395,7 @@ export function useCommunity() {
   const createPostImageUpload = useCallback(
     async (fileName: string, contentType: string) => {
       const res = await imageUploadInfoMutation({ fileName, contentType })
-      if (res.error) throw new Error(res.error.message)
+      if (res.error) throw new CommunityMediaPreparationError()
       const info = res.data?.createPostImageUploadInfo
       if (!info) throw new Error('No se obtuvo la URL de subida.')
       return info
@@ -397,7 +419,7 @@ export function useCommunity() {
   const uploadProfileImage = useCallback(
     async (kind: 'AVATAR' | 'COVER', file: File) => {
       const info = await createProfileImageUpload(kind, file.name, file.type)
-      await uploadCommunityMedia(info.uploadUrl, file)
+      await uploadCommunityMedia(info.uploadUrl, file, file.type, info.key)
       return info
     },
     [createProfileImageUpload],
@@ -408,7 +430,7 @@ export function useCommunity() {
   const uploadPostImage = useCallback(
     async (file: File, contentType: string) => {
       const info = await createPostImageUpload(file.name, contentType)
-      await uploadCommunityMedia(info.uploadUrl, file, contentType)
+      await uploadCommunityMedia(info.uploadUrl, file, contentType, info.key)
       return info.key
     },
     [createPostImageUpload],
@@ -643,15 +665,21 @@ export function useCommunity() {
 
   return {
     me,
+    deleteOwnPost,
+    deleteOwnComment,
     meLoading: meResult.fetching,
     meError: meResult.error,
     retryMe: () => reexecuteMe({ requestPolicy: 'network-only' }),
     meTimelinePosts,
     feed,
+    loadMoreFeed: () => setFeedTake(current => current + PAGE_SIZE),
+    feedHasMore: (feedResult.data?.feed.length ?? 0) >= feedTake,
     feedLoading: feedResult.fetching,
     feedError: feedResult.error,
     retryFeed: () => reexecuteFeed({ requestPolicy: 'network-only' }),
     followingFeed,
+    loadMoreFollowing: () => setFollowingTake(current => current + PAGE_SIZE),
+    followingHasMore: (followingFeedResult.data?.followingFeed.length ?? 0) >= followingTake,
     followingFeedLoading: followingFeedResult.fetching,
     followingFeedError: followingFeedResult.error,
     retryFollowingFeed: () => reexecuteFollowingFeed({ requestPolicy: 'network-only' }),
@@ -670,7 +698,9 @@ export function useCommunity() {
     people,
     peopleLoading: peopleResult.fetching,
     peopleError: peopleResult.error,
+    retryPeople: () => reexecutePeople({ requestPolicy: "network-only" }),
     setPeopleQuery,
+    setDiscoverPeople,
     conversations,
     conversationsLoading: conversationsResult.fetching,
     conversationsError: conversationsResult.error,

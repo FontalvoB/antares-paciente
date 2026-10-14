@@ -31537,3 +31537,386 @@ ion-modal.room-test-chat { --border-radius: 26px 26px 0 0; --background: var(--w
 .room-chat-welcome { max-width: 330px; padding: 24px 0; }
 .room-chat-welcome h2 { margin: 0; color: var(--navy); font-size: 23px; letter-spacing: -.5px; }
 .room-chat-welcome p { margin: 4px 0 0; font-size: 14px; line-height: 1.7; color: var(--mu); }
+/* El compositor permanece en el área visible, sin desplazarse con el hilo. */
+ion-modal.room-chat-modal {
+  align-items: flex-end;
+  --height: min(82dvh, 760px);
+  --max-height: calc(100dvh - env(safe-area-inset-top));
+}
+ion-modal.room-chat-modal::part(content) { overflow: hidden; }
+.room-chat { box-sizing: border-box; overflow: hidden; }
+.room-chat-head, .room-chat-foot, .room-chat-error, .room-chat-disabled { flex: 0 0 auto; }
+.room-chat-body { flex: 1 1 0; overflow-y: auto; }
+.room-chat-input { overflow-y: auto; }
+.kb-open ion-modal.room-chat-modal {
+  padding-bottom: var(--kb, 0px);
+  --height: min(82dvh, calc(100dvh - var(--kb, 0px) - env(safe-area-inset-top)));
+}
+.kb-open .room-chat-foot { padding-bottom: 10px; }
+/* Comunidad: navegación constante, feed compacto y superficies semánticas. */
+.community-screen { background: var(--g0); color: var(--tx); }
+.community-screen .com-scroll { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+.com-feed-header { padding: calc(18px + env(safe-area-inset-top)) 18px 12px; background: var(--wh); border-bottom: 1px solid var(--bd); }
+.com-feed-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.com-feed-eyebrow { color: var(--mu); font-size: 10px; letter-spacing: .1em; font-weight: 650; }
+.com-feed-heading h1 { font-size: 25px; color: var(--tx); letter-spacing: -.6px; margin: 3px 0 0; }
+.com-create-btn { --background: var(--teal); --color: #fff; --border-radius: 12px; --box-shadow: none; font-size: 13px; min-height: 44px; margin: 0; }
+.com-feed-header .com-me-scope-row { margin: 16px 0 0; padding: 0; justify-content: flex-start; }
+.com-main-nav { position: absolute; z-index: 45; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)); background: var(--wh); border-top: 1px solid var(--bd); }
+.com-main-nav ion-button { flex: 1; min-width: 0; margin: 0; --color: var(--mu); --background-hover: var(--g1); --border-radius: 12px; height: 52px; }
+.com-main-nav ion-button::part(native) { flex-direction: column; gap: 5px; padding: 4px; }
+.com-main-nav ion-icon { font-size: 21px; }
+.com-main-nav span { font-size: 10px; font-weight: 600; }
+.com-main-nav ion-button.is-current { --color: var(--teal); --background: var(--g1); }
+.community-screen .comfab-wrap { bottom: calc(84px + env(safe-area-inset-bottom)); }
+.community-screen .com-topbar { display: none; }
+.com-load-more { display: flex; justify-content: center; padding: 20px; }
+.com-publish-error { border: 1px solid var(--red); border-radius: 12px; padding: 12px 14px; margin: 12px 16px; color: var(--tx); background: var(--g1); font-size: 13px; line-height: 1.5; }
+.community-screen :is(.com-post,.com-banner,.com-detail,.com-club-card,.com-row,.compf-edit) { background-color: var(--wh); color: var(--tx); border-color: var(--bd); }
+.community-screen :is(.com-post-name,.com-post-body,.com-banner-title,.com-row-name,.compf-name) { color: var(--tx); }
+.community-screen :is(.com-post-time,.com-row-sub,.com-banner-sub,.com-me-bio) { color: var(--mu); }
+.community-screen .com-scope { background: var(--g1); border: 1px solid var(--bd); }
+.community-screen .com-scope-btn { color: var(--mu); min-height: 44px; }
+.community-screen .com-scope-btn.on { color: var(--tx); background: var(--wh); }
+:is(.community-screen,body.community-dark) .poll-opt.mine .poll-opt-text,
+:is(.community-screen,body.community-dark) .poll-opt.mine .poll-opt-pct { color: var(--tx); opacity: 1; }
+body.community-dark :is(.com-feed-header,.com-main-nav,.com-detail,.com-banner) { background: var(--wh); color: var(--tx); }
+body.community-dark :is(.poll-opt,.cpm-drop) { color: var(--tx); border-color: var(--bd); }
+body.community-dark :is(.com-post-act,.com-c-actions button,.com-row-sub,.com-net-sub) { color: var(--mu); opacity: 1; }
+body.community-dark .compf-cover ~ .compf-bio { color: var(--mu); }
+body.community-dark .com-main-nav ion-button.is-current { --color: #c1d9eb; }
+body.community-dark .com-feed-eyebrow { color: #b5c2d4; }
+.com-main-nav .com-nav-content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: 100%; }
+.community-screen .com-hamb { bottom: calc(84px + env(safe-area-inset-bottom)); }
+body.community-dark .poll-head { color: #c5b5e9; }
+/* Comunidad: barra limpia con una sola selección y acciones cómodas al tacto. */
+.com-main-nav { padding: 7px 8px calc(9px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgb(0 0 0 / 4%); }
+.com-main-nav ion-button { position: relative; height: 58px; --border-radius: 0; --background: transparent; --background-hover: transparent; --background-focused: transparent; --background-activated: transparent; --color: var(--mu); }
+.com-main-nav ion-button.is-current { --background: transparent; --color: var(--teal); }
+.com-main-nav ion-button.is-current::after { content: ''; position: absolute; top: 0; left: 36%; right: 36%; height: 3px; background: var(--teal); border-radius: 4px; }
+.com-main-nav .com-nav-content { gap: 6px; }
+.com-main-nav .com-nav-content > span { font-size: 11px; font-weight: 600; letter-spacing: 0; }
+.com-main-nav ion-icon { font-size: 25px; }
+.community-screen .com-post-actions { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-top: 0; }
+.community-screen .com-post-actions button.com-act-btn { min-width: 52px; min-height: 48px; padding: 10px 12px; gap: 9px; font-size: 16px; border-radius: 14px; color: var(--tx); }
+.community-screen .com-post-actions button.com-act-btn .com-react-ico { font-size: 25px; width: 25px; height: 25px; }
+.community-screen .com-post-actions .com-react-count { font-size: 15px; font-weight: 650; }
+.community-screen .com-post-actions button.com-act-btn.like.on { color: var(--red); }
+.community-screen .com-post-actions button.com-act-btn:active { background: var(--g1); }
+.community-screen .com-post-actions button.com-act-btn:last-child { margin-left: auto; }
+.com-delete-post { --color: var(--mu); --border-radius: 12px; width: 44px; height: 44px; min-width: 44px; margin: 0; }
+.com-delete-post ion-icon { font-size: 21px; }
+
+.com-main-nav ion-button.is-current .com-nav-content { color: var(--teal); }
+body.community-dark .com-main-nav ion-button.is-current .com-nav-content { color: #8ce2cf; }
+body.community-dark .com-main-nav ion-button.is-current::after { background: #8ce2cf; }
+
+/* Compact post toolbar: generous targets without a tall footer. */
+.community-screen .com-post-actions { padding: 3px 12px; gap: 6px; }
+.community-screen .com-post-actions button.com-act-btn { min-height: 44px; min-width: 44px; padding: 6px 8px; gap: 8px; }
+.community-screen .com-post-actions button.com-act-btn.repost.on,
+.com-detail .com-post-actions button.com-act-btn.repost.on { color: #16a477; font-weight: 800; }
+.community-screen .com-post-actions button.com-act-btn.repost.on .com-react-ico,
+.com-detail .com-post-actions button.com-act-btn.repost.on .com-react-ico { filter: drop-shadow(.5px 0 currentColor) drop-shadow(-.5px 0 currentColor); }
+
+/* Comments use one quiet surface and one scroll region. */
+.com-comments-modal .com-detail { background: var(--wh); overflow-y: auto; gap: 0; }
+.com-comments-modal .com-detail-post { border: 0; border-radius: 0; box-shadow: none; padding: 18px 0 8px; margin-top: 0; flex-shrink: 0; animation: none; }
+.com-comments-modal .com-detail-comments { overflow: visible; flex: 1 0 auto; border: 0; border-radius: 0; box-shadow: none; padding: 8px 0 20px; margin-top: 0; animation: none; }
+.com-comments-modal .com-cmt-head { border: 0; padding: 12px 0; }
+.com-comments-modal .com-cmt-title { font-size: 16px; font-weight: 700; }
+.com-comments-modal .com-cmt-count { background: transparent; color: var(--mu); padding: 0; font-size: 14px; font-weight: 500; }
+.com-comments-modal .com-post-actions { display: flex; align-items: center; gap: 8px; padding: 8px 0 0; border: 0; }
+.com-comments-modal .com-act-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; gap: 8px; padding: 6px 8px; font-size: 15px; color: var(--tx); }
+.com-comments-modal .com-react-ico { width: 25px; height: 25px; font-size: 25px; }
+.com-comments-modal .com-act-btn.like.on { color: #e65353; }
+.com-comments-modal .com-detail-input { position: sticky; bottom: 0; flex-shrink: 0; margin-top: auto; border-radius: 16px; box-shadow: none; background: var(--g1); }
+.com-comments-modal .com-detail-msg { padding: 28px 8px; color: var(--mu); text-align: center; }
+
+/* Comment actions: reset browser button chrome and align the icon rhythm. */
+.com-c-actions { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.com-c-actions :is(.com-c-likebtn,.com-c-reportbtn) { appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 40px; min-height: 40px; margin: 0; padding: 8px; border: 0; border-radius: 10px; background: transparent; color: var(--mu); font: inherit; cursor: pointer; }
+.com-c-actions :is(.com-c-likebtn,.com-c-reportbtn) ion-icon { background: transparent; color: inherit; }
+.com-c-actions .com-c-likebtn.on { color: #e65353; }
+.com-c-actions :is(.com-c-likebtn,.com-c-reportbtn):active { background: var(--g1); }
+.com-c-actions :is(.com-c-likebtn,.com-c-reportbtn):focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.com-c-actions .com-c-replybtn { --color: var(--mu); --padding-start: 0; --padding-end: 8px; margin: 0; min-height: 40px; font-size: 13px; font-weight: 600; }
+
+/* Discovery: compact people rows with a clear trailing action. */
+.community-screen .com-row.amg-row { flex-direction: row; align-items: center; gap: 12px; padding: 16px; margin: 0 14px 10px; border-radius: 18px; box-shadow: none; border: 1px solid var(--bd); }
+.community-screen .amg-head { flex: 1; min-width: 0; gap: 12px; }
+.community-screen .amg-head > :first-child { flex-shrink: 0; }
+.community-screen .amg-name { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 14px; line-height: 1.35; font-weight: 650; }
+.community-screen .amg-sub { font-size: 12px; margin-top: 4px; }
+.community-screen .amg-foot { flex-shrink: 0; justify-content: flex-end; gap: 4px; max-width: 42%; }
+.community-screen .amg-foot ion-button { --background: var(--teal); --color: #fff; --box-shadow: none; --border-radius: 12px; --padding-start: 12px; --padding-end: 12px; min-height: 40px; height: 40px; margin: 0; font-size: 12px; font-weight: 650; }
+.community-screen .amg-foot ion-button[fill="outline"] { --background: transparent; --color: var(--tx); --border-color: var(--bd); }
+.community-screen .amg-foot ion-button ion-icon { font-size: 17px; }
+.community-screen .amg-tabs { justify-content: stretch; padding: 0 16px 16px; }
+.community-screen .amg-tabs .com-scope { display: flex; width: 100%; padding: 0; background: transparent; border: 0; border-radius: 0; gap: 20px; }
+.community-screen .amg-tabs .com-scope-btn { flex: 1; justify-content: center; border-radius: 0; border: 0; border-bottom: 2px solid transparent; background: transparent; box-shadow: none; padding: 12px 4px; font-size: 14px; color: var(--mu); }
+.community-screen .amg-tabs .com-scope-btn.on { color: var(--tx); border-bottom-color: var(--teal); background: transparent; box-shadow: none; }
+.community-screen .amg-count { background: transparent; color: var(--mu); font-size: 12px; font-weight: 500; padding: 0 2px; }
+
+.club-category-bar { display: flex; gap: 6px; padding: 0 14px 10px; overflow: hidden; align-items: center; }
+.club-category-bar > * { flex-shrink: 0; min-width: 0; max-width: 42%; }
+.club-category-bar > :last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.profile-timeline { padding: 0 16px 24px; }
+.profile-timeline article { border-bottom: 1px solid var(--bd); padding: 16px 0; }
+.profile-timeline-post { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 0; border: 0; background: transparent; color: var(--tx); text-align: left; font: inherit; cursor: pointer; }
+.profile-timeline-post > :first-child { flex-shrink: 0; }
+.profile-timeline-content { flex: 1; min-width: 0; }
+.profile-timeline-author { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: 13px; line-height: 1.5; }
+.profile-timeline-author strong { font-weight: 700; }
+.profile-timeline-author > span { color: var(--mu); font-size: 12px; }
+.profile-timeline-body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.55; margin-top: 4px; }
+.profile-timeline-media { display: block; width: 100%; max-height: 360px; object-fit: cover; margin-top: 12px; border-radius: 14px; }
+.profile-timeline-repost { display: flex; align-items: center; gap: 6px; color: var(--mu); font-size: 12px; padding-left: 52px; margin-bottom: 8px; }
+.profile-timeline-poll { display: grid; gap: 6px; margin-top: 12px; }
+.profile-timeline-poll > div { padding: 10px 12px; border: 1px solid var(--bd); border-radius: 10px; font-size: 13px; }
+.profile-timeline-stats { display: flex; gap: 28px; color: var(--mu); margin-top: 12px; }
+.profile-timeline-stats span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; }
+.profile-timeline-stats ion-icon { font-size: 20px; }
+.profile-timeline-post:focus-visible { outline: 2px solid var(--teal); outline-offset: 5px; border-radius: 8px; }
+
+/* A calm branded canvas for the community feed. */
+.community-feed-active .com-scroll { background: radial-gradient(ellipse at 0 0, rgba(42,172,158,.12), transparent 55%), radial-gradient(ellipse at 100% 35%, rgba(91,136,193,.09), transparent 55%), var(--g0); }
+.community-feed-active .com-feed-header { position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(120deg, color-mix(in srgb, var(--wh) 90%, #a8e4d8), var(--wh) 70%); border-bottom: 1px solid var(--bd); padding: 22px 18px 18px; animation: community-brand-enter .4s ease-out both; }
+.com-brand-lockup { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.com-brand-mark { display: grid; place-items: center; width: 50px; height: 50px; flex-shrink: 0; border-radius: 16px; background: rgba(255,255,255,.88); box-shadow: 0 3px 14px rgba(0,84,77,.06); }
+.com-brand-mark img { width: 46px; height: 46px; object-fit: contain; }
+.community-feed-active .com-feed-eyebrow { letter-spacing: .12em; font-size: 9px; }
+.community-feed-active .com-feed-heading h1 { font-size: 24px; margin-top: 2px; }
+.community-feed-active .com-feed-header::after { content: ''; position: absolute; z-index: -1; width: 210px; height: 210px; right: -70px; top: -110px; border: 1px solid rgba(38,161,143,.14); border-radius: 50%; box-shadow: 0 0 0 24px rgba(38,161,143,.035), 0 0 0 48px rgba(38,161,143,.025); animation: community-brand-breathe 9s ease-in-out infinite; pointer-events: none; }
+body.community-dark .community-feed-active .com-feed-header { background: linear-gradient(120deg, #193535, var(--wh) 75%); }
+.community-feed-active .com-create-btn { font-size: 12px; --padding-start: 12px; --padding-end: 12px; }
+@keyframes community-brand-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes community-brand-breathe { 0%,100% { transform: scale(1); opacity: .65; } 50% { transform: scale(1.12); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .community-feed-active .com-feed-header, .community-feed-active .com-feed-header::after { animation: none; } }
+
+/* Branded texture continues behind refresh and the feed cards. */
+.community-feed-active .com-scroll {
+  background-image:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--teal) 13%, transparent) 1px, transparent 1.5px),
+    radial-gradient(ellipse at 0 15%, rgba(42,172,158,.14), transparent 55%),
+    radial-gradient(ellipse at 100% 55%, rgba(91,136,193,.12), transparent 55%);
+  background-size: 22px 22px, 100% 900px, 100% 1100px;
+  background-color: var(--g0);
+}
+.community-feed-active .com-feed-tools { position: relative; background: transparent; }
+.community-feed-active .com-feed-tools::before { content: ''; flex: 1; height: 1px; margin-right: 16px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--teal) 24%, transparent)); pointer-events: none; }
+body.community-dark .community-feed-active .com-scroll { background-color: #101c26; }
+
+/* Personal profile: identity first, actions once, timeline close at hand. */
+.compf-personal .compf-cover { height: 92px; border-radius: 0 0 22px 22px; }
+.compf-personal .compf-cover-kicker { display: none; }
+.compf-identity { display: flex; align-items: center; gap: 14px; padding: 18px 18px 0; }
+.compf-identity > :first-child { flex-shrink: 0; }
+.compf-identity-text { flex: 1; min-width: 0; }
+.compf-identity-name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.compf-identity-name > span:first-child { font-size: 19px; font-weight: 750; line-height: 1.25; color: var(--tx); }
+.compf-identity-name .chip { font-size: 10px; padding: 3px 7px; }
+.compf-handle { font-size: 12px; color: var(--mu); margin-top: 5px; overflow-wrap: anywhere; }
+.compf-personal .compf-bio { text-align: left; margin: 16px 18px 6px; padding: 0; font-size: 14px; line-height: 1.5; color: var(--tx); }
+.compf-secondary-meta { display: flex; gap: 7px; padding: 0 18px; font-size: 10px; color: var(--mu); }
+.compf-stat-buttons { display: flex; gap: 0; padding: 16px 18px 12px; }
+.compf-stat-buttons > * { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; border: 0; background: transparent; color: var(--mu); font: inherit; font-size: 12px; padding: 8px 2px; }
+.compf-stat-buttons b { color: var(--tx); font-size: 15px; }
+.compf-stat-buttons button { cursor: pointer; border-radius: 10px; }
+.compf-stat-buttons button:active { background: var(--g1); }
+.compf-personal-actions { display: flex; gap: 8px; align-items: center; padding: 0 18px 18px; }
+.compf-personal-actions ion-button { margin: 0; height: 44px; --box-shadow: none; --border-radius: 12px; }
+.compf-personal-actions .compf-publish { flex: 1; --background: var(--teal); --color: #fff; font-size: 14px; font-weight: 650; }
+.compf-personal-actions .compf-utility { width: 44px; --background: var(--wh); --color: var(--tx); }
+.compf-personal-actions .compf-utility ion-icon { font-size: 20px; width: 20px; height: 20px; }
+.compf-personal .compf-tabs { margin-top: 0; }
+@media (max-width: 350px) { .compf-stat-buttons > * { flex-direction: column; gap: 3px; } }
+
+.compf-profile-menu { flex-shrink: 0; margin: 0; width: 40px; height: 40px; --padding-start: 8px; --padding-end: 8px; --color: var(--mu); }
+.compf-profile-menu ion-icon { width: 22px; height: 22px; font-size: 22px; }
+.community-screen .compf-tabs { display: flex; justify-content: stretch; gap: 0; padding: 0 16px; margin-top: 4px; background: transparent; border-top: 0; border-bottom: 1px solid var(--bd); }
+.community-screen .compf-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 12px 4px; margin: 0; border-radius: 0; background: transparent; color: var(--mu); border: 0; border-bottom: 2px solid transparent; font-size: 13px; font-weight: 600; box-shadow: none; }
+.community-screen .compf-tab.on { color: var(--tx); border-bottom-color: var(--teal); background: transparent; }
+.community-screen .compf-tab ion-icon { font-size: 18px; width: 18px; height: 18px; }
+
+.compf-secondary-meta { align-items: center; gap: 8px; margin-top: 10px; }
+.compf-brand-badge, .compf-points-badge { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; border-radius: 10px; padding: 4px 9px; font-size: 10px; letter-spacing: .025em; }
+.compf-brand-badge { color: var(--tx); background: var(--wh); border: 1px solid var(--bd); font-weight: 650; }
+.compf-brand-badge img { width: 22px; height: 22px; object-fit: contain; }
+.compf-points-badge { color: #775008; background: #fff0c9; border: 1px solid #f1d78c; }
+.compf-points-badge ion-icon { width: 16px; height: 16px; font-size: 16px; color: #a87510; }
+.compf-points-badge b { font-size: 12px; }
+body.community-dark .compf-points-badge { background: #3b321e; border-color: #61502b; color: #f5d98d; }
+body.community-dark .compf-points-badge ion-icon { color: #f5cc64; }
+body.community-dark .compf-brand-badge img { background: #edf8f4; border-radius: 6px; }
+
+/* Profile editor: one calm surface and one entrance, without chained animations. */
+.compf-edit-screen { padding: 18px 16px 28px; animation: profile-editor-enter 220ms cubic-bezier(.22,1,.36,1) both; }
+.compf-edit-screen .compf-edit { margin: 0; padding: 0; background: transparent; border-radius: 0; box-shadow: none; animation: none; }
+.compf-edit-screen .compf-edit-head { margin-bottom: 22px; }
+.compf-edit-screen .compf-edit-title { font-size: 24px; font-weight: 700; letter-spacing: -.5px; color: var(--tx); }
+.compf-edit-screen .compf-edit-sub { font-size: 13px; font-weight: 400; margin-top: 6px; line-height: 1.5; }
+.compf-edit-screen .compf-edit-preview { margin-bottom: 66px; }
+.compf-edit-screen .compf-edit-cover { height: 140px; border-radius: 18px; }
+.compf-edit-screen .compf-edit-circle { left: 18px; transform: none; bottom: -42px; }
+.compf-edit-screen .compf-edit-change.cover { min-height: 40px; border-radius: 12px; padding: 8px 12px; background: rgba(10,30,40,.75); font-size: 12px; }
+.compf-edit-screen .compf-edit-change.avatar { width: 38px; height: 38px; background: var(--teal); color: white; }
+.compf-edit-screen .compf-edit-change.avatar ion-icon { width: 18px; height: 18px; font-size: 18px; }
+.compf-edit-screen .compf-edit ion-input.fld, .compf-edit-screen .compf-edit ion-textarea.fld { margin-top: 18px; background: var(--wh); color: var(--tx); border: 1px solid var(--bd); border-radius: 14px; padding: 12px 14px !important; box-shadow: none; --highlight-color-focused: var(--teal); }
+.compf-edit-screen .compf-edit-foot { display: flex; gap: 10px; margin-top: 24px; padding-bottom: 12px; }
+.compf-edit-screen .compf-edit-foot ion-button { flex: 1; height: 46px; margin: 0; --border-radius: 12px; --box-shadow: none; font-size: 14px; font-weight: 650; }
+.compf-edit-screen .compf-edit-save { --background: var(--teal); --color: #fff; }
+.compf-edit-screen .compf-edit-cancel { --border-color: var(--bd); --color: var(--tx); --background: var(--wh); }
+@keyframes profile-editor-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media(prefers-reduced-motion:reduce) { .compf-edit-screen { animation: none; } }
+.community-screen:has(.compf-edit-screen) :is(.comfab-wrap,.com-hamb) { display: none; }
+.compf-edit-screen { padding-bottom: 100px; }
+
+.compf-edit-screen .compf-field-group { margin-top: 20px; }
+.compf-edit-screen .compf-field-group > label { display: block; margin: 0 2px 8px; color: var(--mu); font-size: 12px; line-height: 1.4; font-weight: 650; }
+.compf-edit-screen .compf-field-group ion-input.fld,
+.compf-edit-screen .compf-field-group ion-textarea.fld { margin-top: 0; font-size: 15px; --padding-top: 12px; --padding-bottom: 12px; }
+
+.community-feed-active .com-feed-sticky-tabs { position: sticky; top: 0; z-index: 40; display: flex; margin: 0; padding: 10px 18px; background: var(--wh); border-bottom: 1px solid var(--bd); box-shadow: 0 4px 12px rgb(0 0 0 / 3%); }
+.community-feed-active .com-feed-sticky-tabs .com-scope { margin: 0; }
+
+.community-feed-active .com-feed-sticky-tabs { justify-content: space-between; align-items: center; gap: 8px; padding: 8px 14px; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 0; box-shadow: none; }
+.community-feed-active .com-feed-sticky-tabs .com-scope { flex-shrink: 0; }
+.community-feed-active .com-feed-sticky-tabs .com-scope-btn { padding: 9px 12px; font-size: 12px; min-height: 40px; }
+.community-feed-active .com-feed-refresh { margin: 0; flex-shrink: 0; height: 40px; --padding-start: 6px; --padding-end: 6px; --color: var(--mu); font-size: 12px; font-weight: 600; }
+
+.profile-timeline-stats { margin-left: 52px; margin-top: 6px; gap: 12px; justify-content: space-between; }
+.profile-timeline-stats button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 40px; min-height: 40px; padding: 5px; border: 0; border-radius: 10px; background: transparent; color: var(--mu); font: inherit; font-size: 12px; cursor: pointer; }
+.profile-timeline-stats button.liked { color: #e65353; }
+.profile-timeline-stats button.reposted { color: #16a477; font-weight: 750; }
+.profile-timeline-stats button:active { background: var(--g1); }
+
+.profile-timeline-live-poll { margin: 10px 0 0 52px; }
+/* Profile timeline actions match the feed toolbar. */
+.profile-timeline-stats { gap: 6px; padding: 3px 0; }
+.profile-timeline-stats button { min-width: 44px; min-height: 44px; padding: 6px 8px; gap: 8px; font-size: 15px; font-weight: 650; border-radius: 14px; }
+.profile-timeline-stats button ion-icon { width: 25px; height: 25px; font-size: 25px; }
+.profile-timeline-stats button.reposted ion-icon { filter: drop-shadow(.5px 0 currentColor) drop-shadow(-.5px 0 currentColor); }
+
+.profile-timeline article { position: relative; }
+.profile-timeline-menu { position: absolute; top: 8px; right: -8px; z-index: 1; }
+.profile-timeline article:has(.profile-timeline-repost) .profile-timeline-menu { top: 32px; }
+.profile-timeline-author { padding-right: 32px; }
+
+.com-discover-header { display: flex; align-items: center; padding: 20px 18px 8px; background: transparent; color: var(--tx); }
+.community-screen .com-discover-header .com-banner-title { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; line-height: 1.35; color: var(--tx); }
+.community-screen .com-discover-header .com-banner-title ion-icon { font-size: 22px; color: var(--teal); }
+.community-screen .com-discover-header .com-banner-sub { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--mu); font-size: 13px; font-weight: 400; }
+body.community-dark .com-discover-header .com-banner-title { color: #f1f5f9; }
+body.community-dark .com-discover-header .com-banner-title ion-icon { color: #8ce2cf; }
+body.community-dark .com-discover-header .com-banner-sub { color: #b5c2d4; }
+
+.com-clubs-header, .com-chat-header { justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.com-clubs-header .com-banner-main, .com-chat-header .com-banner-main { flex: 1; min-width: 0; }
+.com-clubs-header > ion-button { margin: 0; flex-shrink: 0; --color: var(--tx); --border-color: var(--bd); --border-radius: 12px; height: 40px; font-size: 11px; }
+.com-chat-header .chat-hero-actions { display: flex; gap: 6px; }
+.com-chat-header .chat-icon-btn { width: 40px; height: 40px; margin: 0; --background: var(--wh); --color: var(--teal); --border-radius: 12px; --box-shadow: none; }
+.com-chat-header .chat-icon-btn ion-icon { font-size: 20px; width: 20px; height: 20px; }
+/* Related community headers, each with its own quiet animated motif. */
+.community-screen .com-discover-header { position: relative; isolation: isolate; overflow: hidden; margin: 12px 14px 16px; padding: 20px 16px; border-radius: 20px; border: 1px solid color-mix(in srgb, var(--teal) 12%, var(--bd)); background: linear-gradient(115deg, color-mix(in srgb, var(--wh) 80%, #bce8db), var(--wh)); }
+.community-screen .com-discover-header::before, .community-screen .com-discover-header::after { content: ''; position: absolute; pointer-events: none; z-index: -1; border-radius: 50%; }
+.community-screen .com-discover-header::before { width: 150px; height: 150px; right: -40px; top: -70px; border: 1px solid rgba(25,148,123,.16); box-shadow: 0 0 0 18px rgba(25,148,123,.04), 0 0 0 36px rgba(25,148,123,.025); animation: community-header-drift 10s ease-in-out infinite; }
+.community-screen .com-discover-header::after { width: 90px; height: 90px; right: 70px; bottom: -74px; background: rgba(25,148,123,.06); animation: community-header-drift 12s ease-in-out infinite reverse; }
+.community-screen .com-clubs-header { background: linear-gradient(115deg, color-mix(in srgb, var(--wh) 82%, #cadcf5), var(--wh)); }
+.community-screen .com-clubs-header::before { width: 130px; height: 130px; border-radius: 28px; right: -28px; top: -65px; border-color: rgba(65,117,183,.17); box-shadow: 0 0 0 18px rgba(65,117,183,.035), 0 0 0 36px rgba(65,117,183,.025); animation-name: community-header-rotate; }
+.community-screen .com-clubs-header::after { background: rgba(65,117,183,.06); border-radius: 22px; }
+.community-screen .com-chat-header { background: linear-gradient(115deg, color-mix(in srgb, var(--wh) 85%, #ddd4f2), var(--wh)); }
+.community-screen .com-chat-header::before { right: 65px; top: -90px; border-color: rgba(122,92,169,.16); box-shadow: 0 0 0 14px rgba(122,92,169,.035), 0 0 0 28px rgba(122,92,169,.025); animation-delay: -3s; }
+.community-screen .com-chat-header::after { right: -12px; background: rgba(122,92,169,.07); }
+body.community-dark .community-screen .com-discover-header { background: linear-gradient(115deg, #193735, var(--wh)); }
+body.community-dark .community-screen .com-clubs-header { background: linear-gradient(115deg, #203149, var(--wh)); }
+body.community-dark .community-screen .com-chat-header { background: linear-gradient(115deg, #302941, var(--wh)); }
+.community-screen .com-discover-header .com-banner-main { position: relative; }
+@keyframes community-header-drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-8px,8px); } }
+@keyframes community-header-rotate { 0%,100% { transform: rotate(12deg); } 50% { transform: translate(-6px,6px) rotate(22deg); } }
+@media (prefers-reduced-motion: reduce) { .community-screen .com-discover-header::before, .community-screen .com-discover-header::after { animation: none; } }
+/* A single gentle entrance when switching community sections. */
+.community-screen .com-discover-header { animation: community-banner-enter 320ms cubic-bezier(.22,1,.36,1) both; }
+@keyframes community-banner-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .community-screen .com-discover-header { animation: none; }
+}
+
+/* One search treatment across Discover, Clubs and Chats. */
+.community-screen .com-search-wrap { margin: 0; padding: 0 16px 16px; }
+.community-screen ion-searchbar.com-searchbar { padding: 0; min-height: 48px; --background: var(--wh); --color: var(--tx); --placeholder-color: var(--mu); --placeholder-opacity: 1; --icon-color: var(--mu); --clear-button-color: var(--mu); --border-radius: 14px; --box-shadow: none; }
+.community-screen ion-searchbar.com-searchbar .searchbar-input-container { height: 48px; }
+.community-screen ion-searchbar.com-searchbar .searchbar-input { min-height: 48px; border: 1px solid var(--bd); border-radius: 14px; padding-inline-start: 44px; font-size: 14px; font-weight: 400; line-height: 1.4; background: var(--wh); color: var(--tx); box-shadow: none; }
+.community-screen ion-searchbar.com-searchbar .searchbar-search-icon { left: 14px; top: 14px; width: 20px; height: 20px; color: var(--mu); }
+.community-screen ion-searchbar.com-searchbar.searchbar-has-focus .searchbar-input { border-color: var(--teal); }
+.community-screen ion-searchbar.com-searchbar input.searchbar-input { padding-left: 44px !important; padding-right: 40px !important; }
+
+/* Shared app canvas, with clear surfaces above the subtle brand texture. */
+.screen > .screen-scroll {
+  background-color: var(--g0);
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--teal) 13%, transparent) 1px, transparent 1.5px), radial-gradient(ellipse at 0 15%, rgba(42,172,158,.14), transparent 55%), radial-gradient(ellipse at 100% 55%, rgba(91,136,193,.12), transparent 55%);
+  background-size: 22px 22px, 100% 900px, 100% 1100px;
+}
+.community-screen .com-scroll { background-color: var(--g0); background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--teal) 13%, transparent) 1px, transparent 1.5px), radial-gradient(ellipse at 0 15%, rgba(42,172,158,.14), transparent 55%), radial-gradient(ellipse at 100% 55%, rgba(91,136,193,.12), transparent 55%); background-size: 22px 22px, 100% 900px, 100% 1100px; }
+body.community-dark .community-screen .com-scroll { background-color: #101c26; }
+.compf-personal { animation: profile-section-enter 320ms cubic-bezier(.22,1,.36,1) both; }
+.compf-summary { margin: 14px 14px 12px; padding: 0 0 4px; border-radius: 20px; background: var(--wh); border: 1px solid var(--bd); box-shadow: 0 4px 18px rgb(0 0 0 / 3%); }
+.compf-personal .compf-tabs { margin: 0 14px; padding: 0 8px; border-radius: 14px; background: var(--wh); }
+.compf-personal .profile-timeline { padding: 0 14px 24px; }
+.compf-personal .profile-timeline article { background: var(--wh); border: 1px solid var(--bd); border-radius: 18px; margin-top: 12px; padding: 16px 12px 10px; }
+.compf-personal .profile-timeline-menu { right: 4px; }
+@keyframes profile-section-enter { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
+@media (prefers-reduced-motion: reduce) { .compf-personal { animation: none; } }
+
+.profile-feed-list { padding: 12px 0 24px; }
+.profile-feed-item .profile-timeline-repost { padding-left: 30px; margin: 0 0 6px; }
+.profile-feed-item .profile-timeline-repost { display: inline-flex; align-items: center; gap: 7px; margin: 0 14px 8px; padding: 6px 11px; border-radius: 10px; border: 1px solid #b7dfd1; background: #e1f5ec; color: #146b50; font-size: 12px; font-weight: 750; }
+.profile-feed-item .profile-timeline-repost ion-icon { width: 18px; height: 18px; font-size: 18px; filter: drop-shadow(.4px 0 currentColor); }
+body.community-dark .profile-feed-item .profile-timeline-repost { background: #193c32; border-color: #2f6955; color: #91e3bf; }
+.profile-feed-item .profile-timeline-repost { background: transparent; border: 0; border-radius: 0; padding: 2px 4px; }
+body.community-dark .profile-feed-item .profile-timeline-repost { background: transparent; border: 0; }
+/* Cover and identity form one full-width profile banner. */
+.compf-personal .compf-cover { height: 132px; border-radius: 0; }
+.compf-personal .compf-summary { margin: 0 0 16px; padding: 0 0 10px; border: 0; border-radius: 0 0 24px 24px; background: var(--wh); box-shadow: 0 5px 18px rgb(0 0 0 / 4%); }
+.compf-personal .compf-identity { position: relative; align-items: flex-start; padding: 0 20px; gap: 14px; }
+.compf-personal .compf-identity > :first-child { margin-top: -28px; border-radius: 50%; box-shadow: 0 0 0 4px var(--wh); }
+.compf-personal .compf-identity-text { padding-top: 14px; }
+.compf-personal .compf-profile-menu { margin-top: 8px; }
+.compf-personal .compf-bio { margin: 16px 20px 6px; }
+.compf-personal .compf-secondary-meta { padding-inline: 20px; }
+.compf-personal .compf-stat-buttons { padding-inline: 20px; }
+.compf-personal .compf-identity { align-items: flex-start; }
+.compf-personal .compf-identity-text { padding-top: 8px; }
+.compf-personal .compf-identity-name { gap: 4px 8px; }
+.compf-personal .compf-handle { margin-top: 3px; }
+.compf-personal .compf-bio { margin-top: 8px; }
+.compf-personal .compf-identity-name .chip { line-height: 1.1; }
+
+.compf-personal .compf-identity { min-height: 48px; }
+.compf-banner-handle { margin: 4px 20px 0; color: var(--mu); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.compf-personal .compf-bio { margin-top: 8px; }
+
+.compf-user-status { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.compf-user-status .compf-handle { margin: 0; font-size: 11px; }
+.compf-user-status .chip { font-size: 10px; line-height: 1.1; padding: 3px 7px; }
+.compf-personal .compf-identity-text { padding-top: 8px; }
+.compf-personal .compf-identity-text { padding-top: 0; margin-top: -8px; }
+.compf-personal .compf-cover { height: 120px; background-size: cover; background-position: center; }
+.compf-personal .compf-identity { min-height: 36px; }
+.compf-personal .compf-bio { margin-top: 2px; }
+/* Keep text below the cover; only the avatar overlaps it. */
+.compf-personal .compf-identity-text { margin-top: 0; padding-top: 10px; }
+.compf-personal .compf-identity { min-height: 0; padding-bottom: 6px; }
+.compf-personal .compf-identity-name > span:first-child { line-height: 1.3; }
+.compf-personal .compf-bio { margin-top: 4px; }
+/* Raise the cover edge while preserving the higher identity placement. */
+.compf-personal .compf-cover { height: 102px; margin-bottom: 18px; }
+.compf-personal .compf-summary { margin-top: -18px; }
+.compf-personal .compf-identity { padding-top: 18px; }
+.compf-personal .compf-identity-text { margin-top: -8px; padding-top: 0; }
+.compf-personal .compf-identity > :first-child { margin-top: -46px; }
+.compf-personal .compf-identity > :first-child { margin-top: -28px; }

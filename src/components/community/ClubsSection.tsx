@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSubscription } from "urql";
-import { IonButton, IonIcon, IonSearchbar } from "@ionic/react";
+import { IonActionSheet, IonButton, IonIcon, IonSearchbar } from "@ionic/react";
 import {
   albumsOutline,
   arrowBack,
@@ -76,6 +76,14 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
      recomendador de clubes. null = sin plan o fallo → sin insignia. */
   const [condition, setCondition] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [categorySlots, setCategorySlots] = useState(2);
+  const categoryBar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = categoryBar.current; if (!el) return;
+    const observer = new ResizeObserver(([entry]) => setCategorySlots(Math.max(1, Math.min(CLUB_CATEGORIES.length, Math.floor((entry.contentRect.width - 145) / 105)))));
+    observer.observe(el); return () => observer.disconnect();
+  }, []);
   const [category, setCategory] = useState<string>("all");
   const [onlyMine, setOnlyMine] = useState(false);
   const [selected, setSelected] = useState<Club | null>(null);
@@ -883,17 +891,11 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
 
   return (
     <>
-      <div
-        style={{
-          padding: "0 14px 8px",
-          display: "flex",
-          gap: 6,
-          alignItems: "center",
-        }}
-      >
-        <h2 style={{ fontSize: 17, fontWeight: 900, margin: 0, flex: 1 }}>
-          {t("Clubes")}
-        </h2>
+      <div className="com-discover-header com-clubs-header">
+        <div className="com-banner-main">
+          <div className="com-banner-title"><IonIcon icon={peopleOutline} />{t("Clubes")}</div>
+          <div className="com-banner-sub"><IonIcon icon={sparklesOutline} />{t("Conecta a través de tus intereses")}</div>
+        </div>
         <IonButton
           size="small"
           fill={onlyMine ? "solid" : "outline"}
@@ -903,35 +905,29 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
           {t("Mis clubes")} ({myClubs.length})
         </IonButton>
       </div>
-      <div style={{ padding: "0 14px 8px" }}>
+      <div className="com-search-wrap">
         <IonSearchbar
+          mode="md"
+          className="com-searchbar"
           value={q}
           onIonInput={(e) => setQ(e.target.value ?? "")}
           placeholder={t("Buscar clubes…")}
         />
       </div>
-      <div
-        style={{
-          display: "flex",
-          gap: 6,
-          overflowX: "auto",
-          padding: "0 14px 10px",
-        }}
-      >
-        <Chip
-          active={category === "all"}
-          label={t("Todos")}
-          onClick={() => setCategory("all")}
-        />
-        {CLUB_CATEGORIES.map((c) => (
-          <Chip
-            key={c}
-            active={category === c}
-            label={t(c)}
-            onClick={() => setCategory(c)}
-          />
+      <div ref={categoryBar} className="club-category-bar">
+        <Chip active={category === "all"} label={t("Todos")} onClick={() => setCategory("all")} />
+        {CLUB_CATEGORIES.slice(0, categorySlots).map(c => (
+          <Chip key={c} active={category === c} label={t(c)} onClick={() => setCategory(c)} />
         ))}
+        {categorySlots < CLUB_CATEGORIES.length && <Chip
+          active={category !== "all" && !CLUB_CATEGORIES.slice(0, categorySlots).some(c => c === category)}
+          label={category !== "all" && !CLUB_CATEGORIES.slice(0, categorySlots).some(c => c === category) ? `${t(category)} ▾` : `${t("Más")} ▾`}
+          onClick={() => setCategoriesOpen(true)} />}
       </div>
+      <IonActionSheet isOpen={categoriesOpen} onDidDismiss={() => setCategoriesOpen(false)} buttons={[
+        ...CLUB_CATEGORIES.map(c => ({text: t(c), handler: () => {setCategory(c); setCategoriesOpen(false)}})),
+        {text: t("Cancelar"), role: "cancel"},
+      ]} />
       <div
         style={{
           display: "flex",

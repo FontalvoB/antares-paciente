@@ -35,7 +35,7 @@ export function PollBlock({
       <div className="poll-head">
         <IonIcon icon={statsChartOutline} /> {t('Encuesta')}
       </div>
-      {poll.options.map((option) => {
+      {[...poll.options].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((option) => {
         const votes = option.votes.length
         const pct = total > 0 ? Math.round((votes / total) * 100) : 0
         const mine = myVote?.id === option.id

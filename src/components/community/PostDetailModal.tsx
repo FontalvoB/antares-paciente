@@ -1,5 +1,6 @@
+import { OwnPostDeleteButton } from "./OwnPostDeleteButton";
 import { CommunityVideo } from "./CommunityVideo";
-import { IonAlert, IonButton, IonIcon, IonModal, IonTextarea } from '@ionic/react'
+import { createAnimation, IonAlert, IonButton, IonIcon, IonModal, IonTextarea } from '@ionic/react'
 import {
   arrowUndo,
   chatbubbleEllipsesOutline,
@@ -11,6 +12,7 @@ import {
   repeat,
   repeatOutline,
   send,
+  trashOutline,
 } from 'ionicons/icons'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useSubscription } from 'urql'
@@ -20,6 +22,24 @@ import type { Comment, Post, Profile, RepostRef } from '../../graphql/community'
 import { useI18n } from '../../i18n/I18nContext'
 import { Avatar, timeAgo } from './community'
 import { PollBlock } from './PollBlock'
+
+// A restrained sheet transition; keep reduced-motion preferences immediate.
+function commentsTransition(baseEl: HTMLElement, opening: boolean) {
+  const root = baseEl.shadowRoot ?? baseEl
+  const wrapper = root.querySelector('.modal-wrapper')
+  const backdrop = root.querySelector('ion-backdrop')
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const animation = createAnimation().duration(reduced ? 0 : opening ? 240 : 180)
+    .easing(opening ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'cubic-bezier(0.4, 0, 1, 1)')
+  if (wrapper) animation.addAnimation(createAnimation().addElement(wrapper)
+    .fromTo('transform', opening ? 'translateY(32px)' : 'translateY(0)', opening ? 'translateY(0)' : 'translateY(24px)')
+    .fromTo('opacity', opening ? '0' : '1', opening ? '1' : '0'))
+  if (backdrop) animation.addAnimation(createAnimation().addElement(backdrop)
+    .fromTo('opacity', opening ? '0' : 'var(--backdrop-opacity)', opening ? 'var(--backdrop-opacity)' : '0'))
+  return animation
+}
+const enterComments = (baseEl: HTMLElement) => commentsTransition(baseEl, true)
+const leaveComments = (baseEl: HTMLElement) => commentsTransition(baseEl, false)
 
 /** Razones de reporte disponibles. */
 const REPORT_REASONS = [
@@ -50,6 +70,7 @@ function CommentItem({
   onOpenProfile,
   onReportComment,
   onToggleCommentLike,
+  onDeleteComment,
 }: {
   comment: Comment
   depth: number
@@ -58,8 +79,11 @@ function CommentItem({
   onReply: (c: Comment) => void
   onOpenProfile?: (profileId: string) => void
   onReportComment?: (commentId: string, reason: string, details?: string) => Promise<{ id: string } | null | undefined>
+  onDeleteComment?: (id: string) => Promise<void>
   onToggleCommentLike?: (commentId: string, liked: boolean) => Promise<{ id: string; likes: { id: string; profileId: string }[] } | null>
 }) {
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const isReply = depth > 0
   const { t } = useI18n()
   const name = comment.profile?.displayName ?? t('Miembro')
@@ -109,17 +133,23 @@ function CommentItem({
           <div className="com-c-body">{comment.body}</div>
           <div className="com-c-actions">
             <IonButton fill="clear" className="com-c-replybtn" onClick={() => onReply(comment)}>
-              <IonIcon icon={arrowUndo} style={{ fontSize: 12, marginRight: 4 }} /> {t('Responder')}
+              <IonIcon icon={arrowUndo} style={{ fontSize: 18, marginRight: 6 }} /> {t('Responder')}
             </IonButton>
             {onToggleCommentLike && (
               <button
                 type="button"
                 className={`com-c-likebtn ${likedByMe ? 'on' : ''}`}
+                aria-label={t(likedByMe ? 'Quitar me gusta' : 'Me gusta')}
                 onClick={() => void onToggleCommentLike(comment.id, !!likedByMe)}
                 aria-pressed={likedByMe}
               >
-                <IonIcon icon={likedByMe ? heart : heartOutline} style={{ fontSize: 14 }} />
+                <IonIcon icon={likedByMe ? heart : heartOutline} style={{ fontSize: 20 }} />
                 {likeCount > 0 && <span>{likeCount}</span>}
+              </button>
+            )}
+            {mine && onDeleteComment && (
+              <button type="button" className="com-c-reportbtn" disabled={deleting} aria-label={t('Eliminar mi comentario')} onClick={() => setDeleteOpen(true)}>
+                <IonIcon icon={trashOutline} style={{fontSize:19}} />
               </button>
             )}
             {onReportComment && (
@@ -129,7 +159,7 @@ function CommentItem({
                 onClick={() => setReportOpen(true)}
                 aria-label={t('Reportar comentario')}
               >
-                <IonIcon icon={flagOutline} style={{ fontSize: 13 }} />
+                <IonIcon icon={flagOutline} style={{ fontSize: 19 }} />
               </button>
             )}
             {replyCount > 0 && (
@@ -163,12 +193,19 @@ function CommentItem({
                 myId={myId}
                 onReply={onReply}
                 onOpenProfile={onOpenProfile}
+                onDeleteComment={onDeleteComment}
                 onReportComment={onReportComment}
                 onToggleCommentLike={onToggleCommentLike}
               />
             ))}
         </div>
       </div>
+      <IonAlert isOpen={deleteOpen} onDidDismiss={() => setDeleteOpen(false)} header={t('Eliminar comentario')}
+        message={t('¿Quieres eliminar tu comentario?')}
+        buttons={[{text:t('Cancelar'),role:'cancel'}, {text:t('Eliminar'),role:'destructive',handler:()=>{
+          setDeleteOpen(false); setDeleting(true)
+          void onDeleteComment?.(comment.id).finally(() => setDeleting(false))
+        }}]} />
       <IonAlert
         isOpen={reportOpen}
         header={t('Reportar comentario')}
@@ -208,12 +245,17 @@ export function PostDetailModal({
   onToast,
   onVotePoll,
   onToggleRepost,
+  onToggleLike,
   onReportPost,
   onReportComment,
   onToggleCommentLike,
+  onDeleteComment,
   onFetchPostReposts,
+  onDeletePost,
   dark = false,
 }: {
+  onToggleLike?: (p: Post) => Promise<void>
+  onDeletePost?: (id: string) => Promise<void>
   post: Post | null
   me?: Profile | null
   onClose: () => void
@@ -228,6 +270,7 @@ export function PostDetailModal({
   onToggleRepost?: (p: Post) => Promise<{ id: string; reposts: RepostRef[] } | null>
   onReportPost?: (postId: string, reason: string, details?: string) => Promise<{ id: string } | null | undefined>
   onReportComment?: (commentId: string, reason: string, details?: string) => Promise<{ id: string } | null | undefined>
+  onDeleteComment?: (id: string) => Promise<void>
   onToggleCommentLike?: (commentId: string, liked: boolean) => Promise<{ id: string; likes: { id: string; profileId: string }[] } | null>
   onFetchPostReposts?: (postId: string) => Promise<Pick<{ id: string; displayName: string; avatarUrl: string | null }, 'id' | 'displayName' | 'avatarUrl'>[]>
   dark?: boolean
@@ -271,6 +314,18 @@ export function PostDetailModal({
     }
   }, [post?.id, refreshPost]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [likeBusy, setLikeBusy] = useState(false)
+  async function handlePostLike() {
+    if (!view || !me || !onToggleLike || likeBusy) return
+    setLikeBusy(true)
+    try {
+      await onToggleLike(view)
+      setView(current => current ? {...current, likes: current.likes.some(l => l.profileId === me.id)
+        ? current.likes.filter(l => l.profileId !== me.id)
+        : [...current.likes, {id: `local-${me.id}`, profileId: me.id}]} : current)
+    } catch (error) { onToast((error as Error).message, 'err') }
+    finally { setLikeBusy(false) }
+  }
   // --- Estado: reporte ---
   const [reportOpen, setReportOpen] = useState(false)
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment'; id: string } | null>(null)
@@ -446,7 +501,9 @@ export function PostDetailModal({
     <IonModal
       isOpen={modalOpen}
       onDidDismiss={handleDidDismiss}
-      className={dark ? 'com-dark-surface' : undefined}
+      enterAnimation={enterComments}
+      leaveAnimation={leaveComments}
+      className={`com-comments-modal ${dark ? 'com-dark-surface' : ''}`}
     >
       <div className="com-detail">
         <div className="com-detail-head">
@@ -467,6 +524,7 @@ export function PostDetailModal({
             </div>
             <div className="com-post-time">{timeAgo(view.createdAt, t)}</div>
           </div>
+          <OwnPostDeleteButton postId={view.id} authorId={view.profile.id} myId={me?.id} onDelete={onDeletePost} onDeleted={onClose} onReport={() => openReport('post', postId)} onToast={onToast} />
           <IonButton
             fill="clear"
             size="small"
@@ -504,14 +562,12 @@ export function PostDetailModal({
             ))}
 
           {/* Acciones del post: like, comentarios, repost, compartir, reportar */}
-          <div className="com-post-actions" style={{ padding: '4px 0 0' }}>
-            <button
-              type="button"
-              className="com-act-btn"
-              onClick={() => openReport('post', postId)}
-              aria-label={t('Reportar publicación')}
-            >
-              <IonIcon className="com-react-ico" icon={flagOutline} />
+          <div className="com-post-actions">
+            <button type="button" className={`com-act-btn like ${view.likes.some(l => l.profileId === me?.id) ? 'on' : ''}`} disabled={!onToggleLike || likeBusy} aria-label={t(view.likes.some(l => l.profileId === me?.id) ? 'Quitar me gusta' : 'Me gusta')} aria-pressed={view.likes.some(l => l.profileId === me?.id)} onClick={() => void handlePostLike()}>
+              <IonIcon className="com-react-ico" icon={view.likes.some(l => l.profileId === me?.id) ? heart : heartOutline} /><span>{view.likes.length}</span>
+            </button>
+            <button type="button" className="com-act-btn" aria-label={t('Comentar')} onClick={() => void taRef.current?.setFocus()}>
+              <IonIcon className="com-react-ico" icon={chatbubbleEllipsesOutline} /><span>{countCommunityComments(comments)}</span>
             </button>
             {onToggleRepost && (
               <button
@@ -557,6 +613,16 @@ export function PostDetailModal({
                   isNew={c.id === freshId}
                   onReply={setReplyTarget}
                   onOpenProfile={onOpenProfile}
+                  onDeleteComment={async (id) => {
+                    try {
+                      await onDeleteComment?.(id)
+                      const remove = (items: Comment[]): Comment[] => items.filter(c => c.id !== id).map(c => ({...c, replies: remove(c.replies ?? [])}))
+                      setComments(current => remove(current))
+                      commentsSinceOpen.current = remove(commentsSinceOpen.current)
+                      if (replyTarget?.id === id) setReplyTarget(null)
+                      onToast(t('Comentario eliminado'), 'ok')
+                    } catch (error) { onToast((error as Error).message, 'err') }
+                  }}
                   onReportComment={onReportComment}
                   onToggleCommentLike={handleCommentLike}
                 />

@@ -1,3 +1,4 @@
+import { ProfileTimeline, type TimelineActions } from "./ProfileTimeline";
 import { IonButton, IonIcon } from '@ionic/react'
 import {
   chatbubbleEllipsesOutline,
@@ -31,6 +32,7 @@ export function MemberProfile({
   onUnfollow,
   onMessage,
   onOpenPost,
+  timelineActions,
 }: {
   profile: Profile
   isFriend: boolean
@@ -42,6 +44,7 @@ export function MemberProfile({
   onFollow: () => void
   onUnfollow: () => void
   onMessage: () => void
+  timelineActions: TimelineActions
   onOpenPost: (p: Post) => void
 }) {
   const [view, setView] = useState<ProfileView>('all')
@@ -51,7 +54,7 @@ export function MemberProfile({
     () =>
       view === 'all'
         ? profile.posts
-        : profile.posts.filter((p) => (view === 'video' ? p.mediaType === 'VIDEO' : p.mediaType !== 'VIDEO')),
+        : profile.posts.filter((p) => (!!p.imageUrl?.trim() && p.mediaType === (view === 'video' ? 'VIDEO' : 'IMAGE'))),
     [profile.posts, view],
   )
 
@@ -161,6 +164,8 @@ export function MemberProfile({
             hint={view === 'all' ? t('Este miembro no ha compartido publicaciones todavía.') : undefined}
           />
         </div>
+      ) : view === 'all' ? (
+        <ProfileTimeline posts={filtered} onOpenPost={onOpenPost} {...timelineActions} />
       ) : (
         <div className="compf-grid">
           {filtered.map((post) => (

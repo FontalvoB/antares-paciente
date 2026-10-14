@@ -1,18 +1,20 @@
-import { IonButton, IonIcon, IonInput, IonTextarea } from '@ionic/react'
+import coppMark from "../../assets/LogoIndividual.png";
+import { sparklesOutline } from "ionicons/icons";
+import { ProfileTimeline, type TimelineActions } from "./ProfileTimeline";
+import { shareCommunityContent } from "../../utils/community-sharing";
+import { IonActionSheet, IonButton, IonIcon, IonInput, IonTextarea } from '@ionic/react'
 import {
   add,
   cameraOutline,
   checkmark,
   createOutline,
+  ellipsisHorizontal,
   documentTextOutline,
   filmOutline,
   gridOutline,
   imagesOutline,
-  peopleOutline,
-  personAddOutline,
   play,
   repeatOutline,
-  ribbonOutline,
   shareSocialOutline,
 } from 'ionicons/icons'
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
@@ -55,6 +57,7 @@ export function CommunityProfile({
   onCompose,
   onShowList,
   onOpenPost,
+  timelineActions,
   onUploadProfileImage,
   onToast,
 }: {
@@ -67,18 +70,18 @@ export function CommunityProfile({
   onSaveProfile: (name: string, bio: string | null, avatarKey?: string | null, coverKey?: string | null) => Promise<void>
   onCompose: () => void
   onShowList: (which: 'followers' | 'following') => void
+  timelineActions: TimelineActions
   onOpenPost: (p: Post) => void
   /** Sube la foto de perfil/portada y devuelve la info (key + URL de lectura). */
   onUploadProfileImage: (kind: 'AVATAR' | 'COVER', file: File) => Promise<{ key: string; readUrl: string }>
   onToast: (msg: string, kind?: 'ok' | 'err' | 'info' | 'warn') => void
 }) {
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [dn, setDn] = useState(me?.displayName ?? '')
   const [bio, setBio] = useState(me?.bio ?? '')
   const [saving, setSaving] = useState(false)
   const [view, setView] = useState<ProfileView>('all')
-  const [editingOut, setEditingOut] = useState(false)
-  const editingBusyRef = useRef(false)
   const [avatarPick, setAvatarPick] = useState<{ file: File; url: string } | null>(null)
   const [coverPick, setCoverPick] = useState<{ file: File; url: string } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
@@ -102,16 +105,9 @@ export function CommunityProfile({
     else setCoverPick({ file, url })
   }
 
-  // Transición con salida/entrada al cambiar entre perfil y edición.
   const goEdit = (next: boolean) => {
-    if (editingBusyRef.current) return
-    editingBusyRef.current = true
-    setEditingOut(true)
-    window.setTimeout(() => {
-      setEditing(next)
-      setEditingOut(false)
-      editingBusyRef.current = false
-    }, 180)
+    if (saving) return
+    setEditing(next)
   }
 
   const handle = useMemo(
@@ -123,7 +119,7 @@ export function CommunityProfile({
     () =>
       view === 'all'
         ? posts
-        : posts.filter((p) => (view === 'video' ? p.mediaType === 'VIDEO' : p.mediaType !== 'VIDEO')),
+        : posts.filter((p) => (!!p.imageUrl?.trim() && p.mediaType === (view === 'video' ? 'VIDEO' : 'IMAGE'))),
     [posts, view],
   )
 
@@ -145,7 +141,7 @@ export function CommunityProfile({
         coverKey = info.key
       }
       await onSaveProfile(dn.trim(), bio.trim() || null, avatarKey, coverKey)
-      goEdit(false)
+      setEditing(false)
       onToast('Perfil actualizado', 'ok')
     } catch (e) {
       onToast((e as Error).message, 'err')
@@ -154,22 +150,19 @@ export function CommunityProfile({
     }
   }
 
-  const composeWrapper = () => onCompose()
 
   async function shareProfile() {
     try {
-      await navigator.clipboard.writeText(`https://antares.bio/${handle}`)
-      onToast(t('Enlace de tu perfil copiado'), 'ok')
-    } catch {
-      onToast(t('Perfil: @') + handle, 'info')
-    }
+      const result = await shareCommunityContent(t('Comunidad Copp Adresd'), `${me?.displayName ?? handle} · COPP-ADRESD\n${me?.bio ?? ''}`)
+      if (result === 'copied') onToast(t('Contenido copiado para compartir'), 'ok')
+    } catch { onToast(t('No se pudo compartir. Inténtalo de nuevo.'), 'err') }
   }
 
   if (editing) {
     const avatarSrc = avatarPick?.url ?? me?.avatarUrl ?? undefined
     const coverSrc = coverPick?.url ?? me?.coverUrl ?? undefined
     return (
-      <div className="prof-view" key="edit" style={{ paddingTop: 12 }}>
+      <div className="compf-edit-screen" key="edit">
         <div className="compf-edit">
           <div className="compf-edit-head">
             <div className="compf-edit-title">{t('Editar perfil')}</div>
@@ -213,27 +206,34 @@ export function CommunityProfile({
           <input ref={avatarInputRef} type="file" accept={PROFILE_IMAGE_TYPES.join(',')} hidden onChange={(e) => pickProfileImage('AVATAR', e)} />
           <input ref={coverInputRef} type="file" accept={PROFILE_IMAGE_TYPES.join(',')} hidden onChange={(e) => pickProfileImage('COVER', e)} />
 
+          <div className="compf-field-group">
+          <label htmlFor="community-display-name">{t('Nombre visible')}</label>
           <IonInput
+            id="community-display-name"
+            aria-label={t('Nombre visible')}
             className="fld"
-            label={t('Nombre visible')}
-            labelPlacement="stacked"
             value={dn}
             onIonInput={(e) => setDn(e.detail.value ?? '')}
           />
+          </div>
+          <div className="compf-field-group">
+          <label htmlFor="community-profile-bio">{t('Sobre mí')}</label>
           <IonTextarea
+            id="community-profile-bio"
+            aria-label={t('Sobre mí')}
             className="fld"
-            label={t('Sobre mí')}
-            labelPlacement="stacked"
             value={bio}
             onIonInput={(e) => setBio(e.detail.value ?? '')}
             autoGrow
+            rows={3}
           />
 
+          </div>
           <div className="compf-edit-foot">
-            <IonButton fill="outline" className="bt bt-mini" onClick={() => goEdit(false)}>
+            <IonButton fill="outline" className="compf-edit-cancel" disabled={saving} onClick={() => goEdit(false)}>
               {t('Cancelar')}
             </IonButton>
-            <IonButton className="bt bt-pur bt-mini" disabled={saving} onClick={() => void save()}>
+            <IonButton className="compf-edit-save" disabled={saving || !dn.trim()} onClick={() => void save()}>
               {saving ? (
                 t('Guardando…')
               ) : (
@@ -249,7 +249,7 @@ export function CommunityProfile({
   }
 
   return (
-    <div className={`prof-view ${editingOut ? 'out' : ''}`} key="main">
+    <div className="prof-view compf-personal" key="main">
       {me?.status === 'BANNED' && (
         <div className="compf-banned" style={{ margin: '6px 16px 10px' }}>
           {t('Tu perfil está suspendido en la comunidad.')}
@@ -265,86 +265,31 @@ export function CommunityProfile({
           <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} /> {t('Mi espacio')}
         </span>
       </div>
-      <div className="compf-avatar-slot">
-        <div className="compf-avatar-wrap">
-          <Avatar
-            name={me?.displayName ?? 'MG'}
-            seedId={me?.id ?? 'me'}
-            size={96}
-            src={me?.avatarUrl}
-            style={{ boxShadow: '0 0 0 4px var(--wh), 0 12px 26px rgba(124,58,237,0.18)' }}
-          />
+      <div className="compf-summary">
+      <div className="compf-identity">
+        <Avatar name={me?.displayName ?? t('Mi perfil')} seedId={me?.id ?? 'me'} size={80} src={me?.avatarUrl} />
+        <div className="compf-identity-text">
+          <div className="compf-identity-name"><span>{me?.displayName ?? t('Mi perfil')}</span></div>
+          <div className="compf-user-status"><span className="compf-handle">@{handle}</span>{me ? statusBadge(me.status, t) : null}</div>
         </div>
+        <IonButton fill="clear" className="compf-profile-menu" aria-label={t('Opciones de perfil')} onClick={() => setProfileMenuOpen(true)}><IonIcon slot="icon-only" icon={ellipsisHorizontal} /></IonButton>
       </div>
-
-      {/* Identidad */}
-      <div className="compf-name-row center">
-        <span className="compf-name-big">{me?.displayName ?? t('Mi perfil')}</span>
-        {me ? statusBadge(me.status, t) : null}
+      <p className="compf-bio">{me?.bio?.trim() || t('Comparte lo que haces con la comunidad.')}</p>
+      <div className="compf-secondary-meta">
+        <span className="compf-brand-badge"><img src={coppMark} alt="" />COPP-ADRESD</span>
+        <span className="compf-points-badge"><IonIcon icon={sparklesOutline} /><b>{formatCount(pointsTotal)}</b><span>pts</span></span>
       </div>
-
-      {meLoading && !me ? (
-        <div className="compf-skel" />
-      ) : (
-        <div className="compf-stats-line">
-          <b>{formatCount(posts.length)}</b> {t('publicaciones')}
-          <span className="compf-sep">·</span>
-          <b>{formatCount(followersCount)}</b> {t('seguidores')}
-          <span className="compf-sep">·</span>
-          <b>{formatCount(followingCount)}</b> {t('siguiendo')}
-        </div>
-      )}
-
-      <div className="compf-meta">
-        <span className="compf-meta-item">
-          <IonIcon icon={ribbonOutline} /> COPP-ADRESD + INFINITO
-        </span>
-        <span className="compf-meta-item">
-          <IonIcon icon={gridOutline} style={{ fontSize: 13 }} /> {pointsTotal} pts
-        </span>
-        <span className="compf-meta-item">
-          <IonIcon icon={checkmark} style={{ fontSize: 14 }} /> @{handle}
-        </span>
+      {meLoading && !me ? <div className="compf-skel" /> : <div className="compf-stat-buttons">
+        <div><b>{formatCount(posts.length)}</b><span>{t('publicaciones')}</span></div>
+        <button type="button" onClick={() => onShowList('followers')}><b>{formatCount(followersCount)}</b><span>{t('seguidores')}</span></button>
+        <button type="button" onClick={() => onShowList('following')}><b>{formatCount(followingCount)}</b><span>{t('siguiendo')}</span></button>
+      </div>}
       </div>
-
-      <p className="compf-bio">
-        {me?.bio?.trim() ? me.bio : t('Comparte lo que haces con la comunidad.')}
-      </p>
-
-      {/* Acciones (estilo Panel + Crear) */}
-      <div className="compf-actions">
-        <IonButton fill="solid" className="compf-action-btn" onClick={() => void shareProfile()}>
-          <IonIcon icon={shareSocialOutline} style={{ marginRight: 5 }} /> {t('Compartir')}
-        </IonButton>
-        <IonButton fill="solid" className="compf-action-btn" onClick={composeWrapper}>
-          <IonIcon icon={add} style={{ marginRight: 5 }} /> {t('Crear')}
-        </IonButton>
-        <IonButton fill="clear" className="compf-action-edit" onClick={() => goEdit(true)} aria-label={t('Editar perfil')}>
-          <IonIcon icon={createOutline} />
-        </IonButton>
-      </div>
-
-      {/* Círculos rápidos */}
-      <div className="compf-circles">
-        <button type="button" className="compf-circle" onClick={() => onShowList('following')}>
-          <span className="compf-circle-ico">
-            <IonIcon icon={personAddOutline} />
-          </span>
-          {t('Siguiendo')}
-        </button>
-        <button type="button" className="compf-circle" onClick={() => onShowList('followers')}>
-          <span className="compf-circle-ico">
-            <IonIcon icon={peopleOutline} />
-          </span>
-          {t('Seguidores')}
-        </button>
-        <button type="button" className="compf-circle" onClick={onCompose}>
-          <span className="compf-circle-ico">
-            <IonIcon icon={gridOutline} />
-          </span>
-          {t('Publicar')}
-        </button>
-      </div>
+      <IonActionSheet isOpen={profileMenuOpen} onDidDismiss={() => setProfileMenuOpen(false)} buttons={[
+        {text: t('Editar perfil'), icon: createOutline, handler: () => {setProfileMenuOpen(false); goEdit(true)}},
+        {text: t('Compartir'), icon: shareSocialOutline, handler: () => {setProfileMenuOpen(false); void shareProfile()}},
+        {text: t('Cancelar'), role: 'cancel'},
+      ]} />
 
       {/* Tabs con filtro */}
       <div className="compf-tabs">
@@ -373,6 +318,8 @@ export function CommunityProfile({
             </IonButton>
           </EmptyState>
         </div>
+      ) : view === 'all' ? (
+        <ProfileTimeline posts={filtered} onOpenPost={onOpenPost} {...timelineActions} />
       ) : (
         <div className="compf-grid">
           {filtered.map((post) => (
