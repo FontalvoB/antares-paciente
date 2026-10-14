@@ -1934,7 +1934,7 @@ why-is-node-running@^2.3.0:
     siginfo "^2.0.0"
     stackback "0.0.2"
 
-wonka@^6.3.2:
+wonka@^6.3.2, wonka@^6.3.6:
   version "6.3.6"
   resolved "https://registry.npmjs.org/wonka/-/wonka-6.3.6.tgz"
   integrity sha512-MXH+6mDHAZ2GuMpgKS055FR6v0xVP3XwquxIMYXgiW+FejHQlMGlvVRZT4qMCxR+bEo/FCtIdKxwej9WV3YQag==
