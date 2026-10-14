@@ -61,6 +61,7 @@ export interface PollVote {
 }
 
 export interface PollOption {
+  position?: number
   id: string
   text: string
   votes: PollVote[]
@@ -327,6 +328,7 @@ const POLL_FRAGMENT = /* GraphQL */ `
     id
     options {
       id
+      position
       text
       votes {
         id
@@ -976,4 +978,12 @@ export const GROUP_CHANGED = /* GraphQL */ `
 export const COMMENT_ADDED_SUBSCRIPTION = /* GraphQL */ `
   subscription CommentAdded { commentAdded { ...CommentFields } }
   ${COMMENT_FRAGMENT}
+`
+
+export const DELETE_OWN_POST = /* GraphQL */ `
+  mutation DeleteOwnPost($id: UUID!) { deletePost(id: $id) { id } }
+`
+
+export const DELETE_OWN_COMMENT = /* GraphQL */ `
+  mutation DeleteOwnComment($id: UUID!) { deleteComment(id: $id) { id } }
 `

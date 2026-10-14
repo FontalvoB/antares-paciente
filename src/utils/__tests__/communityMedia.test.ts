@@ -13,7 +13,7 @@ describe('Community storage on a phone', () => {
     native(); const send = vi.fn().mockResolvedValue({ ok: true }); vi.stubGlobal('fetch', send)
     const file = new File(['png'], 'achievement.png', { type: 'image/png' })
     await uploadCommunityMedia('/storage/community/posts/card.png', file)
-    expect(send).toHaveBeenCalledWith('https://erp.coppadresd.com/storage/community/posts/card.png', {
+    expect(send).toHaveBeenCalledWith('https://erp.coppadresd.com/api/v1/community/storage/community/posts/card.png', {
       method: 'PUT', headers: { 'Content-Type': 'image/png', Authorization: 'Bearer qa-token' }, body: file,
     })
   })
@@ -41,4 +41,17 @@ describe('Community storage on a phone', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 413 }))
     await expect(uploadCommunityMedia('/storage/a.png', new File(['png'], 'a.png'))).rejects.toThrow('413')
   })
+})
+
+it('falls back to the authenticated Community route when bucket CORS rejects the upload', async () => {
+  native(); const send = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValue({ok:true}); vi.stubGlobal('fetch',send)
+  const file = new File(['png'], 'card.png', {type:'image/png'})
+  await uploadCommunityMedia('https://bucket.s3.amazonaws.com/card.png?sig=secret',file,file.type,'community/posts/card.png')
+  expect(send.mock.calls[1][0]).toBe('https://erp.coppadresd.com/api/v1/community/storage/community/posts/card.png')
+  expect(send.mock.calls[1][1].headers.Authorization).toBe('Bearer qa-token')
+})
+
+it('keeps signatures while routing legacy Community media through the Community alias', () => {
+  native()
+  expect(communityMediaUrl('/storage/community/posts/a.mp4?sig=abc&exp=1')).toBe('https://erp.coppadresd.com/api/v1/community/storage/community/posts/a.mp4?sig=abc&exp=1')
 })

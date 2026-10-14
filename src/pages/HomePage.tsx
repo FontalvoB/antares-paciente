@@ -575,7 +575,6 @@ export function HomePage() {
                   <>
                     <span className="hm-metric-val hm-metric-rd">—</span>
                     <span className="hm-metric-lbl">{t(card.label)}</span>
-                    <span className="hm-metric-sub">{t(card.note)}</span>
                   </>
                 ) : (
                   <>

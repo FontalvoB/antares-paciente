@@ -50,7 +50,7 @@ export function MetricHistoryModal({
             {card.kind === 'requires-data' ? (
               <div className="mh-empty">
                 <IonIcon icon={sparkles} />
-                <p>{t(card.note)}</p>
+                <p>{t('Sin datos')}</p>
               </div>
             ) : (
               <>

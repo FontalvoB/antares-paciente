@@ -1,3 +1,5 @@
+import { personOutline } from "ionicons/icons";
+import communityLogo from "../assets/LogoIndividual.png";
 import { newestFirst } from '../utils/community-feed';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -10,7 +12,6 @@ import {
 import {
   arrowBack,
   arrowUp,
-  cameraOutline,
   chatbubbleEllipsesOutline,
   createOutline,
   chatbubblesOutline,
@@ -37,7 +38,6 @@ import {
   useGroupMessageListener,
   type FeedPostView,
 } from "../hooks/useCommunity";
-import { useCoverTint } from "../hooks/useCoverTint";
 import { useQuery, useSubscription } from "urql";
 import {
   POST_ADDED,
@@ -286,10 +286,14 @@ export function CommunityPage() {
     meTimelinePosts,
     feed,
     feedLoading,
+    feedHasMore,
+    loadMoreFeed,
     feedError,
     retryFeed,
     followingFeed,
     followingFeedLoading,
+    followingHasMore,
+    loadMoreFollowing,
     followingFeedError,
     retryFollowingFeed,
     friends,
@@ -298,17 +302,18 @@ export function CommunityPage() {
     retryFriends,
     peopleFollowing,
     followers,
-    followersLoading,
-    followersError,
-    retryFollowers,
     people,
     peopleLoading,
     peopleError,
+    retryPeople,
     setPeopleQuery,
+    setDiscoverPeople,
     conversations,
     conversationsLoading,
     conversationsError,
     refetchConversations,
+    deleteOwnPost,
+    deleteOwnComment,
     createPost,
     createPollPost,
     votePoll,
@@ -338,26 +343,6 @@ export function CommunityPage() {
     leaveGroup,
     sendGroupMessage,
   } = useCommunity();
-
-  const coverTint = useCoverTint(me?.coverUrl);
-  const heroCss = useMemo(() => {
-    const [cr, cg, cb] = coverTint.rgb;
-    // Adónde se funde el hero en modo claro: el mismo gris del fondo del feed
-    // (#d9dfe8) para que el degradado termine sin costura.
-    const LIGHT: [number, number, number] = [217, 223, 232];
-    const mixToBg = (t: number): string => {
-      const c = [cr, cg, cb].map((v, i) => Math.round(v + (LIGHT[i] - v) * t));
-      return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-    };
-    return {
-      "--me-cover-end": `rgb(${cr}, ${cg}, ${cb})`,
-      "--me-bg": `linear-gradient(180deg, ${mixToBg(0)} 0%, ${mixToBg(0.55)} 52%, ${mixToBg(1)} 100%)`,
-      "--me-on": coverTint.dark ? "#ffffff" : "#14213b",
-      "--me-on-soft": coverTint.dark
-        ? "rgba(255, 255, 255, 0.82)"
-        : "rgba(20, 33, 59, 0.82)",
-    } as React.CSSProperties;
-  }, [coverTint]);
 
   const [tab, setTab] = useState<
     "feed" | "perfil" | "chat" | "amigos" | "redes" | "clubes"
@@ -484,9 +469,9 @@ export function CommunityPage() {
     () => new Set(peopleFollowing.map((p) => p.id)),
     [peopleFollowing],
   );
-  const recommended = followers.filter(
-    (f) => !friends.some((x) => x.id === f.id),
-  );
+  useEffect(() => { setDiscoverPeople(tab === "amigos"); }, [tab, setDiscoverPeople]);
+  const recommended = people.filter(person => person.profile.id !== me?.id && !person.isFollowing)
+    .map(person => person.profile);
   const profileIsFriend =
     profile != null && friends.some((x) => x.id === profile.id);
   const profileFollowingBack = profile != null && followedIds.has(profile.id);
@@ -516,19 +501,12 @@ export function CommunityPage() {
   const heroRef = useRef<HTMLDivElement | null>(null);
   const [topbarOn, setTopbarOn] = useState(false);
   const topbarOnRef = useRef(false);
-  const [fabHidden, setFabHidden] = useState(false);
-  const fabHiddenRef = useRef(false);
-  fabHiddenRef.current = fabHidden;
-  const [hambHidden, setHambHidden] = useState(false);
-  const hambHiddenRef = useRef(false);
-  hambHiddenRef.current = hambHidden;
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     let raf = 0;
     let heroH = 0;
     let lastY = el.scrollTop;
-    let upAcc = 0;
     const onScroll = () => {
       const st = el.scrollTop;
       const hero = heroRef.current;
@@ -557,24 +535,6 @@ export function CommunityPage() {
       if (on !== topbarOnRef.current) {
         topbarOnRef.current = on;
         setTopbarOn(on);
-      }
-      // Oculta el FAB y el hamburger al bajar; los muestra al subir (o al
-      // estar en el tope).
-      if (st < 26) {
-        upAcc = 0;
-        if (fabHiddenRef.current) setFabHidden(false);
-        if (hambHiddenRef.current) setHambHidden(false);
-      } else if (delta > 0) {
-        upAcc = 0;
-        if (!fabHiddenRef.current) setFabHidden(true);
-        if (!hambHiddenRef.current) setHambHidden(true);
-      } else {
-        upAcc += -delta;
-        if (upAcc >= 40) {
-          upAcc = 0;
-          if (fabHiddenRef.current) setFabHidden(false);
-          if (hambHiddenRef.current) setHambHidden(false);
-        }
       }
     };
     el.addEventListener("scroll", onScroll, { passive: true });
@@ -716,6 +676,7 @@ export function CommunityPage() {
       window.setTimeout(() => setThemeAnim(false), 520);
       return;
     }
+    if (a === "amigos") setAmigosTab("sugerencias");
     handleTab(a);
     window.setTimeout(
       () => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" }),
@@ -740,7 +701,7 @@ export function CommunityPage() {
       ) : me && me.status === "BANNED" ? (
         <BannedScreen reason={me.banReason} />
       ) : (
-        <Screen hideNav className={comDark ? "com-dark" : undefined}>
+        <Screen hideNav className={`community-screen${comDark ? " com-dark" : ""}${tab === "feed" && !viewingId ? " community-feed-active" : ""}`}>
           <Scroll
             ref={scrollRef}
             noNav
@@ -789,7 +750,7 @@ export function CommunityPage() {
                         name={row.displayName}
                         seedId={row.id}
                         src={row.avatarUrl}
-                        sub={row.bio?.trim() || t("Sin bio")}
+                        sub={row.bio?.trim() || undefined}
                         onClick={() => {
                           openProfile(row.id);
                           setMemberList(null);
@@ -859,6 +820,7 @@ export function CommunityPage() {
                   ) : (
                     <>
                       <MemberProfile
+                        timelineActions={{onDeletePost: deleteOwnPost, onReportPost: reportPost, onVotePoll: votePoll, myId: me?.id, onToggleLike: handleToggleLike, onToggleRepost: toggleRepost, onToast: showToast}}
                         profile={profile}
                         isFriend={profileIsFriend}
                         isFollowingBack={profileFollowingBack}
@@ -888,58 +850,10 @@ export function CommunityPage() {
               <>
                 {tab === "feed" && (
                   <>
-                    <div className="com-me-hero" ref={heroRef} style={heroCss}>
-                      <div
-                        className="compf-cover com-me-cover"
-                        style={
-                          me?.coverUrl
-                            ? {
-                                backgroundImage: `url(${me.coverUrl})`,
-                                backgroundSize: "cover",
-                                backgroundPosition: "center",
-                              }
-                            : undefined
-                        }
-                      >
-                        <span className="compf-cover-kicker">
-                          <IonIcon
-                            icon={cameraOutline}
-                            style={{ fontSize: 14 }}
-                          />{" "}
-                          {t("Mi espacio")}
-                        </span>
-                      </div>
-                      <div className="com-me-avatar-slot">
-                        <Avatar
-                          name={me?.displayName ?? "AT"}
-                          seedId={me?.id ?? "me"}
-                          size={86}
-                          src={me?.avatarUrl}
-                          style={{
-                            boxShadow:
-                              "0 0 0 4px var(--wh), 0 12px 26px rgba(124,58,237,0.18)",
-                          }}
-                        />
-                      </div>
-                      {me ? (
-                        <div className="com-me-name">{me.displayName}</div>
-                      ) : meLoading ? (
-                        <IonSkeletonText
-                          style={{ width: 150, height: 18, margin: "0 auto" }}
-                          animated
-                        />
-                      ) : (
-                        <div className="com-me-name">{t("Bienvenido")}</div>
-                      )}
-                      <div className="com-me-kicker">
-                        COPP-ADRESD + INFINITO
-                      </div>
-                      <p className="com-me-bio">
-                        {me?.bio?.trim()
-                          ? me.bio
-                          : t("Comparte lo que haces con la comunidad.")}
-                      </p>
-                      <div className="com-me-scope-row">
+                    <div className="com-feed-header" ref={heroRef}>
+                      <div className="com-feed-heading"><div className="com-brand-lockup"><span className="com-brand-mark"><img src={communityLogo} alt="COPP-ADRESD" /></span><div><span className="com-feed-eyebrow">COPP-ADRESD</span><h1>{t("Comunidad")}</h1></div></div><IonButton className="com-create-btn" onClick={() => setComposeOpen(true)}><IonIcon icon={createOutline} slot="start" />{t("Publicar")}</IonButton></div>
+                    </div>
+                      <div className="com-me-scope-row com-feed-sticky-tabs">
                         <div className="com-scope">
                           <button
                             type="button"
@@ -959,7 +873,7 @@ export function CommunityPage() {
                           </button>
                         </div>
                       </div>
-                    </div>
+
 
                     {newPostsCount > 0 && (
                       <div
@@ -1000,11 +914,6 @@ export function CommunityPage() {
                       </div>
                     )}
 
-                    <div className="com-feed-tools">
-                      <IonButton fill="clear" disabled={feedLoading || followingFeedLoading} onClick={() => {
-                        retryFeed(); retryFollowingFeed();
-                      }}>{t("Actualizar")}</IonButton>
-                    </div>
                     {feedScope === "forYou" ? (
                       feedError && clubFeed.length === 0 ? (
                         <ErrorCard
@@ -1120,6 +1029,7 @@ export function CommunityPage() {
                             />
                           ) : (
                             <PostCard
+                              onDeletePost={deleteOwnPost}
                               key={item.key}
                               index={i}
                               view={item.view}
@@ -1171,6 +1081,7 @@ export function CommunityPage() {
                     ) : (
                       followingFeed.map((view, i) => (
                         <PostCard
+                          onDeletePost={deleteOwnPost}
                           key={view.post.id}
                           index={i}
                           view={view}
@@ -1191,6 +1102,8 @@ export function CommunityPage() {
                     )}
                   </>
                 )}
+
+                {tab === "feed" && !viewingId && (feedScope === "forYou" ? feedHasMore : followingHasMore) && <div className="com-load-more"><IonButton fill="outline" disabled={feedScope === "forYou" ? feedLoading : followingFeedLoading} onClick={() => feedScope === "forYou" ? loadMoreFeed() : loadMoreFollowing()}>{t("Cargar más publicaciones")}</IonButton></div>}
 
                 {tab === "perfil" && (
                   <div
@@ -1238,7 +1151,7 @@ export function CommunityPage() {
                               name={f.displayName}
                               seedId={f.id}
                               src={f.avatarUrl}
-                              sub={f.bio?.trim() || t("Sin bio")}
+                              sub={f.bio?.trim() || undefined}
                               onClick={() => openProfile(f.id)}
                             >
                               <span className="com-row-lbl">
@@ -1252,6 +1165,7 @@ export function CommunityPage() {
                       </>
                     ) : (
                       <CommunityProfile
+                        timelineActions={{onDeletePost: deleteOwnPost, onReportPost: reportPost, onVotePoll: votePoll, myId: me?.id, onToggleLike: handleToggleLike, onToggleRepost: toggleRepost, onToast: showToast}}
                         me={me}
                         meLoading={meLoading}
                         pointsTotal={pointsTotal}
@@ -1298,13 +1212,13 @@ export function CommunityPage() {
                       />
                     )}
 
-                    <div className="chat-hero anim-in">
-                      <div className="chat-hero-main">
-                        <div className="chat-title">
-                          <IonIcon icon={globeOutline} className="chat-globe" />{" "}
+                    <div className="com-discover-header com-chat-header">
+                      <div className="com-banner-main">
+                        <div className="com-banner-title">
+                          <IonIcon icon={chatbubblesOutline} />{" "}
                           {t("Chat Copp Adresd")}
                         </div>
-                        <div className="chat-sub">
+                        <div className="com-banner-sub">
                           <IonIcon icon={peopleOutline} />{" "}
                           {t("Tus amigos y grupos")}
                         </div>
@@ -1328,11 +1242,12 @@ export function CommunityPage() {
                     </div>
 
                     <div
-                      className="chat-search anim-in"
+                      className="com-search-wrap"
                       style={{ animationDelay: "40ms" }}
                     >
                       <IonSearchbar
-                        className="sbar chat-sbar"
+                        className="com-searchbar"
+                        mode="md"
                         value={chatQ}
                         placeholder={t("Buscar o preguntar…")}
                         onIonInput={(e) => setChatQ(e.detail.value ?? "")}
@@ -1520,7 +1435,7 @@ export function CommunityPage() {
 
                 {tab === "amigos" && (
                   <>
-                    <div className="com-banner anim-in">
+                    <div className="com-discover-header">
                       <div className="com-banner-main">
                         <div className="com-banner-title">
                           <IonIcon icon={peopleOutline} /> {t("Amigos Copp Adresd")}
@@ -1531,9 +1446,10 @@ export function CommunityPage() {
                         </div>
                       </div>
                     </div>
-                    <div style={{ padding: 14 }}>
+                    <div className="com-search-wrap">
                       <IonSearchbar
-                        className="sbar"
+                        mode="md"
+                        className="com-searchbar"
                         value={q}
                         placeholder={t("Buscar amigos en Copp Adresd…")}
                         onIonInput={(e) => {
@@ -1561,7 +1477,7 @@ export function CommunityPage() {
                           onClick={() => setAmigosTab("sugerencias")}
                           aria-pressed={amigosTab === "sugerencias"}
                         >
-                          <IonIcon icon={starOutline} /> {t("Sugerencias")}
+                          <IonIcon icon={starOutline} /> {t("Descubrir")}
                           <span className="amg-count">
                             {recommended.length}
                           </span>
@@ -1575,7 +1491,7 @@ export function CommunityPage() {
                       ) : peopleError ? (
                         <ErrorCard
                           message={t("No se pudo buscar. Inténtalo de nuevo.")}
-                          onRetry={() => setPeopleQuery(q)}
+                          onRetry={retryPeople}
                         />
                       ) : people.length === 0 ? (
                         <EmptyState
@@ -1593,7 +1509,7 @@ export function CommunityPage() {
                               name={p.profile.displayName}
                               seedId={p.profile.id}
                               src={p.profile.avatarUrl}
-                              sub={p.profile.bio?.trim() || t("Sin bio")}
+                              sub={p.profile.bio?.trim() || undefined}
                               onClick={() => openProfile(p.profile.id)}
                               actions={
                                 p.isFriend ? (
@@ -1679,7 +1595,7 @@ export function CommunityPage() {
                             name={f.displayName}
                             seedId={f.id}
                             src={f.avatarUrl}
-                            sub={f.bio?.trim() || t("Sin bio")}
+                            sub={f.bio?.trim() || undefined}
                             onClick={() => openProfile(f.id)}
                             actions={
                               <>
@@ -1708,20 +1624,20 @@ export function CommunityPage() {
                           />
                         ))
                       )
-                    ) : followersError ? (
+                    ) : peopleError ? (
                       <ErrorCard
-                        message={t("No se pudo cargar tus seguidores.")}
-                        onRetry={retryFollowers}
+                        message={t("No se pudo buscar. Inténtalo de nuevo.")}
+                        onRetry={retryPeople}
                       />
-                    ) : followersLoading ? (
+                    ) : peopleLoading ? (
                       <RowSkeleton rows={3} />
                     ) : recommended.length === 0 ? (
                       <EmptyState
                         icon={starOutline}
                         tone="gold"
-                        title={t("No tienes seguidores nuevos por ahora")}
+                        title={t("No hay más miembros para descubrir")}
                         hint={t(
-                          "Cuando nuevos miembros te sigan, aparecerán aquí para conectar.",
+                          "Busca por nombre o vuelve más tarde para conocer nuevos miembros.",
                         )}
                       />
                     ) : (
@@ -1734,13 +1650,11 @@ export function CommunityPage() {
                             name={f.displayName}
                             seedId={f.id}
                             src={f.avatarUrl}
-                            sub={f.bio?.trim() || t("Sin bio")}
+                            sub={f.bio?.trim() || undefined}
                             onClick={() => openProfile(f.id)}
                             actions={
                               <>
-                                <span className="com-row-lbl">
-                                  {t("Te sigue")}
-                                </span>
+                                {followers.some(person => person.id === f.id) && <span className="com-row-lbl">{t("Te sigue")}</span>}
                                 {isFollowingBack ? (
                                   <IonButton
                                     fill="outline"
@@ -1766,7 +1680,7 @@ export function CommunityPage() {
                                       icon={personAddOutline}
                                       style={{ marginRight: 4 }}
                                     />{" "}
-                                    {t("Seguir de vuelta")}
+                                    {t("Seguir")}
                                   </IonButton>
                                 )}
                               </>
@@ -1839,6 +1753,9 @@ export function CommunityPage() {
           </div>
 
           <PostDetailModal
+            onDeleteComment={deleteOwnComment}
+            onToggleLike={handleToggleLike}
+            onDeletePost={deleteOwnPost}
             post={activePost}
             me={me}
             onClose={() => setActivePost(null)}
@@ -1942,7 +1859,7 @@ export function CommunityPage() {
 
           <CommunityFab
             scrollRef={scrollRef}
-            hidden={fabHidden}
+            hidden={false}
             onPick={handleFab}
             dark={comDark}
           />
@@ -1953,7 +1870,11 @@ export function CommunityPage() {
             onClose={() => setLightbox(null)}
           />
 
-          <ComSidebar me={me} hidden={hambHidden} />
+          <nav className="com-main-nav" aria-label={t("Navegación de comunidad")}>
+            {([{id:"feed",label:"Feed",icon:globeOutline},{id:"amigos",label:"Descubrir",icon:peopleOutline},{id:"clubes",label:"Clubes",icon:peopleIcon},{id:"chat",label:"Chats",icon:chatbubblesOutline},{id:"perfil",label:"Perfil",icon:personOutline}] as const).map(item => <IonButton key={item.id} fill="clear" className={tab === item.id && !viewingId ? "is-current" : undefined} aria-current={tab === item.id && !viewingId ? "page" : undefined} onClick={() => handleFab(item.id)}><span className="com-nav-content"><IonIcon icon={item.icon} /><span>{t(item.label)}</span></span></IonButton>)}
+          </nav>
+
+          <ComSidebar me={me} hidden={false} />
 
           <ComposePostModal
             open={composeOpen}

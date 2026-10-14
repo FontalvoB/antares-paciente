@@ -1,14 +1,8 @@
 import { IonIcon } from "@ionic/react";
 import {
   add,
-  albumsOutline,
-  chatbubblesOutline,
-  compassOutline,
   createOutline,
   moonOutline,
-  peopleOutline,
-  personOutline,
-  shareSocialOutline,
   sunnyOutline,
 } from "ionicons/icons";
 import { useEffect, useRef, useState, type RefObject } from "react";
@@ -27,18 +21,7 @@ export type FabAction =
 /** Ítems del menú: el primero en DOM se asienta más cerca del botón (el
  *  contenedor usa column-reverse, así el orden visual es Publish → Redes). */
 const ITEMS: { id: FabAction; label: string; icon: string; tone: string }[] = [
-  {
-    id: "publish",
-    label: "Nueva publicación",
-    icon: createOutline,
-    tone: "pur",
-  },
-  { id: "feed", label: "Feed", icon: compassOutline, tone: "teal" },
-  { id: "clubes", label: "Clubes", icon: albumsOutline, tone: "pur" },
-  { id: "perfil", label: "Perfil", icon: personOutline, tone: "blue" },
-  { id: "chat", label: "Chats", icon: chatbubblesOutline, tone: "org" },
-  { id: "amigos", label: "Amigos", icon: peopleOutline, tone: "gold" },
-  { id: "redes", label: "Redes", icon: shareSocialOutline, tone: "red" },
+  { id: "publish", label: "Nueva publicación", icon: createOutline, tone: "pur" },
 ];
 
 /** Botón flotante de la comunidad: se despliega hacia arriba con las acciones

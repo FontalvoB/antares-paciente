@@ -1,3 +1,4 @@
+import { CommunityMediaPreparationError } from "../../utils/community-media";
 import {
   IonButton,
   IonIcon,
@@ -96,6 +97,7 @@ export function ComposePostModal({
   const [media, setMedia] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
@@ -154,6 +156,7 @@ export function ComposePostModal({
 
   useEffect(() => {
     if (!open) {
+      setPublishError(null);
       setType("text");
       setDraft("");
       setMedia(null);
@@ -239,6 +242,7 @@ export function ComposePostModal({
   async function handlePublish() {
     const text = draft.trim();
     if ((!text && !media && !pollReady) || publishing || uploading) return;
+    setPublishError(null);
     setPublishing(true);
     try {
       if (type === "poll") {
@@ -264,6 +268,7 @@ export function ComposePostModal({
       onToast(t("Publicado en la comunidad"), "ok");
       onClose();
     } catch (e) {
+      setPublishError(e instanceof CommunityMediaPreparationError ? t("El servicio no pudo preparar la subida del archivo. Tu contenido se conserva; vuelve a intentarlo.") : t("No se pudo publicar. Tu contenido se conserva; puedes volver a intentarlo."));
       onToast((e as Error).message, "err");
     } finally {
       setPublishing(false);
@@ -279,6 +284,7 @@ export function ComposePostModal({
       className={dark ? "com-dark-surface" : undefined}
     >
       <div className="com-detail">
+        {publishError && <div role="alert" className="com-publish-error">{publishError}</div>}
         <div className="com-detail-head">
           <Avatar
             name={me?.displayName ?? "MG"}
