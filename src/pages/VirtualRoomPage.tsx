@@ -1,4 +1,4 @@
-import { attachRoomTrack, detachRoomTrack } from "../utils/roomTracks";
+import { attachRoomTrack, detachRoomTrack, observeRoomVideoTrack, roomVideoIsVisible } from "../utils/roomTracks";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import {
@@ -10,6 +10,9 @@ import {
   micOffOutline,
   chatbubbleEllipsesOutline,
   refreshOutline,
+  swapHorizontalOutline,
+  cameraReverseOutline,
+  optionsOutline,
   shieldCheckmarkOutline,
 } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
@@ -36,6 +39,7 @@ import {
   type MediaProbeStatus,
 } from "../utils/roomMedia";
 import { isRoomChatEnabled } from "../utils/roomChat";
+import { RoomDeviceSettings } from "../components/RoomDeviceSettings";
 import { RoomChatPanel } from "../components/RoomChatPanel";
 import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
 import {
@@ -63,6 +67,11 @@ interface TwilioTrack {
   enable?(): void;
   disable?(): void;
   stop?(): void;
+  restart?(constraints?: MediaTrackConstraints): Promise<unknown>;
+  mediaStreamTrack?: MediaStreamTrack;
+  isSwitchedOff?: boolean;
+  on?(event: string, listener: () => void): void;
+  off?(event: string, listener: () => void): void;
 }
 interface TwilioTrackMap {
   forEach(cb: (publication: { track: TwilioTrack | null }) => void): void;
@@ -192,6 +201,15 @@ export function VirtualRoomPage() {
     initialMediaProbe(),
   );
   const [chatOpen, setChatOpen] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
+  const [localMain, setLocalMain] = useState(false);
+  const [cameraCount, setCameraCount] = useState<number | null>(null);
+  const cameraFacingRef = useRef("user");
+  const [deviceBusy, setDeviceBusy] = useState(false);
+  const [deviceError, setDeviceError] = useState("");
+  const [outputId, setOutputId] = useState("");
+  const outputIdRef = useRef("");
+  const trackObservers = useRef(new Map<TwilioTrack, () => void>());
   /** Video remoto suscrito: placeholder con iniciales cuando está apagado. */
   const [remoteVideoOn, setRemoteVideoOn] = useState(false);
   /** Pre-consulta de la cita (F4) desde el prejoin: editable solo Confirmed. */
@@ -254,6 +272,7 @@ export function VirtualRoomPage() {
     detachAll(localRef.current);
     detachAll(remoteRef.current);
     setChatOpen(false);
+    setDevicesOpen(false);
     setPhase("ended");
     setSeconds(0);
     closeRoom();
@@ -305,70 +324,68 @@ export function VirtualRoomPage() {
     [apptId, roomAppointment, detachAll],
   );
 
-  const attachParticipant = useCallback(
-    (participant: TwilioParticipant, container: HTMLElement | null, local = false) => {
-      if (!container) return;
-      participant.tracks.forEach((publication) => {
-        const track = publication.track;
-        if (
-          track &&
-          typeof (track as { attach?: unknown }).attach === "function"
-        ) {
-          attachRoomTrack(track as TwilioTrack, container, local);
-        }
-      });
-    },
-    [],
-  );
+  const refreshRemoteVideo = useCallback(() => {
+    let visible = false;
+    roomRef.current?.participants.forEach(participant => participant.tracks.forEach(({ track }) => {
+      if (track && roomVideoIsVisible(track)) visible = true;
+    }));
+    setRemoteVideoOn(visible);
+  }, []);
 
-  /**
-   * En Twilio Video los tracks se publican DESPUÉS de participantConnected:
-   * hay que suscribirse a trackSubscribed (y re-visitar los ya publicados).
-   * Sin esto los contenedores quedan vacíos (pantalla negra en consulta).
-   */
-  const setupParticipant = useCallback(
-    (
-      participant: TwilioParticipant,
-      container: HTMLElement | null,
-      onVideoChange?: (on: boolean) => void,
-      local = false,
-    ) => {
-      const el = container ?? null;
-      const isVideoTrack = (track: TwilioTrack) =>
-        (track as { kind?: string }).kind === "video";
-      participant.on("trackSubscribed", (p) => {
-        const track = p as TwilioTrack;
-        if (
-          track &&
-          el &&
-          typeof (track as { attach?: unknown }).attach === "function"
-        ) {
-          attachRoomTrack(track, el, local);
-        }
-        if (onVideoChange && isVideoTrack(track)) onVideoChange(true);
+  const attachParticipant = useCallback((participant: TwilioParticipant, container: HTMLElement | null, local = false) => {
+    participant.tracks.forEach(({ track }) => {
+      if (!track || !container || typeof track.attach !== "function") return;
+      attachRoomTrack(track, container, local);
+      // El audio vive separado del video; el selector de salida se conserva en nuevas suscripciones.
+      if (!local && outputIdRef.current) container.querySelectorAll("audio").forEach(audio => {
+        if ("setSinkId" in audio) void (audio as HTMLAudioElement & {setSinkId(id: string): Promise<void>})
+          .setSinkId(outputIdRef.current).catch(() => setDeviceError(t("No se pudo cambiar la salida de audio.")));
       });
-      participant.on("trackUnsubscribed", (p) => {
-        const track = p as TwilioTrack;
-        if (
-          track &&
-          el &&
-          typeof (track as { detach?: unknown }).detach === "function"
-        ) {
-          detachRoomTrack(track);
-        }
-        if (onVideoChange && isVideoTrack(track)) onVideoChange(false);
-      });
-      attachParticipant(participant, container, local);
-      participant.tracks.forEach(({ track }) => {
-        if (track && isVideoTrack(track)) onVideoChange?.(track.isEnabled !== false);
-      });
-    },
-    [attachParticipant],
-  );
+    });
+  }, [t]);
+
+  const setupParticipant = useCallback((participant: TwilioParticipant, getContainer: () => HTMLElement | null, local = false) => {
+    const watch = (track: TwilioTrack) => {
+      if (!local && !trackObservers.current.has(track)) {
+        trackObservers.current.set(track, observeRoomVideoTrack(track, refreshRemoteVideo));
+      }
+    };
+    const sync = () => {
+      participant.tracks.forEach(({ track }) => { if (track) watch(track); });
+      attachParticipant(participant, getContainer(), local);
+      if (!local) refreshRemoteVideo();
+    };
+    participant.on("trackSubscribed", p => {
+      const track = p as TwilioTrack;
+      watch(track);
+      attachRoomTrack(track, getContainer(), local);
+      sync();
+    });
+    participant.on("trackUnsubscribed", p => {
+      const track = p as TwilioTrack;
+      detachRoomTrack(track);
+      trackObservers.current.get(track)?.();
+      trackObservers.current.delete(track);
+      if (!local) refreshRemoteVideo();
+    });
+    sync();
+  }, [attachParticipant, refreshRemoteVideo]);
+
+  // Reintenta adjuntar después de montar los refs: connect puede resolverse antes del commit de React.
+  useEffect(() => {
+    const room = roomRef.current;
+    if (phase !== "connected" || !room) return;
+    attachParticipant(room.localParticipant, localRef.current, true);
+    room.participants.forEach(p => attachParticipant(p, remoteRef.current));
+    refreshRemoteVideo();
+  }, [phase, attachParticipant, refreshRemoteVideo]);
 
   /** Conecta la sala ya negociada: pinta participantes y engancha eventos. */
   const wireRoom = useCallback(
     (room: TwilioRoom, plan: { audio: boolean; video: boolean }) => {
+      trackObservers.current.forEach(dispose => dispose());
+      trackObservers.current.clear();
+      setRemoteVideoOn(false);
       roomRef.current = room;
       reconnectAttemptedRef.current = false;
       setMicOn(plan.audio);
@@ -377,7 +394,7 @@ export function VirtualRoomPage() {
       setHasLocalVideo(plan.video);
 
       // Local: los tracks de cámara/mic llegan vía trackSubscribed tras connect.
-      setupParticipant(room.localParticipant, localRef.current, undefined, true);
+      setupParticipant(room.localParticipant, () => localRef.current, true);
       setPhase("connected");
       setParticipants([room.localParticipant.identity]);
 
@@ -386,7 +403,7 @@ export function VirtualRoomPage() {
         setParticipants((prev) =>
           prev.includes(p.identity) ? prev : [...prev, p.identity],
         );
-        setupParticipant(p, remoteRef.current, setRemoteVideoOn);
+        setupParticipant(p, () => remoteRef.current);
       });
 
       room.on("participantConnected", (p) => {
@@ -396,7 +413,7 @@ export function VirtualRoomPage() {
             ? prev
             : [...prev, participant.identity],
         );
-        setupParticipant(participant, remoteRef.current, setRemoteVideoOn);
+        setupParticipant(participant, () => remoteRef.current);
       });
       room.on("participantDisconnected", (p) => {
         const participant = p as TwilioParticipant;
@@ -411,8 +428,11 @@ export function VirtualRoomPage() {
             typeof (track as { detach?: unknown }).detach === "function"
           ) {
             detachRoomTrack(track);
+            trackObservers.current.get(track)?.();
+            trackObservers.current.delete(track);
           }
         });
+        refreshRemoteVideo();
         setParticipants((prev) =>
           prev.filter((id) => id !== participant.identity),
         );
@@ -445,7 +465,7 @@ export function VirtualRoomPage() {
         void finalizeEnd("network");
       });
     },
-    [detachAll, setupParticipant, finalizeEnd],
+    [detachAll, setupParticipant, finalizeEnd, refreshRemoteVideo],
   );
 
   const connect = useCallback(
@@ -517,9 +537,12 @@ export function VirtualRoomPage() {
 
   // Montaje/desmontaje: corta tracks y conexión (sin auto-reconexión).
   useEffect(() => {
+    const observers = trackObservers.current;
     mountedRef.current = true;
     intentionalRef.current = false;
     return () => {
+      observers.forEach(dispose => dispose());
+      observers.clear();
       mountedRef.current = false;
       intentionalRef.current = true;
       stopLocalTracks(roomRef.current);
@@ -544,6 +567,20 @@ export function VirtualRoomPage() {
       cancelled = true;
     };
   }, [phase, mediaProbe]);
+
+  useEffect(() => {
+    if (phase !== "connected") return;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const list = await navigator.mediaDevices?.enumerateDevices();
+        if (active && list) setCameraCount(list.filter(d => d.kind === "videoinput").length);
+      } catch { /* El selector mantiene la alternativa por facingMode. */ }
+    };
+    void refresh();
+    navigator.mediaDevices?.addEventListener?.("devicechange", refresh);
+    return () => { active = false; navigator.mediaDevices?.removeEventListener?.("devicechange", refresh); };
+  }, [phase]);
 
   // TTL del token (900 s): la conexión se renueva con un token fresco antes
   // de que el SDK quede con credenciales vencidas.
@@ -601,6 +638,7 @@ export function VirtualRoomPage() {
         }
       }
     };
+    void check();
     const timer = window.setInterval(() => void check(), ROOM_POLL_MS);
     return () => {
       cancelled = true;
@@ -630,6 +668,50 @@ export function VirtualRoomPage() {
       return next;
     });
   }, []);
+
+  function currentInputId(kind: "camera" | "microphone") {
+    let id = "";
+    const tracks = kind === "camera" ? roomRef.current?.localParticipant.videoTracks : roomRef.current?.localParticipant.audioTracks;
+    tracks?.forEach(({track}) => { id ||= track?.mediaStreamTrack?.getSettings().deviceId ?? ""; });
+    return id;
+  }
+
+  async function changeDevice(kind: "camera" | "microphone", deviceId?: string) {
+    if (deviceBusy) return false;
+    setDeviceBusy(true);
+    setDeviceError("");
+    try {
+      const tracks = kind === "camera" ? roomRef.current?.localParticipant.videoTracks : roomRef.current?.localParticipant.audioTracks;
+      let track: TwilioTrack | undefined;
+      tracks?.forEach(publication => { if (!track && publication.track) track = publication.track; });
+      if (!track?.restart) throw new Error("Device unavailable");
+      const facing = track.mediaStreamTrack?.getSettings().facingMode || cameraFacingRef.current;
+      const nextFacing = facing === "environment" ? "user" : "environment";
+      await track.restart(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: nextFacing });
+      if (kind === "camera") cameraFacingRef.current = track.mediaStreamTrack?.getSettings().facingMode || nextFacing;
+      // restart mantiene la publicación; conservar el estado elegido por el paciente.
+      setTracksEnabled(tracks, kind === "camera" ? camOn : micOn);
+      return true;
+    } catch {
+      setDeviceError(t("No se pudo cambiar el dispositivo. Revisa sus permisos e inténtalo de nuevo."));
+      return false;
+    } finally { if (mountedRef.current) setDeviceBusy(false); }
+  }
+
+  async function changeOutput(id: string) {
+    const audio = Array.from(remoteRef.current?.querySelectorAll("audio") ?? []);
+    const previous = outputIdRef.current;
+    try {
+      await Promise.all(audio.map(el => (el as HTMLAudioElement & {setSinkId(id: string): Promise<void>}).setSinkId(id)));
+      outputIdRef.current = id;
+      setOutputId(id);
+      setDeviceError("");
+    } catch {
+      await Promise.allSettled(audio.map(el => (el as HTMLAudioElement & {setSinkId(id: string): Promise<void>}).setSinkId(previous)));
+      setDeviceError(t("No se pudo cambiar la salida de audio."));
+      throw new Error("Output unavailable");
+    }
+  }
 
   const duration = useMemo(() => {
     const m = Math.floor(seconds / 60);
@@ -892,7 +974,7 @@ export function VirtualRoomPage() {
           // de Twilio llegan vía trackSubscribed tras el connect y los refs
           // deben existir en ese momento (si no, el attach se pierde y la
           // pantalla queda vacía).
-          <div className="room-video">
+          <div className={`room-video${localMain ? " room-local-main" : ""}`}>
             <div className="room-tile room-tile-remote">
               <div className="room-tile-media" ref={remoteRef}>
                 {phase === "connecting" ? (
@@ -909,6 +991,10 @@ export function VirtualRoomPage() {
               {phase === "connected" ? (
                 <span className="room-tile-name">{remoteLabel}</span>
               ) : null}
+              {phase === "connected" && localMain ? (
+                <IonButton className="room-swap-video" fill="clear" aria-label={t("Cambiar video principal")}
+                  onClick={() => setLocalMain(value => !value)}><IonIcon slot="icon-only" icon={swapHorizontalOutline} /></IonButton>
+              ) : null}
               {phase === "connected" &&
               !remoteVideoOn &&
               participants.length > 1 ? (
@@ -924,8 +1010,12 @@ export function VirtualRoomPage() {
                   {nameInitials(user.nombre)}
                 </span>
               ) : null}
+              {phase === "connected" && !localMain ? (
+                <IonButton className="room-swap-video" fill="clear" aria-label={t("Cambiar video principal")}
+                  onClick={() => setLocalMain(value => !value)}><IonIcon slot="icon-only" icon={swapHorizontalOutline} /></IonButton>
+              ) : null}
               {phase === "connected" ? (
-                <span className="room-tile-name">{user.nombre}</span>
+                <span className="room-tile-name">{t("Tú")}</span>
               ) : null}
             </div>
             {phase === "connected" ? (
@@ -945,50 +1035,63 @@ export function VirtualRoomPage() {
         <footer className="room-foot">
           <div className="room-ctrls">
             <IonButton
-              className={`bt bt-round room-toggle${micOn ? "" : " off"}`}
-              disabled={!hasLocalAudio}
+              className={`room-control${micOn ? "" : " off"}`}
+              disabled={!hasLocalAudio || deviceBusy}
               aria-label={
                 micOn ? t("Silenciar micrófono") : t("Activar micrófono")
               }
               onClick={toggleMic}
             >
-              <IonIcon
-                slot="icon-only"
+              <span className="room-control-content"><IonIcon
+
                 icon={micOn ? micOutline : micOffOutline}
-              />
+              /><span>{t("Micrófono")}</span></span>
             </IonButton>
             <IonButton
-              className={`bt bt-round room-toggle${camOn ? "" : " off"}`}
-              disabled={!hasLocalVideo}
+              className={`room-control${camOn ? "" : " off"}`}
+              disabled={!hasLocalVideo || deviceBusy}
               aria-label={camOn ? t("Apagar cámara") : t("Encender cámara")}
               onClick={toggleCam}
             >
-              <IonIcon
-                slot="icon-only"
+              <span className="room-control-content"><IonIcon
+
                 icon={camOn ? videocamOutline : videocamOffOutline}
-              />
+              /><span>{t("Cámara")}</span></span>
+            </IonButton>
+            <IonButton className="room-control" disabled={!hasLocalVideo || deviceBusy || (cameraCount !== null && cameraCount < 2)}
+              aria-label={t("Cambiar cámara")} onClick={() => void changeDevice("camera")}>
+              <span className="room-control-content"><IonIcon icon={cameraReverseOutline} /><span>{t("Girar")}</span></span>
+            </IonButton>
+            <IonButton className="room-control" aria-label={t("Dispositivos de la consulta")}
+              onClick={() => setDevicesOpen(true)}>
+              <span className="room-control-content"><IonIcon icon={optionsOutline} /><span>{t("Ajustes")}</span></span>
             </IonButton>
             <IonButton
-              className="bt bt-round room-toggle"
+              className="room-control"
               aria-label={t("Chat de la consulta")}
               onClick={() => setChatOpen(true)}
             >
-              <IonIcon slot="icon-only" icon={chatbubbleEllipsesOutline} />
+              <span className="room-control-content"><IonIcon icon={chatbubbleEllipsesOutline} /><span>{t("Chat")}</span></span>
             </IonButton>
             <IonButton
-              className="bt bt-round room-hang"
+              className="room-control room-leave"
               aria-label={t("Colgar")}
               onClick={hangUp}
             >
-              <IonIcon slot="icon-only" icon={callOutline} />
+              <span className="room-control-content"><IonIcon icon={callOutline} /><span>{t("Salir")}</span></span>
             </IonButton>
           </div>
+          {deviceError && <p className="room-device-error" role="alert">{deviceError}</p>}
           <span className="room-hint">
             {t("La sesión la inicia y finaliza el profesional")}
           </span>
         </footer>
       ) : null}
 
+      <RoomDeviceSettings isOpen={devicesOpen && phase === "connected"} onClose={() => setDevicesOpen(false)}
+        canCamera={hasLocalVideo} canMicrophone={hasLocalAudio} busy={deviceBusy} error={deviceError}
+        inputIds={{camera: currentInputId("camera"), microphone: currentInputId("microphone")}}
+        outputId={outputId} onInput={changeDevice} onOutput={changeOutput} />
       {chatOpen && apptId ? (
         <RoomChatPanel
           appointmentId={apptId}
