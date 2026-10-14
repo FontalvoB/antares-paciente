@@ -31520,3 +31520,4 @@ ion-modal.room-test-chat { --border-radius: 26px 26px 0 0; --background: var(--w
 .room-prejoin .room-prejoin-join ion-icon { font-size: 19px; width: 19px; height: 19px; margin-inline-end: 9px; flex-shrink: 0; }
 .room-prejoin .room-prejoin-join::part(native) { white-space: nowrap; }
 .room-prejoin .room-prejoin-join ion-icon { color: #fff !important; }
+.room-prejoin-status { align-self: flex-start; padding: 5px 9px; border-radius: 8px; background: var(--g1); color: var(--teal); font-size: 10px; font-weight: 650; letter-spacing: .03em; }

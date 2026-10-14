@@ -21,6 +21,7 @@ import {
   fetchAppointmentRoom,
   fetchJoinToken,
 } from "../utils/appointmentsApi";
+import { APPOINTMENT_STATUS_LABELS } from "../data/appointments";
 import { formatRoomMoment, roomWindowState } from "../utils/roomWindow";
 import {
   classifyRoomEnd,
@@ -725,6 +726,9 @@ export function VirtualRoomPage() {
 
   if (!roomAppointment) return null;
 
+  const statusLabel = roomAppointment.status
+    ? APPOINTMENT_STATUS_LABELS[roomAppointment.status]
+    : roomAppointment.when;
   const cameraStatus: MediaProbeStatus = mediaProbe?.camera ?? "checking";
   const microphoneStatus: MediaProbeStatus =
     mediaProbe?.microphone ?? "checking";
@@ -809,6 +813,7 @@ export function VirtualRoomPage() {
                 <span className="room-prejoin-avatar" aria-hidden="true">{roomAppointment.name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]).join("")}</span>
                 <div><strong>{roomAppointment.name}</strong><span>{t(roomAppointment.motivo)}</span></div>
               </div>
+              <span className="room-prejoin-status">{t(statusLabel)}</span>
               <div className="room-info">
                 <span>
                   <b>{t("Paciente")}</b>
@@ -914,7 +919,7 @@ export function VirtualRoomPage() {
               ) : null}
               <p className="room-prejoin-privacy"><IonIcon icon={shieldCheckmarkOutline} />{t("Tu información se mantiene protegida durante la consulta.")}</p>
             </section>
-            <span className="room-prejoin-code">{t("Código de cita")} · {roomAppointment.id.slice(0, 8).toUpperCase()}</span>
+            <span className="room-prejoin-code">{t("Código de cita")} · <span>{roomAppointment.id.slice(0, 8).toUpperCase()}</span></span>
           </div>
         ) : phase === "ended" ? (
           <div className="room-empty room-panel">
