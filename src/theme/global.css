@@ -31521,3 +31521,19 @@ ion-modal.room-test-chat { --border-radius: 26px 26px 0 0; --background: var(--w
 .room-prejoin .room-prejoin-join::part(native) { white-space: nowrap; }
 .room-prejoin .room-prejoin-join ion-icon { color: #fff !important; }
 .room-prejoin-status { align-self: flex-start; padding: 5px 9px; border-radius: 8px; background: var(--g1); color: var(--teal); font-size: 10px; font-weight: 650; letter-spacing: .03em; }
+/* Chat conectado: usa la paleta de la consulta y conserva el compositor. */
+.room-chat-modal { --background: var(--wh); --border-radius: 26px 26px 0 0; }
+.room-chat { background: var(--wh); color: var(--tx); min-height: 0; }
+.room-chat-head { padding: 18px 12px 14px 20px; border-bottom-color: var(--bd); color: var(--navy); }
+.room-chat-close { --color: var(--navy) !important; }
+.room-chat-body { min-height: 0; padding: 20px; }
+.room-chat-bubble { background: var(--g1); color: var(--tx); border-radius: 16px 16px 16px 4px; padding: 12px 14px; font-size: 14px; }
+.room-chat-row.mine .room-chat-bubble { color: #fff; border-radius: 16px 16px 4px 16px; }
+.room-chat-meta { padding: 3px 4px; }
+.room-chat-foot { background: var(--wh); border-top-color: var(--bd); padding-inline: 16px; gap: 10px; }
+.room-chat-input { --background: var(--g1); --color: var(--tx); border: 1px solid var(--bd); border-radius: 16px; font-size: 14px; }
+.room-chat-send { --border-radius: 14px; width: 46px; height: 46px; flex-shrink: 0; }
+.room-chat-send[disabled] { --background: var(--g1) !important; }
+.room-chat-welcome { max-width: 330px; padding: 24px 0; }
+.room-chat-welcome h2 { margin: 0; color: var(--navy); font-size: 23px; letter-spacing: -.5px; }
+.room-chat-welcome p { margin: 4px 0 0; font-size: 14px; line-height: 1.7; color: var(--mu); }

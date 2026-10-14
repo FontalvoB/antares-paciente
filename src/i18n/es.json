@@ -2553,12 +2553,9 @@
   "Cámara": "Cámara",
   "Micrófono": "Micrófono",
   "Ampliar video de {name}": "Ampliar video de {name}",
-  "Chat de prueba": "Chat de prueba",
-  "Estamos preparando el chat de la consulta. Todavía no puedes enviar ni recibir mensajes aquí.": "Estamos preparando el chat de la consulta. Todavía no puedes enviar ni recibir mensajes aquí.",
   "Volver a la consulta": "Volver a la consulta",
   "Tu próxima consulta": "Tu próxima consulta",
   "Antes de entrar": "Antes de entrar",
-  "En preparación": "En preparación",
   "Un espacio para conversar": "Un espacio para conversar",
-  "Esta vista es de prueba. No se envían mensajes al profesional.": "Esta vista es de prueba. No se envían mensajes al profesional."
+  "Comparte tus preguntas con el equipo de la consulta. Los mensajes aparecerán aquí.": "Comparte tus preguntas con el equipo de la consulta. Los mensajes aparecerán aquí."
 }

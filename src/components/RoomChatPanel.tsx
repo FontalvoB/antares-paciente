@@ -6,7 +6,7 @@ import {
   IonSpinner,
   IonTextarea,
 } from "@ionic/react";
-import { close, send } from "ionicons/icons";
+import { close, send, chatbubblesOutline } from "ionicons/icons";
 import {
   ApiClientError,
   fetchRoomChatMessages,
@@ -233,8 +233,10 @@ export function RoomChatPanel({ appointmentId, enabled, onClose }: Props) {
               </IonButton>
             </div>
           ) : messages.length === 0 ? (
-            <div className="room-chat-empty">
-              <span>{t("Sin mensajes todavía.")}</span>
+            <div className="room-chat-empty room-chat-welcome">
+              <div className="room-test-chat-illustration" aria-hidden="true"><IonIcon icon={chatbubblesOutline} /><span>···</span></div>
+              <h2>{t("Un espacio para conversar")}</h2>
+              <p>{t("Comparte tus preguntas con el equipo de la consulta. Los mensajes aparecerán aquí.")}</p>
             </div>
           ) : (
             messages.map((message) => (

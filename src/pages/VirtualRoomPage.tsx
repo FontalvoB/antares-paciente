@@ -39,7 +39,8 @@ import {
   type MediaProbeStatus,
 } from "../utils/roomMedia";
 import { RoomDeviceSettings } from "../components/RoomDeviceSettings";
-import { RoomTestChat } from "../components/RoomTestChat";
+import { RoomChatPanel } from "../components/RoomChatPanel";
+import { isRoomChatEnabled } from "../utils/roomChat";
 import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
 import {
   isPreVisitIntakeEditable,
@@ -1055,10 +1056,10 @@ export function VirtualRoomPage() {
             </IonButton>
             <IonButton
               className="room-control"
-              aria-label={t("Chat de prueba")}
+              aria-label={t("Chat de la consulta")}
               onClick={() => setChatOpen(true)}
             >
-              <span className="room-control-content"><IonIcon icon={chatbubbleEllipsesOutline} /><span>{t("Chat de prueba")}</span></span>
+              <span className="room-control-content"><IonIcon icon={chatbubbleEllipsesOutline} /><span>{t("Chat de la consulta")}</span></span>
             </IonButton>
             <IonButton
               className="room-control room-leave"
@@ -1080,7 +1081,7 @@ export function VirtualRoomPage() {
         inputIds={{camera: currentInputId("camera"), microphone: currentInputId("microphone")}}
         outputId={outputId} onInput={changeDevice} onOutput={changeOutput} />
       {chatOpen && apptId ? (
-        <RoomTestChat onClose={() => setChatOpen(false)} />
+        <RoomChatPanel appointmentId={apptId} enabled={isRoomChatEnabled(roomAppointment.status)} onClose={() => setChatOpen(false)} />
       ) : null}
 
       {intakeOpen && apptId ? (
