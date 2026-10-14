@@ -21,7 +21,6 @@ import {
   fetchAppointmentRoom,
   fetchJoinToken,
 } from "../utils/appointmentsApi";
-import { APPOINTMENT_STATUS_LABELS } from "../data/appointments";
 import { formatRoomMoment, roomWindowState } from "../utils/roomWindow";
 import {
   classifyRoomEnd,
@@ -38,9 +37,8 @@ import {
   type MediaProbeResult,
   type MediaProbeStatus,
 } from "../utils/roomMedia";
-import { isRoomChatEnabled } from "../utils/roomChat";
 import { RoomDeviceSettings } from "../components/RoomDeviceSettings";
-import { RoomChatPanel } from "../components/RoomChatPanel";
+import { RoomTestChat } from "../components/RoomTestChat";
 import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
 import {
   isPreVisitIntakeEditable,
@@ -727,10 +725,6 @@ export function VirtualRoomPage() {
 
   if (!roomAppointment) return null;
 
-  const statusLabel = roomAppointment.status
-    ? APPOINTMENT_STATUS_LABELS[roomAppointment.status]
-    : roomAppointment.when;
-
   const cameraStatus: MediaProbeStatus = mediaProbe?.camera ?? "checking";
   const microphoneStatus: MediaProbeStatus =
     mediaProbe?.microphone ?? "checking";
@@ -805,40 +799,26 @@ export function VirtualRoomPage() {
             </section>
           </div>
         ) : phase === "ready" ? (
-          <div className="room-empty room-panel">
-            <section className="room-card">
-              <span className="room-card-icon">
-                <IonIcon icon={videocamOutline} />
-              </span>
-              <strong>{t("Sala virtual lista")}</strong>
+          <div className="room-empty room-panel room-prejoin">
+            <section className="room-card room-prejoin-summary">
+              <div className="room-prejoin-heading">
+                <span className="room-card-icon"><IonIcon icon={videocamOutline} /></span>
+                <div><span className="room-eyebrow">{t("Tu próxima consulta")}</span><h2>{t("Sala virtual lista")}</h2></div>
+              </div>
+              <div className="room-prejoin-professional">
+                <span className="room-prejoin-avatar" aria-hidden="true">{roomAppointment.name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]).join("")}</span>
+                <div><strong>{roomAppointment.name}</strong><span>{t(roomAppointment.motivo)}</span></div>
+              </div>
               <div className="room-info">
                 <span>
                   <b>{t("Paciente")}</b>
                   <span>{user.nombre}</span>
                 </span>
                 <span>
-                  <b>{t("Profesional")}</b>
-                  <span>{roomAppointment.name}</span>
-                </span>
-                <span>
-                  <b>{t("Especialidad")}</b>
-                  <span>{t(roomAppointment.motivo)}</span>
-                </span>
-                <span>
                   <b>{t("Fecha y hora")}</b>
                   <span>
                     {roomAppointment.time} · {t(roomAppointment.day)}
                   </span>
-                </span>
-                <span>
-                  <b>{t("Código de cita")}</b>
-                  <span title={roomAppointment.id}>
-                    {roomAppointment.id.slice(0, 8).toUpperCase()}
-                  </span>
-                </span>
-                <span>
-                  <b>{t("Estado")}</b>
-                  <span>{t(statusLabel)}</span>
                 </span>
               </div>
               {windowState === "before" ? (
@@ -875,11 +855,8 @@ export function VirtualRoomPage() {
                 </p>
               )}
             </section>
-            <section className="room-card">
-              <span className="room-eyebrow">
-                <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
-                {t("Atención segura")}
-              </span>
+            <section className="room-card room-prejoin-checks">
+              <div className="room-prejoin-checks-title"><h3>{t("Antes de entrar")}</h3><span><IonIcon icon={shieldCheckmarkOutline} />{t("Atención segura")}</span></div>
               <div className="room-devices" aria-live="polite">
                 <span className={`room-device${cameraReady ? " ok" : ""}`}>
                   <IonIcon
@@ -915,7 +892,8 @@ export function VirtualRoomPage() {
                 </IonButton>
               ) : null}
               <IonButton
-                className="bt bt-teal"
+                expand="block"
+                className="bt bt-teal room-prejoin-join"
                 disabled={!joinAllowed}
                 onClick={() => void connect()}
               >
@@ -934,10 +912,9 @@ export function VirtualRoomPage() {
                   {t("Volver a comprobar")}
                 </IonButton>
               ) : null}
-              <p className="room-note">
-                {t("Tu información se mantiene protegida durante la consulta.")}
-              </p>
+              <p className="room-prejoin-privacy"><IonIcon icon={shieldCheckmarkOutline} />{t("Tu información se mantiene protegida durante la consulta.")}</p>
             </section>
+            <span className="room-prejoin-code">{t("Código de cita")} · {roomAppointment.id.slice(0, 8).toUpperCase()}</span>
           </div>
         ) : phase === "ended" ? (
           <div className="room-empty room-panel">
@@ -1073,10 +1050,10 @@ export function VirtualRoomPage() {
             </IonButton>
             <IonButton
               className="room-control"
-              aria-label={t("Chat de la consulta")}
+              aria-label={t("Chat de prueba")}
               onClick={() => setChatOpen(true)}
             >
-              <span className="room-control-content"><IonIcon icon={chatbubbleEllipsesOutline} /><span>{t("Chat")}</span></span>
+              <span className="room-control-content"><IonIcon icon={chatbubbleEllipsesOutline} /><span>{t("Chat de prueba")}</span></span>
             </IonButton>
             <IonButton
               className="room-control room-leave"
@@ -1098,11 +1075,7 @@ export function VirtualRoomPage() {
         inputIds={{camera: currentInputId("camera"), microphone: currentInputId("microphone")}}
         outputId={outputId} onInput={changeDevice} onOutput={changeOutput} />
       {chatOpen && apptId ? (
-        <RoomChatPanel
-          appointmentId={apptId}
-          enabled={isRoomChatEnabled(roomAppointment.status)}
-          onClose={() => setChatOpen(false)}
-        />
+        <RoomTestChat onClose={() => setChatOpen(false)} />
       ) : null}
 
       {intakeOpen && apptId ? (

@@ -31465,3 +31465,58 @@ ion-button.room-control.room-leave { --background: var(--red); --color: var(--wh
 .room-video .room-person-preview { position: absolute; bottom: 14px; top: auto; z-index: 3; width: 96px; height: 128px; flex: none; border: 2px solid var(--wh); border-radius: 14px; }
 .room-person-preview .room-tile-name { left: 4px; bottom: 4px; max-width: calc(100% - 8px); padding: 4px 6px; font-size: 10px; }
 .room-person-preview .room-tile-initials { font-size: 20px; }
+
+/* Sala de espera: resumen compacto y preparación antes de entrar. */
+.room-prejoin.room-panel { max-width: 500px; margin: 8px auto 24px; gap: 16px; }
+.room-prejoin .room-card { align-items: stretch; text-align: left; padding: 22px; gap: 18px; border-color: var(--bd); background: var(--wh); box-shadow: var(--shadow-sm); }
+.room-prejoin-heading { display: flex; align-items: center; gap: 12px; }
+.room-prejoin-heading .room-card-icon { flex-shrink: 0; background: color-mix(in srgb, var(--teal) 9%, var(--wh)); }
+.room-prejoin-heading .room-eyebrow { font-size: 10px; letter-spacing: .09em; color: var(--teal); }
+.room-prejoin-heading h2 { margin: 4px 0 0; font-size: 22px; line-height: 1.2; color: var(--navy); letter-spacing: -.5px; }
+.room-prejoin-professional { display: flex; align-items: center; gap: 12px; padding: 18px 0; border-top: 1px solid var(--bd); border-bottom: 1px solid var(--bd); }
+.room-prejoin-avatar { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%; background: var(--g1); color: var(--navy); font-weight: 700; }
+.room-prejoin-professional > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.room-prejoin-professional strong { color: var(--tx); font-size: 17px; }
+.room-prejoin-professional > div > span { color: var(--mu); font-size: 13px; }
+.room-prejoin .room-info { gap: 16px; }
+.room-prejoin .room-info > span { padding: 0; border: 0; border-radius: 0; background: transparent; gap: 6px; }
+.room-prejoin .room-info b { text-transform: none; letter-spacing: 0; color: var(--mu); font-size: 11px; font-weight: 500; }
+.room-prejoin .room-info > span > span { color: var(--tx); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+.room-prejoin .room-note { font-size: 12px; line-height: 1.6; color: var(--mu); text-align: left; }
+.room-prejoin-checks-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.room-prejoin-checks-title h3 { font-size: 16px; margin: 0; color: var(--navy); }
+.room-prejoin-checks-title > span { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--teal); }
+.room-prejoin-checks-title ion-icon { font-size: 15px; }
+.room-prejoin .room-devices { display: grid; gap: 0; padding: 0; border: 0; background: transparent; }
+.room-prejoin .room-device { display: flex; align-items: center; gap: 10px; padding: 12px 0; font-size: 13px; border-bottom: 1px solid var(--bd); }
+.room-prejoin .room-device ion-icon { font-size: 20px; flex-shrink: 0; }
+.room-prejoin .room-device.ok { color: var(--teal); }
+.room-prejoin .room-intake { margin: 0; width: 100%; min-height: 44px; --border-radius: 12px; --background: var(--g1); --color: var(--teal); font-size: 13px; }
+.room-prejoin .room-prejoin-join { width: 100%; margin: 0; min-height: 52px; --border-radius: 14px; font-size: 15px; }
+.room-prejoin .room-prejoin-privacy { display: flex; align-items: flex-start; justify-content: center; gap: 6px; margin: 0; font-size: 11px; line-height: 1.6; color: var(--mu); text-align: center; }
+.room-prejoin-privacy ion-icon { flex-shrink: 0; font-size: 15px; margin-top: 1px; }
+.room-prejoin-code { text-align: center; color: var(--mu); font-size: 11px; letter-spacing: .03em; }
+
+/* Chat no implementado: hoja de prueba explícita, sin compositor engañoso. */
+ion-modal.room-test-chat { --border-radius: 26px 26px 0 0; --background: var(--wh); --box-shadow: var(--shadow-md); }
+.room-test-chat ion-toolbar { --background: var(--wh); --color: var(--navy); --border-width: 0; padding: 12px 12px 0; }
+.room-test-chat ion-title { font-size: 16px; font-weight: 700; text-align: left; padding-inline-start: 12px; }
+.room-test-chat ion-content { --background: var(--wh); --color: var(--tx); }
+.room-test-chat-body { max-width: 440px; margin: 0 auto; padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); text-align: center; }
+.room-test-chat-illustration { position: relative; display: grid; place-items: center; width: 92px; height: 92px; border-radius: 28px; margin: 4px auto 20px; background: color-mix(in srgb, var(--teal) 8%, var(--wh)); color: var(--teal); }
+.room-test-chat-illustration > ion-icon { font-size: 42px; }
+.room-test-chat-illustration > span { position: absolute; right: -8px; bottom: 2px; padding: 0 10px 6px; border: 3px solid var(--wh); background: var(--navy); color: var(--wh); border-radius: 12px; font-size: 24px; line-height: 1; }
+.room-test-chat-badge { display: inline-block; padding: 6px 10px; border-radius: 8px; background: var(--g1); color: var(--teal); font-size: 11px; font-weight: 600; }
+.room-test-chat-body h2 { color: var(--navy); font-size: 23px; letter-spacing: -.5px; margin: 14px 0 12px; }
+.room-test-chat-body > p { color: var(--mu); font-size: 14px; line-height: 1.7; margin: 0; }
+.room-test-chat-note { display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--bd); background: var(--g1); border-radius: 14px; padding: 14px; margin: 24px 0; text-align: left; color: var(--mu); font-size: 12px; line-height: 1.6; }
+.room-test-chat-note ion-icon { flex-shrink: 0; color: var(--teal); font-size: 17px; margin-top: 2px; }
+.room-test-chat-body ion-button { min-height: 50px; margin: 0; --border-radius: 14px; font-size: 14px; }
+@media (max-width: 360px) { .room-prejoin .room-card { padding: 18px; } .room-prejoin-heading h2 { font-size: 20px; } }
+.room-stage:has(> .room-prejoin) { min-height: 0; flex-direction: column; justify-content: flex-start; align-items: center; }
+.room-prejoin.room-panel { flex-shrink: 0; }
+.room-prejoin .room-prejoin-join { --background: var(--teal) !important; --background-hover: var(--brand-green-soft) !important; --color: #fff !important; --box-shadow: none; --padding-start: 20px; --padding-end: 20px; font-weight: 650; letter-spacing: 0; }
+.room-prejoin .room-prejoin-join::part(native) { min-height: 52px; border-radius: 14px; }
+.room-prejoin .room-prejoin-join ion-icon { font-size: 19px; width: 19px; height: 19px; margin-inline-end: 9px; flex-shrink: 0; }
+.room-prejoin .room-prejoin-join::part(native) { white-space: nowrap; }
+.room-prejoin .room-prejoin-join ion-icon { color: #fff !important; }

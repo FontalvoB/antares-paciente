@@ -2648,5 +2648,13 @@
   "Ajustes": "Settings",
   "Cámara": "Camera",
   "Micrófono": "Microphone",
-  "Ampliar video de {name}": "Enlarge {name}’s video"
+  "Ampliar video de {name}": "Enlarge {name}’s video",
+  "Chat de prueba": "Test chat",
+  "Estamos preparando el chat de la consulta. Todavía no puedes enviar ni recibir mensajes aquí.": "We are preparing the consultation chat. You cannot send or receive messages here yet.",
+  "Volver a la consulta": "Back to consultation",
+  "Tu próxima consulta": "Your upcoming consultation",
+  "Antes de entrar": "Before you join",
+  "En preparación": "In preparation",
+  "Un espacio para conversar": "A space to connect",
+  "Esta vista es de prueba. No se envían mensajes al profesional.": "This is a test view. No messages are sent to the professional."
 }
