@@ -168,8 +168,7 @@ function BackButton({
           onClick={onClick}
           aria-label={resolvedLabel}
         >
-          <IonIcon icon={arrowBack} style={{ marginRight: 6 }} />{" "}
-          {resolvedLabel}
+          <IonIcon slot="icon-only" icon={arrowBack} />
         </IonButton>
       </div>
     );
