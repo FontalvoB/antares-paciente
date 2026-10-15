@@ -32020,3 +32020,15 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 /* Fixed media previews keep tall photos from consuming the feed. */
 .community-screen .com-post-media img.com-post-image { height: clamp(220px, 75vw, 340px); width: 100%; object-fit: cover; object-position: center; touch-action: manipulation; }
 .community-screen .com-dbl-heart ion-icon { width: 86px; height: 86px; font-size: 86px; }
+
+@keyframes comDblHeart {
+  0% { opacity: 0; transform: scale(.55); }
+  20% { opacity: 1; transform: scale(1.08); }
+  36%, 65% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.14); }
+}
+@keyframes comDblRing {
+  0% { opacity: .7; transform: scale(.45); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+@media (prefers-reduced-motion: reduce) { .com-dbl-heart::after { animation: none; display: none; } }

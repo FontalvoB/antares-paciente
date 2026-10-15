@@ -22,6 +22,8 @@ it('opens full photo on a single tap, and likes with a heart on double tap',asyn
  act(()=>vi.advanceTimersByTime(301))
  expect(open).not.toHaveBeenCalled();expect(like).toHaveBeenCalledOnce()
  expect(result.container.querySelector('.com-dbl-heart')).toBeTruthy()
+ act(()=>vi.advanceTimersByTime(1100))
+ expect(result.container.querySelector('.com-dbl-heart')).toBeNull()
 })
 it('does not unlike an already liked photo on double tap',()=>{
  vi.useFakeTimers();const {like}=setup(true)

@@ -97,6 +97,12 @@ export function PostCard({
   const [heartTick, setHeartTick] = useState(0)
   // Like por doble toque en la foto: corazón gigante + animación.
   const [dblTick, setDblTick] = useState(0)
+  useEffect(() => {
+    if (!dblTick) return
+    // Clear even when motion is disabled or WebKit drops animationend.
+    const timer = window.setTimeout(() => setDblTick(0), 1050)
+    return () => window.clearTimeout(timer)
+  }, [dblTick])
   const openTimerRef = useRef(0)
   const lastDoubleRef = useRef(0)
   useEffect(() => () => window.clearTimeout(openTimerRef.current), [])
