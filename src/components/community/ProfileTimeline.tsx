@@ -19,7 +19,7 @@ export interface TimelineActions {
 function TimelineItem({post, onOpenPost, ...actions}: TimelineActions & {post: Post & {isRepost?: boolean}; onOpenPost: (post: Post) => void}) {
   const {t} = useI18n()
   const [local, setLocal] = useState<Post | null>(null)
-  const [details] = useQuery<PostResult>({query: POST_QUERY, variables: {id:post.id}, pause: !!post.poll})
+  const [details] = useQuery<PostResult>({query: POST_QUERY, variables: {id:post.id}, pause: !!post.poll || !!post.clientStatus})
   const current = local ?? details.data?.post ?? post
   const liked = current.likes.some(l => l.profileId === actions.myId)
   return <div className="profile-feed-item">

@@ -34,7 +34,7 @@ export function AchievementShare({
 }) {
   const t = useT();
   const { showToast, navigate } = useApp();
-  const { createPost, uploadPostImage } = useCommunity();
+  const { createPost, uploadPostImage, queuePost } = useCommunity();
   const copy = achievementCopy(achievement, t);
   const [chooseFormat, setChooseFormat] = useState(false);
   const [caption, setCaption] = useState(copy.caption);
@@ -157,6 +157,10 @@ export function AchievementShare({
           disabled={!asset || busy || uncertain || !caption.trim()}
           onClick={() => void perform(async () => {
             if (!asset) return;
+            if (queuePost) {
+              queuePost({body:caption.trim(),file:asset.file});
+              onBack(); navigate('com'); return;
+            }
             const key = await uploadPostImage(asset.file, asset.file.type);
             if (!alive.current) return;
             setUncertain(true);

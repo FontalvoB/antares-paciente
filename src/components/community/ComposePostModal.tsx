@@ -77,11 +77,13 @@ export function ComposePostModal({
   onClose,
   me,
   onPublish,
+  onQueue,
   onPublishPoll,
   onUploadMedia,
   onToast,
   dark = false,
 }: {
+  onQueue?: (draft:{body:string;file?:File|null;options?:string[]}) => void;
   open: boolean;
   onClose: () => void;
   me: Profile | null;
@@ -248,6 +250,13 @@ export function ComposePostModal({
     const text = draft.trim();
     if ((!text && !media && !pollReady) || publishing || uploading) return;
     setPublishError(null);
+    if (onQueue) {
+      try {
+        onQueue({body:type === 'poll' ? pollQuestion.trim() : text, file:media, options:type === 'poll' ? filledOptions : undefined});
+        setDraft(''); clearMedia(); setPollQuestion(''); setPollOptions(['','']); onClose();
+      } catch(error) {onToast((error as Error).message,'err')}
+      return;
+    }
     setPublishing(true);
     try {
       if (type === "poll") {

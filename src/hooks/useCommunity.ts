@@ -1,6 +1,7 @@
+import { communityOutbox } from "../utils/community-outbox";
 import { CommunityMediaPreparationError } from "../utils/community-media";
 import { mergePostsNewest } from '../utils/community-feed'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useClient, useMutation, useQuery, useSubscription } from 'urql'
 import { uploadCommunityMedia } from '../utils/community-media'
 import {
@@ -233,6 +234,7 @@ export function useCommunity() {
   const me: Profile | null = meResult.data?.me ?? null
   const myProfileId = me?.id ?? null
   // Keep server-confirmed submissions visible while the refreshed feed catches up.
+  const outboxPosts = useSyncExternalStore(communityOutbox.subscribe, communityOutbox.snapshot)
   const [publishedPosts, setPublishedPosts] = useState<Post[]>([])
   useEffect(() => { setPublishedPosts([]) }, [myProfileId])
   useEffect(() => {
@@ -250,7 +252,7 @@ export function useCommunity() {
    *  cronológicamente y deduplicadas (si un post es propio y reposteado,
    *  se conserva la versión original). */
   const meTimelinePosts = useMemo<TimelinePost[]>(() => {
-    const own: TimelinePost[] = (me?.posts ?? []).map((p) => ({ ...p, isRepost: false }))
+    const own: TimelinePost[] = mergePostsNewest(me?.posts ?? [], outboxPosts.filter(post => post.profile.id === me?.id)).map((p) => ({ ...p, isRepost: false }))
     const reposted: TimelinePost[] = (me?.reposts ?? []).map((r) => ({
       ...r.post,
       isRepost: true,
@@ -275,7 +277,7 @@ export function useCommunity() {
       }
     }
     return deduped
-  }, [me, deletedIds])
+  }, [me, deletedIds, outboxPosts])
 
   const [, deleteCommentMutation] = useMutation<{ deleteComment: { id: string } | null }>(DELETE_OWN_COMMENT)
   const deleteOwnComment = useCallback(async (id: string) => {
@@ -327,7 +329,7 @@ export function useCommunity() {
   const [, unrepostPostMutation] = useMutation<UnrepostPostResult>(UNREPOST_POST)
 
   const feed = useMemo<FeedPostView[]>(() => {
-    const list = mergePostsNewest(feedResult.data?.feed ?? [], publishedPosts)
+    const list = mergePostsNewest(feedResult.data?.feed ?? [], [...publishedPosts, ...outboxPosts.filter(post => post.profile.id === myProfileId)])
     return list.filter(post => !deletedIds.has(post.id)).map((post) => ({
       post,
       likeCount: post.likes.length,
@@ -335,7 +337,7 @@ export function useCommunity() {
       repostCount: post.reposts.length,
       repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
-  }, [feedResult.data, myProfileId, publishedPosts, deletedIds])
+  }, [feedResult.data, myProfileId, publishedPosts, deletedIds, outboxPosts])
 
   const followingFeed = useMemo<FeedPostView[]>(() => {
     const list = mergePostsNewest(followingFeedResult.data?.followingFeed ?? [], [])
@@ -435,6 +437,23 @@ export function useCommunity() {
     },
     [createPostImageUpload],
   )
+
+  const queuePost = useCallback((draft: {body:string; file?:File|null; options?:string[]}) => {
+    if (!me) throw new Error('Tu perfil todavía está cargando. Inténtalo de nuevo.')
+    const id = `pending-${crypto.randomUUID()}`
+    const preview = draft.file ? URL.createObjectURL(draft.file) : null
+    const optimistic: Post = {id, body:draft.body, createdAt:new Date().toISOString(), pinned:false,
+      profile:{id:me.id, displayName:me.displayName, avatarUrl:me.avatarUrl}, likes:[],reposts:[],comments:[],
+      imageUrl:preview, mediaType:draft.file ? (draft.file.type.startsWith('video/') ? 'VIDEO' : 'IMAGE') : null,
+      poll:draft.options ? {id:`${id}-poll`,options:draft.options.map((text,position)=>({id:`${id}-${position}`,text,position,votes:[]}))} : null}
+    communityOutbox.enqueue(optimistic, async () => {
+      if (draft.options) return createPollPost(draft.body,draft.options)
+      const key = draft.file ? await uploadPostImage(draft.file,draft.file.type) : undefined
+      return createPost(draft.body,key)
+    }, () => {if(preview)URL.revokeObjectURL(preview)})
+    return id
+  }, [me, createPost, createPollPost, uploadPostImage])
+
 
   const toggleLike = useCallback(
     async (post: Post) => {
@@ -705,6 +724,7 @@ export function useCommunity() {
     conversationsLoading: conversationsResult.fetching,
     conversationsError: conversationsResult.error,
     refetchConversations,
+    queuePost,
     createPost,
     createPollPost,
     votePoll,

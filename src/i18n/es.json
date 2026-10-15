@@ -2587,5 +2587,6 @@
   "Ver foto de portada": "Ver foto de portada",
   "Debe ser una imagen (JPG, PNG, WEBP, GIF, HEIC) o un video (MP4, WEBM, MOV).": "Debe ser una imagen (JPG, PNG, WEBP, GIF, HEIC) o un video (MP4, WEBM, MOV).",
   "MP4, WEBM, MOV · hasta {max} MB": "MP4, WEBM, MOV · hasta {max} MB",
-  "Restablecer zoom": "Restablecer zoom"
+  "Restablecer zoom": "Restablecer zoom",
+  "No se pudo publicar. Tu publicación no está guardada; copia el contenido y vuelve a intentarlo.": "No se pudo publicar. Tu publicación no está guardada; copia el contenido y vuelve a intentarlo."
 }

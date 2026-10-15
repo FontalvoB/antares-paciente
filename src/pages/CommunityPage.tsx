@@ -313,6 +313,7 @@ export function CommunityPage() {
     refetchConversations,
     deleteOwnPost,
     deleteOwnComment,
+    queuePost,
     createPost,
     createPollPost,
     votePoll,
@@ -1878,6 +1879,7 @@ export function CommunityPage() {
           <ComSidebar me={me} hidden={false} />
 
           <ComposePostModal
+            onQueue={draft => {queuePost(draft); showPublishedPost()}}
             open={composeOpen}
             onClose={() => setComposeOpen(false)}
             me={me}

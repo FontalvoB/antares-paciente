@@ -152,7 +152,7 @@ export function PostCard({
   }
 
   async function handleRepost() {
-    if (!onToggleRepost) return
+    if (!onToggleRepost || post.clientStatus) return
     try {
       await onToggleRepost(viewPost)
       onToast(repostedByMe ? t('Repost eliminado') : t('Reposteado'), 'ok')
@@ -239,7 +239,7 @@ export function PostCard({
     lastDoubleRef.current = now
     heartKey.current += 1
     setDblTick(heartKey.current)
-    if (!likedByMe) void handleLike()
+    if (!likedByMe && !post.clientStatus) void handleLike()
   }
 
   async function sharePost() {
@@ -277,9 +277,10 @@ export function PostCard({
             <IonIcon icon={pin} style={{ fontSize: 12 }} /> {t('Fijado')}
           </span>
         )}
-        <OwnPostDeleteButton postId={post.id} authorId={post.profile.id} myId={myId} onDelete={onDeletePost} onReport={() => openReport('post', post.id)} onToast={onToast} />
+        {!post.clientStatus && <OwnPostDeleteButton postId={post.id} authorId={post.profile.id} myId={myId} onDelete={onDeletePost} onReport={() => openReport('post', post.id)} onToast={onToast} />}
       </div>
 
+      {post.clientStatus && <div className={`com-post-delivery ${post.clientStatus}`} role={post.clientStatus === 'failed' ? 'alert' : 'status'}>{t(post.clientStatus === 'sending' ? 'Publicando…' : 'No pudimos confirmar la publicación. Revisa Comunidad antes de volver a publicar para evitar duplicados.')}</div>}
       {post.imageUrl && (
         <div className="com-post-media">
           {post.mediaType === 'VIDEO' ? (
@@ -312,13 +313,13 @@ export function PostCard({
       <div className="com-post-body">{viewPost.body}</div>
 
       {viewPost.poll && (
-        <PollBlock poll={viewPost.poll} myId={myId ?? null} onVote={handleVote} />
+        <PollBlock poll={viewPost.poll} myId={myId ?? null} onVote={post.clientStatus ? async () => {} : handleVote} />
       )}
 
       <div className="com-post-actions">
         <button
           className={`com-act-btn like ${likedByMe ? 'on' : ''}`}
-          disabled={liking}
+          disabled={liking || !!post.clientStatus}
           onClick={() => void handleLike()}
           aria-label={t(likedByMe ? "Quitar me gusta" : "Me gusta")}
           aria-pressed={likedByMe}
@@ -343,7 +344,7 @@ export function PostCard({
           />
           <span className="com-react-count">{likeCount}</span>
         </button>
-        <button type="button" className="com-act-btn" onClick={() => onOpen(post)} aria-label={t('Ver comentarios')}>
+        <button type="button" className="com-act-btn" onClick={() => {if(!post.clientStatus)onOpen(post)}} aria-label={t('Ver comentarios')}>
           <IonIcon className="com-react-ico" icon={chatbubbleEllipsesOutline} />
           <span className="com-react-count">{countCommunityComments(post.comments)}</span>
         </button>
@@ -406,7 +407,7 @@ export function PostCard({
             )
           })}
           {countCommunityComments(post.comments) > 2 && (
-            <button type="button" className="com-thread-more" onClick={() => onOpen(post)}>
+            <button type="button" className="com-thread-more" onClick={() => {if(!post.clientStatus)onOpen(post)}}>
               {t('Ver los {count} comentarios', { count: String(countCommunityComments(post.comments)) })}
             </button>
           )}

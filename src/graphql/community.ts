@@ -73,6 +73,7 @@ export interface Poll {
 }
 
 export interface Post {
+  clientStatus?: 'sending' | 'failed'
   id: string
   body: string
   pinned: boolean

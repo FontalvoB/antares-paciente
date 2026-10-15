@@ -32066,3 +32066,6 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .club-detail-backbar { padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 4px; }
 .club-detail-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--bd); border-radius: 12px; background: var(--wh); color: var(--tx); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
 .club-detail-back ion-icon { width: 21px; height: 21px; font-size: 21px; color: var(--teal); }
+
+.com-post-delivery { margin: 0 16px 12px; font-size: 12px; color: var(--mu); }
+.com-post-delivery.failed { color: var(--red); line-height: 1.5; }
