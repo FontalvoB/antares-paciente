@@ -32,6 +32,7 @@ export function MemberProfile({
   onUnfollow,
   onMessage,
   onOpenPost,
+  onOpenImage,
   timelineActions,
 }: {
   profile: Profile
@@ -44,6 +45,7 @@ export function MemberProfile({
   onFollow: () => void
   onUnfollow: () => void
   onMessage: () => void
+  onOpenImage: (url: string, mediaType: 'IMAGE' | 'VIDEO' | null) => void
   timelineActions: TimelineActions
   onOpenPost: (p: Post) => void
 }) {
@@ -61,7 +63,8 @@ export function MemberProfile({
   return (
     <div className="prof-view">
       {/* Portada + avatar superpuesto */}
-      <div
+      <button type="button"
+        disabled={!profile.coverUrl} aria-label={t('Ver foto de portada')} onClick={() => {if (profile.coverUrl) onOpenImage(profile.coverUrl, 'IMAGE')}}
         className="compf-cover memf-cover"
         style={
           profile.coverUrl
@@ -72,9 +75,10 @@ export function MemberProfile({
         <span className="compf-cover-kicker">
           <IonIcon icon={peopleOutline} style={{ fontSize: 14 }} /> {t('Su espacio')}
         </span>
-      </div>
+      </button>
       <div className="compf-avatar-slot">
         <div className="compf-avatar-wrap">
+          <button type="button" className="compf-photo-button" disabled={!profile.avatarUrl} aria-label={t('Ver foto de perfil')} onClick={() => {if(profile.avatarUrl) onOpenImage(profile.avatarUrl, 'IMAGE')}}>
           <Avatar
             name={profile.displayName}
             seedId={profile.id}
@@ -82,6 +86,7 @@ export function MemberProfile({
             src={profile.avatarUrl}
             style={{ boxShadow: '0 0 0 4px var(--wh), 0 12px 26px rgba(124,58,237,0.18)' }}
           />
+          </button>
         </div>
       </div>
 
@@ -177,7 +182,9 @@ export function MemberProfile({
               aria-label={t('Ver publicación')}
             >
               {post.imageUrl ? (
-                <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
+                post.mediaType === 'VIDEO'
+                  ? <video className="compf-tile-media" src={post.imageUrl} muted playsInline preload="metadata" />
+                  : <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
               ) : (
                 <span className="compf-tile-text">💬</span>
               )}

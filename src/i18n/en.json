@@ -297,7 +297,7 @@
   "Vit. E · Mg": "Vit. E · Mg",
   "Volver": "Go back",
   "Volver a Chats": "Back to Chats",
-  "Volver a la app": "Return to app",
+  "Volver a la app": "Back to app",
   "Volver al inicio de sesión": "Return to login",
   "Volver al protocolo": "Back to protocol",
   "Votar por: {text}": "Vote for: {text}",
@@ -2678,5 +2678,7 @@
   "Comentario eliminado": "Comment deleted",
   "Más": "More",
   "Opciones de perfil": "Profile options",
-  "Conecta a través de tus intereses": "Connect through your interests"
+  "Conecta a través de tus intereses": "Connect through your interests",
+  "Ver foto de perfil": "View profile photo",
+  "Ver foto de portada": "View cover photo"
 }

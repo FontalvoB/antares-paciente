@@ -57,6 +57,7 @@ export function CommunityProfile({
   onCompose,
   onShowList,
   onOpenPost,
+  onOpenImage,
   timelineActions,
   onUploadProfileImage,
   onToast,
@@ -70,6 +71,7 @@ export function CommunityProfile({
   onSaveProfile: (name: string, bio: string | null, avatarKey?: string | null, coverKey?: string | null) => Promise<void>
   onCompose: () => void
   onShowList: (which: 'followers' | 'following') => void
+  onOpenImage: (url: string, mediaType: 'IMAGE' | 'VIDEO' | null) => void
   timelineActions: TimelineActions
   onOpenPost: (p: Post) => void
   /** Sube la foto de perfil/portada y devuelve la info (key + URL de lectura). */
@@ -257,17 +259,20 @@ export function CommunityProfile({
       )}
 
       {/* Portada + avatar superpuesto */}
-      <div
+      <button type="button"
+        disabled={!me?.coverUrl} aria-label={t('Ver foto de portada')} onClick={() => {if (me?.coverUrl) onOpenImage(me?.coverUrl, 'IMAGE')}}
         className="compf-cover"
         style={me?.coverUrl ? { backgroundImage: `url(${me.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
       >
         <span className="compf-cover-kicker">
           <IonIcon icon={cameraOutline} style={{ fontSize: 14 }} /> {t('Mi espacio')}
         </span>
-      </div>
+      </button>
       <div className="compf-summary">
       <div className="compf-identity">
+        <button type="button" className="compf-photo-button" disabled={!me?.avatarUrl} aria-label={t('Ver foto de perfil')} onClick={() => {if(me?.avatarUrl) onOpenImage(me.avatarUrl, 'IMAGE')}}>
         <Avatar name={me?.displayName ?? t('Mi perfil')} seedId={me?.id ?? 'me'} size={80} src={me?.avatarUrl} />
+        </button>
         <div className="compf-identity-text">
           <div className="compf-identity-name"><span>{me?.displayName ?? t('Mi perfil')}</span></div>
           <div className="compf-user-status"><span className="compf-handle">@{handle}</span>{me ? statusBadge(me.status, t) : null}</div>
@@ -336,7 +341,9 @@ export function CommunityProfile({
                 </span>
               )}
               {post.imageUrl ? (
-                <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
+                post.mediaType === 'VIDEO'
+                  ? <video className="compf-tile-media" src={post.imageUrl} muted playsInline preload="metadata" />
+                  : <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
               ) : (
                 <span className="compf-tile-text">💬</span>
               )}

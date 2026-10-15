@@ -820,6 +820,7 @@ export function CommunityPage() {
                   ) : (
                     <>
                       <MemberProfile
+                        onOpenImage={openImage}
                         timelineActions={{onDeletePost: deleteOwnPost, onReportPost: reportPost, onVotePoll: votePoll, myId: me?.id, onToggleLike: handleToggleLike, onToggleRepost: toggleRepost, onToast: showToast}}
                         profile={profile}
                         isFriend={profileIsFriend}
@@ -1165,6 +1166,7 @@ export function CommunityPage() {
                       </>
                     ) : (
                       <CommunityProfile
+                        onOpenImage={openImage}
                         timelineActions={{onDeletePost: deleteOwnPost, onReportPost: reportPost, onVotePoll: votePoll, myId: me?.id, onToggleLike: handleToggleLike, onToggleRepost: toggleRepost, onToast: showToast}}
                         me={me}
                         meLoading={meLoading}
@@ -1949,16 +1951,8 @@ function ClubFeedItem({
           {initials(club.name)}
         </span>
         <span style={{ fontSize: 12.5, fontWeight: 800 }}>{club.name}</span>
-        <span
-          style={{
-            fontSize: 10.5,
-            fontWeight: 700,
-            color: "var(--ion-color-primary)",
-            background: "var(--ion-color-primary-tint, #f3ecfe)",
-            padding: "3px 9px",
-            borderRadius: 99,
-          }}
-        >
+        <span className="com-club-post-label">
+          <IonIcon icon={peopleOutline} />
           {t("Club")}
         </span>
       </div>
