@@ -1,3 +1,4 @@
+import { CommunityVideo } from "./CommunityVideo";
 import { CommunityMediaPreparationError } from "../../utils/community-media";
 import {
   IonButton,
@@ -520,7 +521,7 @@ export function ComposePostModal({
         {preview && (
           <div className={`cpm-media-wrap ${isVideoPreview ? "video" : ""}`}>
             {isVideoPreview ? (
-              <video
+              <CommunityVideo
                 className="cpm-media"
                 src={preview}
                 controls

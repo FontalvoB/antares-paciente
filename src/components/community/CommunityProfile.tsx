@@ -1,3 +1,4 @@
+import { CommunityVideo } from "./CommunityVideo";
 import coppMark from "../../assets/LogoIndividual.png";
 import { sparklesOutline } from "ionicons/icons";
 import { ProfileTimeline, type TimelineActions } from "./ProfileTimeline";
@@ -342,7 +343,7 @@ export function CommunityProfile({
               )}
               {post.imageUrl ? (
                 post.mediaType === 'VIDEO'
-                  ? <video className="compf-tile-media" src={post.imageUrl} muted playsInline preload="metadata" />
+                  ? <CommunityVideo className="compf-tile-media" src={post.imageUrl} muted playsInline preload="metadata" />
                   : <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
               ) : (
                 <span className="compf-tile-text">💬</span>

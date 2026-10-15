@@ -1,3 +1,4 @@
+import { CommunityVideo } from "./CommunityVideo";
 import { ProfileTimeline, type TimelineActions } from "./ProfileTimeline";
 import { IonButton, IonIcon } from '@ionic/react'
 import {
@@ -183,7 +184,7 @@ export function MemberProfile({
             >
               {post.imageUrl ? (
                 post.mediaType === 'VIDEO'
-                  ? <video className="compf-tile-media" src={post.imageUrl} muted playsInline preload="metadata" />
+                  ? <CommunityVideo className="compf-tile-media" src={post.imageUrl} muted playsInline preload="metadata" />
                   : <img className="compf-tile-media" src={post.imageUrl} alt="" loading="lazy" />
               ) : (
                 <span className="compf-tile-text">💬</span>
