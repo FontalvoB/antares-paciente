@@ -31987,3 +31987,10 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .community-screen .compf-grid:has(> :only-child),
 .community-screen .compf-grid:has(> :nth-child(2):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .community-screen .compf-grid:has(> :only-child) .compf-tile { aspect-ratio: 1; }
+/* Integrate the iPhone safe area into each existing header surface. */
+.community-feed-active .com-feed-header { padding-top: calc(22px + env(safe-area-inset-top, 0px)); }
+.community-screen .com-discover-header { margin-top: 0; padding-top: calc(20px + env(safe-area-inset-top, 0px)); border-top-left-radius: 0; border-top-right-radius: 0; }
+.community-screen .compf-personal .compf-cover { height: calc(180px + env(safe-area-inset-top, 0px)); }
+.community-screen .memf-cover { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+.community-screen .com-feed-sticky-tabs { top: env(safe-area-inset-top, 0px); }
+.community-screen .compf-edit-screen { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
