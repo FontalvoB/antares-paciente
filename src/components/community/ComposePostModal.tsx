@@ -45,7 +45,7 @@ const IMAGE_TYPES = [
   "image/heic",
   "image/heif",
 ];
-const VIDEO_TYPES = ["video/mp4", "video/webm"];
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 const ALLOWED_TYPES = [...IMAGE_TYPES, ...VIDEO_TYPES];
 
 type PostType = "text" | "image" | "video" | "poll";
@@ -211,13 +211,17 @@ export function ComposePostModal({
   }
 
   function pickFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    // iOS sometimes omits the MIME type when selecting a camera recording.
+    if ((!file.type || file.type === 'application/octet-stream') && /\.mov$/i.test(file.name)) {
+      file = new File([file], file.name, {type:'video/quicktime', lastModified:file.lastModified});
+    }
     if (!ALLOWED_TYPES.includes(file.type)) {
       onToast(
         t(
-          "Debe ser una imagen (JPG, PNG, WEBP, GIF, HEIC) o un video (MP4, WEBM).",
+          "Debe ser una imagen (JPG, PNG, WEBP, GIF, HEIC) o un video (MP4, WEBM, MOV).",
         ),
         "warn",
       );
@@ -505,7 +509,7 @@ export function ComposePostModal({
             </span>
             <span className="cpm-drop-sub">
               {type === "video"
-                ? t("MP4, WEBM · hasta {max} MB", { max: String(MAX_VIDEO_MB) })
+                ? t("MP4, WEBM, MOV · hasta {max} MB", { max: String(MAX_VIDEO_MB) })
                 : t("JPG, PNG, WEBP · hasta {max} MB", {
                     max: String(MAX_IMAGE_MB),
                   })}
@@ -545,7 +549,7 @@ export function ComposePostModal({
         <input
           ref={mediaRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,video/mp4,video/webm"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,video/mp4,video/webm,video/quicktime,.mov"
           hidden
           onChange={pickFile}
         />

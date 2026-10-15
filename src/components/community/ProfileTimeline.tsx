@@ -7,6 +7,7 @@ import { useI18n } from '../../i18n/I18nContext'
 import { PostCard } from './PostCard'
 
 export interface TimelineActions {
+  onOpenImage?: (url: string, mediaType: 'IMAGE' | 'VIDEO' | null) => void
   myId?: string | null
   onToggleLike?: (post: Post) => Promise<void>
   onToggleRepost?: (post: Post) => Promise<{id: string; reposts: Post['reposts']} | null>
@@ -24,7 +25,7 @@ function TimelineItem({post, onOpenPost, ...actions}: TimelineActions & {post: P
   return <div className="profile-feed-item">
     {post.isRepost && <div className="profile-timeline-repost"><IonIcon icon={repeatOutline} />{t('Reposteado')}</div>}
     <PostCard view={{post:current, likeCount:current.likes.length, likedByMe:liked, repostCount:current.reposts.length, repostedByMe:current.reposts.some(r => r.profileId === actions.myId)}}
-      myId={actions.myId} onOpen={onOpenPost} onToast={actions.onToast} onDeletePost={actions.onDeletePost}
+      myId={actions.myId} onOpen={onOpenPost} onOpenImage={actions.onOpenImage} onToast={actions.onToast} onDeletePost={actions.onDeletePost}
       onReportPost={actions.onReportPost ? async (id,reason) => {await actions.onReportPost?.(id,reason); return {id}} : undefined}
       onToggleLike={async () => {
         if (!actions.onToggleLike || !actions.myId) return

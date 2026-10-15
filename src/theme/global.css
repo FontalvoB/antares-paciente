@@ -32016,3 +32016,7 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .com-compose-modal .composer-send { height: 46px; margin: 0; --background: #006653; --color: white; --border-radius: 13px; --box-shadow: none; --padding-start: 18px; --padding-end: 18px; font-weight: 650; }
 .com-compose-modal .cpm-media-wrap { margin-inline: 0; border-radius: 16px; }
 .com-compose-modal .cpm-poll { margin-inline: 0; }
+
+/* Fixed media previews keep tall photos from consuming the feed. */
+.community-screen .com-post-media img.com-post-image { height: clamp(220px, 75vw, 340px); width: 100%; object-fit: cover; object-position: center; touch-action: manipulation; }
+.community-screen .com-dbl-heart ion-icon { width: 86px; height: 86px; font-size: 86px; }

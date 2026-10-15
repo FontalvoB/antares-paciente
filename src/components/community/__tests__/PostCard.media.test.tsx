@@ -1,0 +1,30 @@
+import {act,fireEvent,render,screen} from '@testing-library/react'
+import {afterEach,expect,it,vi} from 'vitest'
+import type {Post} from '../../../graphql/community'
+import {PostCard} from '../PostCard'
+vi.mock('@ionic/react',()=>({IonIcon:()=>null,IonModal:()=>null,IonAlert:()=>null}))
+vi.mock('../OwnPostDeleteButton',()=>({OwnPostDeleteButton:()=>null}))
+vi.mock('../community',()=>({Avatar:()=>null,timeAgo:()=> 'ahora'}))
+vi.mock('../../../i18n/I18nContext',()=>({useI18n:()=>({t:(s:string)=>s})}))
+afterEach(()=>vi.useRealTimers())
+function setup(liked=false) {
+ const post={id:'p',body:'Foto',profile:{id:'a',displayName:'Ana'},imageUrl:'/photo.png',mediaType:'IMAGE',likes:[],reposts:[],comments:[],poll:null} as unknown as Post
+ const like=vi.fn().mockResolvedValue(undefined),open=vi.fn()
+ const result=render(<PostCard view={{post,likeCount:0,likedByMe:liked,repostCount:0,repostedByMe:false}} onOpen={vi.fn()} onOpenImage={open} onToggleLike={like} onToast={vi.fn()}/>)
+ return {like,open,result}
+}
+it('opens full photo on a single tap, and likes with a heart on double tap',async()=>{
+ vi.useFakeTimers();const {like,open,result}=setup()
+ const photo=screen.getByAltText('Imagen de Ana')
+ fireEvent.click(photo);act(()=>vi.advanceTimersByTime(301));expect(open).toHaveBeenCalledOnce()
+ open.mockClear()
+ await act(async()=>{fireEvent.click(photo);fireEvent.click(photo)})
+ act(()=>vi.advanceTimersByTime(301))
+ expect(open).not.toHaveBeenCalled();expect(like).toHaveBeenCalledOnce()
+ expect(result.container.querySelector('.com-dbl-heart')).toBeTruthy()
+})
+it('does not unlike an already liked photo on double tap',()=>{
+ vi.useFakeTimers();const {like}=setup(true)
+ const photo=screen.getByAltText('Imagen de Ana');fireEvent.click(photo);fireEvent.click(photo)
+ expect(like).not.toHaveBeenCalled()
+})

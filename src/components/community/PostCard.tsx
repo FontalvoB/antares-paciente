@@ -98,6 +98,8 @@ export function PostCard({
   // Like por doble toque en la foto: corazón gigante + animación.
   const [dblTick, setDblTick] = useState(0)
   const openTimerRef = useRef(0)
+  const lastDoubleRef = useRef(0)
+  useEffect(() => () => window.clearTimeout(openTimerRef.current), [])
 
   // --- Estado: reporte ---
   const [reportOpen, setReportOpen] = useState(false)
@@ -194,15 +196,24 @@ export function PostCard({
   }
 
   function handleMediaClick() {
-    // Retrasa el lightbox 260 ms: si llega un segundo toque, es doble tap.
-    window.clearTimeout(openTimerRef.current)
+    if (openTimerRef.current) {
+      handleMediaDouble()
+      return
+    }
     openTimerRef.current = window.setTimeout(() => {
-      onOpenImage?.(post.imageUrl!, post.mediaType)
-    }, 260)
+      openTimerRef.current = 0
+      if (onOpenImage) onOpenImage(post.imageUrl!, post.mediaType)
+      else onOpen(post)
+    }, 300)
   }
 
   function handleMediaDouble() {
     window.clearTimeout(openTimerRef.current)
+    openTimerRef.current = 0
+    // Desktop dblclick follows the second click; animate/mutate only once.
+    const now = Date.now()
+    if (now - lastDoubleRef.current < 200) return
+    lastDoubleRef.current = now
     heartKey.current += 1
     setDblTick(heartKey.current)
     if (!likedByMe) void handleLike()

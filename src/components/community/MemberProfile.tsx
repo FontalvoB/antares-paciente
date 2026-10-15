@@ -170,7 +170,7 @@ export function MemberProfile({
           />
         </div>
       ) : view === 'all' ? (
-        <ProfileTimeline posts={filtered} onOpenPost={onOpenPost} {...timelineActions} />
+        <ProfileTimeline posts={filtered} onOpenPost={onOpenPost} {...timelineActions} onOpenImage={onOpenImage} />
       ) : (
         <div className="compf-grid">
           {filtered.map((post) => (
