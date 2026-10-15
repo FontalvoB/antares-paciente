@@ -281,14 +281,16 @@ export function ComposePostModal({
     <IonModal
       isOpen={open}
       onDidDismiss={onClose}
-      className={dark ? "com-dark-surface" : undefined}
+      className={`com-compose-modal ${dark ? "com-dark-surface" : ""}`}
     >
       <div className="com-detail">
+        <h2 className="cpm-heading">{t("Nueva publicación")}</h2>
         {publishError && <div role="alert" className="com-publish-error">{publishError}</div>}
         <div className="com-detail-head">
           <Avatar
             name={me?.displayName ?? "MG"}
             seedId={me?.id ?? "me"}
+            src={me?.avatarUrl}
             size={42}
             style={{
               boxShadow: "0 0 0 2px var(--wh), 0 2px 8px rgba(16,42,80,0.14)",
@@ -318,6 +320,7 @@ export function ComposePostModal({
             confidenciales; la moderación y el reporte viven en el feed. */}
         <div
           role="note"
+          className="cpm-privacy"
           style={{
             display: "flex",
             alignItems: "flex-start",

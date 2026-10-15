@@ -31994,3 +31994,25 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .community-screen .memf-cover { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
 .community-screen .com-feed-sticky-tabs { top: env(safe-area-inset-top, 0px); }
 .community-screen .compf-edit-screen { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
+
+/* Composer: clear hierarchy and COPP green on every overlay surface. */
+.com-compose-modal { --pur: #006653; --pur-d: #004c3e; --pur-l: #d7f2e8; }
+.com-compose-modal.com-dark-surface { --pur: #80e0bd; --pur-d: #54c99f; --pur-l: #20483b; }
+.com-compose-modal .com-detail { padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--wh); gap: 0; }
+.cpm-heading { margin: 0 44px 20px 0; color: var(--tx); font-size: 23px; font-weight: 700; letter-spacing: -.5px; }
+.com-compose-modal .com-detail-head { margin-bottom: 18px; }
+.com-compose-modal .com-detail-close { position: absolute; top: calc(15px + env(safe-area-inset-top, 0px)); right: 14px; }
+.com-compose-modal .cpm-privacy { margin: 0 0 18px !important; color: var(--mu) !important; border: 0 !important; background: var(--g1) !important; padding: 12px !important; font-size: 11px !important; }
+.com-compose-modal .cpm-types { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; padding: 0; margin-bottom: 18px; }
+.com-compose-modal .cpm-type { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 68px; padding: 10px 4px; border: 1px solid var(--bd); border-radius: 14px; background: transparent; color: var(--mu); font-size: 12px; box-shadow: none; }
+.com-compose-modal .cpm-type ion-icon { width: 22px; height: 22px; font-size: 22px; }
+.com-compose-modal .cpm-type.on { color: var(--pur); background: var(--pur-l); border-color: var(--pur); }
+.com-compose-modal .comp-input { margin: 0; min-height: 140px; background: var(--g1); border: 1px solid var(--bd); border-radius: 16px; padding: 14px !important; color: var(--tx); font-size: 16px; box-shadow: none; --highlight-color-focused: var(--pur); }
+.com-compose-modal .cpm-drop { margin: 12px 0; border-color: var(--pur); background: var(--pur-l); color: var(--tx); box-shadow: none; border-radius: 16px; }
+.com-compose-modal .cpm-drop-ico { background: var(--wh); color: var(--pur); }
+.com-compose-modal :is(.cpm-idea,.cpm-tipbar,.cpm-poll-add) { background: var(--pur-l); color: var(--pur); border-color: transparent; }
+.com-compose-modal .cpm-foot { position: sticky; bottom: 0; z-index: 2; background: var(--wh); margin-top: auto; padding: 16px 0 0; gap: 10px; border-top: 0; }
+.com-compose-modal .composer-hint { flex: 1; color: var(--mu); font-size: 11px; }
+.com-compose-modal .composer-send { height: 46px; margin: 0; --background: #006653; --color: white; --border-radius: 13px; --box-shadow: none; --padding-start: 18px; --padding-end: 18px; font-weight: 650; }
+.com-compose-modal .cpm-media-wrap { margin-inline: 0; border-radius: 16px; }
+.com-compose-modal .cpm-poll { margin-inline: 0; }
