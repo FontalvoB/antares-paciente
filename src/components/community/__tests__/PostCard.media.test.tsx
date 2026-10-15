@@ -7,9 +7,9 @@ vi.mock('../OwnPostDeleteButton',()=>({OwnPostDeleteButton:()=>null}))
 vi.mock('../community',()=>({Avatar:()=>null,timeAgo:()=> 'ahora'}))
 vi.mock('../../../i18n/I18nContext',()=>({useI18n:()=>({t:(s:string)=>s})}))
 afterEach(()=>vi.useRealTimers())
-function setup(liked=false, mediaType: 'IMAGE'|'VIDEO' = 'IMAGE') {
+function setup(liked=false, mediaType: 'IMAGE'|'VIDEO' = 'IMAGE', mutation?: () => Promise<void>) {
  const post={id:'p',body:'Foto',profile:{id:'a',displayName:'Ana'},imageUrl:'/photo.png',mediaType,likes:[],reposts:[],comments:[],poll:null} as unknown as Post
- const like=vi.fn().mockResolvedValue(undefined),open=vi.fn()
+ const like=mutation ? vi.fn(mutation) : vi.fn().mockResolvedValue(undefined),open=vi.fn()
  const result=render(<PostCard view={{post,likeCount:0,likedByMe:liked,repostCount:0,repostedByMe:false}} onOpen={vi.fn()} onOpenImage={open} onToggleLike={like} onToast={vi.fn()}/>)
  return {like,open,result}
 }
@@ -36,4 +36,16 @@ it('leaves video taps to the inline player without opening the lightbox',()=>{
  fireEvent.click(result.container.querySelector('video')!)
  act(()=>vi.advanceTimersByTime(500))
  expect(open).not.toHaveBeenCalled()
+})
+
+it('updates the heart before saving and rolls back a rejected like',async()=>{
+ let reject!: (error:Error)=>void
+ const pending=new Promise<void>((_,fail)=>{reject=fail})
+ const {result}=setup(false,'IMAGE',()=>pending)
+ fireEvent.click(screen.getByRole('button',{name:'Me gusta'}))
+ expect(screen.getByRole('button',{name:'Quitar me gusta'}).getAttribute('aria-pressed')).toBe('true')
+ expect(result.container.querySelector('.com-react-count')?.textContent).toBe('1')
+ await act(async()=>{reject(new Error('Network unavailable'))})
+ expect(screen.getByRole('button',{name:'Me gusta'}).getAttribute('aria-pressed')).toBe('false')
+ expect(result.container.querySelector('.com-react-count')?.textContent).toBe('0')
 })

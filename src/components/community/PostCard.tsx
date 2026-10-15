@@ -77,7 +77,7 @@ export function PostCard({
   myId?: string | null
   onToast: (msg: string, kind?: 'ok' | 'err' | 'info' | 'warn') => void
 }) {
-  const { likeCount, likedByMe, repostCount, repostedByMe } = view
+  const { likeCount: serverLikeCount, likedByMe: serverLikedByMe, repostCount, repostedByMe } = view
   const { post } = view
   const { t } = useI18n()
   // Copia local del post: el voto actualiza los resultados al instante.
@@ -92,6 +92,14 @@ export function PostCard({
     }
   }
   const [liking, setLiking] = useState(false)
+  const likePending = useRef(false)
+  const [optimisticLike, setOptimisticLike] = useState<{liked:boolean;count:number}|null>(null)
+  const likedByMe = optimisticLike?.liked ?? serverLikedByMe
+  const likeCount = optimisticLike?.count ?? serverLikeCount
+  useEffect(() => {
+    if (!liking && optimisticLike?.liked === serverLikedByMe) setOptimisticLike(null)
+  }, [liking, optimisticLike, serverLikedByMe, serverLikeCount])
+  useEffect(() => { setOptimisticLike(null) }, [post.id])
   // Re-dispara el pop del corazón + shockwave + partículas en cada like.
   const heartKey = useRef(0)
   const [heartTick, setHeartTick] = useState(0)
@@ -117,19 +125,28 @@ export function PostCard({
   const [repostLoading, setRepostLoading] = useState(false)
 
   async function handleLike() {
-    if (liking) return
+    if (likePending.current) return
     const wasLiked = likedByMe
+    const previousCount = likeCount
+    likePending.current = true
     setLiking(true)
+    setOptimisticLike({liked: !wasLiked, count: Math.max(0, previousCount + (wasLiked ? -1 : 1))})
+    if (!wasLiked) {
+      heartKey.current += 1
+      setHeartTick(heartKey.current)
+      navigator.vibrate?.(12)
+    }
     try {
-      await onToggleLike(post)
-      if (!wasLiked) {
-        heartKey.current += 1
-        setHeartTick(heartKey.current)
-        navigator.vibrate?.(12)
-      }
+      // Send the pre-tap state so the mutation chooses like/unlike correctly.
+      const requestPost = myId ? {...post, likes: wasLiked
+        ? (post.likes.some(l => l.profileId === myId) ? post.likes : [...post.likes, {id:`local-${myId}`, profileId:myId}])
+        : post.likes.filter(l => l.profileId !== myId)} : post
+      await onToggleLike(requestPost)
     } catch (e) {
+      setOptimisticLike({liked: wasLiked, count: previousCount})
       onToast((e as Error).message, 'err')
     } finally {
+      likePending.current = false
       setLiking(false)
     }
   }
