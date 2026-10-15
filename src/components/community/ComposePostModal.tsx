@@ -5,7 +5,6 @@ import {
   IonIcon,
   IonInput,
   IonModal,
-  IonTextarea,
 } from "@ionic/react";
 import {
   add,
@@ -106,7 +105,7 @@ export function ComposePostModal({
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const mediaRef = useRef<HTMLInputElement | null>(null);
-  const taRef = useRef<HTMLIonTextareaElement | null>(null);
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
   const qRef = useRef<HTMLIonInputElement | null>(null);
   const ideasRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ x: number; left: number; moved: boolean } | null>(
@@ -171,7 +170,7 @@ export function ComposePostModal({
       return;
     }
     const t = window.setTimeout(() => {
-      if (type === "text") taRef.current?.setFocus();
+      if (type === "text") taRef.current?.focus();
     }, 300);
     return () => window.clearTimeout(t);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -203,7 +202,7 @@ export function ComposePostModal({
       window.setTimeout(() => qRef.current?.setFocus(), 160);
     } else {
       // Modo texto: abre el teclado automáticamente.
-      window.setTimeout(() => taRef.current?.setFocus(), 160);
+      window.setTimeout(() => taRef.current?.focus(), 160);
     }
   }
 
@@ -383,7 +382,7 @@ export function ComposePostModal({
         </div>
 
         {type !== "poll" && (
-          <IonTextarea
+          <textarea
             ref={taRef}
             className="fld composer-input comp-input"
             value={draft}
@@ -392,8 +391,9 @@ export function ComposePostModal({
                 ? t("¿En qué piensas?")
                 : t("¿Qué cuenta la publicación?")
             }
-            onIonInput={(e) => setDraft(e.detail.value ?? "")}
-            autoGrow
+            aria-label={t("¿En qué piensas?")}
+            maxLength={4000}
+            onChange={(e) => setDraft(e.currentTarget.value)}
             rows={type === "text" ? 3 : 2}
           />
         )}
@@ -479,7 +479,7 @@ export function ComposePostModal({
                     if (suppressClickRef.current) return;
                     setDraft(idea.textKey);
                     navigator.vibrate?.(8);
-                    window.setTimeout(() => taRef.current?.setFocus(), 60);
+                    window.setTimeout(() => taRef.current?.focus(), 60);
                   }}
                 >
                   <IonIcon icon={idea.icon} className="cpm-idea-ico" />

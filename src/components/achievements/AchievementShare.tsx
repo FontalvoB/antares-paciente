@@ -5,7 +5,6 @@ import {
   IonIcon,
   IonActionSheet,
   IonSpinner,
-  IonTextarea,
 } from "@ionic/react";
 import {
   checkmarkCircleOutline,
@@ -37,7 +36,8 @@ export function AchievementShare({
   const { createPost, uploadPostImage, queuePost } = useCommunity();
   const copy = achievementCopy(achievement, t);
   const [chooseFormat, setChooseFormat] = useState(false);
-  const [caption, setCaption] = useState(copy.caption);
+  const captionRef = useRef(copy.caption);
+  const [hasCaption, setHasCaption] = useState(!!copy.caption.trim());
   const [asset, setAsset] = useState<{ file: File; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -113,7 +113,7 @@ export function AchievementShare({
       const file = format === "square" ? asset.file : new File([
         await renderAchievementCard(copy.title, copy.message, t("Un logro para celebrar"), "story"),
       ], "copp-logro-story.png", { type: "image/png" });
-      const status = await shareAchievementFile(file, copy.title, caption);
+      const status = await shareAchievementFile(file, copy.title, captionRef.current);
       if (status === "unsupported") {
         downloadAchievement(file);
         showToast(t("Tarjeta descargada. Adjunta la imagen en tu red social."));
@@ -140,10 +140,12 @@ export function AchievementShare({
           </IonButton>
         </div>
       ) : (
-        <IonTextarea className="achievement-caption" label={t("Añade un mensaje")}
-          labelPlacement="stacked" autoGrow rows={2} maxlength={1200}
-          value={caption} disabled={busy}
-          onIonInput={(e) => setCaption(e.detail.value || "")} />
+        <div className="achievement-caption-field">
+          <label htmlFor="achievement-message">{t("Añade un mensaje")}</label>
+          <textarea id="achievement-message" className="achievement-caption-input" rows={3} maxLength={1200}
+            defaultValue={captionRef.current} disabled={busy}
+            onChange={e => {captionRef.current=e.currentTarget.value;setHasCaption(!!e.currentTarget.value.trim())}} />
+        </div>
       )}
       {error && <div className="achievement-share-error" role="alert">
         <p>{error}</p>
@@ -154,17 +156,17 @@ export function AchievementShare({
       </p>}
       <div className="achievement-share-actions">
         {!published && <IonButton className="achievement-community-action"
-          disabled={!asset || busy || uncertain || !caption.trim()}
+          disabled={!asset || busy || uncertain || !hasCaption}
           onClick={() => void perform(async () => {
             if (!asset) return;
             if (queuePost) {
-              queuePost({body:caption.trim(),file:asset.file});
+              queuePost({body:captionRef.current.trim(),file:asset.file});
               onBack(); navigate('com'); return;
             }
             const key = await uploadPostImage(asset.file, asset.file.type);
             if (!alive.current) return;
             setUncertain(true);
-            const post = await createPost(caption.trim(), key);
+            const post = await createPost(captionRef.current.trim(), key);
             if (!post) throw new Error("Missing post confirmation");
             if (alive.current) {
               setUncertain(false);
