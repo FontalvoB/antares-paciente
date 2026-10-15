@@ -2,7 +2,7 @@ import {vi,it,expect,beforeEach} from 'vitest';
 import {render,screen,fireEvent,waitFor} from '@testing-library/react';
 import type {ReactNode} from 'react';
 const mocks=vi.hoisted(()=>({upload:vi.fn(),post:vi.fn(),render:vi.fn(),share:vi.fn(),download:vi.fn(),toast:vi.fn()}));
-vi.mock('../../../hooks/useCommunity',()=>({useCommunity:()=>({uploadPostImage:mocks.upload,createPost:mocks.post})}));
+vi.mock('../../../hooks/useCommunity',()=>({useCommunity:()=>({uploadPostImage:mocks.upload,createPost:mocks.post,me:{displayName:"Ana María Torres"}})}));
 vi.mock('../../../context/AppContext',()=>({useApp:()=>({showToast:mocks.toast})}));
 vi.mock('../../../services/achievements/share-card',()=>({renderAchievementCard:mocks.render,shareAchievementFile:mocks.share,downloadAchievement:mocks.download}));
 vi.mock('@ionic/react',()=>({
@@ -46,10 +46,11 @@ it('offers story format only for external sharing and keeps Community square',as
  mocks.render.mockClear(); mocks.share.mockResolvedValue('shared');
  mocks.upload.mockResolvedValue('community/card.png'); mocks.post.mockResolvedValue({id:'confirmed'});
  show(); await waitFor(()=>expect(screen.getByRole('img')).toBeTruthy());
+ expect(mocks.render).toHaveBeenLastCalledWith(expect.any(String),expect.any(String),expect.any(String),'square',expect.objectContaining({recipient:'Ana María Torres'}));
  expect(screen.queryByText('Historia')).toBeNull();
  fireEvent.click(screen.getByText('Compartir'));
  fireEvent.click(screen.getByText('Historia'));
- await waitFor(()=>expect(mocks.render).toHaveBeenLastCalledWith(expect.any(String),expect.any(String),expect.any(String),'story'));
+ await waitFor(()=>expect(mocks.render).toHaveBeenLastCalledWith(expect.any(String),expect.any(String),expect.any(String),'story',expect.objectContaining({recipient:'Ana María Torres'})));
  await waitFor(()=>expect((screen.getByRole('button',{name:'Publicar en Comunidad'}) as HTMLButtonElement).disabled).toBe(false));
  fireEvent.click(screen.getByText('Publicar en Comunidad'));
  await waitFor(()=>expect(mocks.post).toHaveBeenCalled());

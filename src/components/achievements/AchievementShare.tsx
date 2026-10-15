@@ -33,7 +33,7 @@ export function AchievementShare({
 }) {
   const t = useT();
   const { showToast, navigate } = useApp();
-  const { createPost, uploadPostImage, queuePost } = useCommunity();
+  const { createPost, uploadPostImage, queuePost, me } = useCommunity();
   const copy = achievementCopy(achievement, t);
   const [chooseFormat, setChooseFormat] = useState(false);
   const captionRef = useRef(copy.caption);
@@ -74,6 +74,7 @@ export function AchievementShare({
       copy.message,
       t("Un logro para celebrar"),
       "square",
+      {heading:t("Certificado de logro"),recipient:me?.displayName,footer:t("Cada paso cuenta. Tu constancia merece celebrarse.")},
     )
       .then((blob) => {
         if (!active) return;
@@ -93,7 +94,7 @@ export function AchievementShare({
       active = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [copy.title, copy.message, t, attempt]);
+  }, [copy.title, copy.message, t, attempt, me?.displayName]);
   async function perform(action: () => Promise<void>) {
     if (submitting.current) return;
     submitting.current = true;
@@ -123,7 +124,7 @@ export function AchievementShare({
     await perform(async () => {
       if (!asset) return;
       const file = format === "square" ? asset.file : new File([
-        await renderAchievementCard(copy.title, copy.message, t("Un logro para celebrar"), "story"),
+        await renderAchievementCard(copy.title, copy.message, t("Un logro para celebrar"), "story", {heading:t("Certificado de logro"),recipient:me?.displayName,footer:t("Cada paso cuenta. Tu constancia merece celebrarse.")}),
       ], "copp-logro-story.png", { type: "image/png" });
       const status = await shareAchievementFile(file, copy.title, captionRef.current);
       if (status === "unsupported") {
