@@ -312,18 +312,8 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
 
     return (
       <>
-        <div style={{ padding: "12px 14px 0" }}>
-          <button
-            type="button"
-            onClick={backToList}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
+        <div className="club-detail-backbar">
+          <button type="button" className="club-detail-back" onClick={backToList}>
             <IonIcon icon={arrowBack} /> {t("Volver a clubes")}
           </button>
         </div>

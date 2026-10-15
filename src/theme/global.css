@@ -32062,3 +32062,7 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 
 .community-screen ion-button.mem-back-btn { width: 44px; min-width: 44px; height: 44px; min-height: 44px; --padding-start: 0; --padding-end: 0; --border-radius: 50%; --background: rgba(12,35,31,.65); --background-hover: rgba(12,35,31,.8); --background-focused: rgba(12,35,31,.8); --background-activated: rgba(12,35,31,.8); --color: #fff; --border-color: rgba(255,255,255,.3); --box-shadow: none; box-shadow: 0 2px 8px rgb(0 0 0 / 12%); }
 .community-screen ion-button.mem-back-btn ion-icon { width: 23px; height: 23px; font-size: 23px; margin: 0; }
+
+.club-detail-backbar { padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 4px; }
+.club-detail-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--bd); border-radius: 12px; background: var(--wh); color: var(--tx); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.club-detail-back ion-icon { width: 21px; height: 21px; font-size: 21px; color: var(--teal); }
