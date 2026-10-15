@@ -37,11 +37,23 @@ export function AchievementShare({
   const copy = achievementCopy(achievement, t);
   const [chooseFormat, setChooseFormat] = useState(false);
   const captionRef = useRef(copy.caption);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const [hasCaption, setHasCaption] = useState(!!copy.caption.trim());
   const [asset, setAsset] = useState<{ file: File; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [published, setPublished] = useState(false);
+  useEffect(() => {
+    const field = messageInputRef.current;
+    const content = field?.closest('ion-content');
+    if (!field || !content) return;
+    // Once the modal shrinks above the native keyboard, reveal the focused input.
+    const observer = new ResizeObserver(() => {
+      if (document.activeElement === field) requestAnimationFrame(() => field.scrollIntoView({block:'nearest'}));
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [published]);
   const [uncertain, setUncertain] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const submitting = useRef(false);
@@ -142,7 +154,7 @@ export function AchievementShare({
       ) : (
         <div className="achievement-caption-field">
           <label htmlFor="achievement-message">{t("Añade un mensaje")}</label>
-          <textarea id="achievement-message" className="achievement-caption-input" rows={3} maxLength={1200}
+          <textarea ref={messageInputRef} id="achievement-message" className="achievement-caption-input" rows={3} maxLength={1200}
             defaultValue={captionRef.current} disabled={busy}
             onChange={e => {captionRef.current=e.currentTarget.value;setHasCaption(!!e.currentTarget.value.trim())}} />
         </div>

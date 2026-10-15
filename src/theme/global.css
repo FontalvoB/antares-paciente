@@ -32077,3 +32077,8 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 
 .com-compose-modal textarea.comp-input { display: block; width: 100%; height: clamp(140px, 24dvh, 220px); min-height: 140px; max-height: 220px; box-sizing: border-box; resize: none; overflow-y: auto; font: inherit; font-size: 16px; line-height: 1.5; scroll-margin-block: 16px; }
 .com-compose-modal textarea.comp-input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+/* The native keyboard does not resize our WebView; resize this overlay itself. */
+.achievement-modal { --height: calc(95dvh - var(--kb, 0px)); --max-height: calc(95dvh - var(--kb, 0px)); }
+.achievement-modal::part(content) { position: absolute; top: 5dvh; bottom: var(--kb, 0px); height: auto; max-height: none; }
+.achievement-modal .achievement-sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+.achievement-modal .achievement-caption-input { scroll-margin-top: 16px; scroll-margin-bottom: 24px; }
