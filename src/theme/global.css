@@ -32032,3 +32032,13 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
   100% { opacity: 0; transform: scale(1.35); }
 }
 @media (prefers-reduced-motion: reduce) { .com-dbl-heart::after { animation: none; display: none; } }
+
+/* Resize comments to the keyboard and scroll only the conversation body. */
+.com-comments-modal { --height: calc(100dvh - var(--kb, 0px)); --max-height: calc(100dvh - var(--kb, 0px)); align-items: flex-start; }
+.com-comments-modal::part(content) { position: absolute; top: 0; bottom: var(--kb, 0px); height: auto; max-height: none; }
+.com-comments-modal .com-detail { overflow: hidden; height: 100%; min-height: 0; box-sizing: border-box; }
+.com-comments-modal .com-detail-head { flex-shrink: 0; }
+.com-comments-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.com-comments-modal .com-detail-comments { flex: initial; }
+.com-comments-modal .com-detail-input { position: relative; bottom: auto; flex-shrink: 0; margin-top: 8px; }
+.community-screen .com-post-media video.com-post-image { cursor: default; }

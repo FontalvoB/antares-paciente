@@ -273,8 +273,6 @@ export function PostCard({
               muted
               playsInline
               preload="metadata"
-              onClick={handleMediaClick}
-              onDoubleClick={handleMediaDouble}
             />
           ) : (
             <img

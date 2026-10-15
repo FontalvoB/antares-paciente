@@ -7,8 +7,8 @@ vi.mock('../OwnPostDeleteButton',()=>({OwnPostDeleteButton:()=>null}))
 vi.mock('../community',()=>({Avatar:()=>null,timeAgo:()=> 'ahora'}))
 vi.mock('../../../i18n/I18nContext',()=>({useI18n:()=>({t:(s:string)=>s})}))
 afterEach(()=>vi.useRealTimers())
-function setup(liked=false) {
- const post={id:'p',body:'Foto',profile:{id:'a',displayName:'Ana'},imageUrl:'/photo.png',mediaType:'IMAGE',likes:[],reposts:[],comments:[],poll:null} as unknown as Post
+function setup(liked=false, mediaType: 'IMAGE'|'VIDEO' = 'IMAGE') {
+ const post={id:'p',body:'Foto',profile:{id:'a',displayName:'Ana'},imageUrl:'/photo.png',mediaType,likes:[],reposts:[],comments:[],poll:null} as unknown as Post
  const like=vi.fn().mockResolvedValue(undefined),open=vi.fn()
  const result=render(<PostCard view={{post,likeCount:0,likedByMe:liked,repostCount:0,repostedByMe:false}} onOpen={vi.fn()} onOpenImage={open} onToggleLike={like} onToast={vi.fn()}/>)
  return {like,open,result}
@@ -29,4 +29,11 @@ it('does not unlike an already liked photo on double tap',()=>{
  vi.useFakeTimers();const {like}=setup(true)
  const photo=screen.getByAltText('Imagen de Ana');fireEvent.click(photo);fireEvent.click(photo)
  expect(like).not.toHaveBeenCalled()
+})
+
+it('leaves video taps to the inline player without opening the lightbox',()=>{
+ vi.useFakeTimers();const {open,result}=setup(false,'VIDEO')
+ fireEvent.click(result.container.querySelector('video')!)
+ act(()=>vi.advanceTimersByTime(500))
+ expect(open).not.toHaveBeenCalled()
 })

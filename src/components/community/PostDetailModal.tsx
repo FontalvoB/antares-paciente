@@ -536,6 +536,7 @@ export function PostDetailModal({
           </IonButton>
         </div>
 
+        <div className="com-comments-scroll">
         <div className="com-detail-post">
           <div className="com-post-body">{view.body}</div>
           {view.poll && (
@@ -550,7 +551,6 @@ export function PostDetailModal({
                 muted
                 playsInline
                 preload="metadata"
-                onClick={() => onOpenImage?.(view.imageUrl!, view.mediaType)}
               />
             ) : (
               <img
@@ -631,6 +631,7 @@ export function PostDetailModal({
           )}
         </div>
 
+        </div>
         <div className="com-detail-input">
           {replyTarget && (
             <div className="com-reply-chip">
