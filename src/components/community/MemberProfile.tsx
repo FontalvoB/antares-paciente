@@ -1,3 +1,4 @@
+import coppMark from "../../assets/LogoIndividual.png";
 import { CommunityVideo } from "./CommunityVideo";
 import { ProfileTimeline, type TimelineActions } from "./ProfileTimeline";
 import { IonButton, IonIcon } from '@ionic/react'
@@ -7,7 +8,6 @@ import {
   documentTextOutline,
   filmOutline,
   imagesOutline,
-  peopleOutline,
   personAddOutline,
   personRemoveOutline,
   play,
@@ -62,7 +62,7 @@ export function MemberProfile({
   )
 
   return (
-    <div className="prof-view">
+    <div className="prof-view compf-personal compf-member">
       {/* Portada + avatar superpuesto */}
       <button type="button"
         disabled={!profile.coverUrl} aria-label={t('Ver foto de portada')} onClick={() => {if (profile.coverUrl) onOpenImage(profile.coverUrl, 'IMAGE')}}
@@ -73,78 +73,31 @@ export function MemberProfile({
             : undefined
         }
       >
-        <span className="compf-cover-kicker">
-          <IonIcon icon={peopleOutline} style={{ fontSize: 14 }} /> {t('Su espacio')}
-        </span>
       </button>
-      <div className="compf-avatar-slot">
-        <div className="compf-avatar-wrap">
+      <div className="compf-summary">
+        <div className="compf-identity">
           <button type="button" className="compf-photo-button" disabled={!profile.avatarUrl} aria-label={t('Ver foto de perfil')} onClick={() => {if(profile.avatarUrl) onOpenImage(profile.avatarUrl, 'IMAGE')}}>
-          <Avatar
-            name={profile.displayName}
-            seedId={profile.id}
-            size={96}
-            src={profile.avatarUrl}
-            style={{ boxShadow: '0 0 0 4px var(--wh), 0 12px 26px rgba(124,58,237,0.18)' }}
-          />
+            <Avatar name={profile.displayName} seedId={profile.id} size={80} src={profile.avatarUrl} />
           </button>
+          <div className="compf-identity-text">
+            <div className="compf-identity-name"><span>{profile.displayName}</span></div>
+            <div className="compf-user-status"><span className="compf-handle">@{profile.displayName.toLowerCase().replace(/[^a-z0-9]+/g, '')}</span>{statusBadge(profile.status, t)}</div>
+          </div>
         </div>
-      </div>
-
-      {/* Identidad */}
-      <div className="compf-name-row center">
-        <span className="compf-name-big">{profile.displayName}</span>
-        {statusBadge(profile.status, t)}
-      </div>
-
-      <div className="compf-stats-line">
-        <b>{formatCount(profile.posts.length)}</b> {t('publicaciones')}
-        <span className="compf-sep">·</span>
-        <b>{formatCount(followersCount)}</b> {t('seguidores')}
-        <span className="compf-sep">·</span>
-        <b>{formatCount(followingCount)}</b> {t('siguiendo')}
-      </div>
-
-      <p className="compf-bio">
-        {profile.bio?.trim() ? profile.bio : t('Comparte lo que hace con la comunidad.')}
-      </p>
-
-      {/* Acciones */}
-      <div className="compf-actions">
-        {isFriend ? (
-          <IonButton fill="solid" className="compf-action-btn" disabled={busy} onClick={onUnfollow}>
-            <IonIcon icon={personRemoveOutline} style={{ marginRight: 5 }} /> {t('Dejar de seguir')}
+        <p className="compf-bio">{profile.bio?.trim() || t('Comparte lo que hace con la comunidad.')}</p>
+        <div className="compf-secondary-meta"><span className="compf-brand-badge"><img src={coppMark} alt="" />COPP-ADRESD</span></div>
+        <div className="compf-stat-buttons">
+          <div><b>{formatCount(profile.posts.length)}</b><span>{t('publicaciones')}</span></div>
+          <button type="button" onClick={() => onShowList('followers')}><b>{formatCount(followersCount)}</b><span>{t('seguidores')}</span></button>
+          <button type="button" onClick={() => onShowList('following')}><b>{formatCount(followingCount)}</b><span>{t('siguiendo')}</span></button>
+        </div>
+        <div className="compf-member-actions">
+          <IonButton fill={isFriend || isFollowingBack ? 'outline' : 'solid'} disabled={busy} onClick={isFriend || isFollowingBack ? onUnfollow : onFollow}>
+            <IonIcon slot="start" icon={isFriend ? personRemoveOutline : isFollowingBack ? checkmark : personAddOutline} />
+            {t(isFriend ? 'Dejar de seguir' : isFollowingBack ? 'Siguiendo' : 'Seguir')}
           </IonButton>
-        ) : isFollowingBack ? (
-          <IonButton fill="solid" className="compf-action-btn" disabled={busy} onClick={onUnfollow}>
-            <IonIcon icon={checkmark} style={{ marginRight: 5 }} /> {t('Siguiendo')}
-          </IonButton>
-        ) : (
-          <IonButton fill="solid" className="compf-action-btn" disabled={busy} onClick={onFollow}>
-            <IonIcon icon={personAddOutline} style={{ marginRight: 5 }} /> {t('Seguir')}
-          </IonButton>
-        )}
-        {isFriend && (
-          <IonButton fill="solid" className="compf-action-btn" onClick={onMessage}>
-            <IonIcon icon={chatbubbleEllipsesOutline} style={{ marginRight: 5 }} /> {t('Enviar mensaje')}
-          </IonButton>
-        )}
-      </div>
-
-      {/* Círculos rápidos */}
-      <div className="compf-circles">
-        <button type="button" className="compf-circle" onClick={() => onShowList('following')}>
-          <span className="compf-circle-ico">
-            <IonIcon icon={personAddOutline} />
-          </span>
-          {t('Siguiendo')}
-        </button>
-        <button type="button" className="compf-circle" onClick={() => onShowList('followers')}>
-          <span className="compf-circle-ico">
-            <IonIcon icon={peopleOutline} />
-          </span>
-          {t('Seguidores')}
-        </button>
+          {isFriend && <IonButton fill="outline" onClick={onMessage}><IonIcon slot="start" icon={chatbubbleEllipsesOutline} />{t('Enviar mensaje')}</IonButton>}
+        </div>
       </div>
 
       {/* Tabs con filtro */}

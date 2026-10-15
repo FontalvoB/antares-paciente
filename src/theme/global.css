@@ -32054,3 +32054,8 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .mbl-zoom-tools { display: flex; align-items: center; flex-shrink: 0; padding: 3px; border-radius: 24px; background: rgba(255,255,255,.12); }
 .mbl-zoom-tools button { height: 40px; min-width: 44px; padding: 0 12px; background: transparent; border: 0; color: white; font: inherit; font-size: 16px; cursor: pointer; }
 .mbl-zoom-tools button:disabled { opacity: .35; }
+
+.compf-member-actions { display: flex; gap: 8px; padding: 0 20px 12px; }
+.compf-member-actions ion-button { flex: 1; margin: 0; height: 42px; --border-radius: 12px; --background: #006653; --color: white; --border-color: var(--bd); --box-shadow: none; font-size: 13px; font-weight: 650; }
+.compf-member-actions ion-button[fill="outline"] { --background: transparent; --color: var(--tx); }
+.compf-member-actions ion-icon { width: 18px; height: 18px; font-size: 18px; }
