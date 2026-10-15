@@ -1,3 +1,4 @@
+import { ZoomableImage } from "./ZoomableImage";
 import { CommunityVideo } from "./CommunityVideo";
 import { IonButton, IonIcon, IonModal } from '@ionic/react'
 import { close, expand } from 'ionicons/icons'
@@ -17,7 +18,7 @@ export function MediaLightbox({
   const isVideo = mediaType === 'VIDEO'
   const { t } = useI18n()
   return (
-    <IonModal isOpen={!!url} onDidDismiss={onClose}>
+    <IonModal className="community-media-viewer" isOpen={!!url} onDidDismiss={onClose}>
       <div className="mbl" onClick={onClose} role="dialog" aria-modal="true" aria-label={t('Imagen ampliada')}>
         <div className="mbl-topbar" onClick={(e) => e.stopPropagation()}>
           <IonButton className="mbl-close" onClick={onClose} aria-label={t('Cerrar')}>
@@ -29,7 +30,7 @@ export function MediaLightbox({
             {isVideo ? (
               <CommunityVideo className="mbl-media" src={url} controls autoPlay playsInline />
             ) : (
-              <img className="mbl-media" src={url} alt={t('Imagen ampliada')} />
+              <ZoomableImage key={url} src={url} alt={t('Imagen ampliada')} />
             )}
             <div className="mbl-hint">
               <IonIcon icon={expand} style={{ fontSize: 13 }} /> {t('Toca fuera para cerrar')}

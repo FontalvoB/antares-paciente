@@ -32042,3 +32042,15 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .com-comments-modal .com-detail-comments { flex: initial; }
 .com-comments-modal .com-detail-input { position: relative; bottom: auto; flex-shrink: 0; margin-top: 8px; }
 .community-screen .com-post-media video.com-post-image { cursor: default; }
+
+.community-media-viewer { --width: 100vw; --height: 100dvh; --max-width: 100vw; --max-height: 100dvh; --border-radius: 0; }
+.community-media-viewer .mbl-body { min-height: 0; padding: calc(64px + env(safe-area-inset-top, 0px)) 12px calc(20px + env(safe-area-inset-bottom, 0px)); }
+.community-media-viewer .mbl-media { width: 100%; height: 100%; min-height: 0; max-width: 100%; max-height: 100%; flex: 1; object-fit: contain; }
+.community-media-viewer .mbl-hint { flex-shrink: 0; }
+
+.mbl-zoom-stage { flex: 1; width: 100%; min-height: 0; display: grid; place-items: center; overflow: hidden; touch-action: none; cursor: grab; }
+.mbl-zoom-stage:active { cursor: grabbing; }
+.mbl-zoom-image { width: 100%; height: 100%; min-height: 0; object-fit: contain; transform-origin: center; user-select: none; -webkit-user-select: none; pointer-events: none; }
+.mbl-zoom-tools { display: flex; align-items: center; flex-shrink: 0; padding: 3px; border-radius: 24px; background: rgba(255,255,255,.12); }
+.mbl-zoom-tools button { height: 40px; min-width: 44px; padding: 0 12px; background: transparent; border: 0; color: white; font: inherit; font-size: 16px; cursor: pointer; }
+.mbl-zoom-tools button:disabled { opacity: .35; }

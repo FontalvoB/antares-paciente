@@ -2682,5 +2682,6 @@
   "Ver foto de perfil": "View profile photo",
   "Ver foto de portada": "View cover photo",
   "Debe ser una imagen (JPG, PNG, WEBP, GIF, HEIC) o un video (MP4, WEBM, MOV).": "Choose an image (JPG, PNG, WEBP, GIF, HEIC) or a video (MP4, WEBM, MOV).",
-  "MP4, WEBM, MOV · hasta {max} MB": "MP4, WEBM, MOV · up to {max} MB"
+  "MP4, WEBM, MOV · hasta {max} MB": "MP4, WEBM, MOV · up to {max} MB",
+  "Restablecer zoom": "Reset zoom"
 }
