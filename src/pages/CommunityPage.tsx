@@ -465,15 +465,21 @@ export function CommunityPage() {
     else void reexecuteMemberFollowing({ requestPolicy: "network-only" });
   };
   const profile = profileResult.data?.profile ?? null;
+  const [followOverrides, setFollowOverrides] = useState<Record<string, boolean>>({});
+  const followPending = useRef(new Set<string>());
   const followedIds = useMemo(
-    () => new Set(peopleFollowing.map((p) => p.id)),
-    [peopleFollowing],
+    () => {
+      const ids = new Set(peopleFollowing.map(p => p.id));
+      for (const [id, following] of Object.entries(followOverrides)) { if(following) ids.add(id); else ids.delete(id) }
+      return ids;
+    },
+    [peopleFollowing, followOverrides],
   );
   useEffect(() => { setDiscoverPeople(tab === "amigos"); }, [tab, setDiscoverPeople]);
   const recommended = people.filter(person => person.profile.id !== me?.id && !person.isFollowing)
     .map(person => person.profile);
   const profileIsFriend =
-    profile != null && friends.some((x) => x.id === profile.id);
+    profile != null && followOverrides[profile.id] !== false && friends.some((x) => x.id === profile.id);
   const profileFollowingBack = profile != null && followedIds.has(profile.id);
 
   useEffect(() => {
@@ -578,50 +584,29 @@ export function CommunityPage() {
   }
 
   async function handleFollowToggle(person: Person) {
-    const id = person.profile.id;
-    const name = person.profile.displayName;
-    setBusyId(id);
-    try {
-      if (person.isFriend) {
-        showToast(t("Ya son amigos"), "info");
-        return;
-      }
-      if (person.isFollowing) {
-        setUnfollowTarget(person.profile);
-      } else {
-        await followUser(id);
-        showToast(t("Siguiendo a {name}", { name }), "ok");
-      }
-    } catch (e) {
-      showToast((e as Error).message, "err");
-    } finally {
-      setBusyId(null);
-    }
+    if (followOverrides[person.profile.id] ?? person.isFollowing) setUnfollowTarget(person.profile);
+    else await handleFollow(person.profile.id, person.profile.displayName);
   }
 
-  async function handleUnfollow(profileId: string, name: string) {
+  async function changeFollow(profileId: string, name: string, following: boolean) {
+    if (followPending.current.has(profileId)) return;
+    const previous = followedIds.has(profileId);
+    followPending.current.add(profileId);
+    setFollowOverrides(current => ({...current,[profileId]:following}));
     setBusyId(profileId);
     try {
-      await unfollowUser(profileId);
-      showToast(t("Dejaste de seguir a {name}", { name }), "ok");
-    } catch (e) {
-      showToast((e as Error).message, "err");
+      if (following) await followUser(profileId); else await unfollowUser(profileId);
+      showToast(t(following ? "Siguiendo a {name}" : "Dejaste de seguir a {name}", {name}), "ok");
+    } catch(error) {
+      setFollowOverrides(current => ({...current,[profileId]:previous}));
+      showToast((error as Error).message, "err");
     } finally {
-      setBusyId(null);
+      followPending.current.delete(profileId);
+      setBusyId(current => current === profileId ? null : current);
     }
   }
-
-  async function handleFollow(profileId: string, name: string) {
-    setBusyId(profileId);
-    try {
-      await followUser(profileId);
-      showToast(t("Siguiendo a {name}", { name }), "ok");
-    } catch (e) {
-      showToast((e as Error).message, "err");
-    } finally {
-      setBusyId(null);
-    }
-  }
+  async function handleUnfollow(profileId: string, name: string) { await changeFollow(profileId,name,false) }
+  async function handleFollow(profileId: string, name: string) { await changeFollow(profileId,name,true) }
 
   const chatQuery = chatQ.trim().toLowerCase();
   const filteredConversations = conversations.filter(
@@ -1172,7 +1157,7 @@ export function CommunityPage() {
                         meLoading={meLoading}
                         pointsTotal={pointsTotal}
                         followersCount={followers.length}
-                        followingCount={peopleFollowing.length}
+                        followingCount={followedIds.size}
                         posts={meTimelinePosts}
                         onSaveProfile={async (
                           name,
@@ -1514,7 +1499,7 @@ export function CommunityPage() {
                               sub={p.profile.bio?.trim() || undefined}
                               onClick={() => openProfile(p.profile.id)}
                               actions={
-                                p.isFriend ? (
+                                p.isFriend && followOverrides[p.profile.id] !== false ? (
                                   <>
                                     <IonButton
                                       fill="outline"
@@ -1542,7 +1527,7 @@ export function CommunityPage() {
                                       />
                                     </IonButton>
                                   </>
-                                ) : p.isFollowing ? (
+                                ) : (followOverrides[p.profile.id] ?? p.isFollowing) ? (
                                   <IonButton
                                     fill="outline"
                                     className="bt bt-mini"
