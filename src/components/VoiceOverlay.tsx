@@ -448,14 +448,7 @@ function ElevenVoiceBody({
   onFallback,
 }: ElevenVoiceBodyProps) {
   const eleven = useConversation();
-  const { t, lang } = useI18n();
-  // Idioma leído por ref: el override se aplica al ARRANCAR la sesión
-  // (contrato de ElevenLabs); un cambio de idioma a mitad de llamada de voz
-  // toma efecto en la siguiente sesión de voz, sin reconectar en caliente.
-  const langRef = useRef(lang);
-  useEffect(() => {
-    langRef.current = lang;
-  }, [lang]);
+  const t = useT();
 
   const start = useCallback(async () => {
     try {
@@ -468,12 +461,12 @@ function ElevenVoiceBody({
       }
       eleven.startSession({
         signedUrl: session.signedUrl,
-        // Idioma del agente de voz = idioma de la app (agente en modelo
-        // multilingüe gemini-2.5-flash: el override sí aplica). Con agente
-        // configurado 'es' y sin override el comportamiento es el histórico.
-        overrides: {
-          agent: { language: langRef.current === "en" ? "en" : "es" },
-        },
+        // NOTA (2026-10-19): overrides.agent.language (idioma de la app) exige
+        // que el backend firme la URL con enable_conversation_config_override=true.
+        // Sin ese flag, ElevenLabs CIERRA la conexión al recibir
+        // conversation_initiation_client_data → startSession rechaza → fallback
+        // Web Speech (inexistente en WKWebView) → silencio total.
+        // Pendiente backend; hasta entonces NO enviar overrides con signedUrl.
       });
     } catch {
       onFallback();
