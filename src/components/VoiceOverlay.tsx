@@ -3,7 +3,7 @@ import { IonButton, IonIcon, IonInput, IonModal } from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n, useT } from "../i18n/I18nContext";
 import { useSpeechAssistant } from "../hooks/useSpeechAssistant";
 import {
   requestVoiceSession,
@@ -131,7 +131,7 @@ export function VoiceOverlay() {
     sendVoiceMessage,
     appendChatMessages,
   } = useApp();
-  const t = useT();
+  const { t, lang } = useI18n();
   const [mode, setMode] = useState<VoiceMode>("idle");
   // Estado del turno en curso en modo ElevenLabs.
   const [thinking, setThinking] = useState(false);
@@ -143,6 +143,9 @@ export function VoiceOverlay() {
   // ── Fallback Web Speech (misma lógica del MVP D4) ──────────────────────────
   const assistantBusyRef = useRef(false);
   const assistant = useSpeechAssistant({
+    // STT/TTS siguen al selector de idioma de la app (cambio en caliente
+    // soportado: el recognizer se relanza con el locale nuevo).
+    lang,
     onFinalTranscript: (text) => {
       if (assistantBusyRef.current) return;
       assistantBusyRef.current = true;
@@ -445,7 +448,14 @@ function ElevenVoiceBody({
   onFallback,
 }: ElevenVoiceBodyProps) {
   const eleven = useConversation();
-  const t = useT();
+  const { t, lang } = useI18n();
+  // Idioma leído por ref: el override se aplica al ARRANCAR la sesión
+  // (contrato de ElevenLabs); un cambio de idioma a mitad de llamada de voz
+  // toma efecto en la siguiente sesión de voz, sin reconectar en caliente.
+  const langRef = useRef(lang);
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
 
   const start = useCallback(async () => {
     try {
@@ -456,7 +466,15 @@ function ElevenVoiceBody({
         onFallback();
         return;
       }
-      eleven.startSession({ signedUrl: session.signedUrl });
+      eleven.startSession({
+        signedUrl: session.signedUrl,
+        // Idioma del agente de voz = idioma de la app (agente en modelo
+        // multilingüe gemini-2.5-flash: el override sí aplica). Con agente
+        // configurado 'es' y sin override el comportamiento es el histórico.
+        overrides: {
+          agent: { language: langRef.current === "en" ? "en" : "es" },
+        },
+      });
     } catch {
       onFallback();
     }

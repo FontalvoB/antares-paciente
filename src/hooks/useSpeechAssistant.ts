@@ -3,12 +3,12 @@
  *
  * Encapsula `SpeechRecognition` (con prefijo `webkit`) y `window.speechSynthesis`
  * para un ciclo bidireccional real:
- *  - Escucha continua en español (es-CO, fallback es-ES) con transcripción
- *    en vivo (interina + final) vía callback.
+ *  - Escucha continua en el idioma de la app (es-CO / en-US según el selector
+ *    de idioma) con transcripción en vivo (interina + final) vía callback.
  *  - Detección de fin de intervención: el resultado `isFinal` del reconocedor
  *    dispara `onFinalTranscript` (con pequeño debounce para agrupar).
- *  - Vocalización de la respuesta del bot con la voz española disponible
- *    (o la default si el WebView no expone una voz es-*).
+ *  - Vocalización de la respuesta del bot con una voz del idioma de la app
+ *    (o la default si el WebView no expone una voz en ese idioma).
  *  - Silenciar/colgar limpian de inmediato reconocimiento y síntesis.
  *
  * Si el WebView/navegador no soporta la Web Speech API el hook lo reporta
@@ -69,8 +69,11 @@ interface SpeechRecognitionWindow {
 export type SpeechAssistantState =
   "unsupported" | "idle" | "listening" | "processing" | "speaking";
 
-/** Locale de reconocimiento: es-CO preferido; el navegador normaliza. */
+/** Locale de reconocimiento en español: es-CO preferido; el navegador normaliza. */
 export const SPEECH_LANG = "es-CO";
+/** Locale de reconocimiento por idioma de la app ('es' | 'en'). */
+export const SPEECH_LOCALES = { es: "es-CO", en: "en-US" } as const;
+export type SpeechLang = keyof typeof SPEECH_LOCALES;
 
 /** Ventana (ms) tras el último resultado final antes de considerar fin de turno. */
 const FINALIZE_DEBOUNCE_MS = 1200;
@@ -82,12 +85,15 @@ export interface UseSpeechAssistantOptions {
   onError?: (message: string) => void;
   /** El reconocimiento se detuvo (fin natural o error): la UI retoma control. */
   onListeningEnd?: () => void;
+  /** Idioma de la app ('es' | 'en'): STT y TTS siguen al selector de idioma. */
+  lang?: SpeechLang;
 }
 
 export function useSpeechAssistant({
   onFinalTranscript,
   onError,
   onListeningEnd,
+  lang = "es",
 }: UseSpeechAssistantOptions) {
   const [supported, setSupported] = useState<boolean | null>(null);
   const [state, setState] = useState<SpeechAssistantState>("idle");
@@ -100,6 +106,26 @@ export function useSpeechAssistant({
   const mutedRef = useRef(false);
   const finalizeTimerRef = useRef<number | null>(null);
   const finalBufferRef = useRef("");
+  /** Idioma vigente en un ref: STT/TTS lo leen en el momento del uso. */
+  const langRef = useRef<SpeechLang>(lang);
+
+  // El selector de idioma cambió: actualizar el locale del recognizer vivo
+  // y abortarlo para que onend lo relance ya hablando el idioma nuevo
+  // (algunos WebViews ignoran el cambio de `lang` en caliente).
+  useEffect(() => {
+    langRef.current = lang;
+    const recognition = recognitionRef.current;
+    if (recognition && recognition.lang !== SPEECH_LOCALES[lang]) {
+      recognition.lang = SPEECH_LOCALES[lang];
+      if (wantListeningRef.current && !mutedRef.current) {
+        try {
+          recognition.abort();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }, [lang]);
 
   // Detectar soporte una sola vez al montar.
   useEffect(() => {
@@ -139,7 +165,7 @@ export function useSpeechAssistant({
     if (!recognition) {
       recognition = new Ctor();
       recognitionRef.current = recognition;
-      recognition.lang = SPEECH_LANG;
+      recognition.lang = SPEECH_LOCALES[langRef.current];
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
@@ -229,12 +255,14 @@ export function useSpeechAssistant({
         const synth = window.speechSynthesis;
         synth.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        // Voz en español si el WebView expone alguna; si no, la default.
-        const esVoice = synth
+        // Voz en el idioma de la app si el WebView expone alguna; si no, la
+        // default con el locale explícito.
+        const locale = SPEECH_LOCALES[langRef.current];
+        const matchVoice = synth
           .getVoices()
-          .find((v) => v.lang.toLowerCase().startsWith("es"));
-        if (esVoice) utterance.voice = esVoice;
-        utterance.lang = esVoice?.lang ?? SPEECH_LANG;
+          .find((v) => v.lang.toLowerCase().startsWith(locale.slice(0, 2)));
+        if (matchVoice) utterance.voice = matchVoice;
+        utterance.lang = matchVoice?.lang ?? locale;
         utterance.rate = 1;
         utterance.onend = () => {
           setState("idle");

@@ -50,7 +50,7 @@ import {
   type ListedAppointment,
   type TeamProfessional,
 } from "../data/appointments";
-import { useT } from "../i18n/I18nContext";
+import { useI18n, useT } from "../i18n/I18nContext";
 import type {
   ChatImageAttachment,
   ChatMessage,
@@ -340,6 +340,9 @@ export function AppProvider({
 }) {
   const [authLoading, setAuthLoading] = useState(true);
   const t = useT();
+  // Idioma actual de la app: se envía en cada turno de chat (señal explícita
+  // para el AI Service — habilita cambiar de idioma a mitad de conversación).
+  const { lang } = useI18n();
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
   // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
@@ -793,7 +796,7 @@ export function AppProvider({
       // Vía bloqueante como respaldo del streaming (misma respuesta final).
       const tryBlockingChat = async (): Promise<ChatMessage | null> => {
         try {
-          const result = await sendChatMessage(text, threadId, image);
+          const result = await sendChatMessage(text, threadId, image, lang);
           const suggestion = result.suggestions?.find(
             (s) => s.type === "appointment",
           );
@@ -845,6 +848,7 @@ export function AppProvider({
           threadId,
           { onToken: appendToken },
           image,
+          lang,
         );
         const suggestion = result.suggestions?.find(
           (s) => s.type === "appointment",

@@ -20,6 +20,21 @@ vi.mock("../../services/chat/chat-service", () => ({
   fetchThreadHistory: (...args: unknown[]) => fetchThreadHistoryMock(...args),
 }));
 
+// El hook lee el idioma de la app para enviarlo en cada turno (señal
+// explícita para el AI Service); en tests se fija 'es' sin provider y
+// `currentLang` permite simular el cambio de idioma a mitad de conversación.
+let currentLang: "es" | "en" = "es";
+const useI18nMock = vi.fn(() => ({
+  lang: currentLang,
+  setLang: vi.fn(),
+  toggleLang: vi.fn(),
+  t: (source: string) => source,
+}));
+vi.mock("../../i18n/I18nContext", () => ({
+  useI18n: () => useI18nMock(),
+  useT: () => useI18nMock().t,
+}));
+
 import { useChatAssistant } from "../useChatAssistant";
 import type { ChatResult, ThreadState } from "../../services/chat/types";
 
@@ -27,6 +42,7 @@ beforeEach(() => {
   sendChatMessageMock.mockReset();
   sendChatFeedbackMock.mockReset();
   fetchThreadHistoryMock.mockReset();
+  currentLang = "es";
 });
 
 afterEach(cleanup);
@@ -76,7 +92,7 @@ describe("useChatAssistant — envío optimista y respuesta", () => {
     expect(result.current.messages[0]?.text).toBe("Hola");
     expect(result.current.isGenerating).toBe(true);
     expect(result.current.error).toBeNull();
-    expect(sendChatMessageMock).toHaveBeenCalledWith("Hola", "thread-1");
+    expect(sendChatMessageMock).toHaveBeenCalledWith("Hola", "thread-1", "es");
 
     await act(async () => {
       resolveReply({
@@ -106,6 +122,33 @@ describe("useChatAssistant — envío optimista y respuesta", () => {
     });
     expect(result.current.messages).toEqual([]);
     expect(sendChatMessageMock).not.toHaveBeenCalled();
+  });
+
+  it("cambio de idioma a mitad de conversación: el turno siguiente envía el idioma nuevo", async () => {
+    sendChatMessageMock.mockResolvedValueOnce({
+      reply: "Hola.",
+      threadId: "thread-1",
+    });
+    const { result, rerender } = renderHook(() => useChatAssistant("thread-1"));
+
+    await act(async () => {
+      await result.current.sendMessage("Hola");
+    });
+    expect(sendChatMessageMock).toHaveBeenLastCalledWith("Hola", "thread-1", "es");
+
+    // El usuario cambia el idioma en la app: el siguiente turno (mismo
+    // thread) debe llevar la señal nueva sin crear un hilo nuevo. El rerender
+    // simula la re-emisión del contexto i18n al cambiar `lang`.
+    sendChatMessageMock.mockResolvedValueOnce({
+      reply: "Hi there.",
+      threadId: "thread-1",
+    });
+    currentLang = "en";
+    rerender();
+    await act(async () => {
+      await result.current.sendMessage("Hi!");
+    });
+    expect(sendChatMessageMock).toHaveBeenLastCalledWith("Hi!", "thread-1", "en");
   });
 });
 
@@ -148,7 +191,7 @@ describe("useChatAssistant — error y reintento", () => {
     });
 
     expect(sendChatMessageMock).toHaveBeenCalledTimes(2);
-    expect(sendChatMessageMock).toHaveBeenLastCalledWith("Hola", "thread-1");
+    expect(sendChatMessageMock).toHaveBeenLastCalledWith("Hola", "thread-1", "es");
     expect(result.current.messages).toHaveLength(2);
     expect(
       result.current.messages.filter((m) => m.role === "user"),

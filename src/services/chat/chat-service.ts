@@ -19,6 +19,7 @@
  */
 
 import { apiFetch, ApiError } from "../../utils/apiClient";
+import type { ChatLanguage } from "../../utils/threadApi";
 import type {
   ChatResult,
   FeedbackRequest,
@@ -59,12 +60,18 @@ function toFriendlyChatError(error: unknown): unknown {
 /**
  * Envía un mensaje al asistente clínico unificado.
  *
+ * `language` (idioma de la app, 'es' | 'en'): señal explícita por turno que
+ * el AI Service usa para responder en el idioma de la app — habilita cambiar
+ * de idioma a mitad de conversación. Opcional: con backends anteriores el
+ * campo extra se ignora (compatible hacia atrás).
+ *
  * @throws ApiError — 401 sesión inválida, 502/503 con mensaje amigable,
  *   resto propagado. Nunca retorna null: el llamador muestra error + reintento.
  */
 export async function sendChatMessage(
   message: string,
   threadId: string,
+  language?: ChatLanguage,
 ): Promise<ChatResult> {
   const text = message.trim();
   if (!text) throw new Error("El mensaje no puede estar vacío.");
@@ -72,7 +79,7 @@ export async function sendChatMessage(
   try {
     return await apiFetch<ChatResult>(CHAT_PATH, {
       method: "POST",
-      body: { message: text, threadId },
+      body: { message: text, threadId, ...(language ? { language } : {}) },
     });
   } catch (error) {
     throw toFriendlyChatError(error);
