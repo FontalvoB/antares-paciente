@@ -448,26 +448,30 @@ function ElevenVoiceBody({
   onFallback,
 }: ElevenVoiceBodyProps) {
   const eleven = useConversation();
-  const t = useT();
+  const { t, lang } = useI18n();
+  // Idioma leído por ref: la sesión de voz se abre con el idioma vigente al
+  // arrancar (un cambio a mitad de llamada toma efecto en la siguiente
+  // sesión — no se reconecta en caliente).
+  const langRef = useRef(lang);
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
 
   const start = useCallback(async () => {
     try {
       // Permiso de micrófono primero (falla temprano con degradación clara).
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      const session = await requestVoiceSession();
+      // Idioma de la app en el request: el backend lo propaga al AI Service
+      // y este deja el agente hablando ese idioma (PATCH server-side ANTES
+      // de emitir el signed URL — con signed URL los overrides del cliente
+      // no aplican de forma fiable; commit 8a7b746). Sin idioma ⇒ el agente
+      // usa su configuración del dashboard (comportamiento histórico).
+      const session = await requestVoiceSession(langRef.current);
       if (!session) {
         onFallback();
         return;
       }
-      eleven.startSession({
-        signedUrl: session.signedUrl,
-        // NOTA (2026-10-19): overrides.agent.language (idioma de la app) exige
-        // que el backend firme la URL con enable_conversation_config_override=true.
-        // Sin ese flag, ElevenLabs CIERRA la conexión al recibir
-        // conversation_initiation_client_data → startSession rechaza → fallback
-        // Web Speech (inexistente en WKWebView) → silencio total.
-        // Pendiente backend; hasta entonces NO enviar overrides con signedUrl.
-      });
+      eleven.startSession({ signedUrl: session.signedUrl });
     } catch {
       onFallback();
     }

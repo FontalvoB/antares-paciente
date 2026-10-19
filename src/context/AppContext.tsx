@@ -245,12 +245,17 @@ const defaultUser: UserProfile = {
   fam1Email: "pedro.gonzalez@email.com",
 };
 
-function createWelcomeMessage(name = "María"): ChatMessage {
+function createWelcomeMessage(name = "María", lang: "es" | "en" = "es"): ChatMessage {
   const firstName = name.trim().split(" ")[0] || "María";
   return {
     id: "welcome",
     role: "bot",
-    text: `Hola ${firstName} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
+    // Saludo en el idioma de la app: el asistente arranca hablando el idioma
+    // que el paciente tiene seleccionado (consistencia con chat/voz).
+    text:
+      lang === "en"
+        ? `Hi ${firstName} 👋 I'm your Copp Adresd health agent. How can I help you today?`
+        : `Hola ${firstName} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
     time: nowLabel(),
   };
 }
@@ -355,7 +360,7 @@ export function AppProvider({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>(() => [
-    createWelcomeMessage(defaultUser.nombre),
+    createWelcomeMessage(defaultUser.nombre, lang),
   ]);
   const [wearableConnected, setWatchConnected] = useState(false);
   const [wearableName, setWatchName] = useState("Copp Adresd Wearable");
@@ -1192,7 +1197,7 @@ export function AppProvider({
         setScreen("home");
         setActiveThreadId(null);
         setUser(defaultUser);
-        setChat([createWelcomeMessage(defaultUser.nombre)]);
+        setChat([createWelcomeMessage(defaultUser.nombre, lang)]);
         // Cierra sesión en el servidor y luego recrea el cliente urql (cache
         // limpia + WS nuevo) para no servir datos del usuario anterior.
         void logoutUser().then(() => onResetCommunityClient?.());
