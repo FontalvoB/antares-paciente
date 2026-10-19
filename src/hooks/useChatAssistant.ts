@@ -23,6 +23,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useI18n } from "../i18n/I18nContext";
 import {
   fetchThreadHistory,
   sendChatFeedback,
@@ -69,6 +70,7 @@ export function useChatAssistant(
   options: UseChatAssistantOptions = {},
 ) {
   const { pageSize = DEFAULT_PAGE_SIZE, initialMessages = [] } = options;
+  const { lang } = useI18n();
   const [messages, setMessages] = useState<AssistantMessage[]>(initialMessages);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +114,9 @@ export function useChatAssistant(
     setIsGenerating(true);
     setError(null);
     try {
-      const result = await sendChatMessage(content, threadRef.current);
+      // Idioma de la app leído por turno: cambiar el idioma a mitad de
+      // conversación toma efecto en la siguiente respuesta del bot.
+      const result = await sendChatMessage(content, threadRef.current, lang);
       idRef.current += 1;
       const botMessage: AssistantMessage = {
         id: `chat-${idRef.current}`,
@@ -134,7 +138,7 @@ export function useChatAssistant(
         setIsGenerating(false);
       }
     }
-  }, []);
+  }, [lang]);
 
   /**
    * Envía un mensaje con pintado optimista del usuario. Vacío = no-op (sin

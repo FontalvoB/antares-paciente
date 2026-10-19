@@ -3,6 +3,9 @@ import { getAccessToken } from "./authApi";
 import { getApiBaseUrl } from "./apiBaseUrl";
 import type { ChatImageAttachment, ChatSuggestion } from "../types";
 
+/** Idioma de la app ('es' | 'en'), espejo de `Language` en i18n/I18nContext. */
+export type ChatLanguage = "es" | "en";
+
 /** Mensaje individual del historial del thread (rol user | bot). */
 export interface ThreadMessage {
   role: string;
@@ -104,6 +107,7 @@ function chatBody(
   message: string,
   threadId: string,
   image?: ChatImageAttachment,
+  language?: ChatLanguage,
 ): string {
   return JSON.stringify({
     message,
@@ -111,6 +115,10 @@ function chatBody(
     ...(image
       ? { imageData: image.base64, imageMimeType: image.mimeType }
       : {}),
+    // Idioma de la app (señal explícita por turno): permite cambiar de
+    // idioma a mitad de conversación. Con backends anteriores el campo
+    // extra se ignora (compatible hacia atrás).
+    ...(language ? { language } : {}),
   });
 }
 
@@ -125,6 +133,7 @@ export async function sendChatMessage(
   message: string,
   threadId: string,
   image?: ChatImageAttachment,
+  language?: ChatLanguage,
 ): Promise<ChatResult> {
   const token = getAccessToken();
   const res = await fetch(`${getApiBaseUrl()}/api/v1/chat`, {
@@ -133,7 +142,7 @@ export async function sendChatMessage(
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: chatBody(message, threadId, image),
+    body: chatBody(message, threadId, image, language),
   });
 
   if (!res.ok) {
@@ -243,12 +252,13 @@ export async function streamChatMessage(
   threadId: string,
   callbacks: StreamCallbacks = {},
   image?: ChatImageAttachment,
+  language?: ChatLanguage,
 ): Promise<ChatResult> {
   // Nativo + CapacitorHttp: el fetch del WebView está parcheado (HTTP nativo,
   // sin streaming de body) — SSE se degradaría a buffering completo. Fallback
   // C1 (design): chat síncrono en nativo, el texto llega en un solo bloque.
   if (Capacitor.isNativePlatform()) {
-    const result = await sendChatMessage(message, threadId, image);
+    const result = await sendChatMessage(message, threadId, image, language);
     if (result.reply) callbacks.onToken?.(result.reply);
     return result;
   }
@@ -261,7 +271,7 @@ export async function streamChatMessage(
       Accept: "text/event-stream",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: chatBody(message, threadId, image),
+    body: chatBody(message, threadId, image, language),
   });
 
   if (!res.ok || !res.body) {
