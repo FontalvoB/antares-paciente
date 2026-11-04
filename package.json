@@ -7,6 +7,7 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "build:dev": "tsc -b && vite build --mode development",
+    "build:web:test": "node scripts/build-test-web.mjs",
     "lint": "oxlint",
     "test": "vitest run",
     "i18n:check": "node scripts/i18n-scan.mjs",

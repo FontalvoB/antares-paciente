@@ -123,3 +123,6 @@ ios/App/App.xcodeproj/project.pbxproj.fastlane-bak
 google-services.json
 GoogleService-Info.plist
 
+# Evidencia pública del despliegue aislado solicitado (sin sesiones ni secretos).
+!docs/test-web-evidence/*.png
+

@@ -1,0 +1,128 @@
+{
+  "CallerReference": "coppadresd-app-test-1793822729",
+  "Comment": "CoppAddresd-App-Test",
+  "Enabled": true,
+  "DefaultRootObject": "index.html",
+  "PriceClass": "PriceClass_100",
+  "HttpVersion": "http2",
+  "IsIPV6Enabled": true,
+  "ViewerCertificate": {
+    "CloudFrontDefaultCertificate": true
+  },
+  "Origins": {
+    "Quantity": 2,
+    "Items": [
+      {
+        "Id": "coppadresd-app-test-s3",
+        "DomainName": "coppadresd-app-test-web-933629770820.s3.us-east-2.amazonaws.com",
+        "OriginAccessControlId": "EA3VZPMAF9SGN",
+        "S3OriginConfig": {
+          "OriginAccessIdentity": ""
+        }
+      },
+      {
+        "Id": "coppadresd-app-test-api",
+        "DomainName": "erp.coppadresd.com",
+        "CustomOriginConfig": {
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "https-only",
+          "OriginSslProtocols": {
+            "Quantity": 1,
+            "Items": [
+              "TLSv1.2"
+            ]
+          },
+          "OriginReadTimeout": 60,
+          "OriginKeepaliveTimeout": 5
+        }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "coppadresd-app-test-s3",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "AllowedMethods": {
+      "Quantity": 2,
+      "Items": [
+        "GET",
+        "HEAD"
+      ],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": [
+          "GET",
+          "HEAD"
+        ]
+      }
+    },
+    "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+    "Compress": true
+  },
+  "CacheBehaviors": {
+    "Quantity": 3,
+    "Items": [
+      {
+        "PathPattern": "/api/*",
+        "TargetOriginId": "coppadresd-app-test-api",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "AllowedMethods": {
+          "Quantity": 7,
+          "Items": [
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "PUT",
+            "PATCH",
+            "POST",
+            "DELETE"
+          ],
+          "CachedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "GET",
+              "HEAD"
+            ]
+          }
+        },
+        "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+        "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+        "Compress": true
+      },
+      {
+        "PathPattern": "/storage/*",
+        "TargetOriginId": "coppadresd-app-test-api",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "AllowedMethods": {
+          "Quantity": 7,
+          "Items": [
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "PUT",
+            "PATCH",
+            "POST",
+            "DELETE"
+          ],
+          "CachedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "GET",
+              "HEAD"
+            ]
+          }
+        },
+        "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+        "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+        "Compress": true
+      },
+      {
+        "PathPattern": "/index.html",
+        "TargetOriginId": "coppadresd-app-test-s3",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+        "Compress": true
+      }
+    ]
+  }
+}

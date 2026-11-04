@@ -1,0 +1,11 @@
+{
+  "account": "933629770820",
+  "region": "us-east-2",
+  "bucket": "coppadresd-app-test-web-933629770820",
+  "bucketArn": "arn:aws:s3:::coppadresd-app-test-web-933629770820",
+  "originAccessControlId": "EA3VZPMAF9SGN",
+  "distributionId": "E10PNDIZLVIVB",
+  "distributionArn": "arn:aws:cloudfront::933629770820:distribution/E10PNDIZLVIVB",
+  "domain": "d1rmzt4ao2pn78.cloudfront.net",
+  "url": "https://d1rmzt4ao2pn78.cloudfront.net"
+}

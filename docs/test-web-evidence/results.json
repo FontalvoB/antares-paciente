@@ -1,0 +1,161 @@
+{
+  "timestamp": "2026-11-04T20:11:39.544Z",
+  "app": "https://d1rmzt4ao2pn78.cloudfront.net",
+  "device": "iPhone 13 / Chromium mobile 390x844",
+  "steps": [
+    {
+      "step": "create-test-user",
+      "status": 201,
+      "userId": "01a1a830-79f5-7ef5-82c3-9afeb3a6cd58",
+      "contract": "email,password,firstName,lastName; no acepta application/documentNumber"
+    },
+    {
+      "step": "new-user-app-access",
+      "status": 401,
+      "authenticated": false
+    },
+    {
+      "step": "erp-assignment-public",
+      "status": 200,
+      "path": "/program/asignacion",
+      "authenticated": false
+    },
+    {
+      "step": "admin-login-api",
+      "status": 200,
+      "authenticated": true
+    },
+    {
+      "step": "assignment-queue-api",
+      "status": 200,
+      "isHtml": false,
+      "responseKeys": [
+        "items",
+        "total",
+        "page",
+        "pageSize",
+        "totalPages"
+      ],
+      "matchingTestPatients": 0
+    },
+    {
+      "step": "proxy-auth-cookie-admin-diagnostic",
+      "loginStatus": 200,
+      "refreshStatus": 200,
+      "bearerMeStatus": 200,
+      "cookie": {
+        "httpOnly": true,
+        "secure": true,
+        "path": "/api/auth",
+        "domain": "d1rmzt4ao2pn78.cloudfront.net"
+      },
+      "patientAppSession": false
+    },
+    {
+      "step": "erp-ui-login",
+      "success": true,
+      "path": "/dashboard"
+    },
+    {
+      "step": "erp-assignment-ui",
+      "status": 200,
+      "path": "/program/asignacion",
+      "notFound": false,
+      "search": "Coppadresd App Test",
+      "empty": true
+    },
+    {
+      "step": "onboarding-paciente",
+      "status": "BLOCKED",
+      "reason": "Sin sesión app de un paciente autorizado; no se fabrican tokens, OTP, respuestas ni resultados clínicos."
+    },
+    {
+      "step": "bateria-3-tests-y-escape",
+      "status": "BLOCKED",
+      "reason": "Sin sesión app de un paciente autorizado; no se fabrican tokens, OTP, respuestas ni resultados clínicos."
+    },
+    {
+      "step": "bateria-9-tests-results-indicators-alerts",
+      "status": "BLOCKED",
+      "reason": "Sin sesión app de un paciente autorizado; no se fabrican tokens, OTP, respuestas ni resultados clínicos."
+    },
+    {
+      "step": "pending-assignment-recommendation-narrative",
+      "status": "BLOCKED",
+      "reason": "Sin sesión app de un paciente autorizado; no se fabrican tokens, OTP, respuestas ni resultados clínicos."
+    },
+    {
+      "step": "erp-apply-week1",
+      "status": "BLOCKED",
+      "reason": "Sin sesión app de un paciente autorizado; no se fabrican tokens, OTP, respuestas ni resultados clínicos."
+    },
+    {
+      "step": "task-xp-streak",
+      "status": "BLOCKED",
+      "reason": "Sin sesión app de un paciente autorizado; no se fabrican tokens, OTP, respuestas ni resultados clínicos."
+    },
+    {
+      "step": "web-root",
+      "status": 200,
+      "title": "COPPADRESD APP",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "step": "same-origin-proxy",
+      "healthStatus": 404,
+      "snapshotAnonymousStatus": 401,
+      "apiRequests": [
+        {
+          "origin": "https://d1rmzt4ao2pn78.cloudfront.net",
+          "path": "/api/auth/refresh",
+          "method": "POST"
+        },
+        {
+          "origin": "https://d1rmzt4ao2pn78.cloudfront.net",
+          "path": "/api/auth/refresh",
+          "method": "POST"
+        },
+        {
+          "origin": "https://d1rmzt4ao2pn78.cloudfront.net",
+          "path": "/api/auth/refresh",
+          "method": "POST"
+        }
+      ],
+      "crossOriginApiRequests": 0
+    },
+    {
+      "step": "public-first-entry",
+      "activation": "ID -> contactos -> OTP; no se envió OTP",
+      "passwordLogin": "documentNumber + password, application=app"
+    },
+    {
+      "step": "public-language-switch",
+      "status": "PASS",
+      "language": "en"
+    },
+    {
+      "step": "public-mobile-layout",
+      "status": "PASS",
+      "horizontalOverflow": false,
+      "crossOriginApiRequests": 0
+    }
+  ],
+  "screenshots": [
+    "01-app-login-mobile.png",
+    "02-app-activation-public.png",
+    "03-app-recovery-public.png",
+    "05-app-login-english.png",
+    "04-erp-assignment-route.png"
+  ],
+  "blockers": [
+    "El alta /api/auth/users no concede UserApplication(app) ni vincula patient_profiles.user_id; login app por email devuelve 401. El formulario real usa documentNumber, que exige un paciente vinculado. La vinculación inicial se realiza tras OTP; no se solicita ni se falsifica."
+  ],
+  "testAccount": {
+    "email": "coppadresd-app-test-20261104201149@example.invalid",
+    "userId": "01a1a830-79f5-7ef5-82c3-9afeb3a6cd58",
+    "created": true
+  }
+}

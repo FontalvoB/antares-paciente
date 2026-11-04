@@ -8,6 +8,23 @@ afterEach(() => {
 });
 
 describe("gateway: proxy web de desarrollo y conexión directa de release", () => {
+  it("usa rutas relativas en web de producción cuando se habilita el proxy", () => {
+    vi.stubEnv("DEV", false);
+    vi.stubEnv("VITE_WEB_SAME_ORIGIN", "true");
+    vi.stubEnv("VITE_GATEWAY_BASE_URL", "https://erp.coppadresd.com");
+    vi.spyOn(Capacitor, "isNativePlatform").mockReturnValue(false);
+    expect(getApiBaseUrl()).toBe("");
+    expect(getAuthBaseUrl()).toBe("");
+    expect(getCommunityApiUrl()).toBe("/api/v1/community/graphql");
+  });
+
+  it("conserva el gateway nativo aunque el flag web esté habilitado", () => {
+    vi.stubEnv("DEV", false);
+    vi.stubEnv("VITE_WEB_SAME_ORIGIN", "true");
+    vi.stubEnv("VITE_GATEWAY_BASE_URL", "https://erp.coppadresd.com");
+    vi.spyOn(Capacitor, "isNativePlatform").mockReturnValue(true);
+    expect(getApiBaseUrl()).toBe("https://erp.coppadresd.com");
+  });
   it("usa el mismo origen en web dev aunque el destino sea producción", () => {
     vi.stubEnv("DEV", true);
     vi.stubEnv("VITE_GATEWAY_BASE_URL", "https://erp.coppadresd.com");

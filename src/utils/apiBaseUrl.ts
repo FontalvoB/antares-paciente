@@ -30,7 +30,7 @@ function trimTrailingSlash(url: string): string {
 
 /** Origen (sin path) del gateway. */
 function gatewayOrigin(): string {
-  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return "";
+  if (!Capacitor.isNativePlatform() && (import.meta.env.DEV || import.meta.env.VITE_WEB_SAME_ORIGIN === "true")) return "";
   const fromEnv = import.meta.env.VITE_GATEWAY_BASE_URL;
   if (fromEnv) return trimTrailingSlash(fromEnv);
   if (Capacitor.isNativePlatform()) {

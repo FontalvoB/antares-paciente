@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+  /** Web de pruebas detrás de un proxy /api; no cambia el gateway nativo. */
+  readonly VITE_WEB_SAME_ORIGIN?: string;
   /** Base URL (origen) del API Gateway YARP (5080) — única entrada pública. Vacío = proxy de Vite. */
   readonly VITE_GATEWAY_BASE_URL?: string;
   /** Origen de la web pública (coppadresdWeb) para la eliminación de cuenta. Sin valor en producción = deshabilitado. */
