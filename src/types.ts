@@ -10,6 +10,8 @@ export type Screen =
   | "prof"
   | "avatar"
   | "prog"
+  | `program-${ProgramTaskId}`
+  | "program-racha"
   | "com"
   | "room"
   | "body";

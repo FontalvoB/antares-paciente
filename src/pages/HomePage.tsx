@@ -348,11 +348,6 @@ export function HomePage() {
   const todayDone = PROGRAM_TASKS.filter((task) => program[task.id]).length;
   // La rueda suma el cofre del día como último segmento.
   const todayTotal = missionTotal + 1;
-  const nextServerTask = snapshot?.todayTasks?.find(
-    (task) => task.status !== "Completed",
-  );
-  const nextFallbackTask = PROGRAM_TASKS.find((task) => !program[task.id]);
-  const nextTaskTitle = nextServerTask?.title || nextFallbackTask?.title || "";
   const dayComplete = todayDone === missionTotal;
 
   // Serie de adherencia REAL: dimensions.adherence por punto del
@@ -502,23 +497,7 @@ export function HomePage() {
           </div>
         </header>
 
-        <button
-          type="button"
-          className="hm-wheel-card"
-          onClick={() => navigate("prog")}
-          aria-label={
-            dayComplete
-              ? t("Programa de hoy completado. Abrir protocolo.")
-              : t(
-                  "Programa de hoy. Siguiente: {next}. {done} de {total} misiones.",
-                  {
-                    next: nextTaskTitle || t("continuar"),
-                    done: String(todayDone),
-                    total: String(missionTotal),
-                  },
-                )
-          }
-        >
+        <section className="hm-wheel-card" aria-label={t("Protocolo diario")}>
           <span className="hm-wheel-kicker">{t("Protocolo diario")}</span>
           <ProtocolWheel
             program={program}
@@ -526,11 +505,13 @@ export function HomePage() {
             title={t("Protocolo diario")}
             count={todayDone}
             total={todayTotal}
+            onSelect={(id) => navigate(id === "chest" ? "program-racha" : `program-${id}`)}
+            onOpenProgram={() => navigate("prog")}
           />
           <span className="hm-wheel-foot">
             {activeStreak} {t("días")}/{t("Semana")} {activeProgramWeek}
           </span>
-        </button>
+        </section>
 
         <div className="hm-metrics" aria-label={t("Indicadores de salud")}>
           {HOME_METRIC_CARDS.map((meta) => {

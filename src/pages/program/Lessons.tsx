@@ -7,6 +7,10 @@ import type {
   VitalsPayload,
 } from "../../services/program/types";
 import {
+  IonAccordion,
+  IonAccordionGroup,
+  IonItem,
+  IonLabel,
   IonButton,
   IonChip,
   IonIcon,
@@ -23,9 +27,7 @@ import {
   bluetooth,
   checkmark,
   heart,
-  heartOutline,
   footstepsOutline,
-  medkitOutline,
   moonOutline,
   pause,
   play,
@@ -43,13 +45,15 @@ import {
   WEEK_LABELS,
 } from "../../data/program";
 import { MISSION_PHOTOS } from "../../data/missionPhotos";
-import { EcgTrace } from "../../components/EcgTrace";
+import { ExerciseGuide } from "./ExerciseGuide";
+import { WatchIcon3D } from "../../components/icons3d";
+import { PageHeader } from "../../components/PageHeader";
+import logoIcon from "../../assets/LogoIndividual.png";
 import type { MetricKind } from "../../devices/types";
 import { useWearable } from "../../context/WearableContext";
 import {
   hoursFromMinutes,
   minutesFromHours,
-  vitalBar,
   vitalNumber,
   vitalStatus,
 } from "../../utils/vitals";
@@ -156,7 +160,8 @@ export function PodcastLesson({
       : null;
 
   return (
-    <div className="lsn-stack">
+    <div className="lsn-stack podcast-player">
+      <div className="pod-editorial"><span>{t("UN MOMENTO PARA TI")}</span><IonChip>{t("Podcast del día")}</IonChip></div>
       <div className="pod-cover">
         <img
           src={coverSrc}
@@ -188,12 +193,14 @@ export function PodcastLesson({
           <span>{mmss(elapsed)}</span>
           <span>{mmss(duration)}</span>
         </div>
-        <IonProgressBar value={progress} className="pb" />
+        <IonRange min={0} max={1000} value={Math.round(progress * 1000)} disabled={seekDisabled}
+          aria-label={t("Posición del audio")} onIonChange={e => onSkip((Number(e.detail.value) / 1000 - progress) * duration)} />
       </div>
 
       <div className="pod-copy">
         <strong>{t(podTitle)}</strong>
-        <span>{[podHost, t(podBlurb)].filter(Boolean).join(" · ")}</span>
+        <span>{podHost}</span>
+        {duration > 0 && <small>{mmss(duration)} · {t("Escucha a tu ritmo")}</small>}
         {mediaUrl && (
           <span className="pod-stream-badge text-[10px] opacity-75">
             ● {t("Audio en streaming")}
@@ -238,29 +245,21 @@ export function PodcastLesson({
         </IonButton>
       </div>
 
+      {podBlurb && <section className="pod-about"><h3>{t("Sobre este episodio")}</h3><p>{t(podBlurb)}</p></section>}
       {podChapters.length > 0 && (
-        <div className="lsn-chapters">
-          {podChapters.map((c) => (
-            <button
-              key={c.at}
-              type="button"
-              className={`lsn-chip ${elapsed >= c.at ? "on" : ""}`}
-              onClick={() => onSkip(c.at - elapsed)}
-              disabled={seekDisabled}
-            >
-              {mmss(c.at)} · {t(c.label)}
-            </button>
+        <section className="pod-chapters"><h3>{t("Capítulos")}</h3>
+          {podChapters.map((c, i) => (
+            <IonButton key={`${c.at}-${i}`} fill="clear" className={`pod-chapter ${chapter === c ? "on" : ""}`}
+              onClick={() => onSkip(c.at - elapsed)} disabled={seekDisabled}>
+              <span className="pod-chapter-number">{String(i + 1).padStart(2, '0')}</span>
+              <span>{t(c.label)}</span><time>{mmss(c.at)}</time>
+            </IonButton>
           ))}
-        </div>
+        </section>
       )}
-
-      {podTakeaways.length > 0 && (
-        <div className="lsn-tips">
-          {podTakeaways.map((tip) => (
-            <div key={tip}>✓ {t(tip)}</div>
-          ))}
-        </div>
-      )}
+      {podTakeaways.length > 0 && <section className="pod-about"><h3>{t("Ideas para llevar contigo")}</h3>
+        <ul>{podTakeaways.map(tip => <li key={tip}>{t(tip)}</li>)}</ul>
+      </section>}
 
       {!done && (
         <IonButton
@@ -384,7 +383,6 @@ export function VitalsLesson({
 
   // Datos del anillo para el bloque "Del anillo" (solo lectura).
   const locale = lang === "en" ? "en-US" : "es-ES";
-  const hrSample = samples.heart_rate;
 
   /** Footer stamp with the real recordedAt from the snapshot (completed view). */
   const recordedStamp = useMemo(() => {
@@ -526,222 +524,69 @@ export function VitalsLesson({
         ? t("Conectando…")
         : t("Sin wearable");
 
-  const pulseAge = hrSample
-    ? hrSample.source === "history"
-      ? t("Del historial")
-      : agoLabel(hrSample.ts, t)
-    : "";
-  /** Solo una lectura de esta sesión (no historial) puede decir "en vivo". */
-  const pulseIsLive = hrSample !== undefined && hrSample.source !== "history";
-  const pulseSummary =
-    info.wearing === false
-      ? t("Coloca el wearable para medir")
-      : hrSample
-        ? `${t(
-            pulseIsLive ? "Pulso en vivo · {bpm} lpm" : "Pulso · {bpm} lpm",
-            { bpm: String(Math.round(hrSample.value)) },
-          )} · ${
-            pulseAge === t("En vivo")
-              ? pulseAge
-              : t("Actualizado {when}", {
-                  when: `${pulseAge.charAt(0).toLowerCase()}${pulseAge.slice(1)}`,
-                })
-          }`
-        : t("Conecta el wearable para ver tu pulso en vivo");
-
   return (
-    <div className="lsn-stack vt-lesson">
-      <section className="vt-hero">
-        <div className="vt-hero-top">
-          <span className="vt-heart">
-            <IonIcon icon={heart} />
-          </span>
-          <div>
-            <div className="vt-kicker">{t("Check-in clínico")}</div>
-            <strong>{t("Signos de ahora")}</strong>
-          </div>
-          <div className="vt-count">
-            <b>{filled}</b>
-            <small>/{VITAL_FIELDS.length}</small>
-          </div>
+    <div className="vitals-workspace">
+      <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD">
+        <img src={logoIcon} alt="" />
+        <div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div>
+      </div>
+      <PageHeader kicker={t("Biometría en vivo")} title={t("Medir signos vitales")}
+        sub={t("Conecta, revisa y registra tus mediciones de hoy.")}
+        trailing={<span className={`status-pill ${connState === "on" ? "on" : ""}`}>
+          <span className="dot" style={{ background: connDot }} />{connLabel}
+          {connState === "on" && info.battery !== undefined && <span className="wearable-battery"><IonIcon icon={batteryHalfOutline} />{info.battery}%</span>}
+        </span>} />
+      <section className={`wearable-showcase ${connState === "on" ? "is-connected" : ""} ${connState === "connecting" ? "is-busy" : ""}`}>
+        <div className="wearable-art" aria-hidden="true">
+          <span className="wearable-leaf wearable-leaf-left" /><span className="wearable-leaf wearable-leaf-right" />
+          <div className="wearable-orbit"><WatchIcon3D size={132} /></div>
+          <span className="wearable-bluetooth">{connState === "connecting" ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}</span>
         </div>
-        {/* Estado del wearable: se ve desde el check-in sin salir de la vista. */}
-        <div className="vt-hero-conn">
-          <span className={`status-pill ${connState === "on" ? "on" : ""}`}>
-            <span className="dot" style={{ background: connDot }} />
-            {connLabel}
-          </span>
-          {connState === "on" && (
-            <>
-              {info.name && <span className="vt-conn-name">{info.name}</span>}
-              {info.battery !== undefined && (
-                <span className="vt-batt">
-                  <IonIcon icon={batteryHalfOutline} />
-                  <strong>{info.battery}%</strong>
-                </span>
-              )}
-              {lastSyncAt !== null && (
-                <span className="vt-conn-sync">
-                  {t("Última sincronización: {when}", {
-                    when: agoLabel(lastSyncAt, t),
-                  })}
-                </span>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="vt-ecg-frame" aria-hidden="true">
-          <EcgTrace bpm={hrSample?.value} height={168} />
-        </div>
-        <p className={`vt-ecg-live ${hrSample ? "is-live" : ""}`}>
-          {hrSample && <span className="vt-live-dot" aria-hidden="true" />}
-          {pulseSummary}
-        </p>
-        <p>
-          {t(
-            "Compara con mediciones anteriores. La tendencia importa más que un solo número.",
-          )}
-        </p>
+        <h2>{connState === "on" ? t("Tu dispositivo está conectado") : connState === "connecting" ? t("Conectando…") : t("Conecta tu wearable")}</h2>
+        <p>{connState === "on" ? t("Tu salud en tiempo real, más cerca de ti.") : t("Mantén el wearable desbloqueado y cerca del teléfono.")}</p>
       </section>
-
-      {wearableConnected ? (
-        <button
-          type="button"
-          className="vt-sync"
-          disabled={syncing}
-          onClick={() => void sync()}
-        >
-          <span className="vt-sync-orb">
-            {syncing ? (
-              <IonSpinner name="crescent" />
-            ) : (
-              <IonIcon icon={bluetooth} />
-            )}
-          </span>
-          <span className="vt-sync-copy">
-            <strong>
-              {syncing
-                ? t("Leyendo el wearable…")
-                : t("Sincronizar {name}", {
-                    name: info.name || t("Copp Adresd Wearable"),
-                  })}
-            </strong>
-            <small>
-              {syncing
-                ? t("FC, SpO2, presión y más")
-                : t("Autollenar con la última medición")}
-            </small>
-          </span>
-        </button>
-      ) : (
-        <button type="button" className="vt-sync" onClick={onOpenWearable}>
-          <span className="vt-sync-orb">
-            <IonIcon icon={bluetooth} />
-          </span>
-          <span className="vt-sync-copy">
-            <strong>{t("Ir a conectar el wearable")}</strong>
-            <small>{t("Autollenar FC, SpO2, presión y más")}</small>
-          </span>
-        </button>
-      )}
-
-      <div className={`vt-grid ${connState === "on" ? "" : "is-offline"}`}>
-        {VITAL_FIELDS.map((f) => {
-          const v = displayVal(f.id);
-          // Valor canónico (sueño: horas del input → minutos) para estado,
-          // barra y payload; el input conserva la unidad del usuario.
-          const n = vitalNumber(v) * (f.scale ?? 1);
-          const st = vitalStatus(n, f.lo, f.hi, t, f.goal);
-          const hasReading = v.trim() !== "" && !Number.isNaN(n);
-          const bar = vitalBar(n, f);
-          const isLoading = pendingFields[f.id] !== undefined;
-          const measureKind = VITAL_MEASURE_KIND[f.id];
-          // Sin dato del wearable: tocar la tarjeta lleva al Reloj a medir
-          // (aquí no se mide; esta vista solo lee).
-          const needsWearable = !hasReading && measureKind && !done;
-          return (
-            <article
-              key={f.id}
-              className={`vt-tile vt-${f.id} ${st.cls} ${v ? "has" : ""} ${
-                pendingFields[f.id] ? "is-loading" : ""
-              }${needsWearable ? " is-link" : ""}`}
-              onClick={
-                needsWearable
-                  ? (event) => {
-                      const target = event.target as HTMLElement | null;
-                      if (target?.closest("ion-input, input, textarea")) return;
-                      onOpenWearable();
-                    }
-                  : undefined
-              }
-            >
-              <div className="vt-row-main">
-                <span className="vt-icon" aria-hidden="true">
-                  <IonIcon icon={vitalIconFor(f.id)} />
-                </span>
-                <div className="vt-reading">
-                  <header className="vt-card-head">
-                    <span className="vt-label" title={t(f.label)}>
-                      {t(VITAL_SHORT_LABEL[f.id] ?? f.label)}
-                    </span>
-                    <span className={`vt-status ${st.cls || ""}`}>
-                      {pendingFields[f.id]
-                        ? t("Sincronizando…")
-                        : connState !== "on" && measureKind
-                          ? t("Sin wearable")
-                          : st.label}
-                    </span>
-                  </header>
-                  <div className="vt-value">
-                    <IonInput
-                      className="vt-input"
-                      placeholder="—"
-                      inputmode="decimal"
-                      value={v}
-                      disabled={done}
-                      style={{ width: `${Math.max(2, v.length)}ch` }}
-                      aria-label={t(f.label)}
-                      onIonInput={(e) =>
-                        setVals((prev) => ({
-                          ...prev,
-                          [f.id]: e.detail.value ?? "",
-                        }))
-                      }
-                    />
-                    <em className={isLoading ? "is-empty" : ""}>{t(f.unit)}</em>
-                  </div>
-                  {f.scale && !Number.isNaN(n) && (
-                    <span className="vt-sub">{formatSleep(n, t)}</span>
-                  )}
-                </div>
-              </div>
-              <div className="vt-row-detail">
-                <div
-                  className={`vt-range ${f.kind === "goal" ? "is-goal" : ""}`}
-                  aria-hidden="true"
-                >
-                  {(f.kind !== "goal" || hasReading) && (
-                    <b
-                      style={{
-                        left: `${bar.bandLeft}%`,
-                        width: `${bar.bandWidth}%`,
-                      }}
-                    />
-                  )}
-                  <i
-                    style={{
-                      left: hasReading ? `${bar.pct}%` : "-8px",
-                      opacity: hasReading ? 1 : 0,
-                    }}
-                  />
-                </div>
-              </div>
-            </article>
-          );
+      <div className="wearable-summary">
+        {["fc", "spo2", "pa", "sueno", "pasos"].map(id => {
+          const field = VITAL_FIELDS.find(f => f.id === id)!;
+          return <div className="wearable-summary-item" key={id}>
+            <span className="wearable-summary-icon"><IonIcon icon={vitalIconFor(id)} /></span>
+            <span>{t(VITAL_SHORT_LABEL[id] ?? field.label)}</span><strong>{displayVal(id) || "—"}</strong><small>{t(field.unit)}</small>
+          </div>;
         })}
       </div>
-
+      <div className="wearable-sync">
+        <IonButton expand="block" className="bt bt-primary" onClick={onOpenWearable}>
+          <IonIcon icon={connState === "on" ? pulseOutline : bluetooth} slot="start" />
+          {connState === "on" ? t("Abrir centro de medición") : t("Ir a conectar el wearable")}
+        </IonButton>
+        {connState === "on" && !done && <IonButton expand="block" fill="outline" disabled={syncing} onClick={() => void sync()}>
+          {syncing ? <IonSpinner slot="start" name="crescent" /> : <IonIcon slot="start" icon={bluetooth} />}
+          {syncing ? t("Leyendo el wearable…") : t("Sincronizar ahora")}
+        </IonButton>}
+        {lastSyncAt !== null && <p className="vitals-sync-stamp">{t("Última sincronización: {when}", { when: agoLabel(lastSyncAt, t) })}</p>}
+      </div>
+      <section className="vitals-records">
+        <div className="vitals-records-heading"><div><span className="kicker">{t("Check-in clínico")}</span><h2>{t("Signos de ahora")}</h2></div><span>{filled}/{VITAL_FIELDS.length}</span></div>
+        <div className="vitals-record-grid">
+          {VITAL_FIELDS.map(f => {
+            const value = displayVal(f.id);
+            const n = vitalNumber(value) * (f.scale ?? 1);
+            const status = vitalStatus(n, f.lo, f.hi, t, f.goal);
+            return <article className="vitals-record" key={f.id}>
+              <span className="wearable-summary-icon"><IonIcon icon={vitalIconFor(f.id)} /></span>
+              <div className="vitals-record-body">
+                <IonInput label={t(f.label)} labelPlacement="stacked" placeholder="—" inputmode="decimal" value={value} disabled={done}
+                  onIonInput={event => setVals(prev => ({ ...prev, [f.id]: event.detail.value ?? "" }))}>
+                  <span slot="end" className="vitals-unit">{t(f.unit)}</span>
+                </IonInput>
+                <small>{pendingFields[f.id] ? t("Sincronizando…") : status.label}{f.scale && !Number.isNaN(n) ? ` · ${formatSleep(n, t)}` : ""}</small>
+              </div>
+              {pendingFields[f.id] && <IonSpinner name="crescent" />}
+            </article>;
+          })}
+        </div>
+      </section>
+      <div className="wearable-sync">
       {recordedStamp && <div className="vt-stamp">{recordedStamp}</div>}
 
       {!done && (
@@ -761,6 +606,7 @@ export function VitalsLesson({
           </IonButton>
         </>
       )}
+      </div>
     </div>
   );
 }
@@ -791,9 +637,9 @@ const VITAL_SHORT_LABEL: Partial<Record<string, string>> = {
 function vitalIconFor(id: string) {
   switch (id) {
     case "fc":
-      return heartOutline;
+      return heart;
     case "pa":
-      return medkitOutline;
+      return pulseOutline;
     case "spo2":
     case "glu":
       return waterOutline;
@@ -1034,7 +880,11 @@ export function ExerciseLesson({
   const ring = cur ? 1 - left / cur.sec : 1;
 
   return (
-    <div className="lsn-stack">
+    <div className="lsn-stack exercise-studio">
+      <div className="ex-studio-header"><span className="kicker">{t("TU MOVIMIENTO DE HOY")}</span><h3>{title ? t(title) : t("Tu rutina")}</h3>
+        <div className="ex-session-meta"><IonChip>{t("{n} ejercicios", { n: String(steps.length) })}</IonChip><IonChip>{mmss(total)} · {t("Tiempo activo")}</IonChip></div>
+      </div>
+      <ExerciseGuide key={`${safeStep}-${cur.name}`} exercise={exercises[safeStep]} onWatch={() => { if (running) onToggle() }} />
       <div className="ex-timer">
         <div className="ex-ring-wrap">
           <svg width="140" height="140" viewBox="0 0 140 140">
@@ -1073,20 +923,28 @@ export function ExerciseLesson({
         </div>
       </div>
 
-      <div className="ex-list">
-        {steps.map((s, i) => (
-          <div
-            key={s.name}
-            className={`ex-li ${i < safeStep ? "done" : ""} ${i === safeStep ? "now" : ""}`}
-          >
-            <b>{i < safeStep ? "✓" : i + 1}</b>
-            <div>
-              <strong>{t(s.name)}</strong>
-              <span>{mmss(s.sec)}</span>
+      <section className="ex-routine-plan"><h3>{t("Tu sesión, paso a paso")}</h3>
+        <IonProgressBar value={Math.min(1, Math.max(0, doneSec / total))} />
+        <IonAccordionGroup>
+          {exercises.map((ex, i) => <IonAccordion key={`${ex.name}-${i}`} value={String(i)}>
+            <IonItem slot="header" lines="none" className={i === safeStep ? "ex-plan-current" : ""}>
+              <span slot="start" className="ex-plan-number">{i < safeStep ? <IonIcon icon={checkmark} /> : String(i + 1).padStart(2, '0')}</span>
+              <IonLabel><h3>{t(ex.name)}</h3><p>{mmss(steps[i].sec)}{i === safeStep ? ` · ${t("Ahora")}` : ''}</p></IonLabel>
+            </IonItem>
+            <div slot="content" className="ex-plan-detail">
+              {ex.description && <p>{t(ex.description)}</p>}
+              <div className="ex-detail-chips">
+                {ex.sets != null && <IonChip>{t("{n} series", { n: String(ex.sets) })}</IonChip>}
+                {ex.repetitions != null && <IonChip>{t("{n} repeticiones", { n: String(ex.repetitions) })}</IonChip>}
+                {ex.restSeconds != null && <IonChip>{t("Descanso: {n} s", { n: String(ex.restSeconds) })}</IonChip>}
+              </div>
+              {ex.targetMuscle && <p><strong>{t("Zona de trabajo")}: </strong>{t(ex.targetMuscle)}</p>}
+              {ex.equipment && <p><strong>{t("Equipamiento")}: </strong>{t(ex.equipment)}</p>}
+              {ex.tips && <p className="ex-coach-tip">{t(ex.tips)}</p>}
             </div>
-          </div>
-        ))}
-      </div>
+          </IonAccordion>)}
+        </IonAccordionGroup>
+      </section>
 
       {!done && (
         <>

@@ -106,6 +106,7 @@ export function StreakView({
           <div className="sr-eyebrow"><span className="sr-live-dot" />{t('Tu constancia, día a día')}</div>
           <h2>{streak > 0 ? t('Mantén viva tu chispa') : t('Tu chispa empieza hoy')}</h2>
           <div className="sr-orbit">
+            <div className="sr-embers" aria-hidden="true">{Array.from({ length: 12 }, (_, i) => <i key={i} style={{ '--ember-i': i } as CSSProperties} />)}</div>
             <span className="sr-orbit-halo" aria-hidden="true" />
             <RingProgress value={nextStreakChest ? streak / nextStreakChest.days : chests.length ? 1 : 0} size={184} stroke={5} gradient={['var(--org-l)', 'var(--org)']}>
               <IonIcon className="sr-fire" icon={flame} aria-hidden="true" />
@@ -134,6 +135,13 @@ export function StreakView({
           </div>
         </motion.section>
 
+        <section className="sr-next-journey">
+          <IonIcon icon={giftOutline} aria-hidden="true" />
+          <div><span className="sr-kicker">{t('Cada día cuenta')}</span>
+            <h3>{nextStreakChest ? t('A {n} días de tu próximo hito', { n: String(Math.max(0, nextStreakChest.days - streak)) }) : t('Sigue construyendo tu historia')}</h3>
+            {nextStreakChest && <IonProgressBar aria-label={t('Progreso al próximo hito')} value={Math.min(1, streak / nextStreakChest.days)} />}
+          </div>
+        </section>
         <div className="pg-week-card sr-week-card">
           <div className="sr-section-head"><div><span className="sr-kicker">{t('Paso a paso')}</span><h3>{t('Esta semana')}</h3></div><span className="sr-week-total">{t('{n} de 7 días activos', { n: String(activeDays) })}</span></div>
           <div className="pg-week">

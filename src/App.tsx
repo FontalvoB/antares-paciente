@@ -23,6 +23,7 @@ import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { useTabletLayout } from "./hooks/useTabletLayout";
 import { PanicOverlay } from "./components/PanicOverlay";
 import { VoiceOverlay } from "./components/VoiceOverlay";
+import { VitaWelcome } from "./components/VitaWelcome";
 import { ToastHost } from "./components/ToastHost";
 import { OfflineBanner } from "./components/common/OfflineBanner";
 import { LoginPage } from "./pages/LoginPage";
@@ -115,6 +116,13 @@ function Router() {
       case "avatar":
         content = <AvatarPage />;
         break;
+      case "program-podcast":
+      case "program-vitals":
+      case "program-nut":
+      case "program-ejercicio":
+      case "program-nutraceutico":
+      case "program-emocional":
+      case "program-racha":
       case "prog":
         content = <ProgramPage />;
         break;
@@ -132,7 +140,7 @@ function Router() {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
-        key={flow === "app" ? `app-${screen}` : flow}
+        key={flow === "app" ? `app-${screen.startsWith("program-") ? "prog" : screen}` : flow}
         className="router-page"
         initial={{ opacity: 0, y: 24, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -223,6 +231,7 @@ function Shell() {
         <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />
+        <VitaWelcome />
         <OfflineBanner />
       </div>
     </div>

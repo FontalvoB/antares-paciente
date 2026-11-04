@@ -1,7 +1,9 @@
-import { cleanup, render } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, render, fireEvent } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ProtocolWheel } from '../ProtocolWheel'
 import type { ProgramDay, ProgramTaskId } from '../../types'
+
+vi.mock('../../i18n/I18nContext', () => ({ useT: () => (text: string) => text }))
 
 afterEach(cleanup)
 const pending: ProgramDay = {
@@ -32,3 +34,17 @@ describe('ProtocolWheel', () => {
     expect(container.querySelector('.wheel-core.complete')).not.toBeNull()
   })
 })
+
+ it('cada nodo navega solamente a su actividad y el centro al protocolo', () => {
+   const onSelect = vi.fn()
+   const onOpenProgram = vi.fn()
+   const { container } = render(<ProtocolWheel {...labels} program={pending} count={0} onSelect={onSelect} onOpenProgram={onOpenProgram} />)
+   for (const id of [...Object.keys(pending), 'chest']) {
+     fireEvent.click(container.querySelector(`[data-task="${id}"] ion-button`)!)
+     expect(onSelect).toHaveBeenLastCalledWith(id)
+   }
+   expect(onSelect).toHaveBeenCalledTimes(7)
+   expect(onOpenProgram).not.toHaveBeenCalled()
+   fireEvent.click(container.querySelector('.wheel-core ion-button')!)
+   expect(onOpenProgram).toHaveBeenCalledOnce()
+ })
