@@ -1,6 +1,6 @@
 # App web de pruebas — coppadresd-app-test
 
-Verificado el **2026-11-04**. Despliegue web operativo y pruebas públicas/autenticación del proxy aprobadas. **El E2E clínico completo está bloqueado por el aprovisionamiento de acceso del paciente**, detallado abajo; no se presenta como aprobado.
+Verificado el **2026-11-04**. **Recorrido clínico terminado**: OTP real → onboarding → 9/9 tests → PendingAssignment → narrativa ES/EN real → Aplicar por UI → semana 1 activa → tarea emocional por UI, **+120 XP y racha 1**. El primer intento limitado al alta Auth se conserva como antecedente. Véase la continuación al final, incluidos los hallazgos de repetición de tests e indicadores.
 
 ## URL y recursos nuevos
 
@@ -19,7 +19,7 @@ Cuenta `933629770820`, perfil AWS CLI `fya-root`. S3 en `us-east-2`; CloudFront 
 
 Estado reproducible: [resources.json](../infra/coppadresd-app-test/resources.json) y [distribution-config.json](../infra/coppadresd-app-test/distribution-config.json).
 
-Solo se crearon esos recursos. No se modificaron buckets, distribuciones/orígenes, ALB, ECS, DNS, dominios, secretos, skills ni configuraciones del backend de otros proyectos. El origen `erp.coppadresd.com` es una referencia HTTPS en la distribución NUEVA; no se cambió su despliegue. No se habilitaron seeders ni flags de producción.
+En FASE A solo se crearon esos recursos. No se modificaron buckets, distribuciones/orígenes, ALB, DNS, dominios, secretos ni skills de otros proyectos. El origen `erp.coppadresd.com` es una referencia HTTPS en la distribución NUEVA. En la continuación, el owner habilitó el flag de asignación y autorizó expresamente una excepción acotada de rollout para reparar la narrativa del ai-service; se documenta abajo. No se habilitaron seeders.
 
 ## Arquitectura y caché
 
@@ -87,7 +87,7 @@ Reporte sanitizado: [results.json](test-web-evidence/results.json). El diagnóst
 
 Verificación local: **lint 0 errores / 27 advertencias preexistentes**, build production exitoso y **1052/1052 tests en 140 archivos**. Las pruebas de resolución de base URL son 5/5, incluidas web production con proxy y preservación de gateway nativo.
 
-## Bloqueo de acceso y alcance clínico pendiente
+## Antecedente del primer intento: alta Auth sin acceso app
 
 El flujo real de `LoginPage.tsx` es **identificación + contraseña** para usuarios vinculados; envía `documentNumber`, no email. La activación inicial es identificación → contacto → OTP → onboarding. El login por contraseña entra directamente a la app: no recorre el onboarding.
 
@@ -100,33 +100,34 @@ Cuenta auth creada, exclusivamente para esta prueba:
 - Nombre: `Coppadresd App Test 20261104201149`.
 - Sin roles/permisos solicitados, sin perfil de paciente creado, sin acceso app ni sesión válida. Su contraseña aleatoria permaneció solo en memoria; no se guardó. El alta no envió OTP.
 
-El secreto autorizado `cooppadresd/auth` se leyó sin imprimir su contenido. Su `AdminPassword` devolvió 401; Luis proporcionó una credencial alternativa que permitió el login del admin canónico `admin@coppaddresd.com`. **El secreto AWS no se actualizó.** Para repetir, se admite un override temporal en memoria.
+En el primer intento se usó un correo admin incorrecto y se probó un override. El owner corrigió posteriormente el contrato: **usar exclusivamente `admin@cooppaddresd.com` + `AdminPassword` de `cooppadresd/auth`**. Esta combinación se verificó con 200 en la continuación. El runner actual aplica esa identidad exacta, sin overrides ni fallback; no se cambió el secreto AWS ni se imprimió su valor.
 
-**No ejecutados / no validados en producción**: onboarding de paciente, 3 tests y escape, 9 tests completos, results/Indicators/alerts, auto-enrollment PendingAssignment, recomendación proposed, narrativa IA con fuentes, Aplicar, semana 1, tarea, XP y racha. La cola desplegada existe; no se verificó el flag de asignación ni su pipeline sin un paciente autenticado.
+**En ese primer intento** no se ejecutaron onboarding, batería ni asignación. Sus estados `BLOCKED` en `results.json` son evidencia histórica; el reporte de la continuación es `patient-results.json`, con el paciente autenticado por OTP real.
 
-Para continuar hace falta un paciente de QA ya vinculado con `UserApplication(app)` habilitado y contraseña conocida, o completar su activación con un OTP de email recibido legítimamente. Para probar específicamente el primer onboarding se necesita ese flujo real de activación. **No se probó OTP telefónico real en producción**, no se gastó Twilio y no se falsificaron códigos, tokens, historias o resultados clínicos. Un backend DEV local no validaría este despliegue contra producción y no se utilizó.
+El owner autorizó después **1–2 SMS reales** a su teléfono y proporcionó el OTP por chat. Se envió **un solo SMS** y la UI lo verificó correctamente; no hubo códigos falsificados ni backend DEV sustituyendo producción. Los datos clínicos de esta ejecución pertenecen a un paciente explícitamente sintético de QA.
 
 ## Repetición del helper
 
 ```powershell
-# Solo pantallas públicas; conserva el reporte previo y no crea usuarios.
-node scripts/test-web-e2e.mjs --public-only
+# Ejecución persistente para permitir OTP humano sin guardar secretos.
+# Verificar antes que 17841 está libre; nunca matar un proceso ajeno.
+Start-Process node -ArgumentList 'scripts/test-web-e2e.mjs' -WindowStyle Hidden `
+  -RedirectStandardOutput '.artifacts/coppadresd-app-test-runner.log' `
+  -RedirectStandardError '.artifacts/coppadresd-app-test-runner-error.log'
 
-# Un primer intento LIVE usa el secreto autorizado; si autentica, crea UNA cuenta.
-node scripts/test-web-e2e.mjs
-
-# Continuar comprobaciones admin sin crear otra cuenta (lee el reporte previo).
-# Si hace falta override: pedirlo en un prompt, nunca ponerlo en el comando/doc.
-$credential = Get-Credential -UserName admin@coppaddresd.com -Message 'Credencial QA admin'
-$env:COPPADRESD_APP_TEST_ADMIN_PASSWORD = $credential.GetNetworkCredential().Password
-try { node scripts/test-web-e2e.mjs --resume-admin }
-finally {
-  Remove-Item Env:COPPADRESD_APP_TEST_ADMIN_PASSWORD
-  Remove-Variable credential
-}
+Invoke-RestMethod http://127.0.0.1:17841/status
+# POST /command, JSON {action:...}: prepare -> send -> otp -> onboarding.
+# El código real solo se pasa en memoria en {action:'otp',code:...}.
+# No escribir ese código en un script, log, captura o archivo de sesión.
+# assignment {ui:true,regenerate:true} solicita narrativa por UI.
+# assignment {ui:true,apply:true} aplica por UI tras verificar ES y EN.
+# task completa la evaluación emocional por UI y verifica snapshot/XP/racha.
+# stop cierra los contextos y el servidor local.
 ```
 
-El helper actual cubre pantallas públicas, proxy/cookies, alta auth y cola ERP; registra explícitamente el bloqueo clínico. **No es un runner de tests clínicos completos**. La ejecución final retorna **exit code 2** mientras exista el bloqueo, aunque las comprobaciones públicas pasen. Los reportes/capturas no contienen valores de cookies, tokens ni contraseñas; no se guardan storageState/HAR de sesiones. La CLI Postman disponible (1.76.0) no implementa `postman status`; la evidencia LIVE procede de Playwright/fetch/curl, sin publicar colecciones ni instalar/modificar skills.
+El helper antiguo se sustituyó por un coordinador de fases y acciones Playwright. Escucha exclusivamente en loopback, rechaza Origin/CORS y requiere JSON; solo permite fases predefinidas, sin eval remoto. AdminPassword, JWT, contraseña inicial y OTP permanecen en memoria del proceso. No se guardan storageState/HAR. El reporte distingue éxito, fallos QA y fases aún pendientes; no transforma un bloqueo en verde. La CLI Postman disponible (1.76.0) no implementa `postman status`; la evidencia LIVE procede de Playwright/fetch/curl, sin publicar colecciones ni instalar/modificar skills.
+
+La versión final del helper no contiene submits clínicos por API: `tests` verifica progreso/resultados mediante GET. Los nueve envíos por API de la fase inicial autorizada quedaron registrados en el reporte; una ejecución futura debe completar los pendientes en el wizard real. Esta herramienta coordina la prueba humana/Playwright; no promete repetir automáticamente tests que la UI deshabilita.
 
 ## Costo estimado y retirada
 
@@ -135,3 +136,87 @@ Sin servidores nuevos ni cuotas mensuales fijas del CDN en este despliegue pay-a
 Fuentes de precios: [CloudFront](https://aws.amazon.com/cloudfront/pricing/) y [S3](https://aws.amazon.com/s3/pricing/). No se contrataron planes mensuales, dominios ni servicios adicionales para imponer un límite.
 
 Para retirar el entorno, operar únicamente sobre la distribución `E10PNDIZLVIVB` (deshabilitar, esperar Deployed y eliminar con su ETag actual), el OAC `EA3VZPMAF9SGN` después de retirar la distribución, y el bucket exacto `coppadresd-app-test-web-933629770820` después de vaciarlo. No se ejecutó retirada. No reutilizar ni ampliar esos comandos a otros buckets/distribuciones de la cuenta.
+
+## Continuación FASE B — resultado real
+
+Reporte vigente: [patient-results.json](test-web-evidence/patient-results.json), `completed=true`, `patient-flow-complete=PASS`. Se usó el mismo navegador móvil persistente durante toda la ejecución; secretos y estado autenticado permanecieron en memoria, sin exportar storageState.
+
+### Contrato de primer inicio y batería
+
+La pantalla del app **Activa tu cuenta** (`LoginPage.tsx`) no acepta tokens de invitación. Su contrato es:
+
+1. `POST /api/auth/id-lookup {documentNumber, application:"app"}`: requiere un perfil de paciente ya creado en ERP y devuelve contactos enmascarados.
+2. `POST /api/auth/send-otp {documentNumber, contactId}`: el contacto PHONE se resuelve en el servidor; el cliente no puede sustituir su destino.
+3. `POST /api/auth/verify-otp {documentNumber, otp, application:"app", rememberMe}`: al verificar, crea/vincula Identity, `patient_profiles.user_id` y `UserApplication(app)`, y devuelve JWT `aud=app` con refresh HttpOnly.
+4. Onboarding: `POST /api/auth/set-first-password` con Bearer y `PUT /api/v1/me/patient-profile`. Actualiza el perfil ERP existente; no crea otro paciente desde el app.
+5. La batería inicial se asigna al crear el paciente; `/me/assignments` tiene además fallback de asignación idempotente si no existen tests visibles. El submit real usa `/api/v1/health-tests/me/tests/{id}/start` y `/submit` con opciones del catálogo vigente.
+
+Invitaciones es un flujo distinto, de **primer acceso al ERP/profesional**: `GET /api/auth/invitations/validate?token=...` y `POST /api/auth/invitations/accept {token,password}` son públicos, pero requieren un token legítimo. El enlace `/invitaciones?token=...` solo se devuelve con proveedor Log; en producción se entrega por correo. `POST /api/auth/users` no genera ese enlace ni concede acceso app. No se invocó el endpoint interno de invitaciones ni se extrajo ningún token desde BD/logs.
+
+### Identidad de QA y recorrido
+
+- Paciente sintético: `29f86969-f99f-425d-8bba-20f52134dc8b`; documento `9920261104202616`.
+- Nombre: `Coppadresd App Test 20261104202616`; email `coppadresd-app-test-20261104202616@example.invalid`.
+- Se creó por `POST /api/v1/patients` como admin, con teléfono del owner autorizado, país `57` y número terminación `4819`. Ese alta no envía OTP.
+- Se envió **un único SMS PHONE** por la UI. El owner dio el código en chat, se introdujo en la UI y `verify-otp` respondió 200 con `aud=app`. El código no se guardó ni aparece en capturas.
+- Onboarding guardado con 200; una batería y nueve asignaciones. Se estableció contraseña inicial aleatoria, solo en memoria.
+- Tests completados: `historia-clinica`, `temperamento`, `nutricional`, `movimiento`, `sueno`, `iac-adresd`, `orp`, `ers`, `bateria-antares`; nueve start y nueve submit con 200.
+- Los nueve submits se ejecutaron por API real de la sesión autenticada, conforme a la autorización anterior del owner. Tras su instrucción posterior de usar exclusivamente UI **no se envió ningún submit adicional por API**. Aplicar, regenerar narrativa y completar la tarea se hicieron con interacción Playwright en los controles reales.
+- Resultados persistidos: **46**, más **1 alerta high de ORP** del paciente de QA. El perfil normalizado deriva obesidad del fixture sintético (95 kg, 165 cm, cintura 105 cm), con fuentes OMS/NHLBI/ACC-AHA-TOS y VA/DoD. El motor conserva la elección de contenido.
+
+### Flag de asignación y comportamiento observado tras 3/9
+
+La primera comprobación UI tras 3 tests agotó el locator de “Plan pendiente”. La app había vuelto al Home normalmente; el error estaba en el parser: el servidor devuelve `404 {message:"NO_ACTIVE_ENROLLMENT: ..."}`, mientras el cliente solo extraía códigos desde `detail`. Se corrigió `apiClient.ts` para extraer el mismo prefijo desde `message`, con tres pruebas de regresión (message/detail y 404 genérico). No se modificó el wizard, la lógica de salida ni el backend. La corrección se publicó solo en el bucket de pruebas.
+
+Después de 9/9 se verificó la pantalla “Pendiente de confirmación clínica”. El owner habilitó **`Program__Assignment__Enabled=true` en `cooppadresd-api:92`**, rollout verde. Antes no había propuesta; después apareció el enrollment `04757409-bc69-4be1-be95-aca383a2563f` en `PendingAssignment`, semana 0, y la recomendación `4fcba68a-ebf1-43e3-8771-688fb6456f51`.
+
+**La UI actual no permite repetir un test completado**: la tarjeta tiene `aria-disabled=true` y `TestsPage.openTest` retorna si `item.done`. Se comprobó por Playwright y fuente. No se forzó el control ni se fabricó un re-submit. La creación ocurrió mediante recuperación del backend al habilitar el flag con la batería ya 9/9; no se atribuye a un nuevo submit por UI. La pantalla de batería sigue mostrando el copy “plan pendiente hasta completar 9” aun estando 9/9: queda como hallazgo de copy/contexto, no como estado real del programa activo.
+
+El cambio del flag lo ejecutó el owner; el agente no modificó el servicio API. Su reversión queda bajo control del owner (retirar el override o volver a su configuración previa), sin alterar datos clínicos ya persistidos.
+
+### Reparación del 503 y narrativa real
+
+La recomendación quedó `pending-narrative`; Regenerar narrativa por UI respondió **202**. Se observaron ocho respuestas 503 del endpoint interno. Los logs del ai-service identificaron la causa: **Anthropic 400 `temperature: Extra inputs are not permitted`**, traducido a 503 por la ruta.
+
+El fix del repo `ai-service` copia exclusivamente el modelo `ChatAnthropic` de narrativa con `temperature=None`, para omitirlo del payload. OpenAI, los agentes de chat, prompts, propuesta y validación de fuentes conservan su comportamiento. Pruebas: **47/47**, lint completo sin errores y regresión del payload dentro del contenedor.
+
+El owner autorizó expresamente la excepción al guardrail de ECS para desplegar **solo ai-service**:
+
+- Base: `cooppadresd-ai:30`, digest `sha256:eb8949741eb2a097e61f340ce5e8ca2088f42b5dea12c3477f55393e1c48ef44`.
+- Imagen candidata: `cooppadresd-ai:coppadresd-app-test-narrative-fix-20261104`.
+- Digest publicado: `sha256:bcf51b44d1a06ac05bff10af48c37937c3ae7fcc413e54bc57e76d1dd4a58ce6`.
+- Revisión desplegada: `arn:aws:ecs:us-east-2:933629770820:task-definition/cooppadresd-ai:31`, **COMPLETED, 1/1**.
+- Único campo cambiado en la task definition: `containerDefinitions[name=ai].image`. Se preservaron dependencias de la imagen base, roles, CPU/memoria, red, secrets y configuración.
+- El owner también informó la configuración `LLM_PROVIDER=anthropic` en `cooppadresd/ai`; el agente no escribió ese secreto.
+- Rollback disponible: actualizar únicamente `cooppadresd-ai` a `cooppadresd-ai:30`; **no se ejecutó rollback**.
+
+El worker produjo texto real ES (**784 caracteres**) y EN (**748**); el estado pasó a `proposed`. Se inspeccionaron ambos idiomas en la UI, sin texto fabricado. Fix local del ai-service: **`9b480425f1e458b72386549a445a258d06939216`**, sin push; [documentación del fix](../../ai-service/docs/program-narrative.md).
+
+### Aplicar y cerrar en el app
+
+En ERP se buscó el documento exacto, abrió la ficha con perfil/fuentes/narrativa y pulsó **Aplicar tal cual**. POST originado por la UI: **200**, estado `applied`, semana 1, `startLocalDate=2026-11-04` (miércoles, arranque inmediato).
+
+En el app se abrió Protocolo diario: GET snapshot **200**, `currentWeekNumber=1`, `currentWeekStatus=Active`, **6 tareas**. Se abrió **Evaluación emocional**, eligió ánimo/sueño/barrera y pulsó **Guardar evaluación**. POST de la UI **200**; snapshot posterior: una tarea Completed, **XP 0→120**, **racha 0→1**. La cabecera muestra **1/6 y 120/750 XP** y la pestaña Racha confirma el día.
+
+| Captura | Evidencia |
+| --- | --- |
+| [06](test-web-evidence/06-first-entry-contacts.png) | Identificación resuelta y contacto SMS enmascarado |
+| [07](test-web-evidence/07-real-sms-otp-waiting.png) | SMS enviado, pantalla esperando al owner, campos vacíos |
+| [08](test-web-evidence/08-first-entry-onboarding.png) | Onboarding tras OTP real |
+| [09](test-web-evidence/09-onboarding-complete-battery.png) | Batería asignada tras guardar perfil |
+| [10](test-web-evidence/10-battery-complete-pending-clinical.png) | 9/9 y espera de confirmación clínica |
+| [11](test-web-evidence/11-erp-queue-patient-search.png) | Búsqueda exacta del paciente en la cola |
+| [12](test-web-evidence/12-ui-completed-test-cannot-repeat.png) | Tests completados deshabilitados; sin nuevo submit |
+| [13](test-web-evidence/13-erp-assignment-profile-narrative.png), [13 EN](test-web-evidence/13b-erp-narrative-english.png) | Perfil, fuentes y narrativa real ES/EN |
+| [14](test-web-evidence/14-erp-assignment-applied.png) | Asignación aplicada |
+| [15](test-web-evidence/15-app-active-week-one.png) | Semana 1 y tareas del día |
+| [16](test-web-evidence/16-app-task-complete-xp.png), [16 racha](test-web-evidence/16b-app-streak-one.png) | 1/6, 120 XP y racha 1 |
+
+### Validación final y límites de la evidencia
+
+- App: **lint 0 errores, 27 advertencias preexistentes; build production correcto; 1055/1055 tests en 141 archivos**. El HTML corregido publicado tiene SHA-256 `d7b17fd6e36cd2c1e75ffd85208565908c0110f82dde8a7c1d8d5e3efd4c1b3e`.
+- ai-service: **47/47 tests de narrativa, ruff completo aprobado, prueba de payload dentro de la imagen y narrativa LIVE ES/EN confirmada**.
+- No quedan bloqueos operativos para este recorrido. Se mantienen hallazgos QA: no existe repetición de completados en el app; el copy de la batería no cambia al llegar a 9/9; la alerta ORP conserva placeholders `[valor]`/`[indicador]` en su título.
+- `/me/results` devolvió 46 scores/subescalas y **ningún resultType=indicator**. No se certifica que `iadherencia`/`iapnea` se hayan persistido como indicadores separados; se verificaron el score IAC, el perfil normalizado y la alerta real, sin inventar indicadores ausentes.
+- La animación transitoria de celebración mostró `+420 pts`; el ledger, la respuesta de completación y la cabecera estabilizada confirmaron **+120 XP**. Queda como discrepancia visual a revisar; no se alteraron puntos ni se ocultó el resultado real.
+- No se probó entrega push en dispositivo nativo. La prueba se realizó en Chromium con emulación iPhone 13, no Safari/iOS físico.

@@ -135,7 +135,7 @@ function parseApiError(
       ? String((body as { message: unknown }).message)
       : `HTTP ${status}`;
 
-  return new ApiError({ message, status, errorType });
+  return new ApiError({ message, status, errorType, code: extractCodeFromDetail(message) });
 }
 
 // --- Main fetch wrapper ---

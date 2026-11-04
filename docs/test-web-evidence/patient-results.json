@@ -1,0 +1,995 @@
+{
+  "startedAt": "2026-11-04T20:26:07.641Z",
+  "app": "https://d1rmzt4ao2pn78.cloudfront.net",
+  "steps": [
+    {
+      "step": "admin-authorized",
+      "status": 200,
+      "email": "admin@cooppaddresd.com"
+    },
+    {
+      "step": "test-patient-created",
+      "status": 201,
+      "patientId": "29f86969-f99f-425d-8bba-20f52134dc8b",
+      "document": "9920261104202616",
+      "email": "coppadresd-app-test-20261104202616@example.invalid",
+      "synthetic": true,
+      "phoneMasked": "+57 305***4819"
+    },
+    {
+      "step": "first-entry-id-lookup",
+      "status": "PASS",
+      "smsSent": 0
+    },
+    {
+      "step": "real-phone-otp-sent",
+      "status": 200,
+      "smsAttempts": 1,
+      "destinationMasked": "+57 305***4819"
+    },
+    {
+      "step": "real-otp-verified",
+      "status": 200,
+      "audience": "app",
+      "otpSource": "owner-chat",
+      "otpPersisted": false
+    },
+    {
+      "step": "onboarding-and-initial-battery",
+      "profileSaved": 200,
+      "batteryCount": 1,
+      "assignedTests": 9
+    },
+    {
+      "step": "test-historia-clinica",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 13,
+      "completed": "completed"
+    },
+    {
+      "step": "test-temperamento",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 6,
+      "completed": "completed"
+    },
+    {
+      "step": "test-nutricional",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 6,
+      "completed": "completed"
+    },
+    {
+      "step": "test-movimiento",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 4,
+      "completed": "completed"
+    },
+    {
+      "step": "test-sueno",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 4,
+      "completed": "completed"
+    },
+    {
+      "step": "test-iac-adresd",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 4,
+      "completed": "completed"
+    },
+    {
+      "step": "test-orp",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 4,
+      "completed": "completed"
+    },
+    {
+      "step": "test-ers",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 4,
+      "completed": "completed"
+    },
+    {
+      "step": "test-bateria-antares",
+      "start": 200,
+      "submit": 200,
+      "answerCount": 5,
+      "completed": "completed"
+    },
+    {
+      "step": "battery-progress",
+      "completed": 9,
+      "total": 9,
+      "resultCount": 46,
+      "indicators": 0
+    },
+    {
+      "step": "nine-tests-app-state",
+      "status": "PASS",
+      "state": "pending-assignment"
+    },
+    {
+      "step": "ui-retest-attempt",
+      "status": "NOT_AVAILABLE",
+      "completedTestDisabled": true,
+      "startOrSubmitSent": false,
+      "source": "TestsPage: completados deshabilitados y openTest retorna cuando item.done"
+    },
+    {
+      "step": "narrative-regeneration",
+      "status": 202
+    },
+    {
+      "step": "results-and-alerts",
+      "resultCount": 46,
+      "resultCodes": [
+        {
+          "type": "score",
+          "code": "bateria-antares",
+          "value": 8
+        },
+        {
+          "type": "subscale",
+          "code": "Expectativas · Plazo esperado",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Mentalidad · Posibilidad de cambio",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Meta · Objetivo principal",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Nota personal · Para tu equipo médico",
+          "value": 0
+        },
+        {
+          "type": "subscale",
+          "code": "Propósito · Urgencia del cambio",
+          "value": 2
+        },
+        {
+          "type": "score",
+          "code": "ers",
+          "value": 7
+        },
+        {
+          "type": "subscale",
+          "code": "Familia · Ambiente en casa",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Gestión · Tiempo personal",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Red de apoyo · Apoyo externo",
+          "value": 1
+        },
+        {
+          "type": "subscale",
+          "code": "Trabajo · Carga laboral",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Hábitos · Tabaquismo",
+          "value": 50
+        },
+        {
+          "type": "subscale",
+          "code": "Laboratorios · Colesterol",
+          "value": 66.67
+        },
+        {
+          "type": "subscale",
+          "code": "Laboratorios · HbA1c (si la tienes)",
+          "value": 66.67
+        },
+        {
+          "type": "score",
+          "code": "orp",
+          "value": 62.5
+        },
+        {
+          "type": "subscale",
+          "code": "Tensión arterial · Última medición",
+          "value": 66.67
+        },
+        {
+          "type": "subscale",
+          "code": "Barreras · Obstáculos reales",
+          "value": 0
+        },
+        {
+          "type": "subscale",
+          "code": "Compromiso · Constancia",
+          "value": 50
+        },
+        {
+          "type": "subscale",
+          "code": "Compromiso · Motivación",
+          "value": 50
+        },
+        {
+          "type": "score",
+          "code": "iac-adresd",
+          "value": 37.5
+        },
+        {
+          "type": "subscale",
+          "code": "Propósito · Razón principal",
+          "value": 50
+        },
+        {
+          "type": "subscale",
+          "code": "Red flags · Ronquidos",
+          "value": 1
+        },
+        {
+          "type": "subscale",
+          "code": "Red flags · Somnolencia diurna",
+          "value": 2
+        },
+        {
+          "type": "score",
+          "code": "sueno",
+          "value": 7
+        },
+        {
+          "type": "subscale",
+          "code": "Sueño · Calidad",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Sueño · Horas por noche",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Actividad · Nivel actual",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Capacidad · Resistencia",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Disponibilidad · Tiempo",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Limitaciones · Dolor",
+          "value": 1
+        },
+        {
+          "type": "score",
+          "code": "movimiento",
+          "value": 7
+        },
+        {
+          "type": "subscale",
+          "code": "Conducta · Alimentación emocional",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Conducta · Control de porciones",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Hábitos · Frecuencia",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Hábitos · Ultraprocesados",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Hidratación · Agua diaria",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Motivación · Disposición al cambio",
+          "value": 2
+        },
+        {
+          "type": "score",
+          "code": "nutricional",
+          "value": 12
+        },
+        {
+          "type": "score",
+          "code": "temperamento",
+          "value": 12
+        },
+        {
+          "type": "subscale",
+          "code": "Temperamento · Análisis y detalle",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Temperamento · Constancia",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Temperamento · Dimensión social",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Temperamento · Metas y resultados",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Temperamento · Reacción emocional",
+          "value": 2
+        },
+        {
+          "type": "subscale",
+          "code": "Temperamento · Rutina y estabilidad",
+          "value": 2
+        },
+        {
+          "type": "score",
+          "code": "historia-clinica",
+          "value": 2
+        }
+      ],
+      "alertsStatus": 200,
+      "alertCount": 1
+    },
+    {
+      "step": "assignment-queue",
+      "status": 200,
+      "matches": 1,
+      "recommendationId": "4fcba68a-ebf1-43e3-8771-688fb6456f51",
+      "state": "proposed"
+    },
+    {
+      "step": "erp-queue-patient-ui",
+      "status": "PASS",
+      "document": "9920261104202616",
+      "proposalVisible": true
+    },
+    {
+      "step": "assignment-detail",
+      "status": 200,
+      "recommendationId": "4fcba68a-ebf1-43e3-8771-688fb6456f51",
+      "state": "proposed",
+      "enrollment": {
+        "id": "04757409-bc69-4be1-be95-aca383a2563f",
+        "status": "PendingAssignment",
+        "currentWeekNumber": 0,
+        "startLocalDate": "2026-11-04",
+        "startedAt": "2026-11-04T20:38:03.449185Z",
+        "timezone": "America/Bogota"
+      },
+      "profileConditions": [
+        {
+          "code": "apnea-sueno",
+          "active": false,
+          "criteria": {
+            "any": [
+              {
+                "op": "gte",
+                "field": "stopBang",
+                "value": 3
+              },
+              {
+                "all": [
+                  {
+                    "op": "gte",
+                    "field": "stopBang",
+                    "value": 2
+                  },
+                  {
+                    "op": "gt",
+                    "unit": "kg/m²",
+                    "field": "bmi",
+                    "value": 35
+                  }
+                ]
+              }
+            ],
+            "severity": [
+              {
+                "all": [
+                  {
+                    "op": "gte",
+                    "field": "ahi",
+                    "value": 5
+                  },
+                  {
+                    "op": "lt",
+                    "field": "ahi",
+                    "value": 15
+                  }
+                ],
+                "code": "mild"
+              },
+              {
+                "all": [
+                  {
+                    "op": "gte",
+                    "field": "ahi",
+                    "value": 15
+                  },
+                  {
+                    "op": "lt",
+                    "field": "ahi",
+                    "value": 30
+                  }
+                ],
+                "code": "moderate"
+              },
+              {
+                "all": [
+                  {
+                    "op": "gte",
+                    "field": "ahi",
+                    "value": 30
+                  }
+                ],
+                "code": "severe"
+              }
+            ],
+            "assignable": true,
+            "missingData": "no-match"
+          },
+          "severity": null,
+          "sourceRef": "AASM/ATS/CHEST",
+          "assignable": true
+        },
+        {
+          "code": "diabetes-t2",
+          "active": false,
+          "criteria": {
+            "all": [
+              {
+                "op": "eq",
+                "field": "confirmedSecondTest",
+                "value": true
+              },
+              {
+                "any": [
+                  {
+                    "op": "gte",
+                    "unit": "mg/dL",
+                    "field": "fpg",
+                    "value": 126
+                  },
+                  {
+                    "op": "gte",
+                    "unit": "%",
+                    "field": "a1c",
+                    "value": 6.5
+                  },
+                  {
+                    "op": "gte",
+                    "unit": "mg/dL",
+                    "field": "ogtt2h",
+                    "value": 200
+                  }
+                ]
+              }
+            ],
+            "assignable": true,
+            "missingData": "no-match"
+          },
+          "severity": null,
+          "sourceRef": "ADA Standards of Care 2026 §2",
+          "assignable": true
+        },
+        {
+          "code": "gad-7",
+          "active": false,
+          "criteria": {
+            "scale": "gad-7",
+            "purpose": [
+              "narrative",
+              "clinical-alerts"
+            ],
+            "severity": [
+              {
+                "code": "mild",
+                "maxExclusive": 10,
+                "minInclusive": 5
+              },
+              {
+                "code": "moderate",
+                "maxExclusive": 15,
+                "minInclusive": 10
+              },
+              {
+                "code": "severe",
+                "minInclusive": 15
+              }
+            ],
+            "assignable": false,
+            "missingData": "no-match"
+          },
+          "severity": null,
+          "sourceRef": "cutoffs oficiales Pfizer/Joint Commission",
+          "assignable": false
+        },
+        {
+          "code": "hipertension",
+          "active": false,
+          "criteria": {
+            "any": [
+              {
+                "op": "gte",
+                "unit": "mmHg",
+                "field": "systolic",
+                "value": 130
+              },
+              {
+                "op": "gte",
+                "unit": "mmHg",
+                "field": "diastolic",
+                "value": 80
+              }
+            ],
+            "severity": [
+              {
+                "any": [
+                  {
+                    "op": "gte",
+                    "unit": "mmHg",
+                    "field": "systolic",
+                    "value": 140
+                  },
+                  {
+                    "op": "gte",
+                    "unit": "mmHg",
+                    "field": "diastolic",
+                    "value": 90
+                  }
+                ],
+                "code": "stage-2"
+              },
+              {
+                "any": [
+                  {
+                    "all": [
+                      {
+                        "op": "gte",
+                        "unit": "mmHg",
+                        "field": "systolic",
+                        "value": 130
+                      },
+                      {
+                        "op": "lte",
+                        "unit": "mmHg",
+                        "field": "systolic",
+                        "value": 139
+                      }
+                    ]
+                  },
+                  {
+                    "all": [
+                      {
+                        "op": "gte",
+                        "unit": "mmHg",
+                        "field": "diastolic",
+                        "value": 80
+                      },
+                      {
+                        "op": "lte",
+                        "unit": "mmHg",
+                        "field": "diastolic",
+                        "value": 89
+                      }
+                    ]
+                  }
+                ],
+                "code": "stage-1"
+              }
+            ],
+            "assignable": true,
+            "missingData": "no-match"
+          },
+          "severity": null,
+          "sourceRef": "AHA/ACC 2025",
+          "assignable": true
+        },
+        {
+          "code": "obesidad",
+          "active": true,
+          "criteria": {
+            "any": [
+              {
+                "op": "gte",
+                "unit": "kg/m²",
+                "field": "bmi",
+                "value": 30
+              },
+              {
+                "all": [
+                  {
+                    "op": "eq",
+                    "field": "ethnicity",
+                    "value": "asian"
+                  },
+                  {
+                    "op": "gte",
+                    "unit": "kg/m²",
+                    "field": "bmi",
+                    "value": 27.5
+                  }
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "op": "eq",
+                    "field": "sex",
+                    "value": "male"
+                  },
+                  {
+                    "op": "gt",
+                    "unit": "cm",
+                    "field": "waist",
+                    "value": 102
+                  }
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "op": "eq",
+                    "field": "sex",
+                    "value": "female"
+                  },
+                  {
+                    "op": "gt",
+                    "unit": "cm",
+                    "field": "waist",
+                    "value": 88
+                  }
+                ]
+              }
+            ],
+            "assignable": true,
+            "missingData": "no-match"
+          },
+          "severity": null,
+          "sourceRef": "OMS/NHLBI/ACC-AHA-TOS 2013 y VA/DoD 2026",
+          "assignable": true
+        },
+        {
+          "code": "phq-9",
+          "active": false,
+          "criteria": {
+            "scale": "phq-9",
+            "purpose": [
+              "narrative",
+              "clinical-alerts"
+            ],
+            "severity": [
+              {
+                "code": "mild",
+                "maxExclusive": 10,
+                "minInclusive": 5
+              },
+              {
+                "code": "moderate",
+                "maxExclusive": 15,
+                "minInclusive": 10
+              },
+              {
+                "code": "moderately-severe",
+                "maxExclusive": 20,
+                "minInclusive": 15
+              },
+              {
+                "code": "severe",
+                "minInclusive": 20
+              }
+            ],
+            "assignable": false,
+            "missingData": "no-match"
+          },
+          "severity": null,
+          "sourceRef": "cutoffs oficiales Pfizer/Joint Commission",
+          "assignable": false
+        },
+        {
+          "code": "prediabetes",
+          "active": false,
+          "criteria": {
+            "any": [
+              {
+                "all": [
+                  {
+                    "op": "gte",
+                    "unit": "mg/dL",
+                    "field": "fpg",
+                    "value": 100
+                  },
+                  {
+                    "op": "lte",
+                    "unit": "mg/dL",
+                    "field": "fpg",
+                    "value": 125
+                  }
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "op": "gte",
+                    "unit": "%",
+                    "field": "a1c",
+                    "value": 5.7
+                  },
+                  {
+                    "op": "lte",
+                    "unit": "%",
+                    "field": "a1c",
+                    "value": 6.4
+                  }
+                ]
+              }
+            ],
+            "assignable": true,
+            "missingData": "no-match"
+          },
+          "severity": null,
+          "sourceRef": "ADA 2026 §2",
+          "assignable": true
+        }
+      ],
+      "matchedRules": [
+        {
+          "reason": "Criterios satisfechos por los valores del snapshot; precedencia por prioridad, peso y código.",
+          "ruleId": "cae36e8d-c674-44ab-9a5e-8b1a75b6661a",
+          "target": {
+            "resolver": "movement-subscales",
+            "difficultyLevels": [
+              1,
+              2,
+              3
+            ],
+            "difficultyResolvedBy": "assignment-engine",
+            "routineNamesByDifficulty": {
+              "1": [
+                "Caminata Activa",
+                "Flexibilidad y Movilidad"
+              ],
+              "2": [
+                "Cardio Básico"
+              ],
+              "3": [
+                "Cardio HIIT"
+              ]
+            }
+          },
+          "weight": 1,
+          "criteria": {
+            "all": [
+              {
+                "op": "exists",
+                "field": "movement.subscales",
+                "value": true
+              }
+            ],
+            "safety": {
+              "sourceRef": "ACSM/ADA 2023-2025, ESC HTN",
+              "restrictions": [
+                {
+                  "when": {
+                    "op": "eq",
+                    "field": "severeRetinopathy",
+                    "value": true
+                  },
+                  "exclude": "vigorous-exercise"
+                },
+                {
+                  "when": {
+                    "op": "eq",
+                    "field": "uncontrolledHypertension",
+                    "value": true
+                  },
+                  "exclude": [
+                    "maximal-loads",
+                    "breath-holding"
+                  ]
+                }
+              ]
+            }
+          },
+          "priority": 100,
+          "ruleCode": "movimiento-subscales-v1",
+          "sourceRef": null,
+          "conditionCode": null,
+          "appliesRoutine": true,
+          "appliesNutrition": false,
+          "targetRoutineName": "Full Body",
+          "targetNutritionPlanName": null
+        },
+        {
+          "reason": "Criterios satisfechos por los valores del snapshot; precedencia por prioridad, peso y código.",
+          "ruleId": "ed6668b8-3868-4ab5-9091-8554bd449262",
+          "target": {
+            "nutritionPlanName": "Plan Obesidad — Déficit calórico"
+          },
+          "weight": 1,
+          "criteria": {
+            "all": [
+              {
+                "op": "eq",
+                "field": "conditions.obesidad.active",
+                "value": true
+              }
+            ],
+            "objective": {
+              "months": 6,
+              "weightLossPercent": [
+                5,
+                10
+              ],
+              "dailyCalorieDeficit": [
+                300,
+                500
+              ]
+            },
+            "sourceRef": "ACC/AHA/TOS/NHLBI"
+          },
+          "priority": 100,
+          "ruleCode": "obesidad-v1",
+          "sourceRef": "OMS/NHLBI/ACC-AHA-TOS 2013 y VA/DoD 2026",
+          "conditionCode": "obesidad",
+          "appliesRoutine": false,
+          "appliesNutrition": true,
+          "targetRoutineName": null,
+          "targetNutritionPlanName": "Plan Obesidad — Déficit calórico"
+        }
+      ],
+      "narrativePending": false,
+      "narrativeEsPresent": true,
+      "narrativeEnPresent": true
+    },
+    {
+      "step": "erp-profile-and-sources",
+      "status": "PASS",
+      "sourceCitations": 3,
+      "narrativeEsPresent": true,
+      "narrativeEnPresent": true
+    },
+    {
+      "step": "erp-apply-assignment",
+      "status": 200,
+      "state": "applied",
+      "startLocalDate": "2026-11-04",
+      "currentWeekNumber": 1
+    },
+    {
+      "step": "active-week-snapshot",
+      "status": 200,
+      "week": 1,
+      "weekStatus": "Active",
+      "tasks": 6,
+      "localDate": "2026-11-04"
+    },
+    {
+      "step": "emotional-task-xp-streak",
+      "status": 200,
+      "pointsAwarded": 120,
+      "xpBefore": 0,
+      "xpAfter": 120,
+      "streakBefore": 0,
+      "streakAfter": 1,
+      "completedTasks": 1
+    },
+    {
+      "step": "patient-flow-complete",
+      "status": "PASS",
+      "patientId": "29f86969-f99f-425d-8bba-20f52134dc8b",
+      "recommendationId": "4fcba68a-ebf1-43e3-8771-688fb6456f51",
+      "smsSent": 1
+    },
+    {
+      "step": "final-ui-evidence",
+      "status": "PASS",
+      "narrativeLanguageTab": "en",
+      "appViewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "step": "final-server-proof",
+      "status": "PASS",
+      "completedTests": [
+        "historia-clinica",
+        "temperamento",
+        "nutricional",
+        "movimiento",
+        "sueno",
+        "iac-adresd",
+        "orp",
+        "ers",
+        "bateria-antares"
+      ],
+      "resultCount": 46,
+      "indicatorCodesReturned": [],
+      "alertCount": 1,
+      "alerts": [
+        {
+          "patientId": "29f86969-f99f-425d-8bba-20f52134dc8b",
+          "severity": "high",
+          "title": "ORP [valor] - [indicador]: riesgo cardiometabólico elevado. Revisar prioridad."
+        }
+      ],
+      "recommendationState": "applied",
+      "narrativeEsCharacters": 784,
+      "narrativeEnCharacters": 748,
+      "activeWeek": 1,
+      "activeWeekStatus": "Active",
+      "xpBalance": 120,
+      "streak": 1
+    },
+    {
+      "step": "streak-ui-evidence",
+      "status": "PASS"
+    }
+  ],
+  "screenshots": [
+    "06-first-entry-contacts.png",
+    "07-real-sms-otp-waiting.png",
+    "08-first-entry-onboarding.png",
+    "09-onboarding-complete-battery.png",
+    "10-battery-complete-pending-clinical.png",
+    "11-erp-queue-patient-search.png",
+    "12-ui-completed-test-cannot-repeat.png",
+    "13-erp-assignment-profile-narrative.png",
+    "14-erp-assignment-applied.png",
+    "15-app-active-week-one.png",
+    "16-app-task-complete-xp.png",
+    "13b-erp-narrative-english.png",
+    "16b-app-streak-one.png"
+  ],
+  "smsSent": 1,
+  "completed": true,
+  "qaFindings": [
+    {
+      "finding": "Timeout tras 3 tests: {message: NO_ACTIVE_ENROLLMENT} perdía su código.",
+      "resolution": "Parser frontend corregido; 3 pruebas de regresión y estado pendiente 9/9 verificado en web."
+    },
+    {
+      "finding": "La batería no permite repetir tests completados desde la UI.",
+      "resolution": "Sin bypass: la recuperación tras habilitar el flag creó el enrollment y la propuesta de la batería completa."
+    },
+    {
+      "finding": "El DTO wire de cola usa id/narrativeEs/narrativeEn.",
+      "resolution": "El runner adapta el mismo contrato que el ERP existente."
+    }
+  ]
+}
