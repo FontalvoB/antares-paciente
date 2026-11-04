@@ -53,6 +53,12 @@ export interface MyNutritionPlanDayDto {
 
 /** Plan de alimentación activo del paciente (wire de `NutritionPlan`). */
 export interface MyNutritionPlanDto {
+  id?: string;
+  revision?: number | null;
+  durationDays?: number;
+  startDate?: string | null;
+  endDate?: string | null;
+  currentDay?: number | null;
   name?: string | null;
   description?: string | null;
   /** Condición objetivo (Obesidad, Diabetes, Mantenimiento...). */
@@ -71,6 +77,23 @@ export interface MyNutritionPlanDto {
   /** Comidas del día (forma plana) o por días del ciclo. */
   meals?: MyNutritionPlanMealDto[] | null;
   days?: MyNutritionPlanDayDto[] | null;
+}
+
+export interface NutritionPlanStatusDto {
+  status: 'no_assessment_assignment' | 'assessments_pending' | 'generating' | 'pending_review' | 'active' | 'expired' | 'generation_failed' | 'no_plan';
+  durationDays: number;
+  startDate?: string | null;
+  endDate?: string | null;
+  currentDay?: number | null;
+  todayLocalDate?: string | null;
+  planId?: string | null;
+  revision?: number | null;
+}
+
+/** Solo estado del proceso: el servidor no expone la dieta en revisión. */
+export async function getMyNutritionPlanStatus(): Promise<NutritionPlanStatusDto | null> {
+  try { return await apiFetch<NutritionPlanStatusDto>(`${MY_NUTRITION_PLAN_PATH}/status`, { method: 'GET' }); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
 
 /**

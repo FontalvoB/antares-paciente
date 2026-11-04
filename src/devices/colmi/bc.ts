@@ -245,15 +245,21 @@ export class BcChannel {
   }
 
   /** Reensambla las tramas bc (pueden venir partidas en varias notificaciones). */
-  private handleNotification(bytes: Uint8Array): void {
-    const merged = new Uint8Array(this.buffer.length + bytes.length);
-    merged.set(this.buffer);
-    merged.set(bytes, this.buffer.length);
-    const { frames, rest } = parseBcFrames(merged);
-    this.buffer = rest;
-    for (const frame of frames) {
-      this.queue.push(frame);
-      this.waiter?.();
+  private handleNotification(bytes: Uint8Array): boolean {
+    try {
+      const merged = new Uint8Array(this.buffer.length + bytes.length);
+      merged.set(this.buffer);
+      merged.set(bytes, this.buffer.length);
+      const { frames, rest } = parseBcFrames(merged);
+      this.buffer = rest;
+      for (const frame of frames) {
+        this.queue.push(frame);
+        this.waiter?.();
+      }
+      return this.buffer.length === 0;
+    } catch (error) {
+      this.buffer = new Uint8Array(0);
+      throw error;
     }
   }
 

@@ -14,16 +14,19 @@
     "sync": "npm run build && npx cap sync && npm run protect:ios-spm",
     "sync:dev": "npm run build:dev && npx cap sync && npm run protect:ios-spm",
     "protect:ios-spm": "node scripts/protect-package-swift.mjs",
-    "release:check": "node -e \"const s=require('fs').readFileSync('ios/App/App/Info.plist','utf8'); if(s.includes('NSAllowsArbitraryLoads')||s.includes('NSAllowsLocalNetworking')){console.error('FALLA: Info.plist tiene ATS de desarrollo; revertir antes de archivar.');process.exit(1)} console.log('Info.plist OK para release (sin ATS de desarrollo).')\""
+    "release:check": "node -e \"const s=require('fs').readFileSync('ios/App/App/Info.plist','utf8'); if(s.includes('NSAllowsArbitraryLoads')||s.includes('NSAllowsLocalNetworking')){console.error('FALLA: Info.plist tiene ATS de desarrollo; revertir antes de archivar.');process.exit(1)} console.log('Info.plist OK para release (sin ATS de desarrollo).')\"",
+    "postinstall": "node scripts/apply-bluetooth-patches.mjs",
+    "native:ble:check": "node scripts/apply-bluetooth-patches.mjs --check"
   },
   "dependencies": {
-    "@capacitor-community/bluetooth-le": "^8.3.0",
+    "@capacitor-community/bluetooth-le": "8.3.0",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.5",
     "@capacitor/camera": "^8.2.4",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/geolocation": "8.2.4",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.5.1",
     "@capacitor/keyboard": "^8.0.5",

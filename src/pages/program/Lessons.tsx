@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
-  ExerciseItemDto,
   NutritionMealDto,
   PodcastChapterDto,
   RecentVitalsDto,
@@ -8,20 +7,14 @@ import type {
 } from "../../services/program/types";
 import {
   IonButton,
-  IonChip,
   IonIcon,
   IonInput,
   IonProgressBar,
-  IonRange,
-  IonSegment,
-  IonSegmentButton,
   IonSpinner,
-  IonTextarea,
 } from "@ionic/react";
 import {
   batteryHalfOutline,
   bluetooth,
-  checkmark,
   heart,
   heartOutline,
   footstepsOutline,
@@ -37,10 +30,7 @@ import {
   waterOutline,
 } from "ionicons/icons";
 import {
-  EMOTION_FACES,
   VITAL_FIELDS,
-  WEEK_BARRIERS,
-  WEEK_LABELS,
 } from "../../data/program";
 import { MISSION_PHOTOS } from "../../data/missionPhotos";
 import { EcgTrace } from "../../components/EcgTrace";
@@ -57,11 +47,8 @@ import { agoLabel, formatSleep } from "../../utils/wearable";
 import {
   formatDateForDisplay,
   toLocalISODate,
-  weekdayMondayIndex,
 } from "../../utils/dates";
-import { resolveNbDayOk } from "../../utils/nbWeekDays";
 import { mealTypeToCode } from "../../utils/mealTypeToCode";
-import { resolveStationSec } from "../../utils/exerciseSteps";
 import { useI18n, useT } from "../../i18n/I18nContext";
 
 function mmss(sec: number) {
@@ -880,7 +867,7 @@ export function NutritionLesson({
       // sin match (no registrado).
       id: mealTypeToCode(m.mealType) ?? `meal-${idx}`,
       emoji,
-      title: m.mealType,
+      title: ({ des: "Desayuno", alm: "Almuerzo", mer: "Merienda", cen: "Cena" } as Record<string, string>)[mealTypeToCode(m.mealType) ?? ""] ?? m.mealType,
       items: details.join(" ") || "Comida planificada",
       kcal: m.calories || 0,
     };
@@ -906,7 +893,7 @@ export function NutritionLesson({
   const kcal = meals
     .filter((m) => mealsLogged.includes(m.id))
     .reduce((s, m) => s + m.kcal, 0);
-  const pct = meals.length > 0 ? mealsLogged.length / meals.length : 0;
+  const pct = meals.length > 0 ? meals.filter(m => mealsLogged.includes(m.id)).length / meals.length : 0;
 
   return (
     <div className="lsn-stack">
@@ -966,7 +953,8 @@ export function NutritionLesson({
           <em>{mealsLogged.includes(m.id) ? "✓" : ""}</em>
         </div>
       ))}
-      <IonButton expand="block" className="bt bt-teal" onClick={onGoPlan}>
+      {meals.every(m => m.id !== "mer") && <section className="lsn-meal nutrition-missing-snack"><span className="lsn-meal-ico" aria-hidden="true">🍎</span><div><strong>{t("Merienda")}</strong><span>{t("Tu nutricionista aún no ha indicado esta comida para este día.")}</span></div></section>}
+      <IonButton expand="block" className="bt bt-primary" onClick={onGoPlan}>
         {t("Ir a registrar comidas")}
       </IonButton>
       {!done && (
@@ -978,325 +966,9 @@ export function NutritionLesson({
   );
 }
 
-export function ExerciseLesson({
-  done,
-  pts,
-  title,
-  exercises,
-  step,
-  left,
-  running,
-  onToggle,
-  onSkip,
-  onComplete,
-  unavailable,
-}: {
-  done: boolean;
-  pts: number;
-  title?: string;
-  exercises?: ExerciseItemDto[] | null;
-  step: number;
-  left: number;
-  running: boolean;
-  onToggle: () => void;
-  onSkip: () => void;
-  onComplete: () => void;
-  unavailable?: boolean;
-}) {
-  const t = useT();
+export { ExerciseLesson } from "./ExerciseLesson";
 
-  // Sin rutina del servidor (content null/contentUnavailable o sin ejercicios):
-  // estado honesto — nunca un circuito fabricado.
-  if (unavailable || !exercises || exercises.length === 0) {
-    return <LessonUnavailable />;
-  }
-
-  const steps = exercises.map((ex) => {
-    // W4: duración defensiva compartida con ProgramPage (resolveStationSec) —
-    // un durationSecs negativo jamás crea una estación de 0s.
-    const sec = resolveStationSec(ex);
-    const cueParts: string[] = [];
-    if (ex.sets && ex.repetitions)
-      cueParts.push(`${ex.sets} series x ${ex.repetitions} reps`);
-    else if (ex.sets) cueParts.push(`${ex.sets} series`);
-    if (ex.description) cueParts.push(ex.description);
-    if (ex.tips) cueParts.push(ex.tips);
-
-    return {
-      name: ex.name,
-      sec,
-      cue: cueParts.join(" · ") || "Ejecuta con buena postura",
-    };
-  });
-
-  const safeStep = Math.min(step, steps.length - 1);
-  const cur = steps[safeStep] || steps[0];
-  const total = steps.reduce((s, x) => s + x.sec, 0);
-  const doneSec =
-    steps.slice(0, safeStep).reduce((s, x) => s + x.sec, 0) + (cur.sec - left);
-  const ring = cur ? 1 - left / cur.sec : 1;
-
-  return (
-    <div className="lsn-stack">
-      <div className="ex-timer">
-        <div className="ex-ring-wrap">
-          <svg width="140" height="140" viewBox="0 0 140 140">
-            <circle
-              cx="70"
-              cy="70"
-              r="58"
-              fill="none"
-              stroke="rgba(255,255,255,.12)"
-              strokeWidth="10"
-            />
-            <circle
-              cx="70"
-              cy="70"
-              r="58"
-              fill="none"
-              stroke="var(--ice)"
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray={`${ring * 364.4} 364.4`}
-              transform="rotate(-90 70 70)"
-            />
-          </svg>
-          <div className="ex-ring-center">
-            <div className="kicker" style={{ color: "var(--ice)" }}>
-              {title ? `${t(title)} · ` : ""}
-              {safeStep + 1} / {steps.length}
-            </div>
-            <div className="display ex-clock">{mmss(left)}</div>
-          </div>
-        </div>
-        <div className="ex-step-name">{t(cur.name)}</div>
-        <div className="ex-step-cue">{t(cur.cue)}</div>
-        <div className="ex-total">
-          {t("Sesión")} {mmss(doneSec)} / {mmss(total)}
-        </div>
-      </div>
-
-      <div className="ex-list">
-        {steps.map((s, i) => (
-          <div
-            key={s.name}
-            className={`ex-li ${i < safeStep ? "done" : ""} ${i === safeStep ? "now" : ""}`}
-          >
-            <b>{i < safeStep ? "✓" : i + 1}</b>
-            <div>
-              <strong>{t(s.name)}</strong>
-              <span>{mmss(s.sec)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {!done && (
-        <>
-          <IonButton expand="block" className="bt bt-pur" onClick={onToggle}>
-            {running
-              ? t("Pausar")
-              : step === 0 && left === (steps[0]?.sec ?? 60)
-                ? t("Iniciar circuito")
-                : t("Continuar")}
-          </IonButton>
-          <IonButton expand="block" className="bt bt-ghost" onClick={onSkip}>
-            {t("Saltar estación")}
-          </IonButton>
-          <IonButton expand="block" className="bt bt-gold" onClick={onComplete}>
-            {t("Ya lo hice · +{pts} pts", { pts: String(pts) })}
-          </IonButton>
-        </>
-      )}
-    </div>
-  );
-}
-
-export function NutraceuticLesson({
-  done,
-  pts,
-  takenAt,
-  slot,
-  nbWeekDays,
-  onSlot,
-  onComplete,
-}: {
-  done: boolean;
-  pts: number;
-  takenAt: string;
-  slot: string;
-  nbWeekDays?: boolean[] | null;
-  onSlot: (v: string) => void;
-  onComplete: () => void;
-}) {
-  const t = useT();
-  const todayIdx = weekdayMondayIndex();
-  return (
-    <div className="lsn-stack">
-      <div className="nb-card">
-        <div className="nb-title">{t("¿Ya tomaste tu Nutracéutico?")}</div>
-        <div className="nb-sub">
-          {done
-            ? t("Registrado · {takenAt}", { takenAt })
-            : t("Producto ADRED · 1 cápsula con el desayuno")}
-        </div>
-        <IonSegment
-          value={slot}
-          onIonChange={(e) => onSlot(String(e.detail.value))}
-          disabled={done}
-        >
-          <IonSegmentButton value="manana">{t("Mañana")}</IonSegmentButton>
-          <IonSegmentButton value="tarde">{t("Tarde")}</IonSegmentButton>
-          <IonSegmentButton value="noche">{t("Noche")}</IonSegmentButton>
-        </IonSegment>
-        <div className="nb-streak">
-          {WEEK_LABELS.map((d, i) => {
-            // Misma resolución que la franja de la vista Hoy (resolveNbDayOk):
-            // verdad del servidor cuando `nbWeekDays` viene (7 ítems), con el
-            // estado optimista local ganando solo para hoy; sin arreglo cae a
-            // la derivación local legada (pasado ok · futuro no) — sin datos
-            // demo.
-            const isToday = i === todayIdx;
-            const ok = resolveNbDayOk(i, todayIdx, nbWeekDays, done);
-            return (
-              <div
-                key={d}
-                className={`nb-day ${ok ? "ok" : "no"} ${isToday ? "today" : ""}`}
-              >
-                {d}
-              </div>
-            );
-          })}
-        </div>
-        {!done ? (
-          <IonButton expand="block" className="bt bt-teal" onClick={onComplete}>
-            {t("Sí, ya lo tomé · +{pts} pts", { pts: String(pts) })}
-          </IonButton>
-        ) : (
-          <div className="lesson-done-banner">
-            {t("Dosis de hoy confirmada")}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function EmotionalLesson({
-  done,
-  pts,
-  onComplete,
-}: {
-  done: boolean;
-  pts: number;
-  onComplete: (payload: { mood: string; barrier: string }) => void;
-}) {
-  const t = useT();
-  const [mood, setMood] = useState("");
-  const [stress, setStress] = useState(5);
-  const [motivation, setMotivation] = useState(8);
-  const [sleep, setSleep] = useState("");
-  const [barrier, setBarrier] = useState("");
-  const [note, setNote] = useState("");
-  // Confirmación única y neutral del registro (sin respuestas fabricadas de IA).
-  const reply = barrier ? t("Gracias, tu equipo recibió tu registro") : "";
-  const ready = Boolean(mood && sleep && barrier);
-
-  const stressLabel = useMemo(
-    () => (stress <= 3 ? t("Bajo") : stress <= 6 ? t("Moderado") : t("Alto")),
-    [stress, t],
-  );
-
-  return (
-    <div className="lsn-stack">
-      <p className="lesson-q">{t("¿Cómo está tu ánimo ahora?")}</p>
-      <div className="mood-row">
-        {EMOTION_FACES.map((m) => (
-          <button
-            key={m.v}
-            type="button"
-            className={`mood-face ${mood === m.v ? "sel" : ""}`}
-            onClick={() => setMood(m.v)}
-          >
-            <span>{m.face}</span>
-            <small>{t(m.label)}</small>
-          </button>
-        ))}
-      </div>
-
-      <p className="lesson-q">
-        {t("Estrés")} · {stressLabel}
-      </p>
-      <IonRange
-        min={1}
-        max={10}
-        step={1}
-        snaps
-        value={stress}
-        disabled={done}
-        onIonInput={(e) => setStress(Number(e.detail.value))}
-      />
-
-      <p className="lesson-q">
-        {t("Motivación")} · {motivation}/10
-      </p>
-      <IonRange
-        min={1}
-        max={10}
-        step={1}
-        snaps
-        value={motivation}
-        disabled={done}
-        onIonInput={(e) => setMotivation(Number(e.detail.value))}
-      />
-
-      <p className="lesson-q">{t("Sueño anoche")}</p>
-      <IonSegment
-        value={sleep}
-        onIonChange={(e) => setSleep(String(e.detail.value ?? ""))}
-        disabled={done}
-      >
-        <IonSegmentButton value="5">≤5 h</IonSegmentButton>
-        <IonSegmentButton value="6">6–7 h</IonSegmentButton>
-        <IonSegmentButton value="8">≥8 h</IonSegmentButton>
-      </IonSegment>
-
-      <p className="lesson-q">{t("¿Qué fue lo más difícil esta semana?")}</p>
-      <div className="barrier-opts">
-        {WEEK_BARRIERS.map((b) => (
-          <IonChip
-            key={b.id}
-            className={barrier === b.id ? "sel" : undefined}
-            onClick={() => !done && setBarrier(b.id)}
-          >
-            {t(b.label)}
-          </IonChip>
-        ))}
-      </div>
-      {reply && <div className="lsn-ai">{reply}</div>}
-
-      <IonTextarea
-        className="fld post-tx"
-        value={note}
-        disabled={done}
-        placeholder={t("Nota opcional para tu psicóloga")}
-        autoGrow
-        onIonInput={(e) => setNote(e.detail.value ?? "")}
-      />
-
-      {!done && (
-        <IonButton
-          expand="block"
-          className="bt bt-primary"
-          disabled={!ready}
-          onClick={() => onComplete({ mood, barrier })}
-        >
-          <IonIcon icon={checkmark} slot="start" />
-          {t("Guardar evaluación · +{pts} pts", { pts: String(pts) })}
-        </IonButton>
-      )}
-    </div>
-  );
-}
+export { NutraceuticLesson } from "./NutraceuticLesson";
+export { EmotionalLesson } from "./EmotionalLesson";
 
 export type ProgramTab = "hoy" | "racha" | "liga" | "evo";

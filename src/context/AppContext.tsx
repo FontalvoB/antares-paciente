@@ -670,8 +670,9 @@ export function AppProvider({
     return onSessionInvalid(() => {
       setFlow("login");
       setScreen("home");
+      onResetCommunityClient?.();
     });
-  }, []);
+  }, [onResetCommunityClient]);
 
   // Vigilancia proactiva de expiración del access token: si venció, se
   // intenta renovar por la cookie de refresh (single-flight compartido con
@@ -1198,9 +1199,10 @@ export function AppProvider({
         setActiveThreadId(null);
         setUser(defaultUser);
         setChat([createWelcomeMessage(defaultUser.nombre, lang)]);
-        // Cierra sesión en el servidor y luego recrea el cliente urql (cache
-        // limpia + WS nuevo) para no servir datos del usuario anterior.
-        void logoutUser().then(() => onResetCommunityClient?.());
+        // logoutUser borra el token antes de esperar la red. Las caches se
+        // limpian de inmediato aunque el servidor de logout no responda.
+        void logoutUser();
+        onResetCommunityClient?.();
       },
       realMode,
       upcomingAppointments: builtReal?.upcoming ?? null,

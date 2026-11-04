@@ -641,7 +641,7 @@ export function RequestAppointmentWizard({
             {display.sosNote && (
               <span className="req-reference-detail">
                 {t(
-                  "Si presentas una situación de emergencia, acude de inmediato o comunícate con el 911.",
+                  "Si presentas una situación de emergencia, acude de inmediato o comunícate con los servicios de emergencia de tu ubicación.",
                 )}
               </span>
             )}

@@ -441,6 +441,7 @@ export function ChatPage() {
             <div className="chat-msg">
               <div
                 className={`bub ${isUser ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
+                data-execution-id={m.executionId}
               >
                 {m.role === "user" && m.image && (
                   // Miniatura de la imagen conversacional adjunta (D3):

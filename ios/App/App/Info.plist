@@ -28,16 +28,36 @@
 	<string>Copp Adresd usa Bluetooth para conectarse a tu wearable (anillo o banda) y leer tus signos vitales, pasos y sueño.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Copp Adresd usa Bluetooth para conectarse a tu wearable y leer tus signos vitales.</string>
+	<key>NSAccessorySetupKitSupports</key>
+	<array>
+		<string>Bluetooth</string>
+	</array>
+	<key>NSAccessorySetupBluetoothNames</key>
+	<array>
+		<string>H59</string>
+		<string>R88</string>
+	</array>
+	<key>NSAccessorySetupBluetoothServices</key>
+	<array>
+		<string>6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E</string>
+		<string>BE940000-7333-BE46-B7AE-689E71722BD5</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Copp Adresd usa tu ubicación únicamente para adjuntarla a una alerta SOS, si la compartes.</string>
+	<string>Copp Adresd usa tu ubicación para identificar el número de emergencias del país y compartirla con tu contacto si activas SOS.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Copp Adresd usa tu ubicación para identificar el número de emergencias del país y compartirla con tu contacto si activas SOS.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Copp Adresd usa el micrófono para las consultas de telemedicina.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Copp Adresd guarda las fotos de tus comidas para tu registro nutricional.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Copp Adresd accede a tus fotos para analizar tus comidas.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

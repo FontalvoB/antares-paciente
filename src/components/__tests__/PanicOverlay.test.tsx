@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PanicOverlay } from "../PanicOverlay";
+import type { HealthSample, MetricKind } from "../../devices/types";
 
 /**
  * Tests de REQ-SOS-07 (change sos-panic-real):
@@ -17,12 +18,24 @@ import { PanicOverlay } from "../PanicOverlay";
  *    (smsChannelStatus de POST /alerts y GET /active; location).
  */
 
+// La lógica SOS se prueba sin hidratar Shadow DOM ni hojas CSS de Stencil.
+// El navegador real verifica aparte el layout de los controles Ionic.
+vi.mock("@ionic/react", async () => {
+  const React = await import("react");
+  const element = (tag: string) => function IonicTestElement(props: Record<string, unknown>) {
+    const { children, icon: _icon, expand: _expand, fill: _fill, lines: _lines, ...rest } = props;
+    return React.createElement(tag, rest, children as React.ReactNode);
+  };
+  return { IonButton: element("button"), IonIcon: element("span"), IonBadge: element("span"), IonList: element("div"), IonItem: element("div"), IonLabel: element("div") };
+});
+
 // Mock del servicio SOS: captura las llamadas de red.
 const sosMock = vi.hoisted(() => ({
   activate: vi.fn(),
   fetchActive: vi.fn(),
   cancel: vi.fn(),
   coords: vi.fn(),
+  locate: vi.fn(),
 }));
 
 vi.mock("../../services/sos/sos-service", () => ({
@@ -30,6 +43,7 @@ vi.mock("../../services/sos/sos-service", () => ({
   fetchActiveSosAlert: sosMock.fetchActive,
   cancelSosAlert: sosMock.cancel,
   getCoordinatesBestEffort: sosMock.coords,
+  getEmergencyLocation: sosMock.locate,
   hasGeolocation: () => false,
   SosServiceError: class SosServiceError extends Error {
     status: number;
@@ -67,6 +81,13 @@ const context = vi.hoisted(() => ({
   },
 }));
 
+const wearableMock = vi.hoisted(() => ({
+  phase: "idle",
+  sessionStale: false,
+  info: {} as { wearing?: boolean },
+  samples: {} as Partial<Record<MetricKind, HealthSample>>,
+}));
+vi.mock("../../context/WearableContext", () => ({ useWearable: () => wearableMock }));
 vi.mock("../../context/AppContext", () => ({ useApp: () => context }));
 vi.mock("../../i18n/I18nContext", () => ({
   useT: () => (key: string, params?: Record<string, string>) =>
@@ -126,6 +147,11 @@ beforeEach(() => {
   context.showToast.mockClear();
   dialMock.mockClear();
   dialMock.mockReturnValue(true);
+  sosMock.locate.mockReset().mockResolvedValue({ country: "CO", coordinates: { latitude: 4.6, longitude: -74.1 }, status: "located" });
+  wearableMock.phase = "idle";
+  wearableMock.sessionStale = false;
+  wearableMock.info = {};
+  wearableMock.samples = {};
 });
 
 afterEach(() => {
@@ -186,24 +212,81 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
     await screen.findByText("Estamos para ayudarte");
   });
 
-  it("la llamada de emergencia en Colombia abre el marcador con el 123", () => {
-    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
-      timeZone: "America/Bogota",
-    } as Intl.ResolvedDateTimeFormatOptions);
+  it("cada servicio en Colombia abre el 123 sin activar el SOS al contacto", async () => {
     render(<PanicOverlay />);
-    fireEvent.click(screen.getByLabelText("Llamar 123"));
-    expect(dialMock).toHaveBeenCalledWith("123");
+    for (const service of ["Ambulancia", "Policía", "Bomberos"]) {
+      fireEvent.click(await screen.findByLabelText(`Llamar: ${service} · 123`));
+    }
+    expect(dialMock.mock.calls).toEqual([["123"], ["123"], ["123"]]);
+    expect(context.activateSos).not.toHaveBeenCalled();
+    expect(sosMock.activate).not.toHaveBeenCalled();
+  });
+
+  it("la ubicación de EE. UU. usa 911 aunque el teléfono conserve zona de Colombia", async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({ timeZone: "America/Bogota" } as Intl.ResolvedDateTimeFormatOptions);
+    sosMock.locate.mockResolvedValue({ country: "US", coordinates: { latitude: 25.76, longitude: -80.19 }, status: "located" });
+    render(<PanicOverlay />);
+    for (const service of ["Ambulancia", "Policía", "Bomberos"]) {
+      fireEvent.click(await screen.findByLabelText(`Llamar: ${service} · 911`));
+    }
+    expect(dialMock.mock.calls).toEqual([["911"], ["911"], ["911"]]);
     expect(context.activateSos).not.toHaveBeenCalled();
   });
 
-  it("la llamada de emergencia en EE. UU. abre el marcador con el 911", () => {
-    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
-      timeZone: "America/New_York",
-    } as Intl.ResolvedDateTimeFormatOptions);
+  it("sin GPS exige confirmar país y conserva cada servicio visible", async () => {
+    sosMock.locate.mockResolvedValue({ country: null, coordinates: null, status: "unavailable" });
     render(<PanicOverlay />);
-    fireEvent.click(screen.getByLabelText("Llamar 911"));
-    expect(dialMock).toHaveBeenCalledWith("911");
-    expect(context.activateSos).not.toHaveBeenCalled();
+    await screen.findByText("No pudimos obtener tu ubicación. Confirma el país para llamar.");
+    for (const service of ["Ambulancia", "Policía", "Bomberos"]) {
+      const button = screen.getByLabelText(`Confirma el país para llamar: ${service}`);
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    }
+    expect(dialMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Estados Unidos"));
+    fireEvent.click(screen.getByLabelText("Llamar: Policía · 911"));
+    expect(dialMock).toHaveBeenCalledExactlyOnceWith("911");
+    expect(screen.getByText("País confirmado por ti: Estados Unidos")).toBeTruthy();
+  });
+
+  it("una ubicación tardía no cambia el país que confirmó el usuario", async () => {
+    let finish!: (result: { country: string; coordinates: null; status: string }) => void;
+    sosMock.locate.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByText("Estados Unidos"));
+    await act(async () => { finish({ country: "CO", coordinates: null, status: "located" }); });
+    fireEvent.click(screen.getByLabelText("Llamar: Bomberos · 911"));
+    expect(dialMock).toHaveBeenCalledExactlyOnceWith("911");
+    expect(screen.getByText("País confirmado por ti: Estados Unidos")).toBeTruthy();
+  });
+
+  it("renueva el país GPS mientras la pantalla sigue abierta", async () => {
+    vi.useFakeTimers();
+    render(<PanicOverlay />);
+    await flush();
+    expect(screen.getByLabelText("Llamar: Ambulancia · 123")).toBeTruthy();
+    sosMock.locate.mockResolvedValue({ country: "US", coordinates: { latitude: 25.76, longitude: -80.19 }, status: "located" });
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(screen.getByLabelText("Llamar: Ambulancia · 911")).toBeTruthy();
+    expect(sosMock.locate).toHaveBeenCalledTimes(2);
+  });
+
+  it("la confirmación manual sigue disponible sin esperar otra consulta GPS", async () => {
+    vi.useFakeTimers();
+    render(<PanicOverlay />);
+    await flush();
+    fireEvent.click(screen.getByText("Estados Unidos"));
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(screen.getByLabelText("Llamar: Ambulancia · 911")).toBeTruthy();
+    expect(sosMock.locate).toHaveBeenCalledTimes(1);
+  });
+
+  it("una ubicación fuera de los países admitidos no inventa un destino 911", async () => {
+    sosMock.locate.mockResolvedValue({ country: null, coordinates: { latitude: 19.4, longitude: -99.1 }, status: "unsupported" });
+    render(<PanicOverlay />);
+    await screen.findByText("Ubicación fuera de cobertura o cerca de una frontera. Confirma el país.");
+    expect(screen.queryByLabelText("Llamar: Ambulancia · 911")).toBeNull();
+    expect(screen.queryByLabelText("Llamar: Ambulancia · 123")).toBeNull();
+    expect(dialMock).not.toHaveBeenCalled();
   });
 
   it("la llamada al familiar abre el marcador nativo sin activar SOS", () => {
@@ -251,7 +334,7 @@ describe("SOS real — despacho y ciclo de vida", () => {
         latitude: 4.6,
         longitude: -74.1,
       },
-      { heartRate: 140, spo2: 94, bloodPressure: "160/110" },
+      null,
     );
     expect(context.activateSos).toHaveBeenCalledTimes(1);
   });
@@ -269,12 +352,85 @@ describe("SOS real — despacho y ciclo de vida", () => {
     fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
     await flush();
     await flush();
-    expect(sosMock.activate).toHaveBeenCalledWith(null, {
-      heartRate: 140,
-      spo2: 94,
-      bloodPressure: "160/110",
-    });
+    expect(sosMock.activate).toHaveBeenCalledWith(null, null);
     expect(context.activateSos).toHaveBeenCalledTimes(1);
+  });
+
+  it("comparte solo los signos vitales reales y recientes del wearable conectado", async () => {
+    sosMock.activate.mockResolvedValue({ id: "real-vitals", status: "Activa", createdAt: "" });
+    wearableMock.phase = "connected";
+    const sample = (metric: MetricKind, value: number, extra: Partial<HealthSample> = {}): HealthSample => ({ metric, value, ts: Date.now(), unit: "", deviceId: "ring-1", source: "live", ...extra });
+    wearableMock.samples = {
+      heart_rate: sample("heart_rate", 72),
+      spo2: sample("spo2", 98),
+      blood_pressure: sample("blood_pressure", 118, { value2: 76 }),
+    };
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    expect(sosMock.activate).toHaveBeenCalledWith(
+      { latitude: 4.6, longitude: -74.1 },
+      { heartRate: 72, spo2: 98, bloodPressure: "118/76" },
+    );
+  });
+
+  it.each([
+    ["pulso menor de 20", "heart_rate", 19, "heartRate"],
+    ["pulso mayor de 300", "heart_rate", 301, "heartRate"],
+    ["saturación menor de 50", "spo2", 49, "spo2"],
+    ["saturación mayor de 100", "spo2", 101, "spo2"],
+    ["presión demasiado larga", "blood_pressure", 1e20, "bloodPressure"],
+  ] as const)("omite %s sin bloquear la alerta ni las demás lecturas válidas", async (_description, metric, value, omitted) => {
+    sosMock.activate.mockResolvedValue({ id: "valid-vitals", status: "Activa", createdAt: "" });
+    wearableMock.phase = "connected";
+    const sample = (metric: MetricKind, value: number, extra: Partial<HealthSample> = {}): HealthSample => ({ metric, value, ts: Date.now(), unit: "", deviceId: "ring-1", source: "live", ...extra });
+    wearableMock.samples = {
+      heart_rate: sample("heart_rate", 72),
+      spo2: sample("spo2", 98),
+      blood_pressure: sample("blood_pressure", 118, { value2: 76 }),
+    };
+    wearableMock.samples[metric] = sample(metric, value, { value2: 76 });
+    const expected: Record<string, number | string> = { heartRate: 72, spo2: 98, bloodPressure: "118/76" };
+    delete expected[omitted];
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    expect(sosMock.activate).toHaveBeenCalledWith({ latitude: 4.6, longitude: -74.1 }, expected);
+    expect(context.activateSos).toHaveBeenCalledTimes(1);
+  });
+
+  it("no envía como actuales lecturas viejas, históricas ni de diagnóstico", async () => {
+    sosMock.activate.mockResolvedValue({ id: "no-vitals", status: "Activa", createdAt: "" });
+    wearableMock.phase = "connected";
+    const sample = (metric: MetricKind, value: number, extra: Partial<HealthSample> = {}): HealthSample => ({ metric, value, ts: Date.now(), unit: "", deviceId: "ring-1", source: "live", ...extra });
+    wearableMock.samples = {
+      heart_rate: sample("heart_rate", 72, { ts: Date.now() - 6 * 60_000 }),
+      spo2: sample("spo2", 98, { source: "history" }),
+      blood_pressure: sample("blood_pressure", 118, { value2: 76, deviceId: "debug" }),
+    };
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    expect(sosMock.activate).toHaveBeenCalledWith({ latitude: 4.6, longitude: -74.1 }, null);
+  });
+
+  it("un wearable sin contacto confirmado no aporta signos vitales al SOS", async () => {
+    sosMock.activate.mockResolvedValue({ id: "not-worn", status: "Activa", createdAt: "" });
+    wearableMock.phase = "connected";
+    wearableMock.info = { wearing: false };
+    wearableMock.samples = { heart_rate: { metric: "heart_rate", value: 72, ts: Date.now(), unit: "bpm", deviceId: "ring-1" } };
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
+    await screen.findByText("¿Activar tu alerta SOS real?");
+    fireEvent.click(screen.getByLabelText("Sí, activar mi SOS"));
+    await flush();
+    expect(sosMock.activate).toHaveBeenCalledWith({ latitude: 4.6, longitude: -74.1 }, null);
   });
 
   it("429 con Retry-After: no activa y bloquea el orbe con cuenta regresiva", async () => {

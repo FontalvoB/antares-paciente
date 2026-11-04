@@ -462,7 +462,7 @@ export class YcbtSession implements DeviceSession {
   private async subscribeIfPresent(
     service: string,
     characteristic: string,
-    onValue: (bytes: Uint8Array) => void,
+    onValue: (bytes: Uint8Array) => boolean | void,
   ): Promise<boolean> {
     if (!ble.hasCharacteristic(this.services, service, characteristic)) {
       return false;
@@ -490,12 +490,23 @@ export class YcbtSession implements DeviceSession {
   }
 
   /** Los dos canales comparten el enrutado: el historial usa cualquiera. */
-  private handleControl(bytes: Uint8Array): void {
-    for (const packet of this.streamC1.push(bytes)) this.route(packet);
+  private handleControl(bytes: Uint8Array): boolean {
+    return this.handleStream(this.streamC1, bytes);
   }
 
-  private handleNotification(bytes: Uint8Array): void {
-    for (const packet of this.streamC3.push(bytes)) this.route(packet);
+  private handleNotification(bytes: Uint8Array): boolean {
+    return this.handleStream(this.streamC3, bytes);
+  }
+
+  private handleStream(stream: PacketStream, bytes: Uint8Array): boolean {
+    try {
+      for (const packet of stream.push(bytes)) this.route(packet);
+      return stream.pendingBytes === 0;
+    } catch (error) {
+      // Reproducir los fragmentos nativos exige empezar sin el resto anterior.
+      stream.reset();
+      throw error;
+    }
   }
 
   private route(packet: YcbtPacket): void {

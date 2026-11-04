@@ -25,6 +25,7 @@ import { PanicOverlay } from "./components/PanicOverlay";
 import { VoiceOverlay } from "./components/VoiceOverlay";
 import { ToastHost } from "./components/ToastHost";
 import { OfflineBanner } from "./components/common/OfflineBanner";
+import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
@@ -224,6 +225,7 @@ function Shell() {
         <VoiceOverlay />
         <ToastHost />
         <OfflineBanner />
+        {flow === "app" && <DailyProtocolReminder />}
       </div>
     </div>
   );
@@ -240,6 +242,9 @@ export default function App() {
   // nuevo con el token del usuario actual). Se crea dentro del updater para no
   // recrearlo en cada render.
   const resetCommunityClient = useCallback(() => {
+    // La sesión siguiente tampoco debe heredar planes, protocolo o registros
+    // clínicos de la cache TanStack de la cuenta anterior.
+    queryClient.clear();
     setCommunityClientState(createCommunityClient());
   }, []);
 

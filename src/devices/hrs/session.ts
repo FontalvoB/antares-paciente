@@ -1,6 +1,7 @@
 import * as ble from '../ble/ble-client';
 import { parseHrsMeasurement } from './hrs';
 import { HR_CHAR_MEASUREMENT, HR_SERVICE } from '../ycbt/protocol';
+import { notificationReceivedAt } from '../ble/notification-clock';
 import type {
   DeviceDescriptor,
   DeviceSession,
@@ -29,7 +30,7 @@ export class HrsSession implements DeviceSession {
         metric: 'heart_rate',
         value: measurement.heartRate,
         unit: 'bpm',
-        ts: Date.now(),
+        ts: notificationReceivedAt(),
         deviceId,
       });
     });

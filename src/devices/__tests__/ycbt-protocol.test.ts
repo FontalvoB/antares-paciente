@@ -66,12 +66,14 @@ describe('PacketStream', () => {
     const stream = new PacketStream();
 
     expect(stream.push(first.subarray(0, 3))).toEqual([]);
+    expect(stream.pendingBytes).toBe(3);
 
     const merged = new Uint8Array(first.length - 3 + second.length);
     merged.set(first.subarray(3));
     merged.set(second, first.length - 3);
 
     expect(stream.push(merged).map((p) => p.type)).toEqual([0x0601, 0x0602]);
+    expect(stream.pendingBytes).toBe(0);
   });
 
   it('descarta bytes basura antes de una trama válida', () => {
@@ -90,6 +92,7 @@ describe('PacketStream', () => {
     const stream = new PacketStream();
     stream.push(frame.subarray(0, 4));
     stream.reset();
+    expect(stream.pendingBytes).toBe(0);
     expect(stream.push(frame.subarray(4))).toEqual([]);
   });
 });

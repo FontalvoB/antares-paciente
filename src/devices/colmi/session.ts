@@ -115,6 +115,9 @@ export class ColmiSession implements DeviceSession {
   /** FC del volcado en curso: corrobora las noches que devuelve el canal bc. */
   private syncHrSamples: HealthSample[] = [];
   private historyPromise: Promise<void> | null = null;
+  /** Un volcado abortado al bloquear el teléfono debe repetirse al volver. */
+  private historyInterrupted = false;
+  private historyGeneration = 0;
   /** Ya se anotó qué layout de FC usa este firmware (evita spam en el log). */
   private hrLayoutNoted = false;
   /** Ya se volcó una trama de presión sin lectura plausible. */
@@ -188,8 +191,15 @@ export class ColmiSession implements DeviceSession {
   /** Volcado del historial de la banda (pasos, FC, estrés/HRV, sueño, SpO2). */
   async syncHistory(): Promise<void> {
     if (this.stopped || !this.appActive || this.measureType !== null) return;
-    if (this.historyBusy) return this.historyPromise ?? Promise.resolve();
+    if (this.historyBusy) {
+      const pending = this.historyPromise ?? Promise.resolve();
+      return this.historyInterrupted
+        ? pending.then(() => this.syncHistory())
+        : pending;
+    }
+    this.historyInterrupted = false;
     this.historyBusy = true;
+    const generation = this.historyGeneration;
     const promise = (async () => {
       this.syncHrSamples = [];
       await this.history.start(
@@ -197,10 +207,12 @@ export class ColmiSession implements DeviceSession {
           includeSleepProbe: ble.isBleDebugEnabled(),
         }),
       );
-      if (!this.appActive || this.stopped) return;
+      if (generation !== this.historyGeneration || !this.appActive || this.stopped) return;
       const ready = await this.bc.open();
-      if (!ready || !this.appActive || this.stopped) return;
-      for (const sample of await this.bc.sleepNights()) {
+      if (!ready || generation !== this.historyGeneration || !this.appActive || this.stopped) return;
+      const nights = await this.bc.sleepNights();
+      if (generation !== this.historyGeneration || !this.appActive || this.stopped) return;
+      for (const sample of nights) {
         if (nightHasHrSupport(sample, this.syncHrSamples)) {
           this.emit(sample);
         } else {
@@ -225,8 +237,11 @@ export class ColmiSession implements DeviceSession {
     if (!active) {
       this.stopWatchdog();
       this.stopBatteryRefresh();
+      this.historyInterrupted = this.historyBusy;
+      this.historyGeneration += 1;
       this.history.abort();
-      void this.bc.close();
+      // La suscripción bc sigue viva: el nativo conserva también sus tramas
+      // mientras el WebView está suspendido. Solo stop() cierra los canales.
       return;
     }
     this.startWatchdog();
@@ -458,9 +473,17 @@ export class ColmiSession implements DeviceSession {
     return next;
   }
 
-  private handleNotification(bytes: Uint8Array): void {
-    for (const frame of this.stream.push(bytes)) {
-      this.handleFrame(frame);
+  private handleNotification(bytes: Uint8Array): boolean {
+    try {
+      for (const frame of this.stream.push(bytes)) {
+        this.handleFrame(frame);
+      }
+      return this.stream.pendingBytes === 0;
+    } catch (error) {
+      // Si persistir una muestra falla, el journal conserva todos los
+      // fragmentos sin ACK y los vuelve a entregar desde el principio.
+      this.stream.reset();
+      throw error;
     }
   }
 

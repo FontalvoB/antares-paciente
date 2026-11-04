@@ -311,17 +311,17 @@ export function TodayView({
         <IonIcon icon={heartOutline} aria-hidden="true" />
       </div>
 
-      <div className="stitle">{t('Nutracéutico')}</div>
+      <div className="stitle">{t('Tu constancia esta semana')}</div>
       <div className="nb-card pg-nb">
         <div className="nb-title">
-          {program.nutraceutico ? t('Dosis de hoy lista') : t('¿Ya tomaste tu Nutracéutico?')}
+          {nbServerTask?.clientPending ? t('Pendiente de sincronización') : program.nutraceutico ? t('Dosis de hoy lista') : t('Un hábito a la vez')}
         </div>
         <div className="nb-sub">
-          {program.nutraceutico
+          {nbServerTask?.clientPending ? t('Tu registro se confirmará al sincronizar con el servidor.') : program.nutraceutico
             ? nbTime
               ? t('Registrado a las {takenAt}', { takenAt: nbTime })
               : t('Registrado')
-            : t('Producto ADRED · dosis matutina')}
+            : t('Sigue tu progreso en el protocolo diario')}
         </div>
         <div className="nb-streak">
           {stripLabels.map((d, i) => {
@@ -338,11 +338,6 @@ export function TodayView({
             )
           })}
         </div>
-        {!program.nutraceutico && (
-          <IonButton expand="block" className="bt bt-teal" onClick={() => onOpenTask('nutraceutico')}>
-            {t('Registrar dosis')}
-          </IonButton>
-        )}
       </div>
 
       <div className="stitle">{t('AI Health Coach')}</div>

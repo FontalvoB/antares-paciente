@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   IonButton,
   IonIcon,
-  IonLoading,
+  IonSkeletonText,
   IonProgressBar,
   IonSpinner,
 } from "@ionic/react";
@@ -130,7 +130,7 @@ export function TestsPage() {
           title:
             PATIENT_TITLES[a.testCode ?? ""] ??
             a.testName ??
-            `Evaluación ${idx + 1}`,
+            "Evaluación",
           sub: visual.sub || stateLabel(a.status),
           emoji: visual.emoji,
           bg: visual.accentSoft,
@@ -358,7 +358,7 @@ export function TestsPage() {
                 style={
                   {
                     marginTop: 8,
-                    "--background": "rgba(255,255,255,.12)",
+                    "--background": "var(--g1)",
                     "--progress-background":
                       "linear-gradient(90deg,var(--teal),var(--cyan))",
                   } as CSSProperties
@@ -391,7 +391,10 @@ export function TestsPage() {
               { n: String(MIN_REQUIRED_TESTS) },
             )}
           </p>
-          {assignmentsLoading ? <IonSpinner name="crescent" /> : assignmentsError ? (
+          {assignmentsLoading ? <div className="ht-loading-list" role="status" aria-label={t("Cargando tus evaluaciones…")}>
+            <div className="ht-loading-caption"><IonSpinner name="crescent" /><span>{t("Estamos preparando tu perfil de salud")}</span></div>
+            {[0, 1, 2].map(index => <div key={index} className="ht-loading-card" aria-hidden="true"><IonSkeletonText animated className="ht-loading-icon" /><div><IonSkeletonText animated style={{ width: "78%" }} /><IonSkeletonText animated style={{ width: "95%" }} /></div></div>)}
+          </div> : assignmentsError ? (
             <div role="alert">
               <p>{t("No se pudieron cargar tus evaluaciones.")}</p>
               <IonButton onClick={() => { setAssignmentsError(false); setAssignmentsLoading(true); setRefreshKey(k => k + 1); }}>{t("Reintentar")}</IonButton>
@@ -507,15 +510,12 @@ export function TestsPage() {
               };
             });
           }}
+          saving={loading}
           onComplete={() => void saveTest()}
         />
       )}
 
-      <IonLoading
-        className="app-loading"
-        isOpen={loading}
-        message={t("Guardando evaluación…")}
-      />
+
     </div>
   );
 }

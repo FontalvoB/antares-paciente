@@ -36,13 +36,9 @@ GoogleService-Info.plist
 *.sw?
 
 # Capacitor native platforms & Android build artifacts
-android/
-/android
 **/android/app/build/
 **/android/.gradle/
 **/android/app/outputs/
-**/android/gradlew.bat
-**/android/gradlew
 **/.cxx/
 
 # Capturas locales de diseño (scripts/shot.mjs)

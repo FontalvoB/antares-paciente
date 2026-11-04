@@ -1,23 +1,43 @@
 import { BleClient, ScanMode } from "@capacitor-community/bluetooth-le";
 import type {
-  BleDevice,
   BleService,
   ScanResult,
 } from "@capacitor-community/bluetooth-le";
-import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Capacitor } from "@capacitor/core";
 import { classifyDevice } from "../classify";
 import { COLMI_SERVICE } from "../colmi/protocol";
 import { WearableError, toWearableError } from "../errors";
 import { sameUuid, toBytes } from "../util";
 import { BLE_ACCESS_SERVICES } from "../ycbt/protocol";
 import type { DeviceDescriptor } from "../types";
+import { notificationJournal } from "./notification-journal";
+import type { NotificationConsumer } from "./notification-journal";
 
 // Envoltorio fino sobre @capacitor-community/bluetooth-le.
 // El resto de la app no depende del plugin: sólo de las funciones de aquí.
 
 let initialized = false;
+let initialization: Promise<void> | null = null;
+let enabling: Promise<void> | null = null;
 let scanning = false;
+let nativeScan = false;
+let scanGeneration = 0;
 let debugEnabled = false;
+const notificationRemovers = new Map<string, () => void>();
+let notificationFailure: ((error: unknown) => void) | null = null;
+
+export function setNotificationFailureHandler(handler: ((error: unknown) => void) | null): void {
+  notificationFailure = handler;
+}
+
+function reportNotificationFailure(error: unknown): void {
+  console.error("[ble] No se confirmó la recepción; las tramas siguen en almacenamiento nativo.", error);
+  notificationFailure?.(error);
+}
+
+function notificationKey(deviceId: string, service: string, characteristic: string): string {
+  return `${deviceId}|${service}|${characteristic}`.toLowerCase();
+}
 
 /** Servicios que la app puede leer: se declaran a Web Bluetooth al buscar. */
 const ACCESS_SERVICES: string[] = [...BLE_ACCESS_SERVICES, COLMI_SERVICE];
@@ -33,18 +53,6 @@ export interface ConnectOptions {
   /** Timeout del handshake BLE (los intentos automáticos esperan más). */
   timeoutMs?: number;
 }
-
-/**
- * Método nativo `getDevices` del plugin (no expuesto por el envoltorio
- * `BleClient`): re-registra en su mapa interno ids conocidos por el sistema.
- */
-interface RawBluetoothLePlugin {
-  getDevices(options: {
-    deviceIds: string[];
-  }): Promise<{ devices: BleDevice[] }>;
-}
-
-const rawPlugin = registerPlugin<RawBluetoothLePlugin>("BluetoothLe");
 
 /** Registro de tramas para el modo diagnóstico (RX y TX). */
 export interface NotificationTap {
@@ -125,21 +133,44 @@ function advertisesKnownService(uuids?: string[]): boolean {
   );
 }
 
-export async function ensureBluetoothReady(): Promise<void> {
+/** Una sola inicialización: recrear el manager nativo pierde enlaces y listeners. */
+async function initializeBluetooth(): Promise<void> {
   if (isWebPlatform() && typeof webBluetooth() === "undefined") {
     throw new WearableError(
       "scan-unavailable",
       "Este navegador no soporta Web Bluetooth.",
     );
   }
+  if (initialized) return;
+  if (!initialization) {
+    initialization = BleClient.initialize({ androidNeverForLocation: true })
+      .then(() => {
+        initialized = true;
+      })
+      .finally(() => {
+        // Un permiso denegado no deja la inicialización bloqueada para siempre.
+        initialization = null;
+      });
+  }
+  await initialization;
+}
+
+export async function ensureBluetoothReady(): Promise<void> {
   try {
-    if (!initialized) {
-      await BleClient.initialize({ androidNeverForLocation: true });
-      initialized = true;
-    }
+    await initializeBluetooth();
     const enabled = await BleClient.isEnabled();
     if (!enabled) {
-      await BleClient.requestEnable();
+      // iOS no ofrece requestEnable: devolver el error correcto, no convertirlo
+      // en "escaneo no disponible" por llamar a un método no implementado.
+      if (Capacitor.getPlatform() !== "android") {
+        throw new WearableError("bluetooth-off");
+      }
+      if (!enabling) {
+        enabling = BleClient.requestEnable().finally(() => {
+          enabling = null;
+        });
+      }
+      await enabling;
       const enabled = await BleClient.isEnabled();
       if (!enabled) throw new WearableError("bluetooth-off");
     }
@@ -154,17 +185,8 @@ export async function ensureBluetoothReady(): Promise<void> {
  * desconcertante. Si el Bluetooth está apagado, el intento simplemente falla.
  */
 async function ensureBluetoothReadyQuiet(): Promise<void> {
-  if (isWebPlatform() && typeof webBluetooth() === "undefined") {
-    throw new WearableError(
-      "scan-unavailable",
-      "Este navegador no soporta Web Bluetooth.",
-    );
-  }
   try {
-    if (!initialized) {
-      await BleClient.initialize({ androidNeverForLocation: true });
-      initialized = true;
-    }
+    await initializeBluetooth();
     if (!(await BleClient.isEnabled())) {
       throw new WearableError("bluetooth-off", "Bluetooth está apagado.");
     }
@@ -176,16 +198,33 @@ async function ensureBluetoothReadyQuiet(): Promise<void> {
 export interface ScanOptions {
   /** Incluye dispositivos sin nombre (modo diagnóstico). */
   includeUnnamed?: boolean;
+  /** Rescate automático: nunca mostrar el diálogo para encender Bluetooth. */
+  silent?: boolean;
+}
+
+/** Se ejecuta antes de un nuevo escaneo para no solapar START/STOP nativos. */
+async function stopNativeScan(): Promise<void> {
+  if (!nativeScan) return;
+  nativeScan = false;
+  try {
+    await BleClient.stopLEScan();
+  } catch {
+    // El escaneo ya había terminado.
+  }
 }
 
 export async function startScan(
   onFound: (device: DeviceDescriptor) => void,
   options: ScanOptions = {},
 ): Promise<void> {
-  await ensureBluetoothReady();
-  scanning = true;
+  // La generación se reclama ANTES de permisos/inicialización: Cancelar debe
+  // invalidar también una búsqueda cuyo diálogo todavía está abierto.
+  const generation = ++scanGeneration;
+  scanning = false;
+  const stopping = stopNativeScan();
   const seen = new Set<string>();
   const handle = (result: ScanResult, force = false) => {
+    if (generation !== scanGeneration || !scanning) return;
     if (seen.has(result.device.deviceId)) return;
     const name = (result.localName ?? result.device.name ?? "").trim();
     const uuids = result.uuids ?? result.device.uuids;
@@ -221,12 +260,21 @@ export async function startScan(
   };
 
   try {
+    await stopping;
+    if (generation !== scanGeneration) return;
+    if (options.silent) await ensureBluetoothReadyQuiet();
+    else await ensureBluetoothReady();
+    if (generation !== scanGeneration) return;
+    scanning = true;
     if (usesDeviceChooser()) {
       const device = await BleClient.requestDevice({
         optionalServices: ACCESS_SERVICES,
       });
       handle({ device } as ScanResult, true);
     } else {
+      // Se marca antes del await: STOP puede encolarse aunque el START nativo
+      // siga en vuelo. El plugin ya serializa todas las operaciones GATT.
+      nativeScan = true;
       await BleClient.requestLEScan(
         {
           allowDuplicates: false,
@@ -237,19 +285,20 @@ export async function startScan(
       );
     }
   } catch (err) {
+    // Un permiso o START viejo que termine tarde no debe romper la búsqueda
+    // nueva ni cambiar su pantalla a error después de haberla cancelado.
+    if (generation !== scanGeneration) return;
     scanning = false;
+    await stopNativeScan();
+    if (generation !== scanGeneration) return;
     throw toWearableError(err, "scan-unavailable");
   }
 }
 
 export async function stopScan(): Promise<void> {
-  if (!scanning) return;
+  scanGeneration += 1;
   scanning = false;
-  try {
-    await BleClient.stopLEScan();
-  } catch {
-    // El escaneo ya había terminado.
-  }
+  await stopNativeScan();
 }
 
 /**
@@ -304,6 +353,7 @@ export async function connectDevice(
   onDisconnect: () => void,
   options: ConnectOptions = {},
 ): Promise<void> {
+  await stopScan();
   if (options.silent) {
     // Reconexión automática: si el Bluetooth está apagado no se lanza el
     // diálogo del sistema sin contexto, simplemente se aborta el intento.
@@ -337,9 +387,12 @@ export async function resolveDeviceId(
   // Android resuelve la MAC directamente y `getDevices` es un eco: no hace
   // falta hidratar nada (y un escaneo de rescate allí sería tiempo perdido).
   if (platform !== "ios" && platform !== "macos") return deviceId;
+  await ensureBluetoothReadyQuiet();
   try {
-    const { devices } = await rawPlugin.getDevices({ deviceIds: [deviceId] });
-    const match = (devices ?? []).find(
+    // 8.3 expone getDevices en BleClient: pasar por su cola evita consultar el
+    // mapa mientras la inicialización o una operación GATT siguen en vuelo.
+    const devices = await BleClient.getDevices([deviceId]);
+    const match = devices.find(
       (device) => device.deviceId?.toLowerCase() === deviceId.toLowerCase(),
     );
     if (match?.deviceId) return match.deviceId;
@@ -353,19 +406,37 @@ export async function resolveDeviceId(
 function rescueScan(deviceId: string): Promise<string | null> {
   return new Promise((resolve) => {
     let settled = false;
-    const finish = (id: string | null) => {
+    const generation = scanGeneration + 1;
+    const finish = async (id: string | null) => {
       if (settled) return;
       settled = true;
-      void stopScan();
+      window.clearTimeout(timer);
+      // El timeout de un rescate viejo nunca debe detener un escaneo nuevo.
+      if (generation === scanGeneration) await stopScan();
       resolve(id);
     };
-    window.setTimeout(() => finish(null), RESCUE_SCAN_MS);
+    const timer = window.setTimeout(() => void finish(null), RESCUE_SCAN_MS);
     startScan((device) => {
       if (device.deviceId.toLowerCase() === deviceId.toLowerCase()) {
-        finish(device.deviceId);
+        void finish(device.deviceId);
       }
-    }).catch(() => finish(null));
+    }, { silent: true })
+      .then(() => {
+        if (generation !== scanGeneration) void finish(null);
+      })
+      .catch(() => void finish(null));
   });
+}
+
+/** Escucha cambios del adaptador sin volver a inicializarlo ni encenderlo. */
+export async function watchBluetoothState(
+  onEnabled: (enabled: boolean) => void,
+): Promise<() => Promise<void>> {
+  await initializeBluetooth();
+  await BleClient.startEnabledNotifications(onEnabled);
+  return async () => {
+    await BleClient.stopEnabledNotifications().catch(() => undefined);
+  };
 }
 
 export async function disconnectDevice(deviceId: string): Promise<void> {
@@ -406,20 +477,36 @@ export async function subscribe(
   deviceId: string,
   service: string,
   characteristic: string,
-  onValue: (bytes: Uint8Array) => void,
+  onValue: NotificationConsumer,
 ): Promise<void> {
+  const key = notificationKey(deviceId, service, characteristic);
+  notificationRemovers.get(key)?.();
+  const journaled = notificationJournal.owns(deviceId);
+  if (journaled) {
+    notificationRemovers.set(key, notificationJournal.register(deviceId, service, characteristic, (bytes) => {
+      tap?.({ direction: "rx", deviceId, service, characteristic, bytes });
+      return onValue(bytes);
+    }));
+  }
   try {
     await BleClient.startNotifications(
       deviceId,
       service,
       characteristic,
       (value) => {
+        if (journaled) {
+          void notificationJournal.drain(deviceId).catch(reportNotificationFailure);
+          return;
+        }
         const bytes = toBytes(value);
         tap?.({ direction: "rx", deviceId, service, characteristic, bytes });
         onValue(bytes);
       },
     );
+    if (journaled) await notificationJournal.drain(deviceId);
   } catch (err) {
+    notificationRemovers.get(key)?.();
+    notificationRemovers.delete(key);
     throw toWearableError(err, "connection-failed");
   }
 }
@@ -429,6 +516,9 @@ export async function unsubscribe(
   service: string,
   characteristic: string,
 ): Promise<void> {
+  const key = notificationKey(deviceId, service, characteristic);
+  notificationRemovers.get(key)?.();
+  notificationRemovers.delete(key);
   try {
     await BleClient.stopNotifications(deviceId, service, characteristic);
   } catch {
