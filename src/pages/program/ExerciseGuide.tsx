@@ -11,7 +11,7 @@ export function ExerciseGuide({ exercise, onWatch, media }: { exercise: Exercise
   const t = useT()
   const [opened, setOpened] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const video = exerciseVideo(exercise.name)
+  const video = 'referenceVideo' in exercise ? exercise.referenceVideo : exerciseVideo(exercise.name)
   return <section className="ex-guide">
     {media ?? <div className="ex-video-stage">
       {opened && video ? <>

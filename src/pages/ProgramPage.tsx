@@ -125,7 +125,6 @@ export function ProgramPage() {
     isLoading: programLoading,
     programState,
     productMessage,
-    isLoading: programLoading,
     refetch: refetchProgram,
   } = useProgram();
 
@@ -672,7 +671,7 @@ export function ProgramPage() {
     taskPts,
   ]);
 
-  if (programLoading || !snapshot || programState !== "active") {
+  if (programLoading || !snapshot || (programState !== "active" && programState !== "recoverable")) {
     return (
       <Screen className="pg-reference">
         <Scroll className="pg-scroll">
