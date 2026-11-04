@@ -71,6 +71,8 @@ import { DAY_BONUS_PTS } from "../data/program";
 const CHAT_LAST_SEEN_PREFIX = "antares:chat-last-seen:";
 
 interface AppState {
+  vitaWelcomePending: boolean;
+  dismissVitaWelcome: () => void;
   authLoading: boolean;
   flow: Flow;
   screen: Screen;
@@ -331,6 +333,7 @@ export function AppProvider({
   /** Se invoca tras login/logout para recrear el cliente urql de la comunidad. */
   onResetCommunityClient?: () => void;
 }) {
+  const [vitaWelcomePending, setVitaWelcomePending] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const t = useT();
   // Idioma actual de la app: se envía en cada turno de chat (señal explícita
@@ -696,6 +699,7 @@ export function AppProvider({
   useEffect(() => {
     return onSessionInvalid(() => {
       resetPatientSession();
+      setVitaWelcomePending(false);
       setFlow("login");
       onResetCommunityClient?.();
     });
@@ -1041,6 +1045,7 @@ export function AppProvider({
 
   const value = useMemo<AppState>(
     () => ({
+      vitaWelcomePending,
       authLoading,
       flow,
       screen,
@@ -1063,6 +1068,7 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      dismissVitaWelcome: () => setVitaWelcomePending(false),
       // Destino unificado: «Mi Avatar» abre Perfil corporal (screen='body').
       // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
       // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
@@ -1076,6 +1082,7 @@ export function AppProvider({
       finishLogin: (seed, next = "onboarding") => {
         resetPatientSession();
         const generation = sessionGeneration.current;
+        setVitaWelcomePending(false);
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         void (async () => {
@@ -1116,10 +1123,12 @@ export function AppProvider({
       },
       backToLogin: () => {
         resetPatientSession();
+        setVitaWelcomePending(false);
         setFlow("login");
         setScreen("home");
       },
       finishOnboarding: (u) => {
+        setVitaWelcomePending(true);
         setUser(u);
         setFlow("tests");
       },
@@ -1236,6 +1245,7 @@ export function AppProvider({
       },
       logout: () => {
         resetPatientSession();
+        setVitaWelcomePending(false);
         setFlow("login");
         setScreen("home");
         // Cierra sesión en el servidor y luego recrea el cliente urql (cache
@@ -1264,6 +1274,7 @@ export function AppProvider({
       roomAppointment,
     }),
     [
+      vitaWelcomePending,
       authLoading,
       resetPatientSession,
       flow,

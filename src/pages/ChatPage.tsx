@@ -31,7 +31,7 @@ import {
   type CSSProperties,
 } from "react";
 import { Screen } from "../components/Screen";
-import { Mascot } from "../components/Mascot";
+import vitaPortrait from "../assets/vita-coach.png";
 import { ChatRichText } from "../components/ChatRichText";
 import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
 import { useApp } from "../context/AppContext";
@@ -338,7 +338,7 @@ export function ChatPage() {
             <h1 className="display">
               {t("Hola, {nombre} 👋", { nombre: user.nombre || t("Paciente") })}
             </h1>
-            <p className="chat-welcome-sub">{t("Estoy aquí para ayudarte")}</p>
+            <p className="chat-welcome-sub">{t("Soy Vita, tu coach asignada")}</p>
             <p>{t("Tu asistente de IA en salud y bienestar")}</p>
           </div>
           <IonButton
@@ -355,7 +355,7 @@ export function ChatPage() {
             <IonIcon icon={medkit} />
           </IonButton>
         </div>
-        <Mascot pose="welcome" className="chat-header-mascot" />
+        <img src={vitaPortrait} alt={t("Vita, tu coach de bienestar")} className="chat-header-mascot vita-chat-portrait" />
       </header>
       <div
         className="chip-scroll chat-quick-actions"
@@ -432,7 +432,7 @@ export function ChatPage() {
                 {m.role === "alert" ? (
                   "!"
                 ) : (
-                  <Mascot pose="welcome" float={false} className="chat-avatar-mascot" />
+                  <img src={vitaPortrait} alt="" className="vita-chat-avatar" />
                 )}
               </div>
             ) : !isUser ? (
@@ -459,7 +459,7 @@ export function ChatPage() {
                     }}
                   />
                 )}
-                {m.role === "user" ? m.text : <ChatRichText text={m.text} />}
+                {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Paciente") }) : m.text} />}
                 {m.role === "alert" && (
                   <IonButton
                     expand="block"
@@ -525,7 +525,7 @@ export function ChatPage() {
         {uploading && (
           <div className="chat-row">
             <div className="chat-avatar" aria-hidden="true">
-              <Mascot pose="thinking" float={false} className="chat-avatar-mascot" />
+              <img src={vitaPortrait} alt="" className="vita-chat-avatar" />
             </div>
             <div className="chat-msg">
               <div className="bub bub-bot chat-uploading">

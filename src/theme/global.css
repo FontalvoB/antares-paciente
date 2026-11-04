@@ -32082,3 +32082,148 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .achievement-modal::part(content) { position: absolute; top: 5dvh; bottom: var(--kb, 0px); height: auto; max-height: none; }
 .achievement-modal .achievement-sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 .achievement-modal .achievement-caption-input { scroll-margin-top: 16px; scroll-margin-bottom: 24px; }
+
+/* Actividades del protocolo: pantallas completas, controles Ionic y composición de dominio. */
+.hm-wheel-card { text-align: center; }
+.wheel-node-action { position: absolute; inset: 0; z-index: 5; margin: 0; width: 100%; height: 100%; min-width: 44px; min-height: 44px; --padding-start: 0; --padding-end: 0; --border-radius: 24%; --background: transparent; }
+.wheel-node-action::part(native) { padding: 0; }
+.wheel-node-action:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; border-radius: 14px; }
+.lesson-page { background: var(--g0); }
+.lesson-page .lesson-page-scroll { padding: env(safe-area-inset-top, 0px) 0 calc(28px + env(safe-area-inset-bottom, 0px)); }
+.lesson-page .lesson-sheet { width: 100%; max-width: 920px; margin: 0 auto; padding: 22px 20px; }
+.lesson-page .lesson-sheet-head { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
+.lesson-page .lesson-sheet-head > div { flex: 1; min-width: 0; }
+.lesson-page .lesson-sheet-head > ion-button { flex: 0 0 44px; width: 44px; height: 44px; margin: 0; --background: var(--wh); --border-radius: 50%; --padding-start: 0; --padding-end: 0; box-shadow: var(--shadow-sm); border-radius: 50%; }
+.lesson-page .lesson-sheet-head h2 { font-size: 25px; line-height: 1.2; margin: 6px 0; letter-spacing: -1px; }
+.lesson-page .lesson-sheet-head p { line-height: 1.5; }
+.lesson-page .lsn-stack { gap: 20px; }
+.lesson-page .lesson-done-banner { margin-bottom: 20px; }
+.lesson-page h3 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -.4px; }
+/* Podcast: portada cuadrada y jerarquía editorial; no cambia el audio ni su progreso. */
+.lesson-podcast { background: linear-gradient(165deg, var(--teal-l), var(--ice-l) 35%, var(--wh) 75%); }
+.podcast-player { display: flex; flex-direction: column; max-width: 600px; margin: auto; }
+.pod-editorial { display: flex; justify-content: space-between; align-items: center; order: -5; }
+.pod-editorial > span { font-size: 10px; font-weight: 800; letter-spacing: 1.6px; color: var(--teal); }
+.pod-editorial ion-chip { font-size: 11px; --background: var(--teal-l); --color: var(--teal); }
+.podcast-player .pod-cover { order: -4; width: min(100%, 380px); height: auto; aspect-ratio: 1; align-self: center; border-radius: 20px; box-shadow: 0 20px 40px color-mix(in srgb, var(--navy) 23%, transparent); }
+.podcast-player .pod-copy { order: -3; gap: 8px; padding-top: 8px; }
+.podcast-player .pod-copy strong { font-size: clamp(24px, 5vw, 34px); font-family: 'Space Grotesk', sans-serif; letter-spacing: -1px; line-height: 1.15; }
+.podcast-player .pod-copy > span { font-size: 14px; color: var(--teal); }
+.podcast-player .pod-copy small { color: var(--mu); }
+.podcast-player .pod-stage { order: -2; padding: 0; background: transparent; border: 0; box-shadow: none; color: var(--tx); }
+.podcast-player .pod-wave { height: 32px; opacity: .65; }
+.podcast-player .pod-wave span { background: var(--teal); max-height: 26px; }
+.podcast-player .pod-now { color: var(--teal); font-size: 12px; }
+.podcast-player .pod-times { color: var(--mu); font-size: 12px; }
+.podcast-player ion-range { padding: 0; --bar-background: var(--bd); --bar-background-active: var(--teal); --knob-background: var(--teal); --bar-height: 4px; }
+.podcast-player .pod-transport { order: -1; justify-content: center; gap: 20px; }
+.podcast-player .pod-play { min-height: 60px; --background: var(--teal); --border-radius: 30px; }
+.pod-about, .pod-chapters { padding: 20px; background: color-mix(in srgb, var(--wh) 80%, transparent); border: 1px solid var(--bd); border-radius: 22px; }
+.pod-about h3, .pod-chapters h3 { margin: 0 0 12px; font-size: 18px; }
+.pod-about p, .pod-about li { color: var(--mu); font-size: 14px; line-height: 1.8; }
+.pod-about ul { padding-left: 20px; margin-bottom: 0; }
+.pod-chapter { display: block; margin: 0; min-height: 56px; height: auto; white-space: normal; text-transform: none; --padding-start: 0; --padding-end: 0; --color: var(--tx); }
+.pod-chapter::part(native) { justify-content: flex-start; text-align: left; gap: 12px; padding-block: 12px; }
+.pod-chapter-number { color: var(--mu); font-size: 12px; }
+.pod-chapter time { margin-left: auto; color: var(--mu); font-size: 12px; }
+.pod-chapter.on { --color: var(--teal); font-weight: 800; }
+/* Ejercicio: demostración, ficha técnica y circuito existente. */
+.exercise-studio { max-width: 760px; margin: auto; }
+.ex-studio-header h3 { font-size: 30px; margin: 6px 0 12px; }
+.ex-session-meta, .ex-detail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ex-session-meta ion-chip, .ex-detail-chips ion-chip { margin: 0; font-size: 12px; --background: var(--teal-l); --color: var(--teal); }
+.ex-guide { background: var(--wh); border-radius: 24px; overflow: hidden; border: 1px solid var(--bd); }
+.ex-video-stage { aspect-ratio: 16 / 10; background: var(--cosmos); position: relative; }
+.ex-video-stage > img, .ex-video-stage > iframe { width: 100%; height: 100%; object-fit: cover; display: block; border: 0; }
+.ex-video-stage > img { opacity: .45; }
+.ex-video-overlay { position: absolute; inset: 0; padding: 24px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; background: linear-gradient(transparent, var(--cosmos)); color: var(--wh); }
+.ex-video-overlay > span { font-size: 10px; letter-spacing: 2px; color: var(--ice); font-weight: 700; }
+.ex-video-overlay h3 { font-size: 24px; margin: 10px 0; color: var(--wh); }
+.ex-video-overlay p { font-size: 12px; line-height: 1.6; margin: 4px 0; }
+.ex-video-loading { position: absolute; left: 46%; top: 40%; color: var(--ice); pointer-events: none; }
+.ex-video-source { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 4px 16px; background: var(--ice-l); color: var(--mu); gap: 4px; }
+.ex-video-source small { font-size: 10px; }
+.ex-video-source ion-button { font-size: 11px; min-height: 44px; }
+.ex-guide-copy { padding: 22px; }
+.ex-guide-copy h3 { margin: 18px 0 8px; font-size: 18px; }
+.ex-guide-copy p, .ex-plan-detail p { font-size: 14px; line-height: 1.7; color: var(--mu); }
+.ex-coach-tip { background: var(--teal-l); border-left: 3px solid var(--teal); border-radius: 8px; padding: 12px; }
+.exercise-studio .ex-timer { background: var(--grad-brand-v); border-radius: 24px; padding: 24px; }
+.exercise-studio .ex-ring-center .kicker { display: none; }
+.exercise-studio .ex-step-name { font-size: 22px; margin-top: 14px; }
+.exercise-studio .ex-step-cue { max-width: 480px; margin: 8px auto; line-height: 1.6; }
+.ex-routine-plan h3 { font-size: 20px; }
+.ex-routine-plan > ion-progress-bar { margin-bottom: 16px; --progress-background: var(--teal); }
+.ex-routine-plan ion-accordion-group { border-radius: 20px; overflow: hidden; border: 1px solid var(--bd); }
+.ex-routine-plan ion-item { --min-height: 76px; --background: var(--wh); }
+.ex-routine-plan ion-label h3 { white-space: normal; font-size: 15px; }
+.ex-routine-plan .ex-plan-current { --background: var(--teal-l); }
+.ex-plan-number { color: var(--teal); font-weight: 800; font-size: 17px; }
+.ex-plan-detail { padding: 8px 22px 22px; background: var(--wh); }
+/* Signos vitales comparte la paleta y los componentes visuales de Wearable. */
+.lesson-vitals .lesson-sheet { padding: 0 0 24px; background: transparent; }
+.lesson-vitals .lesson-sheet-head { padding: 0 20px; margin: 0; justify-content: flex-end; }
+.lesson-vitals .lesson-sheet-head > div { display: none; }
+.lesson-vitals .vitals-workspace { max-width: 760px; margin: auto; }
+.lesson-vitals .wearable-brand { margin-top: 0; }
+.lesson-vitals .page-head-title { font-size: 28px; }
+.vitals-sync-stamp { text-align: center; font-size: 11px; color: var(--mu); }
+.vitals-records { margin: 24px 20px; }
+.vitals-records-heading { display: flex; align-items: center; justify-content: space-between; color: var(--brand-navy); margin-bottom: 14px; }
+.vitals-records-heading h2 { font-size: 20px; margin: 6px 0; }
+.vitals-records-heading .kicker { color: var(--brand-blue-mid); }
+.vitals-records-heading > span { background: var(--wh); border-radius: 999px; padding: 8px 14px; font-weight: 700; }
+.vitals-record-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.vitals-record { display: flex; gap: 10px; align-items: flex-start; padding: 16px 12px; border: 1px solid var(--wh); border-radius: 20px; background: linear-gradient(145deg, var(--wh), var(--home-mist)); box-shadow: 0 5px 16px color-mix(in srgb, var(--home-sky) 25%, transparent); }
+.vitals-record > .wearable-summary-icon { flex-shrink: 0; }
+.vitals-record-body { min-width: 0; flex: 1; }
+.vitals-record ion-input { --color: var(--brand-navy); --padding-top: 0; --padding-bottom: 5px; font-size: 22px; font-weight: 700; }
+.vitals-record ion-input::part(label) { font-size: 11px; font-weight: 600; white-space: normal; color: var(--brand-navy); }
+.vitals-record small, .vitals-unit { color: var(--mu); font-size: 10px; font-weight: 400; }
+.vitals-record ion-spinner { width: 16px; color: var(--brand-blue-mid); }
+@media (max-width: 420px) { .vitals-record-grid { grid-template-columns: 1fr; } }
+/* Racha: escena de constancia, nunca altera puntos o premios. */
+.sr-view .sr-hero { padding-block: 32px; background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--org) 30%, var(--cosmos)), var(--cosmos) 70%); }
+.sr-view .sr-orbit { width: 240px; height: 240px; margin-block: 24px; }
+.sr-embers { position: absolute; inset: 0; pointer-events: none; }
+.sr-embers i { position: absolute; width: 4px; height: 4px; border-radius: 50%; left: calc(12% + var(--ember-i) * 6.5%); bottom: 20%; background: var(--org); box-shadow: 0 0 12px var(--org); animation: vita-ember 4s ease-out infinite; animation-delay: calc(var(--ember-i) * -.35s); }
+.sr-view .sr-fire { font-size: 42px; animation: sr-spark 3s ease-in-out infinite; }
+.sr-view .sr-orbit::before { animation: vita-orbit 35s linear infinite; }
+.sr-next-journey { display: flex; align-items: center; gap: 16px; padding: 22px; border-radius: 22px; background: var(--org-l); margin: 16px 0; border: 1px solid color-mix(in srgb, var(--org) 20%, transparent); }
+.sr-next-journey > ion-icon { font-size: 36px; color: var(--org-d); flex-shrink: 0; }
+.sr-next-journey > div { flex: 1; }
+.sr-next-journey h3 { margin: 6px 0 14px; font-size: 17px; }
+.sr-next-journey ion-progress-bar { --progress-background: var(--org); --background: var(--wh); height: 6px; border-radius: 8px; }
+@keyframes vita-ember { 0% { transform: translateY(10px) scale(.4); opacity: 0; } 25% { opacity: .8; } 100% { transform: translateY(-180px) scale(1.3); opacity: 0; } }
+@keyframes vita-orbit { to { transform: rotate(360deg); } }
+/* Vita comparte el mismo retrato en bienvenida y conversación. */
+.vita-chat-portrait { object-fit: cover; object-position: 50% 20%; border-radius: 24px; }
+.vita-chat-avatar { width: 100%; height: 100%; object-fit: cover; object-position: center 15%; transform: scale(1.3); }
+.chat-avatar:has(.vita-chat-avatar) { overflow: hidden; }
+.vita-welcome-modal { --width: min(420px, calc(100vw - 32px)); --height: auto; --border-radius: 28px; --box-shadow: var(--shadow-md); }
+.vita-welcome { max-height: 90dvh; overflow-y: auto; background: var(--wh); position: relative; }
+.vita-welcome > img { display: block; width: 100%; height: min(33dvh, 260px); object-fit: cover; object-position: center 25%; }
+.vita-welcome .vita-close { position: absolute; right: 10px; top: 10px; z-index: 1; width: 44px; height: 44px; --background: var(--wh); --border-radius: 50%; }
+.vita-welcome-copy { padding: 24px; text-align: center; }
+.vita-welcome-copy h2 { font: 700 25px/1.2 'Space Grotesk', sans-serif; letter-spacing: -.7px; margin: 12px 0; }
+.vita-welcome-copy > p { font-size: 16px; color: var(--teal); }
+.vita-welcome-copy .vita-description { font-size: 13px; color: var(--mu); line-height: 1.6; margin-bottom: 20px; }
+@media (min-width: 768px) {
+  .lesson-page:not(.lesson-vitals) .lesson-sheet { padding: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sr-view .sr-fire, .sr-view .sr-orbit::before, .sr-embers i, .podcast-player .pod-wave span { animation: none !important; }
+  .sr-embers { display: none; }
+}
+/* Ajustes tras comprobar en móvil real del navegador. */
+@media (max-width: 767px) {
+  .podcast-player .pod-cover { width: min(100%, 30dvh, 380px); }
+}
+.lesson-loading { display: grid; justify-items: center; gap: 12px; padding: 40px; color: var(--mu); }
+.chat-reference .chat-hero-copy { padding-right: 128px; }
+.chat-reference .chat-hero-copy > div { min-width: 0; }
+.chat-reference .chat-hero-copy h1 { white-space: normal; font-size: 25px; }
+.chat-reference .chat-header-mascot.vita-chat-portrait { width: 118px; height: 138px; right: 10px; bottom: 0; }
+.chat-reference .chat-row .chat-avatar > .vita-chat-avatar { display: block; position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+.chat-reference .chat-row .chat-avatar:has(.vita-chat-avatar) { position: relative; }
+.vita-welcome-modal::part(content) { max-height: 90dvh; }
