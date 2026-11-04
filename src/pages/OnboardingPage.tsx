@@ -42,7 +42,9 @@ import {
   updateMyPatientProfile,
 } from "../utils/patientProfileApi";
 import { setFirstPassword } from "../utils/authApi";
-import { PARENTESCO } from "../data/emergencyContact";
+import { EmergencyContactFields } from "../components/EmergencyContactFields";
+import { ConsentReadGate } from "../components/ConsentReadGate";
+import { contactFromProfile, emergencyContactsError } from "../utils/emergencyContacts";
 import type { UserProfile } from "../types";
 
 export function OnboardingPage() {
@@ -57,8 +59,8 @@ export function OnboardingPage() {
       name: t("Identidad"),
     },
     {
-      title: t("Contacto de emergencia"),
-      sub: t("A quién avisamos si activas SOS"),
+      title: t("Contactos de emergencia"),
+      sub: t("Tu contacto principal y una persona de respaldo"),
       name: t("Familia"),
     },
     {
@@ -74,6 +76,7 @@ export function OnboardingPage() {
   ];
   const [done, setDone] = useState(false);
   const [checks, setChecks] = useState([false, false, false]);
+  const [consentRead, setConsentRead] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [pwd, setPwd] = useState("");
   const [pwd2, setPwd2] = useState("");
@@ -96,6 +99,7 @@ export function OnboardingPage() {
     fam1Parentesco: "",
     fam1Cel: "",
     fam1Email: "",
+    fam2Nombre: "", fam2Parentesco: "", fam2Cel: "", fam2Email: "",
   });
   const TOTAL_STEPS = STEPS.length;
 
@@ -119,7 +123,7 @@ export function OnboardingPage() {
         const list = await fetchInsurers();
         if (!cancelled) setInsurers(list);
       } catch {
-        /* sin catálogo: el select queda vacío y el seguro no se persiste */
+        /* Sin catálogo: sigue disponible la opción Sin seguro, sin inventar aseguradoras. */
       }
     })();
     return () => {
@@ -141,8 +145,7 @@ export function OnboardingPage() {
     setSaving(true);
     try {
       if (pwd) await setFirstPassword(pwd);
-      const insurerId =
-        insurers.find((i) => i.name === form.seguro)?.id ?? null;
+      const insurerId = form.seguro || null;
       await updateMyPatientProfile({
         dateOfBirth: form.dob || null,
         email: form.email,
@@ -151,6 +154,7 @@ export function OnboardingPage() {
         emergencyRelationship: form.fam1Parentesco,
         emergencyPhone: form.fam1Cel,
         emergencyEmail: form.fam1Email,
+        secondaryEmergencyContact: contactFromProfile(form, 2),
         insurerId,
         memberId: form.poliza,
       });
@@ -193,15 +197,16 @@ export function OnboardingPage() {
       return;
     }
     if (step === 2) {
-      if (!form.fam1Nombre || !form.fam1Cel) {
-        showToast(t("El familiar principal es obligatorio"), "err");
+      const error = emergencyContactsError(contactFromProfile(form, 1), contactFromProfile(form, 2));
+      if (error) {
+        showToast(t(error), "err");
         return;
       }
       setStep(3);
       return;
     }
     if (step === 3) {
-      if (!checks.every(Boolean)) {
+      if (!consentRead || !checks.every(Boolean)) {
         showToast(t("Acepta los términos para continuar"), "warn");
         return;
       }
@@ -246,7 +251,7 @@ export function OnboardingPage() {
         {!done && (
           <div
             className="onb-stepper"
-            aria-label={`Paso ${step} de ${TOTAL_STEPS}`}
+            aria-label={t("Paso {step} de {total}", { step: String(step), total: String(TOTAL_STEPS) })}
           >
             {STEPS.map((s, i) => {
               const n = i + 1;
@@ -301,7 +306,7 @@ export function OnboardingPage() {
                   margin: "8px 16px 0",
                 }}
               >
-                {t("Tu perfil COPP-ADRESD quedó activo. Semana 12 de 24.")}
+                {t("Tu perfil COPP-ADRESD está listo. Continúa con tus evaluaciones iniciales.")}
               </p>
               <div className="onb-done-list">
                 {[
@@ -396,24 +401,12 @@ export function OnboardingPage() {
                         interface="popover"
                         value={form.seguro}
                         onIonChange={(e) =>
-                          set("seguro", e.detail.value as string)
+                          setForm(f => ({ ...f, seguro: String(e.detail.value ?? ""), ...(e.detail.value ? {} : { poliza: "", grupo: "" }) }))
                         }
                       >
-                        {[
-                          "BlueCross BlueShield",
-                          "Aetna",
-                          "UnitedHealth",
-                          "Cigna",
-                          "Medicare Part B",
-                          "Medicaid",
-                        ]
-                          .concat(insurers.map((i) => i.name))
-                          .filter((s, i, arr) => arr.indexOf(s) === i)
-                          .map((s) => (
-                            <IonSelectOption key={s} value={s}>
-                              {s}
-                            </IonSelectOption>
-                          ))}
+                        <IonSelectOption value="">{t("Sin seguro médico")}</IonSelectOption>
+                        {form.seguro && !insurers.some(insurer => insurer.id === form.seguro) && <IonSelectOption value={form.seguro}>{t("Seguro registrado")}</IonSelectOption>}
+                        {insurers.map(insurer => <IonSelectOption key={insurer.id} value={insurer.id}>{insurer.name}</IonSelectOption>)}
                       </IonSelect>
                     </div>
                     <div className="onb-grid-2">
@@ -421,6 +414,7 @@ export function OnboardingPage() {
                         <label htmlFor="onb-poliza">{t("N.º de póliza")}</label>
                         <IonInput
                           id="onb-poliza"
+                          disabled={!form.seguro}
                           className="fld"
                           value={form.poliza}
                           enterkeyhint="next"
@@ -433,6 +427,7 @@ export function OnboardingPage() {
                         <label htmlFor="onb-grupo">{t("Grupo")}</label>
                         <IonInput
                           id="onb-grupo"
+                          disabled={!form.seguro}
                           className="fld"
                           value={form.grupo}
                           enterkeyhint="next"
@@ -499,7 +494,7 @@ export function OnboardingPage() {
                     <IonIcon icon={medkitOutline} />
                     <span>
                       {t(
-                        "Si activas SOS, avisamos a esta persona, al médico y a emergencias. No se usa para marketing.",
+                        "El primer contacto recibe tus alertas SOS. El segundo es un contacto de respaldo opcional.",
                       )}
                     </span>
                   </div>
@@ -514,74 +509,11 @@ export function OnboardingPage() {
                         <span>{t("Obligatorio para activar el programa")}</span>
                       </div>
                     </div>
-                    <div className="field">
-                      <label htmlFor="onb-fam-nom">{t("Nombre")}</label>
-                      <IonInput
-                        id="onb-fam-nom"
-                        className="fld"
-                        value={form.fam1Nombre}
-                        autocomplete="name"
-                        enterkeyhint="next"
-                        onIonInput={(e) =>
-                          set("fam1Nombre", e.detail.value ?? "")
-                        }
-                      />
-                    </div>
-                    <div className="field">
-                      <label>{t("Parentesco")}</label>
-                      <div
-                        className="chips"
-                        style={{ marginTop: 0, marginBottom: 4 }}
-                      >
-                        {PARENTESCO.map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            className={`chip ${form.fam1Parentesco === p ? "chip-teal" : "chip-glass"}`}
-                            style={
-                              form.fam1Parentesco === p
-                                ? undefined
-                                : {
-                                    background: "var(--g0)",
-                                    border: "1px solid var(--bd)",
-                                    color: "var(--mu)",
-                                  }
-                            }
-                            onClick={() => set("fam1Parentesco", p)}
-                          >
-                            {p}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label htmlFor="onb-fam-cel">{t("Celular")}</label>
-                      <IonInput
-                        id="onb-fam-cel"
-                        className="fld"
-                        type="tel"
-                        inputmode="tel"
-                        enterkeyhint="next"
-                        value={form.fam1Cel}
-                        onIonInput={(e) => set("fam1Cel", e.detail.value ?? "")}
-                      />
-                    </div>
-                    <div className="field" style={{ marginBottom: 0 }}>
-                      <label htmlFor="onb-fam-mail">
-                        {t("Correo (opcional)")}
-                      </label>
-                      <IonInput
-                        id="onb-fam-mail"
-                        className="fld"
-                        type="email"
-                        inputmode="email"
-                        enterkeyhint="done"
-                        value={form.fam1Email}
-                        onIonInput={(e) =>
-                          set("fam1Email", e.detail.value ?? "")
-                        }
-                      />
-                    </div>
+                    <EmergencyContactFields prefix="onb-fam" value={contactFromProfile(form, 1)} onChange={contact => setForm(f => ({ ...f, fam1Nombre: contact.name, fam1Parentesco: contact.relationship, fam1Cel: contact.phone, fam1Email: contact.email }))} />
+                  </section>
+                  <section className="onb-card tone-ice">
+                    <div className="onb-card-head"><span className="onb-card-ico tone-ice"><IonIcon icon={peopleOutline} /></span><div><strong>{t("Segundo contacto de emergencia")}</strong><span>{t("Opcional · persona de respaldo")}</span></div></div>
+                    <EmergencyContactFields prefix="onb-fam2" value={contactFromProfile(form, 2)} onChange={contact => setForm(f => ({ ...f, fam2Nombre: contact.name, fam2Parentesco: contact.relationship, fam2Cel: contact.phone, fam2Email: contact.email }))} />
                   </section>
 
                   <section
@@ -632,7 +564,7 @@ export function OnboardingPage() {
                         <span>{t("COPP-ADRESD · 24 semanas")}</span>
                       </div>
                     </div>
-                    <div className="onb-doc">
+                    <ConsentReadGate onRead={() => setConsentRead(true)}>
                       <strong style={{ color: "var(--tx)" }}>
                         {t("Programa de medicina preventiva")}
                       </strong>
@@ -641,41 +573,15 @@ export function OnboardingPage() {
                           "Tus datos son PHI según HIPAA. FYA TECH SAS actúa como Business Associate. Los datos biométricos se cifran con AES-256. Las fotos de comida se eliminan en 24 h. Autorizas el contacto de emergencia si activas SOS.",
                         )}
                       </p>
-                    </div>
+                    </ConsentReadGate>
                     {[
                       t("He leído y acepto el consentimiento informado."),
                       t(
                         "Autorizo el manejo de mis datos de salud según HIPAA.",
                       ),
                       t("Autorizo notificar a mis contactos de emergencia."),
-                    ].map((t, i) => (
-                      <button
-                        key={t}
-                        type="button"
-                        className={`check-row ${checks[i] ? "on" : ""}`}
-                        onClick={() =>
-                          setChecks((c) => c.map((x, j) => (j === i ? !x : x)))
-                        }
-                      >
-                        <IonCheckbox
-                          checked={checks[i]}
-                          onClick={(e) => e.stopPropagation()}
-                          onIonChange={(e) =>
-                            setChecks((c) =>
-                              c.map((x, j) => (j === i ? e.detail.checked : x)),
-                            )
-                          }
-                        />
-                        <span
-                          style={{
-                            fontSize: 13,
-                            lineHeight: 1.45,
-                            textAlign: "left",
-                          }}
-                        >
-                          {t}
-                        </span>
-                      </button>
+                    ].map((label, i) => (
+                      <IonCheckbox key={label} className="onb-consent-check" labelPlacement="end" justify="start" disabled={!consentRead} checked={checks[i]} onIonChange={e => setChecks(c => c.map((value, index) => index === i ? e.detail.checked : value))}>{label}</IonCheckbox>
                     ))}
                   </section>
                 </>
@@ -799,7 +705,7 @@ export function OnboardingPage() {
             <IonButton expand="block" className="bt bt-ghost" onClick={back}>
               {step === 1 ? t("Cancelar") : t("Volver")}
             </IonButton>
-            <IonButton expand="block" className="bt bt-primary" onClick={next}>
+            <IonButton expand="block" className="bt bt-primary" disabled={step === 3 && (!consentRead || !checks.every(Boolean))} onClick={next}>
               {cta}
             </IonButton>
           </div>

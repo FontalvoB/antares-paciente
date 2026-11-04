@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupAssessmentResults } from "../../../utils/assessmentResults";
+import { analyzeAssessmentProfile, groupAssessmentResults } from "../../../utils/assessmentResults";
 import type { MeResult } from "../../../utils/healthTestsApi";
 const result = (id: string, evaluationId: string, resultType: MeResult['resultType'], value: number): MeResult => ({ id, evaluationId, resultType, code: 'temperamento', label: id, value, qualifier: 'alto', severity: null });
 describe('assessment result grouping', () => {
@@ -24,4 +24,27 @@ describe('assessment result grouping', () => {
     expect(saved.severity).toBe('low');
   });
 
+});
+
+describe('grounded profile analysis', () => {
+  it('does not hide stored attention severity when the text classification is absent', () => {
+    const indicator = { ...result('flag', 'one', 'indicator', 2), qualifier: null, severity: 'high' };
+    expect(analyzeAssessmentProfile([indicator]).attention).toEqual([indicator]);
+  });
+  it('uses stored severity and includes derived indicators without inventing score cutoffs', () => {
+    const total = { ...result('total', 'one', 'score', 140), qualifier: null };
+    const indicator = { ...result('indicator', 'one', 'indicator', 2), qualifier: 'Revisar', severity: 'high' };
+    const summary = analyzeAssessmentProfile([total, indicator]);
+    expect(summary.evaluations).toBe(1);
+    expect(summary.unclassified).toBe(1);
+    expect(summary.attention).toEqual([indicator]);
+  });
+  it('ignores historical subscale risk labels and keeps separate attempts', () => {
+    const dimension = { ...result('dimension', 'one', 'subscale', 99), severity: 'high' };
+    const second = { ...result('total', 'two', 'score', 400), qualifier: null };
+    const summary = analyzeAssessmentProfile([dimension, second]);
+    expect(summary.evaluations).toBe(2);
+    expect(summary.attention).toEqual([]);
+    expect(summary.unclassified).toBe(2);
+  });
 });

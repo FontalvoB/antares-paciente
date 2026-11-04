@@ -31,7 +31,7 @@
   resolved "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-1.10.1.tgz"
   integrity sha512-wJ8ReQbHxsAfXhrf9ixl0aYbZorRuOWpBNzm8pL8ftmSxQx/wnJD5Eg861NwJU/czy2VXFIebCeZnZrI9rktIQ==
 
-"@capacitor-community/bluetooth-le@^8.3.0":
+"@capacitor-community/bluetooth-le@8.3.0":
   version "8.3.0"
   resolved "https://registry.npmjs.org/@capacitor-community/bluetooth-le/-/bluetooth-le-8.3.0.tgz"
   integrity sha512-bjI+m8mZ2AB9xIgwPu9T40QoAC7NErYt6q13zMHBzW3hIAITqQKFiElKOUsX813ItXzb81GoRqjlbSeHlKEzQg==
@@ -89,6 +89,20 @@
   dependencies:
     tslib "^2.1.0"
 
+"@capacitor/filesystem@^8":
+  version "8.1.5"
+  resolved "https://registry.npmjs.org/@capacitor/filesystem/-/filesystem-8.1.5.tgz"
+  integrity sha512-m1RkI8L83NJeppEKyRWioK3MDp2vjlA+QfUQcF8/xRlcXNC2HYxqoyYJ+K4M0EcVovy+g+4F24S05+bhK4Vgdg==
+  dependencies:
+    "@capacitor/synapse" "^1.0.4"
+
+"@capacitor/geolocation@8.2.4":
+  version "8.2.4"
+  resolved "https://registry.npmjs.org/@capacitor/geolocation/-/geolocation-8.2.4.tgz"
+  integrity sha512-FDcUiPQc2AXSTAV61QSDPXml11guKBx5HPEkdWvUqw7kMqrc2Ucp0bsWngeLyRs/01a5aWBI0hEuvetuF3PsrQ==
+  dependencies:
+    "@capacitor/synapse" "^1.0.4"
+
 "@capacitor/haptics@^8.0.2":
   version "8.0.2"
   resolved "https://registry.npmjs.org/@capacitor/haptics/-/haptics-8.0.2.tgz"
@@ -104,15 +118,30 @@
   resolved "https://registry.npmjs.org/@capacitor/keyboard/-/keyboard-8.0.5.tgz"
   integrity sha512-oFXygC4eKYA5l2MdpTR06L2M/4x6e2SLD5yS1T9+UBDKTkzyvhWKEhbYLUaTIBPpLKqlfGudJw1X73S1H9eUzQ==
 
+"@capacitor/local-notifications@^8":
+  version "8.3.1"
+  resolved "https://registry.npmjs.org/@capacitor/local-notifications/-/local-notifications-8.3.1.tgz"
+  integrity sha512-F7zu/+p/mIR958YP4axOkeI5hBKRaXDyYjbNPrAil2wWfd7OxScPSTvP9t85NpQ0eULVRu0/sntoxOg6ck477A==
+
 "@capacitor/push-notifications@^8.1.2":
   version "8.1.2"
   resolved "https://registry.npmjs.org/@capacitor/push-notifications/-/push-notifications-8.1.2.tgz"
   integrity sha512-TQl4XxqJfNF+KbSYBFMXYYT5WXUaleVKXlByhh/8+KySMVNjp+l5OqAUoGe/sY1IAnGXEuUeCjA/WLZEVvGwrA==
 
+"@capacitor/share@^8":
+  version "8.0.3"
+  resolved "https://registry.npmjs.org/@capacitor/share/-/share-8.0.3.tgz"
+  integrity sha512-gnvZBV1NPu2B8vd1UKncR56G15ueHd0aZLqgDov++t3SmTBG9Q0VrAZ1VnHn5stxlmglVaTb4RwopMgbpLzroA==
+
 "@capacitor/status-bar@^8.0.3":
   version "8.0.3"
   resolved "https://registry.npmjs.org/@capacitor/status-bar/-/status-bar-8.0.3.tgz"
   integrity sha512-csSpfNeN49Hx9JaQBSJEIiEbOLtXg3kcc2IpScq2fu5L520h3AWEvsxoH8Srk1jxfRKepaJ4S4sqSC3foI4AgA==
+
+"@capacitor/synapse@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.npmjs.org/@capacitor/synapse/-/synapse-1.0.4.tgz"
+  integrity sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==
 
 "@dimforge/rapier3d-compat@~0.12.0":
   version "0.12.0"
@@ -282,10 +311,15 @@
   resolved "https://registry.npmjs.org/@oxc-project/types/-/types-0.144.0.tgz"
   integrity sha512-nuhZIOLuI6TFQ32I/WnUx+SCPY7SdSKwgnFHydAuoS1+Z4BRcaP+RRJmGzl9lw+0OFF7UmaESf7KQRXaNLHypg==
 
-"@oxlint/binding-win32-x64-msvc@1.78.0":
+"@oxlint/binding-linux-x64-gnu@1.78.0":
   version "1.78.0"
-  resolved "https://registry.npmjs.org/@oxlint/binding-win32-x64-msvc/-/binding-win32-x64-msvc-1.78.0.tgz"
-  integrity sha512-Sb5ocmLSuYeOuXd+CFOToGKp/gjXUEWDnvIGwhnh8aq8wY4TMmEnKnvbogSW7RdMZv77JSARduS7/gv+khYEjA==
+  resolved "https://registry.npmjs.org/@oxlint/binding-linux-x64-gnu/-/binding-linux-x64-gnu-1.78.0.tgz"
+  integrity sha512-rRdISSYegj6VganMZ9tjRjijowfHJ09IZU01i0toBAqr6n5LEtwHq2IeS4FjW2RoskOHlb6efB26H5izYb3GEQ==
+
+"@oxlint/binding-linux-x64-musl@1.78.0":
+  version "1.78.0"
+  resolved "https://registry.npmjs.org/@oxlint/binding-linux-x64-musl/-/binding-linux-x64-musl-1.78.0.tgz"
+  integrity sha512-GmsP4rW0xTL6u5CVdcDsaN5Fbc7hBc382Wmar1kttbnwSEviM+rSINKOMQ+UQ6iH+AGwC+8gaAiwu134Tgh6Lg==
 
 "@puppeteer/browsers@3.2.1":
   version "3.2.1"
@@ -338,20 +372,30 @@
     use-sync-external-store "^1.4.0"
     zustand "^5.0.3"
 
-"@rolldown/binding-win32-x64-msvc@1.2.4":
+"@rolldown/binding-linux-x64-gnu@1.2.4":
   version "1.2.4"
-  resolved "https://registry.npmjs.org/@rolldown/binding-win32-x64-msvc/-/binding-win32-x64-msvc-1.2.4.tgz"
-  integrity sha512-UwSDJOg3dqCAejWdxclJjCsh3Qq4vLYMDxmyHqo1btz3stK2VqgwNd3mm5tuIwzSlGIQ/1H9Hr+Zn09mrezNqQ==
+  resolved "https://registry.npmjs.org/@rolldown/binding-linux-x64-gnu/-/binding-linux-x64-gnu-1.2.4.tgz"
+  integrity sha512-4/GyVjmhR+Tc6HLJvwc1sOhPqAZtySiSMesOZyX6JQ5XBxoTDEMKQzvo07NIK6nTon/SivlZqvhzvuVBNQhObQ==
+
+"@rolldown/binding-linux-x64-musl@1.2.4":
+  version "1.2.4"
+  resolved "https://registry.npmjs.org/@rolldown/binding-linux-x64-musl/-/binding-linux-x64-musl-1.2.4.tgz"
+  integrity sha512-l9eeLsCNvPpmSXUej0etw/J1eqV0Jj1D5G/xG6YTijmE6dkv6E2QezgWbTfQk63v952DPqrjOCoiqxq7Bw0YUQ==
 
 "@rolldown/pluginutils@^1.0.0", "@rolldown/pluginutils@^1.0.1":
   version "1.0.1"
   resolved "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.1.tgz"
   integrity sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==
 
-"@rollup/rollup-win32-x64-msvc@4.44.0":
+"@rollup/rollup-linux-x64-gnu@4.44.0":
   version "4.44.0"
-  resolved "https://registry.npmjs.org/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.44.0.tgz"
-  integrity sha512-Q2Mgwt+D8hd5FIPUuPDsvPR7Bguza6yTkJxspDGkZj7tBRn2y4KSWYuIXpftFSjBra76TbKerCV7rgFPQrn+wQ==
+  resolved "https://registry.npmjs.org/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.44.0.tgz"
+  integrity sha512-iUVJc3c0o8l9Sa/qlDL2Z9UP92UZZW1+EmQ4xfjTc1akr0iUFZNfxrXJ/R1T90h/ILm9iXEY6+iPrmYB3pXKjw==
+
+"@rollup/rollup-linux-x64-musl@4.44.0":
+  version "4.44.0"
+  resolved "https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.44.0.tgz"
+  integrity sha512-PQUobbhLTQT5yz/SPg116VJBgz+XOtXt8D1ck+sfJJhuEsMj2jSej5yTdp8CvWBSceu+WW+ibVL6dm0ptG5fcA==
 
 "@standard-schema/spec@^1.1.0":
   version "1.1.0"
@@ -1116,10 +1160,15 @@ lie@^3.0.2:
   dependencies:
     immediate "~3.0.5"
 
-lightningcss-win32-x64-msvc@1.33.0:
+lightningcss-linux-x64-gnu@1.33.0:
   version "1.33.0"
-  resolved "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.33.0.tgz"
-  integrity sha512-OlEICDx/Xl0FqSp4bry8zFnCvGpig3Gl4gCquvYwHuqJKEC1+n9NgDniFvqHGmMv1ZkqDJrDqKKSykTDX+ehuA==
+  resolved "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.33.0.tgz"
+  integrity sha512-ar+Ju7LmcN0Jo4FpL4hpFybwNG9/3A/Br5KW2n2jyODg3MEZXaDYADdemoNS+BDNfMgKvylJLj4S5tyRActuAg==
+
+lightningcss-linux-x64-musl@1.33.0:
+  version "1.33.0"
+  resolved "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.33.0.tgz"
+  integrity sha512-RYiYbkokw0trfKqqzfF55lginwEPrD3OJDfTuJzFs1MK6iFnDenaz1fqLLtX4ITG3OktJQXOeTaw1awrBAlZPw==
 
 lightningcss@^1.33.0:
   version "1.33.0"
@@ -2039,25 +2088,3 @@ zustand@^5.0.1, zustand@^5.0.3:
   version "5.0.15"
   resolved "https://registry.npmjs.org/zustand/-/zustand-5.0.15.tgz"
   integrity sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==
-
-"@capacitor/filesystem@^8":
-  version "8.1.4"
-  resolved "https://registry.npmjs.org/@capacitor/filesystem/-/filesystem-8.1.4.tgz"
-  integrity sha512-8MXmt10cb+dGWoh8jUeO8on0U6iETQCX5k+fmdB278PZ3MYDEVGQo08+hroaOtUbK3+5stiRk4/K6QBHKepv0A==
-  dependencies:
-    "@capacitor/synapse" "^1.0.4"
-
-"@capacitor/local-notifications@^8":
-  version "8.3.1"
-  resolved "https://registry.npmjs.org/@capacitor/local-notifications/-/local-notifications-8.3.1.tgz"
-  integrity sha512-F7zu/+p/mIR958YP4axOkeI5hBKRaXDyYjbNPrAil2wWfd7OxScPSTvP9t85NpQ0eULVRu0/sntoxOg6ck477A==
-
-"@capacitor/share@^8":
-  version "8.0.3"
-  resolved "https://registry.npmjs.org/@capacitor/share/-/share-8.0.3.tgz"
-  integrity sha512-gnvZBV1NPu2B8vd1UKncR56G15ueHd0aZLqgDov++t3SmTBG9Q0VrAZ1VnHn5stxlmglVaTb4RwopMgbpLzroA==
-
-"@capacitor/synapse@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.npmjs.org/@capacitor/synapse/-/synapse-1.0.4.tgz"
-  integrity sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==

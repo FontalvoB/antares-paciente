@@ -55,11 +55,14 @@ import {
 import { useProgramScores } from "../hooks/useProgramScores";
 import { useProgramCalendar } from "../hooks/useProgramCalendar";
 import { resolveStationSec } from "../utils/exerciseSteps";
+import { programDayNumber } from "../utils/programDayNumber";
+import { queueCommunityShareDraft } from "../utils/communityShareDraft";
 import type {
   CompleteTaskInput,
   ProgramSnapshotDto,
   TaskCode,
   VitalsPayload,
+  EmotionalAssessmentPayload,
 } from "../services/program/types";
 
 const CONF_COLORS = [
@@ -103,7 +106,6 @@ export function ProgramPage() {
   const [exRunning, setExRunning] = useState(false);
   const [exStep, setExStep] = useState(0);
   const [exLeft, setExLeft] = useState(45);
-  const [nutriSlot, setNutriSlot] = useState("manana");
   const [takenAt, setTakenAt] = useState("");
   const [openedChest, setOpenedChest] = useState<{
     title: string;
@@ -338,6 +340,7 @@ export function ProgramPage() {
         moodScore?: number;
         barriers?: string;
         vitals?: VitalsPayload | null;
+        emotional?: EmotionalAssessmentPayload | null;
       },
     ) => {
       if (program[id]) return;
@@ -359,6 +362,7 @@ export function ProgramPage() {
           }),
           ...(extra?.barriers !== undefined && { barriers: extra.barriers }),
           ...(extra?.vitals !== undefined && { vitals: extra.vitals }),
+          ...(extra?.emotional !== undefined && { emotional: extra.emotional }),
         };
         queueTaskCompletion(offlinePayload);
         queryClient.setQueryData<ProgramSnapshotDto>(
@@ -389,6 +393,7 @@ export function ProgramPage() {
           moodScore: extra?.moodScore,
           barriers: extra?.barriers,
           vitals: extra?.vitals,
+          emotional: extra?.emotional,
         },
         {
           onSuccess: () => {
@@ -920,9 +925,16 @@ export function ProgramPage() {
                   done={program.nutraceutico}
                   pts={taskPts}
                   takenAt={takenAt}
-                  slot={nutriSlot}
+                  pending={serverActiveTask?.clientPending === true}
+                  recordedAt={serverActiveTask?.clientPending ? null : serverActiveTask?.completedAt}
                   nbWeekDays={snapshot?.streak?.nbWeekDays}
-                  onSlot={setNutriSlot}
+                  dayNumber={programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate)}
+                  onShare={serverActiveTask?.status === "Completed" && !serverActiveTask.clientPending ? () => {
+                    const day = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
+                    queueCommunityShareDraft(user.id || user.cedula, day ? t("Día {day} para estar más sano. Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!", { day: String(day) }) : t("Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!"));
+                    setActive(null);
+                    navigate("com");
+                  } : undefined}
                   onComplete={() =>
                     finish(
                       "nutraceutico",
@@ -937,8 +949,9 @@ export function ProgramPage() {
               {task.id === "emocional" && (
                 <EmotionalLesson
                   done={program.emocional}
+                  pending={serverActiveTask?.clientPending === true}
                   pts={taskPts}
-                  onComplete={({ mood, barrier }) => {
+                  onComplete={({ mood, barrier, emotional }) => {
                     finish(
                       "emocional",
                       taskPts,
@@ -946,12 +959,11 @@ export function ProgramPage() {
                         pts: String(taskPts),
                       }),
                       {
-                        moodScore: parseInt(mood, 10) || 3,
+                        moodScore: Number(mood),
                         barriers: barrier,
+                        emotional,
                       },
                     );
-                    if (barrier)
-                      showToast(t("Registro enviado a tu equipo"), "info");
                   }}
                 />
               )}

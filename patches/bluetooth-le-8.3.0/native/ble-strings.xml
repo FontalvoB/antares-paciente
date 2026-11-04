@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="antares_ble_channel">Health device</string>
+    <string name="antares_ble_receiving">Receiving data from your health device</string>
+    <string name="antares_ble_stop">Stop</string>
+</resources>

@@ -5,7 +5,7 @@ import type { MyNutritionPlanDto } from "../../../services/nutrition/my-nutritio
 import { ApiError } from "../../../utils/apiClient";
 
 vi.mock("../../../i18n/I18nContext", () => ({
-  useT: () => (key: string) => key,
+  useT: () => (key: string, params?: Record<string, string>) => key.replace(/\{([^}]+)\}/g, (match, name) => params?.[name] ?? match),
 }));
 
 const planFixture: MyNutritionPlanDto = {
@@ -47,6 +47,43 @@ const baseProps = {
 };
 
 describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
+  it('un estado pendiente o vencido oculta el menú aprobado que quedó en cache', () => {
+    const view = render(<NutritionPlanTab {...baseProps} plan={planFixture} status={{ status: 'pending_review', durationDays: 30 }} />);
+    expect(screen.queryByText('Avena, plátano')).toBeNull();
+    expect(screen.getByText('En revisión por nutrición')).toBeTruthy();
+    view.rerender(<NutritionPlanTab {...baseProps} plan={planFixture} status={{ status: 'expired', durationDays: 30 }} />);
+    expect(screen.queryByText('Avena, plátano')).toBeNull();
+    expect(screen.getByText('Preparando tu próximo ciclo')).toBeTruthy();
+  });
+
+  it('espera la revisión aprobada actual en lugar de mostrar una versión anterior de cache', () => {
+    render(<NutritionPlanTab {...baseProps} plan={{ ...planFixture, id: 'plan-A', revision: 1 }} status={{ status: 'active', planId: 'plan-A', revision: 2, durationDays: 30 }} />);
+    expect(screen.queryByText('Avena, plátano')).toBeNull();
+    expect(screen.getByText('Actualizando tu plan aprobado')).toBeTruthy();
+  });
+  it("incluye merienda sin inventar alimentos si no está prescrita", () => {
+    render(<NutritionPlanTab {...baseProps} plan={planFixture} />);
+    expect(screen.getAllByText('Merienda')).toHaveLength(2);
+    expect(screen.getAllByText('Tu nutricionista aún no ha indicado esta comida para este día.')).toHaveLength(2);
+  });
+
+  it("muestra el día del ciclo y el menú que corresponde tras repetir la semana", () => {
+    const plan = { ...planFixture, meals: undefined, durationDays: 30, currentDay: 10, startDate: '2026-11-01', endDate: '2026-11-30', days: Array.from({ length: 7 }, (_, i) => ({ dayNumber: i + 1, meals: [{ mealType: 'Snack', foods: `Merienda del menú ${i + 1}` }] })) };
+    const view = render(<NutritionPlanTab {...baseProps} plan={plan} />);
+    expect(screen.getByText('Merienda del menú 3')).toBeTruthy();
+    expect(screen.queryByText('Merienda del menú 1')).toBeNull();
+    expect(screen.getByText('Día 10 de 30')).toBeTruthy();
+    expect(screen.getAllByText('Merienda')).toHaveLength(2);
+    view.rerender(<NutritionPlanTab {...baseProps} plan={plan} status={{ status: 'active', durationDays: 30, currentDay: 11 }} />);
+    expect(screen.getByText('Día 11 de 30')).toBeTruthy();
+    expect(screen.getByText('Merienda del menú 4')).toBeTruthy();
+  });
+
+  it("un plan en revisión muestra su estado sin comidas ni metas de fallback", () => {
+    render(<NutritionPlanTab {...baseProps} status={{ status: 'pending_review', durationDays: 30 }} fallbackRows={[{ emoji: '🔥', label: 'Calorías diarias', value: '1800 kcal' }]} />);
+    expect(screen.getByText('En revisión por nutrición')).toBeTruthy();
+    expect(screen.queryByText('1800 kcal')).toBeNull();
+  });
   beforeEach(() => {
     baseProps.onRetry = vi.fn();
   });

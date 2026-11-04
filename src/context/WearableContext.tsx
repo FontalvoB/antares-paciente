@@ -13,6 +13,22 @@ import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useQueryClient } from "@tanstack/react-query";
 import * as ble from "../devices/ble/ble-client";
+import {
+  drainPendingNotifications,
+  authorizeAccessory,
+  detachPendingNotifications,
+  NOTIFICATION_GAP_EVENT,
+  startPersistentConnection,
+  stopPersistentConnection,
+} from "../devices/ble/notification-journal";
+import {
+  createSampleSnapshot,
+  loadSampleSnapshot,
+  recordSampleSnapshot,
+  updateSampleSnapshot,
+} from "../devices/sample-store";
+import type { SampleSnapshot } from "../devices/sample-store";
+import { buildDeviceMetricUploads } from "../devices/metrics-outbox";
 import { nextHeartbeatDecision } from "../devices/heartbeat";
 import { DIAG_LOG_LIMIT, shortUuid } from "../devices/diagnostics";
 import type { DiagEntry } from "../devices/diagnostics";
@@ -62,8 +78,6 @@ type WearableOperation = "sync" | "measure";
 
 /** Ingreso periódico de métricas: agrupa cambios y evita un POST por muestra. */
 const INGEST_INTERVAL_MS = 60_000;
-/** Espera mínima entre reintentos automáticos (arranque/segundo plano). */
-const RECONNECT_DEBOUNCE_MS = 15_000;
 /** Pausa entre el volcado de historial y la primera medida del sync. */
 const SYNC_SETTLE_MS = 800;
 /** Sin NINGUNA notificación en este tiempo, la sesión está muerta. */
@@ -80,13 +94,11 @@ const SYNC_DUMP_MARGIN_MS = 30_000;
  * Escalera de reintentos de la reconexión automática: al abrir la app el
  * wearable puede tardar en anunciarse (o estar dormido), y un único intento
  * dejaba al usuario con el botón "Reconectar" en pantalla. Tras la escalera
- * NO se abandona: queda un intento lento cada `AUTO_RECONNECT_RETRY_MS`
+ * NO se abandona: queda un intento lento cada 120 segundos
  * mientras la app esté en primer plano (la conexión BLE no sobrevive al
  * cierre de la app; lo persistente es la identidad + este reintento).
  */
-const AUTO_RECONNECT_DELAYS_MS = [0, 5_000, 15_000, 30_000, 60_000];
-/** Ritmo lento indefinido una vez agotada la escalera inicial. */
-const AUTO_RECONNECT_RETRY_MS = 120_000;
+const AUTO_RECONNECT_DELAYS_MS = [0, 5_000, 15_000, 30_000, 60_000, 120_000];
 
 export interface WearableState {
   phase: WearablePhase;
@@ -172,6 +184,10 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const app = useApp();
   const t = useT();
   const queryClient = useQueryClient();
+  const accountId = app.flow === "app" && !app.authLoading
+    ? (app.user.id || app.user.cedula || app.user.email || "").trim() : "";
+  const accountRef = useRef(accountId);
+  accountRef.current = accountId;
 
   const [phase, setPhase] = useState<WearablePhase>("idle");
   const [sessionStale, setSessionStale] = useState(false);
@@ -198,13 +214,20 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   } | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [savedDevice, setSavedDevice] = useState<SavedDevice | null>(() =>
-    loadSavedDevice(),
+    accountId ? loadSavedDevice(accountId) : null,
   );
 
   const sessionRef = useRef<DeviceSession | null>(null);
+  const descriptorRef = useRef<DeviceDescriptor | null>(null);
+  const snapshotRef = useRef<SampleSnapshot | null>(null);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const connectionTaskRef = useRef<Promise<void> | null>(null);
+  const cleanupRef = useRef<Promise<void>>(Promise.resolve());
   const syncHistoryRef = useRef<() => Promise<void>>(() => Promise.resolve());
   /** Evita que historia, medidas manuales y sync compitan por el mismo sensor. */
   const operationRef = useRef<WearableOperation | null>(null);
+  const operationGenerationRef = useRef(0);
   const queuedSyncRef = useRef(false);
   /** Pings de presencia sin respuesta acumulados (ver heartbeat). */
   const heartbeatMisses = useRef(0);
@@ -219,7 +242,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const ingestDirty = useRef(false);
   const ingestInFlight = useRef(false);
   const lastIngestAt = useRef(0);
-  const lastIngestPayload = useRef("");
+  const lastIngestPayload = useRef(new Map<string, string>());
   // Espejo de `samples`: syncAll decide qué medir sin depender del render.
   const samplesRef = useRef(samples);
   samplesRef.current = samples;
@@ -239,24 +262,45 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const resetDayAggregate = useCallback(() => {
     dayStore.current = newDayStore(toLocalISODate());
     setToday(EMPTY_TOTALS);
-    lastIngestPayload.current = "";
+    lastIngestPayload.current.clear();
     setLastSyncAt(null);
   }, []);
 
-  const resetSessionState = useCallback(() => {
+  const restoreSnapshot = useCallback((ownerId: string, deviceId: string) => {
+    const snapshot = loadSampleSnapshot(ownerId, deviceId) ?? createSampleSnapshot(ownerId, deviceId);
+    snapshotRef.current = snapshot;
+    dayStore.current = snapshot.day;
+    setInfo(snapshot.info);
+    setSamples(snapshot.latest);
+    samplesRef.current = snapshot.latest;
+    setToday(totalsOf(snapshot.day));
+    setLastSyncAt(snapshot.lastSyncAt);
+    lastIngestPayload.current.clear();
+    ingestDirty.current = Object.keys(snapshot.days).length > 0;
+  }, []);
+
+  const resetSessionState = useCallback((clearReadings = false) => {
     sessionGenerationRef.current += 1;
     operationRef.current = null;
+    operationGenerationRef.current += 1;
     queuedSyncRef.current = false;
-    resetDayAggregate();
+    cancelSyncRef.current = true;
+    if (clearReadings) {
+      resetDayAggregate();
+      snapshotRef.current = null;
+      setInfo({});
+      setSamples({});
+      samplesRef.current = {};
+      ingestDirty.current = false;
+    }
     sessionRef.current = null;
     setSessionStale(false);
     setDevice(null);
-    setInfo({});
-    setSamples({});
     setGatt([]);
     setCanMeasure(false);
     setMeasureKinds([]);
     setSyncing(false);
+    phaseRef.current = "idle";
     setPhase("idle");
   }, [resetDayAggregate]);
 
@@ -266,18 +310,18 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       return;
     }
     const session = sessionRef.current;
-    const deviceId = device?.deviceId;
+    const deviceId = descriptorRef.current?.deviceId;
     resetSessionState();
     app.disconnectWearable();
     // Cierre ordenado: soltar suscripciones y el enlace (antes se abandonaban
     // y solo un reintento fallido los limpiaba de rebote).
-    void (async () => {
+    cleanupRef.current = cleanupRef.current.then(async () => {
       if (session) await session.stop().catch(() => undefined);
       if (deviceId) await ble.disconnectDevice(deviceId).catch(() => undefined);
-    })();
-    app.showToast(t("Se perdió la conexión con el dispositivo"), "warn");
+    });
+    if (appActiveRef.current) app.showToast(t("Se perdió la conexión con el dispositivo"), "warn");
     startAutoReconnectRef.current();
-  }, [app, device, resetSessionState, t]);
+  }, [app, resetSessionState, t]);
 
   /**
    * Envía el acumulado del día al backend (upsert por día y métrica). Se
@@ -296,42 +340,21 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       const now = Date.now();
       if (!force && now - lastIngestAt.current < INGEST_INTERVAL_MS) return;
 
-      const totals = totalsOf(dayStore.current);
-      const sleep = dayStore.current.sleep;
-      const activity = {
-        ...(totals.steps !== null ? { steps: totals.steps } : {}),
-        ...(totals.distanceM !== null ? { distanceM: totals.distanceM } : {}),
-        ...(totals.activityKcal !== null
-          ? { activityKcal: totals.activityKcal }
-          : {}),
-      };
-      const key = JSON.stringify({
-        activity,
-        sleep: sleep ? [sleep.ts, sleep.minutes] : null,
-      });
-      if (key === lastIngestPayload.current) {
-        ingestDirty.current = false;
-        return;
-      }
+      const snapshot = snapshotRef.current;
+      if (!snapshot || snapshot.accountId !== accountRef.current) return;
 
       ingestInFlight.current = true;
       try {
-        const requests: Array<Promise<unknown>> = [];
-        if (Object.keys(activity).length > 0) {
-          requests.push(recordDeviceMetrics(activity));
+        for (const upload of buildDeviceMetricUploads(snapshot)) {
+          if (snapshot.accountId !== accountRef.current) return;
+          if (lastIngestPayload.current.get(upload.id) === upload.key) continue;
+          await recordDeviceMetrics(upload.input);
+          if (snapshot.accountId !== accountRef.current) return;
+          lastIngestPayload.current.set(upload.id, upload.key);
         }
-        if (sleep && sleep.minutes > 0) {
-          requests.push(
-            recordDeviceMetrics({
-              sleepMinutes: sleep.minutes,
-              recordedAt: new Date(sleep.ts).toISOString(),
-            }),
-          );
-        }
-        await Promise.all(requests);
         lastIngestAt.current = now;
-        lastIngestPayload.current = key;
-        ingestDirty.current = false;
+        // Una lectura llegada durante el POST conserva su ingreso pendiente.
+        ingestDirty.current = snapshotRef.current !== snapshot;
         void queryClient.invalidateQueries({
           queryKey: programKeys.metricsHistory,
         });
@@ -344,8 +367,23 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
-  const handleSample = useCallback((sample: HealthSample) => {
+  const handleSample = useCallback((sample: HealthSample, persist = true) => {
     lastSeenAtRef.current = Date.now();
+    if (persist) {
+      const previous = snapshotRef.current;
+      if (!previous || previous.accountId !== accountRef.current) return;
+      let snapshot = recordSampleSnapshot(previous, sample);
+      const update = wearingInfoUpdate(sample, snapshot.info);
+      if (update) snapshot = updateSampleSnapshot(snapshot, { info: update });
+      snapshotRef.current = snapshot;
+      dayStore.current = snapshot.day;
+      samplesRef.current = snapshot.latest;
+      setInfo(snapshot.info);
+      setSamples(snapshot.latest);
+      setToday(totalsOf(snapshot.day));
+      ingestDirty.current = true;
+      return;
+    }
     setInfo((prev) => {
       const update = wearingInfoUpdate(sample, prev);
       return update ? { ...prev, ...update } : prev;
@@ -355,17 +393,34 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     const day = toLocalISODate();
     if (dayStore.current.date !== day) {
       dayStore.current = newDayStore(day);
-      lastIngestPayload.current = "";
+      lastIngestPayload.current.clear();
     }
-    const store = dayStore.current;
+    // El diagnóstico no modifica el snapshot real que espera subir al servidor.
+    const current = dayStore.current;
+    const store = { ...current, counters: { ...current.counters }, buckets: new Map(current.buckets) };
     if (!applySample(store, sample)) return;
     setToday(totalsOf(store));
-    ingestDirty.current = true;
   }, []);
 
   const handleInfo = useCallback((delta: DeviceInfo) => {
     lastSeenAtRef.current = Date.now();
+    const snapshot = snapshotRef.current;
+    if (snapshot && snapshot.accountId === accountRef.current) {
+      const next = updateSampleSnapshot(snapshot, { info: delta });
+      snapshotRef.current = next;
+      dayStore.current = next.day;
+      if (snapshot.day.date !== next.day.date) setToday(totalsOf(next.day));
+    }
     setInfo((prev) => ({ ...prev, ...delta }));
+  }, []);
+
+  const refreshStoredDay = useCallback(() => {
+    const snapshot = snapshotRef.current;
+    if (!snapshot || snapshot.accountId !== accountRef.current || snapshot.day.date === toLocalISODate()) return;
+    const next = updateSampleSnapshot(snapshot, {});
+    snapshotRef.current = next;
+    dayStore.current = next.day;
+    setToday(totalsOf(next.day));
   }, []);
 
   const finishScan = useCallback(() => {
@@ -426,7 +481,12 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     if (!session?.syncHistory) return;
     try {
       await session.syncHistory();
-      setLastSyncAt(Date.now());
+      if (sessionRef.current !== session || !appActiveRef.current) return;
+      const syncedAt = Date.now();
+      if (snapshotRef.current) {
+        snapshotRef.current = updateSampleSnapshot(snapshotRef.current, { lastSyncAt: syncedAt });
+      }
+      setLastSyncAt(syncedAt);
       // Las muestras del volcado ya marcaron el acumulado como pendiente.
       await flushIngest(true);
     } catch {
@@ -441,9 +501,14 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       return;
     }
     if (operationRef.current === "sync") return;
+    const session = sessionRef.current;
+    if (!session) return;
+    const operation = ++operationGenerationRef.current;
+    const ownsOperation = () => operationGenerationRef.current === operation && sessionRef.current === session;
     operationRef.current = "sync";
     setSyncing(true);
     const safety = window.setTimeout(() => {
+      if (!ownsOperation()) return;
       // Red de seguridad: ni la red ni un driver pueden dejar la UI en
       // "Midiendo…" para siempre.
       setSyncStage(null);
@@ -455,11 +520,13 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       await runSync();
     } finally {
       window.clearTimeout(safety);
-      setSyncing(false);
-      operationRef.current = null;
-      if (queuedSyncRef.current) {
-        queuedSyncRef.current = false;
-        void syncHistoryRef.current();
+      if (ownsOperation()) {
+        setSyncing(false);
+        operationRef.current = null;
+        if (queuedSyncRef.current) {
+          queuedSyncRef.current = false;
+          void syncHistoryRef.current();
+        }
       }
     }
   }, [runSync]);
@@ -477,6 +544,10 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         if (operationRef.current === "measure") queuedSyncRef.current = true;
         return [];
       }
+      const session = sessionRef.current;
+      if (!session) return [];
+      const operation = ++operationGenerationRef.current;
+      const ownsOperation = () => operationGenerationRef.current === operation && sessionRef.current === session;
       operationRef.current = "sync";
       setSyncing(true);
       cancelSyncRef.current = false;
@@ -484,6 +555,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       // lista a medir (un fijo quedaría corto con ventanas largas: anillo
       // 30+60+90 s > 120 s y el sync se "cerraba" solo a la mitad).
       let safety = window.setTimeout(() => {
+        if (!ownsOperation()) return;
         setSyncStage(null);
         setSyncing(false);
         operationRef.current = null;
@@ -493,13 +565,13 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       const measured: MetricKind[] = [];
       try {
         await runSync();
+        if (!ownsOperation()) return measured;
         // Respiro tras el volcado: la primera medida forzada no debe llegar justo
         // cuando el dump cierra (el anillo a veces la ignora y cierra en timeout).
         await new Promise<void>((resolve) =>
           window.setTimeout(resolve, SYNC_SETTLE_MS),
         ).catch(() => undefined);
-        const session = sessionRef.current;
-        if (!session?.measure) return measured;
+        if (!ownsOperation() || !session.measure) return measured;
         const stale = staleMeasureKinds(
           session.measureKinds ?? measureKinds,
           samplesRef.current,
@@ -523,6 +595,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
           SYNC_DUMP_MARGIN_MS,
         );
         safety = window.setTimeout(() => {
+          if (!ownsOperation()) return;
           setSyncStage(null);
           setSyncing(false);
           operationRef.current = null;
@@ -531,7 +604,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         for (const kind of toMeasure) {
           // Cancelación del usuario (vista de foco): no arrancar más etapas y
           // salir sin el volcado extra de SpO2.
-          if (cancelSyncRef.current) break;
+          if (cancelSyncRef.current || !ownsOperation()) break;
           measured.push(kind);
           setSyncStage({ kind, startedAt: Date.now() });
           let ok = false;
@@ -557,8 +630,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
           // El guard cortó pero el driver sigue midiendo: pararlo para que no
           // mida en el vacío mientras la secuencia ya avanzó (cierra como
           // "cancelled", sin toast ni reintento).
-          if (!closed) session.stopMeasure?.();
-          if (cancelSyncRef.current) break;
+          if (!closed && ownsOperation()) session.stopMeasure?.();
+          if (cancelSyncRef.current || !ownsOperation()) break;
           // El anillo suele guardar la SpO2 que no llegó a tiempo: un volcado
           // extra la trae del historial sin que el usuario reintente.
           if (kind === "spo2" && !ok) await runSync();
@@ -566,12 +639,14 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         return measured;
       } finally {
         window.clearTimeout(safety);
-        setSyncStage(null);
-        setSyncing(false);
-        operationRef.current = null;
-        if (queuedSyncRef.current) {
-          queuedSyncRef.current = false;
-          void syncHistoryRef.current();
+        if (ownsOperation()) {
+          setSyncStage(null);
+          setSyncing(false);
+          operationRef.current = null;
+          if (queuedSyncRef.current) {
+            queuedSyncRef.current = false;
+            void syncHistoryRef.current();
+          }
         }
       }
     },
@@ -579,145 +654,154 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   );
 
   const connect = useCallback(
-    (target: DeviceDescriptor, options?: { silent?: boolean }) => {
+    (target: DeviceDescriptor, options?: { silent?: boolean; automatic?: boolean }): Promise<void> => {
+      const ownerId = accountRef.current;
+      if (!ownerId) return Promise.resolve();
+      // El candado se toma antes de cualquier await: un doble toque o un
+      // temporizador no puede abrir otro GATT mientras sigue el handshake.
+      if (connectionTaskRef.current) return connectionTaskRef.current;
+      if (phaseRef.current === "connected" && descriptorRef.current?.deviceId === target.deviceId) {
+        return Promise.resolve();
+      }
       const silent = options?.silent === true;
-      if (!silent) intentionalDisconnect.current = false;
+      intentionalDisconnect.current = false;
       const generation = ++sessionGenerationRef.current;
+      const previousSession = sessionRef.current;
+      const previousDevice = descriptorRef.current;
+      sessionRef.current = null;
+      operationGenerationRef.current += 1;
+      operationRef.current = null;
+      queuedSyncRef.current = false;
+      cancelSyncRef.current = true;
+      setSyncing(false);
+      setSyncStage(null);
       let connectedId = target.deviceId;
+      let session: DeviceSession | null = null;
+      const current = () => sessionGenerationRef.current === generation && accountRef.current === ownerId;
       clearScanTimer();
-      void ble.stopScan();
+      phaseRef.current = "connecting";
       setError(null);
       setPhase("connecting");
-      void (async () => {
+      const task = (async () => {
         try {
-          // En iOS el plugin solo conecta ids de su mapa interno: tras
-          // reiniciar la app hay que re-registrar el dispositivo guardado.
-          const canonicalId = await ble
-            .resolveDeviceId(target.deviceId)
-            .catch(() => null);
-          const resolved: DeviceDescriptor =
-            canonicalId && canonicalId !== target.deviceId
-              ? { ...target, deviceId: canonicalId }
-              : target;
+          await cleanupRef.current;
+          if (previousSession) {
+            await flushIngest(true);
+            await previousSession.stop().catch(() => undefined);
+            if (previousDevice) {
+              await stopPersistentConnection(previousDevice.deviceId).catch(() => undefined);
+              await ble.disconnectDevice(previousDevice.deviceId);
+            }
+          }
+          if (!current()) return;
+          await ble.stopScan();
+          const canonicalId = await ble.resolveDeviceId(target.deviceId);
+          if (!current()) return;
+          const resolved = canonicalId ? { ...target, deviceId: canonicalId } : target;
           connectedId = resolved.deviceId;
-          await ble.connectDevice(
-            resolved.deviceId,
-            () => {
-              if (sessionGenerationRef.current === generation) {
-                handleUnexpectedDisconnect();
-              } else if (intentionalDisconnect.current) {
-                intentionalDisconnect.current = false;
-              }
-            },
-            {
-              silent,
-              timeoutMs: silent ? 30_000 : undefined,
-            },
-          );
-          const session = await openSession(resolved);
-          // Dispositivo nuevo: los pasos/sueño en memoria eran del anterior.
-          resetDayAggregate();
-          await session.start(
-            (sample) => {
-              if (sessionGenerationRef.current === generation) {
-                handleSample(sample);
-              }
-            },
-            (delta) => {
-              if (sessionGenerationRef.current === generation) {
-                handleInfo(delta);
-              }
-            },
-          );
-          if (sessionGenerationRef.current !== generation) {
+          descriptorRef.current = resolved;
+          // Restaurar antes de suscribir: incluso las respuestas iniciales
+          // quedan persistidas y nunca se borran al terminar el handshake.
+          restoreSnapshot(ownerId, connectedId);
+          if (options?.automatic !== true && Capacitor.getPlatform() === "ios") {
+            const authorization = await authorizeAccessory(resolved);
+            if (!current()) return;
+            if (authorization.supported && !authorization.authorized) {
+              phaseRef.current = "idle";
+              setPhase("idle");
+              return;
+            }
+          }
+          await startPersistentConnection(connectedId, ownerId, options?.automatic === true);
+          if (!current()) {
+            await stopPersistentConnection(connectedId, true).catch(() => undefined);
+            return;
+          }
+          await ble.connectDevice(connectedId, () => {
+            if (current()) handleUnexpectedDisconnect();
+          }, { silent, timeoutMs: silent ? 30_000 : undefined });
+          if (!current()) {
+            await ble.disconnectDevice(connectedId);
+            return;
+          }
+          session = await openSession(resolved);
+          if (!current()) {
             await session.stop().catch(() => undefined);
+            await ble.disconnectDevice(connectedId);
             return;
           }
           sessionRef.current = session;
+          await session.start(
+            (sample) => { if (current()) handleSample(sample); },
+            (delta) => { if (current()) handleInfo(delta); },
+          );
+          if (!current()) {
+            await session.stop().catch(() => undefined);
+            return;
+          }
           session.setAppActive?.(appActiveRef.current);
           setCanMeasure(session.supportsMeasure === true);
-          setMeasureKinds(
-            session.measureKinds ??
-              (session.supportsMeasure ? DEFAULT_MEASURE_KINDS : []),
-          );
-          // El volcado GATT solo se pide en modo diagnóstico: la conexión ya
-          // descubrió los servicios, así que la consulta es inmediata.
+          setMeasureKinds(session.measureKinds ?? (session.supportsMeasure ? DEFAULT_MEASURE_KINDS : []));
           if (diagnostics) {
-            void ble
-              .getDeviceServices(resolved.deviceId)
-              .then(setGatt)
-              .catch(() => undefined);
+            void ble.getDeviceServices(connectedId).then((services) => {
+              if (current()) setGatt(services);
+            }).catch(() => undefined);
           }
-          // El anillo puede anunciarse sin nombre: se usa una etiqueta legible
-          // para el estado global, que otras pantallas muestran tal cual.
           const label = resolved.name || t("Dispositivo sin nombre");
           setDevice(resolved);
-          // Fusionar (no reemplazar): durante `session.start` ya pudieron
-          // llegar batería y firmware, y reemplazar los borraba.
-          setInfo((prev) => ({ ...prev, name: label }));
-          setSamples({});
+          handleInfo({ name: label });
+          phaseRef.current = "connected";
           setPhase("connected");
           lastSeenAtRef.current = Date.now();
+          heartbeatMisses.current = 0;
           setSessionStale(false);
           app.connectWearable(label);
-          // Se recuerda el dispositivo para reconectar sin volver a emparejar.
-          saveDevice(resolved);
-          setSavedDevice(loadSavedDevice());
-          if (!silent) {
-            app.showToast(t("{name} conectado", { name: label }), "ok");
-          }
-          // Primer volcado: sueño, pasos y vitales guardados en el anillo.
-          void syncHistoryRef.current();
+          saveDevice(resolved, ownerId);
+          setSavedDevice(loadSavedDevice(ownerId));
+          if (!silent) app.showToast(t("{name} conectado", { name: label }), "ok");
+          if (appActiveRef.current) void syncHistoryRef.current();
         } catch (err) {
+          if (session) await session.stop().catch(() => undefined);
           await ble.disconnectDevice(connectedId);
-          if (sessionGenerationRef.current !== generation) return;
+          if (!current()) return;
           resetSessionState();
-          // Una reconexión automática fallida no invade la pantalla con un
-          // error: queda la tarjeta de "Último dispositivo" para reintentar.
-          // El dispositivo guardado SOLO se olvida ante un firmware realmente
-          // incompatible: un "not found" transitorio (anillo dormido/fuera de
-          // alcance) no borra la memoria, la escalera sigue intentando.
-          const wearableError = toWearableError(err, "connection-failed");
-          if (silent && wearableError.code === "unsupported-device") {
-            clearSavedDevice();
-            setSavedDevice(null);
+          if (/stopped by user/i.test(err instanceof Error ? err.message : String(err))) {
+            intentionalDisconnect.current = true;
           }
+          // Un dispositivo dormido, fuera de rango o no hallado no se olvida.
           if (silent) return;
-          setError(wearableError.code);
+          setError(toWearableError(err, "connection-failed").code);
+          phaseRef.current = "error";
           setPhase("error");
+        } finally {
+          connectionTaskRef.current = null;
         }
       })();
+      connectionTaskRef.current = task;
+      return task;
     },
-    [
-      app,
-      clearScanTimer,
-      diagnostics,
-      handleInfo,
-      handleSample,
-      handleUnexpectedDisconnect,
-      resetDayAggregate,
-      resetSessionState,
-      syncHistoryRef,
-      t,
-    ],
+    [app, clearScanTimer, diagnostics, flushIngest, handleInfo, handleSample,
+      handleUnexpectedDisconnect, resetSessionState, restoreSnapshot, t],
   );
 
   const disconnect = useCallback(() => {
     const session = sessionRef.current;
-    const deviceId = device?.deviceId;
+    const deviceId = descriptorRef.current?.deviceId;
     intentionalDisconnect.current = true;
-    // Último envío con el acumulado completo antes de soltar la sesión.
     void flushIngest(true);
     resetSessionState();
+    descriptorRef.current = null;
     app.disconnectWearable();
-    // Desconexión explícita: se olvida el dispositivo para no reconectar solo.
-    clearSavedDevice();
+    if (accountRef.current) clearSavedDevice(accountRef.current);
     setSavedDevice(null);
-    void (async () => {
+    cleanupRef.current = cleanupRef.current.then(async () => {
       if (session) await session.stop().catch(() => undefined);
-      if (deviceId) await ble.disconnectDevice(deviceId);
-    })();
-  }, [app, device, flushIngest, resetSessionState]);
+      if (deviceId) {
+        await stopPersistentConnection(deviceId, true).catch(() => undefined);
+        await ble.disconnectDevice(deviceId);
+      }
+    });
+  }, [app, flushIngest, resetSessionState]);
 
   /** Reconexión al último dispositivo guardado (una sola pasada, sin ruido). */
   const reconnect = useCallback(() => {
@@ -786,10 +870,14 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       return;
     }
     operationRef.current = "measure";
+    const operation = ++operationGenerationRef.current;
+    const session = sessionRef.current;
+    const ownsOperation = () => operationGenerationRef.current === operation && sessionRef.current === session;
     let completed = false;
     const finish = (ok: boolean, reason: Parameters<MeasureCallback>[1]) => {
       if (completed) return;
       completed = true;
+      if (!ownsOperation()) { onDone?.(ok, reason); return; }
       operationRef.current = null;
       onDone?.(ok, reason);
       if (queuedSyncRef.current) {
@@ -797,7 +885,6 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         void syncHistoryRef.current();
       }
     };
-    const session = sessionRef.current;
     if (!session?.measure) {
       finish(false, "refused");
       return;
@@ -805,7 +892,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     session.measure(kind, (ok, reason) => {
       finish(ok, reason);
       // Mismo caso que en el sync: la lectura puede estar en el historial.
-      if (!ok && kind === "spo2") void syncHistoryRef.current();
+      if (!ok && kind === "spo2" && ownsOperation()) void syncHistoryRef.current();
     });
   }, []);
 
@@ -819,8 +906,9 @@ export function WearableProvider({ children }: { children: ReactNode }) {
    * pueda medir de nuevo. Sin medida en curso no hace nada.
    */
   const stopMeasure = useCallback(() => {
-    sessionRef.current?.stopMeasure?.();
+    operationGenerationRef.current += 1;
     if (operationRef.current === "measure") operationRef.current = null;
+    sessionRef.current?.stopMeasure?.();
   }, []);
 
   /**
@@ -829,6 +917,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
    * la UI de inmediato; el bucle de etapas sale solo al resolver sus esperas.
    */
   const cancelSync = useCallback(() => {
+    operationGenerationRef.current += 1;
     cancelSyncRef.current = true;
     sessionRef.current?.stopMeasure?.();
     setSyncStage(null);
@@ -850,118 +939,155 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const injectDebugSample = useCallback(
     (sample: Omit<HealthSample, "deviceId">) => {
       const wasDirty = ingestDirty.current;
-      handleSample({ ...sample, deviceId: "debug" });
+      handleSample({ ...sample, deviceId: "debug" }, false);
       ingestDirty.current = wasDirty;
     },
     [handleSample],
   );
 
-  // Refs espejo: la reconexión automática necesita el estado y el `connect`
-  // vigentes sin re-suscribir el listener en cada render.
-  const phaseRef = useRef(phase);
-  phaseRef.current = phase;
+  // La siguiente pasada se programa DESPUÉS de terminar el intento anterior.
   const connectRef = useRef(connect);
   connectRef.current = connect;
-  const lastReconnectAt = useRef(0);
   const autoAttempt = useRef(0);
   const autoTimer = useRef<number | undefined>(undefined);
+  const reconnectGeneration = useRef(0);
 
-  /**
-   * Reconexión al último dispositivo guardado. Silenciosa: si el anillo no
-   * está cerca, la pantalla queda igual y ofrece "Reconectar".
-   */
-  const tryAutoReconnect = useCallback((force: boolean) => {
-    const saved = loadSavedDevice();
-    if (!saved || !canAutoReconnectHere(saved)) return;
-    if (phaseRef.current === "connecting" || phaseRef.current === "connected") {
-      return;
-    }
-    const now = Date.now();
-    if (!force && now - lastReconnectAt.current < RECONNECT_DEBOUNCE_MS) return;
-    lastReconnectAt.current = now;
-    connectRef.current(saved, { silent: true });
-  }, []);
-
-  /**
-   * Reintentos automáticos: escalera rápida al abrir y luego un ritmo lento
-   * INDEFINIDO en primer plano (antes se abandonaba a los ~2 min y el anillo
-   * dormido quedaba sin reconectar hasta el toque manual).
-   */
-  const scheduleAutoReconnect = useCallback(() => {
-    if (autoAttempt.current >= AUTO_RECONNECT_DELAYS_MS.length) {
-      // Escalera agotada: reintento lento cada 2 min hasta conectar.
-      window.clearTimeout(autoTimer.current);
-      autoTimer.current = window.setTimeout(() => {
-        if (phaseRef.current === "connected" || !appActiveRef.current) return;
-        tryAutoReconnect(true);
-        scheduleAutoReconnect();
-      }, AUTO_RECONNECT_RETRY_MS);
-      return;
-    }
-    const delay = AUTO_RECONNECT_DELAYS_MS[autoAttempt.current] ?? 0;
+  const scheduleAutoReconnect = useCallback((generation: number) => {
+    if (generation !== reconnectGeneration.current || !accountRef.current) return;
+    const delay = AUTO_RECONNECT_DELAYS_MS[Math.min(autoAttempt.current, AUTO_RECONNECT_DELAYS_MS.length - 1)];
     autoAttempt.current += 1;
     window.clearTimeout(autoTimer.current);
     autoTimer.current = window.setTimeout(() => {
-      if (phaseRef.current === "connected") return;
-      tryAutoReconnect(true);
-      scheduleAutoReconnect();
+      void (async () => {
+        if (generation !== reconnectGeneration.current || !appActiveRef.current) return;
+        const saved = loadSavedDevice(accountRef.current);
+        if (!saved || !canAutoReconnectHere(saved) || intentionalDisconnect.current) return;
+        if (phaseRef.current === "connected") return;
+        if (phaseRef.current !== "scanning") {
+          if (connectionTaskRef.current) await connectionTaskRef.current;
+          else await connectRef.current(saved, { silent: true, automatic: true });
+        }
+        if (generation === reconnectGeneration.current && (phaseRef.current as WearablePhase) !== "connected") {
+          scheduleAutoReconnect(generation);
+        }
+      })();
     }, delay);
-  }, [tryAutoReconnect]);
+  }, []);
 
   const startAutoReconnect = useCallback(() => {
+    const generation = ++reconnectGeneration.current;
     autoAttempt.current = 0;
-    scheduleAutoReconnect();
+    scheduleAutoReconnect(generation);
   }, [scheduleAutoReconnect]);
   startAutoReconnectRef.current = startAutoReconnect;
 
   const stopAutoReconnect = useCallback(() => {
+    reconnectGeneration.current += 1;
     window.clearTimeout(autoTimer.current);
-    autoAttempt.current = AUTO_RECONNECT_DELAYS_MS.length;
   }, []);
 
-  // Al entrar a la app y al volver del segundo plano (iOS suspende el BLE).
-  // No se intenta durante login/onboarding/tests: el usuario todavía no pidió
-  // nada del reloj y no corresponde pedir permisos ahí.
+  // Una cuenta nueva nunca hereda la conexión, el journal ni las tarjetas
+  // del paciente anterior. La identidad guardada también está separada.
   useEffect(() => {
-    if (app.flow !== "app") {
-      stopAutoReconnect();
+    stopAutoReconnect();
+    if (!accountId) {
+      setSavedDevice(null);
       return;
     }
+    const saved = loadSavedDevice(accountId);
+    setSavedDevice(saved);
+    if (saved) {
+      try { restoreSnapshot(accountId, saved.deviceId); }
+      catch (error) { console.error("[ble] No se pudo restaurar el historial local.", error); setError("unknown"); }
+    }
     startAutoReconnect();
-    if (!Capacitor.isNativePlatform()) return;
-    const handle = App.addListener("appStateChange", ({ isActive }) => {
+    void flushIngest(true);
+    return () => {
+      stopAutoReconnect();
+      // Una recreación del WebView conserva el servicio nativo. Solo el
+      // cambio explícito de cuenta revoca su captura y asociación.
+      if (accountRef.current === accountId) return;
+      const session = sessionRef.current;
+      const deviceId = descriptorRef.current?.deviceId;
+      resetSessionState(true);
+      descriptorRef.current = null;
+      // Al cerrar sesión se corta la captura nativa: no se atribuyen datos
+      // nuevos a otra persona que luego inicie sesión en este teléfono.
+      cleanupRef.current = cleanupRef.current.then(async () => {
+        if (session) await session.stop().catch(() => undefined);
+        if (deviceId) {
+          await stopPersistentConnection(deviceId, true).catch(() => undefined);
+          await ble.disconnectDevice(deviceId);
+        }
+      });
+    };
+  }, [accountId, flushIngest, resetSessionState, restoreSnapshot, startAutoReconnect, stopAutoReconnect]);
+
+  useEffect(() => {
+    if (!accountId || !Capacitor.isNativePlatform()) return;
+    const onStateChange = (isActive: boolean) => {
       appActiveRef.current = isActive;
       sessionRef.current?.setAppActive?.(isActive);
-      if (!isActive) return;
-      // El foreground hace una sola actualización controlada. Si el enlace se
-      // perdió, la escalera silenciosa se encarga de reconectar.
-      if (phaseRef.current !== "connected") {
-        startAutoReconnect();
-      } else if (operationRef.current === null) {
-        void syncHistoryRef.current();
+      if (!isActive) {
+        stopAutoReconnect();
+        cancelSync();
+        void flushIngest(true);
+        return;
       }
-    });
-    return () => {
-      void handle.then((h) => h.remove());
+      const resume = async () => {
+        refreshStoredDay();
+        const deviceId = descriptorRef.current?.deviceId;
+        if (deviceId) await drainPendingNotifications(deviceId);
+        if (phaseRef.current !== "connected") startAutoReconnect();
+        else if (operationRef.current === null) await syncHistoryRef.current();
+        await flushIngest(true);
+      };
+      void resume().catch((error) => { console.error("[ble] Recuperación pendiente.", error); setError("unknown"); });
     };
-  }, [app.flow, startAutoReconnect, stopAutoReconnect]);
+    const handle = App.addListener("appStateChange", ({ isActive }) => onStateChange(isActive));
+    void App.getState().then(({ isActive }) => {
+      appActiveRef.current = isActive;
+      sessionRef.current?.setAppActive?.(isActive);
+    }).catch(() => undefined);
+    const enabled = ble.watchBluetoothState((on) => {
+      if (!on && phaseRef.current === "connected") handleUnexpectedDisconnect();
+      if (on && appActiveRef.current) startAutoReconnect();
+    }).catch(() => () => Promise.resolve());
+    ble.setNotificationFailureHandler(() => setError("unknown"));
+    const onGap = (event: Event) => {
+      const detail = (event as CustomEvent<{ ownerId: string; deviceId: string }>).detail;
+      if (detail?.ownerId !== accountRef.current || detail.deviceId !== descriptorRef.current?.deviceId) return;
+      setError("no-data");
+      if (appActiveRef.current) void syncHistoryRef.current();
+    };
+    window.addEventListener(NOTIFICATION_GAP_EVENT, onGap);
+    return () => {
+      void handle.then((listener) => listener.remove());
+      void enabled.then((remove) => remove());
+      ble.setNotificationFailureHandler(null);
+      window.removeEventListener(NOTIFICATION_GAP_EVENT, onGap);
+    };
+  }, [accountId, cancelSync, flushIngest, handleUnexpectedDisconnect, refreshStoredDay, startAutoReconnect, stopAutoReconnect]);
 
-  // La conexión correcta (manual o automática) corta los reintentos.
   useEffect(() => {
     if (phase === "connected") stopAutoReconnect();
   }, [phase, stopAutoReconnect]);
 
   useEffect(() => stopAutoReconnect, [stopAutoReconnect]);
 
-  // Ingreso periódico mientras hay sesión: el acumulado del día se actualiza
-  // aunque no haya volcados ni medidas puntuales.
+  // El backlog durable también se reintenta sin enlace BLE (red recuperada).
   useEffect(() => {
-    if (phase !== "connected") return;
+    if (!accountId) return;
+    const flush = () => { if (appActiveRef.current) void flushIngest(true); };
     const timer = window.setInterval(() => {
-      if (appActiveRef.current) void flushIngest();
+      if (!appActiveRef.current) return;
+      try { refreshStoredDay(); }
+      catch (error) { console.error("[ble] No se pudo actualizar el día local.", error); setError("unknown"); }
+      void flushIngest();
     }, INGEST_INTERVAL_MS);
-    return () => window.clearInterval(timer);
-  }, [flushIngest, phase]);
+    window.addEventListener("online", flush);
+    return () => { window.clearInterval(timer); window.removeEventListener("online", flush); };
+  }, [accountId, flushIngest, refreshStoredDay]);
 
   // Registro del tráfico BLE: solo mientras el modo diagnóstico está activo.
   useEffect(() => {
@@ -989,13 +1115,15 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, [diagnostics]);
 
   useEffect(() => {
+    appActiveRef.current = true;
     return () => {
       appActiveRef.current = false;
       sessionGenerationRef.current += 1;
       operationRef.current = null;
       clearScanTimer();
       void ble.stopScan();
-      void sessionRef.current?.stop();
+      sessionRef.current?.setAppActive?.(false);
+      if (descriptorRef.current) detachPendingNotifications(descriptorRef.current.deviceId);
       sessionRef.current = null;
     };
   }, [clearScanTimer]);

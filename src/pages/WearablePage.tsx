@@ -57,6 +57,7 @@ import {
 } from "../utils/measure";
 import { useDoubleTap } from "../hooks/useDoubleTap";
 import { agoLabel, formatSleep } from "../utils/wearable";
+import { formatDateForDisplay, toLocalISODate } from "../utils/dates";
 import type {
   DeviceDescriptor,
   HealthSample,
@@ -287,6 +288,11 @@ export function WearablePage() {
   // historial de días atrás (el "Hace 63 h" de la tarjeta venía de ahí).
   const steps = today.steps ?? null;
   const sleepMinutes = today.sleepMinutes;
+  const lastReadingAt = Math.max(0, ...Object.values(samples).map((sample) => sample.ts));
+  const savedReadingDate = new Date(lastReadingAt);
+  const savedReadingLabel = lastReadingAt > 0
+    ? `${formatDateForDisplay(toLocalISODate(savedReadingDate))} ${savedReadingDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`
+    : null;
 
   /**
    * Lista única de dispositivos: el último guardado (primero, con `Reconectar`)
@@ -731,6 +737,8 @@ export function WearablePage() {
           <p>
             {connOn
               ? t("Tu salud en tiempo real, más cerca de ti.")
+              : savedReadingLabel
+                ? t("Datos guardados · {when}", { when: savedReadingLabel })
               : connecting || sessionStale
                 ? t("Estableciendo sesión con el dispositivo…")
                 : t("Mantén el wearable desbloqueado y cerca del teléfono.")}
@@ -741,20 +749,20 @@ export function WearablePage() {
             {
               label: "FC",
               icon: heart,
-              value: connOn && hr != null ? Math.round(hr) : "—",
+              value: hr != null ? Math.round(hr) : "—",
               unit: "lpm",
             },
             {
               label: "SpO2",
               icon: waterOutline,
-              value: connOn && spo2 != null ? Math.round(spo2) + "%" : "—",
+              value: spo2 != null ? Math.round(spo2) + "%" : "—",
               unit: "",
             },
             {
               label: "Presión",
               icon: pulseOutline,
               value:
-                connOn && blood
+                blood
                   ? Math.round(blood.value) +
                     "/" +
                     (blood.value2 == null ? "—" : Math.round(blood.value2))
@@ -765,7 +773,7 @@ export function WearablePage() {
               label: "Sueño",
               icon: moonOutline,
               value:
-                connOn && sleepMinutes != null
+                sleepMinutes != null
                   ? formatSleep(sleepMinutes, t)
                   : "—",
               unit: "",
@@ -774,7 +782,7 @@ export function WearablePage() {
               label: "Pasos",
               icon: footstepsOutline,
               value:
-                connOn && steps != null
+                steps != null
                   ? Math.round(steps).toLocaleString(locale)
                   : "—",
               unit: "",

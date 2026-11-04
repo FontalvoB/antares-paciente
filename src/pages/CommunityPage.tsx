@@ -30,6 +30,7 @@ import {
 } from "ionicons/icons";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
+import { takeCommunityShareDraft } from "../utils/communityShareDraft";
 import { useI18n } from "../i18n/I18nContext";
 import {
   useCommunity,
@@ -277,7 +278,7 @@ function BrandIcon({ path, size = 20 }: { path: string; size?: number }) {
 }
 
 export function CommunityPage() {
-  const { showToast, pointsTotal } = useApp();
+  const { showToast, pointsTotal, user } = useApp();
   const { t } = useI18n();
   const {
     me,
@@ -373,6 +374,11 @@ export function CommunityPage() {
     "followers" | "following" | null
   >(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [shareDraft, setShareDraft] = useState<string | null>(null);
+  useEffect(() => {
+    const draft = takeCommunityShareDraft(user.id || user.cedula);
+    if (draft) { setShareDraft(draft); setComposeOpen(true); }
+  }, [user.id, user.cedula]);
   const [chatQ, setChatQ] = useState("");
   const [newChatOpen, setNewChatOpen] = useState(false);
   const [amigosTab, setAmigosTab] = useState<"amigos" | "sugerencias">(
@@ -1866,7 +1872,8 @@ export function CommunityPage() {
           <ComposePostModal
             onQueue={draft => {queuePost(draft); showPublishedPost()}}
             open={composeOpen}
-            onClose={() => setComposeOpen(false)}
+            initialDraft={shareDraft ?? ""}
+            onClose={() => { setComposeOpen(false); setShareDraft(null); }}
             me={me}
             onPublish={async (text, mediaKey) => {
               await createPost(text, mediaKey ?? undefined);

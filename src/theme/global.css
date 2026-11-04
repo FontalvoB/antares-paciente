@@ -21067,6 +21067,97 @@ ion-button.bt-gold {
   box-shadow: var(--shadow-sm);
 }
 
+/* ──────────────────────────────────────────────────────────────────────
+   BATERÍA DE EVALUACIÓN — HÉROES Y WIZARD EN CLARO.
+   El hero del listado seguía usando los degradados oscuros compartidos
+   con Academy/Infinito; se sobrescribe SOLO bajo .ht-hero para no tocar
+   esas vistas. Los mood night/cosmos del wizard pasan al lenguaje claro.
+   ────────────────────────────────────────────────────────────────────── */
+.ht-hero.hero-cosmos,
+.ht-hero.hero-indigo {
+  background: linear-gradient(135deg, var(--ice-l), #fff 62%);
+}
+.ht-hero.hero-navy {
+  background: linear-gradient(135deg, var(--blue-l), #fff 62%);
+}
+.ht-hero.hero-teal {
+  background: linear-gradient(135deg, var(--teal-l), #fff 62%);
+}
+.ht-hero.hero-pur {
+  background: linear-gradient(135deg, var(--pur-l), #fff 62%);
+}
+.ht-hero {
+  color: var(--tx);
+}
+.ht-hero::before,
+.ht-hero::after {
+  display: none;
+}
+.ht-hero-orbs {
+  display: none;
+}
+.ht-hero-meta {
+  color: var(--mu);
+}
+.ht-hero .kicker {
+  color: var(--mu);
+}
+.ht-hero .h2 {
+  color: var(--tx);
+}
+.ht-hero ion-button.ht-hero-back {
+  --background: #fff;
+  --background-hover: var(--g0);
+  --background-activated: var(--g1);
+  --color: var(--tx);
+  border: 1px solid var(--bd);
+  box-shadow: var(--shadow-sm);
+}
+.ht-hero ion-button.ht-hero-back ion-icon {
+  color: var(--tx);
+}
+.ht-hero ion-button.ht-skip {
+  --background: #fff;
+  --color: var(--tx);
+  --border-color: var(--bd);
+  box-shadow: var(--shadow-sm);
+}
+.ht-page.mood-night,
+.ht-page.mood-cosmos {
+  --ht-bg: var(--g0);
+  --ht-card: #fff;
+  --ht-track: var(--g1);
+  --ht-text: var(--tx);
+  --ht-muted: var(--mu);
+  --ht-line: var(--bd);
+}
+.mood-night .ht-intro-emoji,
+.mood-cosmos .ht-intro-emoji {
+  background: var(--ht-card);
+  box-shadow: var(--shadow-md);
+}
+.mood-night .ht-chip.sel,
+.mood-cosmos .ht-chip.sel {
+  background: color-mix(in srgb, var(--teal) 14%, var(--ht-card));
+  border-color: var(--teal);
+}
+.mood-night .ht-chip-check,
+.mood-cosmos .ht-chip-check {
+  color: var(--teal);
+}
+.mood-night ion-textarea.ht-area,
+.mood-cosmos ion-textarea.ht-area {
+  --background: #fff;
+  --color: var(--tx);
+  --border-color: var(--bd);
+  --placeholder-color: var(--mu);
+  border-color: var(--bd);
+}
+.mood-night .ht-stage,
+.mood-cosmos .ht-stage {
+  background-image: none;
+}
+
 /* --- Plan nutricional (rediseño) --- */
 .nut-dash {
   display: flex;
@@ -32227,3 +32318,314 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .chat-reference .chat-row .chat-avatar > .vita-chat-avatar { display: block; position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
 .chat-reference .chat-row .chat-avatar:has(.vita-chat-avatar) { position: relative; }
 .vita-welcome-modal::part(content) { max-height: 90dvh; }
+/* SOS: servicios independientes; los controles siguen siendo Ionic. */
+.sos-reference .sos-services {
+  margin-bottom: 14px;
+  padding: 16px 12px 12px;
+  border: 1px solid var(--bd);
+  border-radius: 23px;
+  background: var(--wh);
+  color: var(--tx);
+  box-shadow: var(--shadow-sm);
+}
+.sos-reference .sos-services .sos-section-heading h2 {
+  margin-top: 4px;
+  font-size: 20px;
+}
+.sos-reference .sos-country-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 10px 0;
+  color: var(--mu);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.sos-reference .sos-country-status ion-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 16px;
+  color: var(--brand-blue-mid);
+}
+.sos-reference .sos-country-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.sos-reference .sos-country-options ion-button {
+  margin: 0;
+  min-width: 0;
+  min-height: 44px;
+  --border-radius: 12px;
+  --color: var(--brand-blue-mid);
+  --border-color: var(--bd);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.sos-reference .sos-country-options ion-button.is-selected {
+  --background: var(--brand-navy);
+  --color: var(--wh);
+  color: var(--wh);
+}
+.sos-reference .sos-country-options ion-button.is-selected::part(native) { color: var(--wh); }
+.sos-reference .sos-service-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.sos-reference ion-button.sos-service-action {
+  --service-color: var(--panic);
+  margin: 0;
+  min-width: 0;
+  height: auto;
+  min-height: 148px;
+  --background: color-mix(in srgb, var(--service-color) 8%, var(--wh));
+  --background-activated: color-mix(in srgb, var(--service-color) 18%, var(--wh));
+  --color: var(--service-color);
+  --border-width: 1px;
+  --border-style: solid;
+  --border-color: color-mix(in srgb, var(--service-color) 28%, var(--wh));
+  --border-radius: 17px;
+  --padding-start: 5px;
+  --padding-end: 5px;
+  --padding-top: 14px;
+  --padding-bottom: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  box-shadow: none;
+}
+.sos-reference ion-button.sos-service-action.service-police { --service-color: var(--brand-navy); }
+.sos-reference ion-button.sos-service-action.service-fire { --service-color: var(--org-d); }
+.sos-reference .sos-service-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  text-align: center;
+}
+.sos-reference .sos-service-content > ion-icon { font-size: 28px; }
+.sos-reference .sos-service-content > strong { font-size: 12px; font-weight: 800; }
+.sos-reference .sos-service-content > span { min-height: 28px; color: var(--mu); font-size: 11px; line-height: 1.3; }
+.sos-reference .sos-service-content > b { font-size: 13px; font-weight: 800; }
+.sos-reference .sos-services-note {
+  margin: 12px 0 5px;
+  color: var(--tx);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.sos-reference .sos-services-separate {
+  margin: 0;
+  color: var(--mu);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.sos-reference .sos-actions.sos-contact-actions { grid-template-columns: 1fr; }
+
+/* Contactos y consentimiento: controles compartidos con estado de lectura real. */
+.emergency-contact-fields .field { margin-bottom: 12px; }
+.emergency-contact-help { color: var(--mu); font-size: 13px; line-height: 1.6; }
+.onb-consent-document { max-height: 180px; overflow-y: auto; overscroll-behavior: contain; }
+.onb-consent-document:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.onb-consent-status { display: flex; align-items: center; gap: 8px; color: var(--mu); font-size: 12px; line-height: 1.5; }
+.onb-consent-status.is-read { color: var(--blue); }
+.onb-consent-status ion-icon { flex-shrink: 0; font-size: 20px; }
+.onb-consent-check { display: flex; min-height: 56px; padding: 12px 0; font-size: 13px; --size: 22px; --checkbox-background-checked: var(--blue); --border-color-checked: var(--blue); }
+.onb-consent-check::part(label) { white-space: normal; line-height: 1.5; }
+
+/* Batería inicial: carga integrada y síntesis basada en los resultados guardados. */
+.ht-loading-caption { display: flex; align-items: center; gap: 12px; color: var(--blue); font-size: 13px; font-weight: 600; padding: 16px 0; }
+.ht-loading-caption ion-spinner { width: 24px; height: 24px; }
+.ht-loading-card { display: flex; gap: 14px; align-items: center; min-height: 90px; padding: 18px; margin: 10px 0; border: 1px solid var(--bd); border-radius: 22px; background: var(--wh); }
+.ht-loading-card > div { flex: 1; }
+.ht-loading-card ion-skeleton-text { height: 13px; border-radius: 7px; }
+.ht-loading-card .ht-loading-icon { flex-shrink: 0; width: 46px; height: 46px; border-radius: 15px; }
+.assessment-profile-analysis { margin: 18px 0; padding: 20px 16px; background: var(--blue-l); border: 1px solid var(--bd); border-radius: 24px; color: var(--tx); }
+.apa-heading { display: flex; align-items: center; gap: 12px; }
+.apa-heading > ion-icon { font-size: 32px; color: var(--blue); }
+.apa-heading span { color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: 1px; }
+.apa-heading h2 { font-size: 22px; margin: 4px 0 0; }
+.assessment-profile-analysis p { font-size: 13px; line-height: 1.7; }
+.apa-stat { display: flex; gap: 12px; align-items: center; margin: 18px 0; }
+.apa-stat strong { font-size: 36px; color: var(--blue); }
+.apa-stat span { max-width: 180px; font-size: 13px; line-height: 1.5; }
+.assessment-profile-analysis ion-accordion { border-radius: 16px; overflow: hidden; }
+.assessment-profile-analysis ion-item { --background: var(--wh); --min-height: 58px; font-size: 13px; font-weight: 700; }
+.assessment-profile-analysis ion-label { white-space: normal; }
+.apa-review { background: var(--wh); padding: 0 16px 16px; }
+.apa-review ul { list-style: none; margin: 0; padding: 0; }
+.apa-review li { display: flex; flex-direction: column; gap: 5px; padding: 12px 0; border-top: 1px solid var(--bd); font-size: 13px; }
+.apa-review li span { color: var(--mu); }
+.apa-question { display: flex; align-items: flex-start; gap: 8px; color: var(--blue); }
+.apa-question ion-icon { flex-shrink: 0; margin-top: 15px; font-size: 20px; }
+.assessment-profile-analysis .apa-note { color: var(--mu); font-size: 11px; margin-bottom: 0; }
+/* Rutina y técnica de cada ejercicio: contenido clínico asignado, sin medios demo. */
+.exercise-session { color: var(--tx); }
+.exercise-session-summary, .exercise-prescription, .exercise-technique, .exercise-current {
+  border: 1px solid var(--bd); border-radius: 20px; padding: 20px; background: var(--wh);
+}
+.exercise-session-heading { display: flex; align-items: center; gap: 12px; }
+.exercise-session-heading > ion-icon { font-size: 28px; color: var(--navy); flex-shrink: 0; }
+.exercise-session h2 { margin: 4px 0 8px; font-size: 22px; line-height: 1.25; overflow-wrap: anywhere; }
+.exercise-session h3 { margin: 0 0 10px; font-size: 16px; }
+.exercise-session p { color: var(--mu); font-size: 14px; line-height: 1.6; }
+.exercise-session .kicker { color: var(--blue); margin: 0; font-size: 11px; }
+.exercise-session-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.exercise-session-stats > span { padding: 7px 12px; background: var(--ice-l); border-radius: 10px; color: var(--navy); font-size: 13px; font-weight: 700; }
+.exercise-current { text-align: center; background: var(--ice-l); }
+.exercise-session-clock { display: block; margin: 12px 0; font-size: 44px; font-variant-numeric: tabular-nums; color: var(--navy); }
+.exercise-current ion-progress-bar { height: 7px; border-radius: 5px; --progress-background: var(--navy); --background: var(--bd); }
+.exercise-current > p:last-child { margin-bottom: 0; font-size: 12px; }
+.exercise-stations { padding: 4px 0; background: transparent; border: 1px solid var(--bd); border-radius: 18px; overflow: hidden; }
+.exercise-stations ion-item { --min-height: 80px; --padding-start: 14px; --inner-padding-end: 12px; --background: var(--wh); --color: var(--tx); }
+.exercise-stations ion-item.exercise-station-current { --background: var(--ice-l); }
+.exercise-stations ion-icon { color: var(--navy); margin-right: 12px; }
+.exercise-stations ion-label { white-space: normal; }
+.exercise-stations ion-label h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.exercise-stations ion-label p { font-size: 12px; color: var(--mu); }
+.exercise-back { align-self: flex-start; margin: 0; min-height: 44px; --color: var(--navy); --padding-start: 0; }
+.exercise-detail-heading { padding: 0 2px; }
+.exercise-demonstration { margin: 0; border: 1px solid var(--bd); border-radius: 20px; overflow: hidden; background: var(--ice-l); }
+.exercise-demonstration > video, .exercise-demonstration > img { display: block; width: 100%; max-height: 420px; aspect-ratio: 16/10; object-fit: contain; background: var(--cosmos); }
+.exercise-demonstration > figcaption { padding: 12px 16px; font-size: 12px; color: var(--mu); }
+.exercise-media-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 170px; padding: 24px; border: 1px dashed var(--bd); border-radius: 20px; background: var(--ice-l); color: var(--navy); text-align: center; }
+.exercise-media-empty > ion-icon { font-size: 32px; }
+.exercise-media-empty > p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--mu); }
+.exercise-prescription dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.exercise-prescription dl > div { border-radius: 12px; background: var(--g0); padding: 12px; min-width: 0; }
+.exercise-prescription dt { font-size: 12px; color: var(--mu); }
+.exercise-prescription dd { margin: 5px 0 0; font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+.exercise-technique { border-left: 4px solid var(--brand-sky-mid); background: var(--ice-l); }
+.exercise-technique > p { margin-bottom: 0; }
+
+/* Diomedes: protocolo diario legible, nutrición y hábitos. */
+.protocol-note { display:flex; align-items:flex-start; gap:12px; padding:16px; border:1px solid var(--bd); border-radius:18px; background:var(--blue-l); color:var(--navy); }
+.protocol-note > ion-icon { flex:0 0 auto; font-size:24px; margin-top:2px; }
+.protocol-note h3, .protocol-note p { margin:0; }
+.protocol-note p { font-size:13px; line-height:1.65; }
+.protocol-question, .protocol-fieldset { margin:0; padding:18px; border:1px solid var(--bd); border-radius:18px; background:var(--ion-background-color); min-width:0; }
+.protocol-question h3, .protocol-fieldset legend { margin:0 0 8px; color:var(--navy); font-size:15px; font-weight:750; }
+.protocol-question h3 { display:flex; align-items:center; gap:7px; justify-content:space-between; }
+.protocol-question h3 strong { font-size:15px; }
+.protocol-question p, .protocol-fieldset p, .protocol-question small { color:var(--mu); font-size:13px; line-height:1.6; }
+.protocol-reflection .mood-row { gap:4px; }
+.protocol-reflection ion-button.mood-face { flex:1; min-width:0; min-height:76px; height:auto; margin:0; --padding-start:2px; --padding-end:2px; --border-radius:14px; color:var(--navy); }
+.protocol-reflection ion-button.mood-face::part(native) { flex-direction:column; gap:6px; }
+.protocol-reflection ion-button.mood-face span { font-size:25px; }
+.protocol-reflection ion-button.mood-face small { font-size:10px; white-space:normal; }
+.protocol-reflection ion-button.mood-face.sel { --background:var(--blue-l); outline:2px solid var(--blue); outline-offset:-2px; border-radius:14px; }
+.protocol-barriers { display:flex; flex-wrap:wrap; gap:6px; }
+.protocol-barriers ion-button { min-height:44px; margin:0; height:auto; --padding-top:9px; --padding-bottom:9px; white-space:normal; font-size:12px; }
+.protocol-sleep-suggestion { padding:12px; margin-bottom:12px; border-radius:14px; background:var(--blue-l); }
+.protocol-sleep-suggestion ion-icon { color:var(--navy); font-size:22px; }
+.protocol-sleep-suggestion ion-button { font-size:12px; min-height:44px; }
+.protocol-privacy, .protocol-small { font-size:12px; line-height:1.6; color:var(--mu); }
+.protocol-saved { padding:28px; text-align:center; color:var(--navy); }
+.protocol-saved > ion-icon { font-size:48px; color:var(--teal-d); }
+.nutraceutic-cover { position:relative; height:195px; border-radius:22px; overflow:hidden; background:var(--blue-l); }
+.nutraceutic-cover img { height:100%; width:100%; object-fit:cover; }
+.nutraceutic-cover > span { position:absolute; right:10px; bottom:10px; border-radius:8px; background:var(--navy); color:var(--ion-color-primary-contrast); padding:5px 8px; font-size:10px; }
+.protocol-eyebrow { display:flex; align-items:center; justify-content:inherit; gap:7px; font-size:11px; font-weight:750; letter-spacing:.04em; color:var(--blue); }
+.nutraceutic-intro h2 { color:var(--navy); margin:10px 0; font-size:23px; line-height:1.25; }
+.nutraceutic-intro p, .nutraceutic-share p { font-size:13px; line-height:1.65; color:var(--mu); }
+.nutraceutic-detail .nb-day.no { background:var(--blue-l); color:var(--navy); }
+.nutraceutic-detail .nb-day.ok { background:var(--navy); color:var(--ion-color-primary-contrast); }
+.nutraceutic-share { padding:20px; border:1px solid var(--bd); border-radius:18px; text-align:center; }
+.nutraceutic-share > ion-icon { color:var(--blue); font-size:30px; }
+.nutraceutic-share h3 { color:var(--navy); margin:8px 0; }
+.daily-protocol-reminder { --height:auto; --width:min(92vw,410px); --border-radius:26px; }
+.daily-reminder-card { padding:30px 24px 22px; background:var(--ion-background-color); color:var(--navy); text-align:center; }
+.daily-reminder-card .protocol-eyebrow { justify-content:center; }
+.daily-reminder-card h2 { font-size:27px; line-height:1.18; margin:12px 0; }
+.daily-reminder-card p { font-size:14px; line-height:1.7; color:var(--mu); }
+.daily-reminder-art { display:flex; align-items:center; justify-content:center; margin:0 auto 20px; width:85px; height:85px; border-radius:28px; background:var(--blue-l); color:var(--navy); }
+.daily-reminder-art ion-icon:first-child { font-size:43px; }
+.daily-reminder-art ion-icon:last-child { font-size:22px; align-self:flex-start; margin-top:14px; }
+.nutrition-cycle { margin-top:16px; padding:16px; border-radius:16px; color:var(--ion-color-primary-contrast); background:var(--navy); }
+.nutrition-cycle > span { font-size:11px; display:block; opacity:.88; }
+.nutrition-cycle > strong { font-size:24px; display:block; margin-top:4px; }
+.nutrition-cycle p { color:var(--ion-color-primary-contrast); font-size:12px; margin:6px 0 0; }
+.nutrition-day-select { margin:0 16px 12px; max-width:calc(100% - 32px); }
+.nutrition-unconfigured { color:var(--mu); font-size:13px; line-height:1.7; margin:0; }
+.nutrition-meal-description { color:var(--navy); font-size:16px; line-height:1.5; font-weight:650; margin:0 0 10px; }
+.nutrition-plan-status { padding:26px; color:var(--navy); }
+.nutrition-plan-status > ion-icon { width:38px; height:38px; padding:14px; border-radius:20px; background:var(--blue-l); margin-bottom:20px; }
+.nutrition-plan-status h2 { font-size:25px; line-height:1.2; margin:10px 0; }
+.nutrition-plan-status p { color:var(--mu); font-size:14px; line-height:1.8; }
+.nutrition-plan-status small { font-size:12px; line-height:1.6; color:var(--mu); }
+.nutrition-preparation { display:grid; gap:14px; padding-bottom:20px; }
+.nutrition-preparation .ntr-card { margin-bottom:0; }
+.nutrition-preparation-intro { display:flex; align-items:center; gap:12px; }
+.nutrition-preparation-mark { display:grid; place-items:center; padding:12px; background:var(--blue-l); border-radius:17px; }
+.nutrition-preparation-mark ion-icon { font-size:27px; color:var(--navy); }
+.nutrition-preparation-phase { display:flex; align-items:center; gap:9px; padding:12px; margin:18px 0 24px; border-radius:13px; background:var(--blue-l); color:var(--navy); font-size:12px; }
+.nutrition-preparation-phase ion-icon { font-size:23px; flex-shrink:0; }
+.nutrition-preparation-steps { padding:0; margin:0; list-style:none; display:grid; gap:0; }
+.nutrition-preparation-steps li { display:grid; grid-template-columns:38px minmax(0,1fr); gap:12px; position:relative; padding-bottom:23px; }
+.nutrition-preparation-steps li:not(:last-child)::after { content:''; position:absolute; top:38px; bottom:0; left:18px; width:2px; background:var(--bd); }
+.nutrition-step-icon { display:grid; place-items:center; width:38px; height:38px; border-radius:50%; background:var(--g1); color:var(--mu); }
+.nutrition-step-icon ion-icon { font-size:23px; }
+.nutrition-preparation-steps li[data-state='complete'] .nutrition-step-icon { background:var(--teal-l); color:var(--teal-d); }
+.nutrition-preparation-steps li[data-state='current'] .nutrition-step-icon { background:var(--navy); color:var(--ion-color-primary-contrast); }
+.nutrition-preparation-steps strong { font-size:14px; color:var(--navy); display:block; margin:0 0 4px; }
+.nutrition-preparation-steps p { font-size:12px; line-height:1.6; margin:0; }
+.nutrition-preparation-steps small { display:block; margin-top:5px; font-size:11px; font-weight:650; }
+.nutrition-preparation-steps li[data-state='current'] small { color:var(--blue); }
+.nutrition-preparation-review h3, .nutrition-preparation-actions h3 { color:var(--navy); font-size:17px; margin:0 0 10px; }
+.nutrition-preparation-review p, .nutrition-preparation-actions p { font-size:13px; line-height:1.7; color:var(--mu); }
+.nutrition-preparation-duration { display:flex; align-items:center; gap:9px; margin-top:15px; padding-top:14px; border-top:1px solid var(--bd); font-size:12px; color:var(--navy); }
+.nutrition-preparation-duration ion-icon { font-size:25px; flex-shrink:0; }
+.assessment-ai-summary { font-size:15px; line-height:1.8; color:var(--navy); }
+.assessment-ai-priorities { list-style:none; padding:0; margin:22px 0; display:grid; gap:24px; }
+.assessment-ai-priority-title { display:flex; gap:12px; align-items:baseline; }
+.assessment-ai-priority-title > span { color:var(--blue); font:700 23px 'Space Grotesk',sans-serif; }
+.assessment-ai-priority-title h3 { font-size:17px; line-height:1.35; color:var(--navy); margin:0; }
+.assessment-ai-priorities li > p { font-size:13px; line-height:1.8; }
+.assessment-ai-action { display:flex; gap:9px; padding:13px; border-radius:14px; background:var(--blue-l); color:var(--navy); }
+.assessment-ai-action > ion-icon { font-size:24px; flex-shrink:0; }
+.assessment-ai-action strong { font-size:12px; }
+.assessment-ai-action p { font-size:13px; margin:5px 0 0; line-height:1.7; }
+.assessment-ai-priorities li > small, .assessment-ai-date { display:block; margin-top:9px; color:var(--mu); font-size:11px; line-height:1.6; }
+.assessment-ai-encouragement { color:var(--teal-d); font-size:14px; font-weight:650; line-height:1.7; }
+.assessment-ai-questions { padding-top:15px; border-top:1px solid var(--bd); }
+.assessment-ai-questions h3 { display:flex; align-items:center; gap:8px; color:var(--navy); font-size:14px; }
+.assessment-ai-questions ul { padding-left:18px; font-size:13px; line-height:1.8; color:var(--mu); }
+.nutraceutic-day-celebration { position:relative; overflow:hidden; padding:23px 24px 25px; border-radius:25px; background:var(--grad-brand-v); color:var(--ion-color-primary-contrast); box-shadow:var(--shadow-md); }
+.nutraceutic-day-celebration::after { content:''; position:absolute; top:42px; right:-42px; width:145px; height:145px; border:22px solid color-mix(in srgb,var(--ion-color-primary-contrast) 8%,transparent); border-radius:50%; pointer-events:none; }
+.nutraceutic-day-topline { position:relative; display:flex; align-items:center; gap:9px; font-size:10px; font-weight:750; letter-spacing:.12em; }
+.nutraceutic-day-topline ion-icon { font-size:22px; }
+.nutraceutic-day-number { display:flex; align-items:baseline; gap:12px; margin-top:17px; }
+.nutraceutic-day-number > span { font-size:21px; font-weight:500; }
+.nutraceutic-day-number > strong { font:700 72px/1 'Space Grotesk',sans-serif; letter-spacing:-3px; }
+.nutraceutic-day-celebration h2 { position:relative; margin:10px 0 8px; font-size:25px; line-height:1.2; color:inherit; }
+.nutraceutic-day-celebration p { position:relative; max-width:29ch; margin:0; font-size:13px; line-height:1.65; color:inherit; opacity:.9; }
+.exercise-current .exercise-demonstration { margin:16px 0 8px; }
+.exercise-current .exercise-demonstration video { width:100%; aspect-ratio:16/9; object-fit:contain; }
+@media (prefers-reduced-motion:reduce) { .daily-reminder-art { animation:none; } }
+.sos-recipient-row ion-label { white-space:normal; }
+.sos-recipient-channels { display:grid; gap:7px; margin:12px 0 0; font-size:12px; }
+.sos-recipient-channels > div { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+.sos-recipient-channels dt { color:var(--mu); }
+.sos-recipient-channels dd { margin:0; color:var(--navy); font-weight:650; text-align:right; }
+.protocol-mood-choice { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; width:100%; min-width:0; }
+.protocol-mood-choice small { display:block; line-height:1.2; text-align:center; }
+.nutraceutic-detail .lesson-done-banner { display:flex; align-items:center; gap:8px; }
+.nutraceutic-detail .lesson-done-banner.is-pending { background:var(--blue-l); color:var(--navy); }
+
+.nutrition-meal-navigation { margin:20px 0; padding-top:18px; border-top:1px solid var(--bd); }
+.nutrition-meal-navigation h3 { margin:0 0 5px; color:var(--navy); font-size:17px; }
+.nutrition-meal-navigation > p { margin:0 0 13px; color:var(--mu); font-size:12px; line-height:1.6; }
+.nutrition-meal-shortcuts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.nutrition-meal-shortcuts ion-button { margin:0; min-height:66px; --padding-start:12px; --padding-end:12px; --border-radius:15px; --background:var(--blue-l); --color:var(--navy); white-space:normal; text-transform:none; letter-spacing:normal; }
+.nutrition-meal-shortcuts ion-button::part(native) { justify-content:flex-start; gap:9px; }
+.nutrition-meal-shortcuts ion-button > span:first-child { font-size:23px; }
+.nutrition-meal-shortcuts ion-button > span:last-child { display:flex; flex-direction:column; align-items:flex-start; gap:4px; text-align:left; }
+.nutrition-meal-shortcuts strong { font-size:13px; }
+.nutrition-meal-shortcuts small { color:var(--mu); font-size:10px; font-weight:500; }
+.ntr-prescribed-meal { scroll-margin-top:85px; }
+.ntr-prescribed-meal:focus-visible { outline:2px solid var(--blue); outline-offset:3px; }

@@ -1,9 +1,11 @@
 import { chromium } from 'playwright'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 const base = process.env.PROTOCOL_PREVIEW_URL || 'http://127.0.0.1:5180'
-const out = 'node_modules/.cache/protocol-qa'
+const out = process.env.PROTOCOL_QA_OUTPUT || await mkdtemp(path.join(tmpdir(), 'protocol-qa-'))
 await mkdir(out, { recursive: true })
-const browser = await chromium.launch({ channel: 'chrome', headless: true })
+const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL, headless: true })
 const errors = []
 try {
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } })

@@ -1,3 +1,7 @@
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
+import { countryFromCoordinates } from "../../utils/emergencyNumbers";
+import type { EmergencyCountry } from "../../utils/emergencyNumbers";
 import { getAccessToken } from "../../utils/authApi";
 import { getApiBaseUrl } from "../../utils/apiBaseUrl";
 
@@ -23,12 +27,13 @@ import { getApiBaseUrl } from "../../utils/apiBaseUrl";
 export interface SosCoordinates {
   latitude: number;
   longitude: number;
+  accuracyMeters?: number;
+  locationCapturedAt?: string;
 }
 
 /**
- * Signos vitales incluidos en la alerta. Por ahora el cliente envía valores
- * demo (constantes del overlay); cuando exista una fuente real (wearable o
- * telemetría) se reemplazan aquí sin tocar el backend.
+ * Signos vitales opcionales de una fuente real. Si no existe una lectura
+ * utilizable, se omite la métrica; nunca se fabrica una lectura de emergencia.
  */
 export interface SosVitalsDto {
   heartRate?: number | null;
@@ -39,6 +44,11 @@ export interface SosVitalsDto {
 /** Alerta SOS (DTO mínimo según REQ-SOS-01/03; campos extra ignorados). */
 export interface SosAlertDto {
   id: string;
+  recipients?: Array<{
+    id: string; contactOrder: number; maskedPhone?: string | null;
+    smsChannelStatus: string; voiceChannelStatus: string; emailChannelStatus?: string | null;
+    smsDeliveryStatus?: string | null; voiceCallStatus?: string | null;
+  }>;
   /** "Activa" | "Atendida" | "Cancelada" (string por compatibilidad). */
   status: string;
   createdAt: string;
@@ -100,50 +110,126 @@ export class SosServiceError extends Error {
   }
 }
 
-/** `true` cuando el navegador expone geolocalización usable. */
+/** GPS actual en nativo o geolocalización del navegador en web. */
 export function hasGeolocation(): boolean {
-  return typeof navigator !== "undefined" && "geolocation" in navigator;
+  return Capacitor.isNativePlatform() || (typeof navigator !== "undefined" &&
+    typeof navigator.geolocation?.getCurrentPosition === "function");
 }
 
-/**
- * Ubicación best-effort (D6): timeout estricto de 2 s, alta precisión
- * apagada (primer fix rápido). Cualquier fallo → null y la alerta se
- * envía SIN coordenadas: la emergencia nunca se frena por GPS.
- */
-export function getCoordinatesBestEffort(): Promise<SosCoordinates | null> {
+const POSITION_MAX_AGE_MS = 30_000;
+const POSITION_REQUEST_MS = 8_000;
+let locationFlight: Promise<SosCoordinates | null> | null = null;
+
+interface LocationPosition {
+  timestamp: number;
+  coords: { latitude: number; longitude: number; accuracy?: number };
+}
+
+function normalizePosition(position: LocationPosition): SosCoordinates | null {
+  const { latitude, longitude, accuracy } = position.coords;
+  const age = Date.now() - position.timestamp;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+    latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+    !Number.isFinite(position.timestamp) || position.timestamp <= 0 ||
+    age < -5_000 || age > POSITION_MAX_AGE_MS ||
+    (accuracy !== undefined && (!Number.isFinite(accuracy) || accuracy < 0 || accuracy > 100_000))) return null;
+  return {
+    latitude, longitude,
+    ...(accuracy !== undefined ? { accuracyMeters: accuracy } : {}),
+    locationCapturedAt: new Date(position.timestamp).toISOString(),
+  };
+}
+
+function requestCoordinates(): Promise<SosCoordinates | null> {
+  if (locationFlight) return locationFlight;
   if (!hasGeolocation()) return Promise.resolve(null);
-  return new Promise((resolve) => {
+  const request = new Promise<SosCoordinates | null>((resolve) => {
     let settled = false;
     const done = (value: SosCoordinates | null) => {
       if (settled) return;
       settled = true;
+      window.clearTimeout(timer);
       resolve(value);
     };
-    try {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          // Rango válido server-side igual al backend (REQ-SOS-01).
-          if (
-            latitude < -90 ||
-            latitude > 90 ||
-            longitude < -180 ||
-            longitude > 180
-          ) {
-            done(null);
-            return;
+    // Incluye permiso del sistema: ningún diálogo bloquea el SOS sin límite.
+    const timer = window.setTimeout(() => done(null), POSITION_REQUEST_MS + 500);
+    if (Capacitor.isNativePlatform()) {
+      void (async () => {
+        try {
+          let permissions = await Geolocation.checkPermissions();
+          if (settled) return;
+          if (permissions.location !== "granted" && permissions.coarseLocation !== "granted") {
+            permissions = await Geolocation.requestPermissions({ permissions: ["location"] });
           }
-          done({ latitude, longitude });
-        },
-        () => done(null),
-        { timeout: 2000, maximumAge: 30_000, enableHighAccuracy: false },
-      );
-      // Salvaguarda: si el callback no llega, nunca bloquear el flujo.
-      window.setTimeout(() => done(null), 2500);
-    } catch {
-      done(null);
+          if (settled) return;
+          if (permissions.location !== "granted" && permissions.coarseLocation !== "granted") {
+            done(null); return;
+          }
+          const position = await Geolocation.getCurrentPosition({
+            timeout: POSITION_REQUEST_MS, maximumAge: POSITION_MAX_AGE_MS,
+            enableHighAccuracy: false, enableLocationFallback: true,
+          });
+          if (!settled) done(normalizePosition(position));
+        } catch { done(null); }
+      })();
+    } else {
+      try {
+        navigator.geolocation.getCurrentPosition(
+          (position) => done(normalizePosition(position)),
+          () => done(null),
+          { timeout: POSITION_REQUEST_MS, maximumAge: POSITION_MAX_AGE_MS, enableHighAccuracy: false },
+        );
+      } catch { done(null); }
     }
   });
+  const flight = request.finally(() => { if (locationFlight === flight) locationFlight = null; });
+  locationFlight = flight;
+  return flight;
+}
+
+/**
+ * Fix best-effort con plazo total de 2,5 s al activar (el SOS no espera GPS).
+ * La detección de país puede dar 8 s al permiso inicial. Ambas operaciones
+ * comparten un único request nativo y nunca envían ubicación a un geocodificador.
+ */
+export function getCoordinatesBestEffort(options: { timeoutMs?: number } = {}): Promise<SosCoordinates | null> {
+  const requested = options.timeoutMs ?? 2500;
+  const timeout = Number.isFinite(requested) && requested > 0 ? Math.min(requested, POSITION_REQUEST_MS + 500) : 2500;
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (coordinates: SosCoordinates | null) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve(coordinates);
+    };
+    const timer = window.setTimeout(() => done(null), timeout);
+    void requestCoordinates().then(done, () => done(null));
+  });
+}
+
+export interface EmergencyLocationResult {
+  country: EmergencyCountry | null;
+  coordinates: SosCoordinates | null;
+  status: "located" | "unavailable" | "unsupported";
+}
+
+export async function getEmergencyLocation(): Promise<EmergencyLocationResult> {
+  const coordinates = await getCoordinatesBestEffort({ timeoutMs: POSITION_REQUEST_MS });
+  if (!coordinates) return { country: null, coordinates: null, status: "unavailable" };
+  const country = countryFromCoordinates(coordinates);
+  return { country, coordinates, status: country ? "located" : "unsupported" };
+}
+
+/** El contrato real usa latitud/longitud planas; la UI consume location. */
+function normalizeAlert(value: SosAlertDto & {
+  latitude?: number | null; longitude?: number | null;
+}): SosAlertDto {
+  const latitude = value.latitude ?? value.location?.latitude;
+  const longitude = value.longitude ?? value.location?.longitude;
+  const valid = typeof latitude === "number" && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
+    typeof longitude === "number" && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+  return { ...value, location: valid ? { latitude, longitude } : null };
 }
 
 /** Mensaje legible según el código de error esperado del módulo SOS. */
@@ -200,7 +286,11 @@ export async function activateSosAlert(
     // alerta sigue creándose (D6).
     body: JSON.stringify({
       ...(coords
-        ? { latitude: coords.latitude, longitude: coords.longitude }
+        ? {
+          latitude: coords.latitude, longitude: coords.longitude,
+          ...(coords.accuracyMeters !== undefined ? { accuracyMeters: coords.accuracyMeters } : {}),
+          ...(coords.locationCapturedAt ? { locationCapturedAt: coords.locationCapturedAt } : {}),
+        }
         : {}),
       ...(vitals ? { vitals } : {}),
     }),
@@ -215,7 +305,7 @@ export async function activateSosAlert(
       detail,
     });
   }
-  return (await res.json()) as SosAlertDto;
+  return normalizeAlert((await res.json()) as SosAlertDto);
 }
 
 /**
@@ -227,12 +317,12 @@ export async function fetchActiveSosAlert(): Promise<SosAlertDto | null> {
   const res = await fetch(`${getApiBaseUrl()}/api/v1/sos/alerts/active`, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
-  if (res.status === 404) return null;
+  if (res.status === 404 || res.status === 204) return null;
   if (!res.ok) {
     const detail = await readDetail(res);
     throw new SosServiceError(res.status, problemMessage(res.status, detail));
   }
-  return (await res.json()) as SosAlertDto;
+  return normalizeAlert((await res.json()) as SosAlertDto);
 }
 
 /** Cancela la alerta activa del paciente dueño (REQ-SOS-05, aud=app). */
@@ -249,5 +339,5 @@ export async function cancelSosAlert(id: string): Promise<SosAlertDto> {
     const detail = await readDetail(res);
     throw new SosServiceError(res.status, problemMessage(res.status, detail));
   }
-  return (await res.json()) as SosAlertDto;
+  return normalizeAlert((await res.json()) as SosAlertDto);
 }

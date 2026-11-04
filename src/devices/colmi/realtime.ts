@@ -1,6 +1,7 @@
 import { CMD_REALTIME_RESPONSE, MEASURE_TYPE } from "./protocol";
 import type { ColmiFrame } from "./protocol";
 import type { HealthSample, MetricKind } from "../types";
+import { notificationReceivedAt } from "../ble/notification-clock";
 
 // Respuesta en vivo: 69 <tipo> <err> <b3> <b4> <b5> …
 // - FC (1): layout clásico = b3; en este firmware H59 el valor viaja como u16
@@ -142,7 +143,7 @@ export function parseRealtimeFrame(
     value,
     ...(value2 === undefined ? {} : { value2 }),
     unit,
-    ts: Date.now(),
+    ts: notificationReceivedAt(),
     deviceId,
   });
 

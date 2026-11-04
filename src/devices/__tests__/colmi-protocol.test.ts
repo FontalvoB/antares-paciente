@@ -60,8 +60,10 @@ describe('colmi protocol', () => {
     const second = buildFrame(CMD.SET_TIME, [1, 2]);
 
     expect(stream.push(first.slice(0, 7))).toEqual([]);
+    expect(stream.pendingBytes).toBe(7);
     const frames = stream.push(first.slice(7));
     expect(frames.length).toBe(1);
+    expect(stream.pendingBytes).toBe(0);
     expect(frames[0].cmd).toBe(CMD.BATTERY);
 
     const noise = new Uint8Array([0x00, ...second]);
@@ -71,6 +73,7 @@ describe('colmi protocol', () => {
     expect(Array.from(withNoise[0].payload.slice(0, 2))).toEqual([1, 2]);
 
     stream.reset();
+    expect(stream.pendingBytes).toBe(0);
     expect(stream.push(first.slice(0, 7))).toEqual([]);
   });
 

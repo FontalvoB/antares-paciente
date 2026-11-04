@@ -50,7 +50,8 @@ import { useLeague } from "../hooks/useLeague";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useProgram } from "../hooks/useProgram";
 import { formatMetricValue } from "../data/metrics";
-import { PARENTESCO } from "../data/emergencyContact";
+import { EmergencyContactFields } from "../components/EmergencyContactFields";
+import { contactFromProfile, emergencyContactsError, trimEmergencyContact } from "../utils/emergencyContacts";
 import { updateLeaguePreferences } from "../services/program/league-service";
 import { programKeys } from "../hooks/queryKeys";
 import { ApiError } from "../utils/apiClient";
@@ -165,150 +166,40 @@ function ContactSection() {
 function EmergencyContactSection() {
   const { user, showToast, refreshPatientProfile } = useApp();
   const t = useT();
-  const [name, setName] = useState(user.fam1Nombre ?? "");
-  const [relationship, setRelationship] = useState(user.fam1Parentesco ?? "");
-  const [phone, setPhone] = useState(user.fam1Cel ?? "");
-  const [email, setEmail] = useState(user.fam1Email ?? "");
+  const [primary, setPrimary] = useState(() => contactFromProfile(user, 1));
+  const [secondary, setSecondary] = useState(() => contactFromProfile(user, 2));
   const [saving, setSaving] = useState(false);
-  const preSaveRef = useRef({ name, relationship, phone, email });
-
   useEffect(() => {
-    setName(user.fam1Nombre ?? "");
-    setRelationship(user.fam1Parentesco ?? "");
-    setPhone(user.fam1Cel ?? "");
-    setEmail(user.fam1Email ?? "");
-  }, [user.fam1Nombre, user.fam1Parentesco, user.fam1Cel, user.fam1Email]);
-
-  const trimmedName = name.trim();
-  const trimmedRelationship = relationship.trim();
-  const trimmedPhone = phone.trim();
-  const trimmedEmail = email.trim();
-  const dirty =
-    trimmedName !== (user.fam1Nombre ?? "") ||
-    trimmedRelationship !== (user.fam1Parentesco ?? "") ||
-    trimmedPhone !== (user.fam1Cel ?? "") ||
-    trimmedEmail !== (user.fam1Email ?? "");
-
+    setPrimary({ name: user.fam1Nombre ?? "", relationship: user.fam1Parentesco ?? "", phone: user.fam1Cel ?? "", email: user.fam1Email ?? "" });
+    setSecondary({ name: user.fam2Nombre ?? "", relationship: user.fam2Parentesco ?? "", phone: user.fam2Cel ?? "", email: user.fam2Email ?? "" });
+  }, [user.fam1Nombre, user.fam1Parentesco, user.fam1Cel, user.fam1Email, user.fam2Nombre, user.fam2Parentesco, user.fam2Cel, user.fam2Email]);
+  const dirty = JSON.stringify(primary) !== JSON.stringify(contactFromProfile(user, 1)) || JSON.stringify(secondary) !== JSON.stringify(contactFromProfile(user, 2));
   const save = async () => {
     if (saving) return;
-    if (trimmedName && !trimmedPhone) {
-      showToast(t("El contacto de emergencia requiere teléfono."), "err");
-      return;
-    }
-    if (!trimmedName && !trimmedPhone && trimmedEmail) {
-      showToast(t("El correo requiere nombre y teléfono del contacto."), "err");
-      return;
-    }
-    preSaveRef.current = { name, relationship, phone, email };
+    const error = emergencyContactsError(primary, secondary);
+    if (error) { showToast(t(error), "err"); return; }
     setSaving(true);
+    const first = trimEmergencyContact(primary);
     try {
-      await updateMyPatientProfile({
-        dateOfBirth: user.dob || null,
-        email: user.email,
-        phone: user.celular,
-        emergencyName: trimmedName,
-        emergencyRelationship: trimmedRelationship,
-        emergencyPhone: trimmedPhone,
-        emergencyEmail: trimmedEmail,
-        insurerId: user.seguro || null,
-        memberId: user.poliza,
-      });
+      await updateMyPatientProfile({ dateOfBirth: user.dob || null, email: user.email, phone: user.celular,
+        emergencyName: first.name, emergencyRelationship: first.relationship, emergencyPhone: first.phone, emergencyEmail: first.email,
+        secondaryEmergencyContact: trimEmergencyContact(secondary), insurerId: user.seguro || null, memberId: user.poliza });
       await refreshPatientProfile();
       showToast(t("Contacto de emergencia actualizado"), "ok");
     } catch (err) {
-      setName(preSaveRef.current.name);
-      setRelationship(preSaveRef.current.relationship);
-      setPhone(preSaveRef.current.phone);
-      setEmail(preSaveRef.current.email);
-      showToast(
-        err instanceof Error
-          ? err.message
-          : t("No se pudo actualizar el contacto de emergencia"),
-        "err",
-      );
-    } finally {
-      setSaving(false);
-    }
+      showToast(err instanceof Error ? err.message : t("No se pudo actualizar el contacto de emergencia"), "err");
+    } finally { setSaving(false); }
   };
-
-  return (
-    <div className="pf-contact" style={{ marginTop: 18 }}>
-      <div className="h3" style={{ margin: "0 0 6px" }}>
-        {t("Contacto de emergencia")}
-      </div>
-      <p style={{ margin: "0 0 10px", color: "var(--mu)", fontSize: 13 }}>
-        {t("A quién avisamos al activar SOS: llamada, SMS y correo.")}
-      </p>
-      <div className="field" style={{ marginBottom: 10 }}>
-        <label htmlFor="pf-emg-name">{t("Nombre")}</label>
-        <IonInput
-          id="pf-emg-name"
-          className="fld"
-          value={name}
-          autocomplete="name"
-          enterkeyhint="next"
-          onIonInput={(e) => setName(String(e.detail.value ?? ""))}
-        />
-      </div>
-      <div className="field" style={{ marginBottom: 10 }}>
-        <label>{t("Parentesco")}</label>
-        <div className="chips" style={{ marginTop: 0, marginBottom: 4 }}>
-          {PARENTESCO.map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={`chip ${relationship === p ? "chip-teal" : "chip-glass"}`}
-              style={
-                relationship === p
-                  ? undefined
-                  : {
-                      background: "var(--g0)",
-                      border: "1px solid var(--bd)",
-                      color: "var(--mu)",
-                    }
-              }
-              aria-pressed={relationship === p}
-              onClick={() => setRelationship(p)}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="field" style={{ marginBottom: 10 }}>
-        <label htmlFor="pf-emg-cel">{t("Celular")}</label>
-        <IonInput
-          id="pf-emg-cel"
-          className="fld"
-          type="tel"
-          inputmode="tel"
-          enterkeyhint="next"
-          value={phone}
-          onIonInput={(e) => setPhone(String(e.detail.value ?? ""))}
-        />
-      </div>
-      <div className="field" style={{ marginBottom: 12 }}>
-        <label htmlFor="pf-emg-mail">{t("Correo (opcional)")}</label>
-        <IonInput
-          id="pf-emg-mail"
-          className="fld"
-          type="email"
-          inputmode="email"
-          enterkeyhint="done"
-          value={email}
-          onIonInput={(e) => setEmail(String(e.detail.value ?? ""))}
-        />
-      </div>
-      <IonButton
-        expand="block"
-        className="bt bt-primary"
-        disabled={saving || !dirty}
-        onClick={() => void save()}
-      >
-        {saving ? t("Guardando…") : t("Guardar contacto de emergencia")}
-      </IonButton>
-    </div>
-  );
+  return <div className="pf-contact" style={{ marginTop: 18 }}>
+    <h3>{t("Contacto de emergencia")}</h3>
+    <p className="emergency-contact-help">{t("El primer contacto recibe tus alertas SOS. El segundo es un contacto de respaldo opcional.")}</p>
+    <h4>{t("Cuidador principal")} · {t("Obligatorio")}</h4>
+    <EmergencyContactFields prefix="pf-emg" value={primary} onChange={setPrimary} disabled={saving} />
+    <h4>{t("Segundo contacto de emergencia")}</h4>
+    <p className="emergency-contact-help">{t("Opcional · persona de respaldo")}</p>
+    <EmergencyContactFields prefix="pf-emg2" value={secondary} onChange={setSecondary} disabled={saving} />
+    <IonButton expand="block" className="bt bt-primary" disabled={saving || !dirty} onClick={() => void save()}>{saving ? t("Guardando…") : t("Guardar contacto de emergencia")}</IonButton>
+  </div>;
 }
 
 /**

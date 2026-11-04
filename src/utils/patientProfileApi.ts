@@ -6,6 +6,13 @@ import { apiFetch, ApiError } from "./apiClient";
  * Los errores no se tragan — el llamador decide la UX (R1.4, R5.6).
  */
 
+export interface PatientEmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+  email: string;
+}
+
 /** Espejo del PatientSelfProfileDto del backend (camelCase, ASP.NET default). */
 export interface PatientSelfProfileDto {
   patientId: string;
@@ -21,6 +28,7 @@ export interface PatientSelfProfileDto {
   emergencyEmail: string;
   insurerId: string | null;
   memberId: string;
+  secondaryEmergencyContact?: PatientEmergencyContact | null;
 }
 
 export async function fetchMyPatientProfile(
@@ -42,6 +50,7 @@ export interface UpdatePatientProfileRequest {
   emergencyEmail: string;
   insurerId: string | null;
   memberId: string;
+  secondaryEmergencyContact?: PatientEmergencyContact | null;
 }
 
 export async function updateMyPatientProfile(
@@ -50,7 +59,7 @@ export async function updateMyPatientProfile(
 ): Promise<PatientSelfProfileDto> {
   return apiFetch<PatientSelfProfileDto>("/api/v1/me/patient-profile", {
     method: "PUT",
-    body,
+    body: { ...body, clearInsurer: body.insurerId === null },
     signal,
   });
 }
@@ -91,6 +100,10 @@ export function toUserProfile(
     email: dto.email,
     celular: dto.phone,
     ...emg,
+    fam2Nombre: dto.secondaryEmergencyContact?.name ?? "",
+    fam2Parentesco: dto.secondaryEmergencyContact?.relationship ?? "",
+    fam2Cel: dto.secondaryEmergencyContact?.phone ?? "",
+    fam2Email: dto.secondaryEmergencyContact?.email ?? "",
   };
 }
 

@@ -42,6 +42,10 @@ export interface UserProfile {
   fam1Parentesco: string;
   fam1Cel: string;
   fam1Email: string;
+  fam2Nombre?: string;
+  fam2Parentesco?: string;
+  fam2Cel?: string;
+  fam2Email?: string;
   ciudad?: string;
 }
 

@@ -207,6 +207,14 @@ describe('reconcileSnapshot — todayBonusAvailable "still earnable" semantics (
 })
 
 describe('applyOptimistic — nutraceutico wire code (rename regression guard)', () => {
+  it('solo la confirmación del servidor habilita efectos públicos de la tarea', () => {
+    const snapshot = makeSnapshot([makeTask({ taskCode: 'nutraceutico' }), makeTask({ taskCode: 'emocional' })])
+    const optimistic = applyOptimistic(applyOptimistic(snapshot, 'nutraceutico'), 'emocional')
+    expect(optimistic!.todayTasks.every(task => task.clientPending)).toBe(true)
+    const confirmed = reconcileSnapshot(optimistic, makeResponse(), 'nutraceutico')
+    expect(confirmed!.todayTasks.find(task => task.taskCode === 'nutraceutico')!.clientPending).toBe(false)
+    expect(confirmed!.todayTasks.find(task => task.taskCode === 'emocional')!.clientPending).toBe(true)
+  })
   it('completes the nutraceutico task with the renamed wire code', () => {
     const snap = makeSnapshot([makeTask({ taskCode: 'nutraceutico', points: 80 })])
     const out = applyOptimistic(snap, 'nutraceutico')

@@ -240,12 +240,17 @@ const defaultUser: UserProfile = {
   fam1Cel: "", fam1Email: "",
 };
 
-function createWelcomeMessage(name = ""): ChatMessage {
+function createWelcomeMessage(name = "", lang: "es" | "en" = "es"): ChatMessage {
   const firstName = name.trim().split(" ")[0];
   return {
     id: "welcome",
     role: "bot",
-    text: `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
+    // Saludo en el idioma de la app: el asistente arranca hablando el idioma
+    // que el paciente tiene seleccionado (consistencia con chat/voz).
+    text:
+      lang === "en"
+        ? `Hi${firstName ? ` ${firstName}` : ""} 👋 I'm your Copp Adresd health agent. How can I help you today?`
+        : `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
     time: nowLabel(),
   };
 }
@@ -351,7 +356,7 @@ export function AppProvider({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>(() => [
-    createWelcomeMessage(defaultUser.nombre),
+    createWelcomeMessage(defaultUser.nombre, lang),
   ]);
   const [wearableConnected, setWatchConnected] = useState(false);
   const [wearableName, setWatchName] = useState("Copp Adresd Wearable");
@@ -1248,9 +1253,13 @@ export function AppProvider({
         setVitaWelcomePending(false);
         setFlow("login");
         setScreen("home");
-        // Cierra sesión en el servidor y luego recrea el cliente urql (cache
-        // limpia + WS nuevo) para no servir datos del usuario anterior.
-        void logoutUser().then(() => onResetCommunityClient?.());
+        setActiveThreadId(null);
+        setUser(defaultUser);
+        setChat([createWelcomeMessage(defaultUser.nombre, lang)]);
+        // logoutUser borra el token antes de esperar la red. Las caches se
+        // limpian de inmediato aunque el servidor de logout no responda.
+        void logoutUser();
+        onResetCommunityClient?.();
       },
       realMode,
       upcomingAppointments: builtReal?.upcoming ?? null,
