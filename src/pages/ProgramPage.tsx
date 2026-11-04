@@ -8,7 +8,7 @@ import {
 } from "react";
 import { IonButton, IonContent, IonIcon, IonModal } from "@ionic/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { close, flame, gift, refresh } from "ionicons/icons";
+import { close, flame, gift } from "ionicons/icons";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
@@ -37,6 +37,7 @@ import {
   VitalsLesson,
   type ProgramTab,
 } from "./program/Lessons";
+import { ProgramPendingState } from "../components/program/ProgramPendingState";
 import { ProgramHeader } from "./program/ProgramHeader";
 import { RankingView } from "./program/RankingView";
 import { StreakView } from "./program/StreakView";
@@ -77,6 +78,7 @@ export function ProgramPage() {
     completeStep,
     pointsToday: appPointsToday,
     navigate,
+    openTests,
     showToast,
     streak: appStreak,
     programWeek: appProgramWeek,
@@ -118,6 +120,7 @@ export function ProgramPage() {
     snapshot,
     programState,
     productMessage,
+    isLoading: programLoading,
     refetch: refetchProgram,
   } = useProgram();
 
@@ -654,38 +657,25 @@ export function ProgramPage() {
     taskPts,
   ]);
 
+  if (programLoading || !snapshot || programState !== "active") {
+    return (
+      <Screen className="pg-reference">
+        <Scroll className="pg-scroll">
+          <ProgramPendingState
+            loading={programLoading}
+            state={programState}
+            message={productMessage}
+            onTests={() => openTests()}
+            onRetry={refetchProgram}
+          />
+        </Scroll>
+      </Screen>
+    );
+  }
+
   return (
     <Screen className="pg-reference">
       <Scroll className="pg-scroll">
-        {productMessage && (
-          <div
-            className="card"
-            style={{
-              margin: "12px 16px",
-              borderLeft: "4px solid var(--org)",
-              padding: "12px 16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <p style={{ margin: 0, fontSize: 13, color: "var(--text)" }}>
-              {productMessage}
-            </p>
-            {programState === "recoverable" && (
-              <IonButton
-                size="small"
-                fill="outline"
-                onClick={() => refetchProgram()}
-                style={{ marginLeft: 8 }}
-              >
-                <IonIcon icon={refresh} slot="start" />
-                {t("Reintentar")}
-              </IonButton>
-            )}
-          </div>
-        )}
-
         <ProgramHeader
           programWeek={activeProgramWeek}
           doneCount={doneCount}
