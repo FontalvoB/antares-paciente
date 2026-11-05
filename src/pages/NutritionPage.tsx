@@ -12,7 +12,7 @@ import {
   IonSegmentButton,
   IonSpinner,
 } from "@ionic/react";
-import { cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline } from "ionicons/icons";
+import { closeOutline, cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline } from "ionicons/icons";
 import dailyMediterranean from "../assets/nutrition/daily-mediterranean.jpg";
 import dailyBreakfast from "../assets/nutrition/daily-breakfast.jpg";
 import { PageHeader } from "../components/PageHeader";
@@ -1033,35 +1033,25 @@ export function NutritionPage() {
         )}
       </Scroll>
 
-      {/* ── Registro manual de comida (prefill del plan, editable) ── */}
-      <IonModal
-        isOpen={registerTarget !== null}
-        onDidDismiss={() => setRegisterTarget(null)}
-      >
-        <motion.div
-          style={{ padding: 20 }}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-        >
-          <div className="nut-reg-title">{t("Registrar comida")}</div>
-          {registerTarget && (
-            <MealIntakeForm
-              initial={EMPTY_INTAKE_FORM}
-              submitLabel={t("Guardar")}
-              pending={nutritionMutation.isPending}
-              planReference={planReferenceFor(registerTarget)}
-              onSubmit={submitRegister}
-            />
-          )}
-          <IonButton
-            expand="block"
-            fill="clear"
-            onClick={() => setRegisterTarget(null)}
-          >
-            {t("Cancelar")}
-          </IonButton>
-        </motion.div>
+      {/* Registro manual: los objetivos son referencia, no consumo registrado. */}
+      <IonModal className="nutrition-register-modal" isOpen={registerTarget !== null} onDidDismiss={() => setRegisterTarget(null)} aria-labelledby="nutrition-register-title">
+        <IonContent>
+          <div className="nutrition-register-shell">
+            <header className="nutrition-register-hero">
+              <div className="nutrition-register-top"><span className="nutrition-register-kicker"><IonIcon icon={leafOutline} aria-hidden="true" />{t("Tu alimentación de hoy")}</span>
+                <IonButton fill="clear" className="nutrition-register-close" aria-label={t("Cerrar")} onClick={() => setRegisterTarget(null)}><IonIcon slot="icon-only" icon={closeOutline} /></IonButton>
+              </div>
+              <div className="nutrition-register-meal"><IonIcon icon={restaurantOutline} aria-hidden="true" />{registerTarget && t(MEAL_LABELS[registerTarget])}</div>
+              <h2 id="nutrition-register-title">{t("Registrar comida")}</h2>
+              <p>{t("Añade lo que consumiste. Cada registro te ayuda a conocer mejor tu alimentación.")}</p>
+            </header>
+            <div className="nutrition-register-body">
+              <div className="nutrition-register-section"><h3>{t("Información nutricional")}</h3><p>{t("Introduce los valores de tu porción. Deja vacíos los que no conozcas.")}</p></div>
+              {registerTarget && <MealIntakeForm key={registerTarget} initial={EMPTY_INTAKE_FORM} submitLabel={t("Guardar")} pending={nutritionMutation.isPending} planReference={planReferenceFor(registerTarget)} onSubmit={submitRegister} />}
+              <IonButton className="nutrition-register-cancel" expand="block" fill="clear" onClick={() => setRegisterTarget(null)}>{t("Cancelar")}</IonButton>
+            </div>
+          </div>
+        </IonContent>
       </IonModal>
 
       {/* ── La tarjeta IA global pide primero la comida ── */}
