@@ -49,6 +49,7 @@ export function MealIntakeForm({
           labelPlacement="stacked"
           fill="outline"
           type="number"
+          placeholder="—"
           inputmode={f.inputmode}
           enterkeyhint={i === FIELDS.length - 1 ? "done" : "next"}
           value={form[f.key]}

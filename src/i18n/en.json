@@ -2699,5 +2699,11 @@
   "Restablecer zoom": "Reset zoom",
   "No se pudo publicar. Tu publicación no está guardada; copia el contenido y vuelve a intentarlo.": "Could not publish. Your post is not saved; copy the content and try again.",
   "Certificado de logro": "Certificate of achievement",
-  "Cada paso cuenta. Tu constancia merece celebrarse.": "Every step counts. Your consistency deserves celebrating."
+  "Cada paso cuenta. Tu constancia merece celebrarse.": "Every step counts. Your consistency deserves celebrating.",
+  "Estimación IA · confirma o ajusta": "AI estimate · confirm or adjust",
+  "≈ Valores estimados por IA — ajústalos si puedes": "≈ AI estimated values — adjust them if you can",
+  "Confianza alta": "High confidence",
+  "Confianza media": "Medium confidence",
+  "Confianza baja": "Low confidence",
+  "Revisa este alimento o intenta con otra foto.": "Review this food or try another photo."
 }

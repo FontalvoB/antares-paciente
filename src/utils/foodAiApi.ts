@@ -14,8 +14,8 @@ export interface NutritionValues {
   carbohydrates: number;
   fat: number;
   fiber: number;
-  sugar: number;
-  sodium: number;
+  sugar: number | null;
+  sodium: number | null;
 }
 
 export interface PortionInfo {
@@ -31,6 +31,8 @@ export type NutritionStatus =
   "available" | "unavailable" | "portion_unavailable";
 
 export interface DetectedFood {
+  nutritionSource?: "usda" | "llm_estimate" | null;
+  nameEn?: string | null;
   name: string;
   confidence: number;
   boundingBox: { x: number; y: number; width: number; height: number };
@@ -45,6 +47,7 @@ export interface DetectedFood {
 }
 
 export interface FoodAnalysisResult {
+  provider?: "legacy" | "llm" | null;
   analysisId: string;
   status: string;
   modelVersion: string;
@@ -69,6 +72,7 @@ export interface MealIntake {
 
 /** Item de un análisis persistido (GET /api/v1/foodai/analyses/{id}). */
 export interface FoodAnalysisItem {
+  nutritionSource?: "usda" | "llm_estimate" | null;
   name: string;
   confidence: number;
   boundingBox: { x: number; y: number; width: number; height: number };
@@ -134,8 +138,8 @@ export class FoodAiError extends Error {
   }
 }
 
-/** Timeout del análisis: soporta el peor caso (DINO fallback 10-17 s). */
-const ANALYSIS_TIMEOUT_MS = 60_000;
+/** Dos proveedores LLM (30 s cada uno) más fallback local y persistencia. */
+const ANALYSIS_TIMEOUT_MS = 120_000;
 
 /** Emoji decorativo por alimento (identidad del diseño, no funcional). */
 export const FOOD_EMOJI: Record<string, string> = {

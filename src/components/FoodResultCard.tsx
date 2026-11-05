@@ -1,4 +1,4 @@
-import { IonIcon } from "@ionic/react";
+import { IonChip, IonIcon } from "@ionic/react";
 import { warningOutline } from "ionicons/icons";
 import { useI18n } from "../i18n/I18nContext";
 import { displayName, FOOD_EMOJI, type DetectedFood } from "../utils/foodAiApi";
@@ -8,10 +8,16 @@ import { displayName, FOOD_EMOJI, type DetectedFood } from "../utils/foodAiApi";
  * reutilizarla en el flujo por comida sin duplicar UI).
  */
 export function FoodResultCard({ food }: { food: DetectedFood }) {
-  const { t } = useI18n();
-  const name = displayName(food.name);
+  const { t, lang } = useI18n();
+  const name = lang === "en" && food.nameEn?.trim() ? food.nameEn : displayName(food.name);
   const emoji = FOOD_EMOJI[food.name] ?? "🍽️";
   const available = food.nutritionStatus === "available" && food.nutrition;
+  const estimated = food.nutritionSource === "llm_estimate" || food.source === "llm_estimate";
+  const confidence = food.confidence >= 0.8
+    ? { label: t("Confianza alta"), background: "var(--teal-l)", color: "var(--teal-d)" }
+    : food.confidence >= 0.5
+      ? { label: t("Confianza media"), background: "var(--org-l)", color: "var(--org-d)" }
+      : { label: t("Confianza baja"), background: "var(--red-l)", color: "var(--tx)" };
 
   return (
     <div
@@ -52,6 +58,18 @@ export function FoodResultCard({ food }: { food: DetectedFood }) {
         )}
       </div>
 
+      <IonChip style={{ background: confidence.background, color: confidence.color, height: "auto", padding: "6px 10px" }}>
+        {confidence.label}
+      </IonChip>
+      {food.confidence < 0.5 && (
+        <p className="nut-ai-hint">{t("Revisa este alimento o intenta con otra foto.")}</p>
+      )}
+      {estimated && available && (
+        <IonChip style={{ background: "var(--org-l)", color: "var(--org-d)", height: "auto", padding: "6px 10px" }}>
+          {t("≈ Valores estimados por IA — ajústalos si puedes")}
+        </IonChip>
+      )}
+
       {available && food.nutrition ? (
         <>
           <div
@@ -63,7 +81,7 @@ export function FoodResultCard({ food }: { food: DetectedFood }) {
             }}
           >
             <span style={{ fontWeight: 800, fontSize: 20 }}>
-              {Math.round(food.nutrition.calories)}
+              {estimated ? "≈ " : ""}{Math.round(food.nutrition.calories)}
             </span>
             <span style={{ fontSize: 12, opacity: 0.7 }}>kcal</span>
           </div>
