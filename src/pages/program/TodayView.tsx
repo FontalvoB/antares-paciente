@@ -5,29 +5,13 @@ import { checkmark, chevronForward, gift, heartOutline, leaf, sparkles, trophy }
 import {
   DAY_BONUS_PTS,
   PROGRAM_TASKS,
-  WEEK_LABELS,
 } from '../../data/program'
 import { MISSION_PHOTOS } from '../../data/missionPhotos'
 import type { ProgramDay, ProgramTaskId } from '../../types'
 import type { ScoresResponseDto, TodayTaskDto } from '../../services/program/types'
 import { useI18n } from '../../i18n/I18nContext'
-import {
-  nbServerTodayIndex,
-  nbWeekLabel,
-  resolveNbDayOk,
-} from '../../utils/nbWeekDays'
 import { resolveStationSec } from '../../utils/exerciseSteps'
 import { TASK_ICONS } from './ui'
-
-/** Formatea un `completedAt` ISO del servidor en HH:mm del locale del device. */
-function formatTaskTime(iso: string, lang: 'es' | 'en'): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-ES', {
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
 
 export function TodayView({
   program,
@@ -36,11 +20,6 @@ export function TodayView({
   currentId,
   first,
   programWeek,
-  todayIdx,
-  takenAt,
-  nbWeekDays,
-  weekStartDateLocal,
-  todayLocalDate,
   dailyBonusAmount,
   todayBonusAvailable,
   scores,
@@ -55,15 +34,6 @@ export function TodayView({
   currentId?: ProgramTaskId
   first: string
   programWeek: number
-  todayIdx: number
-  /** Instante optimista de sesión (justo tras completar, antes del refetch). */
-  takenAt: string
-  /** Completaciones reales de la semana (server truth, indexadas por weekStartDateLocal + i). */
-  nbWeekDays?: boolean[] | null
-  /** Inicio de la semana de la INSCRIPCIÓN (snapshot.template.currentWeekStartDateLocal). */
-  weekStartDateLocal?: string | null
-  /** "Hoy" del servidor (snapshot.todayLocalDate). */
-  todayLocalDate?: string | null
   /** Monto base real de la regla DAY_BONUS; null/undefined en API previa. */
   dailyBonusAmount?: number | null
   /** "Bonus aún ganable" (server): false = ya otorgado hoy. undefined = API previa. */
@@ -74,7 +44,7 @@ export function TodayView({
   onGoEvo: () => void
   onGoChat: () => void
 }) {
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
 
   // La lista viene del backend cuando hay snapshot; si no, del plan local.
   const taskList = useMemo(() => {
@@ -121,19 +91,6 @@ export function TodayView({
       thumbnailUrl: null,
     }))
   }, [todayTasks, program, programWeek, t])
-
-  // --- Nutracéutico: hora real de la última completación (server truth) ---
-  // `completedAt` del servidor formateado en locale del device; `takenAt` de
-  // sesión solo como instante optimista (antes de que aterrice el refetch).
-  // Si no hay ninguno, "Registrado" sin hora inventada.
-  const nbServerTask = todayTasks?.find((task) => task.taskCode === 'nutraceutico')
-  const nbTime = useMemo(() => {
-    if (nbServerTask?.completedAt) {
-      const formatted = formatTaskTime(nbServerTask.completedAt, lang)
-      if (formatted) return formatted
-    }
-    return takenAt
-  }, [nbServerTask?.completedAt, takenAt, lang])
 
   // --- Cofre del día: verdad del snapshot cuando existe ---
   // `todayBonusAvailable === false` → bonus ya otorgado; `=== true` → aún
@@ -201,29 +158,6 @@ export function TodayView({
       </>
     )
   }, [nutrition, prevNutrition, bodyFat, first, t])
-
-  // --- Franja semanal de Nutracéutico: alineada por FECHA del servidor ---
-  // `nbWeekDays` está indexado por `template.currentWeekStartDateLocal + i`
-  // (la semana de la INSCRIPCIÓN, no necesariamente lunes). El índice de HOY
-  // se deriva con matemática de fecha pura entre las dos fechas del snapshot
-  // (sin reloj ni TZ del device). Cuando no hay fechas del servidor, el índice
-  // cae fuera de 0..6, o el arreglo no viene (API previa) → derivación local
-  // legada con el índice device (lunes-primero).
-  const serverTodayIdx = nbServerTodayIndex(weekStartDateLocal, todayLocalDate)
-  const serverAligned = serverTodayIdx !== null && !!nbWeekDays && nbWeekDays.length === 7
-  const stripTodayIdx = serverAligned ? (serverTodayIdx as number) : todayIdx
-  const stripArray = serverAligned ? nbWeekDays : null
-
-  // Letras visibles: derivadas de la semana del servidor (Intl 'narrow' en el
-  // locale actual); sin fecha del servidor se conserva el fallback device
-  // WEEK_LABELS (L..D, lunes-primero) — comportamiento documentado.
-  const stripLabels = useMemo(() => {
-    if (weekStartDateLocal) {
-      const derived = WEEK_LABELS.map((_, i) => nbWeekLabel(weekStartDateLocal, i, lang))
-      if (derived.every((l): l is string => l !== null)) return derived
-    }
-    return [...WEEK_LABELS]
-  }, [weekStartDateLocal, lang])
 
   return (
     <div className="pg-pane">
@@ -309,35 +243,6 @@ export function TodayView({
         <IonIcon icon={leaf} aria-hidden="true" />
         <div><strong>{t('¡Cada acción cuenta!')}</strong><p>{t('Tu esfuerzo de hoy construye una mejor versión de ti.')}</p></div>
         <IonIcon icon={heartOutline} aria-hidden="true" />
-      </div>
-
-      <div className="stitle">{t('Tu constancia esta semana')}</div>
-      <div className="nb-card pg-nb">
-        <div className="nb-title">
-          {nbServerTask?.clientPending ? t('Pendiente de sincronización') : program.nutraceutico ? t('Dosis de hoy lista') : t('Un hábito a la vez')}
-        </div>
-        <div className="nb-sub">
-          {nbServerTask?.clientPending ? t('Tu registro se confirmará al sincronizar con el servidor.') : program.nutraceutico
-            ? nbTime
-              ? t('Registrado a las {takenAt}', { takenAt: nbTime })
-              : t('Registrado')
-            : t('Sigue tu progreso en el protocolo diario')}
-        </div>
-        <div className="nb-streak">
-          {stripLabels.map((d, i) => {
-            // `resolveNbDayOk` con el índice YA resuelto: el del servidor
-            // cuando la semana del snapshot aplica (stripArray), o la
-            // derivación local legada (pasado ok · futuro no · hoy = local)
-            // cuando el arreglo no aplica. El estado optimista local gana
-            // solo para la celda de hoy si el arreglo aún dice false.
-            const ok = resolveNbDayOk(i, stripTodayIdx, stripArray, program.nutraceutico)
-            return (
-              <div key={`${d}-${i}`} className={`nb-day ${ok ? 'ok' : 'no'} ${i === stripTodayIdx ? 'today' : ''}`}>
-                {d}
-              </div>
-            )
-          })}
-        </div>
       </div>
 
       <div className="stitle">{t('AI Health Coach')}</div>

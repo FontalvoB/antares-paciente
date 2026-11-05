@@ -12,7 +12,7 @@ import { BLE_ACCESS_SERVICES } from "../ycbt/protocol";
 import type { DeviceDescriptor } from "../types";
 import { notificationJournal } from "./notification-journal";
 import { listAuthorizedAccessories } from "./accessory-discovery";
-import { readIosRadioState } from "./radio-state";
+import { readIosConnectionState, readIosRadioState } from "./radio-state";
 import type { BluetoothRadioState } from "./radio-state";
 import type { NotificationConsumer } from "./notification-journal";
 
@@ -463,6 +463,13 @@ export async function watchBluetoothState(
     active = false;
     await BleClient.stopEnabledNotifications().catch(() => undefined);
   };
+}
+
+/** null conserva la política previa si la plataforma no puede comprobarlo. */
+export async function getDeviceConnectionState(deviceId: string): Promise<boolean | null> {
+  if (Capacitor.getPlatform() !== "ios") return null;
+  try { return await readIosConnectionState(deviceId); }
+  catch { return null; }
 }
 
 export async function disconnectDevice(deviceId: string): Promise<void> {

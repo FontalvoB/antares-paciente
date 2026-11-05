@@ -90,7 +90,7 @@ jobs:
       - name: i18n (es/en)
         run: npm run i18n:check
 
-      - name: Guardas de release (Info.plist sin ATS de desarrollo)
+      - name: Guardas de release (ATS y número de build dinámico)
         run: npm run release:check
 
       - name: Build web de producción (vite)

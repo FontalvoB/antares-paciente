@@ -9,7 +9,7 @@ import {
 } from "@ionic/react";
 import {
   checkmarkCircle,
-  chevronBack,
+  arrowBackOutline,
   chevronForward,
   sparkles,
 } from "ionicons/icons";
@@ -306,7 +306,7 @@ export function TestsPage() {
               aria-label={t("Volver")}
               onClick={() => setShowResult(false)}
             >
-              <IonIcon slot="icon-only" icon={chevronBack} />
+              <IonIcon slot="icon-only" icon={arrowBackOutline} />
             </IonButton>
             <div className="ar-hero-copy">
               <div className="ar-eyebrow">{t("TU PERFIL DE SALUD")}</div>
@@ -319,16 +319,14 @@ export function TestsPage() {
         <div className={`hero ${heroClass} ht-hero`}>
           <div className="ht-hero-orbs" aria-hidden="true" />
           <div className="ht-hero-top">
-            {openId !== null && (
-              <IonButton
-                fill="clear"
-                className="ht-hero-back"
-                aria-label={t("Volver")}
-                onClick={closeTest}
-              >
-                <IonIcon slot="icon-only" icon={chevronBack} />
-              </IonButton>
-            )}
+            <IonButton
+              fill="clear"
+              className="ht-hero-back"
+              aria-label={t("Volver")}
+              onClick={openId !== null ? closeTest : skipTests}
+            >
+              <IonIcon slot="icon-only" icon={arrowBackOutline} />
+            </IonButton>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="kicker">{t("COPP ADRESD · PERFIL DE SALUD")}</div>
               <div className="h2">

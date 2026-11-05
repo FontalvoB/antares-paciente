@@ -274,7 +274,7 @@
 +
  let CONNECTION_TIMEOUT: Double = 10
  let DEFAULT_TIMEOUT: Double = 5
-@@ -13,7 +16,16 @@
+@@ -13,7 +16,17 @@
      public let jsName = "BluetoothLe"
      public let pluginMethods: [CAPPluginMethod] = [
          CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
@@ -288,10 +288,11 @@
 +        CAPPluginMethod(name: "ackNotifications", returnType: CAPPluginReturnPromise),
          CAPPluginMethod(name: "isEnabled", returnType: CAPPluginReturnPromise),
 +        CAPPluginMethod(name: "getBluetoothState", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "getConnectionState", returnType: CAPPluginReturnPromise),
          CAPPluginMethod(name: "requestEnable", returnType: CAPPluginReturnPromise),
          CAPPluginMethod(name: "enable", returnType: CAPPluginReturnPromise),
          CAPPluginMethod(name: "disable", returnType: CAPPluginReturnPromise),
-@@ -51,6 +63,9 @@
+@@ -51,6 +64,9 @@
      typealias BleService = [String: Any]
      typealias BleCharacteristic = [String: Any]
      typealias BleDescriptor = [String: Any]
@@ -301,7 +302,7 @@
      private var deviceManager: DeviceManager?
      private var deviceMap = [String: Device]()
      private var displayStrings = [String: String]()
-@@ -59,22 +74,199 @@
+@@ -59,22 +75,207 @@
          self.displayStrings = self.getDisplayStrings()
      }
 -
@@ -510,9 +511,17 @@
 +        DispatchQueue.main.async {
 +            guard let manager = self.getDeviceManager(call) else { return }
 +            call.resolve(["state": manager.bluetoothState()])
++        }
++    }
++
++    // Consulta el vínculo de este manager, no periféricos de otras apps.
++    @objc func getConnectionState(_ call: CAPPluginCall) {
++        DispatchQueue.main.async {
++            guard let device = self.getDevice(call, checkConnection: false) else { return }
++            call.resolve(["connected": device.isConnected()])
          }
      }
-@@ -600,5 +792,9 @@
+@@ -600,5 +801,9 @@
              call.reject("Bluetooth LE not initialized.")
              return nil
          }
@@ -522,7 +531,7 @@
 +        }
          return deviceManager
      }
-@@ -738,11 +934,13 @@
+@@ -738,11 +943,13 @@
 -
 +
      private func getOrCreateDevice(_ peripheral: CBPeripheral) -> Device {

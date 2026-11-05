@@ -305,7 +305,7 @@ export function LoginPage() {
               >
                 <div className="auth-field">
                   <label htmlFor="login-id">
-                    1{t("Número de identificación")}
+                    {t("Número de identificación")}
                   </label>
                   <IonInput
                     id="login-id"

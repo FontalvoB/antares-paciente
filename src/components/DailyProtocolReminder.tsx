@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 import { programKeys } from '../hooks/queryKeys'
 import type { ProgramSnapshotDto } from '../services/program/types'
-import { markProtocolReminderSeen, reminderKey, wasProtocolReminderSeen } from '../utils/dailyProtocolReminder'
+import { markProtocolReminderSeen, protocolReminderDelay, reminderKey } from '../utils/dailyProtocolReminder'
 
 /** Observa la consulta existente: no inscribe ni consulta de nuevo al paciente. */
 export function DailyProtocolReminder() {
@@ -25,14 +25,21 @@ export function DailyProtocolReminder() {
     return () => document.removeEventListener('visibilitychange', change)
   }, [])
   useEffect(() => {
-    if (!eligible || !key || wasProtocolReminderSeen(key)) return
-    const timer = window.setTimeout(() => {
-      if (wasProtocolReminderSeen(key)) return
+    if (!eligible || !key || open) return
+    let timer: number
+    const show = () => {
+      // Otro tab puede haber mostrado el aviso mientras este temporizador esperaba.
+      const remaining = protocolReminderDelay(key)
+      if (remaining > 0) {
+        timer = window.setTimeout(show, remaining)
+        return
+      }
       markProtocolReminderSeen(key)
       setOpen(true)
-    }, 12_000)
+    }
+    timer = window.setTimeout(show, Math.max(12_000, protocolReminderDelay(key)))
     return () => window.clearTimeout(timer)
-  }, [eligible, key, pending])
+  }, [eligible, key, pending, open])
   useEffect(() => {
     if (!eligible) setOpen(false)
   }, [eligible])

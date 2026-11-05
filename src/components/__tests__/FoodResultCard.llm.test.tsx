@@ -48,7 +48,7 @@ describe("FoodResultCard bilingüe", () => {
   it.each(["es", "en"])("muestra valores y fuente estimada en %s", (lang) => {
     localStorage.setItem("antares_lang", lang);
     render(<I18nProvider><FoodResultCard food={{ ...food,
-      nutritionStatus: "available", nutritionSource: "llm_estimate",
+      nutritionStatus: "available", nutritionSource: "llm_estimate", source: "llm_estimate",
       nutrition: { calories: 300, protein: 20, carbohydrates: 40, fat: 6, fiber: 2, sugar: null, sodium: null },
     }} /></I18nProvider>);
     expect(screen.getByText("≈ 300")).toBeTruthy();
@@ -56,6 +56,8 @@ describe("FoodResultCard bilingüe", () => {
       ? "≈ Valores estimados por IA — ajústalos si puedes"
       : "≈ AI estimated values — adjust them if you can")).toBeTruthy();
     expect(screen.queryByText("Información nutricional no disponible")).toBeNull();
+    expect(screen.queryByText("llm_estimate")).toBeNull();
+    expect(screen.getByText(lang === "es" ? "≈ Estimación de IA" : "≈ AI estimate")).toBeTruthy();
   });
 
   it("no marca la nutrición USDA como estimada", () => {
@@ -65,5 +67,6 @@ describe("FoodResultCard bilingüe", () => {
     }} /></I18nProvider>);
     expect(screen.getByText("300")).toBeTruthy();
     expect(screen.queryByText(/Valores estimados por IA/)).toBeNull();
+    expect(screen.getByText("Datos verificados · USDA")).toBeTruthy();
   });
 });

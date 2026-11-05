@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { foodScene, FOOD_SPRING } from "./nutrition/foodMotion";
 import { Capacitor } from "@capacitor/core";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
@@ -7,6 +9,8 @@ import {
   scanOutline,
   trashOutline,
   closeOutline,
+  createOutline,
+  shieldCheckmarkOutline,
   imageOutline,
   refreshOutline,
 } from "ionicons/icons";
@@ -25,6 +29,7 @@ import { dataUrlToBlob } from "../services/media/camera-service";
  *   archivo (el de cámara lleva capture="environment" y abre la cámara del SO).
  */
 interface Props {
+  onManual?: () => void;
   active?: boolean;
   onCapture: (blob: Blob, fileName: string) => void;
   onCancel: () => void;
@@ -49,8 +54,10 @@ function canPreview(): boolean {
   );
 }
 
-export function CameraCapture({ onCapture, onCancel, autoSource, active = true }: Props) {
+export function CameraCapture({ onCapture, onCancel, autoSource, active = true, onManual }: Props) {
   const t = useT();
+  const reduced = useReducedMotion();
+  const [flash, setFlash] = useState(false);
   const isNative = Capacitor.isNativePlatform();
   const preview = !isNative && canPreview();
   const autoOpened = useRef(false);
@@ -79,6 +86,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
     setState("ready");
   }
   function discardPhoto() {
+    setFlash(false);
     setSelection(null);
     setError(null);
     setState(preview ? "starting" : "ready");
@@ -212,6 +220,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
   }
 
   function onTakePhoto() {
+    setFlash(true);
     if (isNative) {
       void takeNative(CameraSource.Camera);
     } else if (preview && state === "ready") {
@@ -222,6 +231,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
   }
 
   function onPickGallery() {
+    setFlash(false);
     if (isNative) {
       void takeNative(CameraSource.Photos);
     } else {
@@ -253,7 +263,11 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
     }
   }, [active, autoSource, isNative, preview]);
 
-  if (selection) return (
+  return <div className="nut-cam-presentation">
+    <AnimatePresence initial={false}>
+    <motion.div key={selection ? "preview" : state === "busy" ? "busy" : "live"} className="nut-cam-scene" {...foodScene(reduced)}>
+    {selection ? <div className="nut-camera-preview">
+    {flash && !reduced && <motion.div className="nut-cam-flash" aria-hidden="true" initial={{ opacity: 0.45 }} animate={{ opacity: 0 }} transition={{ duration: 0.12 }} />}
     <FoodPhotoStage src={selection.url}>
       <div className="food-photo-actions">
         <IonButton className="food-photo-primary" expand="block" onClick={() => onCapture(selection.blob, selection.name)}>
@@ -270,22 +284,17 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
         <IonButton className="food-photo-cancel" expand="block" fill="clear" onClick={onCancel}>{t("Cancelar")}</IonButton>
       </div>
     </FoodPhotoStage>
-  );
-
-  if (state === "busy") {
-    return (
-      <div className="nut-cam-busy">
+    </div> : state === "busy" ? (
+      <div className="nut-cam-busy" role="status">
         <IonSpinner name="crescent" />
         <div>{t("Abriendo cámara…")}</div>
       </div>
-    );
-  }
-
-  return (
+    ) : (
     <div className="nut-cam">
       {state === "starting" && (
-        <div className="nut-cam-busy">
+        <div className="nut-cam-busy" role="status">
           <IonSpinner name="crescent" />
+          <div>{t("Abriendo cámara…")}</div>
         </div>
       )}
 
@@ -325,6 +334,9 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
             </div>
           )}
 
+          <div className="nut-cam-controls">
+          <p className="nut-cam-privacy"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />{t("Tu foto se enviará solo cuando pulses analizar.")}</p>
+          <motion.div whileTap={reduced ? undefined : { scale: 0.92 }} transition={FOOD_SPRING}>
           <IonButton
             className="nut-cam-main"
             expand="block"
@@ -334,6 +346,7 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
             <IonIcon icon={cameraOutline} slot="start" />
             {t("Tomar foto")}
           </IonButton>
+          </motion.div>
           <div className="nut-cam-actions">
             <IonButton
               className="nut-cam-gallery"
@@ -347,11 +360,13 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
             <IonButton
               className="nut-cam-close"
               fill="clear"
-              onClick={onCancel}
-              aria-label={t("Cancelar")}
+              onClick={onManual ?? onCancel}
+              aria-label={t(onManual ? "Registro manual" : "Cancelar")}
             >
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={onManual ? createOutline : closeOutline} slot="start" />
+              {onManual ? t("Registro manual") : t("Cancelar")}
             </IonButton>
+          </div>
           </div>
         </>
       )}
@@ -373,5 +388,8 @@ export function CameraCapture({ onCapture, onCancel, autoSource, active = true }
         onChange={onFileSelected}
       />
     </div>
-  );
+    )}
+    </motion.div>
+    </AnimatePresence>
+  </div>;
 }

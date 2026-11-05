@@ -7,7 +7,7 @@ import type { IntakeFormState } from "../utils/nutritionForm";
 /**
  * Formulario de valores nutricionales (reutilizado por el registro manual y
  * por la revisión/edición del flujo con foto). Estilos: clases globales
- * `.nut-reg` (tokens del design system, sin CSS nuevo).
+ * `.meal-intake` (registro manual) sobre los tokens del design system.
  */
 const FIELDS: {
   key: keyof IntakeFormState;
