@@ -46,6 +46,7 @@ import type {
   TaskCode,
   TodayTaskDto,
   VitalsPayload,
+  EmotionalAssessmentPayload,
 } from '../services/program/types'
 
 // ---------------------------------------------------------------------------
@@ -62,6 +63,7 @@ export interface CompleteTaskVars {
   // Additive (vital-signs-tracking): optional nested vitals for the `vitals`
   // task. Carried verbatim into the wire payload and the offline queue.
   vitals?: VitalsPayload | null
+  emotional?: EmotionalAssessmentPayload | null
 }
 
 /** Payload delivered to the celebration listener / onCelebrate callback. */
@@ -183,7 +185,7 @@ export function applyOptimistic(
     todayPoints: snapshot.todayPoints + xpEstimate,
     todayTasks: snapshot.todayTasks.map((t) => {
       if (t.taskCode !== taskCode) return t
-      const completed: TodayTaskDto = { ...t, status: 'Completed', completedAt: new Date().toISOString() }
+      const completed: TodayTaskDto = { ...t, status: 'Completed', completedAt: new Date().toISOString(), clientPending: true }
       if (taskCode !== 'vitals' || vitals == null) return completed
       const hasVitals = VITAL_RECORD_KEYS.some((k) => vitals[k] != null)
       if (!hasVitals) return completed
@@ -217,10 +219,12 @@ export function applyOptimistic(
 export function reconcileSnapshot(
   snapshot: ProgramSnapshotDto | undefined,
   data: CompleteTaskResponseDto,
+  confirmedTask?: TaskCode,
 ): ProgramSnapshotDto | undefined {
   if (!snapshot) return snapshot
   return {
     ...snapshot,
+    todayTasks: confirmedTask ? snapshot.todayTasks.map(task => task.taskCode === confirmedTask ? { ...task, clientPending: false } : task) : snapshot.todayTasks,
     xp: { ...snapshot.xp, balance: data.xpBalanceAfter },
     streak: { ...snapshot.streak, current: data.streakCurrent },
     todayPoints: data.dayPoints,
@@ -240,6 +244,7 @@ function buildPayload(snapshot: ProgramSnapshotDto, vars: MutationVars): Complet
     barriers: vars.barriers,
     contentFingerprint: vars.contentFingerprint,
     vitals: vars.vitals,
+    emotional: vars.emotional,
   }
 }
 
@@ -329,7 +334,7 @@ export function useCompleteTask(
       fireCelebrationOnce(vars.clientRequestId, vars.taskCode, snapshotForCelebration, onCelebrate)
 
       queryClient.setQueryData<ProgramSnapshotDto>(programKeys.snapshot, (old) =>
-        reconcileSnapshot(old, data),
+        reconcileSnapshot(old, data, vars.taskCode),
       )
     },
 

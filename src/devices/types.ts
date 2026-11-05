@@ -67,9 +67,11 @@ export interface DeviceDescriptor {
 /** Códigos de error de la capa de dispositivos (se traducen en la UI). */
 export type WearableErrorCode =
   | "bluetooth-off"
+  | "bluetooth-not-ready"
   | "permission-denied"
   | "scan-unavailable"
   | "connection-failed"
+  | "session-unavailable"
   | "unsupported-device"
   | "no-data"
   | "unknown";

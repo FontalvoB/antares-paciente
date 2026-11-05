@@ -212,6 +212,11 @@ export function parsePacket(frame: Uint8Array): YcbtPacket | null {
 export class PacketStream {
   private buffer = new Uint8Array(0);
 
+  /** Fragmentos que aún requieren la siguiente notificación antes de su ACK. */
+  get pendingBytes(): number {
+    return this.buffer.length;
+  }
+
   push(bytes: Uint8Array): YcbtPacket[] {
     const merged = new Uint8Array(this.buffer.length + bytes.length);
     merged.set(this.buffer);

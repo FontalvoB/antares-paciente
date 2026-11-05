@@ -6,6 +6,7 @@ import type { MeResult } from "../../utils/healthTestsApi";
 import { PATIENT_TITLES, themeFor } from "./model";
 
 import { groupAssessmentResults } from "../../utils/assessmentResults";
+import { AssessmentProfileAnalysis } from "./AssessmentProfileAnalysis";
 
 export function AssessmentResults({ results, error, onEnter, onCommunity }: {
   error: boolean;
@@ -28,6 +29,7 @@ export function AssessmentResults({ results, error, onEnter, onCommunity }: {
             <div className="ar-summary-icon"><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" /></div>
             <div><strong>{t("Resultados guardados")}</strong><p>{t("{n} evaluaciones con resultados", { n: String(groups.length) })}</p></div>
           </div>
+          <AssessmentProfileAnalysis results={results} />
           <div className="ar-section"><h2>{t("Tus evaluaciones")}</h2><p>{t("Explora cada evaluación para ver sus puntuaciones y detalles.")}</p></div>
           <IonAccordionGroup className="ar-cards" multiple>
             {groups.map(({ id, score, details }) => {
@@ -38,7 +40,7 @@ export function AssessmentResults({ results, error, onEnter, onCommunity }: {
                 <IonAccordion key={id} value={id} className="ar-card" style={{ "--ar-accent": theme.accent, "--ar-soft": theme.accentSoft } as CSSProperties}>
                   <IonItem slot="header" lines="none" className="ar-card-header">
                     <span slot="start" className="ar-card-icon" aria-hidden="true">{theme.emoji}</span>
-                    <IonLabel className="ar-card-title"><h3>{t(title)}</h3>{title !== score.label && <p>{score.label}</p>}
+                    <IonLabel className="ar-card-title"><h3>{t(title)}</h3>{title !== score.label && <p>{t(score.label)}</p>}
                       <span className="ar-classification">{classification ? t(classification) : t("Puntuación registrada")}</span>
                     </IonLabel>
                     <div slot="end" className="ar-score"><strong>{score.value}</strong>{score.resultType !== "indicator" && <span>{t("puntos")}</span>}</div>
@@ -48,7 +50,7 @@ export function AssessmentResults({ results, error, onEnter, onCommunity }: {
                     {details.some(result => result.resultType === "subscale") && <p className="ar-scale-note">{t("Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.")}</p>}
                     {details.length > 0 ? <IonList lines="none" className="ar-detail-list">
                       {details.map(result => <IonItem key={result.id} className="ar-detail-row">
-                        <IonLabel><h4>{result.label}</h4>{result.qualifier && <p>{t(result.qualifier)}</p>}</IonLabel>
+                        <IonLabel><h4>{t(result.label)}</h4>{result.qualifier && <p>{t(result.qualifier)}</p>}</IonLabel>
                         <span slot="end" className="ar-detail-value">{result.value}</span>
                       </IonItem>)}
                     </IonList> : <p className="ar-no-details">{t("Sin resultados adicionales para esta evaluación.")}</p>}

@@ -18,3 +18,11 @@ export function groupAssessmentResults(results: MeResult[]) {
     details: items.filter(item => item !== (items.find(score => score.resultType === "score") ?? items[0])),
   }));
 }
+
+/** Sintetiza clasificaciones persistidas; nunca aplica rangos clínicos locales. */
+export function analyzeAssessmentProfile(results: MeResult[]) {
+  const groups = groupAssessmentResults(results);
+  const classified = groups.flatMap(group => [group.score, ...group.details.filter(result => result.resultType === "indicator")]).filter(result => (result.qualifier || result.severity) && result.resultType !== "subscale");
+  const attention = classified.filter(result => ["moderate", "high", "critical"].includes(result.severity?.toLowerCase() ?? ""));
+  return { evaluations: groups.length, classified, attention, unclassified: groups.filter(group => !group.score.qualifier && !group.score.severity).length };
+}

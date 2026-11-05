@@ -66,6 +66,8 @@ export function totalsOf(store: DayStore): DeviceDayTotals {
  * repintar ni marcar ingesta por muestras que no aportan al día).
  */
 export function applySample(store: DayStore, sample: HealthSample): boolean {
+  // Un replay puede traer contadores de ayer además de cubetas históricas.
+  if (toLocalISODate(new Date(sample.ts)) !== store.date) return false;
   switch (sample.metric) {
     case "steps":
     case "distance": {
@@ -83,6 +85,8 @@ export function applySample(store: DayStore, sample: HealthSample): boolean {
         store.buckets.set(sample.ts, bucket);
       } else if (sample.value > store.counters[field]) {
         store.counters[field] = sample.value;
+      } else {
+        return false;
       }
       return true;
     }

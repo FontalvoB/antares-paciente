@@ -12,14 +12,18 @@ import type { DeviceDescriptor } from "./types";
  */
 const STORAGE_KEY = "antares_last_device";
 
+function storageKey(accountId?: string): string {
+  return accountId ? `${STORAGE_KEY}:${encodeURIComponent(accountId)}` : STORAGE_KEY;
+}
+
 export interface SavedDevice extends DeviceDescriptor {
   /** Epoch ms de la última conexión correcta. */
   lastConnectedAt: number;
 }
 
-export function loadSavedDevice(): SavedDevice | null {
+export function loadSavedDevice(accountId?: string): SavedDevice | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(accountId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SavedDevice>;
     if (!parsed || typeof parsed.deviceId !== "string" || !parsed.deviceId) {
@@ -43,7 +47,7 @@ export function loadSavedDevice(): SavedDevice | null {
   }
 }
 
-export function saveDevice(device: DeviceDescriptor): void {
+export function saveDevice(device: DeviceDescriptor, accountId?: string): void {
   try {
     const saved: SavedDevice = {
       deviceId: device.deviceId,
@@ -54,15 +58,15 @@ export function saveDevice(device: DeviceDescriptor): void {
       paired: true,
       lastConnectedAt: Date.now(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    localStorage.setItem(storageKey(accountId), JSON.stringify(saved));
   } catch {
     // Sin almacenamiento la app sigue funcionando, solo no recuerda.
   }
 }
 
-export function clearSavedDevice(): void {
+export function clearSavedDevice(accountId?: string): void {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(storageKey(accountId));
   } catch {
     // Nada que limpiar.
   }

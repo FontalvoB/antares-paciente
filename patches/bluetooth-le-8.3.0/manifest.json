@@ -1,0 +1,49 @@
+{
+  "version": "8.3.0",
+  "files": [
+    {
+      "path": "ios/Sources/BluetoothLe/Device.swift",
+      "before": "26265ba85d82d32d94bd3ca5cd66e3bfb5b6e5acd8d1ad06bed0c2831ba62ea6",
+      "after": "5c0929d8d64007e9cb50366021d9475d0e18d1612e1d961fba57071158a03391"
+    },
+    {
+      "path": "ios/Sources/BluetoothLe/DeviceManager.swift",
+      "before": "efd7fe684aec9bf5f85d5ad60fe052c93442bb2a709f70f17737115bcb0f4411",
+      "after": "62d24ea5ef4e5d056d8b676ca2783784bd8608a797e7212bc863a88cabf24e7e"
+    },
+    {
+      "path": "ios/Sources/BluetoothLe/Plugin.swift",
+      "before": "58cf9b423fbcab49669f9daade3c2774deeb9a215d89fce0a7ecd964728134e9",
+      "after": "d05e027956ad218bbdf27c561411adbb92b5b719875aebd7b4aceee6010ee32c"
+    },
+    {
+      "path": "Package.swift",
+      "before": "9ff6a26722fbe693ddf3d45b05c10e672ae50a54a96e13667cf2ff2c46f19217",
+      "after": "831a14a9985b85de8f0a052decc704e142553ade030cf7fd31d774418574a9d9"
+    },
+    {
+      "path": "android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/BluetoothLe.kt",
+      "before": "5cc86ba8e1b91e2d4fb827252fc689731f6c75d038e129b43d7d38b515c0bffe",
+      "after": "f639acf50c2f25808aba019392d2ef5eeb66adb951076d7524c03131cf43971c"
+    },
+    {
+      "path": "android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/Device.kt",
+      "before": "d143431891d8eae70920f214cc4f9696cf1042c604b9e35c3f0f49be8c781a69",
+      "after": "530863d7ce31cccb69bcf1ee6bbae327330a09cf0c5cd78f5dacb1dfe4045711"
+    },
+    {
+      "path": "android/src/main/AndroidManifest.xml",
+      "before": "91f4bc36662491deef7aaa70e1db77bcecf66d122df1860e0f0141280ca80e49",
+      "after": "348e9eb5300e48117ffb2ca997cce46556a5f12bda1182a6429ecc52711bcfa2"
+    }
+  ],
+  "additions": {
+    "ios/Sources/BluetoothLe/BleNotificationJournal.swift": "BleNotificationJournal.swift",
+    "android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/BleNotificationJournal.kt": "BleNotificationJournal.kt",
+    "android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/BleBackgroundService.kt": "BleBackgroundService.kt",
+    "android/src/androidTest/java/com/capacitorjs/community/plugins/bluetoothle/BleNotificationJournalTest.kt": "BleNotificationJournalTest.kt",
+    "ios/Sources/BluetoothLe/BleAccessorySetup.swift": "BleAccessorySetup.swift",
+    "android/src/main/res/values/antares_ble_strings.xml": "ble-strings.xml",
+    "android/src/main/res/values-es/antares_ble_strings.xml": "ble-strings-es.xml"
+  }
+}

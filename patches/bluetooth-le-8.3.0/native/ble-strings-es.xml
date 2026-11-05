@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="antares_ble_channel">Dispositivo de salud</string>
+    <string name="antares_ble_receiving">Recibiendo datos de tu dispositivo de salud</string>
+    <string name="antares_ble_stop">Detener</string>
+</resources>

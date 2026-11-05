@@ -81,6 +81,7 @@ export function ComposePostModal({
   onUploadMedia,
   onToast,
   dark = false,
+  initialDraft = "",
 }: {
   onQueue?: (draft:{body:string;file?:File|null;options?:string[]}) => void;
   open: boolean;
@@ -93,6 +94,7 @@ export function ComposePostModal({
   onUploadMedia: (file: File, contentType: string) => Promise<string>;
   onToast: (msg: string, kind?: "ok" | "err" | "info" | "warn") => void;
   dark?: boolean;
+  initialDraft?: string;
 }) {
   const [type, setType] = useState<PostType>("text");
   const [draft, setDraft] = useState("");
@@ -169,6 +171,7 @@ export function ComposePostModal({
       setPollOptions(["", ""]);
       return;
     }
+    if (initialDraft) setDraft(initialDraft);
     const t = window.setTimeout(() => {
       if (type === "text") taRef.current?.focus();
     }, 300);

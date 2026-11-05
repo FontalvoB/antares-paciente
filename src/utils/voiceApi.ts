@@ -44,7 +44,9 @@ export interface VoiceSession {
  * (sin sesión, backend sin voz configurada, red) — el caller degrada al
  * agente de voz Web Speech y nunca muestra detalles técnicos al paciente.
  */
-export async function requestVoiceSession(): Promise<VoiceSession | null> {
+export async function requestVoiceSession(
+  language?: "es" | "en",
+): Promise<VoiceSession | null> {
   try {
     const accessToken = getAccessToken();
     if (!accessToken) return null;
@@ -54,7 +56,11 @@ export async function requestVoiceSession(): Promise<VoiceSession | null> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({}),
+      // Idioma de la app: el backend lo propaga al AI Service para que el
+      // agente de voz arranque hablando ese idioma (con signed URL los
+      // overrides del cliente no aplican). Opcional: backends anteriores
+      // lo ignoran (compatible hacia atrás).
+      body: JSON.stringify({ ...(language ? { language } : {}) }),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as VoiceSession;

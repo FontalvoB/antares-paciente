@@ -21,13 +21,20 @@ function sample(
   return {
     value: 0,
     unit: "",
-    ts: Date.now(),
+    ts: tsOnDay(12),
     deviceId: "dev-1",
     ...extra,
   };
 }
 
 describe("day-totals", () => {
+  it("no aplica contadores en vivo de otro día al reproducir el journal", () => {
+    const store = newDayStore(DAY);
+    for (const metric of ["steps", "distance", "calories"] as const) {
+      expect(applySample(store, sample({ metric, value: 1000, ts: wakeOnDayMinus(1) }))).toBe(false);
+    }
+    expect(totalsOf(store)).toEqual(EMPTY_TOTALS);
+  });
   it("un store nuevo devuelve totales vacíos", () => {
     expect(totalsOf(newDayStore(DAY))).toEqual(EMPTY_TOTALS);
   });

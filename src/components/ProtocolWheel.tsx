@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import logoIcon from '../assets/LogoIndividual.png'
-import { IonIcon } from '@ionic/react'
+import { useT } from '../i18n/I18nContext'
+import { IonButton, IonIcon } from '@ionic/react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { checkmark, gift, trophy } from 'ionicons/icons'
 import { PROGRAM_TASKS } from '../data/program'
@@ -39,18 +40,21 @@ function arc(center: number) {
 }
 
 /** Gráfico de dominio sin equivalente Ionic: órbitas inspiradas en Copp Adresd.
- * El botón del home contiene toda la rueda; sus nodos son decorativos.
+ * Cada nodo ofrece una acción Ionic accesible sin anidar botones.
  * El estado proviene del protocolo, nunca de una animación ni de estado local.
  */
 export function ProtocolWheel({
-  program, chestClaimed = false, title, count, total,
+  program, chestClaimed = false, title, count, total, onSelect, onOpenProgram,
 }: {
   program: ProgramDay
   chestClaimed?: boolean
   title: string
   count: number
   total: number
+  onSelect?: (id: ProgramTaskId | 'chest') => void
+  onOpenProgram?: () => void
 }) {
+  const t = useT()
   const reduce = useReducedMotion()
   const segments = SEGMENT_KEYS.map((key, i) => ({
     key,
@@ -86,9 +90,12 @@ export function ProtocolWheel({
         const { x, y } = point(seg.center, R_ORBIT)
         return (
           <span key={seg.key} className={`wheel-badge${seg.done ? ' done' : ''}`}
-            data-task={seg.key} aria-hidden="true"
+            data-task={seg.key}
             style={{ '--wheel-accent': seg.color, left: `${x / VIEW * 100}%`, top: `${y / VIEW * 100}%` } as CSSProperties}>
-            <IonIcon icon={seg.icon} />
+            {onSelect && <IonButton fill="clear" className="wheel-node-action"
+              aria-label={seg.key === "chest" ? t("Racha") : t(PROGRAM_TASKS.find(task => task.id === seg.key)!.title)}
+              onClick={() => onSelect(seg.key)} />}
+            <IonIcon icon={seg.icon} aria-hidden="true" />
             <span className="wheel-number">
               {seg.done ? <IonIcon icon={checkmark} /> : String(i + 1).padStart(2, '0')}
             </span>
@@ -97,6 +104,7 @@ export function ProtocolWheel({
       })}
 
       <div className={`wheel-core${complete ? ' complete' : ''}`}>
+        {onOpenProgram && <IonButton fill="clear" className="wheel-node-action" aria-label={t("Abrir protocolo diario")} onClick={onOpenProgram} />}
         <img className="wheel-logo" src={logoIcon} alt="" aria-hidden="true" />
         <strong className="wheel-core-count">{count}<span>/{total}</span></strong>
         <span className="wheel-core-title">{title}</span>
