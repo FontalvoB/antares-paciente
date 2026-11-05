@@ -32782,6 +32782,38 @@ ion-button.emergency-contact-remove { min-height:44px; margin:0 0 8px; --padding
 .sos-delivery-contact-count { display:grid; gap:4px; margin:10px 0 14px; color:var(--mu); font-size:11px; line-height:1.5; }
 .sos-delivery-contact-count strong { color:var(--navy); font-size:13px; }
 .sos-delivery-row.unavailable,.sos-delivery-row.unavailable b,.sos-delivery-row.unavailable ion-icon { color:var(--mu); }
+/* Registro nutricional: formulario compartido y cabecera del registro manual. */
+.nutrition-register-modal { --width: 480px; --height: min(820px, 94dvh); --border-radius: 28px; }
+.nutrition-register-modal::part(content) { max-height: 94dvh; }
+.nutrition-register-modal ion-content { --background: var(--wh); }
+.nutrition-register-shell { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.nutrition-register-hero { padding: 14px 24px 26px; background: radial-gradient(ellipse at top right,var(--home-aqua),transparent 80%),var(--home-mist); border-bottom: 1px solid var(--home-sky); }
+.nutrition-register-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+.nutrition-register-kicker { display: flex; align-items: center; gap: 6px; color: var(--teal); font-size: 11px; font-weight: 700; }
+.nutrition-register-kicker ion-icon { font-size: 16px; }
+.nutrition-register-close { width: 44px; height: 44px; margin: 0 -10px 0 0; --color: var(--brand-navy); --border-radius: 50%; --background: color-mix(in srgb,var(--wh) 70%,transparent); }
+.nutrition-register-meal { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; background: var(--wh); color: var(--teal); border-radius: 10px; font-size: 12px; font-weight: 700; }
+.nutrition-register-hero h2 { font-family: 'Space Grotesk',sans-serif; font-size: 29px; letter-spacing: -.9px; color: var(--brand-navy); margin: 14px 0 8px; }
+.nutrition-register-hero > p { font-size: 13px; line-height: 1.6; color: var(--brand-blue-mid); margin: 0; max-width: 340px; }
+.nutrition-register-body { padding: 24px; }
+.nutrition-register-section h3 { margin: 0 0 6px; font-size: 16px; color: var(--brand-navy); }
+.nutrition-register-section p { margin: 0 0 20px; font-size: 12px; line-height: 1.6; color: var(--mu); }
+.meal-intake-reference { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--home-sky); background: var(--home-mist); border-radius: 14px; padding: 12px; margin-bottom: 16px; }
+.meal-intake-reference ion-icon { color: var(--teal); font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.meal-intake-reference p { margin: 0; color: var(--brand-blue-mid); font-size: 11px; line-height: 1.6; }
+.meal-intake-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.meal-intake-field { min-width: 0; padding: 12px 14px; border: 1px solid var(--bd); border-radius: 16px; background: var(--wh); transition: border-color .15s; }
+.meal-intake-field:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px color-mix(in srgb,var(--teal) 10%,transparent); }
+.meal-intake-field.meal-intake-calories { grid-column: 1/-1; display: flex; align-items: center; gap: 14px; background: var(--home-mist); border-color: var(--home-sky); }
+.meal-intake-energy-icon { width: 44px; height: 44px; display: grid; place-items: center; flex-shrink: 0; border-radius: 14px; background: var(--wh); color: var(--teal); font-size: 25px; }
+.meal-intake-form .meal-intake-field ion-input { margin: 0; min-height: 62px; min-width: 0; --background: transparent; --padding-start: 0; --padding-end: 0; --padding-top: 0; --padding-bottom: 0; --color: var(--brand-navy); --highlight-height: 0; --placeholder-color: var(--mu); font-size: 23px; font-weight: 700; border: 0; box-shadow: none; }
+.meal-intake-form .meal-intake-field ion-input .label-text { color: var(--mu); font-size: 14px; font-weight: 600; white-space: normal; }
+.meal-intake-form .meal-intake-calories ion-input { font-size: 28px; }
+.meal-intake-form .nut-intake-submit { margin: 22px 0 0; min-height: 50px; --background: var(--teal); --background-hover: var(--brand-blue-mid); --color: var(--wh); --border-radius: 15px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.nutrition-register-cancel { margin: 6px 0 0; --color: var(--mu); font-size: 13px; text-transform: none; }
+
+.meal-intake-form input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+.meal-intake-form input[type="number"]::-webkit-inner-spin-button, .meal-intake-form input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* Prueba temporal del consentimiento: documento y controles reales, sin persistencia. */
 .onb-consent-test-note { margin-bottom:14px; }
