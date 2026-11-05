@@ -47,10 +47,14 @@ export interface UseProgramResult {
 
 // --- Product messages (SPEC R4.3 / R4.4 / R4.5, G1/G2) ---
 
-const NOT_READY_MSG = 'Tu programa no está listo aún. Contacta a tu equipo de salud.'
-const WITHDRAWN_MSG = 'Tu programa no está disponible. Contacta a tu equipo de salud.'
-const PAUSED_MSG = 'Tu programa está pausado.'
-const RECOVERABLE_MSG = 'No pudimos cargar tu programa en este momento. Intenta nuevamente.'
+const NOT_READY_MSG = 'El programa todavía no tiene actividades publicadas para ti. Tu equipo de salud debe habilitarlas antes de que puedas comenzar.'
+const WITHDRAWN_MSG = 'Tu participación en este programa figura como desactivada, por eso sus actividades ya no están disponibles. Contacta a tu equipo de salud para conocer el motivo y los siguientes pasos.'
+const PAUSED_MSG = 'Tu programa figura como pausado y sus actividades están suspendidas. Contacta a tu equipo de salud para saber por qué y cuándo puedes retomarlas.'
+const RECOVERABLE_MSG = 'No pudimos consultar tus actividades. El servicio no indicó una causa específica. Reintenta; si se repite, contacta a tu equipo de salud.'
+const NETWORK_MSG = 'No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.'
+const TIMEOUT_MSG = 'El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.'
+const SERVER_MSG = 'El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.'
+const ASSESSMENTS_UNAVAILABLE_MSG = 'Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.'
 
 /**
  * useProgram — see file header for the full R4/R5 behavior contract.
@@ -129,7 +133,7 @@ export function useProgram(): UseProgramResult {
         return {
           snapshot: null,
           programState: (battery.isError ? 'recoverable' : battery.data === undefined ? 'active' : battery.data >= 9 ? 'pending-assignment' : 'pending-tests') as ProgramState,
-          productMessage: battery.isError ? RECOVERABLE_MSG : null,
+          productMessage: battery.isError ? ASSESSMENTS_UNAVAILABLE_MSG : null,
         }
       }
       // Withdrawn (future recognition, G1).
@@ -160,7 +164,9 @@ export function useProgram(): UseProgramResult {
       return {
         snapshot: null,
         programState: 'recoverable' as ProgramState,
-        productMessage: RECOVERABLE_MSG,
+        productMessage: error.errorType === 'network' ? NETWORK_MSG
+          : error.errorType === 'TIMEOUT' || error.status === 504 ? TIMEOUT_MSG
+            : error.status >= 500 ? SERVER_MSG : RECOVERABLE_MSG,
       }
     }
 

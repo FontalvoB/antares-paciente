@@ -3322,5 +3322,13 @@
   "Estamos cargando tus actividades del día.": "We are loading your daily activities.",
   "Volver a Inicio": "Return to Home",
   "Si el problema continúa, vuelve a intentarlo más tarde.": "If the issue continues, try again later.",
-  "Puedes regresar a esta pantalla desde tu protocolo diario.": "You can return to this screen from your daily protocol."
+  "Puedes regresar a esta pantalla desde tu protocolo diario.": "You can return to this screen from your daily protocol.",
+  "El programa todavía no tiene actividades publicadas para ti. Tu equipo de salud debe habilitarlas antes de que puedas comenzar.": "Your program does not have any published activities for you yet. Your care team needs to enable them before you can begin.",
+  "Tu participación en este programa figura como desactivada, por eso sus actividades ya no están disponibles. Contacta a tu equipo de salud para conocer el motivo y los siguientes pasos.": "Your participation in this program is marked as inactive, so its activities are no longer available. Contact your care team to find out why and what to do next.",
+  "Tu programa figura como pausado y sus actividades están suspendidas. Contacta a tu equipo de salud para saber por qué y cuándo puedes retomarlas.": "Your program is marked as paused and its activities are suspended. Contact your care team to find out why and when you can resume them.",
+  "No pudimos consultar tus actividades. El servicio no indicó una causa específica. Reintenta; si se repite, contacta a tu equipo de salud.": "We could not retrieve your activities. The service did not provide a specific cause. Try again; if it happens again, contact your care team.",
+  "No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.": "We could not connect to your program service. Check your internet connection and try again.",
+  "El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.": "Your program service took too long to respond. Wait a moment and try again.",
+  "El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.": "Your program service encountered a problem retrieving your activities. Try again in a few minutes; if it happens again, contact your care team.",
+  "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.": "Your program is not active yet and we could not check whether you have completed your assessments. Try again; if it happens again, contact your care team."
 }

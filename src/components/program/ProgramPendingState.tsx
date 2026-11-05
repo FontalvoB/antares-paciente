@@ -41,12 +41,12 @@ export function ProgramPendingState({ loading, state, message, onTests, onRetry,
     </section>
   )
   const availability = state === 'paused'
-    ? { title: 'Tu programa está en pausa', description: 'Tu equipo de salud debe confirmar cuándo retomar tus actividades.', icon: pauseOutline }
+    ? { title: 'Tu programa está en pausa', description: message ?? 'Tu equipo de salud debe confirmar cuándo retomar tus actividades.', icon: pauseOutline }
     : state === 'withdrawn'
-      ? { title: 'Tu programa no está activo', description: 'Consulta con tu equipo de salud para conocer los siguientes pasos.', icon: shieldCheckmarkOutline }
+      ? { title: 'Tu programa no está activo', description: message ?? 'Consulta con tu equipo de salud para conocer los siguientes pasos.', icon: shieldCheckmarkOutline }
       : state === 'no-template'
-        ? { title: 'Tu programa aún no está disponible', description: 'Las actividades aparecerán aquí cuando tu equipo active el programa.', icon: timeOutline }
-        : { title: 'Tu programa no cargó', description: message ?? 'No pudimos recuperar tus actividades ahora. Puedes reintentar o volver a Inicio.', icon: refreshOutline }
+        ? { title: 'Tu programa aún no está disponible', description: message ?? 'Las actividades aparecerán aquí cuando tu equipo active el programa.', icon: timeOutline }
+        : { title: 'Tu programa no cargó', description: message ?? 'No pudimos consultar tus actividades. El servicio no indicó una causa específica. Reintenta; si se repite, contacta a tu equipo de salud.', icon: refreshOutline }
   return (
     <section className="program-state" data-program-state={loading ? 'loading' : state} role="status" aria-label={loading ? t('Cargando tu programa') : t('Estado de tu programa')} aria-live="polite" aria-busy={loading}>
       <header className="program-state-top">

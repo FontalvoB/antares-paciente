@@ -10,7 +10,18 @@ const id = '11111111-1111-4111-8111-111111111111';
 const token = 'x.' + Buffer.from(JSON.stringify({ sub: id, exp: Math.floor(Date.now() / 1000) + 7 * 86400 })).toString('base64url') + '.x';
 const browser = await chromium.launch(), results = [];
 const titles = { recoverable: 'Tu programa no cargó', paused: 'Tu programa está en pausa', withdrawn: 'Tu programa no está activo', 'no-template': 'Tu programa aún no está disponible' };
-for (const width of [320, 390, 768]) for (const scenario of ['recoverable', 'loading', 'paused', 'withdrawn', 'no-template', 'nutra', 'nutra-completed']) {
+const reasons = {
+  recoverable: 'No pudimos consultar tus actividades. El servicio no indicó una causa específica. Reintenta; si se repite, contacta a tu equipo de salud.',
+  network: 'No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.',
+  timeout: 'El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.',
+  server: 'El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.',
+  assessments: 'Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.',
+  paused: 'Tu programa figura como pausado y sus actividades están suspendidas. Contacta a tu equipo de salud para saber por qué y cuándo puedes retomarlas.',
+  withdrawn: 'Tu participación en este programa figura como desactivada, por eso sus actividades ya no están disponibles. Contacta a tu equipo de salud para conocer el motivo y los siguientes pasos.',
+  'no-template': 'El programa todavía no tiene actividades publicadas para ti. Tu equipo de salud debe habilitarlas antes de que puedas comenzar.',
+};
+const recoverableScenarios = ['recoverable', 'network', 'timeout', 'server', 'assessments'];
+for (const width of [320, 390, 768]) for (const scenario of ['recoverable', 'network', 'timeout', 'server', 'assessments', 'loading', 'paused', 'withdrawn', 'no-template', 'nutra', 'nutra-completed']) {
   if (process.env.COP_E2E_CASE && `${scenario}-${width}` !== process.env.COP_E2E_CASE) continue;
   const context = await browser.newContext({ viewport: { width, height: 900 } });
   const page = await context.newPage(); page.setDefaultTimeout(7000);
@@ -40,9 +51,11 @@ for (const width of [320, 390, 768]) for (const scenario of ['recoverable', 'loa
       snapshotReads++;
       if (success) return reply(snapshot());
       if (scenario === 'loading') { heldRoute = route; return; }
-      const error = { paused: [409, 'ENROLLMENT_PAUSED'], withdrawn: [410, 'ENROLLMENT_WITHDRAWN'], 'no-template': [422, 'TEMPLATE_NOT_ACTIVE'] }[scenario] ?? [400, 'TEMPORARILY_UNAVAILABLE'];
-      return route.fulfill({ status: error[0], json: { code: error[1], detail: error[1] } });
+      if (scenario === 'network') return route.abort('failed');
+      const error = { paused: [409, 'ENROLLMENT_PAUSED'], withdrawn: [410, 'ENROLLMENT_WITHDRAWN'], 'no-template': [422, 'TEMPLATE_NOT_ACTIVE'], server: [503, 'UNAVAILABLE'], timeout: [504, 'GATEWAY_TIMEOUT'], assessments: [404, 'NO_ACTIVE_ENROLLMENT'] }[scenario] ?? [400, 'UNKNOWN_FAILURE'];
+      return route.fulfill({ status: error[0], json: { code: error[1], detail: 'Technical details that must never reach the patient' } });
     }
+    if (scenario === 'assessments' && p.startsWith('/api/v1/health-tests/me/')) return route.fulfill({ status: 503, json: {} });
     if (p === '/api/v1/program/tasks/complete') {
       done = true;
       return reply({ taskCompletionId: id, pointsAwarded: 80, xpBalanceAfter: 1280, isPerfectDay: false, dailyBonusAwarded: 0, streakCurrent: 1, freezesRemaining: 0, dayPoints: 80, dayPointsMax: 630 });
@@ -101,10 +114,12 @@ for (const width of [320, 390, 768]) for (const scenario of ['recoverable', 'loa
         success = true; await heldRoute.fulfill({ json: snapshot() }); heldRoute = null;
         await expect(page.locator('.pcards')).toBeVisible();
       } else {
-        await expect(page.getByRole('heading', { name: titles[scenario], exact: true })).toBeVisible();
+        await expect(page.getByRole('heading', { name: titles[scenario] ?? titles.recoverable, exact: true })).toBeVisible();
+        await expect(page.locator('.program-state-description')).toHaveText(reasons[scenario]);
+        await expect(page.getByText('Technical details that must never reach the patient')).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Volver a Inicio', exact: true })).toBeVisible();
         await expect(page.getByRole('progressbar')).toHaveCount(0);
-        if (scenario === 'recoverable') {
+        if (recoverableScenarios.includes(scenario)) {
           const reads = snapshotReads; success = true;
           await page.getByRole('button', { name: 'Reintentar', exact: true }).click();
           await expect(page.locator('.pcards')).toBeVisible(); assert(snapshotReads > reads);

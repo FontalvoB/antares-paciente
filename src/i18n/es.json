@@ -3332,5 +3332,13 @@
   "Estamos cargando tus actividades del día.": "Estamos cargando tus actividades del día.",
   "Volver a Inicio": "Volver a Inicio",
   "Si el problema continúa, vuelve a intentarlo más tarde.": "Si el problema continúa, vuelve a intentarlo más tarde.",
-  "Puedes regresar a esta pantalla desde tu protocolo diario.": "Puedes regresar a esta pantalla desde tu protocolo diario."
+  "Puedes regresar a esta pantalla desde tu protocolo diario.": "Puedes regresar a esta pantalla desde tu protocolo diario.",
+  "El programa todavía no tiene actividades publicadas para ti. Tu equipo de salud debe habilitarlas antes de que puedas comenzar.": "El programa todavía no tiene actividades publicadas para ti. Tu equipo de salud debe habilitarlas antes de que puedas comenzar.",
+  "Tu participación en este programa figura como desactivada, por eso sus actividades ya no están disponibles. Contacta a tu equipo de salud para conocer el motivo y los siguientes pasos.": "Tu participación en este programa figura como desactivada, por eso sus actividades ya no están disponibles. Contacta a tu equipo de salud para conocer el motivo y los siguientes pasos.",
+  "Tu programa figura como pausado y sus actividades están suspendidas. Contacta a tu equipo de salud para saber por qué y cuándo puedes retomarlas.": "Tu programa figura como pausado y sus actividades están suspendidas. Contacta a tu equipo de salud para saber por qué y cuándo puedes retomarlas.",
+  "No pudimos consultar tus actividades. El servicio no indicó una causa específica. Reintenta; si se repite, contacta a tu equipo de salud.": "No pudimos consultar tus actividades. El servicio no indicó una causa específica. Reintenta; si se repite, contacta a tu equipo de salud.",
+  "No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.": "No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.",
+  "El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.": "El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.",
+  "El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.": "El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.",
+  "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.": "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud."
 }
