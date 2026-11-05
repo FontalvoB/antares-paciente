@@ -19,6 +19,10 @@ it('keeps the analyzed photo on Back and places plan comparison before the food 
   const view = render(<MealFoodFlow meal="des" mode="register" onBack={back} onClose={close} onManual={vi.fn()} />);
   fireEvent.click(screen.getByText('Capture fixture'));
   expect(view.container.querySelector('.food-photo-scan')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Volver' })).toBeTruthy();
+  expect(screen.getByText('Detectando alimentos')).toBeTruthy();
+  expect(screen.getByText('Estimando porciones')).toBeTruthy();
+  expect(screen.getByText('Calculando nutrición')).toBeTruthy();
   await act(async () => resolve({ analysisId: 'a', foods: [{name:'Food',nutritionStatus:'available'}], summary: { calories: 250 } }));
   await waitFor(() => expect(screen.getByText('Detected food detail')).toBeTruthy());
   expect(view.container.querySelector('.food-photo-scan')).toBeNull();
@@ -37,4 +41,12 @@ vi.mock('@ionic/react', async (original) => ({
  IonButton: ({children,onClick,disabled,...props}: {children?:ReactNode;onClick?:()=>void;disabled?:boolean;'aria-label'?:string}) => <button disabled={disabled} onClick={onClick} aria-label={props['aria-label']}>{children}</button>,
  IonSpinner: () => <span />,
 }));
-vi.mock('framer-motion', () => ({ motion: { div: ({ children }: { children: ReactNode }) => <div>{children}</div> } }));
+vi.mock('framer-motion', async (original) => ({
+  ...(await original<typeof import('framer-motion')>()),
+  useReducedMotion: () => true,
+  AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
+  motion: {
+    div: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    span: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+  },
+}));

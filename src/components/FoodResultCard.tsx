@@ -1,14 +1,16 @@
 import { IonChip, IonIcon } from "@ionic/react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   alertCircle, barbellOutline, checkmarkCircle, leafOutline,
   nutritionOutline, restaurantOutline, scaleOutline, waterOutline, warningOutline,
 } from "ionicons/icons";
+import { FOOD_SPRING } from "./nutrition/foodMotion";
 import { useI18n } from "../i18n/I18nContext";
 import { displayName, FOOD_EMOJI, type DetectedFood } from "../utils/foodAiApi";
 
 /** Tarjeta de dominio compartida por revisión y detalle; Ionic conserva los chips. */
 export function FoodResultCard({ food, index = 0 }: { food: DetectedFood; index?: number }) {
+  const reduced = useReducedMotion();
   const { t, lang } = useI18n();
   const name = lang === "en" && food.nameEn?.trim() ? food.nameEn : displayName(food.name);
   const emoji = FOOD_EMOJI[food.name];
@@ -30,9 +32,9 @@ export function FoodResultCard({ food, index = 0 }: { food: DetectedFood; index?
   return (
     <motion.div
       className="food-result-card"
-      initial={{ opacity: 0.6, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, ...(reduced ? {} : { y: 16 }) }}
+      animate={{ opacity: 1, ...(reduced ? {} : { y: 0 }) }}
+      transition={reduced ? { duration: 0.18 } : { ...FOOD_SPRING, delay: index * 0.06 }}
     >
       <div className="food-result-top">
         <span className="food-result-avatar" aria-hidden="true">

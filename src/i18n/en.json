@@ -2707,5 +2707,9 @@
   "Confianza baja": "Low confidence",
   "Revisa este alimento o intenta con otra foto.": "Review this food or try another photo.",
   "≈ Estimación de IA": "≈ AI estimate",
-  "Datos verificados · USDA": "Verified data · USDA"
+  "Datos verificados · USDA": "Verified data · USDA",
+  "Detectando alimentos": "Detecting foods",
+  "Estimando porciones": "Estimating portions",
+  "Calculando nutrición": "Calculating nutrition",
+  "Registrar · {meal}": "Log · {meal}"
 }

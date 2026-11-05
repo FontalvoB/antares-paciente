@@ -2611,5 +2611,9 @@
   "Confianza baja": "Confianza baja",
   "Revisa este alimento o intenta con otra foto.": "Revisa este alimento o intenta con otra foto.",
   "≈ Estimación de IA": "≈ Estimación de IA",
-  "Datos verificados · USDA": "Datos verificados · USDA"
+  "Datos verificados · USDA": "Datos verificados · USDA",
+  "Detectando alimentos": "Detectando alimentos",
+  "Estimando porciones": "Estimando porciones",
+  "Calculando nutrición": "Calculando nutrición",
+  "Registrar · {meal}": "Registrar · {meal}"
 }

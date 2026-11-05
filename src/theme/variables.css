@@ -40,6 +40,9 @@
   );
   --grad-sky: linear-gradient(90deg, #87aeca 0%, #5581a2 62%, #4b7086 100%);
 
+  /* Campos nutricionales: misma superficie en registro y revisión. */
+  --nut-input-bg: #f1f4f8;
+  --nut-input-label: #3d5068;
   --cosmos: #04203f;
   --cosmos-2: #023467;
   --navy: #142855;
