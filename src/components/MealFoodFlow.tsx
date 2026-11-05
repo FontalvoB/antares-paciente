@@ -3,7 +3,7 @@ import { FoodPlanComparison } from "./nutrition/FoodPlanComparison";
 import type { MyNutritionPlanDto } from "../services/nutrition/my-nutrition-plan-service";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
+import { IonButton, IonChip, IonIcon, IonSpinner } from "@ionic/react";
 import {
   arrowBackOutline,
   cameraOutline,
@@ -174,6 +174,7 @@ function analysisItemToDetected(item: FoodAnalysisItem): DetectedFood {
     nutrition: item.nutrition,
     nutritionRange: null,
     nutritionStatus: item.nutritionStatus,
+    nutritionSource: item.nutritionSource,
     source: item.source,
     sourceVersion: null,
     sourceId: null,
@@ -668,6 +669,11 @@ export function MealFoodFlow({
             fat={result.summary?.fat ?? result.intake?.fatG ?? null}
             fiber={result.summary?.fiber ?? result.intake?.fiberG ?? null}
           />
+          {result.provider === "llm" && (
+            <IonChip style={{ height: "auto", padding: "8px 12px", background: "var(--teal-l)", color: "var(--teal-d)" }}>
+              {t("Estimación IA · confirma o ajusta")}
+            </IonChip>
+          )}
           <FoodPlanComparison result={result} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({result.foods.length})
@@ -676,7 +682,7 @@ export function MealFoodFlow({
             <FoodResultCard key={`${food.name}-${i}`} food={food} />
           ))}
 
-          {editingValues ? (
+          {editingValues || (!result.summary && !result.intake) ? (
             <>
               <div className="nut-ai-title nut-flow-sec">
                 {t("Editar valores")}
@@ -758,6 +764,11 @@ export function MealFoodFlow({
             fat={newResult.summary?.fat ?? newResult.intake?.fatG ?? null}
             fiber={newResult.summary?.fiber ?? newResult.intake?.fiberG ?? null}
           />
+          {newResult.provider === "llm" && (
+            <IonChip style={{ height: "auto", padding: "8px 12px", background: "var(--teal-l)", color: "var(--teal-d)" }}>
+              {t("Estimación IA · confirma o ajusta")}
+            </IonChip>
+          )}
           <FoodPlanComparison result={newResult} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({newResult.foods.length})
@@ -766,7 +777,7 @@ export function MealFoodFlow({
             <FoodResultCard key={`${food.name}-${i}`} food={food} />
           ))}
 
-          {editingNewValues ? (
+          {editingNewValues || (!newResult.summary && !newResult.intake) ? (
             <>
               <div className="nut-ai-title nut-flow-sec">
                 {t("Editar valores")}

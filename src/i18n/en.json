@@ -3211,5 +3211,11 @@
   "Bluetooth apagado": "Bluetooth is off",
   "Activa Bluetooth": "Turn on Bluetooth",
   "Enciende Bluetooth en Ajustes para conectar tu wearable.": "Turn on Bluetooth in Settings to connect your wearable.",
-  "Entendido": "Got it"
+  "Entendido": "Got it",
+  "Estimación IA · confirma o ajusta": "AI estimate · confirm or adjust",
+  "≈ Valores estimados por IA — ajústalos si puedes": "≈ AI estimated values — adjust them if you can",
+  "Confianza alta": "High confidence",
+  "Confianza media": "Medium confidence",
+  "Confianza baja": "Low confidence",
+  "Revisa este alimento o intenta con otra foto.": "Review this food or try another photo."
 }
