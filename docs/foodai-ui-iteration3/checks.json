@@ -1,0 +1,364 @@
+[
+  {
+    "width": 320,
+    "lang": "es",
+    "state": "camera",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "es",
+    "state": "preview",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "es",
+    "state": "analyzing",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "es",
+    "steps": [
+      "Detectando alimentos",
+      "Estimando porciones",
+      "Calculando nutrición"
+    ]
+  },
+  {
+    "width": 320,
+    "lang": "es",
+    "state": "review",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "es",
+    "state": "edit",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "es",
+    "state": "manual",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "es",
+    "state": "manual-focus",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "camera",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "preview",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "analyzing",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "steps": [
+      "Detecting foods",
+      "Estimating portions",
+      "Calculating nutrition"
+    ]
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "review",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "edit",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "manual",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "manual-focus",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 320,
+    "lang": "en",
+    "state": "reduced-motion",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "reducedMotion": {
+      "animation": "none",
+      "opacity": "0"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "camera",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "preview",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "analyzing",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "steps": [
+      "Detectando alimentos",
+      "Estimando porciones",
+      "Calculando nutrición"
+    ]
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "review",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "edit",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "manual",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "manual-focus",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "detail",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "busy",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "es",
+    "state": "desktop-manual",
+    "overflow": [],
+    "back": {
+      "top": 247,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "state": "camera",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "state": "preview",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "state": "analyzing",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "steps": [
+      "Detecting foods",
+      "Estimating portions",
+      "Calculating nutrition"
+    ]
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "state": "review",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "state": "edit",
+    "overflow": [],
+    "back": {
+      "top": 49.890625,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "state": "manual",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  },
+  {
+    "width": 390,
+    "lang": "en",
+    "state": "manual-focus",
+    "overflow": [],
+    "back": {
+      "top": 47,
+      "color": "rgb(20, 40, 85)"
+    }
+  }
+]
