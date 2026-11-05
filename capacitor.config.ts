@@ -61,9 +61,10 @@ const config: CapacitorConfig = {
       enabled: true,
     },
     Keyboard: {
-      // "none": el inset lo gestiona useKeyboardInset (variable --kb).
+      // iOS: useKeyboardInset ajusta el viewport compartido de pantallas/modales.
       // "body" duplicaba el desplazamiento y dejaba un hueco sobre el teclado.
       resize: "none",
+      resizeOnFullScreen: true,
     },
     StatusBar: {
       style: "DARK",

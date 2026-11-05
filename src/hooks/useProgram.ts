@@ -39,6 +39,8 @@ export interface UseProgramResult {
   error: ApiError | null
   /** Human-facing product message for non-active states (already R4/R5 safe, never the raw server detail). */
   productMessage: string | null
+  /** Completitud inicial real; null si todavía no se pudo consultar. */
+  initialAssessmentsCompleted?: number | null
   /** Manual refetch (e.g. a "reintentar" CTA on the recoverable state). */
   refetch: () => void
 }
@@ -203,6 +205,7 @@ export function useProgram(): UseProgramResult {
     isMockFallback: false,
     error,
     productMessage,
+    initialAssessmentsCompleted: battery.data ?? null,
     refetch: retryProgram,
   }
 }

@@ -99,15 +99,8 @@ body {
   position: relative;
 }
 
-/* Inset del teclado virtual (hook useKeyboardInset, solo nativo iOS):
-   encoge la caja del screen para que el footer en flujo (composer del
-   chat) o el contenido del login suban por encima del teclado en lugar
-   de quedar tapados. */
-.screen.chat-kb,
-.screen.auth-kb {
-  padding-bottom: var(--kb, 0px);
-  transition: padding-bottom 0.22s ease-out;
-}
+/* El viewport del Shell se ajusta una sola vez para todas las pantallas.
+   No añadir un segundo padding de teclado en cada formulario. */
 
 /* Con el teclado abierto se colapsa el héroe del login (logo + título)
    para que los campos quepan sin solaparse ni hacer zoom. */
@@ -30021,9 +30014,7 @@ ion-modal.request-modal ion-content.req-body {
 /* Con el teclado abierto (useKeyboardInset, nativo iOS) la caja del modal
    encoge: el área de scroll pierde altura y el footer sube por encima del
    teclado en lugar de quedar tapado. */
-.kb-open ion-modal.request-modal .req-page {
-  padding-bottom: var(--kb, 0px);
-}
+.kb-open ion-modal.request-modal .req-page { padding-bottom: 0; }
 .booking-reference ion-content.req-body {
   --background:
     radial-gradient(
@@ -31642,8 +31633,7 @@ ion-modal.room-chat-modal::part(content) { overflow: hidden; }
 .room-chat-body { flex: 1 1 0; overflow-y: auto; }
 .room-chat-input { overflow-y: auto; }
 .kb-open ion-modal.room-chat-modal {
-  padding-bottom: var(--kb, 0px);
-  --height: min(82dvh, calc(100dvh - var(--kb, 0px) - env(safe-area-inset-top)));
+  --height: min(82dvh, var(--app-viewport-height, 100dvh));
 }
 .kb-open .room-chat-foot { padding-bottom: 10px; }
 /* Comunidad: navegación constante, feed compacto y superficies semánticas. */
@@ -32127,8 +32117,8 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 @media (prefers-reduced-motion: reduce) { .com-dbl-heart::after { animation: none; display: none; } }
 
 /* Resize comments to the keyboard and scroll only the conversation body. */
-.com-comments-modal { --height: calc(100dvh - var(--kb, 0px)); --max-height: calc(100dvh - var(--kb, 0px)); align-items: flex-start; }
-.com-comments-modal::part(content) { position: absolute; top: 0; bottom: var(--kb, 0px); height: auto; max-height: none; }
+.com-comments-modal { --height: var(--app-viewport-height, 100dvh); --max-height: var(--app-viewport-height, 100dvh); align-items: flex-start; }
+.com-comments-modal::part(content) { position: absolute; top: 0; bottom: 0; height: auto; max-height: none; }
 .com-comments-modal .com-detail { overflow: hidden; height: 100%; min-height: 0; box-sizing: border-box; }
 .com-comments-modal .com-detail-head { flex-shrink: 0; }
 .com-comments-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
@@ -32171,8 +32161,8 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .com-compose-modal textarea.comp-input { display: block; width: 100%; height: clamp(140px, 24dvh, 220px); min-height: 140px; max-height: 220px; box-sizing: border-box; resize: none; overflow-y: auto; font: inherit; font-size: 16px; line-height: 1.5; scroll-margin-block: 16px; }
 .com-compose-modal textarea.comp-input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
 /* The native keyboard does not resize our WebView; resize this overlay itself. */
-.achievement-modal { --height: calc(95dvh - var(--kb, 0px)); --max-height: calc(95dvh - var(--kb, 0px)); }
-.achievement-modal::part(content) { position: absolute; top: 5dvh; bottom: var(--kb, 0px); height: auto; max-height: none; }
+.achievement-modal { --height: min(95dvh, var(--app-viewport-height, 95dvh)); --max-height: min(95dvh, var(--app-viewport-height, 95dvh)); }
+.achievement-modal::part(content) { position: absolute; top: 5%; bottom: 0; height: auto; max-height: none; }
 .achievement-modal .achievement-sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 .achievement-modal .achievement-caption-input { scroll-margin-top: 16px; scroll-margin-bottom: 24px; }
 
@@ -32690,3 +32680,92 @@ ion-button.emergency-contact-remove { min-height:44px; margin:0 0 8px; --padding
 .consent-preview .onb-body { padding-bottom:120px; }
 .consent-preview-complete { padding:16px; background:var(--teal-l); color:var(--teal); border-radius:16px; font-size:13px; line-height:1.6; }
 @media (min-width:680px) { .consent-preview .onb-head,.consent-preview .onb-body,.consent-preview .onb-foot { width:100%; max-width:620px; margin-inline:auto; } .consent-preview .onb-foot { left:50%; transform:translateX(-50%); } }
+
+/* Teclado: un área visible común para formularios, chat y overlays portados. */
+html.kb-open { --nav-h: 0px; }
+.kb-open .app-stage {
+  position: fixed;
+  top: var(--app-viewport-top, 0px);
+  inset-inline: 0;
+  height: var(--app-viewport-height);
+  min-height: 0;
+  padding-block: 0;
+  align-items: flex-start;
+}
+html.kb-open .app-shell,
+html.kb-open .app-shell.app-shell-login { height: 100%; max-height: 100%; }
+.kb-open .bnav { display: none; }
+.kb-open ion-modal,
+.kb-open ion-alert,
+.kb-open ion-toast {
+  top: var(--app-viewport-top, 0px);
+  bottom: auto;
+  height: var(--app-viewport-height);
+  max-height: var(--app-viewport-height);
+  --max-height: 100%;
+}
+.kb-open .onb-head { padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px; }
+.kb-open .onb-head-top, .kb-open .onb-head-sub { display: none; }
+.kb-open .onb-head-title { font-size: 19px; margin: 8px 0 0; }
+.kb-open .onb-stepper-dot { width: 20px; height: 20px; font-size: 10px; }
+.kb-open .onb-page .screen-scroll.no-nav.onb-body { padding-bottom: 16px; }
+.kb-open .onb-page .onb-foot {
+  position: static;
+  flex-shrink: 0;
+  padding: 8px 16px 10px;
+  background: var(--wh);
+}
+.kb-open .com-compose-modal .com-detail { min-height: 0; overflow-y: auto; }
+
+/* Preparación del programa: progreso real, acompañamiento y próximos pasos. */
+.program-setup { max-width: 820px; margin-inline: auto; padding: calc(22px + env(safe-area-inset-top, 0px)) 18px 28px; display: flex; flex-direction: column; gap: 20px; color: var(--navy); }
+.program-setup-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.program-setup-top > span { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--brand-blue-mid); }
+.program-setup-top ion-chip { margin: 0; min-height: 28px; max-width: 60%; padding: 6px 10px; background: var(--ice-l); color: var(--brand-blue-mid); font-size: 10px; line-height: 1.4; }
+.program-setup-hero { display: grid; grid-template-columns: minmax(0, 1fr) 105px; align-items: center; gap: 12px; }
+.program-setup-hero h1 { margin: 0 0 12px; font-family: 'Space Grotesk', sans-serif; font-size: clamp(27px, 7.5vw, 36px); line-height: 1.08; letter-spacing: -.9px; color: var(--navy); }
+.program-setup-hero p { margin: 0; color: var(--mu); font-size: 13px; line-height: 1.65; }
+.program-setup-portrait { position: relative; height: 170px; border-radius: 56px 56px 28px 28px; background: linear-gradient(160deg, var(--ice-l), var(--home-aqua)); overflow: hidden; }
+.program-setup-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 14%; }
+.program-setup-portrait > span { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 20px; background: var(--wh); color: var(--navy); font-size: 11px; font-weight: 750; box-shadow: var(--shadow-sm); }
+.program-setup-portrait ion-icon { font-size: 13px; color: var(--brand-blue-mid); }
+ion-card.program-setup-progress { margin: 0; border-radius: 24px; background: var(--wh); box-shadow: 0 8px 24px color-mix(in srgb, var(--brand-sky) 18%, transparent); border: 1px solid color-mix(in srgb, var(--brand-sky) 24%, transparent); }
+.program-setup-progress ion-card-content { padding: 20px; }
+.program-setup-progress-top { display: flex; align-items: center; gap: 12px; }
+.program-setup-icon { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; border-radius: 15px; background: var(--ice-l); color: var(--brand-blue-mid); }
+.program-setup-icon ion-icon { font-size: 23px; }
+.program-setup-progress h2 { margin: 0; font-size: 16px; font-weight: 750; color: var(--navy); }
+.program-setup-progress-top p { margin: 3px 0 0; font-size: 13px; color: var(--brand-blue-mid); font-weight: 650; }
+.program-setup-progress ion-progress-bar { margin-top: 18px; height: 7px; border-radius: 8px; --background: var(--ice-l); --progress-background: var(--brand-blue-mid); }
+.program-setup-progress p.program-setup-progress-copy { color: var(--mu); line-height: 1.6; font-size: 12px; margin: 14px 0 0; }
+.program-setup-progress ion-button { margin: 18px 0 0; min-height: 50px; --border-radius: 16px; --background: var(--navy); --color: var(--wh); --box-shadow: none; font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; white-space: normal; }
+.program-setup-path { padding: 0 3px; }
+.program-setup-path > h2 { font-size: 16px; margin: 0 0 18px; color: var(--navy); }
+.program-setup-path ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; }
+.program-setup-path li { position: relative; display: flex; gap: 14px; padding-bottom: 22px; }
+.program-setup-path li:last-child { padding-bottom: 0; }
+.program-setup-path li:not(:last-child)::after { content: ''; position: absolute; top: 39px; left: 18px; bottom: 4px; width: 1px; background: var(--bd); }
+.program-setup-path li > span { width: 38px; height: 38px; flex: 0 0 38px; border: 1px solid var(--bd); border-radius: 13px; background: var(--wh); display: grid; place-items: center; font-size: 14px; color: var(--mu); font-weight: 750; }
+.program-setup-path li.current > span { background: var(--navy); border-color: var(--navy); color: var(--wh); }
+.program-setup-path li.done > span { background: var(--teal-l); border-color: var(--teal-l); color: var(--teal); }
+.program-setup-path li ion-icon { font-size: 19px; }
+.program-setup-path h3 { font-size: 13px; margin: 1px 0 5px; color: var(--navy); font-weight: 750; }
+.program-setup-path p { font-size: 12px; line-height: 1.55; margin: 0; color: var(--mu); }
+.program-setup-note { display: flex; align-items: center; gap: 11px; padding: 14px 16px; background: var(--ice-l); border-radius: 18px; }
+.program-setup-note > ion-icon { font-size: 22px; flex-shrink: 0; color: var(--brand-blue-mid); }
+.program-setup-note strong { font-size: 12px; }
+.program-setup-note p { font-size: 11px; color: var(--mu); line-height: 1.5; margin: 3px 0 0; }
+ion-card.program-setup-fallback { margin: calc(20px + env(safe-area-inset-top, 0px)) 16px 20px; }
+@media (min-width: 700px) {
+  .program-setup { padding-inline: 28px; gap: 24px; }
+  .program-setup-hero { grid-template-columns: minmax(0, 1fr) 155px; gap: 28px; }
+  .program-setup-portrait { height: 190px; }
+  .program-setup-hero h1 { max-width: 440px; font-size: 40px; }
+  .program-setup-hero p { max-width: 440px; font-size: 15px; }
+}
+@media (max-width: 350px) {
+  .program-setup { padding-inline: 14px; gap: 18px; }
+  .program-setup-hero { grid-template-columns: minmax(0, 1fr) 84px; }
+  .program-setup-portrait { height: 150px; }
+  .program-setup-progress ion-card-content { padding: 16px; }
+}

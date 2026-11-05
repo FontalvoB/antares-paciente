@@ -125,6 +125,7 @@ export function ProgramPage() {
     isLoading: programLoading,
     programState,
     productMessage,
+    initialAssessmentsCompleted,
     refetch: refetchProgram,
   } = useProgram();
 
@@ -681,6 +682,7 @@ export function ProgramPage() {
             message={productMessage}
             onTests={() => openTests()}
             onRetry={refetchProgram}
+            completedAssessments={initialAssessmentsCompleted}
           />
         </Scroll>
       </Screen>
