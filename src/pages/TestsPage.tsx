@@ -270,6 +270,7 @@ export function TestsPage() {
       );
       return;
     }
+    if (completed < 9) showToast(t("Tu plan queda pendiente hasta completar las 9 evaluaciones."), "warn");
     skipTests();
   };
 
@@ -387,7 +388,7 @@ export function TestsPage() {
         <div className="screen-scroll no-nav ht-list">
           <p className="ht-lead">
             {t(
-              "Completa al menos {n} evaluaciones para personalizar tu programa. El resto puedes hacerlo después.",
+              "Puedes omitir el resto después de {n} evaluaciones. Tu plan queda pendiente hasta completar las 9 evaluaciones.",
               { n: String(MIN_REQUIRED_TESTS) },
             )}
           </p>

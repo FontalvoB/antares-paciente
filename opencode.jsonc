@@ -52,10 +52,7 @@
         "type": "local",
         "command": ["codegraph", "serve", "--mcp"],
       },
-      "playwright": {
-        "type": "local",
-        "command": ["npx", "@playwright/mcp@latest"],
-      },
+      // playwright y chrome-devtools: config global (~/.config/opencode/opencode.json)
     },
   },
 }

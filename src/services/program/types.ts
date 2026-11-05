@@ -67,6 +67,7 @@ export interface ExerciseItemDto {
   weightKg?: number | null
   tempo?: string | null
   rpe?: number | null
+  referenceVideo?: { embedUrl: string; sourceUrl: string; author: string } | null
 }
 
 export interface PodcastChapterDto {

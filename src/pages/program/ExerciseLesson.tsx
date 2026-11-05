@@ -82,7 +82,9 @@ export function ExerciseLesson({ done, pts, title, exercises, step, left, runnin
       <h2>{viewed.name}</h2>
       {viewed.description && <p>{viewed.description}</p>}
     </header>
-    <ExerciseDemonstration key={`${selected}:${viewed.mediaId ?? viewed.mediaUrl ?? viewed.name}`} exercise={viewed} />
+    {viewed.referenceVideo && !viewed.mediaUrl
+      ? <ExerciseGuide key={`${selected}:${viewed.name}`} exercise={viewed} onWatch={() => {}} />
+      : <ExerciseDemonstration key={`${selected}:${viewed.mediaId ?? viewed.mediaUrl ?? viewed.name}`} exercise={viewed} />}
     <section className="exercise-prescription" aria-label={t("Indicaciones del ejercicio")}>
       <h3>{t("Tu indicación")}</h3>
       <dl>

@@ -37,6 +37,7 @@ import {
   VitalsLesson,
   type ProgramTab,
 } from "./program/Lessons";
+import { ProgramPendingState } from "../components/program/ProgramPendingState";
 import { ProgramHeader } from "./program/ProgramHeader";
 import { RankingView } from "./program/RankingView";
 import { StreakView } from "./program/StreakView";
@@ -81,6 +82,7 @@ export function ProgramPage() {
     completeStep,
     pointsToday: appPointsToday,
     navigate,
+    openTests,
     showToast,
     streak: appStreak,
     programWeek: appProgramWeek,
@@ -668,6 +670,22 @@ export function ProgramPage() {
     activeExerciseSteps,
     taskPts,
   ]);
+
+  if (programLoading || !snapshot || (programState !== "active" && programState !== "recoverable")) {
+    return (
+      <Screen className="pg-reference">
+        <Scroll className="pg-scroll">
+          <ProgramPendingState
+            loading={programLoading}
+            state={programState}
+            message={productMessage}
+            onTests={() => openTests()}
+            onRetry={refetchProgram}
+          />
+        </Scroll>
+      </Screen>
+    );
+  }
 
   return (
     <Screen hideNav={!!active} className={`pg-reference${active ? ` lesson-page lesson-${active}${active === "vitals" ? " wearable-reference" : ""}` : ""}`}>
