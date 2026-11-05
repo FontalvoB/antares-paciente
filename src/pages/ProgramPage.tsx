@@ -683,6 +683,7 @@ export function ProgramPage() {
             onTests={() => openTests()}
             onRetry={refetchProgram}
             completedAssessments={initialAssessmentsCompleted}
+            onHome={() => navigate("home")}
           />
         </Scroll>
       </Screen>
@@ -746,13 +747,6 @@ export function ProgramPage() {
                 currentId={currentId}
                 first={first}
                 programWeek={activeProgramWeek}
-                todayIdx={todayIdx}
-                takenAt={takenAt}
-                nbWeekDays={snapshot?.streak?.nbWeekDays}
-                weekStartDateLocal={
-                  snapshot?.template?.currentWeekStartDateLocal
-                }
-                todayLocalDate={snapshot?.todayLocalDate}
                 dailyBonusAmount={snapshot?.dailyBonusAmount}
                 todayBonusAvailable={snapshot?.todayBonusAvailable}
                 scores={scores}
@@ -818,7 +812,7 @@ export function ProgramPage() {
                   <IonIcon slot="icon-only" icon={arrowBack} />
                 </IonButton>
               </div>
-              {program[task.id] && (
+              {program[task.id] && task.id !== "nutraceutico" && (
                 <div className="lesson-done-banner">
                   {t("Completada hoy · +{pts} pts", { pts: String(taskPts) })}
                 </div>

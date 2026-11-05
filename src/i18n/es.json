@@ -3315,5 +3315,22 @@
   "Detectando alimentos": "Detectando alimentos",
   "Estimando porciones": "Estimando porciones",
   "Datos verificados · USDA": "Datos verificados · USDA",
-  "Registrar · {meal}": "Registrar · {meal}"
+  "Registrar · {meal}": "Registrar · {meal}",
+  "Tu programa no cargó": "Tu programa no cargó",
+  "Tu programa está en pausa": "Tu programa está en pausa",
+  "Tu equipo de salud debe confirmar cuándo retomar tus actividades.": "Tu equipo de salud debe confirmar cuándo retomar tus actividades.",
+  "Tu programa no está activo": "Tu programa no está activo",
+  "Consulta con tu equipo de salud para conocer los siguientes pasos.": "Consulta con tu equipo de salud para conocer los siguientes pasos.",
+  "Tu programa aún no está disponible": "Tu programa aún no está disponible",
+  "Las actividades aparecerán aquí cuando tu equipo active el programa.": "Las actividades aparecerán aquí cuando tu equipo active el programa.",
+  "No pudimos recuperar tus actividades ahora. Puedes reintentar o volver a Inicio.": "No pudimos recuperar tus actividades ahora. Puedes reintentar o volver a Inicio.",
+  "Cargando tu programa": "Cargando tu programa",
+  "Estado de tu programa": "Estado de tu programa",
+  "Un momento": "Un momento",
+  "Vamos paso a paso": "Vamos paso a paso",
+  "Tu bienestar, a tu ritmo": "Tu bienestar, a tu ritmo",
+  "Estamos cargando tus actividades del día.": "Estamos cargando tus actividades del día.",
+  "Volver a Inicio": "Volver a Inicio",
+  "Si el problema continúa, vuelve a intentarlo más tarde.": "Si el problema continúa, vuelve a intentarlo más tarde.",
+  "Puedes regresar a esta pantalla desde tu protocolo diario.": "Puedes regresar a esta pantalla desde tu protocolo diario."
 }

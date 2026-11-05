@@ -3305,5 +3305,22 @@
   "Detectando alimentos": "Detecting foods",
   "Estimando porciones": "Estimating portions",
   "Datos verificados · USDA": "Verified data · USDA",
-  "Registrar · {meal}": "Log · {meal}"
+  "Registrar · {meal}": "Log · {meal}",
+  "Tu programa no cargó": "Your program could not load",
+  "Tu programa está en pausa": "Your program is paused",
+  "Tu equipo de salud debe confirmar cuándo retomar tus actividades.": "Your care team needs to confirm when you can resume your activities.",
+  "Tu programa no está activo": "Your program is not active",
+  "Consulta con tu equipo de salud para conocer los siguientes pasos.": "Check with your care team about the next steps.",
+  "Tu programa aún no está disponible": "Your program is not available yet",
+  "Las actividades aparecerán aquí cuando tu equipo active el programa.": "Your activities will appear here when your care team activates the program.",
+  "No pudimos recuperar tus actividades ahora. Puedes reintentar o volver a Inicio.": "We could not retrieve your activities right now. Try again or return to Home.",
+  "Cargando tu programa": "Loading your program",
+  "Estado de tu programa": "Your program status",
+  "Un momento": "One moment",
+  "Vamos paso a paso": "One step at a time",
+  "Tu bienestar, a tu ritmo": "Your well-being, at your pace",
+  "Estamos cargando tus actividades del día.": "We are loading your daily activities.",
+  "Volver a Inicio": "Return to Home",
+  "Si el problema continúa, vuelve a intentarlo más tarde.": "If the issue continues, try again later.",
+  "Puedes regresar a esta pantalla desde tu protocolo diario.": "You can return to this screen from your daily protocol."
 }
