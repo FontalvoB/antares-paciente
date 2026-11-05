@@ -32655,10 +32655,29 @@ ion-badge.emergency-contact-optional-badge { --background:var(--g0); --color:var
 .emergency-contact-country { font-size:12px; --padding-start:9px; --padding-end:8px; }
 .emergency-contact-field-hint { margin:7px 0 0; color:var(--mu); font-size:11px; line-height:1.5; }
 ion-button.emergency-contact-add { margin:0; min-height:54px; --border-radius:16px; --border-color:var(--bd); --border-width:1px; --color:var(--navy); --background:var(--ice-l); --box-shadow:none; text-transform:none; letter-spacing:0; font-size:13px; font-weight:700; }
-ion-button.emergency-contact-remove { min-height:44px; margin:0 0 8px; --padding-start:0; --padding-end:12px; --color:var(--mu); text-transform:none; letter-spacing:0; font-size:12px; }
+ion-button.emergency-contact-remove { min-height:44px; margin:0 0 8px; --padding-start:12px; --padding-end:12px; --color:var(--ion-color-danger-shade); --border-radius:10px; text-transform:none; letter-spacing:0; font-size:12px; }
+.emergency-contact-remove ion-icon[slot="start"] { width:18px; height:18px; font-size:18px; flex-shrink:0; margin-inline-start:0; margin-inline-end:8px; }
 .emergency-contact-add:focus-visible,.emergency-contact-remove:focus-visible { outline:2px solid var(--blue); outline-offset:3px; }
 @keyframes contact-card-reveal { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
 @media (min-width:600px) { .emergency-contact-fields { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; } .emergency-contact-card ion-card-content { padding:22px 22px 8px; } }
 @media (prefers-reduced-motion:reduce) { ion-card.emergency-contact-card-optional { animation:none; } }
 
 .emergency-contact-error { color: var(--ion-color-danger); font-size: 13px; line-height: 1.5; margin: 12px 0; }
+
+/* Seguimiento SOS: la misma jerarquía del formulario, con estados por contacto. */
+.sos-contact-deliveries { display:grid; gap:14px; margin-top:12px; }
+.sos-contact-delivery .emergency-contact-card-heading { margin-bottom:14px; }
+.sos-contact-delivery .emergency-contact-card-title h3 { margin:0; color:var(--navy); font-size:14px; line-height:1.4; font-weight:750; }
+.sos-contact-delivery .emergency-contact-card-title p { font-variant-numeric:tabular-nums; letter-spacing:.25px; }
+.sos-contact-delivery ion-card-content { padding-bottom:14px; }
+.sos-contact-channel-list { margin:0; display:grid; }
+.sos-contact-channel { display:grid; grid-template-columns:minmax(64px,.8fr) minmax(0,1.5fr); align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--bd); font-size:12px; line-height:1.45; }
+.sos-contact-channel dt { display:flex; align-items:center; gap:8px; color:var(--mu); }
+.sos-contact-channel dt ion-icon { width:16px; height:16px; font-size:16px; flex-shrink:0; }
+.sos-contact-channel dd { justify-self:end; margin:0; max-width:100%; padding:5px 9px; border-radius:8px; font-size:11px; font-weight:650; text-align:right; color:var(--blue); background:var(--blue-l); }
+.sos-contact-channel.ok dd { color:var(--teal); background:var(--teal-l); }
+.sos-contact-channel.bad dd { color:var(--ion-color-danger-shade); background:var(--red-l); }
+.sos-contact-channel.unavailable dd { color:var(--mu); background:var(--g0); }
+.sos-delivery-contact-count { display:grid; gap:4px; margin:10px 0 14px; color:var(--mu); font-size:11px; line-height:1.5; }
+.sos-delivery-contact-count strong { color:var(--navy); font-size:13px; }
+.sos-delivery-row.unavailable,.sos-delivery-row.unavailable b,.sos-delivery-row.unavailable ion-icon { color:var(--mu); }

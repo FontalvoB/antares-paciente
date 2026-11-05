@@ -40,7 +40,7 @@ export function EmergencyContactsForm({ primary, secondary, onPrimaryChange, onS
           <IonBadge className="emergency-contact-optional-badge">{t("Opcional")}</IonBadge>
         </div>
         <EmergencyContactFields prefix={`${prefix}2`} value={secondary} onChange={value => { setExpanded(true);onSecondaryChange(value); }} disabled={disabled} countryLabel="País del contacto opcional" />
-        <IonButton fill="clear" className="emergency-contact-remove" disabled={disabled} onClick={() => { onSecondaryChange(emptyEmergencyContact());setExpanded(false);focus(`${prefix}-add-optional`); }}><IonIcon slot="start" icon={trashOutline} aria-hidden="true" />{t("Quitar contacto opcional")}</IonButton>
+        <IonButton fill="clear" color="danger" className="emergency-contact-remove" disabled={disabled} onClick={() => { onSecondaryChange(emptyEmergencyContact());setExpanded(false);focus(`${prefix}-add-optional`); }}><IonIcon slot="start" icon={trashOutline} aria-hidden="true" />{t("Quitar contacto opcional")}</IonButton>
       </IonCardContent>
     </IonCard> : <IonButton id={`${prefix}-add-optional`} fill="outline" expand="block" className="emergency-contact-add" disabled={disabled} aria-expanded={false} aria-controls={`${prefix}-optional-card`} onClick={() => { setExpanded(true);focus(`${prefix}2-name`); }}>
       <IonIcon slot="start" icon={addOutline} aria-hidden="true" />{t("Añadir contacto opcional")}

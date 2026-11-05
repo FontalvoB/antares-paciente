@@ -3242,5 +3242,13 @@
   "Alerta real: se notificará a tus contactos registrados por llamada y SMS.": "Real alert: your saved contacts will be notified by call and SMS.",
   "Toca SOS y confirma para solicitar ayuda a tus contactos registrados y a tu equipo clínico.": "Tap SOS and confirm to request help from your saved contacts and care team.",
   "Se enviará una alerta a tus contactos registrados y a tu equipo médico, con tu ubicación si la compartes.": "An alert will be sent to your saved contacts and care team, with your location if you share it.",
-  "Si activas SOS, avisaremos a tus contactos registrados por llamada y SMS. También por correo si lo registras.": "If you activate SOS, your saved contacts will receive a call and SMS. We will also email them if you add an email address."
+  "Si activas SOS, avisaremos a tus contactos registrados por llamada y SMS. También por correo si lo registras.": "If you activate SOS, your saved contacts will receive a call and SMS. We will also email them if you add an email address.",
+  "Sin confirmación de envío · {phone}": "Delivery not confirmed · {phone}",
+  "Tu SOS está activo. Aquí puedes seguir los avisos a tus contactos.": "Your SOS is active. Track notifications to your contacts here.",
+  "Contactos y equipo clínico": "Contacts and care team",
+  "{count} contacto incluido": "{count} contact included",
+  "{count} contactos incluidos": "{count} contacts included",
+  "Consulta abajo el estado de cada contacto.": "See each contact’s status below.",
+  "Teléfono protegido": "Protected phone number",
+  "Finalizada": "Completed"
 }
