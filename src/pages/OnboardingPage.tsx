@@ -25,8 +25,6 @@ import {
   eye,
   eyeOff,
   lockClosedOutline,
-  medkitOutline,
-  peopleOutline,
   personOutline,
   shieldCheckmarkOutline,
   walletOutline,
@@ -42,7 +40,7 @@ import {
   updateMyPatientProfile,
 } from "../utils/patientProfileApi";
 import { setFirstPassword } from "../utils/authApi";
-import { EmergencyContactFields } from "../components/EmergencyContactFields";
+import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
 import { ConsentReadGate } from "../components/ConsentReadGate";
 import { contactFromProfile, emergencyContactsError } from "../utils/emergencyContacts";
 import type { UserProfile } from "../types";
@@ -490,31 +488,9 @@ export function OnboardingPage() {
 
               {step === 2 && (
                 <>
-                  <div className="onb-trust onb-trust-warn">
-                    <IonIcon icon={medkitOutline} />
-                    <span>
-                      {t(
-                        "El primer contacto recibe tus alertas SOS. El segundo es un contacto de respaldo opcional.",
-                      )}
-                    </span>
-                  </div>
-
-                  <section className="onb-card tone-panic">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-panic">
-                        <IonIcon icon={peopleOutline} />
-                      </span>
-                      <div>
-                        <strong>{t("Cuidador principal")}</strong>
-                        <span>{t("Obligatorio para activar el programa")}</span>
-                      </div>
-                    </div>
-                    <EmergencyContactFields prefix="onb-fam" value={contactFromProfile(form, 1)} onChange={contact => setForm(f => ({ ...f, fam1Nombre: contact.name, fam1Parentesco: contact.relationship, fam1Cel: contact.phone, fam1Email: contact.email }))} />
-                  </section>
-                  <section className="onb-card tone-ice">
-                    <div className="onb-card-head"><span className="onb-card-ico tone-ice"><IonIcon icon={peopleOutline} /></span><div><strong>{t("Segundo contacto de emergencia")}</strong><span>{t("Opcional · persona de respaldo")}</span></div></div>
-                    <EmergencyContactFields prefix="onb-fam2" value={contactFromProfile(form, 2)} onChange={contact => setForm(f => ({ ...f, fam2Nombre: contact.name, fam2Parentesco: contact.relationship, fam2Cel: contact.phone, fam2Email: contact.email }))} />
-                  </section>
+                  <EmergencyContactsForm prefix="onb-fam" primary={contactFromProfile(form, 1)} secondary={contactFromProfile(form, 2)}
+                    onPrimaryChange={contact => setForm(f => ({ ...f, fam1Nombre: contact.name, fam1Parentesco: contact.relationship, fam1Cel: contact.phone, fam1Email: contact.email }))}
+                    onSecondaryChange={contact => setForm(f => ({ ...f, fam2Nombre: contact.name, fam2Parentesco: contact.relationship, fam2Cel: contact.phone, fam2Email: contact.email }))} disabled={saving} />
 
                   <section
                     className="onb-card"

@@ -5,8 +5,11 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import {
+  IonActionSheet,
   IonBadge,
   IonButton,
+  IonCard,
+  IonCardContent,
   IonIcon,
   IonItem,
   IonLabel,
@@ -22,6 +25,8 @@ import {
   mailOutline,
   medkit,
   people,
+  personOutline,
+  peopleOutline,
   pulse,
   shieldCheckmarkOutline,
   informationCircleOutline,
@@ -46,6 +51,7 @@ import {
   type SosVitalsDto,
   type SosAlertDto,
 } from "../services/sos/sos-service";
+import { normalizeEmergencyPhone } from "../utils/emergencyPhone";
 import { openNativeDialer } from "../utils/nativeDialer";
 import { emergencyNumberForCountry } from "../utils/emergencyNumbers";
 import type { EmergencyCountry } from "../utils/emergencyNumbers";
@@ -136,6 +142,11 @@ export function PanicOverlay() {
     return () => cancelAnimationFrame(frame);
   }, [panicOpen, view]);
 
+  const [choosingContact, setChoosingContact] = useState(false);
+  const manualContacts = [
+    { name: user.fam1Nombre || t("Contacto principal"), phone: normalizeEmergencyPhone(user.fam1Cel), label: t("Principal") },
+    { name: user.fam2Nombre || t("Contacto opcional"), phone: normalizeEmergencyPhone(user.fam2Cel), label: t("Opcional") },
+  ].filter((contact, index, all) => contact.phone && all.findIndex(other => other.phone === contact.phone) === index);
   const family = user.fam1Nombre;
   const familyRole = user.fam1Parentesco;
   const familyCel = user.fam1Cel;
@@ -198,6 +209,7 @@ export function PanicOverlay() {
       setRateLimitSecs(0);
       setFastPoll(false);
       setSharedVitals(false);
+      setChoosingContact(false);
     }
   }, [panicOpen]);
 
@@ -268,7 +280,8 @@ export function PanicOverlay() {
       return;
     }
 
-    if (!openNativeDialer(familyCel)) {
+    if (manualContacts.length > 1) { setChoosingContact(true); return; }
+    if (!openNativeDialer(manualContacts[0]?.phone)) {
       showToast(
         t("No hay un contacto de emergencia con teléfono configurado."),
         "err",
@@ -376,7 +389,10 @@ export function PanicOverlay() {
   const contactDegraded = voiceDegraded || smsDegraded;
   const locationShared = realAlert?.location != null;
 
-  const activeCopy = voiceSent && smsSent
+  const hasRecipientDetails = Boolean(realAlert?.recipients?.length);
+  const activeCopy = hasRecipientDetails
+    ? t("Tu SOS está activo. Aquí puedes seguir los avisos a tus contactos.")
+    : voiceSent && smsSent
     ? t("Llamada y SMS enviados a tu contacto de emergencia.")
     : voiceSent
       ? t("Llamada realizada a tu contacto de emergencia.")
@@ -506,7 +522,9 @@ export function PanicOverlay() {
       title: t("Equipo clínico"),
       sub:
         sosActive
-          ? t("Alerta registrada para tu equipo clínico")
+          ? hasRecipientDetails
+            ? deliveryLabel(realAlert?.pushChannelStatus ?? "SinDatos", t("Notificado"))
+            : t("Alerta registrada para tu equipo clínico")
           : t("Médico de cabecera"),
       tone: "blue",
       on: realAlert?.pushChannelStatus === "Enviado",
@@ -531,8 +549,28 @@ export function PanicOverlay() {
     },
   ];
 
+  const networkRows = [
+    rows[0],
+    ...(user.fam2Nombre?.trim() || user.fam2Cel?.trim() ? [{
+      key: "secondary",
+      ico: people,
+      title: user.fam2Nombre?.trim() || t("Contacto opcional"),
+      sub: sosActive
+        ? t("Sin confirmación de envío · {phone}", { phone: user.fam2Cel || "" })
+        : [t("Contacto opcional"), user.fam2Parentesco, user.fam2Cel].filter(Boolean).join(" · "),
+      tone: "ice",
+      // Los estados de entrega confirmados vienen de recipients, no del perfil.
+      on: false,
+    }] : []),
+    rows[1],
+  ];
+
   return (
     <MotionConfig reducedMotion="user">
+      <IonActionSheet isOpen={panicOpen && choosingContact} header={t("¿A quién quieres llamar?")} onDidDismiss={() => setChoosingContact(false)} buttons={[
+        ...manualContacts.map(contact => ({ text: `${contact.name} · ${contact.label}`, icon: call, handler: () => { openNativeDialer(contact.phone); } })),
+        { text: t("Cancelar"), role: "cancel" },
+      ]} />
       <AnimatePresence>
         {panicOpen && (
           <motion.div
@@ -591,7 +629,7 @@ export function PanicOverlay() {
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
                 {t(
-                  "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
+                  "Alerta real: se notificará a tus contactos registrados por llamada y SMS.",
                 )}
               </span>
             </div>)}
@@ -755,7 +793,7 @@ export function PanicOverlay() {
                           {sosActive
                             ? `${activeCopy} ${locationCopy}`
                             : t(
-                                "Toca SOS y confirma para solicitar ayuda a tu contacto de emergencia y a tu equipo clínico.",
+                                "Toca SOS y confirma para solicitar ayuda a tus contactos registrados y a tu equipo clínico.",
                               )}
                         </p>
                       </div>
@@ -763,7 +801,7 @@ export function PanicOverlay() {
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
                 {t(
-                  "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
+                  "Alerta real: se notificará a tus contactos registrados por llamada y SMS.",
                 )}
               </span>
             </div>
@@ -771,10 +809,11 @@ export function PanicOverlay() {
                       <div className="sos-delivery">
                         <div className="sos-delivery-head">
                           <small>{t("ESTADO DE LA ENTREGA")}</small>
-                          <h2>{t("Confirmación de canales")}</h2>
+                          <h2>{t(hasRecipientDetails ? "Contactos y equipo clínico" : "Confirmación de canales")}</h2>
                         </div>
+                        {hasRecipientDetails && <p className="sos-delivery-contact-count"><strong>{t(realAlert!.recipients!.length === 1 ? "{count} contacto incluido" : "{count} contactos incluidos", { count: String(realAlert!.recipients!.length) })}</strong><span>{t("Consulta abajo el estado de cada contacto.")}</span></p>}
                         <ul className="sos-delivery-list">
-                          {deliveryRows.map((d) => {
+                          {deliveryRows.filter(row => !hasRecipientDetails || row.key === "push").map((d) => {
                             const label = deliveryLabel(
                               d.status,
                               d.okLabel,
@@ -808,7 +847,9 @@ export function PanicOverlay() {
                               d.status === "SinDestino" ||
                               // Backend sin el campo de correo: tampoco es fallo.
                               d.status === "SinDatos";
-                            const tone = okDelivery
+                            const tone = hasRecipientDetails && d.status === "NoConfigurado"
+                              ? "unavailable"
+                              : okDelivery
                               ? "ok"
                               : pendingDelivery
                                 ? "pending"
@@ -837,19 +878,37 @@ export function PanicOverlay() {
                         </div>
                         <IonIcon icon={people} aria-hidden="true" />
                       </div>
+                      {hasRecipientDetails && <div className="sos-contact-deliveries">
+                        {realAlert!.recipients!.map(recipient => {
+                          const primary = recipient.contactOrder === 0;
+                          const channels = [
+                            { key: "voice", icon: call, title: t("Llamada"), status: recipient.voiceChannelStatus, delivery: recipient.voiceCallStatus, accepted: t("Llamada solicitada") },
+                            { key: "sms", icon: chatbubbles, title: "SMS", status: recipient.smsChannelStatus, delivery: recipient.smsDeliveryStatus, accepted: t("Aceptado por el proveedor") },
+                            { key: "email", icon: mailOutline, title: t("Correo"), status: recipient.emailChannelStatus ?? "SinDatos", delivery: null, accepted: t("Enviado") },
+                          ];
+                          return <IonCard key={recipient.id} className={`emergency-contact-card sos-contact-delivery ${primary ? "emergency-contact-card-primary" : "emergency-contact-card-optional"}`}>
+                            <IonCardContent>
+                              <div className="emergency-contact-card-heading">
+                                <span className="emergency-contact-card-icon"><IonIcon icon={primary ? personOutline : peopleOutline} aria-hidden="true" /></span>
+                                <div className="emergency-contact-card-title"><h3>{t(primary ? "Contacto principal" : "Contacto opcional")}</h3><p>{recipient.maskedPhone || t("Teléfono protegido")}</p></div>
+                                <IonBadge className={primary ? "emergency-contact-required" : "emergency-contact-optional-badge"}>{t(primary ? "Obligatorio" : "Opcional")}</IonBadge>
+                              </div>
+                              <dl className="sos-contact-channel-list">
+                                {channels.map(channel => {
+                                  const failed = ["no-answer", "busy", "canceled", "failed", "undelivered"].includes(channel.delivery ?? "") || ["Fallido", "Timeout"].includes(channel.status);
+                                  const unavailable = ["SinDestino", "SinDatos", "NoConfigurado"].includes(channel.status);
+                                  const confirmed = ["delivered", "completed"].includes(channel.delivery ?? "") || (channel.key === "email" && channel.status === "Enviado");
+                                  const tone = failed ? "bad" : unavailable ? "unavailable" : confirmed ? "ok" : "pending";
+                                  const label = channel.delivery === "completed" ? t("Finalizada") : deliveryLabel(channel.status, channel.accepted, channel.delivery);
+                                  return <div key={channel.key} className={`sos-contact-channel ${tone}`}><dt><IonIcon icon={channel.icon} aria-hidden="true" />{channel.title}</dt><dd>{label}</dd></div>;
+                                })}
+                              </dl>
+                            </IonCardContent>
+                          </IonCard>;
+                        })}
+                      </div>}
                       <IonList className="sos-feed" lines="none">
-                        {realAlert?.recipients?.map(recipient => <IonItem key={recipient.id} className="sos-feed-row sos-recipient-row">
-                          <span slot="start" className="sos-feed-ico"><IonIcon icon={people} aria-hidden="true" /></span>
-                          <IonLabel><strong>{t(recipient.contactOrder === 0 ? "Contacto principal" : "Contacto de respaldo")}</strong>
-                            {recipient.maskedPhone && <small>{recipient.maskedPhone}</small>}
-                            <dl className="sos-recipient-channels">
-                              <div><dt>SMS</dt><dd>{deliveryLabel(recipient.smsChannelStatus, t("Aceptado por el proveedor"), recipient.smsDeliveryStatus)}</dd></div>
-                              <div><dt>{t("Llamada")}</dt><dd>{deliveryLabel(recipient.voiceChannelStatus, t("Llamada solicitada"), recipient.voiceCallStatus)}</dd></div>
-                              {recipient.emailChannelStatus && <div><dt>{t("Correo")}</dt><dd>{deliveryLabel(recipient.emailChannelStatus, t("Enviado"))}</dd></div>}
-                            </dl>
-                          </IonLabel>
-                        </IonItem>)}
-                        {rows.slice(realAlert?.recipients?.length ? 1 : 0, 2).map((r) => {
+                        {(realAlert?.recipients?.length ? networkRows.filter(row => row.key === "doc") : networkRows).map((r) => {
                           // BUG-01: el check refleja el estado REAL del canal,
                           // no una secuencia animada (r.on lo decide).
                           const on = r.on;
@@ -958,7 +1017,7 @@ export function PanicOverlay() {
                         </h1>
                         <p>
                           {t(
-                            "Se enviará una alerta a tu contacto de emergencia y a tu equipo médico, con tu ubicación si la compartes.",
+                            "Se enviará una alerta a tus contactos registrados y a tu equipo médico, con tu ubicación si la compartes.",
                           )}
                         </p>
                       </div>

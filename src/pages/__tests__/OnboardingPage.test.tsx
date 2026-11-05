@@ -44,6 +44,7 @@ describe("onboarding requirements", () => {
     next();
     enter("onb-fam-name", "Ana");
     enter("onb-fam-cel", "+573001234567");
+    fireEvent.click(screen.getByText("Añadir contacto opcional"));
     enter("onb-fam2-name", "Luis");
     next();
     expect(state.toast).toHaveBeenCalledWith("Completa el nombre y el teléfono del segundo contacto o déjalo vacío.", "err");

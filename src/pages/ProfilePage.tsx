@@ -50,7 +50,7 @@ import { useLeague } from "../hooks/useLeague";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useProgram } from "../hooks/useProgram";
 import { formatMetricValue } from "../data/metrics";
-import { EmergencyContactFields } from "../components/EmergencyContactFields";
+import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
 import { contactFromProfile, emergencyContactsError, trimEmergencyContact } from "../utils/emergencyContacts";
 import { updateLeaguePreferences } from "../services/program/league-service";
 import { programKeys } from "../hooks/queryKeys";
@@ -169,6 +169,7 @@ function EmergencyContactSection() {
   const [primary, setPrimary] = useState(() => contactFromProfile(user, 1));
   const [secondary, setSecondary] = useState(() => contactFromProfile(user, 2));
   const [saving, setSaving] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
   useEffect(() => {
     setPrimary({ name: user.fam1Nombre ?? "", relationship: user.fam1Parentesco ?? "", phone: user.fam1Cel ?? "", email: user.fam1Email ?? "" });
     setSecondary({ name: user.fam2Nombre ?? "", relationship: user.fam2Parentesco ?? "", phone: user.fam2Cel ?? "", email: user.fam2Email ?? "" });
@@ -177,7 +178,8 @@ function EmergencyContactSection() {
   const save = async () => {
     if (saving) return;
     const error = emergencyContactsError(primary, secondary);
-    if (error) { showToast(t(error), "err"); return; }
+    if (error) { setContactError(t(error)); return; }
+    setContactError(null);
     setSaving(true);
     const first = trimEmergencyContact(primary);
     try {
@@ -192,12 +194,8 @@ function EmergencyContactSection() {
   };
   return <div className="pf-contact" style={{ marginTop: 18 }}>
     <h3>{t("Contacto de emergencia")}</h3>
-    <p className="emergency-contact-help">{t("El primer contacto recibe tus alertas SOS. El segundo es un contacto de respaldo opcional.")}</p>
-    <h4>{t("Cuidador principal")} · {t("Obligatorio")}</h4>
-    <EmergencyContactFields prefix="pf-emg" value={primary} onChange={setPrimary} disabled={saving} />
-    <h4>{t("Segundo contacto de emergencia")}</h4>
-    <p className="emergency-contact-help">{t("Opcional · persona de respaldo")}</p>
-    <EmergencyContactFields prefix="pf-emg2" value={secondary} onChange={setSecondary} disabled={saving} />
+    <EmergencyContactsForm prefix="pf-emg" primary={primary} secondary={secondary} onPrimaryChange={value => { setContactError(null); setPrimary(value); }} onSecondaryChange={value => { setContactError(null); setSecondary(value); }} disabled={saving} />
+    {contactError && <p role="alert" className="emergency-contact-error">{contactError}</p>}
     <IonButton expand="block" className="bt bt-primary" disabled={saving || !dirty} onClick={() => void save()}>{saving ? t("Guardando…") : t("Guardar contacto de emergencia")}</IonButton>
   </div>;
 }
