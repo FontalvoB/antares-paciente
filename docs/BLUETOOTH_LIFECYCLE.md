@@ -7,9 +7,11 @@ La identidad, las muestras y los acumulados se separan por cuenta y dispositivo.
 ## Captura y apertura
 
 1. **Buscar dispositivo** es la única acción de búsqueda. La configuración
-   actual usa permiso Bluetooth general y muestra todos los anuncios BLE que
-   iOS o Android entregan, incluidos los desconocidos y sin nombre. H59/R88
-   llevan icono de compatibilidad; los demás son visibles sin acción Conectar.
+   actual usa permiso Bluetooth general y recibe los anuncios BLE que
+   iOS o Android entregan, incluidos los desconocidos y sin nombre. La vista
+   normal muestra solo compatibles; Modo diagnóstico muestra todos, con los
+   compatibles primero. H59/R88 llevan icono de compatibilidad; los demás
+   aparecen únicamente en diagnóstico, sin acción Conectar.
    No se inicia captura por buscar. El código ASK queda desactivado cuando
    Info.plist no declara NSAccessorySetupKitSupports, como en este build.
 2. Antes de suscribir se activa la captura nativa para la cuenta actual.
@@ -32,7 +34,7 @@ asociación nativa. Desconectar explícitamente olvida el vínculo automático;
 las muestras ya normalizadas permanecen en la caché privada de esa cuenta.
 Un fallo transitorio no olvida el dispositivo ni vacía las tarjetas.
 Los H59/R88 llevan icono y texto de compatibilidad. Los resultados desconocidos
-son visibles en la búsqueda normal y en diagnóstico, sin acción de conexión. El contexto también los rechaza antes de autorización o GATT. Los
+son visibles solo en diagnóstico, sin acción de conexión. El contexto también los rechaza antes de autorización o GATT. Los
 nombres genéricos «ring» o «watch» no acreditan compatibilidad. Una identidad
 renombrada se puede reconocer por un servicio de los drivers soportados.
 Un vínculo de una versión anterior sin cuenta asociada requiere seleccionarlo

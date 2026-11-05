@@ -5,6 +5,7 @@ const mock = vi.hoisted(() => ({
   platform: "ios",
   authorized: vi.fn(),
   radioState: vi.fn(),
+  connectionState: vi.fn(),
   client: {
     initialize: vi.fn(),
     isEnabled: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock("@capacitor-community/bluetooth-le", () => ({
   ScanMode: { SCAN_MODE_LOW_LATENCY: 2 },
 }));
 vi.mock("../ble/accessory-discovery", () => ({ listAuthorizedAccessories: mock.authorized }));
-vi.mock("../ble/radio-state", () => ({ readIosRadioState: mock.radioState }));
+vi.mock("../ble/radio-state", () => ({ readIosRadioState: mock.radioState, readIosConnectionState: mock.connectionState }));
 
 vi.mock("@capacitor/core", () => ({
   Capacitor: {
@@ -77,6 +78,22 @@ describe("BLE — inicialización y cancelación", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it.each([true, false])("consulta el vínculo iOS propio (%s), no conexiones de otras apps", async (connected) => {
+    mock.connectionState.mockResolvedValue(connected);
+    expect(await ble.getDeviceConnectionState("ring")).toBe(connected);
+    expect(mock.connectionState).toHaveBeenCalledWith("ring");
+    expect(mock.client.getConnectedDevices).not.toHaveBeenCalled();
+  });
+
+  it("no convierte un fallo de consulta nativa en una confirmación de vínculo", async () => {
+    mock.connectionState.mockRejectedValue(new Error("bridge unavailable"));
+    expect(await ble.getDeviceConnectionState("ring")).toBeNull();
+    mock.platform = "android";
+    mock.connectionState.mockClear();
+    expect(await ble.getDeviceConnectionState("ring")).toBeNull();
+    expect(mock.connectionState).not.toHaveBeenCalled();
   });
 
   it("lista accesorios autorizados sin exigir que estén conectados ni abrir radio", async () => {

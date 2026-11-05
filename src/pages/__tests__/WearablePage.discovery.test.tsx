@@ -67,9 +67,7 @@ describe('WearablePage — compatibilidad y alta', () => {
     expect(screen.getByText('Banda H59 · Anillo R88')).toBeTruthy();
     expect(screen.getAllByLabelText('Compatible').length).toBeGreaterThanOrEqual(3);
     expect(screen.getByText('R88 C1BF')).toBeTruthy();
-    expect(screen.getByText('Living Room TV')).toBeTruthy();
-    fireEvent.click(screen.getByText('Living Room TV'));
-    expect(fixture.state.connect).not.toHaveBeenCalled();
+    expect(screen.queryByText('Living Room TV')).toBeNull();
     fireEvent.click(screen.getByText('Buscar dispositivo'));
     expect(fixture.state.scan).toHaveBeenCalledOnce();
     expect(screen.queryByText('Agregar wearable')).toBeNull();

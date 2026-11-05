@@ -50,6 +50,7 @@ import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import { describeServices, formatEntry } from "../devices/diagnostics";
+import { compareDeviceCompatibility } from "../devices/discovery";
 import { isSupportedWearable } from "../devices/support";
 import { useI18n } from "../i18n/I18nContext";
 import { useElapsed } from "../hooks/useElapsed";
@@ -349,8 +350,10 @@ export function WearablePage() {
         };
       }
     }
-    return entries;
-  }, [devices, savedDevice]);
+    return entries
+      .filter((device) => diagnostics || isSupportedWearable(device))
+      .sort(compareDeviceCompatibility);
+  }, [devices, savedDevice, diagnostics]);
 
   useEffect(() => {
     if (phase !== "connecting" && pending) setPending(null);
@@ -361,14 +364,14 @@ export function WearablePage() {
       announced.current = false;
       return;
     }
-    const count = devices.length;
+    const count = devices.filter((device) => diagnostics || isSupportedWearable(device)).length;
     if (announced.current || !count) return;
     announced.current = true;
     showToast(
       t("{count} dispositivos encontrados", { count: String(count) }),
       "ok",
     );
-  }, [devices, hasScanned, showToast, t]);
+  }, [devices, diagnostics, hasScanned, showToast, t]);
 
   // Al abrir la pantalla se re-pide la info del dispositivo: la batería solo
   // llegaba cuando el wearable la empujaba (p. ej. al abrir la app oficial).
@@ -933,7 +936,9 @@ export function WearablePage() {
 
             {hasScanned && !deviceList.length && phase !== "error" && (
               <p className="watch-pair-copy">
-                {t("No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.")}
+                {diagnostics
+                  ? t("No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.")
+                  : t("No encontramos wearables compatibles. Acerca tu H59 o R88 e inténtalo de nuevo.")}
               </p>
             )}
 

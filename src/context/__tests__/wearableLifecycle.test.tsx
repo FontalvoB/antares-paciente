@@ -1,6 +1,7 @@
 import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { App } from "@capacitor/app";
 import * as ble from "../../devices/ble/ble-client";
 import { searchWearableAccessories, supportsAccessoryDiscovery } from "../../devices/ble/accessory-discovery";
 import {
@@ -62,6 +63,7 @@ vi.mock("../../devices/ble/ble-client", () => ({
   getDeviceServices: vi.fn(async () => []),
   watchBluetoothState: vi.fn(async () => async () => undefined),
   getBluetoothState: vi.fn(async () => "on"),
+  getDeviceConnectionState: vi.fn(async (): Promise<boolean | null> => null),
   setNotificationFailureHandler: vi.fn(),
   setNotificationTap: vi.fn(),
   setBleDebug: vi.fn(),
@@ -142,8 +144,10 @@ describe("WearableContext — reconexión y datos durables", () => {
     vi.clearAllMocks();
     localStorage.clear();
     native.listener = null;
+    vi.mocked(App.getState).mockResolvedValue({ isActive: true });
     native.radioListener = null;
     vi.mocked(ble.getBluetoothState).mockResolvedValue("on");
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(null);
     vi.mocked(ble.watchBluetoothState).mockImplementation(async (listener) => {
       native.radioListener = listener;
       return async () => undefined;
@@ -439,6 +443,183 @@ describe("WearableContext — reconexión y datos durables", () => {
     expect(wearable.info).toEqual({});
     expect(loadSampleSnapshot(ACCOUNT, DEVICE.deviceId)?.latest.heart_rate).toEqual(sample);
     expect(loadSampleSnapshot("patient-b", DEVICE.deviceId)).toBeNull();
+  });
+
+  it("no arrastra un ping fallido previo al bloqueo como fallo al despertar", async () => {
+    const session = { ...fakeSession(), requestInfo: vi.fn() };
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.useFakeTimers();
+    try {
+      renderWearable();
+      await connect();
+      await act(async () => { await vi.advanceTimersByTimeAsync(150_000); });
+      expect(session.requestInfo).toHaveBeenCalledTimes(1);
+      await act(async () => { native.listener?.({ isActive: false }); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(30 * 60_000); });
+      await act(async () => { native.listener?.({ isActive: true }); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+      expect(session.stop).not.toHaveBeenCalled();
+      expect(session.requestInfo).toHaveBeenCalledTimes(2);
+      expect(wearable.phase).toBe("connected");
+      await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+      expect(session.stop).toHaveBeenCalledTimes(1);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("un GATT iOS conectado no impide recuperar un protocolo que no responde", async () => {
+    native.platform = "ios";
+    const session = { ...fakeSession(), requestInfo: vi.fn() };
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(true);
+    vi.useFakeTimers();
+    try {
+      renderWearable();
+      await connect();
+      await act(async () => { await vi.advanceTimersByTimeAsync(180_000); });
+      expect(session.requestInfo).toHaveBeenCalledTimes(1);
+      expect(session.stop).toHaveBeenCalledTimes(1);
+      expect(ble.getDeviceConnectionState).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("conserva la sesión iOS si llega una caída antigua después de la recuperación nativa", async () => {
+    native.platform = "ios";
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(true);
+    renderWearable();
+    await connect();
+    const disconnected = vi.mocked(ble.connectDevice).mock.calls[0][1];
+    await act(async () => { native.listener?.({ isActive: false }); });
+    await act(async () => { disconnected(); });
+    expect(ble.getDeviceConnectionState).toHaveBeenCalledWith(DEVICE.deviceId);
+    expect(wearable.phase).toBe("connected");
+    expect(session.stop).not.toHaveBeenCalled();
+    expect(ble.disconnectDevice).not.toHaveBeenCalled();
+    await act(async () => { native.listener?.({ isActive: true }); });
+    expect(openSession).toHaveBeenCalledTimes(1);
+    expect(session.start).toHaveBeenCalledTimes(1);
+    expect(wearable.phase).toBe("connected");
+  });
+
+  it("una respuesta inicial tardía no revierte el estado de bloqueo más reciente", async () => {
+    let resolve!: (value: { isActive: boolean }) => void;
+    vi.mocked(App.getState).mockReturnValue(new Promise<{ isActive: boolean }>((done) => { resolve = done; }));
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    renderWearable();
+    await connect();
+    await act(async () => { native.listener?.({ isActive: false }); });
+    await act(async () => { resolve({ isActive: true }); });
+    expect(session.setAppActive).toHaveBeenLastCalledWith(false);
+  });
+
+  it("apagar Bluetooth cancela una recuperación nativa pendiente", async () => {
+    native.platform = "ios";
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(false);
+    renderWearable();
+    await connect();
+    const disconnected = vi.mocked(ble.connectDevice).mock.calls[0][1];
+    await act(async () => { native.listener?.({ isActive: false }); });
+    await act(async () => { disconnected(); });
+    await act(async () => { native.radioListener?.(false, "off"); });
+    expect(session.stop).toHaveBeenCalledTimes(1);
+    expect(wearable.phase).toBe("error");
+    expect(wearable.error).toBe("bluetooth-off");
+    expect(ble.connectDevice).toHaveBeenCalledTimes(1);
+  });
+
+  it("conserva el driver mientras iOS recupera el enlace en background y lo adopta al volver", async () => {
+    native.platform = "ios";
+    const session = { ...fakeSession(), requestInfo: vi.fn() };
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(false);
+    renderWearable();
+    await connect();
+    const disconnected = vi.mocked(ble.connectDevice).mock.calls[0][1];
+    await act(async () => { native.listener?.({ isActive: false }); });
+    await act(async () => { disconnected(); });
+    expect(wearable.phase).toBe("connecting");
+    expect(session.stop).not.toHaveBeenCalled();
+    expect(ble.disconnectDevice).not.toHaveBeenCalled();
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(true);
+    await act(async () => { native.listener?.({ isActive: true }); });
+    expect(wearable.phase).toBe("connected");
+    expect(openSession).toHaveBeenCalledTimes(1);
+    expect(session.start).toHaveBeenCalledTimes(1);
+    expect(session.requestInfo).toHaveBeenCalled();
+    expect(session.setAppActive).toHaveBeenLastCalledWith(true);
+  });
+
+  it.each([false, null])("si iOS no recuperó el enlace en background (%s), reconecta al volver", async (connected) => {
+    native.platform = "ios";
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(false);
+    renderWearable();
+    await connect();
+    const disconnected = vi.mocked(ble.connectDevice).mock.calls[0][1];
+    await act(async () => { native.listener?.({ isActive: false }); });
+    await act(async () => { disconnected(); });
+    expect(session.stop).not.toHaveBeenCalled();
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(connected);
+    await act(async () => { native.listener?.({ isActive: true }); });
+    expect(session.stop).toHaveBeenCalledTimes(1);
+    expect(ble.disconnectDevice).toHaveBeenCalledWith(DEVICE.deviceId);
+  });
+
+  it("una recuperación nativa pendiente no puede revertir Desconectar del usuario", async () => {
+    native.platform = "ios";
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(false);
+    renderWearable();
+    await connect();
+    const disconnected = vi.mocked(ble.connectDevice).mock.calls[0][1];
+    await act(async () => { native.listener?.({ isActive: false }); });
+    await act(async () => { disconnected(); });
+    let resolve!: (value: boolean) => void;
+    vi.mocked(ble.getDeviceConnectionState).mockReturnValue(new Promise<boolean>((done) => { resolve = done; }));
+    await act(async () => { native.listener?.({ isActive: true }); });
+    await act(async () => { wearable.disconnect(); });
+    await act(async () => { resolve(true); });
+    expect(wearable.phase).toBe("idle");
+    expect(wearable.savedDevice).toBeNull();
+    expect(session.start).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([false, null])("una caída iOS sin vínculo nativo confirmado (%s) conserva la recuperación habitual", async (connected) => {
+    native.platform = "ios";
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    vi.mocked(ble.getDeviceConnectionState).mockResolvedValue(connected);
+    renderWearable();
+    await connect();
+    const disconnected = vi.mocked(ble.connectDevice).mock.calls[0][1];
+    await act(async () => { disconnected(); });
+    expect(session.stop).toHaveBeenCalledTimes(1);
+    expect(ble.disconnectDevice).toHaveBeenCalledWith(DEVICE.deviceId);
+    expect(native.app.disconnectWearable).toHaveBeenCalledTimes(1);
+  });
+
+  it("una comprobación nativa tardía no restaura una sesión desconectada por el usuario", async () => {
+    native.platform = "ios";
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    let resolve!: (value: boolean) => void;
+    vi.mocked(ble.getDeviceConnectionState).mockReturnValue(new Promise<boolean>((done) => { resolve = done; }));
+    renderWearable();
+    await connect();
+    const disconnected = vi.mocked(ble.connectDevice).mock.calls[0][1];
+    await act(async () => { disconnected(); });
+    await act(async () => { wearable.disconnect(); });
+    await act(async () => { resolve(true); });
+    expect(wearable.phase).toBe("idle");
+    expect(wearable.savedDevice).toBeNull();
+    expect(session.start).toHaveBeenCalledTimes(1);
+    expect(native.app.connectWearable).toHaveBeenCalledTimes(1);
   });
 
   it("al volver al foreground drena el journal antes del volcado de historial", async () => {

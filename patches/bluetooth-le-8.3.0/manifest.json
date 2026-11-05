@@ -14,7 +14,7 @@
     {
       "path": "ios/Sources/BluetoothLe/Plugin.swift",
       "before": "58cf9b423fbcab49669f9daade3c2774deeb9a215d89fce0a7ecd964728134e9",
-      "after": "d05e027956ad218bbdf27c561411adbb92b5b719875aebd7b4aceee6010ee32c"
+      "after": "1832af4cdb1ab65ccd91b133b88746abc5d9b4cb11be5594d19e0779d19f41f3"
     },
     {
       "path": "Package.swift",

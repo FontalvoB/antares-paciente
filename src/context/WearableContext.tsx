@@ -83,7 +83,7 @@ type WearableOperation = "sync" | "measure";
 const INGEST_INTERVAL_MS = 60_000;
 /** Pausa entre el volcado de historial y la primera medida del sync. */
 const SYNC_SETTLE_MS = 800;
-/** Sin NINGUNA notificación en este tiempo, la sesión está muerta. */
+/** Umbral de lectura antigua: se verifica presencia antes de desmontar. */
 const SESSION_STALE_MS = 120_000;
 /** Cada cuánto se comprueba la liveness de la sesión conectada. */
 const SESSION_LIVENESS_TICK_MS = 30_000;
@@ -254,6 +254,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const sessionGenerationRef = useRef(0);
   const scanTimer = useRef<number | undefined>(undefined);
   const intentionalDisconnect = useRef(false);
+  /** Una caída en background conserva el driver hasta comprobar el enlace nativo. */
+  const backgroundRecovery = useRef(false);
   const dayStore = useRef<DayStore>(newDayStore(toLocalISODate()));
   const ingestDirty = useRef(false);
   const ingestInFlight = useRef(false);
@@ -296,6 +298,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetSessionState = useCallback((clearReadings = false) => {
+    backgroundRecovery.current = false;
     sessionGenerationRef.current += 1;
     operationRef.current = null;
     operationGenerationRef.current += 1;
@@ -320,13 +323,35 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     setPhase("idle");
   }, [resetDayAggregate]);
 
-  const handleUnexpectedDisconnect = useCallback(() => {
+  const handleUnexpectedDisconnect = useCallback(async (verifyNativeLink = true) => {
     if (intentionalDisconnect.current) {
       intentionalDisconnect.current = false;
       return;
     }
     const session = sessionRef.current;
     const deviceId = descriptorRef.current?.deviceId;
+    // iOS puede recuperar el enlace mientras JS está suspendido. Una caída
+    // anterior entregada al despertar no debe derribar esa sesión recuperada.
+    if (verifyNativeLink && session && deviceId && (phaseRef.current === "connected" || backgroundRecovery.current) &&
+        Capacitor.getPlatform() === "ios" && bluetoothRadioRef.current !== "off") {
+      const generation = sessionGenerationRef.current;
+      const connected = await ble.getDeviceConnectionState(deviceId);
+      if (generation !== sessionGenerationRef.current || sessionRef.current !== session) return;
+      if (connected === true) {
+        heartbeatMisses.current = 0;
+        if (appActiveRef.current) session.requestInfo?.();
+        return;
+      }
+      if (!appActiveRef.current) {
+        // didDisconnect puede llegar ANTES de los 5 s del reintento nativo.
+        // No cancelar ese reintento ni destruir sus consumidores/suscripciones.
+        backgroundRecovery.current = true;
+        phaseRef.current = "connecting";
+        setPhase("connecting");
+        setSessionStale(true);
+        return;
+      }
+    }
     resetSessionState();
     app.disconnectWearable();
     // Cierre ordenado: soltar suscripciones y el enlace (antes se abandonaban
@@ -706,6 +731,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         return Promise.resolve();
       }
       const silent = options?.silent === true;
+      backgroundRecovery.current = false;
       intentionalDisconnect.current = false;
       const generation = ++sessionGenerationRef.current;
       const previousSession = sessionRef.current;
@@ -878,7 +904,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       if (decision.action === "ping") {
         sessionRef.current?.requestInfo?.();
       } else if (decision.action === "dead") {
-        handleUnexpectedDisconnect();
+        // Un GATT conectado no garantiza que el protocolo responda a pings.
+        void handleUnexpectedDisconnect(false);
       }
     }, SESSION_LIVENESS_TICK_MS);
     return () => window.clearInterval(timer);
@@ -996,13 +1023,13 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const reconnectGeneration = useRef(0);
 
   const scheduleAutoReconnect = useCallback((generation: number) => {
-    if (generation !== reconnectGeneration.current || !accountRef.current || bluetoothRadioRef.current === "off") return;
+    if (generation !== reconnectGeneration.current || !accountRef.current || bluetoothRadioRef.current === "off" || backgroundRecovery.current) return;
     const delay = AUTO_RECONNECT_DELAYS_MS[Math.min(autoAttempt.current, AUTO_RECONNECT_DELAYS_MS.length - 1)];
     autoAttempt.current += 1;
     window.clearTimeout(autoTimer.current);
     autoTimer.current = window.setTimeout(() => {
       void (async () => {
-        if (generation !== reconnectGeneration.current || !appActiveRef.current || addingAccessoryRef.current || bluetoothRadioRef.current === "off") return;
+        if (generation !== reconnectGeneration.current || !appActiveRef.current || addingAccessoryRef.current || bluetoothRadioRef.current === "off" || backgroundRecovery.current) return;
         const saved = loadSavedDevice(accountRef.current);
         if (!saved || !isSupportedWearable(saved) || !canAutoReconnectHere(saved) || intentionalDisconnect.current) return;
         if (phaseRef.current === "connected") return;
@@ -1018,7 +1045,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startAutoReconnect = useCallback(() => {
-    if (bluetoothRadioRef.current === "off") return;
+    if (bluetoothRadioRef.current === "off" || backgroundRecovery.current) return;
     const generation = ++reconnectGeneration.current;
     autoAttempt.current = 0;
     scheduleAutoReconnect(generation);
@@ -1121,7 +1148,10 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!accountId || !Capacitor.isNativePlatform()) return;
+    let disposed = false;
+    let activityVersion = 0;
     const onRadioState = (on: boolean, state: BluetoothRadioState = on ? "on" : "off") => {
+      if (disposed) return;
       const previous = bluetoothRadioRef.current;
       bluetoothRadioRef.current = state;
       if (state === "off") {
@@ -1129,7 +1159,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         clearScanTimer();
         void ble.stopScan();
         setDevices([]);
-        if (phaseRef.current === "connected") handleUnexpectedDisconnect();
+        if (phaseRef.current === "connected" || backgroundRecovery.current) void handleUnexpectedDisconnect(false);
         else if (phaseRef.current === "connecting" || phaseRef.current === "scanning") resetSessionState();
         setError("bluetooth-off");
         phaseRef.current = "error";
@@ -1143,8 +1173,13 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       }
     };
     const onStateChange = (isActive: boolean) => {
+      if (disposed) return;
+      activityVersion += 1;
       appActiveRef.current = isActive;
-      sessionRef.current?.setAppActive?.(isActive);
+      // El silencio mientras JS duerme no cuenta como un ping sin respuesta.
+      // Al volver se exige una comprobación nueva antes de reciclar la sesión.
+      heartbeatMisses.current = 0;
+      if (!isActive || !backgroundRecovery.current) sessionRef.current?.setAppActive?.(isActive);
       if (!isActive) {
         stopAutoReconnect();
         cancelSync();
@@ -1152,10 +1187,32 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         return;
       }
       const resume = async () => {
-        if (addingAccessoryRef.current) return;
+        if (disposed || addingAccessoryRef.current) return;
         const state = await ble.getBluetoothState();
+        if (disposed || !appActiveRef.current) return;
         onRadioState(state === "on", state);
         if (state === "off") return;
+        if (backgroundRecovery.current) {
+          const session = sessionRef.current;
+          const device = descriptorRef.current;
+          const generation = sessionGenerationRef.current;
+          if (!session || !device) return;
+          const connected = await ble.getDeviceConnectionState(device.deviceId);
+          if (disposed || generation !== sessionGenerationRef.current || sessionRef.current !== session ||
+              !appActiveRef.current || !backgroundRecovery.current) return;
+          backgroundRecovery.current = false;
+          if (connected !== true) {
+            await handleUnexpectedDisconnect(false);
+            return;
+          }
+          // El enlace ya volvió: reutilizar el driver, sin repetir start/handshake.
+          phaseRef.current = "connected";
+          setPhase("connected");
+          setError(null);
+          app.connectWearable(device.name || t("Dispositivo sin nombre"));
+          session.setAppActive?.(true);
+          session.requestInfo?.();
+        }
         refreshStoredDay();
         const deviceId = descriptorRef.current?.deviceId;
         if (deviceId) await drainPendingNotifications(deviceId);
@@ -1166,9 +1223,12 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       void resume().catch((error) => { console.error("[ble] Recuperación pendiente.", error); setError("unknown"); });
     };
     const handle = App.addListener("appStateChange", ({ isActive }) => onStateChange(isActive));
+    const initialActivityVersion = activityVersion;
     void App.getState().then(({ isActive }) => {
+      if (disposed || activityVersion !== initialActivityVersion) return;
       appActiveRef.current = isActive;
-      sessionRef.current?.setAppActive?.(isActive);
+      if (backgroundRecovery.current && isActive) onStateChange(true);
+      else sessionRef.current?.setAppActive?.(isActive);
     }).catch(() => undefined);
     const enabled = ble.watchBluetoothState(onRadioState).catch(() => () => Promise.resolve());
     ble.setNotificationFailureHandler(() => setError("unknown"));
@@ -1180,12 +1240,13 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener(NOTIFICATION_GAP_EVENT, onGap);
     return () => {
+      disposed = true;
       void handle.then((listener) => listener.remove());
       void enabled.then((remove) => remove());
       ble.setNotificationFailureHandler(null);
       window.removeEventListener(NOTIFICATION_GAP_EVENT, onGap);
     };
-  }, [accountId, cancelSync, clearScanTimer, flushIngest, handleUnexpectedDisconnect, refreshStoredDay, resetSessionState, startAutoReconnect, stopAutoReconnect]);
+  }, [accountId, app, cancelSync, clearScanTimer, flushIngest, handleUnexpectedDisconnect, refreshStoredDay, resetSessionState, startAutoReconnect, stopAutoReconnect, t]);
 
   useEffect(() => {
     if (phase === "connected") stopAutoReconnect();
