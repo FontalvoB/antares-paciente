@@ -26,9 +26,15 @@ import {
   shieldCheckmarkOutline,
   informationCircleOutline,
   hourglass,
+  flame,
+  shield,
 } from "ionicons/icons";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import { useApp } from "../context/AppContext";
+import { useWearable } from "../context/WearableContext";
+import type { HealthSample, MetricKind } from "../devices/types";
 import { useT } from "../i18n/I18nContext";
 import {
   SosServiceError,
@@ -36,10 +42,13 @@ import {
   cancelSosAlert,
   fetchActiveSosAlert,
   getCoordinatesBestEffort,
+  getEmergencyLocation,
+  type SosVitalsDto,
   type SosAlertDto,
 } from "../services/sos/sos-service";
 import { openNativeDialer } from "../utils/nativeDialer";
-import { resolveEmergencyNumber } from "../utils/emergencyNumbers";
+import { emergencyNumberForCountry } from "../utils/emergencyNumbers";
+import type { EmergencyCountry } from "../utils/emergencyNumbers";
 
 import logoIcon from "../assets/LogoIndividual.png";
 
@@ -51,14 +60,41 @@ type DialTarget = "callEmergency" | "callFamily";
 const RING = 2 * Math.PI * 78;
 /** Sondeo ligero del estado real de la alerta (REQ-SOS-07). */
 const ACTIVE_POLL_MS = 15_000;
-/** Signos vitales demo: aún no hay fuente real en el dispositivo. */
-const DEMO_VITALS = { heartRate: 140, spo2: 94, bloodPressure: "160/110" };
+/** Solo lecturas en vivo de los últimos cinco minutos; nunca datos de prueba. */
+const SOS_VITAL_MAX_AGE_MS = 5 * 60_000;
+const COUNTRY_REFRESH_MS = 60_000;
+
+function recentVitals(samples: Partial<Record<MetricKind, HealthSample>>, now: number): SosVitalsDto | null {
+  const fresh = (sample: HealthSample | undefined): sample is HealthSample => !!sample && sample.source !== "history" &&
+    sample.deviceId !== "debug" && Number.isFinite(sample.ts) &&
+    now - sample.ts >= 0 && now - sample.ts <= SOS_VITAL_MAX_AGE_MS && Number.isFinite(sample.value);
+  const vitals: SosVitalsDto = {};
+  const hr = samples.heart_rate;
+  const oxygen = samples.spo2;
+  const pressure = samples.blood_pressure;
+  if (fresh(hr) && hr.value >= 20 && hr.value <= 300) vitals.heartRate = Math.round(hr.value);
+  if (fresh(oxygen) && oxygen.value >= 50 && oxygen.value <= 100) vitals.spo2 = Math.round(oxygen.value);
+  if (fresh(pressure) && pressure.value > 0 && pressure.value2 !== undefined && Number.isFinite(pressure.value2) && pressure.value2 > 0) {
+    const bloodPressure = `${Math.round(pressure.value)}/${Math.round(pressure.value2)}`;
+    if (bloodPressure.length <= 20) vitals.bloodPressure = bloodPressure;
+  }
+  return Object.keys(vitals).length ? vitals : null;
+}
+
+const EMERGENCY_SERVICES = [
+  { key: "ambulance", label: "Ambulancia", description: "Atención médica", icon: medkit },
+  { key: "police", label: "Policía", description: "Seguridad y protección", icon: shield },
+  { key: "fire", label: "Bomberos", description: "Incendios y rescate", icon: flame },
+] as const;
 
 
 export function PanicOverlay() {
   const { panicOpen, sosActive, closePanic, activateSos, user, showToast } =
     useApp();
   const t = useT();
+  const wearable = useWearable();
+  const wearableRef = useRef(wearable);
+  wearableRef.current = wearable;
   const reduce = useReducedMotion();
   const overlayRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<SosView>("protocol");
@@ -70,11 +106,21 @@ export function PanicOverlay() {
   /** Alerta real (POST /api/v1/sos/alerts o GET /alerts/active): fuente del
    * copy honesto — estado del canal SMS y ubicación efectiva (BUG-01). */
   const [realAlert, setRealAlert] = useState<SosAlertDto | null>(null);
+  // Las acciones del contexto cambian de identidad al renderizar. Mantenerlas
+  // fuera de las dependencias evita cancelar cada sondeo antes de su respuesta.
+  const alertActions = useRef({ closePanic, showToast });
+  alertActions.current = { closePanic, showToast };
   const [activating, setActivating] = useState(false);
   /** Cuenta regresiva 429 (segundos de Retry-After) que bloquea el orbe. */
   const [rateLimitSecs, setRateLimitSecs] = useState(0);
   /** Sondeo rápido (3 s) durante el primer minuto tras activar. */
   const [fastPoll, setFastPoll] = useState(false);
+  const [detectedCountry, setDetectedCountry] = useState<EmergencyCountry | null>(null);
+  const [manualCountry, setManualCountry] = useState<EmergencyCountry | null>(null);
+  const manualCountryRef = useRef(manualCountry);
+  manualCountryRef.current = manualCountry;
+  const [locationStatus, setLocationStatus] = useState<"locating" | "located" | "unavailable" | "unsupported">("locating");
+  const [sharedVitals, setSharedVitals] = useState(false);
 
   // Overlay de emergencia custom: conserva el foco al cerrar. Los controles
   // siguen siendo componentes Ionic.
@@ -93,9 +139,55 @@ export function PanicOverlay() {
   const family = user.fam1Nombre;
   const familyRole = user.fam1Parentesco;
   const familyCel = user.fam1Cel;
-  // Número de emergencias del país del dispositivo (123 en Colombia, 911 en
-  // EE. UU.): se resuelve una vez por apertura del overlay.
-  const emergencyNumber = useMemo(() => resolveEmergencyNumber(), []);
+  const emergencyCountry = manualCountry ?? detectedCountry;
+  const emergencyNumber = emergencyCountry ? emergencyNumberForCountry(emergencyCountry) : null;
+  const countryLabel = emergencyCountry === "CO" ? t("Colombia") : t("Estados Unidos");
+
+  // La selección manual prevalece. El país obtenido por GPS se renueva al
+  // volver a la app y cada minuto mientras esta pantalla siga abierta.
+  useEffect(() => {
+    if (!panicOpen) return;
+    let cancelled = false;
+    let pending = false;
+    let nativeActive = true;
+    let lastAttempt = 0;
+    let expiry: number | undefined;
+    setDetectedCountry(null);
+    setManualCountry(null);
+    manualCountryRef.current = null;
+    const detect = () => {
+      if (cancelled || pending || manualCountryRef.current || !nativeActive || document.visibilityState === "hidden") return;
+      pending = true;
+      lastAttempt = Date.now();
+      setDetectedCountry(null);
+      setLocationStatus("locating");
+      void getEmergencyLocation().then((result) => {
+        if (cancelled) return;
+        setDetectedCountry(result.country);
+        setLocationStatus(result.status);
+        if (result.status === "located" && !manualCountryRef.current) expiry = window.setTimeout(detect, COUNTRY_REFRESH_MS);
+      }).catch(() => {
+        if (!cancelled) setLocationStatus("unavailable");
+      }).finally(() => { pending = false; });
+    };
+    const resume = () => {
+      if (!nativeActive || document.visibilityState === "hidden" || Date.now() - lastAttempt < 5_000) return;
+      window.clearTimeout(expiry);
+      detect();
+    };
+    detect();
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("pageshow", resume);
+    const handle = Capacitor.isNativePlatform()
+      ? App.addListener("appStateChange", ({ isActive }) => { nativeActive = isActive; if (isActive) resume(); }).catch(() => null) : null;
+    return () => {
+      cancelled = true;
+      window.clearTimeout(expiry);
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("pageshow", resume);
+      void handle?.then((listener) => listener?.remove());
+    };
+  }, [panicOpen]);
 
   useEffect(() => {
     if (!panicOpen) {
@@ -105,6 +197,7 @@ export function PanicOverlay() {
       setActivating(false);
       setRateLimitSecs(0);
       setFastPoll(false);
+      setSharedVitals(false);
     }
   }, [panicOpen]);
 
@@ -125,8 +218,8 @@ export function PanicOverlay() {
         const alert = await fetchActiveSosAlert();
         if (cancelled) return;
         if (!alert || alert.status !== "Activa") {
-          closePanic();
-          showToast(t("Tu alerta SOS ya fue atendida."), "ok");
+          alertActions.current.closePanic();
+          alertActions.current.showToast(t("Tu alerta SOS ya fue atendida."), "ok");
         } else {
           setAlertId(alert.id);
           setRealAlert(alert);
@@ -144,7 +237,7 @@ export function PanicOverlay() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [sosActive, panicOpen, closePanic, showToast, t, fastPoll]);
+  }, [sosActive, panicOpen, t, fastPoll]);
 
   // Refresco rápido (3 s) durante el primer minuto tras activar: el estado
   // real de entrega (SMS/llamada) suele resolverse en segundos.
@@ -171,7 +264,7 @@ export function PanicOverlay() {
    */
   const startCall = (target: DialTarget) => {
     if (target === "callEmergency") {
-      openNativeDialer(emergencyNumber);
+      if (emergencyNumber) openNativeDialer(emergencyNumber);
       return;
     }
 
@@ -195,7 +288,11 @@ export function PanicOverlay() {
     setActivating(true);
     try {
       const coords = await getCoordinatesBestEffort();
-      const alert: SosAlertDto = await activateSosAlert(coords, DEMO_VITALS);
+      const current = wearableRef.current;
+      const vitals = current.phase === "connected" && !current.sessionStale && current.info.wearing !== false
+        ? recentVitals(current.samples, Date.now()) : null;
+      const alert: SosAlertDto = await activateSosAlert(coords, vitals);
+      setSharedVitals(vitals !== null);
       setAlertId(alert.id);
       // La respuesta real del backend alimenta el copy (BUG-01):
       // smsChannelStatus + location deciden qué se puede afirmar.
@@ -388,19 +485,6 @@ export function PanicOverlay() {
     on: boolean;
   }[] = [
     {
-      key: "amb",
-      ico: medkit,
-      title: t("Emergencias {numero}", { numero: emergencyNumber }),
-      sub: sosActive
-        ? t(
-            "El SOS no marca al {numero} automáticamente. Usa el botón Llamar {numero}.",
-            { numero: emergencyNumber },
-          )
-        : t("En espera de activación"),
-      tone: "red",
-      on: false,
-    },
-    {
       key: "fam",
       ico: people,
       title: family,
@@ -419,13 +503,13 @@ export function PanicOverlay() {
     {
       key: "doc",
       ico: pulse,
-      title: t("Dr. Ramírez"),
+      title: t("Equipo clínico"),
       sub:
         sosActive
           ? t("Alerta registrada para tu equipo clínico")
           : t("Médico de cabecera"),
       tone: "blue",
-      on: sosActive,
+      on: realAlert?.pushChannelStatus === "Enviado",
     },
     {
       key: "gps",
@@ -439,9 +523,11 @@ export function PanicOverlay() {
       key: "vit",
       ico: heart,
       title: t("Signos vitales"),
-      sub: t("No se comparten signos vitales en esta alerta"),
+      sub: sosActive && sharedVitals
+        ? t("Lecturas recientes del wearable compartidas")
+        : t("Sin lecturas recientes confirmadas en esta alerta"),
       tone: "org",
-      on: false,
+      on: sosActive && sharedVitals,
     },
   ];
 
@@ -521,6 +607,66 @@ export function PanicOverlay() {
                   transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <div className="sos-scroll-body">
+                    <section className="sos-services" aria-labelledby="sos-services-title">
+                      <div className="sos-section-heading">
+                        <div>
+                          <small>{t("LLAMAR A EMERGENCIAS")}</small>
+                          <h2 id="sos-services-title">{t("¿Qué ayuda necesitas?")}</h2>
+                        </div>
+                        <IonIcon icon={call} aria-hidden="true" />
+                      </div>
+                      <p className="sos-country-status" role="status" aria-live="polite">
+                        <IonIcon icon={location} aria-hidden="true" />
+                        {manualCountry
+                          ? t("País confirmado por ti: {pais}", { pais: countryLabel })
+                          : detectedCountry
+                            ? t("Ubicación del dispositivo: {pais}", { pais: countryLabel })
+                            : locationStatus === "locating"
+                              ? t("Buscando tu ubicación. Puedes confirmar el país ahora.")
+                              : locationStatus === "unsupported"
+                                ? t("Ubicación fuera de cobertura o cerca de una frontera. Confirma el país.")
+                                : t("No pudimos obtener tu ubicación. Confirma el país para llamar.")}
+                      </p>
+                      <div className="sos-country-options" role="group" aria-label={t("País para llamar")}>
+                        {(["CO", "US"] as const).map((country) => (
+                          <IonButton
+                            key={country}
+                            className={emergencyCountry === country ? "is-selected" : undefined}
+                            fill={emergencyCountry === country ? "solid" : "outline"}
+                            aria-pressed={emergencyCountry === country}
+                            onClick={() => { manualCountryRef.current = country; setManualCountry(country); }}
+                          >
+                            {country === "CO" ? t("Colombia") : t("Estados Unidos")}
+                          </IonButton>
+                        ))}
+                      </div>
+                      <div className="sos-service-actions" role="group" aria-label={t("Servicios de emergencia")}>
+                        {EMERGENCY_SERVICES.map((service) => (
+                          <IonButton
+                            key={service.key}
+                            className={`sos-service-action service-${service.key}`}
+                            disabled={!emergencyNumber}
+                            aria-label={emergencyNumber
+                              ? t("Llamar: {servicio} · {numero}", { servicio: t(service.label), numero: emergencyNumber })
+                              : t("Confirma el país para llamar: {servicio}", { servicio: t(service.label) })}
+                            onClick={() => startCall("callEmergency")}
+                          >
+                            <span className="sos-service-content">
+                              <IonIcon icon={service.icon} aria-hidden="true" />
+                              <strong>{t(service.label)}</strong>
+                              <span>{t(service.description)}</span>
+                              <b>{emergencyNumber ? t("Llamar {numero}", { numero: emergencyNumber }) : t("Confirma el país")}</b>
+                            </span>
+                          </IonButton>
+                        ))}
+                      </div>
+                      <p className="sos-services-note">
+                        {emergencyNumber
+                          ? t("Las tres opciones llaman al {numero}. Indica al operador si necesitas ambulancia, policía o bomberos.", { numero: emergencyNumber })
+                          : t("Confirma Colombia o Estados Unidos para mostrar el número de emergencias.")}
+                      </p>
+                      <p className="sos-services-separate">{t("Estas llamadas son independientes de la alerta a tu contacto y equipo clínico.")}</p>
+                    </section>
                     <section className="sos-alert-card">
                       <header className="sos-head">
                         <IonBadge
@@ -692,7 +838,18 @@ export function PanicOverlay() {
                         <IonIcon icon={people} aria-hidden="true" />
                       </div>
                       <IonList className="sos-feed" lines="none">
-                        {rows.slice(0, 3).map((r) => {
+                        {realAlert?.recipients?.map(recipient => <IonItem key={recipient.id} className="sos-feed-row sos-recipient-row">
+                          <span slot="start" className="sos-feed-ico"><IonIcon icon={people} aria-hidden="true" /></span>
+                          <IonLabel><strong>{t(recipient.contactOrder === 0 ? "Contacto principal" : "Contacto de respaldo")}</strong>
+                            {recipient.maskedPhone && <small>{recipient.maskedPhone}</small>}
+                            <dl className="sos-recipient-channels">
+                              <div><dt>SMS</dt><dd>{deliveryLabel(recipient.smsChannelStatus, t("Aceptado por el proveedor"), recipient.smsDeliveryStatus)}</dd></div>
+                              <div><dt>{t("Llamada")}</dt><dd>{deliveryLabel(recipient.voiceChannelStatus, t("Llamada solicitada"), recipient.voiceCallStatus)}</dd></div>
+                              {recipient.emailChannelStatus && <div><dt>{t("Correo")}</dt><dd>{deliveryLabel(recipient.emailChannelStatus, t("Enviado"))}</dd></div>}
+                            </dl>
+                          </IonLabel>
+                        </IonItem>)}
+                        {rows.slice(realAlert?.recipients?.length ? 1 : 0, 2).map((r) => {
                           // BUG-01: el check refleja el estado REAL del canal,
                           // no una secuencia animada (r.on lo decide).
                           const on = r.on;
@@ -736,7 +893,7 @@ export function PanicOverlay() {
                         />
                       </div>
                       <div className="sos-data-grid">
-                        {rows.slice(3).map((row) => (
+                        {rows.slice(2).map((row) => (
                           <article
                             key={row.key}
                             // BUG-01: encendido solo con respaldo real (GPS).
@@ -752,17 +909,7 @@ export function PanicOverlay() {
                   </div>
 
                   <footer className="sos-action-dock">
-                    <div className="sos-actions">
-                      <IonButton
-                        className="bt sos-act-911"
-                        aria-label={t("Llamar {numero}", {
-                          numero: emergencyNumber,
-                        })}
-                        onClick={() => startCall("callEmergency")}
-                      >
-                        <IonIcon icon={call} slot="start" />
-                        {t("Llamar {numero}", { numero: emergencyNumber })}
-                      </IonButton>
+                    <div className="sos-actions sos-contact-actions">
                       <IonButton
                         className="bt sos-act-fam"
                         aria-label={t("Llamar familiar")}

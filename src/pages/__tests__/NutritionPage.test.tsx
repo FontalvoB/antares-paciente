@@ -5,6 +5,10 @@ import { NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { ProgramSnapshotDto } from "../../services/program/types";
 
+vi.mock("../../hooks/useNutritionPlanStatus", () => ({
+  useNutritionPlanStatus: () => ({ status: null, isLoading: false, error: null, refetch: vi.fn() }),
+}));
+
 vi.mock("../../components/Screen", () => ({
   Screen: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Scroll: ({ children }: { children: ReactNode }) => <div>{children}</div>,

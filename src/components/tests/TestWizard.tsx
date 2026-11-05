@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { IonButton, IonIcon, IonProgressBar, IonTextarea } from "@ionic/react";
+import { IonButton, IonIcon, IonProgressBar, IonSpinner, IonTextarea } from "@ionic/react";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import {
   arrowBackOutline,
@@ -36,6 +36,7 @@ export function TestWizard({
   onNum,
   onBackendMulti,
   onComplete,
+  saving = false,
 }: {
   theme: TestTheme;
   steps: WizardStep[];
@@ -45,6 +46,7 @@ export function TestWizard({
   onNum: (index: number, value: number) => void;
   onBackendMulti: (index: number, option: number) => void;
   onComplete: () => void;
+  saving?: boolean;
 }) {
   const t = useT();
   const reduce = useReducedMotion();
@@ -86,6 +88,7 @@ export function TestWizard({
   };
 
   const selectScale = (index: number, value: number) => {
+    if (saving) return;
     onScale(index, value);
     void tapHaptic();
     if (!isLast) {
@@ -94,6 +97,7 @@ export function TestWizard({
   };
 
   const continueNext = () => {
+    if (saving) return;
     if (isLast) {
       onComplete();
       return;
@@ -181,6 +185,7 @@ export function TestWizard({
               fill="solid"
               className="bt bt-ghost bt-round"
               aria-label={t("Anterior")}
+              disabled={saving}
               onClick={() => go(step - 1)}
             >
               <IonIcon
@@ -191,10 +196,11 @@ export function TestWizard({
             <IonButton
               expand="block"
               className={`bt ht-cta ${isLast ? "bt-gold" : "bt-teal"}`}
-              disabled={!canContinue}
+              disabled={!canContinue || saving}
               onClick={continueNext}
             >
-              {isLast ? t("Guardar evaluación") : t("Continuar")}
+              {saving && <IonSpinner name="crescent" slot="start" />}
+              {saving ? t("Guardando tu evaluación…") : isLast ? t("Guardar evaluación") : t("Continuar")}
               {!isLast && <IonIcon icon={chevronForward} slot="end" />}
             </IonButton>
           </div>
@@ -312,7 +318,7 @@ function StepView({
           </motion.button>
           <div className="ht-num-val">
             <strong>{current}</strong>
-            {step.unit && <span className="ht-num-unit">{step.unit}</span>}
+            {step.unit && <span className="ht-num-unit">{t(step.unit)}</span>}
           </div>
           <motion.button
             type="button"
@@ -328,7 +334,7 @@ function StepView({
           {t("{min} – {max} {unit}", {
             min: String(step.min),
             max: String(step.max),
-            unit: step.unit,
+            unit: t(step.unit),
           })}
         </p>
       </div>

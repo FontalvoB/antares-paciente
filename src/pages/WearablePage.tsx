@@ -20,6 +20,10 @@ import {
 } from "@ionic/react";
 import {
   heart,
+  banOutline,
+  checkmarkCircle,
+  watchOutline,
+  radioButtonOffOutline,
   chevronForward,
   batteryHalfOutline,
   bluetooth,
@@ -46,6 +50,7 @@ import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import { describeServices, formatEntry } from "../devices/diagnostics";
+import { isSupportedWearable } from "../devices/support";
 import { useI18n } from "../i18n/I18nContext";
 import { useElapsed } from "../hooks/useElapsed";
 import {
@@ -57,6 +62,7 @@ import {
 } from "../utils/measure";
 import { useDoubleTap } from "../hooks/useDoubleTap";
 import { agoLabel, formatSleep } from "../utils/wearable";
+import { formatDateForDisplay, toLocalISODate } from "../utils/dates";
 import type {
   DeviceDescriptor,
   HealthSample,
@@ -66,14 +72,17 @@ import type {
 } from "../devices/types";
 
 const ERROR_KEYS: Record<WearableErrorCode, string> = {
+  "bluetooth-not-ready":
+    "No se pudo conectar. Inténtalo de nuevo.",
   "bluetooth-off":
-    "Bluetooth está apagado. Actívalo para buscar tu dispositivo.",
+    "Enciende Bluetooth en Ajustes para conectar tu wearable.",
   "permission-denied":
     "Permiso de Bluetooth denegado. Habilítalo en los ajustes del sistema.",
   "scan-unavailable": "Tu navegador no permite buscar dispositivos Bluetooth.",
   "connection-failed": "No se pudo conectar. Inténtalo de nuevo.",
+  "session-unavailable": "No pudimos identificar tu sesión. Vuelve a iniciar sesión para conectar el wearable.",
   "unsupported-device":
-    "Este dispositivo no expone datos compatibles con la app.",
+    "Solo puedes conectar una banda H59 o un anillo R88.",
   "no-data":
     "El dispositivo no envía datos. Verifica que esté vinculado con su app oficial.",
   unknown: "Ocurrió un error inesperado. Inténtalo de nuevo.",
@@ -182,6 +191,8 @@ export function WearablePage() {
     error,
     diagnostics,
     setDiagnostics,
+    accessoryDiscoverySupported,
+    addingAccessory,
     gatt,
     log,
     clearLog,
@@ -204,7 +215,20 @@ export function WearablePage() {
     clearError,
   } = useWearable();
   const [confirmOff, setConfirmOff] = useState(false);
+  const [bluetoothPromptOpen, setBluetoothPromptOpen] = useState(false);
+  const bluetoothPromptShown = useRef(false);
   const [pending, setPending] = useState<string | null>(null);
+  const [historyProgressRequested, setHistoryProgressRequested] = useState(false);
+  const historyRequestGeneration = useRef(0);
+  const requestHistoryWithProgress = async () => {
+    const generation = ++historyRequestGeneration.current;
+    setHistoryProgressRequested(true);
+    try {
+      await syncHistory();
+    } finally {
+      if (generation === historyRequestGeneration.current) setHistoryProgressRequested(false);
+    }
+  };
   const [measuring, setMeasuring] = useState<{
     kind: MetricKind;
     since: number;
@@ -263,19 +287,29 @@ export function WearablePage() {
 
   const scanning = phase === "scanning";
   const connecting = phase === "connecting";
-  /** Estado honesto de conexión: el flag de la app puede quedar obsoleto si la
-   *  banda deja de emitir (fuera de rango/apagada). */
-  const connOn = wearableConnected && !sessionStale && phase === "connected";
-  const connConnecting = !connOn && (sessionStale || scanning || connecting);
+  const bluetoothOff = error === "bluetooth-off";
+  useEffect(() => {
+    if (!bluetoothOff) {
+      bluetoothPromptShown.current = false;
+      setBluetoothPromptOpen(false);
+    } else if (!bluetoothPromptShown.current) {
+      bluetoothPromptShown.current = true;
+      setBluetoothPromptOpen(true);
+    }
+  }, [bluetoothOff]);
+  // Una lectura antigua no implica una desconexión BLE. La fase cambia ante
+  // pérdida del enlace o un heartbeat fallido; no al suspender las lecturas.
+  const connOn = !bluetoothOff && wearableConnected && phase === "connected";
+  const connConnecting = !bluetoothOff && !connOn && (scanning || connecting);
   const connDot = connOn
     ? "var(--safe)"
     : connConnecting
       ? "var(--org)"
       : "var(--mu)";
-  const connLabel = connOn
+  const connLabel = bluetoothOff ? t("Bluetooth apagado") : connOn
     ? t("Conectado")
     : connConnecting
-      ? t("Conectando…")
+      ? scanning ? t("Buscando dispositivos…") : t("Conectando…")
       : t("Sin wearable");
   const hrSample = samples.heart_rate;
   const hr = hrSample?.value;
@@ -287,6 +321,11 @@ export function WearablePage() {
   // historial de días atrás (el "Hace 63 h" de la tarjeta venía de ahí).
   const steps = today.steps ?? null;
   const sleepMinutes = today.sleepMinutes;
+  const lastReadingAt = Math.max(0, ...Object.values(samples).map((sample) => sample.ts));
+  const savedReadingDate = new Date(lastReadingAt);
+  const savedReadingLabel = lastReadingAt > 0
+    ? `${formatDateForDisplay(toLocalISODate(savedReadingDate))} ${savedReadingDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`
+    : null;
 
   /**
    * Lista única de dispositivos: el último guardado (primero, con `Reconectar`)
@@ -322,13 +361,14 @@ export function WearablePage() {
       announced.current = false;
       return;
     }
-    if (announced.current || !devices.length) return;
+    const count = devices.length;
+    if (announced.current || !count) return;
     announced.current = true;
     showToast(
-      t("{count} dispositivos encontrados", { count: String(devices.length) }),
+      t("{count} dispositivos encontrados", { count: String(count) }),
       "ok",
     );
-  }, [devices.length, hasScanned, showToast, t]);
+  }, [devices, hasScanned, showToast, t]);
 
   // Al abrir la pantalla se re-pide la info del dispositivo: la batería solo
   // llegaba cuando el wearable la empujaba (p. ej. al abrir la app oficial).
@@ -527,6 +567,8 @@ export function WearablePage() {
    * no muestra toast ni avanza nada (ver finishMeasure).
    */
   const cancelFocus = useCallback(() => {
+    historyRequestGeneration.current += 1;
+    setHistoryProgressRequested(false);
     clearFlash();
     if (measureSafety.current !== undefined) {
       window.clearTimeout(measureSafety.current);
@@ -615,7 +657,7 @@ export function WearablePage() {
   };
 
   const pair = (device: DeviceDescriptor) => {
-    if (connecting) return;
+    if (bluetoothOff || connecting || addingAccessory || !isSupportedWearable(device)) return;
     setPending(device.deviceId);
     connect(device);
   };
@@ -652,7 +694,9 @@ export function WearablePage() {
         </span>
         <IonLabel>
           <h3>{t("Modo diagnóstico")}</h3>
-          <p>{t("Muestra todos los dispositivos y el detalle GATT.")}</p>
+          <p>{accessoryDiscoverySupported
+            ? t("Muestra el detalle BLE de los accesorios autorizados.")
+            : t("Muestra todos los dispositivos y el detalle GATT.")}</p>
         </IonLabel>
         <IonToggle
           slot="end"
@@ -686,7 +730,7 @@ export function WearablePage() {
           sub={
             wearableConnected
               ? `${info.name || wearableName} · ${t("datos en tiempo real")}`
-              : t("Empareja un dispositivo para ver FC, sueño y SpO2")
+              : t("Conecta tu H59 o R88 para ver FC, sueño y SpO2")
           }
           trailing={
             <span className={`status-pill ${connOn ? "on" : ""}`}>
@@ -722,16 +766,20 @@ export function WearablePage() {
           <h2 aria-live="polite">
             {connOn
               ? t("Tu dispositivo está conectado")
-              : connecting || sessionStale
+              : connecting && !bluetoothOff
                 ? t("Conectando…")
-                : scanning
+                : scanning && !bluetoothOff
                   ? t("Buscando cerca de ti…")
                   : t("Conecta tu wearable")}
           </h2>
           <p>
             {connOn
-              ? t("Tu salud en tiempo real, más cerca de ti.")
-              : connecting || sessionStale
+              ? sessionStale
+                ? t("Conexión activa. Esperando nuevas lecturas del dispositivo.")
+                : t("Tu salud en tiempo real, más cerca de ti.")
+              : savedReadingLabel
+                ? t("Datos guardados · {when}", { when: savedReadingLabel })
+              : connecting && !bluetoothOff
                 ? t("Estableciendo sesión con el dispositivo…")
                 : t("Mantén el wearable desbloqueado y cerca del teléfono.")}
           </p>
@@ -741,20 +789,20 @@ export function WearablePage() {
             {
               label: "FC",
               icon: heart,
-              value: connOn && hr != null ? Math.round(hr) : "—",
+              value: hr != null ? Math.round(hr) : "—",
               unit: "lpm",
             },
             {
               label: "SpO2",
               icon: waterOutline,
-              value: connOn && spo2 != null ? Math.round(spo2) + "%" : "—",
+              value: spo2 != null ? Math.round(spo2) + "%" : "—",
               unit: "",
             },
             {
               label: "Presión",
               icon: pulseOutline,
               value:
-                connOn && blood
+                blood
                   ? Math.round(blood.value) +
                     "/" +
                     (blood.value2 == null ? "—" : Math.round(blood.value2))
@@ -765,7 +813,7 @@ export function WearablePage() {
               label: "Sueño",
               icon: moonOutline,
               value:
-                connOn && sleepMinutes != null
+                sleepMinutes != null
                   ? formatSleep(sleepMinutes, t)
                   : "—",
               unit: "",
@@ -774,7 +822,7 @@ export function WearablePage() {
               label: "Pasos",
               icon: footstepsOutline,
               value:
-                connOn && steps != null
+                steps != null
                   ? Math.round(steps).toLocaleString(locale)
                   : "—",
               unit: "",
@@ -795,7 +843,7 @@ export function WearablePage() {
             <IonButton
               expand="block"
               className="bt bt-primary"
-              onClick={() => void syncHistory()}
+              onClick={() => void requestHistoryWithProgress()}
               disabled={!connOn || syncing || measuring !== null || queued > 0}
             >
               {syncing ? (
@@ -810,7 +858,17 @@ export function WearablePage() {
         )}
         {!wearableConnected ? (
           <div className="watch-pair">
-            {phase === "error" && error && (
+            <IonList className="group-list" lines="none">
+              <IonItem className="group-item">
+                <IonIcon icon={watchOutline} slot="start" aria-hidden="true" />
+                <IonLabel>
+                  <h3>{t("Banda H59 · Anillo R88")}</h3>
+                  <p>{t("Dispositivos compatibles con la app")}</p>
+                </IonLabel>
+                <IonIcon icon={checkmarkCircle} slot="end" color="success" aria-label={t("Compatible")} />
+              </IonItem>
+            </IonList>
+            {phase === "error" && error && !bluetoothOff && (
               <p className="watch-pair-copy" style={{ color: "var(--red)" }}>
                 {t(ERROR_KEYS[error])}
               </p>
@@ -821,20 +879,23 @@ export function WearablePage() {
               <>
                 <div className="group-label">{t("Tus dispositivos")}</div>
                 <IonList className="group-list" lines="full">
-                  {deviceList.map((device) => (
+                  {deviceList.map((device) => {
+                    const supported = isSupportedWearable(device);
+                    return (
                     <IonItem
                       key={device.deviceId}
                       className="group-item"
-                      button
+                      button={supported}
                       detail={false}
-                      disabled={connecting}
+                      disabled={bluetoothOff || connecting || addingAccessory || !supported}
                       onClick={() => pair(device)}
                     >
                       <div className="bt-dev-ico" slot="start">
-                        <IonIcon icon={pulseOutline} />
+                        <IonIcon icon={!supported ? banOutline : device.kind === "ycbt" ? radioButtonOffOutline : watchOutline} />
                       </div>
                       <IonLabel>
                         <h3>{device.name || t("Dispositivo sin nombre")}</h3>
+                        <p>{supported ? t("Compatible con la app") : t("Dispositivo no compatible")}</p>
                         <p>
                           {device.paired
                             ? t("Ya emparejado en los ajustes del teléfono")
@@ -842,6 +903,7 @@ export function WearablePage() {
                         </p>
                       </IonLabel>
                       <div slot="end" className="bt-dev-end">
+                        {supported && <IonIcon icon={checkmarkCircle} color="success" aria-label={t("Compatible")} />}
                         {device.paired ? (
                           <span
                             className="chip chip-teal"
@@ -852,7 +914,7 @@ export function WearablePage() {
                         ) : (
                           <Signal n={signalBars(device.rssi)} />
                         )}
-                        {pending === device.deviceId ? (
+                        {!supported ? null : pending === device.deviceId ? (
                           <IonSpinner
                             name="crescent"
                             style={{ width: 18, height: 18 }}
@@ -864,16 +926,14 @@ export function WearablePage() {
                         )}
                       </div>
                     </IonItem>
-                  ))}
+                  );})}
                 </IonList>
               </>
             )}
 
-            {hasScanned && !devices.length && phase !== "error" && (
+            {hasScanned && !deviceList.length && phase !== "error" && (
               <p className="watch-pair-copy">
-                {t(
-                  "No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.",
-                )}
+                {t("No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.")}
               </p>
             )}
 
@@ -882,9 +942,9 @@ export function WearablePage() {
               expand="block"
               className="bt bt-primary"
               onClick={scan}
-              disabled={connecting}
+              disabled={bluetoothOff || connecting || addingAccessory}
             >
-              {scanning ? (
+              {scanning && !bluetoothOff ? (
                 <>
                   <IonSpinner
                     name="crescent"
@@ -901,7 +961,7 @@ export function WearablePage() {
               )}
             </IonButton>
 
-            {scanning && (
+            {scanning && !bluetoothOff && (
               <div
                 className="watch-scan-strip"
                 role="status"
@@ -1184,7 +1244,9 @@ export function WearablePage() {
                     <IonLabel>
                       <h3>{t("Modo diagnóstico")}</h3>
                       <p>
-                        {t("Muestra todos los dispositivos y el detalle GATT.")}
+                        {accessoryDiscoverySupported
+                          ? t("Muestra el detalle BLE de los accesorios autorizados.")
+                          : t("Muestra todos los dispositivos y el detalle GATT.")}
                       </p>
                     </IonLabel>
                   </IonItem>
@@ -1300,6 +1362,14 @@ export function WearablePage() {
       </Scroll>
 
       <IonAlert
+        isOpen={bluetoothOff && bluetoothPromptOpen}
+        header={t("Activa Bluetooth")}
+        message={t("Enciende Bluetooth en Ajustes para conectar tu wearable.")}
+        buttons={[{ text: t("Entendido"), role: "cancel" }]}
+        onDidDismiss={() => setBluetoothPromptOpen(false)}
+      />
+
+      <IonAlert
         isOpen={confirmOff}
         header={t("¿Desconectar el wearable?")}
         message={t(
@@ -1322,9 +1392,9 @@ export function WearablePage() {
       {(() => {
         const overlayKind = focusKind ?? focusResult?.kind ?? null;
         if (overlayKind === null) {
-          // Fase de volcado: el foco abre AL TOCAR sincronizar, no cuando
-          // arranca el primer barrido (el dump previo dejaba ~20 s de UI muerta).
-          if (syncing) {
+          // El refresco automático conserva visible Reloj y su conexión.
+          // El foco se abre solo al solicitar Sincronizar ahora explícitamente.
+          if (syncing && historyProgressRequested) {
             return <MeasureSyncOverlay isOpen onCancel={cancelFocus} />;
           }
           return null;

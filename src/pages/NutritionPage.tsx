@@ -29,6 +29,7 @@ import {
   queueHydration,
 } from "../services/offline/offline-queue-service";
 import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
+import { useNutritionPlanStatus } from "../hooks/useNutritionPlanStatus";
 import { NutritionMetrics, NutritionWeek, NutritionWeightChart } from "../components/nutrition/NutritionInsights";
 import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { useProgram } from "../hooks/useProgram";
@@ -76,7 +77,7 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
 };
 
 export function NutritionPage() {
-  const { showToast } = useApp();
+  const { showToast, navigate, openTests } = useApp();
   // Sin snapshot → sin contenido fabricado: la pantalla entera deriva de la
   // verdad del servidor. isLoading distingue carga inicial de estados
   // terminales honestos; productMessage (estados paused/withdrawn/
@@ -101,6 +102,7 @@ export function NutritionPage() {
     error: planError,
     refetch: refetchPlan,
   } = useMyNutritionPlan();
+  const { status: planStatus, refetch: refreshPlanStatus } = useNutritionPlanStatus();
   const [tab, setTab] = useState<
     "hoy" | "semana" | "indicaciones" | "historial"
   >("hoy");
@@ -897,11 +899,14 @@ export function NutritionPage() {
         {tab === "indicaciones" && (
           <NutritionPlanTab
             plan={nutritionPlan}
+            status={planStatus}
             isLoading={planLoading}
             error={planError}
             fallbackRows={planRows}
             locale={locale}
-            onRetry={() => void refetchPlan()}
+            onRetry={() => { void refetchPlan(); void refreshPlanStatus(); }}
+            onOpenAssessments={() => openTests()}
+            onOpenProgram={() => navigate('prog')}
           />
         )}
 

@@ -20,6 +20,18 @@ describe("device-store", () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());
 
+  it("separa la identidad del dispositivo por cuenta y no adopta el vínculo sin dueño", () => {
+    saveDevice(descriptor);
+    expect(loadSavedDevice("patient-a")).toBeNull();
+    saveDevice(descriptor, "patient-a");
+    expect(loadSavedDevice("patient-a")?.deviceId).toBe(descriptor.deviceId);
+    expect(loadSavedDevice("patient-b")).toBeNull();
+    clearSavedDevice("patient-b");
+    expect(loadSavedDevice("patient-a")).not.toBeNull();
+    clearSavedDevice("patient-a");
+    expect(loadSavedDevice("patient-a")).toBeNull();
+  });
+
   it("guarda y recupera el dispositivo con su marca de tiempo", () => {
     saveDevice(descriptor);
     const saved = loadSavedDevice();

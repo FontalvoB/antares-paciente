@@ -60,6 +60,14 @@ export interface ExerciseItemDto {
   equipment?: string | null
   tips?: string | null
   sortOrder: number
+  mediaId?: string | null
+  mediaUrl?: string | null
+  thumbnailUrl?: string | null
+  mediaType?: 'Video' | 'Image' | null
+  weightKg?: number | null
+  tempo?: string | null
+  rpe?: number | null
+  referenceVideo?: { embedUrl: string; sourceUrl: string; author: string } | null
 }
 
 export interface PodcastChapterDto {
@@ -131,6 +139,8 @@ export interface TodayTaskContentDto {
 }
 
 export interface TodayTaskDto {
+  /** Solo cliente: una marca optimista aún no confirmada por el servidor. */
+  clientPending?: boolean
   taskCode: TaskCode
   title: string
   short: string
@@ -230,6 +240,15 @@ export interface ProgramEnrollmentDto {
   startedAt?: string | null
 }
 
+export interface EmotionalAssessmentPayload {
+  stressScore?: number
+  motivationScore?: number
+  sleepMinutes?: number
+  sleepSource?: 'manual' | 'wearable'
+  sleepRecordedAt?: string
+  notes?: string
+}
+
 export interface CompleteTaskInput {
   enrollmentId: string
   localDate: string
@@ -242,6 +261,7 @@ export interface CompleteTaskInput {
   // Additive (vital-signs-tracking): optional nested vitals for the `vitals`
   // task. Null/empty payloads are ignored by the backend (no behaviour change).
   vitals?: VitalsPayload | null
+  emotional?: EmotionalAssessmentPayload | null
 }
 
 export interface CompleteTaskResponseDto {

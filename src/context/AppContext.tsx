@@ -1,5 +1,6 @@
 import { App } from "@capacitor/app";
 import { resetSessionQueryCache } from "../utils/queryClient";
+import { sessionUserId } from "../utils/sessionIdentity";
 import { Capacitor } from "@capacitor/core";
 import {
   createContext,
@@ -71,6 +72,8 @@ import { DAY_BONUS_PTS } from "../data/program";
 const CHAT_LAST_SEEN_PREFIX = "antares:chat-last-seen:";
 
 interface AppState {
+  vitaWelcomePending: boolean;
+  dismissVitaWelcome: () => void;
   authLoading: boolean;
   flow: Flow;
   screen: Screen;
@@ -238,12 +241,17 @@ const defaultUser: UserProfile = {
   fam1Cel: "", fam1Email: "",
 };
 
-function createWelcomeMessage(name = ""): ChatMessage {
+function createWelcomeMessage(name = "", lang: "es" | "en" = "es"): ChatMessage {
   const firstName = name.trim().split(" ")[0];
   return {
     id: "welcome",
     role: "bot",
-    text: `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
+    // Saludo en el idioma de la app: el asistente arranca hablando el idioma
+    // que el paciente tiene seleccionado (consistencia con chat/voz).
+    text:
+      lang === "en"
+        ? `Hi${firstName ? ` ${firstName}` : ""} 👋 I'm your Copp Adresd health agent. How can I help you today?`
+        : `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
     time: nowLabel(),
   };
 }
@@ -331,6 +339,7 @@ export function AppProvider({
   /** Se invoca tras login/logout para recrear el cliente urql de la comunidad. */
   onResetCommunityClient?: () => void;
 }) {
+  const [vitaWelcomePending, setVitaWelcomePending] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const t = useT();
   // Idioma actual de la app: se envía en cada turno de chat (señal explícita
@@ -348,7 +357,7 @@ export function AppProvider({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [testsDone, setTestsDone] = useState<number[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>(() => [
-    createWelcomeMessage(defaultUser.nombre),
+    createWelcomeMessage(defaultUser.nombre, lang),
   ]);
   const [wearableConnected, setWatchConnected] = useState(false);
   const [wearableName, setWatchName] = useState("Copp Adresd Wearable");
@@ -696,6 +705,7 @@ export function AppProvider({
   useEffect(() => {
     return onSessionInvalid(() => {
       resetPatientSession();
+      setVitaWelcomePending(false);
       setFlow("login");
       onResetCommunityClient?.();
     });
@@ -740,6 +750,10 @@ export function AppProvider({
       try {
         const session = await restoreSession();
         if (session && isCurrent()) {
+          // /me puede fallar sin red. El token restaurado conserva la clave
+          // de cuenta necesaria para su wearable y su caché privada.
+          const restoredUserId = sessionUserId(session.accessToken);
+          if (restoredUserId) setUser((prev) => ({ ...prev, id: restoredUserId }));
           try {
             const me = await getMe();
             if (me && isCurrent()) {
@@ -1041,6 +1055,7 @@ export function AppProvider({
 
   const value = useMemo<AppState>(
     () => ({
+      vitaWelcomePending,
       authLoading,
       flow,
       screen,
@@ -1063,6 +1078,7 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      dismissVitaWelcome: () => setVitaWelcomePending(false),
       // Destino unificado: «Mi Avatar» abre Perfil corporal (screen='body').
       // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
       // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
@@ -1076,10 +1092,13 @@ export function AppProvider({
       finishLogin: (seed, next = "onboarding") => {
         resetPatientSession();
         const generation = sessionGeneration.current;
+        setVitaWelcomePending(false);
+        const loginUserId = sessionUserId(getAccessToken());
+        if (loginUserId) setUser((prev) => ({ ...prev, id: loginUserId }));
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         void (async () => {
-          let meId: string | undefined;
+          let meId: string | undefined = loginUserId ?? undefined;
           let meName: string | undefined;
           try {
             const me = await getMe();
@@ -1116,10 +1135,12 @@ export function AppProvider({
       },
       backToLogin: () => {
         resetPatientSession();
+        setVitaWelcomePending(false);
         setFlow("login");
         setScreen("home");
       },
       finishOnboarding: (u) => {
+        setVitaWelcomePending(true);
         setUser(u);
         setFlow("tests");
       },
@@ -1236,11 +1257,16 @@ export function AppProvider({
       },
       logout: () => {
         resetPatientSession();
+        setVitaWelcomePending(false);
         setFlow("login");
         setScreen("home");
-        // Cierra sesión en el servidor y luego recrea el cliente urql (cache
-        // limpia + WS nuevo) para no servir datos del usuario anterior.
-        void logoutUser().then(() => onResetCommunityClient?.());
+        setActiveThreadId(null);
+        setUser(defaultUser);
+        setChat([createWelcomeMessage(defaultUser.nombre, lang)]);
+        // logoutUser borra el token antes de esperar la red. Las caches se
+        // limpian de inmediato aunque el servidor de logout no responda.
+        void logoutUser();
+        onResetCommunityClient?.();
       },
       realMode,
       upcomingAppointments: builtReal?.upcoming ?? null,
@@ -1264,6 +1290,7 @@ export function AppProvider({
       roomAppointment,
     }),
     [
+      vitaWelcomePending,
       authLoading,
       resetPatientSession,
       flow,

@@ -7,11 +7,14 @@ const api = vi.hoisted(() => ({ fetchMyAssignments: vi.fn(), fetchMyResults: vi.
 const toast = vi.hoisted(() => vi.fn());
 vi.mock('../../utils/healthTestsApi', () => api);
 vi.mock('../../context/AppContext', () => ({ useApp: () => ({ showToast: toast, skipTests: vi.fn(), finishTests: vi.fn(), navigate: vi.fn() }) }));
-vi.mock('../../i18n/I18nContext', () => ({ useT: () => (key: string) => key }));
+vi.mock('../../i18n/I18nContext', () => ({
+  useT: () => (key: string) => key,
+  useI18n: () => ({ t: (key: string) => key, lang: 'es' }),
+}));
 vi.mock('../../components/tests/TestWizard', () => ({ TestWizard: ({ onComplete }: { onComplete: () => void }) => <button onClick={onComplete}>Submit real assessment</button> }));
 vi.mock('@ionic/react', () => ({
   IonButton: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => <button onClick={onClick}>{children}</button>,
-  IonIcon: () => null, IonLoading: () => null, IonProgressBar: () => null, IonSpinner: () => <span>Loading</span>,
+  IonIcon: () => null, IonSkeletonText: () => null, IonLoading: () => null, IonProgressBar: () => null, IonSpinner: () => <span>Loading</span>,
   IonAccordionGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonAccordion: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -93,7 +96,7 @@ describe('real assessment flow', () => {
     await screen.findByText('Análisis y detalle');
     expect(screen.getByText('20')).toBeTruthy();
     expect(screen.getByText('4')).toBeTruthy();
-    expect(screen.getByText('alto')).toBeTruthy();
+    expect(screen.getAllByText('alto').length).toBeGreaterThan(0);
     expect(screen.queryByText('bajo')).toBeNull();
     expect(screen.getByText('Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.')).toBeTruthy();
   });

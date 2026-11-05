@@ -2,6 +2,7 @@ import type { HealthSample, MetricKind } from "../types";
 import { MEASURE_MODE, OP, bleSecondsToMs } from "./protocol";
 import type { YcbtPacket } from "./protocol";
 import { readUint16LE, readUint24LE, readUint32LE } from "../util";
+import { notificationReceivedAt } from "../ble/notification-clock";
 
 // Decodifica los paquetes de medida en vivo (grupo 0x06xx) que el anillo
 // envía por C3 después de AppControlReal START.
@@ -160,7 +161,7 @@ function parseWearing(payload: Uint8Array, deviceId: string): HealthSample[] {
       metric: "wearing",
       value: worn,
       unit: "bool",
-      ts: Number.isFinite(ts) && ts > 0 ? ts : Date.now(),
+      ts: Number.isFinite(ts) && ts > 0 ? ts : notificationReceivedAt(),
       deviceId,
     },
   ];
@@ -180,7 +181,7 @@ function single(
       value,
       value2,
       unit,
-      ts: Date.now(),
+      ts: notificationReceivedAt(),
       deviceId,
     },
   ];

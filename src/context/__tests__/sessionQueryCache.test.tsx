@@ -36,6 +36,7 @@ vi.mock("../../utils/appointmentsApi", () => ({
 
 
 import { hasRealSession, fetchMyContext } from "../../utils/appointmentsApi";
+import { getAccessToken, getMe, restoreSession } from "../../utils/authApi";
 import { queryClient } from "../../utils/queryClient";
 function Harness() {
   const { finishLogin, logout, authLoading, user, patientCareContext, refreshAppointments } = useApp();
@@ -50,7 +51,31 @@ function Harness() {
 }
 
 describe("cambio de paciente", () => {
-  beforeEach(() => { queryClient.clear(); localStorage.clear(); vi.mocked(hasRealSession).mockReturnValue(false); });
+  beforeEach(() => {
+    queryClient.clear(); localStorage.clear();
+    vi.mocked(hasRealSession).mockReturnValue(false);
+    vi.mocked(restoreSession).mockResolvedValue(null);
+    vi.mocked(getMe).mockResolvedValue(null);
+    vi.mocked(getAccessToken).mockReturnValue(null);
+  });
+  it("restaura la cuenta del wearable aunque /me falle al reabrir sin backend", async () => {
+    const claims = { "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier": "patient-offline" };
+    const token = `header.${btoa(JSON.stringify(claims))}.signature`;
+    vi.mocked(restoreSession).mockResolvedValue({ accessToken: token, tokenType: "Bearer", expiresIn: 900 });
+    render(<I18nProvider><AppProvider><Harness /></AppProvider></I18nProvider>);
+    await waitFor(() => expect(screen.getByTestId("ready").textContent).toBe("true"));
+    expect(JSON.parse(screen.getByTestId("contact").textContent!).id).toBe("patient-offline");
+    fireEvent.click(screen.getByText("logout"));
+    expect(JSON.parse(screen.getByTestId("contact").textContent!).id).toBeFalsy();
+  });
+
+  it("identifica la cuenta al iniciar sesión sin esperar la consulta de perfil", async () => {
+    render(<I18nProvider><AppProvider><Harness /></AppProvider></I18nProvider>);
+    await waitFor(() => expect(screen.getByTestId("ready").textContent).toBe("true"));
+    vi.mocked(getAccessToken).mockReturnValue(`header.${btoa(JSON.stringify({ sub: "patient-login" }))}.signature`);
+    fireEvent.click(screen.getByText("login"));
+    await waitFor(() => expect(JSON.parse(screen.getByTestId("contact").textContent!).id).toBe("patient-login"));
+  });
   it("no reutiliza métricas del usuario anterior ni respuestas que lleguen tarde", async () => {
     render(<I18nProvider><AppProvider><Harness /></AppProvider></I18nProvider>);
     await waitFor(() => expect(screen.getByTestId("ready").textContent).toBe("true"));

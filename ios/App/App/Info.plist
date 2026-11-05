@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<string>4</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
@@ -31,13 +31,19 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Copp Adresd usa tu ubicación únicamente para adjuntarla a una alerta SOS, si la compartes.</string>
+	<string>Copp Adresd usa tu ubicación para identificar el número de emergencias del país y compartirla con tu contacto si activas SOS.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Copp Adresd usa tu ubicación para identificar el número de emergencias del país y compartirla con tu contacto si activas SOS.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Copp Adresd usa el micrófono para las consultas de telemedicina.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Copp Adresd guarda las fotos de tus comidas para tu registro nutricional.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Copp Adresd accede a tus fotos para analizar tus comidas.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

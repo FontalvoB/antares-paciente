@@ -1,0 +1,687 @@
+--- a/ios/Sources/BluetoothLe/Device.swift
++++ b/ios/Sources/BluetoothLe/Device.swift
+@@ -22,6 +22,15 @@
+         self.peripheral.delegate = self
+     }
+-
++
++    func restoreNotifications() {
++        guard BleNotificationJournal.shared.isTracking(self.getId()) else { return }
++        for (service, characteristic) in BleNotificationJournal.shared.subscriptions(self.getId()) {
++            if let value = getCharacteristic(CBUUID(string: service), CBUUID(string: characteristic)), !value.isNotifying {
++                self.peripheral.setNotifyValue(true, for: value)
++            }
++        }
++    }
++
+     func getName() -> String? {
+         return self.peripheral.name
+     }
+@@ -91,6 +100,7 @@
+             return
+         }
+         
++        self.restoreNotifications()
+         self.servicesDiscovered += 1
+         self.characteristicsCount += service.characteristics?.count ?? 0
+         
+@@ -244,6 +254,10 @@
+         let valueString = dataToString(characteristic.value!)
+         self.resolve(key, valueString)
+-
++
++        // Persistir antes de avisar al WebView; también funciona tras restauración.
++        if characteristic.isNotifying, let service = characteristic.service {
++            BleNotificationJournal.shared.append(self.getId(), service: cbuuidToString(service.uuid), characteristic: cbuuidToString(characteristic.uuid), value: valueString)
++        }
+         // notifications
+         if let callback = self.callbackMap[notifyKey] {
+             callback(true, valueString)
+@@ -371,6 +385,9 @@
+         guard let characteristic = self.getCharacteristic(serviceUUID, characteristicUUID) else {
+             self.reject(key, "Characteristic not found.")
+             return
++        }
++        if enable {
++            BleNotificationJournal.shared.rememberSubscription(self.getId(), service: cbuuidToString(serviceUUID), characteristic: cbuuidToString(characteristicUUID))
+         }
+         log("Set notifications", enable)
+         self.peripheral.setNotifyValue(enable, for: characteristic)
+--- a/ios/Sources/BluetoothLe/DeviceManager.swift
++++ b/ios/Sources/BluetoothLe/DeviceManager.swift
+@@ -14,7 +14,82 @@
+     typealias ScanResultCallback = (_ peripheral: CBPeripheral, _ advertisementData: [String: Any], _ rssi: NSNumber) -> Void
+-
++
+     private var centralManager: CBCentralManager!
+-    private let viewController: UIViewController?
++    private var viewController: UIViewController?
++    private static var retained: DeviceManager?
++    var retainedDevices = [String: Device]()
++    var accessorySetupInProgress: Bool { centralManager == nil }
++    private var waitingForAccessoryPowerOn = false
++    private var readinessWaiters = [UUID: (Callback, DispatchWorkItem)]()
++
++    // El estado inicial/resetting no demuestra que el usuario apagara el radio.
++    func waitUntilPoweredOn(_ callback: @escaping Callback) {
++        if centralManager?.state == .poweredOn { callback(true, "BLE powered on"); return }
++        if centralManager?.state == .unauthorized { callback(false, "BLE permission denied"); return }
++        if centralManager?.state == .unsupported { callback(false, "BLE unsupported"); return }
++        let id = UUID()
++        let timer = DispatchWorkItem { [weak self] in
++            guard let item = self?.readinessWaiters.removeValue(forKey: id) else { return }
++            item.0(false, "Bluetooth manager is not ready")
++        }
++        readinessWaiters[id] = (callback, timer)
++        DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: timer)
++    }
++
++    private func updateReadiness(_ state: CBManagerState) {
++        guard state == .poweredOn || state == .unauthorized || state == .unsupported else { return }
++        let waiters = readinessWaiters.values.map { $0 }
++        readinessWaiters.removeAll()
++        for (callback, timer) in waiters {
++            timer.cancel()
++            callback(state == .poweredOn, state == .poweredOn ? "BLE powered on" : state == .unauthorized ? "BLE permission denied" : "Bluetooth manager is not ready")
++        }
++    }
++
++
++    // ASK rechaza activarse mientras exista un CBCentralManager de la app.
++    // Solo se cede el radio sin conexiones; el diario y su propietario permanecen.
++    func suspendForAccessorySetup() -> Bool {
++        guard centralManager != nil,
++              retainedDevices.values.allSatisfy({ $0.getPeripheral().state == .disconnected }),
++              discoveredPeripherals.values.allSatisfy({ $0.state == .disconnected }) else { return false }
++        let waiters = readinessWaiters.values.map { $0 }
++        readinessWaiters.removeAll()
++        for (callback, timer) in waiters { timer.cancel(); callback(false, "Accessory setup is in progress") }
++        if centralManager.state == .poweredOn { stopScan() }
++        timeoutMap.values.forEach { $0.cancel() }
++        timeoutMap.removeAll()
++        callbackMap.removeAll()
++        scanResultCallback = nil
++        retainedDevices.removeAll()
++        discoveredPeripherals.removeAll()
++        centralManager.delegate = nil
++        centralManager = nil
++        return true
++    }
++
++    func resumeAfterAccessorySetup(waitForPoweredOn: Bool = true, _ callback: @escaping Callback) {
++        waitingForAccessoryPowerOn = waitForPoweredOn
++        callbackMap["initialize"] = { [weak self] success, message in
++            self?.waitingForAccessoryPowerOn = false
++            callback(success && self?.centralManager?.state == .poweredOn, message)
++        }
++        setTimeout("initialize", "Bluetooth did not become ready after accessory setup", 10)
++        centralManager = CBCentralManager(delegate: self, queue: .main, options: [CBCentralManagerOptionRestoreIdentifierKey: "com.coppadresd.wearable.central"])
++    }
++
++    static func obtain(_ viewController: UIViewController?, _ strings: [String: String], _ callback: @escaping Callback) -> DeviceManager {
++        if let current = retained {
++            guard !current.accessorySetupInProgress else { callback(false, "Accessory setup is in progress"); return current }
++            current.viewController = viewController
++            if !strings.isEmpty { current.displayStrings = strings }
++            current.callbackMap["initialize"] = callback
++            if current.centralManager.state != .unknown { current.centralManagerDidUpdateState(current.centralManager) }
++            return current
++        }
++        let current = DeviceManager(viewController, strings, callback)
++        retained = current
++        return current
++    }
+     private var displayStrings: [String: String]!
+     private var callbackMap = [String: Callback]()
+     private var scanResultCallback: ScanResultCallback?
+@@ -37,7 +112,35 @@
+         super.init()
+         self.displayStrings = displayStrings
+         self.callbackMap["initialize"] = callback
+-        self.centralManager = CBCentralManager(delegate: self, queue: DispatchQueue.main)
++        self.centralManager = CBCentralManager(delegate: self, queue: DispatchQueue.main, options: [CBCentralManagerOptionRestoreIdentifierKey: "com.coppadresd.wearable.central"])
++    }
++
++    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
++        for peripheral in dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] ?? [] {
++            let id = peripheral.identifier.uuidString
++            // No restaurar una asociación eliminada al cerrar sesión.
++            guard BleNotificationJournal.shared.isTracking(id) else {
++                central.cancelPeripheralConnection(peripheral)
++                continue
++            }
++            let device = Device(peripheral)
++            retainedDevices[id] = device
++            discoveredPeripherals[id] = peripheral
++            device.restoreNotifications()
++            if peripheral.state == .connected && peripheral.services == nil { peripheral.discoverServices(nil) }
++        }
++    }
++
++    private func reconnectInBackground(_ central: CBCentralManager, _ peripheral: CBPeripheral) {
++        guard UIApplication.shared.applicationState != .active,
++              BleNotificationJournal.shared.isTracking(peripheral.identifier.uuidString) else { return }
++        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self, weak peripheral] in
++            guard self != nil, let peripheral = peripheral, central.state == .poweredOn,
++                  UIApplication.shared.applicationState != .active,
++                  peripheral.state == .disconnected,
++                  BleNotificationJournal.shared.isTracking(peripheral.identifier.uuidString) else { return }
++            central.connect(peripheral, options: nil)
++        }
+     }
+-
++
+     func setDisplayStrings(_ displayStrings: [String: String]) {
+@@ -46,14 +149,15 @@
+-
++
+     // initialize
+     func centralManagerDidUpdateState(_ central: CBCentralManager) {
++        guard central === centralManager else { return }
++        updateReadiness(central.state)
+         let initializeKey = "initialize"
+         switch central.state {
+         case .poweredOn:
+             self.resolve(initializeKey, "BLE powered on")
+             self.emitState(enabled: true)
+         case .poweredOff:
+-            self.stopScan()
+-            self.resolve(initializeKey, "BLE powered off")
++            if !waitingForAccessoryPowerOn { self.resolve(initializeKey, "BLE powered off") }
+             self.emitState(enabled: false)
+         case .resetting:
+             self.emitState(enabled: false)
+@@ -73,6 +177,18 @@
+         return self.centralManager.state == CBManagerState.poweredOn
+     }
+-
++
++    func bluetoothState() -> String {
++        guard let central = centralManager else { return "unknown" }
++        switch central.state {
++        case .poweredOn: return "on"
++        case .poweredOff: return "off"
++        case .resetting: return "resetting"
++        case .unauthorized: return "unauthorized"
++        case .unsupported: return "unsupported"
++        default: return "unknown"
++        }
++    }
++
+     func registerStateReceiver( _ stateReceiver: @escaping StateReceiver) {
+         self.stateReceiver = stateReceiver
+     }
+@@ -137,7 +253,7 @@
+-
++
+     func stopScan() {
+         log("Stop scanning.")
+-        self.centralManager.stopScan()
++        if self.centralManager?.state == .poweredOn { self.centralManager.stopScan() }
+         self.stopScanWorkItem?.cancel()
+         self.stopScanWorkItem = nil
+         DispatchQueue.main.async { [weak self] in
+@@ -269,8 +385,14 @@
+         _ callback: @escaping Callback
+     ) {
+         let key = "connect|\(device.getId())"
++        self.retainedDevices[device.getId()] = device
+         self.callbackMap[key] = callback
+         log("Connecting to peripheral", device.getPeripheral())
++        if device.isConnected() {
++            device.getPeripheral().discoverServices(nil)
++            self.resolve(key, "Already connected; refreshing services.")
++            return
++        }
+         self.centralManager.connect(device.getPeripheral(), options: nil)
+         self.setConnectionTimeout(key, "Connection timeout.", device, connectionTimeout)
+     }
+@@ -294,6 +416,7 @@
+         error: Error?
+     ) {
+         let key = "connect|\(peripheral.identifier.uuidString)"
++        self.reconnectInBackground(central, peripheral)
+         if let error = error {
+             self.reject(key, error.localizedDescription)
+             return
+@@ -325,7 +448,7 @@
+     ) {
+         let key = "disconnect|\(device.getId())"
+         self.callbackMap[key] = callback
+-        if device.isConnected() == false {
++        if device.getPeripheral().state == .disconnected {
+             self.resolve(key, "Disconnected.")
+             return
+         }
+@@ -342,6 +465,7 @@
+     ) {
+         let key = "disconnect|\(peripheral.identifier.uuidString)"
+         let keyOnDisconnected = "onDisconnected|\(peripheral.identifier.uuidString)"
++        self.reconnectInBackground(central, peripheral)
+         self.resolve(keyOnDisconnected, "Disconnected.")
+         if let error = error {
+             log(error.localizedDescription)
+--- a/ios/Sources/BluetoothLe/Plugin.swift
++++ b/ios/Sources/BluetoothLe/Plugin.swift
+@@ -3,6 +3,9 @@
+ import Foundation
+ import Capacitor
+ import CoreBluetooth
++#if canImport(AccessorySetupKit)
++import AccessorySetupKit
++#endif
+-
++
+ let CONNECTION_TIMEOUT: Double = 10
+ let DEFAULT_TIMEOUT: Double = 5
+@@ -13,7 +16,16 @@
+     public let jsName = "BluetoothLe"
+     public let pluginMethods: [CAPPluginMethod] = [
+         CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "setupAccessory", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "accessoryCapabilities", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "selectAccessory", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "authorizedAccessories", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "startBackground", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "stopBackground", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "getPendingNotifications", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "ackNotifications", returnType: CAPPluginReturnPromise),
+         CAPPluginMethod(name: "isEnabled", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "getBluetoothState", returnType: CAPPluginReturnPromise),
+         CAPPluginMethod(name: "requestEnable", returnType: CAPPluginReturnPromise),
+         CAPPluginMethod(name: "enable", returnType: CAPPluginReturnPromise),
+         CAPPluginMethod(name: "disable", returnType: CAPPluginReturnPromise),
+@@ -51,6 +63,9 @@
+     typealias BleService = [String: Any]
+     typealias BleCharacteristic = [String: Any]
+     typealias BleDescriptor = [String: Any]
++    private static var usesAccessorySetup: Bool {
++        (Bundle.main.object(forInfoDictionaryKey: "NSAccessorySetupKitSupports") as? [String])?.contains("Bluetooth") == true
++    }
+     private var deviceManager: DeviceManager?
+     private var deviceMap = [String: Device]()
+     private var displayStrings = [String: String]()
+@@ -59,22 +74,199 @@
+         self.displayStrings = self.getDisplayStrings()
+     }
+-
++
++    /// Llamado por AppDelegate únicamente en un relanzamiento de Core Bluetooth.
++    public static func restoreBluetoothState() {
++        _ = DeviceManager.obtain(nil, [:], { _, _ in })
++    }
++
++    @objc func accessoryCapabilities(_ call: CAPPluginCall) {
++        #if canImport(AccessorySetupKit)
++        if #available(iOS 18.0, *), Self.usesAccessorySetup { call.resolve(["supported": true]); return }
++        #endif
++        call.resolve(["supported": false])
++    }
++
++    #if canImport(AccessorySetupKit)
++    @available(iOS 18.0, *)
++    private func accessoryData(_ accessory: ASAccessory) -> [String: Any] {
++        var data: [String: Any] = ["deviceId": accessory.bluetoothIdentifier!.uuidString,
++                                   "name": accessory.displayName, "paired": true]
++        if let service = accessory.descriptor.bluetoothServiceUUID { data["uuids"] = [service.uuidString] }
++        return data
++    }
++    #endif
++
++    @objc func authorizedAccessories(_ call: CAPPluginCall) {
++        DispatchQueue.main.async {
++            #if canImport(AccessorySetupKit)
++            if #available(iOS 18.0, *), Self.usesAccessorySetup {
++                BleAccessorySetup.shared.list { result in
++                    switch result {
++                    case .success(let accessories): call.resolve(["supported": true, "devices": accessories.map(self.accessoryData)])
++                    case .failure(let error): call.reject(error.localizedDescription, "accessory-setup-failed")
++                    }
++                }
++                return
++            }
++            #endif
++            call.resolve(["supported": false, "devices": []])
++        }
++    }
++
++    @objc func selectAccessory(_ call: CAPPluginCall) {
++        DispatchQueue.main.async {
++            #if canImport(AccessorySetupKit)
++            if #available(iOS 18.0, *), Self.usesAccessorySetup {
++                let manager = self.deviceManager
++                if let manager = manager, !manager.suspendForAccessorySetup() {
++                    call.reject("Accessory setup requires disconnected Bluetooth devices", "accessory-setup-failed"); return
++                }
++                self.deviceMap.removeAll()
++                DispatchQueue.main.async {
++                    BleAccessorySetup.shared.discover { result in
++                        // Buscar no exige abrir GATT ni esperar a que el radio se reactive.
++                        // Incluso al cancelar, devolver los wearables ya autorizados.
++                            var accessories = BleAccessorySetup.shared.authorizedSnapshot()
++                            for selected in (try? result.get()) ?? [] where !accessories.contains(where: { $0.bluetoothIdentifier == selected.bluetoothIdentifier }) {
++                                accessories.append(selected)
++                            }
++                            let ids = accessories.compactMap { $0.bluetoothIdentifier }
++                            let resumed: DeviceManager.Callback = { ready, message in
++                                BleAccessorySetup.trace("search radio ready=\(ready) result=\(message)")
++                                if ready, let current = self.deviceManager {
++                                    for peripheral in current.getDevices(ids) { _ = self.getOrCreateDevice(peripheral) }
++                                }
++                            }
++                            if let manager = manager {
++                                manager.resumeAfterAccessorySetup(waitForPoweredOn: !accessories.isEmpty, resumed)
++                            } else {
++                                self.deviceManager = DeviceManager.obtain(self.bridge?.viewController, self.displayStrings, resumed)
++                            }
++                            switch result {
++                            case .success: call.resolve(["supported": true, "devices": accessories.map(self.accessoryData)])
++                            case .failure(let error): call.reject(error.localizedDescription, "accessory-setup-failed")
++                            }
++                    }
++                }
++                return
++            }
++            #endif
++            call.resolve(["supported": false, "devices": []])
++        }
++    }
++
++    @objc func setupAccessory(_ call: CAPPluginCall) {
++        guard let id = call.getString("deviceId"), let kind = call.getString("kind") else { call.reject("deviceId and kind required"); return }
++        DispatchQueue.main.async {
++            #if canImport(AccessorySetupKit)
++            if #available(iOS 18.0, *), Self.usesAccessorySetup {
++                BleAccessorySetup.shared.list { listed in
++                    if let accessories = try? listed.get(), accessories.contains(where: { $0.bluetoothIdentifier?.uuidString.caseInsensitiveCompare(id) == .orderedSame }) {
++                        call.resolve(["supported": true, "authorized": true]); return
++                    }
++                guard let manager = self.getDeviceManager(call) else { return }
++                guard manager.suspendForAccessorySetup() else {
++                    call.reject("Accessory setup requires disconnected Bluetooth devices"); return
++                }
++                self.deviceMap.removeAll()
++                // Dejar que Core Bluetooth libere su cliente antes de activar ASK.
++                DispatchQueue.main.async {
++                    BleAccessorySetup.shared.setup(deviceId: id, name: call.getString("name") ?? "", kind: kind) { result in
++                        manager.resumeAfterAccessorySetup { ready, message in
++                            BleAccessorySetup.trace("CoreBluetooth resumed ready=\(ready) result=\(message)")
++                            if ready, let uuid = UUID(uuidString: id) {
++                                let peripherals = manager.getDevices([uuid])
++                                BleAccessorySetup.trace("peripherals restored=\(peripherals.count)")
++                                for peripheral in peripherals { _ = self.getOrCreateDevice(peripheral) }
++                            }
++                            switch result {
++                            case .success(let authorized):
++                                if authorized && !ready { call.reject(message) }
++                                else { call.resolve(["supported": true, "authorized": authorized]) }
++                            case .failure(let error):
++                                let nativeError = error as NSError
++                                NSLog("[Antares BLE] Accessory setup failed: %@ (%ld)", nativeError.domain, nativeError.code)
++                                call.reject(error.localizedDescription, "accessory-setup-failed")
++                            }
++                        }
++                    }
++                }
++                }
++                return
++            }
++            #endif
++            call.resolve(["supported": false, "authorized": false])
++        }
++    }
++
++    @objc func startBackground(_ call: CAPPluginCall) {
++        guard let id = call.getString("deviceId"), let owner = call.getString("ownerId") else { call.reject("deviceId and ownerId required"); return }
++        do { try BleNotificationJournal.shared.start(id, owner: owner); call.resolve() }
++        catch { call.reject(error.localizedDescription) }
++    }
++
++    @objc func stopBackground(_ call: CAPPluginCall) {
++        guard let id = call.getString("deviceId") else { call.reject("deviceId required"); return }
++        do { try BleNotificationJournal.shared.stop(id, forget: call.getBool("forget") ?? false); call.resolve() }
++        catch { call.reject(error.localizedDescription) }
++    }
++
++    @objc func getPendingNotifications(_ call: CAPPluginCall) {
++        guard let id = call.getString("deviceId"), let owner = call.getString("ownerId") else { call.reject("deviceId and ownerId required"); return }
++        do { call.resolve(try BleNotificationJournal.shared.pending(id, owner: owner, limit: call.getInt("limit") ?? 256, afterSequence: call.getString("afterSequence"))) }
++        catch { call.reject(error.localizedDescription) }
++    }
++
++    @objc func ackNotifications(_ call: CAPPluginCall) {
++        guard let id = call.getString("deviceId"), let owner = call.getString("ownerId"), let ids = call.getArray("ids", String.self) else { call.reject("deviceId, ownerId and ids required"); return }
++        do { try BleNotificationJournal.shared.acknowledge(id, owner: owner, ids: ids); call.resolve() }
++        catch { call.reject(error.localizedDescription) }
++    }
++
+     @objc func initialize(_ call: CAPPluginCall) {
+         DispatchQueue.main.async {
+-            self.deviceManager = DeviceManager(self.bridge?.viewController, self.displayStrings, {(success, message) in
+-                if success {
+-                    call.resolve()
+-                } else {
+-                    call.reject(message)
+-                }
+-            })
++            let start: (Bool) -> Void = { hasAccessories in
++                self.deviceManager = DeviceManager.obtain(self.bridge?.viewController, self.displayStrings) { success, message in
++                    DispatchQueue.main.async {
++                        guard success else { call.reject(message); return }
++                        if !hasAccessories { call.resolve(); return }
++                        guard let manager = self.deviceManager else { call.reject("Bluetooth manager is not ready", "bluetooth-not-ready"); return }
++                        manager.waitUntilPoweredOn { ready, reason in
++                            if ready { call.resolve() }
++                            else { call.reject(reason, "bluetooth-not-ready") }
++                        }
++                    }
++                }
++            }
++            #if canImport(AccessorySetupKit)
++            if #available(iOS 18.0, *), Self.usesAccessorySetup {
++                // Activar la sesión de accesorios ANTES de crear el manager BLE.
++                BleAccessorySetup.shared.list { result in
++                    switch result {
++                    case .success(let accessories): start(!accessories.isEmpty)
++                    case .failure(let error): call.reject(error.localizedDescription, "accessory-setup-failed")
++                    }
++                }
++                return
++            }
++            #endif
++            // El manager debe poder inicializarse apagado para observar su radio.
++            start(false)
+         }
+     }
+-
++
+     @objc func isEnabled(_ call: CAPPluginCall) {
+         DispatchQueue.main.async {
+             guard let deviceManager = self.getDeviceManager(call) else { return }
+-            let enabled: Bool = deviceManager.isEnabled()
+-            call.resolve(["value": enabled])
++            deviceManager.waitUntilPoweredOn { ready, _ in
++                call.resolve(["value": ready])
++            }
++        }
++    }
++
++    @objc func getBluetoothState(_ call: CAPPluginCall) {
++        DispatchQueue.main.async {
++            guard let manager = self.getDeviceManager(call) else { return }
++            call.resolve(["state": manager.bluetoothState()])
+         }
+     }
+@@ -600,5 +792,9 @@
+             call.reject("Bluetooth LE not initialized.")
+             return nil
+         }
++        guard !deviceManager.accessorySetupInProgress else {
++            call.reject("Accessory setup is in progress.")
++            return nil
++        }
+         return deviceManager
+     }
+@@ -738,11 +934,13 @@
+-
++
+     private func getOrCreateDevice(_ peripheral: CBPeripheral) -> Device {
+         let key = peripheral.identifier.uuidString
+-        if let existing = self.deviceMap[key] {
++        if let existing = self.deviceMap[key] ?? self.deviceManager?.retainedDevices[key] {
++            self.deviceMap[key] = existing
+             existing.updatePeripheral(peripheral)
+             return existing
+         }
+         let device = Device(peripheral)
+         self.deviceMap[key] = device
++        self.deviceManager?.retainedDevices[key] = device
+         return device
+     }
+--- a/Package.swift
++++ b/Package.swift
+@@ -19,7 +19,8 @@
+                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
+                 .product(name: "Cordova", package: "capacitor-swift-pm")
+             ],
+-            path: "ios/Sources/BluetoothLe"),
++            path: "ios/Sources/BluetoothLe",
++            linkerSettings: [.linkedLibrary("sqlite3")]),
+         .testTarget(
+             name: "BluetoothLeTests",
+             dependencies: ["BluetoothLe"],
+--- a/android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/BluetoothLe.kt
++++ b/android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/BluetoothLe.kt
+@@ -91,13 +91,64 @@
+-
++
+     private var bluetoothAdapter: BluetoothAdapter? = null
+     private var stateReceiver: BroadcastReceiver? = null
+-    private var deviceMap = HashMap<String, Device>()
++    private val deviceMap = BleBackgroundService.devices
+     private var deviceScanner: DeviceScanner? = null
+     private var displayStrings: DisplayStrings? = null
+     private var aliases: Array<String> = arrayOf()
+-
++
+     override fun load() {
+         displayStrings = getDisplayStrings()
++    }
++
++    override fun handleOnResume() {
++        BleBackgroundService.appActive = true
++    }
++
++    override fun handleOnPause() {
++        BleBackgroundService.paused(context)
++    }
++
++    @PluginMethod
++    fun startBackground(call: PluginCall) {
++        val id = call.getString("deviceId")
++        val owner = call.getString("ownerId")
++        if (id.isNullOrBlank() || owner.isNullOrBlank()) { call.reject("deviceId and ownerId required"); return }
++        try {
++            BleNotificationJournal.get(context).start(id, owner, call.getBoolean("automatic", false) ?: false)
++            BleBackgroundService.start(context)
++            call.resolve()
++        } catch (error: Exception) { call.reject(error.message ?: "Bluetooth background service failed") }
++    }
++
++    @PluginMethod
++    fun stopBackground(call: PluginCall) {
++        val id = call.getString("deviceId") ?: run { call.reject("deviceId required"); return }
++        try {
++            BleNotificationJournal.get(context).stop(id, call.getBoolean("forget", false) ?: false)
++            BleBackgroundService.changed(context)
++            call.resolve()
++        } catch (error: Exception) { call.reject(error.message ?: "Bluetooth background stop failed") }
++    }
++
++    @PluginMethod
++    fun getPendingNotifications(call: PluginCall) {
++        val id = call.getString("deviceId")
++        val owner = call.getString("ownerId")
++        if (id.isNullOrBlank() || owner.isNullOrBlank()) { call.reject("deviceId and ownerId required"); return }
++        try { call.resolve(BleNotificationJournal.get(context).pending(id, owner, call.getInt("limit", 256) ?: 256, call.getString("afterSequence"))) }
++        catch (error: Exception) { call.reject(error.message ?: "Bluetooth journal read failed") }
++    }
++
++    @PluginMethod
++    fun ackNotifications(call: PluginCall) {
++        val id = call.getString("deviceId")
++        val owner = call.getString("ownerId")
++        if (id.isNullOrBlank() || owner.isNullOrBlank()) { call.reject("deviceId and ownerId required"); return }
++        try {
++            val ids = (call.getArray("ids", JSArray()) ?: JSArray()).toList<String>()
++            BleNotificationJournal.get(context).acknowledge(id, owner, ids)
++            call.resolve()
++        } catch (error: Exception) { call.reject(error.message ?: "Bluetooth journal acknowledgement failed") }
+     }
+-
++
+     @PluginMethod
+@@ -476,6 +527,7 @@
+     }
+-
++
+     private fun onDisconnect(deviceId: String) {
++        BleBackgroundService.reconnect(deviceId)
+         try {
+             notifyListeners("disconnected|${deviceId}", null)
+         } catch (e: ConcurrentModificationException) {
+--- a/android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/Device.kt
++++ b/android/src/main/java/com/capacitorjs/community/plugins/bluetoothle/Device.kt
+@@ -257,6 +257,7 @@
+             val data = characteristic.value
+             if (data != null) {
+                 val value = bytesToString(data)
++                BleNotificationJournal.get(context).append(address, characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
+                 callbackMap[notifyKey]?.invoke(CallbackResponse(true, value))
+             }
+         }
+@@ -269,5 +270,6 @@
+             super.onCharacteristicChanged(gatt, characteristic, data)
+             val notifyKey = "notification|${characteristic.service.uuid}|${characteristic.uuid}"
+             val value = bytesToString(data)
++            BleNotificationJournal.get(context).append(address, characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
+             callbackMap[notifyKey]?.invoke(CallbackResponse(true, value))
+         }
+@@ -341,6 +343,12 @@
+         timeout: Long, skipDescriptorDiscovery: Boolean, callback: (CallbackResponse) -> Unit
+     ) {
+         val key = "connect"
++        // Un reinicio del WebView se une al intento nativo en curso.
++        val previous = callbackMap[key]
++        if (connectionState == STATE_CONNECTING && previous != null) {
++            callbackMap[key] = { response -> previous(response); callback(response) }
++            return
++        }
+         this.skipDescriptorDiscovery = skipDescriptorDiscovery
+         callbackMap[key] = callback
+         if (isConnected()) {
+@@ -625,6 +633,7 @@
+             return
+         }
+-
++
++        if (enable) BleNotificationJournal.get(context).rememberSubscription(address, serviceUUID.toString(), characteristicUUID.toString())
+         val result = bluetoothGatt?.setCharacteristicNotification(characteristic, enable)
+         if (result != true) {
+             reject(key, "Setting notification failed.")
+--- a/android/src/main/AndroidManifest.xml
++++ b/android/src/main/AndroidManifest.xml
+@@ -1,5 +1,13 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+   xmlns:tools="http://schemas.android.com/tools">
++  <!-- El servicio de dispositivo conectado conserva BLE sin Activity. -->
++  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
++  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
++  <application>
++    <service android:name="com.capacitorjs.community.plugins.bluetoothle.BleBackgroundService"
++      android:exported="false" android:stopWithTask="false"
++      android:foregroundServiceType="connectedDevice" />
++  </application>
+   <!-- Bluetooth -->
+   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

@@ -6,9 +6,9 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { IonButton, IonContent, IonIcon, IonModal } from "@ionic/react";
+import { IonButton, IonIcon, IonModal, IonSpinner } from "@ionic/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { close, flame, gift } from "ionicons/icons";
+import { arrowBack, flame, gift, refresh } from "ionicons/icons";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
@@ -56,11 +56,14 @@ import {
 import { useProgramScores } from "../hooks/useProgramScores";
 import { useProgramCalendar } from "../hooks/useProgramCalendar";
 import { resolveStationSec } from "../utils/exerciseSteps";
+import { programDayNumber } from "../utils/programDayNumber";
+import { queueCommunityShareDraft } from "../utils/communityShareDraft";
 import type {
   CompleteTaskInput,
   ProgramSnapshotDto,
   TaskCode,
   VitalsPayload,
+  EmotionalAssessmentPayload,
 } from "../services/program/types";
 
 const CONF_COLORS = [
@@ -74,6 +77,7 @@ const CONF_COLORS = [
 
 export function ProgramPage() {
   const {
+    screen,
     program: appProgram,
     completeStep,
     pointsToday: appPointsToday,
@@ -88,8 +92,9 @@ export function ProgramPage() {
   } = useApp();
 
   const t = useT();
-  const [tab, setTab] = useState<ProgramTab>("hoy");
-  const [active, setActive] = useState<ProgramTaskId | null>(null);
+  const [tab, setTab] = useState<ProgramTab>(screen === "program-racha" ? "racha" : "hoy");
+  const active = PROGRAM_TASKS.find(item => screen === `program-${item.id}`)?.id ?? null;
+  const setActive = useCallback((id: ProgramTaskId | null) => navigate(id ? `program-${id}` : "prog"), [navigate]);
   const [celebrate, setCelebrate] = useState(false);
   const [xpPop, setXpPop] = useState<number | null>(null);
   const [confetti, setConfetti] = useState<
@@ -103,7 +108,6 @@ export function ProgramPage() {
   const [exRunning, setExRunning] = useState(false);
   const [exStep, setExStep] = useState(0);
   const [exLeft, setExLeft] = useState(45);
-  const [nutriSlot, setNutriSlot] = useState("manana");
   const [takenAt, setTakenAt] = useState("");
   const [openedChest, setOpenedChest] = useState<{
     title: string;
@@ -118,9 +122,9 @@ export function ProgramPage() {
   // --- Program Hooks ---
   const {
     snapshot,
+    isLoading: programLoading,
     programState,
     productMessage,
-    isLoading: programLoading,
     refetch: refetchProgram,
   } = useProgram();
 
@@ -338,6 +342,7 @@ export function ProgramPage() {
         moodScore?: number;
         barriers?: string;
         vitals?: VitalsPayload | null;
+        emotional?: EmotionalAssessmentPayload | null;
       },
     ) => {
       if (program[id]) return;
@@ -359,6 +364,7 @@ export function ProgramPage() {
           }),
           ...(extra?.barriers !== undefined && { barriers: extra.barriers }),
           ...(extra?.vitals !== undefined && { vitals: extra.vitals }),
+          ...(extra?.emotional !== undefined && { emotional: extra.emotional }),
         };
         queueTaskCompletion(offlinePayload);
         queryClient.setQueryData<ProgramSnapshotDto>(
@@ -389,6 +395,7 @@ export function ProgramPage() {
           moodScore: extra?.moodScore,
           barriers: extra?.barriers,
           vitals: extra?.vitals,
+          emotional: extra?.emotional,
         },
         {
           onSuccess: () => {
@@ -420,6 +427,8 @@ export function ProgramPage() {
       program,
       completeTaskMutation,
       completeStep,
+      queryClient,
+      setActive,
       progress,
       snapshot,
       showToast,
@@ -463,8 +472,9 @@ export function ProgramPage() {
   useEffect(() => {
     const enteringExercise =
       active === "ejercicio" && prevActive.current !== "ejercicio";
-    prevActive.current = active;
+    if (active !== "ejercicio") prevActive.current = active;
     if (enteringExercise && activeExerciseSteps.length > 0) {
+      prevActive.current = active;
       setExStep(0);
       setExLeft(activeExerciseSteps[0]?.sec ?? 45);
       setExRunning(false);
@@ -496,6 +506,10 @@ export function ProgramPage() {
       setCelebrate(true);
     prevAll.current = allDone;
   }, [allDone]);
+
+  useEffect(() => {
+    if (active !== "ejercicio") setExRunning(false);
+  }, [active]);
 
   // Stop audio and reset playing state when closing the task sheet or switching away from podcast
   useEffect(() => {
@@ -657,7 +671,7 @@ export function ProgramPage() {
     taskPts,
   ]);
 
-  if (programLoading || !snapshot || programState !== "active") {
+  if (programLoading || !snapshot || (programState !== "active" && programState !== "recoverable")) {
     return (
       <Screen className="pg-reference">
         <Scroll className="pg-scroll">
@@ -674,8 +688,37 @@ export function ProgramPage() {
   }
 
   return (
-    <Screen className="pg-reference">
-      <Scroll className="pg-scroll">
+    <Screen hideNav={!!active} className={`pg-reference${active ? ` lesson-page lesson-${active}${active === "vitals" ? " wearable-reference" : ""}` : ""}`}>
+      {!active && <Scroll className="pg-scroll">
+        {productMessage && (
+          <div
+            className="card"
+            style={{
+              margin: "12px 16px",
+              borderLeft: "4px solid var(--org)",
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text)" }}>
+              {productMessage}
+            </p>
+            {programState === "recoverable" && (
+              <IonButton
+                size="small"
+                fill="outline"
+                onClick={() => refetchProgram()}
+                style={{ marginLeft: 8 }}
+              >
+                <IonIcon icon={refresh} slot="start" />
+                {t("Reintentar")}
+              </IonButton>
+            )}
+          </div>
+        )}
+
         <ProgramHeader
           programWeek={activeProgramWeek}
           doneCount={doneCount}
@@ -751,18 +794,10 @@ export function ProgramPage() {
             )}
           </motion.div>
         </AnimatePresence>
-      </Scroll>
+      </Scroll>}
 
-      <IonModal
-        isOpen={!!active && !!task}
-        onDidDismiss={() => setActive(null)}
-        initialBreakpoint={1}
-        breakpoints={[0, 1]}
-        handle
-        className="lesson-modal"
-      >
         {task && (
-          <IonContent>
+          <Scroll key={active} noNav className={`lesson-page-scroll${active === "vitals" ? " wearable-scroll" : ""}`}>
             <div className="lesson-sheet">
               <div className="lesson-sheet-head">
                 <div>
@@ -775,10 +810,10 @@ export function ProgramPage() {
                 </div>
                 <IonButton
                   fill="clear"
-                  aria-label={t("Cerrar")}
+                  aria-label={t("Volver al protocolo")}
                   onClick={() => setActive(null)}
                 >
-                  <IonIcon slot="icon-only" icon={close} />
+                  <IonIcon slot="icon-only" icon={arrowBack} />
                 </IonButton>
               </div>
               {program[task.id] && (
@@ -787,6 +822,9 @@ export function ProgramPage() {
                 </div>
               )}
 
+              {programLoading && <div className="lesson-loading" role="status"><IonSpinner /><p>{t("Cargando tu programa…")}</p></div>}
+              {productMessage && <div className="lsn-unavailable" role="status"><p>{t(productMessage)}</p><IonButton fill="clear" onClick={() => refetchProgram()}>{t("Reintentar")}</IonButton></div>}
+              {!programLoading && !productMessage && <>
               {task.id === "podcast" && (
                 <PodcastLesson
                   done={program.podcast}
@@ -905,9 +943,16 @@ export function ProgramPage() {
                   done={program.nutraceutico}
                   pts={taskPts}
                   takenAt={takenAt}
-                  slot={nutriSlot}
+                  pending={serverActiveTask?.clientPending === true}
+                  recordedAt={serverActiveTask?.clientPending ? null : serverActiveTask?.completedAt}
                   nbWeekDays={snapshot?.streak?.nbWeekDays}
-                  onSlot={setNutriSlot}
+                  dayNumber={programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate)}
+                  onShare={serverActiveTask?.status === "Completed" && !serverActiveTask.clientPending ? () => {
+                    const day = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
+                    queueCommunityShareDraft(user.id || user.cedula, day ? t("Día {day} para estar más sano. Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!", { day: String(day) }) : t("Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!"));
+                    setActive(null);
+                    navigate("com");
+                  } : undefined}
                   onComplete={() =>
                     finish(
                       "nutraceutico",
@@ -922,8 +967,9 @@ export function ProgramPage() {
               {task.id === "emocional" && (
                 <EmotionalLesson
                   done={program.emocional}
+                  pending={serverActiveTask?.clientPending === true}
                   pts={taskPts}
-                  onComplete={({ mood, barrier }) => {
+                  onComplete={({ mood, barrier, emotional }) => {
                     finish(
                       "emocional",
                       taskPts,
@@ -931,19 +977,18 @@ export function ProgramPage() {
                         pts: String(taskPts),
                       }),
                       {
-                        moodScore: parseInt(mood, 10) || 3,
+                        moodScore: Number(mood),
                         barriers: barrier,
+                        emotional,
                       },
                     );
-                    if (barrier)
-                      showToast(t("Registro enviado a tu equipo"), "info");
                   }}
                 />
               )}
+              </>}
             </div>
-          </IonContent>
+          </Scroll>
         )}
-      </IonModal>
 
       <IonModal
         isOpen={celebrate}

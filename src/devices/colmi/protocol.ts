@@ -149,6 +149,11 @@ export function parseFrame(bytes: Uint8Array): ColmiFrame | null {
 export class FrameStream {
   private buffer = new Uint8Array(0);
 
+  /** Fragmentos que aún requieren la siguiente notificación antes de su ACK. */
+  get pendingBytes(): number {
+    return this.buffer.length;
+  }
+
   push(bytes: Uint8Array): ColmiFrame[] {
     const merged = new Uint8Array(this.buffer.length + bytes.length);
     merged.set(this.buffer);
