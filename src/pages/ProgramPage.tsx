@@ -795,7 +795,7 @@ export function ProgramPage() {
         {task && (
           <Scroll key={active} noNav className={`lesson-page-scroll${active === "vitals" ? " wearable-scroll" : ""}`}>
             <div className="lesson-sheet">
-              <div className="lesson-sheet-head">
+              <div className={`lesson-sheet-head${active === "emocional" ? " lesson-sheet-head--emotional" : ""}`}>
                 <div>
                   <div className="kicker" style={{ color: "var(--mu)" }}>
                     {task.emoji}{" "}
@@ -964,6 +964,9 @@ export function ProgramPage() {
                 <EmotionalLesson
                   done={program.emocional}
                   pending={serverActiveTask?.clientPending === true}
+                  saving={completeTaskMutation.isPending}
+                  localDate={snapshot?.todayLocalDate}
+                  saved={serverActiveTask?.emotionalAssessment}
                   pts={taskPts}
                   onComplete={({ mood, barrier, emotional }) => {
                     finish(

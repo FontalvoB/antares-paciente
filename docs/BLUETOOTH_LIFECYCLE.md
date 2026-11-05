@@ -157,3 +157,31 @@ El usuario confirmó físicamente que el estado apagado aparece y la búsqueda
 se detiene. El usuario confirmó el popup estándar en el iPhone y, después
 de encender Bluetooth, reconexión automática, lecturas actualizadas y aviso
 cerrado sin pulsar Conectar.
+
+## Sueño en evaluación emocional (noviembre 2026)
+
+La duración representa segmentos dormidos, conservando el fin real de la sesión
+como timestamp. H59/Colmi excluye stage5 awake y descarta noches truncadas; R88/YCBT
+excluye stage4 awake y stage5 siesta, también en el fallback. No se deriva el
+fin de la noche sumando solo los minutos dormidos. Se mantienen las políticas
+existentes de corroboración de H59 con FC; las estimaciones no equivalen a una
+medición clínica ni se presentan fases individuales no persistidas.
+
+Las muestras recalculadas incluyen `sleepDurationVersion: 1`, conservada en caché.
+La evaluación no rellena automáticamente con cálculos anteriores sin ese marcador:
+se necesita otra sincronización o entrada manual. No se borra el historial previo.
+Un volcado corregido con el mismo timestamp puede actualizar el acumulado diario.
+`resolveLastNightSleep` exige el dispositivo seleccionado, datos válidos y fecha
+local de despertar correspondiente a la evaluación. Un dato viejo, de otro
+wearable o de diagnóstico nunca se rellena como sueño de anoche.
+
+La vista completa mantiene ánimo y sueño visibles; estrés, motivación, barrera,
+calidad subjetiva y nota son opcionales. Una corrección explícita conserva su
+valor aunque llegue un nuevo volcado, cambia a origen manual y elimina metadatos
+de wearable del envío. «No tengo este dato» omite duración, sin registrar cero.
+No se modifican las muestras del dispositivo al corregir esta evaluación.
+
+Validación:1.353 tests, lint/i18n/build, guards de parche/release y el script
+`scripts/emotional-checkin-smoke.mjs` (Ionic real a320/390/768px con datos de prueba)
+pasan. El script inicia/cierra su servidor de prueba y navegador, no usa pacientes
+ni dispositivos reales. Una noche nueva con H59/R88 físicos queda sin comprobar.

@@ -222,7 +222,7 @@ function decodeSleepStandard(
     );
     const segmentCount = Math.min(Math.floor(declared), available);
 
-    let sessionStart = 0;
+    let sessionEnd = 0;
     let minutes = 0;
     const seenStarts = new Set<number>();
     for (let index = 0; index < segmentCount; index++) {
@@ -233,17 +233,16 @@ function decodeSleepStandard(
       const segmentStart = readUint32LE(buffer, offset + 1);
       if (seenStarts.has(segmentStart)) continue;
       seenStarts.add(segmentStart);
-      if (!sessionStart) sessionStart = segmentStart;
       const seconds = readUint24LE(buffer, offset + 5);
       const duration = Math.round(seconds / 60);
       if (duration <= 0) continue;
-      minutes = Math.min(MAX_SLEEP_SESSION_MIN, minutes + duration);
+      sessionEnd = Math.max(sessionEnd, segmentStart + seconds);
+      if (stage !== 4 && stage !== 5) minutes = Math.min(MAX_SLEEP_SESSION_MIN, minutes + duration);
     }
 
-    if (sessionStart > 0 && minutes > 0) {
-      const startMs = ringTimeToMs(sessionStart);
+    if (sessionEnd > 0 && minutes > 0) {
       out.push(
-        sample(deviceId, "sleep", minutes, "min", startMs + minutes * 60_000),
+        sample(deviceId, "sleep", minutes, "min", ringTimeToMs(sessionEnd), { sleepDurationVersion: 1 }),
       );
     }
     cursor = segmentsStart + segmentCount * segmentLength;
@@ -265,10 +264,10 @@ function decodeSleepFallback(
   const now = Date.now();
   const minTimestamp = now - 14 * 24 * 60 * 60_000;
   const maxTimestamp = now + 24 * 60 * 60_000;
-  let best: Array<{ start: number; minutes: number }> = [];
+  let best: Array<{ start: number; minutes: number; asleep: number }> = [];
 
   for (let offset = 0; offset < Math.min(20, buffer.length); offset++) {
-    const run: Array<{ start: number; minutes: number }> = [];
+    const run: Array<{ start: number; minutes: number; asleep: number }> = [];
     const seen = new Set<number>();
     for (let cursor = offset; cursor + 8 <= buffer.length; cursor += 8) {
       const stage = sleepStage(buffer[cursor] ?? 0);
@@ -287,7 +286,7 @@ function decodeSleepFallback(
         continue;
       }
       seen.add(ringStart);
-      run.push({ start: ringStart, minutes });
+      run.push({ start: ringStart, minutes, asleep: stage === 4 || stage === 5 ? 0 : minutes });
     }
     const total = run.reduce((sum, segment) => sum + segment.minutes, 0);
     const bestTotal = best.reduce((sum, segment) => sum + segment.minutes, 0);
@@ -299,17 +298,18 @@ function decodeSleepFallback(
     }
   }
 
-  const totalMinutes = best.reduce((sum, segment) => sum + segment.minutes, 0);
+  const totalMinutes = best.reduce((sum, segment) => sum + segment.asleep, 0);
   if (best.length < 2 || totalMinutes < 20) return [];
 
-  const start = ringTimeToMs(Math.min(...best.map((segment) => segment.start)));
+  const end = ringTimeToMs(Math.max(...best.map((segment) => segment.start + segment.minutes * 60)));
   return [
     sample(
       deviceId,
       "sleep",
       Math.min(totalMinutes, MAX_SLEEP_SESSION_MIN),
       "min",
-      start + Math.min(totalMinutes, MAX_SLEEP_SESSION_MIN) * 60_000,
+      end,
+      { sleepDurationVersion: 1 },
     ),
   ];
 }

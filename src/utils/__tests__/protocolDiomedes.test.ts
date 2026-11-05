@@ -6,7 +6,7 @@ import { markProtocolReminderSeen, reminderKey, wasProtocolReminderSeen } from '
 import type { HealthSample } from '../../devices/types'
 
 const now = new Date(2026, 10, 3, 10, 0).getTime()
-const sample: HealthSample = { metric: 'sleep', value: 427, unit: 'min', ts: new Date(2026, 10, 3, 7).getTime(), deviceId: 'band', source: 'history' }
+const sample: HealthSample = { metric: 'sleep', value: 427, unit: 'min', ts: new Date(2026, 10, 3, 7).getTime(), deviceId: 'band', source: 'history', sleepDurationVersion: 1 }
 
 describe('sueño de anoche y contexto del protocolo', () => {
   it('permite el historial nocturno real del dispositivo seleccionado', () => {

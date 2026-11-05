@@ -40,6 +40,8 @@ export interface HealthSample {
    * `live` (por defecto) = stream en vivo o medida puntual de esta sesión.
    */
   source?: "live" | "history";
+  /** Versión del cálculo de sueño: excluye segmentos despierto y siestas. */
+  sleepDurationVersion?: 1;
 }
 
 /** Familia de protocolo detectada para un dispositivo. */

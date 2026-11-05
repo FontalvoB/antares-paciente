@@ -1,3 +1,4 @@
+import { ringTimeToMs } from "../ycbt/protocol";
 import { describe, expect, it } from "vitest";
 import { decodeHistory } from "../ycbt/records";
 
@@ -95,6 +96,22 @@ describe("decodeHistory — sueño", () => {
     expect(samples[0].value).toBe(45);
     expect(samples[0].unit).toBe("min");
     expect(samples[0].ts).toBeGreaterThan(0);
+  });
+
+  it("excluye despertares y siestas pero conserva el fin real de la sesión", () => {
+    const buffer = Uint8Array.from(sleepSession(1000, [
+      { tag: 0x02, at: 1000, seconds: 1800 },
+      { tag: 0x04, at: 2800, seconds: 600 },
+      { tag: 0x03, at: 3400, seconds: 900 },
+      { tag: 0x04, at: 4300, seconds: 300 },
+    ]));
+    const result = decodeHistory("sleep", buffer, DEVICE)[0];
+    expect(result.value).toBe(45);
+    expect(result.ts).toBe(ringTimeToMs(4600));
+    expect(result.sleepDurationVersion).toBe(1);
+    expect(decodeHistory("sleep", Uint8Array.from(sleepSession(1000, [
+      { tag: 0x05, at: 1000, seconds: 1800 },
+    ])), DEVICE)).toEqual([]);
   });
 
   it("ignora tags desconocidos sin cortar la sesión", () => {

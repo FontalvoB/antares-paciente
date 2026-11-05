@@ -33094,3 +33094,65 @@ ion-button.program-state-back { width: 44px; min-width: 44px; height: 44px; min-
   .program-state h1 { font-size: 26px; }
   .program-state-actions { margin-top: 22px; }
 }
+
+/* Evaluación emocional: pantalla completa, sueño revisable y respuestas opcionales. */
+.lesson-sheet-head--emotional { flex-direction:row-reverse; align-items:center; margin-bottom:24px; }
+.lesson-sheet-head--emotional .kicker, .lesson-sheet-head--emotional p { display:none; }
+.lesson-page .lesson-sheet-head--emotional h2 { margin:0; font:500 13px/1.5 var(--ion-font-family); color:var(--mu); }
+.emotion-checkin { color:var(--tx); padding-bottom:16px; }
+.emotion-intro { margin-bottom:28px; }
+.emotion-intro h2 { font-size:28px; line-height:1.18; font-weight:750; letter-spacing:-.03em; margin:0 0 10px; }
+.emotion-intro p { margin:0; color:var(--mu); font-size:14px; line-height:1.6; }
+.emotion-field { border:0; padding:0; margin:0; min-width:0; }
+.emotion-field legend { padding:0; font-size:16px; font-weight:700; margin-bottom:12px; }
+.emotion-moods { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
+ion-button.emotion-mood { margin:0; min-height:76px; height:auto; --padding-start:2px; --padding-end:2px; --padding-top:12px; --padding-bottom:12px; --border-radius:12px; --border-style:solid; --border-width:1px; --border-color:var(--bd); --color:var(--tx); --background:var(--wh); text-transform:none; letter-spacing:normal; }
+ion-button.emotion-mood.selected { --background:var(--navy); --color:var(--wh); --border-color:var(--navy); }
+.emotion-mood span { display:flex; flex-direction:column; align-items:center; gap:9px; width:100%; }
+.emotion-mood strong { font-size:23px; font-weight:650; line-height:1; }
+.emotion-mood small { font-size:11px; white-space:normal; line-height:1.25; font-weight:500; }
+.emotion-sleep { background:var(--blue-l); color:var(--navy); border-radius:16px; padding:18px; margin-top:28px; }
+.emotion-sleep-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+.emotion-sleep-heading h3 { margin:0; font-size:16px; display:flex; align-items:center; gap:8px; }
+.emotion-sleep-heading ion-icon { font-size:20px; flex-shrink:0; }
+.emotion-sleep-heading > span { font-size:11px; font-weight:650; text-align:right; overflow-wrap:anywhere; max-width:42%; }
+.emotion-night { font-size:12px; color:var(--mu); margin:14px 0 3px; }
+.emotion-duration { font-size:30px; font-weight:750; letter-spacing:-.03em; margin:0 0 5px; }
+.emotion-sleep-meta { font-size:12px; color:var(--mu); margin:0; line-height:1.6; }
+.emotion-sleep-empty { font-size:14px; line-height:1.6; margin:14px 0 0; }
+.emotion-sleep-actions { display:flex; flex-wrap:wrap; gap:3px 14px; margin-top:12px; }
+.emotion-sleep-actions ion-button { margin:0; min-height:44px; --padding-start:0; --padding-end:0; --color:var(--navy); font-size:13px; text-transform:none; letter-spacing:normal; text-decoration:underline; text-underline-offset:3px; }
+.emotion-sleep-editor { margin-top:12px; }
+.emotion-sleep-editor > div { display:flex; gap:8px; margin-top:8px; }
+.emotion-input-error { font-size:13px; color:var(--red); margin-top:8px; }
+.emotion-quality { margin-top:22px; }
+.emotion-quality legend { font-size:14px; }
+.emotion-field legend small, .emotion-details h3 small { color:var(--mu); font-size:12px; font-weight:400; }
+.emotion-pills { display:flex; gap:7px; flex-wrap:wrap; }
+.emotion-pills ion-button { margin:0; min-height:44px; height:auto; --padding-top:10px; --padding-bottom:10px; --padding-start:11px; --padding-end:11px; --border-color:var(--bd); --border-width:1px; --border-radius:10px; --color:var(--tx); --background:var(--wh); font-size:12px; font-weight:500; text-transform:none; letter-spacing:normal; white-space:normal; }
+.emotion-pills ion-button.selected { --background:var(--navy); --color:var(--wh); --border-color:var(--navy); }
+.emotion-help { color:var(--mu); font-size:12px; margin:9px 0 0; line-height:1.5; }
+.emotion-details { border-top:1px solid var(--bd); padding-top:22px; margin-top:28px; }
+.emotion-details > h3 { display:flex; justify-content:space-between; gap:12px; font-size:15px; margin:0 0 24px; }
+.emotion-range { margin-bottom:24px; }
+.emotion-range label, .emotion-range > div { display:flex; justify-content:space-between; gap:12px; }
+.emotion-range label { font-size:14px; font-weight:650; }
+.emotion-range label > span { font-size:12px; font-weight:400; color:var(--mu); }
+.emotion-range ion-range { --bar-background:var(--bd); --bar-background-active:var(--navy); --knob-background:var(--navy); padding:10px 0; }
+.emotion-range > div { color:var(--mu); font-size:12px; }
+.emotion-note { margin-top:22px; }
+.emotion-privacy { font-size:12px; color:var(--mu); line-height:1.6; margin:24px 0 12px; }
+ion-button.emotion-save { margin:0; min-height:50px; --background:var(--navy); --color:var(--wh); --border-radius:12px; font-size:15px; font-weight:650; letter-spacing:normal; text-transform:none; }
+.emotion-save-hint { text-align:center; color:var(--mu); font-size:12px; margin:8px 0 0; }
+.emotion-saved { padding:12px 0; }
+.emotion-saved > ion-icon { color:var(--navy); font-size:32px; }
+.emotion-saved > h3 { font-size:22px; line-height:1.3; margin:12px 0 8px; }
+.emotion-saved > p { color:var(--mu); font-size:14px; line-height:1.6; }
+.emotion-summary { margin:24px 0 0; }
+.emotion-summary > div { display:flex; justify-content:space-between; gap:16px; padding:13px 0; border-bottom:1px solid var(--bd); }
+.emotion-summary dt { color:var(--mu); font-size:13px; }
+.emotion-summary dd { margin:0; text-align:right; font-size:14px; font-weight:650; }
+.emotion-summary small { display:block; color:var(--mu); font-size:12px; font-weight:400; }
+
+.screen.lesson-emocional > .screen-scroll { background:var(--wh); }
+.lesson-emocional .lesson-sheet { max-width:584px; }
