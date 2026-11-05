@@ -3340,5 +3340,11 @@
   "No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.": "No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.",
   "El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.": "El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.",
   "El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.": "El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.",
-  "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.": "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud."
+  "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.": "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.",
+  "Ubicación del dispositivo: {ciudad}, {pais}": "Ubicación del dispositivo: {ciudad}, {pais}",
+  "Línea local verificada": "Línea local verificada",
+  "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.": "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.",
+  "Llamar a la central de emergencias · {numero}": "Llamar a la central de emergencias · {numero}",
+  "Si la línea local no responde, llama al {numero}": "Si la línea local no responde, llama al {numero}",
+  "Llamar": "Llamar"
 }

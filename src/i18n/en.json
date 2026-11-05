@@ -3330,5 +3330,11 @@
   "No pudimos conectar con el servicio de tu programa. Revisa tu conexión a internet y vuelve a intentarlo.": "We could not connect to your program service. Check your internet connection and try again.",
   "El servicio de tu programa tardó demasiado en responder. Espera un momento y vuelve a intentarlo.": "Your program service took too long to respond. Wait a moment and try again.",
   "El servicio de tu programa tuvo un problema al consultar tus actividades. Reintenta en unos minutos; si se repite, contacta a tu equipo de salud.": "Your program service encountered a problem retrieving your activities. Try again in a few minutes; if it happens again, contact your care team.",
-  "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.": "Your program is not active yet and we could not check whether you have completed your assessments. Try again; if it happens again, contact your care team."
+  "Tu programa aún no está activo y no pudimos comprobar si ya completaste tus evaluaciones. Reintenta; si se repite, contacta a tu equipo de salud.": "Your program is not active yet and we could not check whether you have completed your assessments. Try again; if it happens again, contact your care team.",
+  "Ubicación del dispositivo: {ciudad}, {pais}": "Device location: {ciudad}, {pais}",
+  "Línea local verificada": "Verified local line",
+  "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.": "Verified local contacts in {ciudad}. Services without a local contact use {numero}.",
+  "Llamar a la central de emergencias · {numero}": "Call emergency dispatch · {numero}",
+  "Si la línea local no responde, llama al {numero}": "If the local line does not answer, call {numero}",
+  "Llamar": "Call"
 }
