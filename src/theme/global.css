@@ -12523,6 +12523,8 @@ ion-modal.metric-modal ion-content {
   gap: 8px;
   margin-bottom: 12px;
 }
+.mh-head > div { flex: 1; min-width: 0; }
+.mh-head > ion-button { flex: 0 0 44px; width: 44px; min-height: 44px; margin: 0 0 0 auto; --padding-start: 0; --padding-end: 0; }
 .mh-head h2 {
   margin: 2px 0 4px;
   font-family: "Space Grotesk", sans-serif;
@@ -32288,12 +32290,12 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 @keyframes vita-ember { 0% { transform: translateY(10px) scale(.4); opacity: 0; } 25% { opacity: .8; } 100% { transform: translateY(-180px) scale(1.3); opacity: 0; } }
 @keyframes vita-orbit { to { transform: rotate(360deg); } }
 /* Vita comparte el mismo retrato en bienvenida y conversación. */
-.vita-chat-portrait { object-fit: cover; object-position: 50% 20%; border-radius: 24px; }
-.vita-chat-avatar { width: 100%; height: 100%; object-fit: cover; object-position: center 15%; transform: scale(1.3); }
+.vita-chat-portrait { object-fit: contain; object-position: center bottom; border-radius: 0; }
+.vita-chat-avatar { width: 100%; height: 100%; object-fit: cover; object-position: center 12%; transform: scale(1.65); transform-origin: 50% 25%; }
 .chat-avatar:has(.vita-chat-avatar) { overflow: hidden; }
 .vita-welcome-modal { --width: min(420px, calc(100vw - 32px)); --height: auto; --border-radius: 28px; --box-shadow: var(--shadow-md); }
 .vita-welcome { max-height: 90dvh; overflow-y: auto; background: var(--wh); position: relative; }
-.vita-welcome > img { display: block; width: 100%; height: min(33dvh, 260px); object-fit: cover; object-position: center 25%; }
+.vita-welcome > img { display: block; width: 100%; height: min(33dvh, 260px); object-fit: contain; object-position: center bottom; background: radial-gradient(ellipse at bottom,var(--home-aqua),var(--home-mist) 70%); }
 .vita-welcome .vita-close { position: absolute; right: 10px; top: 10px; z-index: 1; width: 44px; height: 44px; --background: var(--wh); --border-radius: 50%; }
 .vita-welcome-copy { padding: 24px; text-align: center; }
 .vita-welcome-copy h2 { font: 700 25px/1.2 'Space Grotesk', sans-serif; letter-spacing: -.7px; margin: 12px 0; }
@@ -32311,17 +32313,17 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
   .podcast-player .pod-cover { width: min(100%, 30dvh, 380px); }
 }
 .lesson-loading { display: grid; justify-items: center; gap: 12px; padding: 40px; color: var(--mu); }
-.chat-reference .chat-hero-copy { padding-right: 128px; }
+.chat-reference .chat-hero-copy { padding-right: 140px; min-height: 136px; align-items: center; }
 .chat-reference .chat-hero-copy > div { min-width: 0; }
 .chat-reference .chat-hero-copy h1 { white-space: normal; font-size: 25px; }
-.chat-reference .chat-header-mascot.vita-chat-portrait { width: 118px; height: 138px; right: 10px; bottom: 0; }
+.chat-reference .chat-header-mascot.vita-chat-portrait { width: 150px; height: 184px; right: 0; bottom: -2px; max-width: none; object-fit: contain; object-position: bottom center; filter: drop-shadow(0 4px 12px color-mix(in srgb,var(--brand-navy) 12%,transparent)); }
 .chat-reference .chat-row .chat-avatar > .vita-chat-avatar { display: block; position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
 .chat-reference .chat-row .chat-avatar:has(.vita-chat-avatar) { position: relative; }
 .vita-welcome-modal::part(content) { max-height: 90dvh; }
 /* SOS: servicios independientes; los controles siguen siendo Ionic. */
 .sos-reference .sos-services {
-  margin-bottom: 14px;
-  padding: 16px 12px 12px;
+  margin-bottom: 20px;
+  padding: 22px 16px 18px;
   border: 1px solid var(--bd);
   border-radius: 23px;
   background: var(--wh);
@@ -32329,8 +32331,10 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
   box-shadow: var(--shadow-sm);
 }
 .sos-reference .sos-services .sos-section-heading h2 {
-  margin-top: 4px;
-  font-size: 20px;
+  margin-top: 8px;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -.5px;
 }
 .sos-reference .sos-country-status {
   display: flex;
@@ -32347,71 +32351,64 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
   font-size: 16px;
   color: var(--brand-blue-mid);
 }
-.sos-reference .sos-country-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 12px;
-}
+.sos-reference .sos-country-options { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 16px 0 18px; padding: 5px; background: var(--home-mist); border: 1px solid var(--home-sky); border-radius: 16px; }
 .sos-reference .sos-country-options ion-button {
-  margin: 0;
-  min-width: 0;
-  min-height: 44px;
-  --border-radius: 12px;
-  --color: var(--brand-blue-mid);
-  --border-color: var(--bd);
-  font-size: 12px;
-  text-transform: none;
-  letter-spacing: 0;
+  margin: 0; min-width: 0; min-height: 46px; --border-radius: 11px;
+  --background: transparent; --background-hover: var(--wh); --background-focused: var(--wh); --background-activated: var(--home-sky);
+  --color: var(--brand-navy); --color-hover: var(--brand-navy); --color-focused: var(--brand-navy); --color-activated: var(--brand-navy);
+  --border-width: 0; --box-shadow: none; --padding-start: 8px; --padding-end: 8px;
+  font-size: 11px; font-weight: 700; text-transform: none; letter-spacing: 0;
 }
 .sos-reference .sos-country-options ion-button.is-selected {
-  --background: var(--brand-navy);
-  --color: var(--wh);
-  color: var(--wh);
+  --background: var(--brand-navy); --background-hover: var(--brand-navy-deep); --background-focused: var(--brand-navy-deep); --background-activated: var(--brand-navy-deep);
+  --color: var(--wh); --color-hover: var(--wh); --color-focused: var(--wh); --color-activated: var(--wh);
+  --box-shadow: 0 3px 8px color-mix(in srgb,var(--brand-navy) 20%,transparent);
 }
-.sos-reference .sos-country-options ion-button.is-selected::part(native) { color: var(--wh); }
-.sos-reference .sos-service-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
+.sos-reference .sos-country-options ion-button::part(native) { color: inherit; }
+.sos-reference .sos-country-options ion-button { color: var(--brand-navy); }
+.sos-reference .sos-country-options ion-button.is-selected { color: var(--wh); }
+.sos-reference .sos-country-options ion-button:not([disabled]):hover { opacity: 1; }
+.sos-reference .sos-country-options ion-icon { font-size: 15px; }
+.sos-reference .sos-service-actions { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 4px 0 6px; }
 .sos-reference ion-button.sos-service-action {
-  --service-color: var(--panic);
-  margin: 0;
-  min-width: 0;
-  height: auto;
-  min-height: 148px;
-  --background: color-mix(in srgb, var(--service-color) 8%, var(--wh));
-  --background-activated: color-mix(in srgb, var(--service-color) 18%, var(--wh));
-  --color: var(--service-color);
-  --border-width: 1px;
-  --border-style: solid;
-  --border-color: color-mix(in srgb, var(--service-color) 28%, var(--wh));
-  --border-radius: 17px;
-  --padding-start: 5px;
-  --padding-end: 5px;
-  --padding-top: 14px;
-  --padding-bottom: 12px;
-  text-transform: none;
-  letter-spacing: 0;
-  white-space: normal;
-  box-shadow: none;
+  --service-color: var(--brand-blue-mid);
+  --service-soft: color-mix(in srgb,var(--service-color) 6%,var(--wh));
+  margin: 0; min-width: 0; height: auto; min-height: 190px;
+  --background: linear-gradient(165deg,var(--wh) 25%,var(--service-soft));
+  --background-hover: var(--service-soft); --background-focused: var(--service-soft); --background-activated: var(--service-soft);
+  --color: var(--brand-navy); --color-hover: var(--brand-navy); --color-focused: var(--brand-navy); --color-activated: var(--brand-navy);
+  --border-width: 1px; --border-style: solid; --border-color: color-mix(in srgb,var(--service-color) 17%,var(--wh)); --border-radius: 20px;
+  --padding-start: 7px; --padding-end: 7px; --padding-top: 18px; --padding-bottom: 12px;
+  --box-shadow: 0 4px 10px color-mix(in srgb,var(--brand-navy) 5%,transparent);
+  text-transform: none; letter-spacing: 0; white-space: normal;
+  animation: sos-service-enter .32s ease-out backwards;
+  transition: transform .18s ease, box-shadow .18s ease;
 }
-.sos-reference ion-button.sos-service-action.service-police { --service-color: var(--brand-navy); }
-.sos-reference ion-button.sos-service-action.service-fire { --service-color: var(--org-d); }
-.sos-reference .sos-service-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  width: 100%;
-  text-align: center;
+.sos-reference ion-button.sos-service-action.service-ambulance { --service-color: var(--panic); }
+.sos-reference ion-button.sos-service-action.service-police { animation-delay: .05s; }
+.sos-reference ion-button.sos-service-action.service-fire { --service-color: var(--org-d); animation-delay: .1s; }
+.sos-reference ion-button.sos-service-action::part(native) { color: var(--brand-navy); overflow: hidden; }
+.sos-reference ion-button.sos-service-action:focus-visible { outline: 2px solid var(--service-color); outline-offset: 3px; }
+@media(hover:hover) {
+ .sos-reference ion-button.sos-service-action:not([disabled]):hover { --border-color: var(--service-color); transform: translateY(-3px); --box-shadow: 0 8px 16px color-mix(in srgb,var(--service-color) 12%,transparent); }
+ .sos-reference ion-button.sos-service-action:not([disabled]):hover .sos-service-symbol { transform: translateY(-2px); }
 }
-.sos-reference .sos-service-content > ion-icon { font-size: 28px; }
-.sos-reference .sos-service-content > strong { font-size: 12px; font-weight: 800; }
-.sos-reference .sos-service-content > span { min-height: 28px; color: var(--mu); font-size: 11px; line-height: 1.3; }
-.sos-reference .sos-service-content > b { font-size: 13px; font-weight: 800; }
+.sos-reference ion-button.sos-service-action:not([disabled]):active { transform: scale(.98); }
+.sos-reference .sos-service-content { display: flex; flex-direction: column; align-items: center; width: 100%; text-align: center; gap: 12px; }
+.sos-reference .sos-service-symbol { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 16px; color: var(--service-color); background: color-mix(in srgb,var(--service-color) 9%,var(--wh)); border: 1px solid color-mix(in srgb,var(--service-color) 11%,var(--wh)); box-shadow: inset 0 1px 0 var(--wh); transition: transform .18s ease; }
+.sos-reference .sos-service-symbol ion-icon { font-size: 29px; }
+.sos-reference .sos-service-copy { display: flex; min-width: 0; width: 100%; flex-direction: column; gap: 5px; }
+.sos-reference .sos-service-copy strong { color: var(--brand-navy); font-size: 12px; font-weight: 750; letter-spacing: -.2px; }
+.sos-reference .sos-service-copy > span { color: var(--mu); font-size: 10px; line-height: 1.4; min-height: 28px; }
+.sos-reference .sos-service-dial { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 32px; padding: 6px 2px; border-radius: 10px; background: var(--wh); border: 1px solid color-mix(in srgb,var(--service-color) 14%,var(--wh)); color: var(--brand-navy); }
+.sos-reference .sos-service-dial ion-icon { font-size: 12px; flex-shrink: 0; }
+.sos-reference .sos-service-dial b { color: var(--brand-navy); font-size: 10px; line-height: 1.4; }
+@keyframes sos-service-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media(prefers-reduced-motion:reduce) {
+ .sos-reference ion-button.sos-service-action, .sos-reference .sos-service-symbol { animation: none; transition: none; }
+ .sos-reference ion-button.sos-service-action:not([disabled]):hover, .sos-reference ion-button.sos-service-action:not([disabled]):active, .sos-reference ion-button.sos-service-action:not([disabled]):hover .sos-service-symbol { transform: none; }
+}
+.sos-reference .sos-services-note { padding: 12px; background: var(--home-mist); border-radius: 13px; }
 .sos-reference .sos-services-note {
   margin: 12px 0 5px;
   color: var(--tx);

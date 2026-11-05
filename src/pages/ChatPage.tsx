@@ -336,7 +336,7 @@ export function ChatPage() {
         <div className="chat-hero-copy">
           <div>
             <h1 className="display">
-              {t("Hola, {nombre} 👋", { nombre: user.nombre || t("Paciente") })}
+              {t("Hola, {nombre} 👋", { nombre: user.nombre.split(" ")[0] || t("Paciente") })}
             </h1>
             <p className="chat-welcome-sub">{t("Soy Vita, tu coach asignada")}</p>
             <p>{t("Tu asistente de IA en salud y bienestar")}</p>

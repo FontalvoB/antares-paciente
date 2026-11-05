@@ -24,6 +24,8 @@ import {
   location,
   mailOutline,
   medkit,
+  medkitOutline,
+  flameOutline,
   people,
   personOutline,
   peopleOutline,
@@ -31,8 +33,6 @@ import {
   shieldCheckmarkOutline,
   informationCircleOutline,
   hourglass,
-  flame,
-  shield,
 } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
 import { App } from "@capacitor/app";
@@ -88,9 +88,9 @@ function recentVitals(samples: Partial<Record<MetricKind, HealthSample>>, now: n
 }
 
 const EMERGENCY_SERVICES = [
-  { key: "ambulance", label: "Ambulancia", description: "Atención médica", icon: medkit },
-  { key: "police", label: "Policía", description: "Seguridad y protección", icon: shield },
-  { key: "fire", label: "Bomberos", description: "Incendios y rescate", icon: flame },
+  { key: "ambulance", label: "Ambulancia", description: "Atención médica", icon: medkitOutline },
+  { key: "police", label: "Policía", description: "Seguridad y protección", icon: shieldCheckmarkOutline },
+  { key: "fire", label: "Bomberos", description: "Incendios y rescate", icon: flameOutline },
 ] as const;
 
 
@@ -674,7 +674,9 @@ export function PanicOverlay() {
                             aria-pressed={emergencyCountry === country}
                             onClick={() => { manualCountryRef.current = country; setManualCountry(country); }}
                           >
+                            <IonIcon slot="start" icon={location} aria-hidden="true" />
                             {country === "CO" ? t("Colombia") : t("Estados Unidos")}
+                            {emergencyCountry === country && <IonIcon slot="end" icon={checkmarkCircle} aria-hidden="true" />}
                           </IonButton>
                         ))}
                       </div>
@@ -682,6 +684,7 @@ export function PanicOverlay() {
                         {EMERGENCY_SERVICES.map((service) => (
                           <IonButton
                             key={service.key}
+                            fill="solid"
                             className={`sos-service-action service-${service.key}`}
                             disabled={!emergencyNumber}
                             aria-label={emergencyNumber
@@ -690,10 +693,9 @@ export function PanicOverlay() {
                             onClick={() => startCall("callEmergency")}
                           >
                             <span className="sos-service-content">
-                              <IonIcon icon={service.icon} aria-hidden="true" />
-                              <strong>{t(service.label)}</strong>
-                              <span>{t(service.description)}</span>
-                              <b>{emergencyNumber ? t("Llamar {numero}", { numero: emergencyNumber }) : t("Confirma el país")}</b>
+                              <span className="sos-service-symbol"><IonIcon icon={service.icon} aria-hidden="true" /></span>
+                              <span className="sos-service-copy"><strong>{t(service.label)}</strong><span>{t(service.description)}</span></span>
+                              <span className="sos-service-dial"><IonIcon icon={call} aria-hidden="true" /><b>{emergencyNumber ? t("Llamar {numero}", { numero: emergencyNumber }) : t("Confirma el país")}</b></span>
                             </span>
                           </IonButton>
                         ))}

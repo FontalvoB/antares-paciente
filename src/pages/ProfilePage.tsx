@@ -18,13 +18,11 @@ import {
   bodyOutline,
   calendarOutline,
   clipboardOutline,
-  infinite,
   languageOutline,
   leafOutline,
   logOutOutline,
   trashOutline,
   medkit,
-  schoolOutline,
   arrowForward,
   chevronForward,
   optionsOutline,
@@ -591,7 +589,6 @@ export function ProfilePage() {
                         />
                       )}
                     </svg>
-                    <span>{t("Tu programa")}</span>
                     <strong>
                       {programProgress === null
                         ? "—"
@@ -783,61 +780,6 @@ export function ProfilePage() {
                   )}
                 </section>
               )}
-
-              <section
-                className="pf-discover"
-                aria-labelledby="pf-discover-title"
-              >
-                <div className="pf-section-title">
-                  <div>
-                    <span className="pf-eyebrow">{t("MÁS PARA TI")}</span>
-                    <h2 id="pf-discover-title">{t("Crece a tu ritmo")}</h2>
-                  </div>
-                  <span className="pf-section-mark" aria-hidden="true">
-                    {teamProfessionals !== null ? "03" : "02"}
-                  </span>
-                </div>
-                <div className="pf-discover-grid">
-                  <IonButton
-                    fill="clear"
-                    className="pf-discover-card pf-academy"
-                    onClick={() => go("edu")}
-                  >
-                    <span className="pf-discover-content">
-                      <IonIcon
-                        className="pf-discover-symbol"
-                        icon={schoolOutline}
-                        aria-hidden="true"
-                      />
-                      <span className="pf-discover-kicker">{t("APRENDE")}</span>
-                      <strong>{t("Academia BIO")}</strong>
-                      <small>{t("Conocimiento para cuidarte.")}</small>
-                      <span className="pf-discover-arrow">
-                        <IonIcon icon={arrowForward} aria-hidden="true" />
-                      </span>
-                    </span>
-                  </IonButton>
-                  <IonButton
-                    fill="clear"
-                    className="pf-discover-card pf-infinito"
-                    onClick={() => go("infinito")}
-                  >
-                    <span className="pf-discover-content">
-                      <IonIcon
-                        className="pf-discover-symbol"
-                        icon={infinite}
-                        aria-hidden="true"
-                      />
-                      <span className="pf-discover-kicker">{t("CONECTA")}</span>
-                      <strong>INFINITO</strong>
-                      <small>{t("Consciencia · Bienestar")}</small>
-                      <span className="pf-discover-arrow">
-                        <IonIcon icon={arrowForward} aria-hidden="true" />
-                      </span>
-                    </span>
-                  </IonButton>
-                </div>
-              </section>
 
               <section
                 className="pf-account"
