@@ -3380,5 +3380,11 @@
   "Selecciona tu ánimo para continuar.": "Select your mood to continue.",
   "Aplica o cancela la corrección de sueño para continuar.": "Apply or cancel the sleep correction to continue.",
   "Escribe tus horas o elige «No tengo este dato».": "Enter your hours or choose “I don’t have this information”.",
-  "Ánimo": "Mood"
+  "Ánimo": "Mood",
+  "Ubicación del dispositivo: {ciudad}, {pais}": "Device location: {ciudad}, {pais}",
+  "Línea local verificada": "Verified local line",
+  "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.": "Verified local contacts in {ciudad}. Services without a local contact use {numero}.",
+  "Llamar a la central de emergencias · {numero}": "Call emergency dispatch · {numero}",
+  "Si la línea local no responde, llama al {numero}": "If the local line does not answer, call {numero}",
+  "Llamar": "Call"
 }

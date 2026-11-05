@@ -33156,3 +33156,23 @@ ion-button.emotion-save { margin:0; min-height:50px; --background:var(--navy); -
 
 .screen.lesson-emocional > .screen-scroll { background:var(--wh); }
 .lesson-emocional .lesson-sheet { max-width:584px; }
+
+
+/* Destinos SOS por ciudad: se conserva la central nacional siempre accesible. */
+.sos-reference .sos-service-route { color: var(--brand-blue-mid); font-size: 11px; line-height: 1.4; font-weight: 700; }
+.sos-reference .sos-service-action[data-route-source="local"] .sos-service-route { color: var(--teal-d); }
+.sos-reference .sos-service-dial-local { flex-wrap: wrap; gap: 2px 4px; }
+.sos-reference .sos-service-dial-local > span { font-size: 11px; }
+.sos-reference .sos-service-dial-local b { flex-basis: 100%; white-space: nowrap; font-size: 11px; }
+.sos-reference ion-button.sos-national-fallback { margin: 10px 0; min-height: 48px; --border-radius: 14px; --border-color: var(--bd); --border-width: 1px; --color: var(--navy); --background: var(--wh); font-size: 12px; font-weight: 700; white-space: normal; text-transform: none; letter-spacing: 0; }
+@media (max-width: 360px) {
+  .sos-reference .sos-service-actions { grid-template-columns: 1fr; }
+  .sos-reference ion-button.sos-service-action { min-height: 104px; --padding-top: 12px; --padding-bottom: 12px; }
+  .sos-reference .sos-service-content { flex-direction: row; text-align: left; gap: 9px; }
+  .sos-reference .sos-service-symbol { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 13px; }
+  .sos-reference .sos-service-symbol ion-icon { font-size: 25px; }
+  .sos-reference .sos-service-copy { flex: 1; width: auto; }
+  .sos-reference .sos-service-copy strong { font-size: 13px; }
+  .sos-reference .sos-service-copy > span { min-height: 0; font-size: 11px; }
+  .sos-reference .sos-service-dial { width: 88px; flex: 0 0 88px; }
+}

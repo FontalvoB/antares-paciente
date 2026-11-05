@@ -3390,5 +3390,11 @@
   "Selecciona tu ánimo para continuar.": "Selecciona tu ánimo para continuar.",
   "Aplica o cancela la corrección de sueño para continuar.": "Aplica o cancela la corrección de sueño para continuar.",
   "Escribe tus horas o elige «No tengo este dato».": "Escribe tus horas o elige «No tengo este dato».",
-  "Ánimo": "Ánimo"
+  "Ánimo": "Ánimo",
+  "Ubicación del dispositivo: {ciudad}, {pais}": "Ubicación del dispositivo: {ciudad}, {pais}",
+  "Línea local verificada": "Línea local verificada",
+  "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.": "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.",
+  "Llamar a la central de emergencias · {numero}": "Llamar a la central de emergencias · {numero}",
+  "Si la línea local no responde, llama al {numero}": "Si la línea local no responde, llama al {numero}",
+  "Llamar": "Llamar"
 }
