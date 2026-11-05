@@ -27,6 +27,15 @@ describe('sueño de anoche y contexto del protocolo', () => {
     expect(programDayNumber(3, '2026-12-28', '2027-01-06')).toBeNull()
     expect(programDayNumber(0, '2026-12-28', '2026-12-28')).toBeNull()
   })
+  it.each([
+    [1, '2026-11-02', '2026-11-02', 1],
+    [3, '2026-11-02', '2026-11-08', 21],
+    [1, '2028-02-28', '2028-02-29', 2],
+    [1, '2026-02-28', '2026-02-30', null],
+    [1, '2026-02-30', '2026-03-03', null],
+  ])('calcula el día desde fechas reales: semana %s, %s a %s', (week, start, today, expected) => {
+    expect(programDayNumber(week, start, today)).toBe(expected)
+  })
 })
 
 describe('borrador voluntario de comunidad', () => {

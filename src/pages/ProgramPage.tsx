@@ -198,6 +198,7 @@ export function ProgramPage() {
   const activeProgramWeek =
     snapshot?.template?.currentWeekNumber ?? appProgramWeek;
   const activeTotalWeeks = snapshot?.template?.totalWeeks ?? PROGRAM_WEEKS;
+  const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
   const weekPct =
     activeTotalWeeks > 0 ? activeProgramWeek / activeTotalWeeks : 0;
 
@@ -724,6 +725,7 @@ export function ProgramPage() {
 
         <ProgramHeader
           programWeek={activeProgramWeek}
+          dayNumber={activeProgramDay}
           doneCount={doneCount}
           total={progress.total}
           allDone={allDone}
@@ -942,9 +944,9 @@ export function ProgramPage() {
                   pending={serverActiveTask?.clientPending === true}
                   recordedAt={serverActiveTask?.clientPending ? null : serverActiveTask?.completedAt}
                   nbWeekDays={snapshot?.streak?.nbWeekDays}
-                  dayNumber={programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate)}
+                  dayNumber={activeProgramDay}
                   onShare={serverActiveTask?.status === "Completed" && !serverActiveTask.clientPending ? () => {
-                    const day = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
+                    const day = activeProgramDay;
                     queueCommunityShareDraft(user.id || user.cedula, day ? t("Día {day} para estar más sano. Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!", { day: String(day) }) : t("Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!"));
                     setActive(null);
                     navigate("com");
