@@ -1,5 +1,6 @@
 import { App } from "@capacitor/app";
 import { resetSessionQueryCache } from "../utils/queryClient";
+import { sessionUserId } from "../utils/sessionIdentity";
 import { Capacitor } from "@capacitor/core";
 import {
   createContext,
@@ -749,6 +750,10 @@ export function AppProvider({
       try {
         const session = await restoreSession();
         if (session && isCurrent()) {
+          // /me puede fallar sin red. El token restaurado conserva la clave
+          // de cuenta necesaria para su wearable y su caché privada.
+          const restoredUserId = sessionUserId(session.accessToken);
+          if (restoredUserId) setUser((prev) => ({ ...prev, id: restoredUserId }));
           try {
             const me = await getMe();
             if (me && isCurrent()) {
@@ -1088,10 +1093,12 @@ export function AppProvider({
         resetPatientSession();
         const generation = sessionGeneration.current;
         setVitaWelcomePending(false);
+        const loginUserId = sessionUserId(getAccessToken());
+        if (loginUserId) setUser((prev) => ({ ...prev, id: loginUserId }));
         // El primer inicio de sesión por ID siembra el perfil para el onboarding.
         // El login con contraseña (usuario ya registrado o demo) entra directo a la app.
         void (async () => {
-          let meId: string | undefined;
+          let meId: string | undefined = loginUserId ?? undefined;
           let meName: string | undefined;
           try {
             const me = await getMe();

@@ -11,6 +11,9 @@ import { sameUuid, toBytes } from "../util";
 import { BLE_ACCESS_SERVICES } from "../ycbt/protocol";
 import type { DeviceDescriptor } from "../types";
 import { notificationJournal } from "./notification-journal";
+import { listAuthorizedAccessories } from "./accessory-discovery";
+import { readIosRadioState } from "./radio-state";
+import type { BluetoothRadioState } from "./radio-state";
 import type { NotificationConsumer } from "./notification-journal";
 
 // Envoltorio fino sobre @capacitor-community/bluetooth-le.
@@ -163,7 +166,7 @@ export async function ensureBluetoothReady(): Promise<void> {
       // iOS no ofrece requestEnable: devolver el error correcto, no convertirlo
       // en "escaneo no disponible" por llamar a un método no implementado.
       if (Capacitor.getPlatform() !== "android") {
-        throw new WearableError("bluetooth-off");
+        throw await disabledRadioError();
       }
       if (!enabling) {
         enabling = BleClient.requestEnable().finally(() => {
@@ -175,7 +178,7 @@ export async function ensureBluetoothReady(): Promise<void> {
       if (!enabled) throw new WearableError("bluetooth-off");
     }
   } catch (err) {
-    throw toWearableError(err, "bluetooth-off");
+    throw toWearableError(err, Capacitor.getPlatform() === "ios" ? "bluetooth-not-ready" : "bluetooth-off");
   }
 }
 
@@ -188,11 +191,23 @@ async function ensureBluetoothReadyQuiet(): Promise<void> {
   try {
     await initializeBluetooth();
     if (!(await BleClient.isEnabled())) {
-      throw new WearableError("bluetooth-off", "Bluetooth está apagado.");
+      throw await disabledRadioError();
     }
   } catch (err) {
-    throw toWearableError(err, "bluetooth-off");
+    throw toWearableError(err, Capacitor.getPlatform() === "ios" ? "bluetooth-not-ready" : "bluetooth-off");
   }
+}
+
+async function disabledRadioError(): Promise<WearableError> {
+  if (Capacitor.getPlatform() !== "ios") return new WearableError("bluetooth-off");
+  const state = await readIosRadioState().catch(() => "unknown");
+  return new WearableError(state === "off" ? "bluetooth-off" : state === "unauthorized" ? "permission-denied" : "bluetooth-not-ready");
+}
+
+export async function getBluetoothState(): Promise<BluetoothRadioState> {
+  await initializeBluetooth();
+  if (Capacitor.getPlatform() === "ios") return readIosRadioState();
+  return await BleClient.isEnabled() ? "on" : "off";
 }
 
 export interface ScanOptions {
@@ -309,6 +324,8 @@ export async function stopScan(): Promise<void> {
  * por los ajustes. En web se usa la lista de dispositivos ya autorizados.
  */
 export async function listPairedDevices(): Promise<DeviceDescriptor[]> {
+  const authorized = await listAuthorizedAccessories().catch(() => null);
+  if (authorized !== null) return authorized;
   try {
     await ensureBluetoothReady();
   } catch {
@@ -430,11 +447,20 @@ function rescueScan(deviceId: string): Promise<string | null> {
 
 /** Escucha cambios del adaptador sin volver a inicializarlo ni encenderlo. */
 export async function watchBluetoothState(
-  onEnabled: (enabled: boolean) => void,
+  onEnabled: (enabled: boolean, state?: BluetoothRadioState) => void,
 ): Promise<() => Promise<void>> {
   await initializeBluetooth();
-  await BleClient.startEnabledNotifications(onEnabled);
+  let active = true;
+  let generation = 0;
+  const publish = async () => {
+    const request = ++generation;
+    const state = await getBluetoothState().catch(() => "unknown" as const);
+    if (active && request === generation) onEnabled(state === "on", state);
+  };
+  await BleClient.startEnabledNotifications(() => { void publish(); });
+  await publish();
   return async () => {
+    active = false;
     await BleClient.stopEnabledNotifications().catch(() => undefined);
   };
 }

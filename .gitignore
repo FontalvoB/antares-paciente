@@ -119,3 +119,5 @@ ios/App/App.xcodeproj/project.pbxproj.fastlane-bak
 google-services.json
 GoogleService-Info.plist
 
+# Configuración local de firma Android
+/android/key.properties

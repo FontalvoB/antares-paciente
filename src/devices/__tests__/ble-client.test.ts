@@ -3,6 +3,8 @@ import type { ScanResult } from "@capacitor-community/bluetooth-le";
 
 const mock = vi.hoisted(() => ({
   platform: "ios",
+  authorized: vi.fn(),
+  radioState: vi.fn(),
   client: {
     initialize: vi.fn(),
     isEnabled: vi.fn(),
@@ -23,6 +25,8 @@ vi.mock("@capacitor-community/bluetooth-le", () => ({
   BleClient: mock.client,
   ScanMode: { SCAN_MODE_LOW_LATENCY: 2 },
 }));
+vi.mock("../ble/accessory-discovery", () => ({ listAuthorizedAccessories: mock.authorized }));
+vi.mock("../ble/radio-state", () => ({ readIosRadioState: mock.radioState }));
 
 vi.mock("@capacitor/core", () => ({
   Capacitor: {
@@ -54,6 +58,8 @@ describe("BLE — inicialización y cancelación", () => {
     vi.resetModules();
     vi.resetAllMocks();
     mock.platform = "ios";
+    mock.authorized.mockResolvedValue(null);
+    mock.radioState.mockResolvedValue("unknown");
     mock.client.initialize.mockResolvedValue(undefined);
     mock.client.isEnabled.mockResolvedValue(true);
     mock.client.requestEnable.mockResolvedValue(undefined);
@@ -71,6 +77,13 @@ describe("BLE — inicialización y cancelación", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("lista accesorios autorizados sin exigir que estén conectados ni abrir radio", async () => {
+    mock.authorized.mockResolvedValue([{ deviceId: "ring", name: "R88 C1BF", kind: "ycbt", paired: true }]);
+    expect(await ble.listPairedDevices()).toMatchObject([{ deviceId: "ring" }]);
+    expect(mock.client.initialize).not.toHaveBeenCalled();
+    expect(mock.client.getConnectedDevices).not.toHaveBeenCalled();
   });
 
   it("comparte una sola inicialización entre escaneo y dispositivos conocidos", async () => {
@@ -212,12 +225,32 @@ describe("BLE — inicialización y cancelación", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("en iOS apagado informa bluetooth-off sin llamar requestEnable", async () => {
+  it("en iOS un manager no disponible no afirma que el radio esté apagado", async () => {
     mock.client.isEnabled.mockResolvedValue(false);
     await expect(ble.ensureBluetoothReady()).rejects.toMatchObject({
-      code: "bluetooth-off",
+      code: "bluetooth-not-ready",
     });
     expect(mock.client.requestEnable).not.toHaveBeenCalled();
+  });
+
+  it("en iOS poweredOff real produce bluetooth-off, sin confundirlo con inicialización", async () => {
+    mock.client.isEnabled.mockResolvedValue(false);
+    mock.radioState.mockResolvedValue("off");
+    await expect(ble.ensureBluetoothReady()).rejects.toMatchObject({ code: "bluetooth-off" });
+    expect(mock.client.requestLEScan).not.toHaveBeenCalled();
+  });
+
+  it("publica el estado inicial apagado y el encendido posterior sin pedir activar el radio", async () => {
+    mock.radioState.mockResolvedValue("off");
+    const changed = vi.fn();
+    const stop = await ble.watchBluetoothState(changed);
+    expect(changed).toHaveBeenLastCalledWith(false, "off");
+    mock.radioState.mockResolvedValue("on");
+    mock.client.startEnabledNotifications.mock.calls[0][0](true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(changed).toHaveBeenLastCalledWith(true, "on");
+    expect(mock.client.requestEnable).not.toHaveBeenCalled();
+    await stop();
   });
 
   it("comparte el diálogo Android de encendido entre llamadas concurrentes", async () => {

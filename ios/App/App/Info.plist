@@ -28,20 +28,6 @@
 	<string>Copp Adresd usa Bluetooth para conectarse a tu wearable (anillo o banda) y leer tus signos vitales, pasos y sueño.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Copp Adresd usa Bluetooth para conectarse a tu wearable y leer tus signos vitales.</string>
-	<key>NSAccessorySetupKitSupports</key>
-	<array>
-		<string>Bluetooth</string>
-	</array>
-	<key>NSAccessorySetupBluetoothNames</key>
-	<array>
-		<string>H59</string>
-		<string>R88</string>
-	</array>
-	<key>NSAccessorySetupBluetoothServices</key>
-	<array>
-		<string>6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E</string>
-		<string>BE940000-7333-BE46-B7AE-689E71722BD5</string>
-	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

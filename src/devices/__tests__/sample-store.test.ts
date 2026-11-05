@@ -36,10 +36,15 @@ function changeStored(change: (value: Record<string, unknown>) => void): void {
 }
 
 describe("sample-store", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    // El proxy Storage de happy-dom no restaura siempre los métodos espiados.
+    // Cada caso necesita su instancia, incluido el que simula cuota agotada.
+    vi.stubGlobal("localStorage", new Storage());
+  });
   afterEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
+    vi.unstubAllGlobals();
   });
 
   it("rehidrata lecturas, info parcial, sincronización y cubetas sin perder sus claves", () => {

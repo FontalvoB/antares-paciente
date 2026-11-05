@@ -9,12 +9,12 @@
     {
       "path": "ios/Sources/BluetoothLe/DeviceManager.swift",
       "before": "efd7fe684aec9bf5f85d5ad60fe052c93442bb2a709f70f17737115bcb0f4411",
-      "after": "61c7ca559c7e286340b8ea2c62f538823bbc57f1af4b8f9e078d504aa0ad3308"
+      "after": "62d24ea5ef4e5d056d8b676ca2783784bd8608a797e7212bc863a88cabf24e7e"
     },
     {
       "path": "ios/Sources/BluetoothLe/Plugin.swift",
       "before": "58cf9b423fbcab49669f9daade3c2774deeb9a215d89fce0a7ecd964728134e9",
-      "after": "cd6b4e7c9eea8b037b6b3fc9e2d9244e1e6509983d5c08d02735f7df4d1369a3"
+      "after": "d05e027956ad218bbdf27c561411adbb92b5b719875aebd7b4aceee6010ee32c"
     },
     {
       "path": "Package.swift",

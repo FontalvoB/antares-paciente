@@ -2082,7 +2082,6 @@
   "{count} dispositivos encontrados": "{count} devices found",
   "Se perdió la conexión con el dispositivo": "The connection to the device was lost",
   "No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.": "No devices found nearby. Bring it closer to the phone and try again.",
-  "Bluetooth está apagado. Actívalo para buscar tu dispositivo.": "Bluetooth is off. Turn it on to search for your device.",
   "Permiso de Bluetooth denegado. Habilítalo en los ajustes del sistema.": "Bluetooth permission denied. Enable it in system settings.",
   "Tu navegador no permite buscar dispositivos Bluetooth.": "Your browser does not allow searching for Bluetooth devices.",
   "Este dispositivo no expone datos compatibles con la app.": "This device does not expose data compatible with the app.",
@@ -3185,5 +3184,19 @@
   "J": "Th",
   "V": "Fr",
   "S": "Sa",
-  "D": "Su"
+  "D": "Su",
+  "Solo puedes conectar una banda H59 o un anillo R88.": "You can only connect an H59 band or an R88 ring.",
+  "Muestra el detalle BLE de los accesorios autorizados.": "Shows BLE details for authorized accessories.",
+  "Banda H59 · Anillo R88": "H59 band · R88 ring",
+  "Dispositivos compatibles con la app": "Devices supported by the app",
+  "Compatible con la app": "Supported by the app",
+  "Dispositivo no compatible": "Unsupported device",
+  "Conecta tu H59 o R88 para ver FC, sueño y SpO2": "Connect your H59 or R88 to see heart rate, sleep and SpO2",
+  "No encontramos wearables compatibles. Acerca tu H59 o R88 e inténtalo de nuevo.": "No supported wearables found. Bring your H59 or R88 closer and try again.",
+  "Conexión activa. Esperando nuevas lecturas del dispositivo.": "Connection active. Waiting for new readings from the device.",
+  "No pudimos identificar tu sesión. Vuelve a iniciar sesión para conectar el wearable.": "We could not identify your session. Sign in again to connect your wearable.",
+  "Bluetooth apagado": "Bluetooth is off",
+  "Activa Bluetooth": "Turn on Bluetooth",
+  "Enciende Bluetooth en Ajustes para conectar tu wearable.": "Turn on Bluetooth in Settings to connect your wearable.",
+  "Entendido": "Got it"
 }

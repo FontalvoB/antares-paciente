@@ -2,6 +2,7 @@ import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as ble from "../../devices/ble/ble-client";
+import { searchWearableAccessories, supportsAccessoryDiscovery } from "../../devices/ble/accessory-discovery";
 import {
   drainPendingNotifications,
   detachPendingNotifications,
@@ -24,6 +25,7 @@ import type { WearableState } from "../WearableContext";
 const native = vi.hoisted(() => ({
   platform: "android",
   listener: null as null | ((event: { isActive: boolean }) => void),
+  radioListener: null as null | ((on: boolean, state?: "on" | "off" | "unknown") => void),
   app: {
     flow: "app",
     authLoading: false,
@@ -59,6 +61,7 @@ vi.mock("../../devices/ble/ble-client", () => ({
   disconnectDevice: vi.fn(async () => undefined),
   getDeviceServices: vi.fn(async () => []),
   watchBluetoothState: vi.fn(async () => async () => undefined),
+  getBluetoothState: vi.fn(async () => "on"),
   setNotificationFailureHandler: vi.fn(),
   setNotificationTap: vi.fn(),
   setBleDebug: vi.fn(),
@@ -72,6 +75,10 @@ vi.mock("../../devices/ble/notification-journal", () => ({
   detachPendingNotifications: vi.fn(),
 }));
 vi.mock("../../devices/registry", () => ({ openSession: vi.fn() }));
+vi.mock("../../devices/ble/accessory-discovery", () => ({
+  supportsAccessoryDiscovery: vi.fn(async () => false),
+  searchWearableAccessories: vi.fn(async (): Promise<DeviceDescriptor[]> => []),
+}));
 vi.mock("../../services/program/metrics-history-service", () => ({
   recordDeviceMetrics: vi.fn(async () => ({ date: "2026-11-03", codes: [], observedAt: "" })),
 }));
@@ -135,7 +142,16 @@ describe("WearableContext — reconexión y datos durables", () => {
     vi.clearAllMocks();
     localStorage.clear();
     native.listener = null;
+    native.radioListener = null;
+    vi.mocked(ble.getBluetoothState).mockResolvedValue("on");
+    vi.mocked(ble.watchBluetoothState).mockImplementation(async (listener) => {
+      native.radioListener = listener;
+      return async () => undefined;
+    });
     native.platform = "android";
+    vi.mocked(supportsAccessoryDiscovery).mockResolvedValue(false);
+    vi.mocked(searchWearableAccessories).mockResolvedValue([]);
+    vi.mocked(ble.listPairedDevices).mockResolvedValue([]);
     vi.mocked(authorizeAccessory).mockResolvedValue({ supported: true, authorized: true });
     native.app = {
       flow: "app", authLoading: false,
@@ -157,6 +173,132 @@ describe("WearableContext — reconexión y datos durables", () => {
     for (const client of clients.splice(0)) client.clear();
     vi.restoreAllMocks();
     localStorage.clear();
+  });
+
+  it("apagar Bluetooth interrumpe el escaneo y bloquea búsqueda/conexión hasta encenderlo", async () => {
+    renderWearable();
+    await waitFor(() => expect(native.radioListener).toBeTruthy());
+    await act(async () => { await wearable.scan(); });
+    expect(wearable.phase).toBe("scanning");
+    await act(async () => { native.radioListener?.(false, "off"); });
+    expect(wearable.phase).toBe("error");
+    expect(wearable.error).toBe("bluetooth-off");
+    vi.mocked(ble.startScan).mockClear();
+    await act(async () => { await wearable.scan(); await wearable.connect(DEVICE); });
+    expect(ble.startScan).not.toHaveBeenCalled();
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+    await act(async () => { native.radioListener?.(true, "on"); });
+    expect(wearable.error).toBeNull();
+    await act(async () => { await wearable.scan(); });
+    expect(ble.startScan).toHaveBeenCalledOnce();
+  });
+
+  it("volver a la app con Bluetooth apagado muestra Activa Bluetooth y no reintenta GATT", async () => {
+    const session = fakeSession();
+    vi.mocked(openSession).mockResolvedValue(session);
+    renderWearable();
+    await connect();
+    vi.mocked(ble.connectDevice).mockClear();
+    vi.mocked(ble.getBluetoothState).mockResolvedValue("off");
+    await act(async () => { native.listener?.({ isActive: false }); native.listener?.({ isActive: true }); });
+    expect(wearable.error).toBe("bluetooth-off");
+    expect(wearable.phase).toBe("error");
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+    expect(loadSavedDevice(ACCOUNT)?.deviceId).toBe(DEVICE.deviceId);
+    vi.useFakeTimers();
+    try {
+      await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
+      expect(ble.connectDevice).not.toHaveBeenCalled();
+      vi.mocked(ble.getBluetoothState).mockResolvedValue("on");
+      await act(async () => { native.radioListener?.(true, "on"); await vi.advanceTimersByTimeAsync(0); });
+      expect(ble.connectDevice).toHaveBeenCalledOnce();
+      expect(wearable.phase).toBe("connected");
+      expect(wearable.error).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("un toque sin cuenta identificada muestra un error y no abre captura sin dueño", async () => {
+    native.app.user = { id: "", cedula: "", email: "" };
+    renderWearable();
+    await connect();
+    expect(wearable.phase).toBe("error");
+    expect(wearable.error).toBe("session-unavailable");
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+    expect(startPersistentConnection).not.toHaveBeenCalled();
+  });
+
+  it("agrega un R88 autorizado sin abrir GATT ni iniciar captura", async () => {
+    vi.mocked(supportsAccessoryDiscovery).mockResolvedValue(true);
+    vi.mocked(searchWearableAccessories).mockResolvedValue([DEVICE]);
+    renderWearable();
+    await waitFor(() => expect(wearable.accessoryDiscoverySupported).toBe(true));
+    await act(async () => { await wearable.scan(); });
+    expect(wearable.devices).toContainEqual(DEVICE);
+    expect(wearable.addingAccessory).toBe(false);
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+    expect(startPersistentConnection).not.toHaveBeenCalled();
+  });
+
+  it("cancelar el alta deja disponibles el selector y la conexión", async () => {
+    vi.mocked(supportsAccessoryDiscovery).mockResolvedValue(true);
+    renderWearable();
+    await waitFor(() => expect(wearable.accessoryDiscoverySupported).toBe(true));
+    await act(async () => { await wearable.scan(); });
+    expect(wearable.phase).toBe("idle");
+    expect(wearable.addingAccessory).toBe(false);
+    expect(wearable.error).toBeNull();
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+  });
+
+  it("buscar conserva el H59 autorizado al cerrar el selector sin otro wearable", async () => {
+    vi.mocked(supportsAccessoryDiscovery).mockResolvedValue(true);
+    const band: DeviceDescriptor = { deviceId: "band-1", name: "H59_E206", kind: "colmi", paired: true };
+    vi.mocked(ble.listPairedDevices).mockResolvedValue([band]);
+    renderWearable();
+    await waitFor(() => expect(wearable.accessoryDiscoverySupported).toBe(true));
+    await act(async () => { await wearable.scan(); });
+    expect(wearable.devices).toContainEqual(band);
+    expect(wearable.hasScanned).toBe(true);
+    expect(wearable.phase).toBe("idle");
+    expect(wearable.error).toBeNull();
+    expect(ble.startScan).not.toHaveBeenCalled();
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+  });
+
+  it("la búsqueda Android conserva el escaneo BLE existente", async () => {
+    renderWearable();
+    await act(async () => { await wearable.scan(); });
+    expect(ble.startScan).toHaveBeenCalledOnce();
+    expect(ble.startScan).toHaveBeenCalledWith(expect.any(Function), { includeUnnamed: true });
+    expect(searchWearableAccessories).not.toHaveBeenCalled();
+  });
+
+  it("no incorpora una autorización que termina en otra cuenta", async () => {
+    vi.mocked(supportsAccessoryDiscovery).mockResolvedValue(true);
+    let finish!: (devices: DeviceDescriptor[]) => void;
+    vi.mocked(searchWearableAccessories).mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    const view = renderWearable();
+    await waitFor(() => expect(wearable.accessoryDiscoverySupported).toBe(true));
+    let pending!: Promise<void>;
+    await act(async () => { pending = wearable.scan(); });
+    native.app.user = { id: "other-patient", cedula: "", email: "" };
+    view.rerenderApp();
+    await act(async () => { finish([DEVICE]); await pending; });
+    expect(wearable.devices).not.toContainEqual(DEVICE);
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+  });
+
+  it("rechaza televisores y auriculares antes de cualquier autorización o GATT", async () => {
+    renderWearable();
+    for (const name of ["Living Room TV", "Headphones", "Smart Ring"]) {
+      await act(async () => { await Promise.resolve(wearable.connect({ deviceId: name, name, kind: "unknown" })); });
+    }
+    expect(wearable.error).toBe("unsupported-device");
+    expect(authorizeAccessory).not.toHaveBeenCalled();
+    expect(startPersistentConnection).not.toHaveBeenCalled();
+    expect(ble.connectDevice).not.toHaveBeenCalled();
   });
 
   it("muestra la caché guardada antes de intentar reconectar", async () => {

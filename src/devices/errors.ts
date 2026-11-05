@@ -17,6 +17,13 @@ export function toWearableError(
 ): WearableError {
   if (err instanceof WearableError) return err;
   const message = err instanceof Error ? err.message : String(err);
+  if (err && typeof err === 'object' && 'code' in err && err.code === 'bluetooth-not-ready') {
+    return new WearableError('bluetooth-not-ready', message);
+  }
+  // Un fallo del picker ASK no demuestra que se haya denegado Bluetooth.
+  if (err && typeof err === 'object' && 'code' in err && err.code === 'accessory-setup-failed') {
+    return new WearableError('connection-failed', message);
+  }
   if (/disabled|not enabled|bluetooth.*off|turned off/i.test(message)) {
     return new WearableError('bluetooth-off', message);
   }

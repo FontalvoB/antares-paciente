@@ -13,6 +13,9 @@ import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useQueryClient } from "@tanstack/react-query";
 import * as ble from "../devices/ble/ble-client";
+import type { BluetoothRadioState } from "../devices/ble/radio-state";
+import { searchWearableAccessories, supportsAccessoryDiscovery } from "../devices/ble/accessory-discovery";
+import { isSupportedWearable } from "../devices/support";
 import {
   drainPendingNotifications,
   authorizeAccessory,
@@ -116,6 +119,8 @@ export interface WearableState {
   /** Modo diagnóstico: lista todos los dispositivos y registra el tráfico BLE. */
   diagnostics: boolean;
   setDiagnostics(on: boolean): void;
+  accessoryDiscoverySupported: boolean;
+  addingAccessory: boolean;
   /** Servicios GATT del dispositivo conectado (solo con diagnóstico). */
   gatt: BleService[];
   /** Últimas tramas BLE intercambiadas (solo con diagnóstico). */
@@ -160,7 +165,7 @@ export interface WearableState {
    * NO se persiste en el backend (se salta el ingreso de device-metrics).
    */
   injectDebugSample(sample: Omit<HealthSample, "deviceId">): void;
-  scan(): void;
+  scan(): Promise<void>;
   cancelScan(): void;
   connect(device: DeviceDescriptor): void;
   disconnect(): void;
@@ -223,6 +228,16 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
   const connectionTaskRef = useRef<Promise<void> | null>(null);
+  const addingAccessoryRef = useRef(false);
+  const [addingAccessory, setAddingAccessory] = useState(false);
+  const [accessoryDiscoverySupported, setAccessoryDiscoverySupported] = useState(false);
+  useEffect(() => {
+    let current = true;
+    void supportsAccessoryDiscovery().then(supported => {
+      if (current) setAccessoryDiscoverySupported(supported);
+    }).catch(() => undefined);
+    return () => { current = false; };
+  }, []);
   const cleanupRef = useRef<Promise<void>>(Promise.resolve());
   const syncHistoryRef = useRef<() => Promise<void>>(() => Promise.resolve());
   /** Evita que historia, medidas manuales y sync compitan por el mismo sensor. */
@@ -234,6 +249,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   /** La vista de foco pidió cancelar el sync: el bucle de etapas sale solo. */
   const cancelSyncRef = useRef(false);
   const appActiveRef = useRef(true);
+  const bluetoothRadioRef = useRef<BluetoothRadioState>("unknown");
   /** Invalida callbacks de una conexión anterior que llegue tarde. */
   const sessionGenerationRef = useRef(0);
   const scanTimer = useRef<number | undefined>(undefined);
@@ -436,14 +452,23 @@ export function WearableProvider({ children }: { children: ReactNode }) {
    * reconectar sin salir de la app.
    */
   const loadPaired = useCallback(async () => {
+    const owner = accountRef.current;
     const paired = await ble.listPairedDevices();
-    if (!paired.length) return;
+    if (!paired.length || accountRef.current !== owner) return;
     setDevices((prev) =>
       paired.reduce((acc, d) => mergeDiscovered(acc, d), prev),
     );
   }, []);
 
-  const scan = useCallback(() => {
+  useEffect(() => {
+    if (accountId && accessoryDiscoverySupported) void loadPaired();
+  }, [accountId, accessoryDiscoverySupported, loadPaired]);
+
+  const scanLegacy = useCallback(() => {
+    if (bluetoothRadioRef.current === "off") {
+      setError("bluetooth-off"); setPhase("error"); return;
+    }
+    if (addingAccessoryRef.current) return;
     if (phase === "scanning") {
       finishScan();
       return;
@@ -466,7 +491,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         (found) => {
           setDevices((prev) => mergeDiscovered(prev, found));
         },
-        { includeUnnamed: diagnostics },
+        { includeUnnamed: true },
       )
       .catch((err: unknown) => {
         clearScanTimer();
@@ -656,7 +681,24 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(
     (target: DeviceDescriptor, options?: { silent?: boolean; automatic?: boolean }): Promise<void> => {
       const ownerId = accountRef.current;
-      if (!ownerId) return Promise.resolve();
+      if (!ownerId) {
+        if (!options?.silent) {
+          setError("session-unavailable");
+          if (phaseRef.current !== "connected") setPhase("error");
+        }
+        return Promise.resolve();
+      }
+      if (bluetoothRadioRef.current === "off") {
+        setError("bluetooth-off"); setPhase("error"); return Promise.resolve();
+      }
+      if (addingAccessoryRef.current) return Promise.resolve();
+      if (!isSupportedWearable(target)) {
+        if (!options?.silent) {
+          setError("unsupported-device");
+          if (phaseRef.current !== "connected") setPhase("error");
+        }
+        return Promise.resolve();
+      }
       // El candado se toma antes de cualquier await: un doble toque o un
       // temporizador no puede abrir otro GATT mientras sigue el handshake.
       if (connectionTaskRef.current) return connectionTaskRef.current;
@@ -845,6 +887,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const cancelScan = useCallback(() => finishScan(), [finishScan]);
 
   const clearError = useCallback(() => {
+    if (bluetoothRadioRef.current === "off") { setError("bluetooth-off"); setPhase("error"); return; }
     setError(null);
     setPhase((prev) => (prev === "error" ? "idle" : prev));
   }, []);
@@ -953,15 +996,15 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   const reconnectGeneration = useRef(0);
 
   const scheduleAutoReconnect = useCallback((generation: number) => {
-    if (generation !== reconnectGeneration.current || !accountRef.current) return;
+    if (generation !== reconnectGeneration.current || !accountRef.current || bluetoothRadioRef.current === "off") return;
     const delay = AUTO_RECONNECT_DELAYS_MS[Math.min(autoAttempt.current, AUTO_RECONNECT_DELAYS_MS.length - 1)];
     autoAttempt.current += 1;
     window.clearTimeout(autoTimer.current);
     autoTimer.current = window.setTimeout(() => {
       void (async () => {
-        if (generation !== reconnectGeneration.current || !appActiveRef.current) return;
+        if (generation !== reconnectGeneration.current || !appActiveRef.current || addingAccessoryRef.current || bluetoothRadioRef.current === "off") return;
         const saved = loadSavedDevice(accountRef.current);
-        if (!saved || !canAutoReconnectHere(saved) || intentionalDisconnect.current) return;
+        if (!saved || !isSupportedWearable(saved) || !canAutoReconnectHere(saved) || intentionalDisconnect.current) return;
         if (phaseRef.current === "connected") return;
         if (phaseRef.current !== "scanning") {
           if (connectionTaskRef.current) await connectionTaskRef.current;
@@ -975,6 +1018,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startAutoReconnect = useCallback(() => {
+    if (bluetoothRadioRef.current === "off") return;
     const generation = ++reconnectGeneration.current;
     autoAttempt.current = 0;
     scheduleAutoReconnect(generation);
@@ -985,6 +1029,58 @@ export function WearableProvider({ children }: { children: ReactNode }) {
     reconnectGeneration.current += 1;
     window.clearTimeout(autoTimer.current);
   }, []);
+
+  const searchAccessory = useCallback(async () => {
+    if (addingAccessoryRef.current || !accountRef.current ||
+        phaseRef.current === "connected" || phaseRef.current === "connecting" || phaseRef.current === "scanning") return;
+    const owner = accountRef.current;
+    const generation = sessionGenerationRef.current;
+    const current = () => accountRef.current === owner && sessionGenerationRef.current === generation;
+    addingAccessoryRef.current = true;
+    setAddingAccessory(true);
+    setError(null);
+    setHasScanned(false);
+    phaseRef.current = "scanning";
+    setPhase("scanning");
+    clearScanTimer();
+    stopAutoReconnect();
+    let selected = false;
+    try {
+      // Esperar un listado inicial en vuelo antes de presentar otra operación ASK.
+      await ble.stopScan();
+      const known = await ble.listPairedDevices();
+      if (!current()) return;
+      setDevices(known);
+      const found = await searchWearableAccessories();
+      if (!current()) return;
+      const authorized = await ble.listPairedDevices();
+      if (!current()) return;
+      if (found?.length) {
+        selected = true;
+      }
+      setDevices(previous => [...authorized, ...(found ?? [])].reduce((devices, device) => mergeDiscovered(devices, device), previous));
+      setPhase("idle");
+    } catch (error) {
+      if (current()) { setError(toWearableError(error, "connection-failed").code); setPhase("error"); }
+    } finally {
+      addingAccessoryRef.current = false;
+      setAddingAccessory(false);
+      if (current()) setHasScanned(true);
+      if (accountRef.current && appActiveRef.current && (!selected || !current())) startAutoReconnect();
+    }
+  }, [clearScanTimer, startAutoReconnect, stopAutoReconnect]);
+
+  const scan = useCallback(async () => {
+    if (bluetoothRadioRef.current === "off") { setError("bluetooth-off"); setPhase("error"); return; }
+    if (addingAccessoryRef.current) return;
+    try {
+      if (await supportsAccessoryDiscovery()) await searchAccessory();
+      else scanLegacy();
+    } catch (error) {
+      setError(toWearableError(error, "connection-failed").code);
+      setPhase("error");
+    }
+  }, [searchAccessory, scanLegacy]);
 
   // Una cuenta nueva nunca hereda la conexión, el journal ni las tarjetas
   // del paciente anterior. La identidad guardada también está separada.
@@ -1025,6 +1121,27 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!accountId || !Capacitor.isNativePlatform()) return;
+    const onRadioState = (on: boolean, state: BluetoothRadioState = on ? "on" : "off") => {
+      const previous = bluetoothRadioRef.current;
+      bluetoothRadioRef.current = state;
+      if (state === "off") {
+        stopAutoReconnect();
+        clearScanTimer();
+        void ble.stopScan();
+        setDevices([]);
+        if (phaseRef.current === "connected") handleUnexpectedDisconnect();
+        else if (phaseRef.current === "connecting" || phaseRef.current === "scanning") resetSessionState();
+        setError("bluetooth-off");
+        phaseRef.current = "error";
+        setPhase("error");
+        return;
+      }
+      if (on) {
+        setError((error) => error === "bluetooth-off" || error === "bluetooth-not-ready" ? null : error);
+        if (previous === "off" && phaseRef.current === "error") { phaseRef.current = "idle"; setPhase("idle"); }
+        if (appActiveRef.current && !addingAccessoryRef.current) startAutoReconnect();
+      }
+    };
     const onStateChange = (isActive: boolean) => {
       appActiveRef.current = isActive;
       sessionRef.current?.setAppActive?.(isActive);
@@ -1035,6 +1152,10 @@ export function WearableProvider({ children }: { children: ReactNode }) {
         return;
       }
       const resume = async () => {
+        if (addingAccessoryRef.current) return;
+        const state = await ble.getBluetoothState();
+        onRadioState(state === "on", state);
+        if (state === "off") return;
         refreshStoredDay();
         const deviceId = descriptorRef.current?.deviceId;
         if (deviceId) await drainPendingNotifications(deviceId);
@@ -1049,10 +1170,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       appActiveRef.current = isActive;
       sessionRef.current?.setAppActive?.(isActive);
     }).catch(() => undefined);
-    const enabled = ble.watchBluetoothState((on) => {
-      if (!on && phaseRef.current === "connected") handleUnexpectedDisconnect();
-      if (on && appActiveRef.current) startAutoReconnect();
-    }).catch(() => () => Promise.resolve());
+    const enabled = ble.watchBluetoothState(onRadioState).catch(() => () => Promise.resolve());
     ble.setNotificationFailureHandler(() => setError("unknown"));
     const onGap = (event: Event) => {
       const detail = (event as CustomEvent<{ ownerId: string; deviceId: string }>).detail;
@@ -1067,7 +1185,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       ble.setNotificationFailureHandler(null);
       window.removeEventListener(NOTIFICATION_GAP_EVENT, onGap);
     };
-  }, [accountId, cancelSync, flushIngest, handleUnexpectedDisconnect, refreshStoredDay, startAutoReconnect, stopAutoReconnect]);
+  }, [accountId, cancelSync, clearScanTimer, flushIngest, handleUnexpectedDisconnect, refreshStoredDay, resetSessionState, startAutoReconnect, stopAutoReconnect]);
 
   useEffect(() => {
     if (phase === "connected") stopAutoReconnect();
@@ -1141,6 +1259,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       error,
       diagnostics,
       setDiagnostics,
+      accessoryDiscoverySupported,
+      addingAccessory,
       gatt,
       log,
       clearLog,
@@ -1177,6 +1297,8 @@ export function WearableProvider({ children }: { children: ReactNode }) {
       error,
       diagnostics,
       setDiagnostics,
+      accessoryDiscoverySupported,
+      addingAccessory,
       gatt,
       log,
       clearLog,

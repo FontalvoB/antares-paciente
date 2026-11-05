@@ -2013,7 +2013,6 @@
   "{count} dispositivos encontrados": "{count} dispositivos encontrados",
   "Se perdió la conexión con el dispositivo": "Se perdió la conexión con el dispositivo",
   "No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.": "No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.",
-  "Bluetooth está apagado. Actívalo para buscar tu dispositivo.": "Bluetooth está apagado. Actívalo para buscar tu dispositivo.",
   "Permiso de Bluetooth denegado. Habilítalo en los ajustes del sistema.": "Permiso de Bluetooth denegado. Habilítalo en los ajustes del sistema.",
   "Tu navegador no permite buscar dispositivos Bluetooth.": "Tu navegador no permite buscar dispositivos Bluetooth.",
   "Este dispositivo no expone datos compatibles con la app.": "Este dispositivo no expone datos compatibles con la app.",
@@ -3195,5 +3194,19 @@
   "J": "J",
   "V": "V",
   "S": "S",
-  "D": "D"
+  "D": "D",
+  "Solo puedes conectar una banda H59 o un anillo R88.": "Solo puedes conectar una banda H59 o un anillo R88.",
+  "Muestra el detalle BLE de los accesorios autorizados.": "Muestra el detalle BLE de los accesorios autorizados.",
+  "Banda H59 · Anillo R88": "Banda H59 · Anillo R88",
+  "Dispositivos compatibles con la app": "Dispositivos compatibles con la app",
+  "Compatible con la app": "Compatible con la app",
+  "Dispositivo no compatible": "Dispositivo no compatible",
+  "Conecta tu H59 o R88 para ver FC, sueño y SpO2": "Conecta tu H59 o R88 para ver FC, sueño y SpO2",
+  "No encontramos wearables compatibles. Acerca tu H59 o R88 e inténtalo de nuevo.": "No encontramos wearables compatibles. Acerca tu H59 o R88 e inténtalo de nuevo.",
+  "Conexión activa. Esperando nuevas lecturas del dispositivo.": "Conexión activa. Esperando nuevas lecturas del dispositivo.",
+  "No pudimos identificar tu sesión. Vuelve a iniciar sesión para conectar el wearable.": "No pudimos identificar tu sesión. Vuelve a iniciar sesión para conectar el wearable.",
+  "Bluetooth apagado": "Bluetooth apagado",
+  "Activa Bluetooth": "Activa Bluetooth",
+  "Enciende Bluetooth en Ajustes para conectar tu wearable.": "Enciende Bluetooth en Ajustes para conectar tu wearable.",
+  "Entendido": "Entendido"
 }
