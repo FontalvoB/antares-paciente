@@ -3280,5 +3280,11 @@
   "7. Repetición de la prueba": "7. Repeating the test",
   "En la vista de prueba puedes usar Reiniciar prueba para volver al comienzo. Esto limpia las casillas y bloquea otra vez la aceptación, de modo que puedes repetir el recorrido tantas veces como necesites. En el formulario normal, volver desde el paso siguiente debe conservar la lectura y las opciones que ya seleccionaste durante la misma sesión.": "In the test view, Reset test returns you to the beginning. It clears the boxes and locks acceptance again so you can repeat the check as often as needed. In normal onboarding, returning from the next step should retain your reading progress and choices during the same session.",
   "8. Última sección de prueba": "8. Last test section",
-  "Esta es la última sección antes del indicador final. Continúa un poco más para que se vea completamente el cierre del documento. El contenido adicional se añadió solo para revisar el desplazamiento y se retirará cuando termine la prueba. El texto original se conserva al principio para poder restaurar la versión habitual sin reconstruirlo ni cambiar las opciones de aceptación.": "This is the last section before the end marker. Scroll a little further to see the document’s ending completely. The extra content was added only to review scrolling and will be removed after the test. The original text remains at the beginning so the normal version can be restored without reconstructing it or changing the acceptance choices."
+  "Esta es la última sección antes del indicador final. Continúa un poco más para que se vea completamente el cierre del documento. El contenido adicional se añadió solo para revisar el desplazamiento y se retirará cuando termine la prueba. El texto original se conserva al principio para poder restaurar la versión habitual sin reconstruirlo ni cambiar las opciones de aceptación.": "This is the last section before the end marker. Scroll a little further to see the document’s ending completely. The extra content was added only to review scrolling and will be removed after the test. The original text remains at the beginning so the normal version can be restored without reconstructing it or changing the acceptance choices.",
+  "≈ Estimación de IA": "≈ AI estimate",
+  "Datos verificados · USDA": "Verified data · USDA",
+  "Detectando alimentos": "Detecting foods",
+  "Estimando porciones": "Estimating portions",
+  "Calculando nutrición": "Calculating nutrition",
+  "Registrar · {meal}": "Log · {meal}"
 }

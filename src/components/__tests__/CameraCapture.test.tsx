@@ -1,7 +1,19 @@
 import { vi, it, expect, beforeEach } from "vitest";
+import type { ReactNode } from "react";
 import { render, fireEvent, screen, waitFor } from "@testing-library/react";
 import { CameraCapture } from "../CameraCapture";
 import { I18nProvider } from "../../i18n/I18nContext";
+// Happy-dom no implementa la cancelación WAAPI de los cambios de escena.
+// La física se verifica en navegador; aquí comprobamos captura y confirmación.
+vi.mock("framer-motion", async (original) => ({
+  ...(await original<typeof import("framer-motion")>()),
+  useReducedMotion: () => true,
+  AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
+  motion: {
+    div: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div>,
+    span: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+  },
+}));
 const native = vi.hoisted(() => ({ value: false, getPhoto: vi.fn() }));
 vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => native.value },

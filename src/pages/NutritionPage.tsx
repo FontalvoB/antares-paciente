@@ -12,7 +12,7 @@ import {
   IonSegmentButton,
   IonSpinner,
 } from "@ionic/react";
-import { cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline } from "ionicons/icons";
+import { arrowBackOutline, cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline } from "ionicons/icons";
 import dailyMediterranean from "../assets/nutrition/daily-mediterranean.jpg";
 import dailyBreakfast from "../assets/nutrition/daily-breakfast.jpg";
 import { PageHeader } from "../components/PageHeader";
@@ -1038,13 +1038,17 @@ export function NutritionPage() {
         isOpen={registerTarget !== null}
         onDidDismiss={() => setRegisterTarget(null)}
       >
-        <motion.div
-          style={{ padding: 20 }}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-        >
-          <div className="nut-reg-title">{t("Registrar comida")}</div>
+        <IonContent className="nut-reg-content">
+        <div className="nut-reg-wrap">
+          <header className="nut-flow-head">
+            <IonButton fill="clear" className="nut-flow-back" aria-label={t("Volver")} onClick={() => setRegisterTarget(null)}>
+              <IonIcon icon={arrowBackOutline} slot="icon-only" />
+            </IonButton>
+            <div className="nut-flow-titles">
+              <h2 className="nut-reg-title">{t("Registrar comida")}</h2>
+              <div className="nut-flow-sub">{registerTarget && t("Registrar · {meal}", { meal: t(MEAL_LABELS[registerTarget]) })}</div>
+            </div>
+          </header>
           {registerTarget && (
             <MealIntakeForm
               initial={EMPTY_INTAKE_FORM}
@@ -1061,7 +1065,8 @@ export function NutritionPage() {
           >
             {t("Cancelar")}
           </IonButton>
-        </motion.div>
+        </div>
+        </IonContent>
       </IonModal>
 
       {/* ── La tarjeta IA global pide primero la comida ── */}
