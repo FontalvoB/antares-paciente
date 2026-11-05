@@ -229,6 +229,13 @@ end
 def archive_and_export!(api_key, build_number)
   install_signing_assets(api_key)
   ipa = build_release_ipa(build_number)
+  # Validar el binario exportado antes de subirlo: el nombre del archivo no
+  # garantiza que Xcode haya aplicado CURRENT_PROJECT_VERSION al Info.plist.
+  actual_build = get_ipa_info_plist_value(ipa: ipa, key: "CFBundleVersion").to_s
+  unless actual_build == build_number.to_s
+    UI.user_error!("El IPA contiene build #{actual_build.inspect}; se esperaba #{build_number}. No se subirá a TestFlight.")
+  end
+  UI.success("✅ CFBundleVersion del IPA verificado: #{actual_build}")
   UI.success("✅ IPA generado: #{ipa}")
   ipa
 end
