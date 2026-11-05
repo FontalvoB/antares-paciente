@@ -1,3 +1,4 @@
+import { normalizeEmergencyPhone } from "./emergencyPhone";
 import type { UserProfile } from "../types";
 import type { PatientEmergencyContact } from "./patientProfileApi";
 
@@ -21,7 +22,7 @@ export function emergencyContactsError(primary: PatientEmergencyContact, seconda
   if (Object.values(second).some(Boolean) && (!second.name || !second.phone)) return "Completa el nombre y el teléfono del segundo contacto o déjalo vacío.";
   for (const contact of [first, second]) {
     if (contact.name.length > 200 || contact.relationship.length > 100 || contact.phone.length > 20) return "Revisa los datos de tus contactos de emergencia.";
-    if (contact.phone && (!/^\+?[0-9().\s-]+$/.test(contact.phone) || (contact.phone.match(/\d/g)?.length ?? 0) < 7 || (contact.phone.match(/\d/g)?.length ?? 0) > 15)) return "Revisa los datos de tus contactos de emergencia.";
+    if (contact.phone && !normalizeEmergencyPhone(contact.phone)) return "Ingresa un teléfono válido con el código de país seleccionado.";
     if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) return "Revisa el correo de tus contactos de emergencia.";
   }
   return null;

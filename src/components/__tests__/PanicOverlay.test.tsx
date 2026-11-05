@@ -26,7 +26,7 @@ vi.mock("@ionic/react", async () => {
     const { children, icon: _icon, expand: _expand, fill: _fill, lines: _lines, ...rest } = props;
     return React.createElement(tag, rest, children as React.ReactNode);
   };
-  return { IonButton: element("button"), IonIcon: element("span"), IonBadge: element("span"), IonList: element("div"), IonItem: element("div"), IonLabel: element("div") };
+  return { IonActionSheet: () => null, IonButton: element("button"), IonIcon: element("span"), IonBadge: element("span"), IonList: element("div"), IonItem: element("div"), IonLabel: element("div") };
 });
 
 // Mock del servicio SOS: captura las llamadas de red.
@@ -77,7 +77,7 @@ const context = vi.hoisted(() => ({
   user: {
     fam1Nombre: "Contacto de prueba",
     fam1Parentesco: "Familiar",
-    fam1Cel: "000",
+    fam1Cel: "+573001234567",
   },
 }));
 
@@ -292,7 +292,7 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
   it("la llamada al familiar abre el marcador nativo sin activar SOS", () => {
     render(<PanicOverlay />);
     fireEvent.click(screen.getByLabelText("Llamar familiar"));
-    expect(dialMock).toHaveBeenCalledWith("000");
+    expect(dialMock).toHaveBeenCalledWith("+573001234567");
     expect(context.activateSos).not.toHaveBeenCalled();
   });
 
@@ -552,9 +552,9 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(
       screen.getByText("Canal de contacto no disponible en este momento"),
     ).toBeTruthy();
-    expect(screen.queryByText("Alerta enviada · 000")).toBeNull();
-    expect(screen.queryByText("SMS enviado · 000")).toBeNull();
-    expect(screen.queryByText("Llamada realizada · 000")).toBeNull();
+    expect(screen.queryByText("Alerta enviada · +573001234567")).toBeNull();
+    expect(screen.queryByText("SMS enviado · +573001234567")).toBeNull();
+    expect(screen.queryByText("Llamada realizada · +573001234567")).toBeNull();
   });
 
   it("canal Enviado + location: sí afirma SMS al contacto y ubicación compartida", async () => {
@@ -580,7 +580,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(copy?.textContent).toBe(
       "SMS enviado a tu contacto de emergencia. Tu ubicación fue compartida con tu equipo.",
     );
-    expect(screen.getByText("SMS enviado · 000")).toBeTruthy();
+    expect(screen.getByText("SMS enviado · +573001234567")).toBeTruthy();
     expect(
       screen.getByText("Tu ubicación fue compartida con tu equipo."),
     ).toBeTruthy();
@@ -873,7 +873,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(copy?.textContent).toBe(
       "Llamada y SMS enviados a tu contacto de emergencia. Sin ubicación en esta alerta.",
     );
-    expect(screen.getByText("Llamada y SMS enviados · 000")).toBeTruthy();
+    expect(screen.getByText("Llamada y SMS enviados · +573001234567")).toBeTruthy();
   });
 
   it("solo voz Enviado (SMS degradado): afirma la llamada sin afirmar SMS", async () => {
@@ -900,8 +900,8 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(copy?.textContent).toBe(
       "Llamada realizada a tu contacto de emergencia. Sin ubicación en esta alerta.",
     );
-    expect(screen.getByText("Llamada realizada · 000")).toBeTruthy();
-    expect(screen.queryByText("SMS enviado · 000")).toBeNull();
+    expect(screen.getByText("Llamada realizada · +573001234567")).toBeTruthy();
+    expect(screen.queryByText("SMS enviado · +573001234567")).toBeNull();
   });
 
   it("voz Fallida sin SMS enviado: degradación sin afirmar llamada", async () => {
@@ -929,6 +929,6 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
         "Alerta registrada para tu equipo clínico. Canal de contacto no disponible en este momento. Sin ubicación en esta alerta.",
       ),
     ).toBeTruthy();
-    expect(screen.queryByText("Llamada realizada · 000")).toBeNull();
+    expect(screen.queryByText("Llamada realizada · +573001234567")).toBeNull();
   });
 });

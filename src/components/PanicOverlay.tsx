@@ -5,6 +5,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import {
+  IonActionSheet,
   IonBadge,
   IonButton,
   IonIcon,
@@ -46,6 +47,7 @@ import {
   type SosVitalsDto,
   type SosAlertDto,
 } from "../services/sos/sos-service";
+import { normalizeEmergencyPhone } from "../utils/emergencyPhone";
 import { openNativeDialer } from "../utils/nativeDialer";
 import { emergencyNumberForCountry } from "../utils/emergencyNumbers";
 import type { EmergencyCountry } from "../utils/emergencyNumbers";
@@ -136,6 +138,11 @@ export function PanicOverlay() {
     return () => cancelAnimationFrame(frame);
   }, [panicOpen, view]);
 
+  const [choosingContact, setChoosingContact] = useState(false);
+  const manualContacts = [
+    { name: user.fam1Nombre || t("Contacto principal"), phone: normalizeEmergencyPhone(user.fam1Cel), label: t("Principal") },
+    { name: user.fam2Nombre || t("Contacto opcional"), phone: normalizeEmergencyPhone(user.fam2Cel), label: t("Opcional") },
+  ].filter((contact, index, all) => contact.phone && all.findIndex(other => other.phone === contact.phone) === index);
   const family = user.fam1Nombre;
   const familyRole = user.fam1Parentesco;
   const familyCel = user.fam1Cel;
@@ -198,6 +205,7 @@ export function PanicOverlay() {
       setRateLimitSecs(0);
       setFastPoll(false);
       setSharedVitals(false);
+      setChoosingContact(false);
     }
   }, [panicOpen]);
 
@@ -268,7 +276,8 @@ export function PanicOverlay() {
       return;
     }
 
-    if (!openNativeDialer(familyCel)) {
+    if (manualContacts.length > 1) { setChoosingContact(true); return; }
+    if (!openNativeDialer(manualContacts[0]?.phone)) {
       showToast(
         t("No hay un contacto de emergencia con teléfono configurado."),
         "err",
@@ -533,6 +542,10 @@ export function PanicOverlay() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <IonActionSheet isOpen={panicOpen && choosingContact} header={t("¿A quién quieres llamar?")} onDidDismiss={() => setChoosingContact(false)} buttons={[
+        ...manualContacts.map(contact => ({ text: `${contact.name} · ${contact.label}`, icon: call, handler: () => { openNativeDialer(contact.phone); } })),
+        { text: t("Cancelar"), role: "cancel" },
+      ]} />
       <AnimatePresence>
         {panicOpen && (
           <motion.div
@@ -591,7 +604,7 @@ export function PanicOverlay() {
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
                 {t(
-                  "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
+                  "Alerta real: se notificará a tus contactos registrados por llamada y SMS.",
                 )}
               </span>
             </div>)}
@@ -755,7 +768,7 @@ export function PanicOverlay() {
                           {sosActive
                             ? `${activeCopy} ${locationCopy}`
                             : t(
-                                "Toca SOS y confirma para solicitar ayuda a tu contacto de emergencia y a tu equipo clínico.",
+                                "Toca SOS y confirma para solicitar ayuda a tus contactos registrados y a tu equipo clínico.",
                               )}
                         </p>
                       </div>
@@ -763,7 +776,7 @@ export function PanicOverlay() {
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
                 {t(
-                  "Alerta real: se notificará a tu contacto de emergencia por llamada y SMS.",
+                  "Alerta real: se notificará a tus contactos registrados por llamada y SMS.",
                 )}
               </span>
             </div>
@@ -958,7 +971,7 @@ export function PanicOverlay() {
                         </h1>
                         <p>
                           {t(
-                            "Se enviará una alerta a tu contacto de emergencia y a tu equipo médico, con tu ubicación si la compartes.",
+                            "Se enviará una alerta a tus contactos registrados y a tu equipo médico, con tu ubicación si la compartes.",
                           )}
                         </p>
                       </div>

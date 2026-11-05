@@ -553,6 +553,10 @@ export function AppProvider({
           fam1Parentesco: real.fam1Parentesco,
           fam1Cel: real.fam1Cel,
           fam1Email: real.fam1Email,
+          fam2Nombre: real.fam2Nombre,
+          fam2Parentesco: real.fam2Parentesco,
+          fam2Cel: real.fam2Cel,
+          fam2Email: real.fam2Email,
         }));
       } catch {
         /* no bloqueante: el perfil aún no existe (paciente sin provisionar) */
