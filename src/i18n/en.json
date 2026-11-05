@@ -3299,5 +3299,11 @@
   "Tu equipo confirma el plan": "Your care team confirms the plan",
   "La revisión profesional va antes de activar tu programa.": "Professional review comes before your program is activated.",
   "Cada paso cuenta": "Every step counts",
-  "Tus evaluaciones completadas quedan guardadas en tu perfil.": "Your completed assessments are saved in your profile."
+  "Tus evaluaciones completadas quedan guardadas en tu perfil.": "Your completed assessments are saved in your profile.",
+  "≈ Estimación de IA": "≈ AI estimate",
+  "Calculando nutrición": "Calculating nutrition",
+  "Detectando alimentos": "Detecting foods",
+  "Estimando porciones": "Estimating portions",
+  "Datos verificados · USDA": "Verified data · USDA",
+  "Registrar · {meal}": "Log · {meal}"
 }

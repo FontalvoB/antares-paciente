@@ -1,10 +1,17 @@
 import { FoodPhotoStage } from "./nutrition/FoodPhotoStage";
 import { FoodPlanComparison } from "./nutrition/FoodPlanComparison";
 import type { MyNutritionPlanDto } from "../services/nutrition/my-nutrition-plan-service";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { IonButton, IonChip, IonIcon, IonSpinner } from "@ionic/react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, animate, motion, useReducedMotion } from "framer-motion";
+import { foodScene } from "./nutrition/foodMotion";
+import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import {
+  barbellOutline,
+  flameOutline,
+  leafOutline,
+  restaurantOutline,
+  sparklesOutline,
+  waterOutline,
   arrowBackOutline,
   cameraOutline,
   checkmarkCircleOutline,
@@ -181,10 +188,23 @@ function analysisItemToDetected(item: FoodAnalysisItem): DetectedFood {
   };
 }
 
+/** El lector de pantalla recibe el valor final; el contador es solo presentación. */
+function FoodCalories({ value }: { value: number | null | undefined }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (value == null || reduced) return;
+    const controls = animate(0, Math.round(value), { duration: 0.6, ease: "easeOut", onUpdate: current => {
+      if (ref.current) ref.current.textContent = String(Math.round(current));
+    } });
+    return () => controls.stop();
+  }, [value, reduced]);
+  return <strong><span className="food-sr-only">{value == null ? "—" : `${Math.round(value)} kcal`}</span><span aria-hidden="true"><span ref={ref}>{value == null ? "—" : Math.round(value)}</span>{value != null && " kcal"}</span></strong>;
+}
+
 /**
- * Resumen nutricional compacto (revisión + detalle): calorías destacadas y
- * macros en cuadrícula 2×2. Valores ausentes como "—" explícito, nunca
- * espacios vacíos. Sin estilos nuevos: clases `.nut-sum-*` del design system.
+ * Panel nutricional de marca compartido por revisión y detalle.
+ * Los valores ausentes conservan el indicador explícito «—».
  */
 function NutritionSummary({
   calories,
@@ -202,35 +222,43 @@ function NutritionSummary({
   showCalories?: boolean;
 }) {
   const t = useT();
+  const reduced = useReducedMotion();
   const grams = (v: number | null | undefined) =>
     v == null ? "—" : `${Math.round(v * 10) / 10} g`;
   const cells = [
-    { label: t("Proteínas"), value: grams(protein) },
-    { label: t("Carbohidratos"), value: grams(carbs) },
-    { label: t("Grasas"), value: grams(fat) },
-    { label: t("Fibra"), value: grams(fiber) },
+    { label: t("Proteínas"), value: grams(protein), icon: barbellOutline },
+    { label: t("Carbohidratos"), value: grams(carbs), icon: restaurantOutline },
+    { label: t("Grasas"), value: grams(fat), icon: waterOutline },
+    { label: t("Fibra"), value: grams(fiber), icon: leafOutline },
   ];
   return (
     <section aria-label={t("Resumen nutricional")}>
       <div className="nut-ai-title nut-flow-sec">
         {t("Resumen nutricional")}
       </div>
-      {showCalories && (
-        <div className="nut-sum-hero">
-          <span>{t("Calorías")}</span>
-          <strong>
-            {calories != null ? `${Math.round(calories)} kcal` : "—"}
-          </strong>
-        </div>
-      )}
-      <div className="nut-sum-grid">
-        {cells.map((c) => (
-          <div key={c.label} className="nut-sum-cell">
-            <span>{c.label}</span>
-            <strong>{c.value}</strong>
+      <motion.div
+        className="nut-summary-panel"
+        {...foodScene(reduced)}
+      >
+        {showCalories && (
+          <div className="nut-sum-hero">
+            <span className="nut-sum-flame"><IonIcon icon={flameOutline} aria-hidden="true" /></span>
+            <div>
+              <span>{t("Calorías")}</span>
+              <FoodCalories value={calories} />
+            </div>
           </div>
-        ))}
-      </div>
+        )}
+        <div className="nut-sum-grid">
+          {cells.map((c) => (
+            <div key={c.label} className="nut-sum-cell">
+              <IonIcon icon={c.icon} aria-hidden="true" />
+              <strong>{c.value}</strong>
+              <span>{c.label}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
     </section>
   );
 }
@@ -248,6 +276,7 @@ export function MealFoodFlow({
 }: Props) {
   const t = useT();
   const { showToast } = useApp();
+  const reduced = useReducedMotion();
   const mealLabel = t(FLOW_MEAL_LABELS[meal]);
   const createMutation = useNutritionLog();
   const updateMutation = useUpdateNutritionLog();
@@ -571,33 +600,29 @@ export function MealFoodFlow({
   }
 
   return (
-    <div className="nut-ai">
+    <div className="nut-ai nut-food-flow">
       <div className="nut-flow-head">
-        {!isAnalyzing && (
-          <IonButton
+        <IonButton
             fill="clear"
             className="nut-flow-back"
             onClick={goBack}
             aria-label={t("Volver")}
           >
             <IonIcon icon={arrowBackOutline} slot="icon-only" />
-          </IonButton>
-        )}
+        </IonButton>
         <div className="nut-flow-titles">
           <div className="nut-flow-title">{mealLabel}</div>
           {stepSub !== "" && <div className="nut-flow-sub">{stepSub}</div>}
         </div>
       </div>
 
+      <AnimatePresence mode="wait" initial={false}>
+      <motion.div key={step} className="nut-flow-scene" {...foodScene(reduced)}>
       {(step === "capture" ||
         step === "analyzing" ||
         step === "recapture" ||
         step === "reanalyzing") && (
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-        >
+        <div>
           {isAnalyzing && (step === "analyzing" ? photo : newPhoto) ? (
             <FoodPhotoStage src={(step === "analyzing" ? photo : newPhoto) as string} analyzing>
               {step === "reanalyzing" && <p className="nut-ai-hint">{t("Tu comida registrada se conserva.")}</p>}
@@ -616,6 +641,7 @@ export function MealFoodFlow({
               )}
               <CameraCapture
                 active={active}
+                onManual={step === "capture" ? () => onManual(meal) : undefined}
                 key={step === "recapture" ? newCaptureKey : captureKey}
                 autoSource={step === "recapture" ? undefined : autoSource}
                 onCapture={(blob, fileName) =>
@@ -627,26 +653,14 @@ export function MealFoodFlow({
                   step === "recapture" ? setStep("detail") : onClose()
                 }
               />
-              {step === "capture" && (
-                <IonButton
-                  expand="block"
-                  fill="clear"
-                  onClick={() => onManual(meal)}
-                >
-                  {t("Registro manual")}
-                </IonButton>
-              )}
+
             </>
           )}
-        </motion.div>
+        </div>
       )}
 
       {step === "review" && result && photo && (
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="nut-review-content">
           <figure className="nut-fig">
             <img
               className="nut-ai-preview"
@@ -654,7 +668,7 @@ export function MealFoodFlow({
               alt={t("Fotografía de la comida")}
             />
           </figure>
-          <IonButton expand="block" fill="outline" onClick={retake}>
+          <IonButton className="nut-photo-change" expand="block" fill="outline" onClick={retake}>
             <IonIcon icon={imageOutline} slot="start" />
             {t("Cambiar foto")}
           </IonButton>
@@ -670,20 +684,22 @@ export function MealFoodFlow({
             fiber={result.summary?.fiber ?? result.intake?.fiberG ?? null}
           />
           {result.provider === "llm" && (
-            <IonChip style={{ height: "auto", padding: "8px 12px", background: "var(--teal-l)", color: "var(--teal-d)" }}>
+            <motion.div className="nut-estimate-banner" {...foodScene(reduced)}>
+              <IonIcon icon={sparklesOutline} aria-hidden="true" />
               {t("Estimación IA · confirma o ajusta")}
-            </IonChip>
+            </motion.div>
           )}
           <FoodPlanComparison result={result} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({result.foods.length})
           </div>
           {result.foods.map((food, i) => (
-            <FoodResultCard key={`${food.name}-${i}`} food={food} />
+            <FoodResultCard key={`${food.name}-${i}`} food={food} index={i} />
           ))}
 
+          <AnimatePresence mode="wait" initial={false}>
           {editingValues || (!result.summary && !result.intake) ? (
-            <>
+            <div key="edit-values">
               <div className="nut-ai-title nut-flow-sec">
                 {t("Editar valores")}
               </div>
@@ -696,9 +712,9 @@ export function MealFoodFlow({
                 pending={saving}
                 onSubmit={saveReview}
               />
-            </>
+            </div>
           ) : (
-            <div className="nut-review-actions">
+            <motion.div key="review-actions" className="nut-review-actions" {...foodScene(reduced)}>
               <IonButton
                 className="nut-review-save"
                 expand="block"
@@ -721,20 +737,17 @@ export function MealFoodFlow({
                 <IonIcon icon={createOutline} slot="start" />
                 {t("Editar valores")}
               </IonButton>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
           <IonButton expand="block" fill="clear" onClick={onClose}>
             {t("Cancelar")}
           </IonButton>
-        </motion.div>
+        </div>
       )}
 
       {step === "rereview" && newResult && newPhoto && (
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="nut-review-content">
           <div className="nut-ai-hint">
             {t("Tu comida registrada se conserva.")}
           </div>
@@ -745,7 +758,7 @@ export function MealFoodFlow({
               alt={t("Fotografía de la comida")}
             />
           </figure>
-          <IonButton expand="block" fill="outline" onClick={newRetake}>
+          <IonButton className="nut-photo-change" expand="block" fill="outline" onClick={newRetake}>
             <IonIcon icon={imageOutline} slot="start" />
             {t("Cambiar foto")}
           </IonButton>
@@ -765,20 +778,22 @@ export function MealFoodFlow({
             fiber={newResult.summary?.fiber ?? newResult.intake?.fiberG ?? null}
           />
           {newResult.provider === "llm" && (
-            <IonChip style={{ height: "auto", padding: "8px 12px", background: "var(--teal-l)", color: "var(--teal-d)" }}>
+            <motion.div className="nut-estimate-banner" {...foodScene(reduced)}>
+              <IonIcon icon={sparklesOutline} aria-hidden="true" />
               {t("Estimación IA · confirma o ajusta")}
-            </IonChip>
+            </motion.div>
           )}
           <FoodPlanComparison result={newResult} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({newResult.foods.length})
           </div>
           {newResult.foods.map((food, i) => (
-            <FoodResultCard key={`${food.name}-${i}`} food={food} />
+            <FoodResultCard key={`${food.name}-${i}`} food={food} index={i} />
           ))}
 
+          <AnimatePresence mode="wait" initial={false}>
           {editingNewValues || (!newResult.summary && !newResult.intake) ? (
-            <>
+            <div key="edit-values">
               <div className="nut-ai-title nut-flow-sec">
                 {t("Editar valores")}
               </div>
@@ -791,9 +806,9 @@ export function MealFoodFlow({
                 pending={saving}
                 onSubmit={saveReanalysis}
               />
-            </>
+            </div>
           ) : (
-            <div className="nut-review-actions">
+            <motion.div key="review-actions" className="nut-review-actions" {...foodScene(reduced)}>
               <IonButton
                 className="nut-review-save"
                 expand="block"
@@ -814,8 +829,9 @@ export function MealFoodFlow({
                 <IonIcon icon={createOutline} slot="start" />
                 {t("Editar valores")}
               </IonButton>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
           <IonButton
             expand="block"
             fill="clear"
@@ -823,16 +839,11 @@ export function MealFoodFlow({
           >
             {t("Cancelar")}
           </IonButton>
-        </motion.div>
+        </div>
       )}
 
       {step === "detail" && log && (
-        <motion.div
-          className="nut-ai-result"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="nut-ai-result">
           {/* FOTO: original del análisis, vacía o error con reintento.
               La comida registrada siempre se conserva aunque falle la carga. */}
           {(detailLoading || awaitingAnalysis) && (
@@ -905,7 +916,7 @@ export function MealFoodFlow({
                 {t("Alimentos detectados")} ({detailFoods.length})
               </div>
               {detailFoods.map((food, i) => (
-                <FoodResultCard key={`${food.name}-${i}`} food={food} />
+                <FoodResultCard key={`${food.name}-${i}`} food={food} index={i} />
               ))}
             </>
           )}
@@ -930,15 +941,11 @@ export function MealFoodFlow({
           <IonButton expand="block" fill="clear" onClick={onClose}>
             {t("Cerrar")}
           </IonButton>
-        </motion.div>
+        </div>
       )}
 
       {step === "edit" && log && (
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-        >
+        <div>
           <div className="nut-ai-hint">
             {t("Se actualiza el mismo registro, sin duplicados.")}
           </div>
@@ -957,8 +964,10 @@ export function MealFoodFlow({
               {t("Cancelar")}
             </IonButton>
           </div>
-        </motion.div>
+        </div>
       )}
+      </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

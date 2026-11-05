@@ -21924,51 +21924,165 @@ ion-button.nut-flow-primary {
   color: var(--org);
 }
 
+/* Food AI — iteración 2: resumen de marca y tarjetas con contraste propio. */
+.nut-summary-panel {
+  padding: 20px 14px 18px;
+  border-radius: 24px;
+  background: var(--grad-brand-v);
+  color: var(--wh);
+  box-shadow: var(--shadow-md);
+  transform-origin: center top;
+}
 .nut-sum-hero {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  background: var(--g0);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 0 20px;
 }
-
-.nut-sum-hero span {
-  font-size: 13px;
-  font-weight: 700;
+.nut-sum-flame {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 16px;
 }
-
+.nut-sum-flame ion-icon { font-size: 27px; }
+.nut-sum-hero > div { display: flex; flex-direction: column; gap: 2px; }
+.nut-sum-hero > div > span { font-size: 13px; font-weight: 600; }
 .nut-sum-hero strong {
-  font-size: 22px;
-  font-weight: 800;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
-
 .nut-sum-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.85fr) minmax(0, 0.75fr);
 }
-
+.nut-sum-hero + .nut-sum-grid { border-top: 1px solid rgb(255 255 255 / 15%); padding-top: 16px; }
 .nut-sum-cell {
-  background: var(--g0);
-  border-radius: 12px;
-  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
+  padding: 0 4px;
+  text-align: center;
 }
-
-.nut-sum-cell span {
-  font-size: 11px;
+.nut-sum-cell + .nut-sum-cell { border-inline-start: 1px solid rgb(255 255 255 / 15%); }
+.nut-sum-cell ion-icon { font-size: 18px; }
+.nut-sum-cell strong { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.nut-sum-cell span { font-size: 11px; font-weight: 600; line-height: 1.4; }
+.nut-food-flow .nut-flow-title { font-family: "Space Grotesk", sans-serif; font-size: 24px; }
+.nut-food-flow .nut-flow-head { margin-bottom: 24px; gap: 8px; }
+.nut-food-flow .nut-flow-sub,
+.nut-food-flow .nut-ai-hint { color: var(--mu); line-height: 1.6; }
+.nut-food-flow .nut-flow-sec { margin-top: 24px; margin-bottom: 12px; text-align: center; font-size: 15px; color: var(--navy); }
+.nut-food-flow .nut-fig { margin-bottom: 12px; }
+.nut-food-flow .nut-ai-preview { border-radius: 24px; box-shadow: var(--shadow-md); }
+.nut-food-flow .nut-photo-change {
+  margin: 0;
+  min-height: 44px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--mu);
+  --border-color: var(--bd);
+  --border-radius: 14px;
+  --color: var(--navy);
 }
-
-.nut-sum-cell strong {
-  font-size: 15px;
-  font-weight: 800;
+.nut-estimate-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 24px;
+  padding: 13px 12px;
+  border-radius: 14px;
+  background: var(--teal-l);
+  color: var(--teal-d);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+.nut-estimate-banner ion-icon { font-size: 19px; flex-shrink: 0; }
+.food-result-card {
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 18px;
+  background: var(--wh);
+  color: var(--navy);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+@media (hover: hover) {
+  .food-result-card:hover { border-color: var(--brand-sky); box-shadow: var(--shadow-md); }
+}
+.food-result-card:active { border-color: var(--brand-green-soft); }
+.food-result-top { display: flex; align-items: center; gap: 10px; }
+.food-result-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--teal-l);
+  color: var(--teal);
+  font-size: 24px;
+}
+.food-result-avatar ion-icon { font-size: 23px; }
+.food-result-name { min-width: 0; flex: 1; font-size: 15px; font-weight: 800; line-height: 1.4; text-transform: capitalize; }
+.food-result-energy { display: flex; flex-shrink: 0; flex-direction: column; align-items: flex-end; gap: 1px; }
+.food-result-energy strong { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.food-result-energy > span { color: var(--mu); font-size: 12px; }
+.food-result-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.food-result-card ion-chip {
+  height: auto;
+  min-height: 28px;
+  margin: 0;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.food-result-card ion-chip ion-icon { margin: 0 5px 0 0; font-size: 15px; flex-shrink: 0; }
+.food-result-portion { background: var(--g0); color: var(--mu); font-variant-numeric: tabular-nums; }
+.food-result-portion ion-icon { color: var(--mu); }
+.food-result-confidence.high { background: var(--teal-l); color: var(--teal-d); }
+.food-result-confidence.medium { background: var(--org-l); color: var(--org-d); }
+.food-result-confidence.low { background: var(--red-l); color: var(--navy); }
+.food-result-confidence ion-icon { color: inherit; }
+.food-result-confidence.low ion-icon { color: var(--red); }
+.food-result-card .nut-ai-hint { margin: 10px 0 0; color: var(--mu); font-size: 13px; line-height: 1.5; }
+.food-result-card ion-chip.food-result-estimate {
+  display: flex;
+  width: fit-content;
+  margin-top: 10px;
+  border-radius: 10px;
+  background: var(--org-l);
+  color: var(--org-d);
+}
+.food-result-macros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+.food-result-card ion-chip.food-result-macro { border-radius: 9px; background: var(--g0); color: var(--navy); font-size: 12px; font-variant-numeric: tabular-nums; }
+.food-result-macro.protein ion-icon { color: var(--blue); }
+.food-result-macro.carbs ion-icon { color: var(--org-d); }
+.food-result-macro.fat ion-icon { color: var(--pur); }
+.food-result-macro.fiber ion-icon { color: var(--teal); }
+.food-result-source { margin: 12px 0 0; color: var(--mu); font-size: 12px; line-height: 1.5; }
+.food-result-card .nut-missing { margin: 12px 0 0; line-height: 1.5; }
+.nut-food-flow .nut-review-actions { margin-top: 24px; gap: 10px; }
+@media (max-width: 360px) {
+  .nut-summary-panel { padding-inline: 10px; }
+  .nut-sum-cell { padding-inline: 1px; }
+  .food-result-card { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nut-summary-panel, .food-result-card { transform: none !important; opacity: 1 !important; transition: none; }
 }
 
 .nut-missing {
@@ -31370,7 +31484,7 @@ button:disabled {
 .food-photo-heading p { font-size: 14px; line-height: 1.5; color: var(--mu); margin: 0; }
 .food-photo-frame { position: relative; isolation: isolate; overflow: hidden; aspect-ratio: 4 / 3; max-height: 42svh; border-radius: 24px; background: var(--cosmos); box-shadow: var(--shadow-md); }
 .food-photo-frame img { width: 100%; height: 100%; display: block; object-fit: contain; }
-.food-photo-frame::after { content: ''; position: absolute; inset: 60% 0 0; background: linear-gradient(transparent, color-mix(in srgb, var(--cosmos) 85%, transparent)); pointer-events: none; }
+.food-photo-frame::after { content: ''; position: absolute; inset: auto 0 0; height: 76px; background: linear-gradient(transparent, var(--cosmos)); pointer-events: none; }
 .food-photo-corners { position: absolute; inset: 16px; border: 1px solid color-mix(in srgb, var(--wh) 50%, transparent); border-radius: 14px; pointer-events: none; }
 .food-photo-caption { position: absolute; z-index: 2; bottom: 20px; left: 24px; color: var(--wh); font-size: 12px; font-weight: 600; letter-spacing: .3px; }
 .food-photo-privacy { display: flex; align-items: center; gap: 9px; margin: 15px 2px 18px; color: var(--mu); font-size: 12px; line-height: 1.5; }
@@ -32769,3 +32883,127 @@ ion-card.program-setup-fallback { margin: calc(20px + env(safe-area-inset-top, 0
   .program-setup-portrait { height: 150px; }
   .program-setup-progress ion-card-content { padding: 16px; }
 }
+
+/* Food AI · iteración 3. Layouts de dominio; controles y overlays siguen siendo Ionic. */
+.food-flow-content { --padding-bottom: 0; }
+.food-flow-content .nut-ai {
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.food-flow-content .nut-flow-head { padding-top: 0; }
+.food-flow-content:has(.nut-cam, .nut-cam-busy) { --background: var(--cosmos); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) { color: var(--wh); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .nut-flow-title,
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .nut-flow-back { color: var(--wh); --color: var(--wh); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .nut-flow-sub { color: var(--bd); }
+.nut-flow-head .nut-flow-back { flex-shrink: 0; min-width: 44px; }
+.food-flow-content .nut-flow-head, .nut-reg-wrap .nut-flow-head {
+  position: sticky;
+  top: env(safe-area-inset-top);
+  z-index: 10;
+  isolation: isolate;
+  background: var(--wh);
+  padding-bottom: 12px;
+}
+.food-flow-content .nut-flow-head::before, .nut-reg-wrap .nut-flow-head::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * env(safe-area-inset-top)) -20px 0;
+  z-index: -1;
+  background: inherit;
+}
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .nut-flow-head { background: var(--cosmos); }
+.nut-flow-scene { min-width: 0; }
+.nut-cam { display: flex; flex-direction: column; gap: 20px; min-height: calc(100svh - 155px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); background: var(--cosmos); }
+.nut-cam-view { width: 100%; aspect-ratio: 4 / 5; max-height: 48svh; margin: auto 0; border-radius: 24px; overflow: hidden; background: var(--cosmos-2); box-shadow: var(--shadow-md); }
+.nut-cam-view video { width: 100%; height: 100%; object-fit: cover; }
+.nut-cam-guide span { border-color: color-mix(in srgb, var(--wh) 70%, transparent); }
+.nut-cam-idle { flex: 1; min-height: 240px; justify-content: center; color: var(--wh); background: var(--cosmos-2); border: 1px solid color-mix(in srgb, var(--wh) 20%, transparent); border-radius: 24px; margin: auto 0; }
+.nut-cam-idle strong { color: var(--wh); font-family: 'Space Grotesk', sans-serif; font-size: 22px; line-height: 1.2; }
+.nut-cam-idle small { color: var(--bd); max-width: 260px; font-size: 13px; line-height: 1.6; }
+.nut-cam-idle ion-icon { color: var(--wh); font-size: 42px; }
+.nut-cam-busy { min-height: 65svh; background: var(--cosmos); color: var(--wh); gap: 18px; font-size: 14px; }
+.nut-cam-busy ion-spinner { color: var(--wh); width: 30px; height: 30px; }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) { display: flex; flex-direction: column; min-height: 100%; }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .nut-flow-scene,
+.nut-flow-scene > div:has(> .nut-cam-presentation) { display: flex; flex-direction: column; flex: 1; }
+.nut-food-flow .nut-cam { flex: 1; min-height: 0; }
+.nut-cam-controls { margin-top: 0; }
+.nut-cam-busy { justify-content: center; min-height: min(65svh, 420px); flex: 1; }
+.nut-cam-privacy { display: flex; align-items: center; gap: 8px; color: var(--bd); font-size: 12px; line-height: 1.5; margin: 0 4px 18px; }
+.nut-cam-privacy ion-icon { flex-shrink: 0; font-size: 20px; }
+.nut-cam-controls ion-button { margin: 0; text-transform: none; font-weight: 700; letter-spacing: 0; --border-radius: 18px; }
+.nut-cam-controls ion-button::part(native) { white-space: normal; line-height: 1.35; }
+.nut-cam-controls ion-button.nut-cam-main { width: 100%; min-height: 60px; font-size: 16px; --background: var(--grad-brand-v); --color: var(--wh); --background-activated: var(--navy); --box-shadow: var(--shadow-md); --border-width: 1px; --border-style: solid; --border-color: color-mix(in srgb, var(--wh) 25%, transparent); }
+.nut-cam-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.nut-cam-actions ion-button { min-width: 0; min-height: 48px; font-size: 12px; --padding-start: 8px; --padding-end: 8px; --color: var(--wh); --border-color: color-mix(in srgb, var(--wh) 45%, transparent); --background: transparent; --background-activated: var(--cosmos-2); }
+.nut-cam-actions ion-icon { font-size: 18px; flex-shrink: 0; }
+.nut-cam-presentation { display: grid; flex: 1; min-width: 0; }
+.nut-cam-scene { grid-area: 1 / 1; min-width: 0; display: flex; flex-direction: column; }
+.nut-camera-preview { position: relative; }
+.nut-cam-flash { position: absolute; z-index: 5; inset: 0; background: var(--wh); border-radius: 24px; pointer-events: none; }
+.food-photo-frame img:not(.food-photo-backdrop) { position: relative; z-index: 1; }
+.food-photo-frame img.food-photo-backdrop { position: absolute; inset: 0; object-fit: cover; filter: blur(28px) saturate(1.2); transform: scale(1.15); }
+.food-photo-frame::after { z-index: 2; }
+.food-photo-caption { z-index: 3; display: flex; align-items: center; gap: 8px; }
+.food-photo-caption ion-spinner { color: var(--wh); width: 16px; height: 16px; }
+.food-photo-scan { z-index: 2; animation-duration: 2s; }
+.food-photo-scan::before { background: linear-gradient(transparent, color-mix(in srgb, var(--wh) 18%, transparent), color-mix(in srgb, var(--brand-green-soft) 65%, transparent)); }
+.food-photo-frame.is-analyzing, .is-analyzing .food-photo-frame { border: 1px solid var(--brand-sky); }
+.is-analyzing .food-photo-corners { z-index: 3; border-color: var(--wh); }
+.food-photo-status { display: block; padding: 20px; border: 1px solid var(--bd); background: var(--wh); box-shadow: var(--shadow-sm); color: var(--navy); }
+.food-photo-status > strong { font-family: 'Space Grotesk', sans-serif; font-size: 18px; }
+.food-photo-status > p { margin-top: 14px; }
+.food-analysis-steps { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 8px; }
+.food-analysis-steps li { display: flex; align-items: center; gap: 12px; min-height: 46px; color: var(--mu); font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 14px; }
+.food-analysis-steps li.is-active { background: var(--teal-l); color: var(--teal-d); }
+.food-step-icon { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: var(--g0); }
+.food-step-icon ion-icon { font-size: 20px; }
+.is-active .food-step-icon { background: var(--wh); }
+.food-step-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-left: auto; flex-shrink: 0; }
+.nut-reg-wrap { padding: max(16px, env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom)); max-width: 580px; margin: 0 auto; box-sizing: border-box; }
+.nut-reg-wrap .nut-flow-head { padding-top: 0; margin-bottom: 28px; gap: 8px; }
+.nut-reg-wrap .nut-reg-title { font-family: 'Space Grotesk', sans-serif; font-size: 26px; letter-spacing: -.7px; margin: 0; line-height: 1.1; }
+.nut-intake { min-width: 0; }
+.nut-intake-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
+.nut-intake .nut-intake-calories { grid-column: 1 / -1; }
+.nut-intake ion-input { min-width: 0; min-height: 88px; margin: 0; border: 1px solid transparent; border-radius: 16px; overflow: hidden; --background: var(--nut-input-bg); --border-radius: 16px; --border-width: 0; --highlight-height: 0; --padding-start: 12px; --padding-end: 12px; --padding-top: 12px; --padding-bottom: 12px; --color: var(--navy); --placeholder-color: var(--mu); --placeholder-opacity: 1; font-weight: 700; font-size: 18px; }
+/* IonInput usa DOM con scope: la etiqueta apilada se estiliza sin parts inexistentes. */
+.nut-intake ion-input.input-label-placement-stacked.label-floating .label-text-wrapper { color: var(--nut-input-label); font-size: 12px; font-weight: 700; transform: none; margin-bottom: 8px; max-width: 100%; transition: none; }
+.nut-intake ion-input .label-text { white-space: normal; text-overflow: clip; }
+.nut-intake ion-input .native-wrapper { gap: 8px; }
+.nut-intake ion-input .native-wrapper > ion-icon[slot=start] { margin-inline-end: 0; }
+.nut-intake ion-input ion-icon { font-size: 21px; color: var(--teal); }
+.nut-intake ion-input.has-focus { box-shadow: 0 0 0 3px var(--teal-l); }
+.nut-intake-reference { height: auto; min-height: 40px; margin: 0 0 18px; padding: 10px 12px; font-size: 12px; font-weight: 700; line-height: 1.5; --background: var(--teal-l); --color: var(--teal-d); border-radius: 14px; }
+.nut-intake-reference ion-icon { margin-inline-end: 8px; color: var(--teal); flex-shrink: 0; }
+.nut-intake ion-button.nut-intake-submit { width: 100%; margin: 20px 0 0; min-height: 54px; --background: var(--grad-brand-v); --background-activated: var(--navy); --color: var(--wh); --border-radius: 16px; --box-shadow: var(--shadow-sm); font-size: 15px; font-weight: 700; text-transform: none; }
+.nut-intake ion-button.nut-intake-submit::part(native) { white-space: normal; }
+.nut-reg-wrap > ion-button { min-height: 48px; --color: var(--mu); }
+.nut-intake ion-button.button-disabled { opacity: .55; }
+@media (hover: hover) {
+  .nut-intake ion-button:hover, .nut-cam-controls ion-button:hover { filter: brightness(1.08); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nut-cam-guide { animation: food-frame-breathe 3s ease-in-out infinite; }
+  .is-analyzing .food-photo-corners { animation: food-frame-breathe 2s ease-in-out infinite; }
+  .food-analysis-steps .is-active ion-icon { animation: food-step-pulse 1.2s ease-in-out infinite; }
+  .nut-intake ion-input { transition: filter .28s ease; }
+  .nut-intake ion-input .input-wrapper::before { transition: opacity .28s ease; }
+  .nut-intake ion-input.has-focus { filter: brightness(1.015); }
+}
+@keyframes food-frame-breathe { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
+@keyframes food-step-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) {
+  .food-photo-scan { animation: none; opacity: 0; will-change: auto; }
+  .nut-cam-guide, .is-analyzing .food-photo-corners, .food-analysis-steps ion-icon { animation: none; }
+  .food-photo-caption ion-spinner, .nut-cam-busy ion-spinner { --duration: 0s; }
+}
+
+/* Superficie y contorno de foco mediante opacidad, sin animar pintura o geometría. */
+.nut-intake ion-input .input-wrapper { isolation: isolate; }
+.nut-intake ion-input .input-wrapper::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: 16px; box-sizing: border-box; background: var(--wh); border: 1px solid var(--teal); opacity: 0; }
+.nut-intake ion-input.has-focus .input-wrapper::before { opacity: 1; }
+.food-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
