@@ -1,136 +1,88 @@
 import { IonChip, IonIcon } from "@ionic/react";
-import { warningOutline } from "ionicons/icons";
+import { motion } from "framer-motion";
+import {
+  alertCircle, barbellOutline, checkmarkCircle, leafOutline,
+  nutritionOutline, restaurantOutline, scaleOutline, waterOutline, warningOutline,
+} from "ionicons/icons";
 import { useI18n } from "../i18n/I18nContext";
 import { displayName, FOOD_EMOJI, type DetectedFood } from "../utils/foodAiApi";
 
-/**
- * Tarjeta de un alimento detectado (extraída verbatim de NutritionPage para
- * reutilizarla en el flujo por comida sin duplicar UI).
- */
-export function FoodResultCard({ food }: { food: DetectedFood }) {
+/** Tarjeta de dominio compartida por revisión y detalle; Ionic conserva los chips. */
+export function FoodResultCard({ food, index = 0 }: { food: DetectedFood; index?: number }) {
   const { t, lang } = useI18n();
   const name = lang === "en" && food.nameEn?.trim() ? food.nameEn : displayName(food.name);
-  const emoji = FOOD_EMOJI[food.name] ?? "🍽️";
+  const emoji = FOOD_EMOJI[food.name];
   const available = food.nutritionStatus === "available" && food.nutrition;
   const estimated = food.nutritionSource === "llm_estimate" || food.source === "llm_estimate";
   const confidence = food.confidence >= 0.8
-    ? { label: t("Confianza alta"), background: "var(--teal-l)", color: "var(--teal-d)" }
+    ? { label: t("Confianza alta"), tone: "high", icon: checkmarkCircle }
     : food.confidence >= 0.5
-      ? { label: t("Confianza media"), background: "var(--org-l)", color: "var(--org-d)" }
-      : { label: t("Confianza baja"), background: "var(--red-l)", color: "var(--tx)" };
+      ? { label: t("Confianza media"), tone: "medium", icon: alertCircle }
+      : { label: t("Confianza baja"), tone: "low", icon: alertCircle };
+  const verified = food.nutritionSource === "usda" || food.source?.toLowerCase().includes("usda");
+  const macros = food.nutrition ? [
+    { label: t("Proteínas"), value: food.nutrition.protein, icon: barbellOutline, tone: "protein" },
+    { label: t("Carbohidratos"), value: food.nutrition.carbohydrates, icon: restaurantOutline, tone: "carbs" },
+    { label: t("Grasas"), value: food.nutrition.fat, icon: waterOutline, tone: "fat" },
+    ...(food.nutrition.fiber != null ? [{ label: t("Fibra"), value: food.nutrition.fiber, icon: leafOutline, tone: "fiber" }] : []),
+  ] : [];
 
   return (
-    <div
-      style={{
-        background: "rgba(255,255,255,.08)",
-        borderRadius: 12,
-        padding: 10,
-        marginBottom: 8,
-      }}
+    <motion.div
+      className="food-result-card"
+      initial={{ opacity: 0.6, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 6,
-        }}
-      >
-        <span style={{ fontSize: 20 }}>{emoji}</span>
-        <span
-          style={{
-            fontWeight: 800,
-            fontSize: 14,
-            textTransform: "capitalize",
-            minWidth: 0,
-            overflowWrap: "anywhere",
-          }}
-        >
-          {name}
+      <div className="food-result-top">
+        <span className="food-result-avatar" aria-hidden="true">
+          {emoji && emoji !== "🍽️" ? emoji : <IonIcon icon={nutritionOutline} />}
         </span>
-        {food.portion && (
-          <span style={{ marginLeft: "auto", fontSize: 12, opacity: 0.75 }}>
-            {Math.round(food.portion.estimatedGrams)} g
-            {food.portion.minGrams != null && food.portion.maxGrams != null
-              ? ` (${Math.round(food.portion.minGrams)}–${Math.round(food.portion.maxGrams)} g)`
-              : ""}
-          </span>
+        <strong className="food-result-name" style={{ overflowWrap: "anywhere" }}>{name}</strong>
+        {available && food.nutrition && (
+          <div className="food-result-energy">
+            <strong>{estimated ? "≈ " : ""}{Math.round(food.nutrition.calories)}</strong>
+            <span>kcal</span>
+          </div>
         )}
       </div>
-
-      <IonChip style={{ background: confidence.background, color: confidence.color, height: "auto", padding: "6px 10px" }}>
-        {confidence.label}
-      </IonChip>
+      <div className="food-result-meta">
+        {food.portion && (
+          <IonChip className="food-result-portion">
+            <IonIcon icon={scaleOutline} aria-hidden="true" />
+            <span>{Math.round(food.portion.estimatedGrams)} g
+              {food.portion.minGrams != null && food.portion.maxGrams != null
+                ? ` (${Math.round(food.portion.minGrams)}–${Math.round(food.portion.maxGrams)} g)` : ""}
+            </span>
+          </IonChip>
+        )}
+        <IonChip className={`food-result-confidence ${confidence.tone}`}>
+          <IonIcon icon={confidence.icon} aria-hidden="true" />
+          <span>{confidence.label}</span>
+        </IonChip>
+      </div>
       {food.confidence < 0.5 && (
         <p className="nut-ai-hint">{t("Revisa este alimento o intenta con otra foto.")}</p>
       )}
       {estimated && available && (
-        <IonChip style={{ background: "var(--org-l)", color: "var(--org-d)", height: "auto", padding: "6px 10px" }}>
+        <IonChip className="food-result-estimate">
           {t("≈ Valores estimados por IA — ajústalos si puedes")}
         </IonChip>
       )}
-
       {available && food.nutrition ? (
         <>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 6,
-              marginBottom: 6,
-            }}
-          >
-            <span style={{ fontWeight: 800, fontSize: 20 }}>
-              {estimated ? "≈ " : ""}{Math.round(food.nutrition.calories)}
-            </span>
-            <span style={{ fontSize: 12, opacity: 0.7 }}>kcal</span>
+          <div className="food-result-macros">
+            {macros.map(macro => (
+              <IonChip key={macro.tone} className={`food-result-macro ${macro.tone}`}>
+                <IonIcon icon={macro.icon} aria-hidden="true" />
+                <span>{macro.label} {Math.round(macro.value)}g</span>
+              </IonChip>
+            ))}
           </div>
-          <div
-            style={{ display: "flex", gap: 8, fontSize: 11, flexWrap: "wrap" }}
-          >
-            <span
-              style={{
-                background: "rgba(255,255,255,.1)",
-                borderRadius: 8,
-                padding: "3px 8px",
-              }}
-            >
-              {t("Proteínas")} {Math.round(food.nutrition.protein)}g
-            </span>
-            <span
-              style={{
-                background: "rgba(255,255,255,.1)",
-                borderRadius: 8,
-                padding: "3px 8px",
-              }}
-            >
-              {t("Carbohidratos")} {Math.round(food.nutrition.carbohydrates)}g
-            </span>
-            <span
-              style={{
-                background: "rgba(255,255,255,.1)",
-                borderRadius: 8,
-                padding: "3px 8px",
-              }}
-            >
-              {t("Grasas")} {Math.round(food.nutrition.fat)}g
-            </span>
-            {food.nutrition.fiber != null && (
-              <span
-                style={{
-                  background: "rgba(255,255,255,.1)",
-                  borderRadius: 8,
-                  padding: "3px 8px",
-                }}
-              >
-                {t("Fibra")} {Math.round(food.nutrition.fiber)}g
-              </span>
-            )}
-          </div>
-          {food.source && (
-            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 6 }}>
-              {food.source}
-            </div>
+          {(estimated || verified) && (
+            <p className="food-result-source">
+              {estimated ? t("≈ Estimación de IA") : t("Datos verificados · USDA")}
+            </p>
           )}
         </>
       ) : (
@@ -150,6 +102,6 @@ export function FoodResultCard({ food }: { food: DetectedFood }) {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

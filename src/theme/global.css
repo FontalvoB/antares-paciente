@@ -21838,51 +21838,165 @@ ion-button.nut-flow-primary {
   color: var(--org);
 }
 
+/* Food AI — iteración 2: resumen de marca y tarjetas con contraste propio. */
+.nut-summary-panel {
+  padding: 20px 14px 18px;
+  border-radius: 24px;
+  background: var(--grad-brand-v);
+  color: var(--wh);
+  box-shadow: var(--shadow-md);
+  transform-origin: center top;
+}
 .nut-sum-hero {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  background: var(--g0);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 0 20px;
 }
-
-.nut-sum-hero span {
-  font-size: 13px;
-  font-weight: 700;
+.nut-sum-flame {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 16px;
 }
-
+.nut-sum-flame ion-icon { font-size: 27px; }
+.nut-sum-hero > div { display: flex; flex-direction: column; gap: 2px; }
+.nut-sum-hero > div > span { font-size: 13px; font-weight: 600; }
 .nut-sum-hero strong {
-  font-size: 22px;
-  font-weight: 800;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
-
 .nut-sum-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.85fr) minmax(0, 0.75fr);
 }
-
+.nut-sum-hero + .nut-sum-grid { border-top: 1px solid rgb(255 255 255 / 15%); padding-top: 16px; }
 .nut-sum-cell {
-  background: var(--g0);
-  border-radius: 12px;
-  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
+  padding: 0 4px;
+  text-align: center;
 }
-
-.nut-sum-cell span {
-  font-size: 11px;
+.nut-sum-cell + .nut-sum-cell { border-inline-start: 1px solid rgb(255 255 255 / 15%); }
+.nut-sum-cell ion-icon { font-size: 18px; }
+.nut-sum-cell strong { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.nut-sum-cell span { font-size: 11px; font-weight: 600; line-height: 1.4; }
+.nut-food-flow .nut-flow-title { font-family: "Space Grotesk", sans-serif; font-size: 24px; }
+.nut-food-flow .nut-flow-head { margin-bottom: 24px; gap: 8px; }
+.nut-food-flow .nut-flow-sub,
+.nut-food-flow .nut-ai-hint { color: var(--mu); line-height: 1.6; }
+.nut-food-flow .nut-flow-sec { margin-top: 24px; margin-bottom: 12px; text-align: center; font-size: 15px; color: var(--navy); }
+.nut-food-flow .nut-fig { margin-bottom: 12px; }
+.nut-food-flow .nut-ai-preview { border-radius: 24px; box-shadow: var(--shadow-md); }
+.nut-food-flow .nut-photo-change {
+  margin: 0;
+  min-height: 44px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--mu);
+  --border-color: var(--bd);
+  --border-radius: 14px;
+  --color: var(--navy);
 }
-
-.nut-sum-cell strong {
-  font-size: 15px;
-  font-weight: 800;
+.nut-estimate-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 24px;
+  padding: 13px 12px;
+  border-radius: 14px;
+  background: var(--teal-l);
+  color: var(--teal-d);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+.nut-estimate-banner ion-icon { font-size: 19px; flex-shrink: 0; }
+.food-result-card {
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 18px;
+  background: var(--wh);
+  color: var(--navy);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+@media (hover: hover) {
+  .food-result-card:hover { border-color: var(--brand-sky); box-shadow: var(--shadow-md); }
+}
+.food-result-card:active { border-color: var(--brand-green-soft); }
+.food-result-top { display: flex; align-items: center; gap: 10px; }
+.food-result-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--teal-l);
+  color: var(--teal);
+  font-size: 24px;
+}
+.food-result-avatar ion-icon { font-size: 23px; }
+.food-result-name { min-width: 0; flex: 1; font-size: 15px; font-weight: 800; line-height: 1.4; text-transform: capitalize; }
+.food-result-energy { display: flex; flex-shrink: 0; flex-direction: column; align-items: flex-end; gap: 1px; }
+.food-result-energy strong { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.food-result-energy > span { color: var(--mu); font-size: 12px; }
+.food-result-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.food-result-card ion-chip {
+  height: auto;
+  min-height: 28px;
+  margin: 0;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.food-result-card ion-chip ion-icon { margin: 0 5px 0 0; font-size: 15px; flex-shrink: 0; }
+.food-result-portion { background: var(--g0); color: var(--mu); font-variant-numeric: tabular-nums; }
+.food-result-portion ion-icon { color: var(--mu); }
+.food-result-confidence.high { background: var(--teal-l); color: var(--teal-d); }
+.food-result-confidence.medium { background: var(--org-l); color: var(--org-d); }
+.food-result-confidence.low { background: var(--red-l); color: var(--navy); }
+.food-result-confidence ion-icon { color: inherit; }
+.food-result-confidence.low ion-icon { color: var(--red); }
+.food-result-card .nut-ai-hint { margin: 10px 0 0; color: var(--mu); font-size: 13px; line-height: 1.5; }
+.food-result-card ion-chip.food-result-estimate {
+  display: flex;
+  width: fit-content;
+  margin-top: 10px;
+  border-radius: 10px;
+  background: var(--org-l);
+  color: var(--org-d);
+}
+.food-result-macros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+.food-result-card ion-chip.food-result-macro { border-radius: 9px; background: var(--g0); color: var(--navy); font-size: 12px; font-variant-numeric: tabular-nums; }
+.food-result-macro.protein ion-icon { color: var(--blue); }
+.food-result-macro.carbs ion-icon { color: var(--org-d); }
+.food-result-macro.fat ion-icon { color: var(--pur); }
+.food-result-macro.fiber ion-icon { color: var(--teal); }
+.food-result-source { margin: 12px 0 0; color: var(--mu); font-size: 12px; line-height: 1.5; }
+.food-result-card .nut-missing { margin: 12px 0 0; line-height: 1.5; }
+.nut-food-flow .nut-review-actions { margin-top: 24px; gap: 10px; }
+@media (max-width: 360px) {
+  .nut-summary-panel { padding-inline: 10px; }
+  .nut-sum-cell { padding-inline: 1px; }
+  .food-result-card { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nut-summary-panel, .food-result-card { transform: none !important; opacity: 1 !important; transition: none; }
 }
 
 .nut-missing {

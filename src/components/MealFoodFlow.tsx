@@ -3,8 +3,14 @@ import { FoodPlanComparison } from "./nutrition/FoodPlanComparison";
 import type { MyNutritionPlanDto } from "../services/nutrition/my-nutrition-plan-service";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { IonButton, IonChip, IonIcon, IonSpinner } from "@ionic/react";
+import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import {
+  barbellOutline,
+  flameOutline,
+  leafOutline,
+  restaurantOutline,
+  sparklesOutline,
+  waterOutline,
   arrowBackOutline,
   cameraOutline,
   checkmarkCircleOutline,
@@ -182,9 +188,8 @@ function analysisItemToDetected(item: FoodAnalysisItem): DetectedFood {
 }
 
 /**
- * Resumen nutricional compacto (revisión + detalle): calorías destacadas y
- * macros en cuadrícula 2×2. Valores ausentes como "—" explícito, nunca
- * espacios vacíos. Sin estilos nuevos: clases `.nut-sum-*` del design system.
+ * Panel nutricional de marca compartido por revisión y detalle.
+ * Los valores ausentes conservan el indicador explícito «—».
  */
 function NutritionSummary({
   calories,
@@ -205,32 +210,41 @@ function NutritionSummary({
   const grams = (v: number | null | undefined) =>
     v == null ? "—" : `${Math.round(v * 10) / 10} g`;
   const cells = [
-    { label: t("Proteínas"), value: grams(protein) },
-    { label: t("Carbohidratos"), value: grams(carbs) },
-    { label: t("Grasas"), value: grams(fat) },
-    { label: t("Fibra"), value: grams(fiber) },
+    { label: t("Proteínas"), value: grams(protein), icon: barbellOutline },
+    { label: t("Carbohidratos"), value: grams(carbs), icon: restaurantOutline },
+    { label: t("Grasas"), value: grams(fat), icon: waterOutline },
+    { label: t("Fibra"), value: grams(fiber), icon: leafOutline },
   ];
   return (
     <section aria-label={t("Resumen nutricional")}>
       <div className="nut-ai-title nut-flow-sec">
         {t("Resumen nutricional")}
       </div>
-      {showCalories && (
-        <div className="nut-sum-hero">
-          <span>{t("Calorías")}</span>
-          <strong>
-            {calories != null ? `${Math.round(calories)} kcal` : "—"}
-          </strong>
-        </div>
-      )}
-      <div className="nut-sum-grid">
-        {cells.map((c) => (
-          <div key={c.label} className="nut-sum-cell">
-            <span>{c.label}</span>
-            <strong>{c.value}</strong>
+      <motion.div
+        className="nut-summary-panel"
+        initial={{ opacity: 0.6, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {showCalories && (
+          <div className="nut-sum-hero">
+            <span className="nut-sum-flame"><IonIcon icon={flameOutline} aria-hidden="true" /></span>
+            <div>
+              <span>{t("Calorías")}</span>
+              <strong>{calories != null ? `${Math.round(calories)} kcal` : "—"}</strong>
+            </div>
           </div>
-        ))}
-      </div>
+        )}
+        <div className="nut-sum-grid">
+          {cells.map((c) => (
+            <div key={c.label} className="nut-sum-cell">
+              <IonIcon icon={c.icon} aria-hidden="true" />
+              <strong>{c.value}</strong>
+              <span>{c.label}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
     </section>
   );
 }
@@ -571,7 +585,7 @@ export function MealFoodFlow({
   }
 
   return (
-    <div className="nut-ai">
+    <div className="nut-ai nut-food-flow">
       <div className="nut-flow-head">
         {!isAnalyzing && (
           <IonButton
@@ -642,11 +656,7 @@ export function MealFoodFlow({
       )}
 
       {step === "review" && result && photo && (
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="nut-review-content">
           <figure className="nut-fig">
             <img
               className="nut-ai-preview"
@@ -654,7 +664,7 @@ export function MealFoodFlow({
               alt={t("Fotografía de la comida")}
             />
           </figure>
-          <IonButton expand="block" fill="outline" onClick={retake}>
+          <IonButton className="nut-photo-change" expand="block" fill="outline" onClick={retake}>
             <IonIcon icon={imageOutline} slot="start" />
             {t("Cambiar foto")}
           </IonButton>
@@ -670,16 +680,17 @@ export function MealFoodFlow({
             fiber={result.summary?.fiber ?? result.intake?.fiberG ?? null}
           />
           {result.provider === "llm" && (
-            <IonChip style={{ height: "auto", padding: "8px 12px", background: "var(--teal-l)", color: "var(--teal-d)" }}>
+            <div className="nut-estimate-banner">
+              <IonIcon icon={sparklesOutline} aria-hidden="true" />
               {t("Estimación IA · confirma o ajusta")}
-            </IonChip>
+            </div>
           )}
           <FoodPlanComparison result={result} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({result.foods.length})
           </div>
           {result.foods.map((food, i) => (
-            <FoodResultCard key={`${food.name}-${i}`} food={food} />
+            <FoodResultCard key={`${food.name}-${i}`} food={food} index={i} />
           ))}
 
           {editingValues || (!result.summary && !result.intake) ? (
@@ -726,15 +737,11 @@ export function MealFoodFlow({
           <IonButton expand="block" fill="clear" onClick={onClose}>
             {t("Cancelar")}
           </IonButton>
-        </motion.div>
+        </div>
       )}
 
       {step === "rereview" && newResult && newPhoto && (
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="nut-review-content">
           <div className="nut-ai-hint">
             {t("Tu comida registrada se conserva.")}
           </div>
@@ -745,7 +752,7 @@ export function MealFoodFlow({
               alt={t("Fotografía de la comida")}
             />
           </figure>
-          <IonButton expand="block" fill="outline" onClick={newRetake}>
+          <IonButton className="nut-photo-change" expand="block" fill="outline" onClick={newRetake}>
             <IonIcon icon={imageOutline} slot="start" />
             {t("Cambiar foto")}
           </IonButton>
@@ -765,16 +772,17 @@ export function MealFoodFlow({
             fiber={newResult.summary?.fiber ?? newResult.intake?.fiberG ?? null}
           />
           {newResult.provider === "llm" && (
-            <IonChip style={{ height: "auto", padding: "8px 12px", background: "var(--teal-l)", color: "var(--teal-d)" }}>
+            <div className="nut-estimate-banner">
+              <IonIcon icon={sparklesOutline} aria-hidden="true" />
               {t("Estimación IA · confirma o ajusta")}
-            </IonChip>
+            </div>
           )}
           <FoodPlanComparison result={newResult} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({newResult.foods.length})
           </div>
           {newResult.foods.map((food, i) => (
-            <FoodResultCard key={`${food.name}-${i}`} food={food} />
+            <FoodResultCard key={`${food.name}-${i}`} food={food} index={i} />
           ))}
 
           {editingNewValues || (!newResult.summary && !newResult.intake) ? (
@@ -823,7 +831,7 @@ export function MealFoodFlow({
           >
             {t("Cancelar")}
           </IonButton>
-        </motion.div>
+        </div>
       )}
 
       {step === "detail" && log && (
@@ -905,7 +913,7 @@ export function MealFoodFlow({
                 {t("Alimentos detectados")} ({detailFoods.length})
               </div>
               {detailFoods.map((food, i) => (
-                <FoodResultCard key={`${food.name}-${i}`} food={food} />
+                <FoodResultCard key={`${food.name}-${i}`} food={food} index={i} />
               ))}
             </>
           )}
