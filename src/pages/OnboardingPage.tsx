@@ -7,7 +7,6 @@ import {
 } from "react";
 import {
   IonButton,
-  IonCheckbox,
   IonDatetime,
   IonIcon,
   IonInput,
@@ -21,7 +20,6 @@ import {
   callOutline,
   checkmark,
   checkmarkCircle,
-  documentTextOutline,
   eye,
   eyeOff,
   lockClosedOutline,
@@ -41,7 +39,7 @@ import {
 } from "../utils/patientProfileApi";
 import { setFirstPassword } from "../utils/authApi";
 import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
-import { ConsentReadGate } from "../components/ConsentReadGate";
+import { InformedConsentSection } from "../components/InformedConsentSection";
 import { contactFromProfile, emergencyContactsError } from "../utils/emergencyContacts";
 import type { UserProfile } from "../types";
 
@@ -528,40 +526,7 @@ export function OnboardingPage() {
                 </>
               )}
 
-              {step === 3 && (
-                <>
-                  <section className="onb-card tone-teal">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-teal">
-                        <IonIcon icon={documentTextOutline} />
-                      </span>
-                      <div>
-                        <strong>{t("Consentimiento informado")}</strong>
-                        <span>{t("COPP-ADRESD · 24 semanas")}</span>
-                      </div>
-                    </div>
-                    <ConsentReadGate onRead={() => setConsentRead(true)}>
-                      <strong style={{ color: "var(--tx)" }}>
-                        {t("Programa de medicina preventiva")}
-                      </strong>
-                      <p style={{ margin: "8px 0 0" }}>
-                        {t(
-                          "Tus datos son PHI según HIPAA. FYA TECH SAS actúa como Business Associate. Los datos biométricos se cifran con AES-256. Las fotos de comida se eliminan en 24 h. Autorizas el contacto de emergencia si activas SOS.",
-                        )}
-                      </p>
-                    </ConsentReadGate>
-                    {[
-                      t("He leído y acepto el consentimiento informado."),
-                      t(
-                        "Autorizo el manejo de mis datos de salud según HIPAA.",
-                      ),
-                      t("Autorizo notificar a mis contactos de emergencia."),
-                    ].map((label, i) => (
-                      <IonCheckbox key={label} className="onb-consent-check" labelPlacement="end" justify="start" disabled={!consentRead} checked={checks[i]} onIonChange={e => setChecks(c => c.map((value, index) => index === i ? e.detail.checked : value))}>{label}</IonCheckbox>
-                    ))}
-                  </section>
-                </>
-              )}
+              {step === 3 && <InformedConsentSection read={consentRead} checks={checks} onRead={() => setConsentRead(true)} onChecked={(index, checked) => setChecks(current => current.map((value, i) => i === index ? checked : value))} />}
 
               {step === 4 && (
                 <>

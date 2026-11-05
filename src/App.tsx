@@ -30,6 +30,7 @@ import { ToastHost } from "./components/ToastHost";
 import { OfflineBanner } from "./components/common/OfflineBanner";
 import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
+import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
 import { HomePage } from "./pages/HomePage";
@@ -250,6 +251,10 @@ export default function App() {
     queryClient.clear();
     setCommunityClientState(createCommunityClient());
   }, []);
+
+  if (__DEV_TOOLS__ && new URLSearchParams(window.location.search).has("consent-test")) {
+    return <I18nProvider><IonApp><ConsentPreviewPage longText={new URLSearchParams(window.location.search).get("consent-test") === "long"} /></IonApp></I18nProvider>;
+  }
 
   return (
     <Provider value={communityClientState}>

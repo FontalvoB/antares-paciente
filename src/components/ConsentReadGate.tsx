@@ -4,11 +4,11 @@ import { checkmarkCircleOutline, readerOutline } from "ionicons/icons";
 import { useT } from "../i18n/I18nContext";
 
 /** Activa la aceptación solo cuando el final del documento resulta visible. */
-export function ConsentReadGate({ children, onRead }: { children: ReactNode; onRead: () => void }) {
+export function ConsentReadGate({ children, onRead, alreadyRead = false }: { children: ReactNode; onRead: () => void; alreadyRead?: boolean }) {
   const t = useT();
   const region = useRef<HTMLDivElement>(null);
-  const notified = useRef(false);
-  const [read, setRead] = useState(false);
+  const notified = useRef(alreadyRead);
+  const [read, setRead] = useState(alreadyRead);
   const checkEnd = useCallback(() => {
     const element = region.current;
     if (element && element.clientHeight > 0 && element.scrollHeight - element.scrollTop - element.clientHeight <= 8 && !notified.current) {
