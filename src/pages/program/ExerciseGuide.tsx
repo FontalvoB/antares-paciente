@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IonButton, IonChip, IonIcon, IonSpinner } from '@ionic/react'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
+import { App as CapacitorApp } from '@capacitor/app'
 import { playCircleOutline, openOutline, barbellOutline } from 'ionicons/icons'
 import { exerciseVideo } from '../../data/exerciseVideos'
 import { MISSION_PHOTOS } from '../../data/missionPhotos'
@@ -40,9 +41,16 @@ export function ExerciseGuide({ exercise, onWatch, media }: { exercise: Exercise
     try {
       // SFSafariViewController no admite Referer: YouTube exige origin con el
       // bundle ID. Android abre la página completa, no un embed sin identidad.
-      const url = Capacitor.getPlatform() === 'ios' && youtubeId
-        ? `https://www.youtube.com/embed/${youtubeId}?playsinline=1&autoplay=0&origin=https%3A%2F%2Fcom.coppadresd.app`
-        : sourceUrl
+      let url = sourceUrl
+      if (Capacitor.getPlatform() === 'ios' && youtubeId) {
+        // El bundle de Xcode puede diferir del appId de capacitor.config.ts.
+        const { id } = await CapacitorApp.getInfo()
+        const player = new URL(`https://www.youtube.com/embed/${youtubeId}`)
+        player.searchParams.set('playsinline', '1')
+        player.searchParams.set('autoplay', '0')
+        player.searchParams.set('origin', `https://${id.toLowerCase()}`)
+        url = player.href
+      }
       await Browser.open({ url })
     } catch { setFailed(true) }
   }
