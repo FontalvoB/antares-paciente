@@ -3,6 +3,7 @@ import { IonButton, IonIcon, IonInput, IonModal } from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { createVoiceMicLevel } from "../utils/voiceMicLevel";
+import { readAgentOutputLevel } from "../utils/agentLevel";
 import { VoiceOrb } from "./VoiceOrb";
 import type { VoicePhase } from "./VoiceOrb";
 import { useApp } from "../context/AppContext";
@@ -71,7 +72,9 @@ function VoiceShell({
 }: VoiceShellProps) {
   const t = useT();
   const [text, setText] = useState("");
-  useEffect(() => { micLevel.setMuted(muted); }, [micLevel, muted]);
+  useEffect(() => {
+    micLevel.setMuted(muted);
+  }, [micLevel, muted]);
   const orbClass = `voice-orb vc-orb is-${phase}`;
   const submitText = (event: React.FormEvent) => {
     event.preventDefault();
@@ -83,16 +86,30 @@ function VoiceShell({
   return (
     <div className="vc-shell">
       <div className="vc-header">
-        <IonButton fill="clear" className="vc-back" aria-label={t("Volver al chat")} onClick={onHangUp}>
+        <IonButton
+          fill="clear"
+          className="vc-back"
+          aria-label={t("Volver al chat")}
+          onClick={onHangUp}
+        >
           <IonIcon icon={chevronBack} />
         </IonButton>
-        <span className="vc-brand">COPP-ADRESD<span>{t("Asistente de voz")}</span></span>
+        <span className="vc-brand">
+          COPP-ADRESD<span>{t("Asistente de voz")}</span>
+        </span>
       </div>
       <div className="vc-center">
         <div className={orbClass} aria-hidden="true">
-          <VoiceOrb phase={phase} active={active} getInputVolume={micLevel.getVolume} getOutputVolume={getOutputVolume} />
+          <VoiceOrb
+            phase={phase}
+            active={active}
+            getInputVolume={micLevel.getVolume}
+            getOutputVolume={getOutputVolume}
+          />
         </div>
-        <div className={`vc-status is-${phase}`} aria-live="polite">{statusLabel}</div>
+        <div className={`vc-status is-${phase}`} aria-live="polite">
+          {statusLabel}
+        </div>
         <div className="vc-transcript" aria-live="polite">
           {transcriptLine || t("Estoy aquí para acompañarte.")}
         </div>
@@ -502,7 +519,9 @@ function ElevenVoiceBody({
     if (!active) return;
     let cancelled = false;
     void start(() => cancelled);
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [start, active]);
 
   const phase: VoicePhase =
@@ -515,6 +534,19 @@ function ElevenVoiceBody({
           : eleven.isSpeaking
             ? "speaking"
             : "listening";
+
+  // Lector estable por ref: el orbe lo llama ~60/s y nunca debe capturar un
+  // cierre obsoleto del hook de la conversación.
+  const elevenRef = useRef(eleven);
+  elevenRef.current = eleven;
+  const readAgentLevel = useCallback(
+    () =>
+      readAgentOutputLevel(
+        elevenRef.current.getOutputVolume,
+        elevenRef.current.getOutputByteFrequencyData,
+      ),
+    [],
+  );
 
   const label =
     eleven.status !== "connected"
@@ -530,9 +562,11 @@ function ElevenVoiceBody({
   return (
     <VoiceShell
       active={active}
-      // Los getters del SDK exponen el nivel real, no la ganancia volume/setVolume.
+      // Nivel del agente compuesto: RMS del SDK + energía espectral real
+      // (getOutputByteFrequencyData) con ganancia perceptual — el orbe
+      // acompana la cadencia de la voz aunque la amplitud bruta sea baja.
       micLevel={micLevel}
-      getOutputVolume={eleven.getOutputVolume}
+      getOutputVolume={readAgentLevel}
       phase={phase}
       statusLabel={label}
       transcriptLine={eleven.isSpeaking ? botLine : userLine}

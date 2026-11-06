@@ -4,31 +4,31 @@
  * Licencia y procedencia en orb.LICENSE y orb.upstream.md.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useTexture } from "@react-three/drei/core/Texture"
-import { PerformanceMonitor } from "@react-three/drei/core/PerformanceMonitor"
-import perlinNoiseUrl from "../../assets/orb/perlin-noise.png"
-import { Canvas, useFrame } from "@react-three/fiber"
-import * as THREE from "three"
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTexture } from "@react-three/drei/core/Texture";
+import { PerformanceMonitor } from "@react-three/drei/core/PerformanceMonitor";
+import perlinNoiseUrl from "../../assets/orb/perlin-noise.png";
+import { Canvas, useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
-export type AgentState = null | "thinking" | "listening" | "talking"
+export type AgentState = null | "thinking" | "listening" | "talking";
 
 type OrbProps = {
-  colors?: [string, string]
-  colorsRef?: React.RefObject<[string, string]>
-  resizeDebounce?: number
-  seed?: number
-  agentState?: AgentState
-  volumeMode?: "auto" | "manual"
-  manualInput?: number
-  manualOutput?: number
-  inputVolumeRef?: React.RefObject<number>
-  outputVolumeRef?: React.RefObject<number>
-  getInputVolume?: () => number
-  getOutputVolume?: () => number
-  onFailure?: () => void
-  className?: string
-}
+  colors?: [string, string];
+  colorsRef?: React.RefObject<[string, string]>;
+  resizeDebounce?: number;
+  seed?: number;
+  agentState?: AgentState;
+  volumeMode?: "auto" | "manual";
+  manualInput?: number;
+  manualOutput?: number;
+  inputVolumeRef?: React.RefObject<number>;
+  outputVolumeRef?: React.RefObject<number>;
+  getInputVolume?: () => number;
+  getOutputVolume?: () => number;
+  onFailure?: () => void;
+  className?: string;
+};
 
 export function Orb({
   colors = ["#87aeca", "#023467"],
@@ -46,9 +46,9 @@ export function Orb({
   className,
   onFailure,
 }: OrbProps) {
-  const [dpr, setDpr] = useState(1.5)
-  const cleanupRef = useRef<(() => void) | undefined>(undefined)
-  useEffect(() => () => cleanupRef.current?.(), [])
+  const [dpr, setDpr] = useState(1.5);
+  const cleanupRef = useRef<(() => void) | undefined>(undefined);
+  useEffect(() => () => cleanupRef.current?.(), []);
   return (
     <div className={className ?? "voice-orb-visual"}>
       <Canvas
@@ -56,16 +56,16 @@ export function Orb({
         fallback={<div className="voice-orb-static" />}
         onCreated={({ gl, setFrameloop }) => {
           const lost = (event: Event) => {
-            event.preventDefault()
-            setFrameloop("never")
-            onFailure?.()
-          }
-          gl.domElement.addEventListener("webglcontextlost", lost)
+            event.preventDefault();
+            setFrameloop("never");
+            onFailure?.();
+          };
+          gl.domElement.addEventListener("webglcontextlost", lost);
           cleanupRef.current = () => {
-            gl.domElement.removeEventListener("webglcontextlost", lost)
-            setFrameloop("never")
-            gl.dispose()
-          }
+            gl.domElement.removeEventListener("webglcontextlost", lost);
+            setFrameloop("never");
+            gl.dispose();
+          };
         }}
         resize={{ debounce: resizeDebounce }}
         gl={{
@@ -74,7 +74,11 @@ export function Orb({
           premultipliedAlpha: true,
         }}
       >
-        <PerformanceMonitor onIncline={() => setDpr(1.5)} onDecline={() => setDpr(1)} onFallback={() => setDpr(1)} />
+        <PerformanceMonitor
+          onIncline={() => setDpr(1.5)}
+          onDecline={() => setDpr(1)}
+          onFallback={() => setDpr(1)}
+        />
         <Scene
           colors={colors}
           colorsRef={colorsRef}
@@ -90,7 +94,7 @@ export function Orb({
         />
       </Canvas>
     </div>
-  )
+  );
 }
 
 function Scene({
@@ -106,134 +110,150 @@ function Scene({
   getInputVolume,
   getOutputVolume,
 }: {
-  colors: [string, string]
-  colorsRef?: React.RefObject<[string, string]>
-  seed?: number
-  agentState: AgentState
-  volumeMode: "auto" | "manual"
-  manualInput?: number
-  manualOutput?: number
-  inputVolumeRef?: React.RefObject<number>
-  outputVolumeRef?: React.RefObject<number>
-  getInputVolume?: () => number
-  getOutputVolume?: () => number
+  colors: [string, string];
+  colorsRef?: React.RefObject<[string, string]>;
+  seed?: number;
+  agentState: AgentState;
+  volumeMode: "auto" | "manual";
+  manualInput?: number;
+  manualOutput?: number;
+  inputVolumeRef?: React.RefObject<number>;
+  outputVolumeRef?: React.RefObject<number>;
+  getInputVolume?: () => number;
+  getOutputVolume?: () => number;
 }) {
   const circleRef =
-    useRef<THREE.Mesh<THREE.CircleGeometry, THREE.ShaderMaterial>>(null)
-  const initialColorsRef = useRef<[string, string]>(colors)
-  const targetColor1Ref = useRef(new THREE.Color(colors[0]))
-  const targetColor2Ref = useRef(new THREE.Color(colors[1]))
-  const animSpeedRef = useRef(0.1)
-  const perlinNoiseTexture = useTexture(
-    perlinNoiseUrl
-  )
+    useRef<THREE.Mesh<THREE.CircleGeometry, THREE.ShaderMaterial>>(null);
+  const initialColorsRef = useRef<[string, string]>(colors);
+  const targetColor1Ref = useRef(new THREE.Color(colors[0]));
+  const targetColor2Ref = useRef(new THREE.Color(colors[1]));
+  const animSpeedRef = useRef(0.1);
+  const perlinNoiseTexture = useTexture(perlinNoiseUrl);
 
-  const agentRef = useRef<AgentState>(agentState)
-  const modeRef = useRef<"auto" | "manual">(volumeMode)
-  const manualInRef = useRef<number>(manualInput ?? 0)
-  const manualOutRef = useRef<number>(manualOutput ?? 0)
-  const curInRef = useRef(0)
-  const curOutRef = useRef(0)
+  const agentRef = useRef<AgentState>(agentState);
+  const modeRef = useRef<"auto" | "manual">(volumeMode);
+  const manualInRef = useRef<number>(manualInput ?? 0);
+  const manualOutRef = useRef<number>(manualOutput ?? 0);
+  const curInRef = useRef(0);
+  const curOutRef = useRef(0);
 
   useEffect(() => {
-    agentRef.current = agentState
-  }, [agentState])
+    agentRef.current = agentState;
+  }, [agentState]);
 
   useEffect(() => {
-    modeRef.current = volumeMode
-  }, [volumeMode])
+    modeRef.current = volumeMode;
+  }, [volumeMode]);
 
   useEffect(() => {
     manualInRef.current = clamp01(
-      manualInput ?? inputVolumeRef?.current ?? getInputVolume?.() ?? 0
-    )
-  }, [manualInput, inputVolumeRef, getInputVolume])
+      manualInput ?? inputVolumeRef?.current ?? getInputVolume?.() ?? 0,
+    );
+  }, [manualInput, inputVolumeRef, getInputVolume]);
 
   useEffect(() => {
     manualOutRef.current = clamp01(
-      manualOutput ?? outputVolumeRef?.current ?? getOutputVolume?.() ?? 0
-    )
-  }, [manualOutput, outputVolumeRef, getOutputVolume])
+      manualOutput ?? outputVolumeRef?.current ?? getOutputVolume?.() ?? 0,
+    );
+  }, [manualOutput, outputVolumeRef, getOutputVolume]);
 
   const random = useMemo(
     () => splitmix32(seed ?? Math.floor(Math.random() * 2 ** 32)),
-    [seed]
-  )
+    [seed],
+  );
   const offsets = useMemo(
     () =>
       new Float32Array(Array.from({ length: 7 }, () => random() * Math.PI * 2)),
-    [random]
-  )
+    [random],
+  );
 
   useEffect(() => {
-    targetColor1Ref.current = new THREE.Color(colors[0])
-    targetColor2Ref.current = new THREE.Color(colors[1])
-  }, [colors])
+    targetColor1Ref.current = new THREE.Color(colors[0]);
+    targetColor2Ref.current = new THREE.Color(colors[1]);
+  }, [colors]);
 
   useFrame((_, elapsed: number) => {
-    const delta = Math.min(elapsed, 0.05)
-    const mat = circleRef.current?.material
-    if (!mat) return
-    const live = colorsRef?.current
+    const delta = Math.min(elapsed, 0.05);
+    const mat = circleRef.current?.material;
+    if (!mat) return;
+    const live = colorsRef?.current;
     if (live) {
-      if (live[0]) targetColor1Ref.current.set(live[0])
-      if (live[1]) targetColor2Ref.current.set(live[1])
+      if (live[0]) targetColor1Ref.current.set(live[0]);
+      if (live[1]) targetColor2Ref.current.set(live[1]);
     }
-    const u = mat.uniforms
-    u.uTime.value += delta * 0.5
-    // Respiración de reposo; la deformación de voz sigue los niveles reales.
-    circleRef.current!.scale.setScalar(1 + Math.sin(u.uTime.value * 1.4) * 0.014)
-    circleRef.current!.position.x = Math.sin(u.uTime.value * 0.37) * 0.025
+    const u = mat.uniforms;
+    u.uTime.value += delta * 0.5;
 
-    if (u.uOpacity.value < 1) {
-      u.uOpacity.value = Math.min(1, u.uOpacity.value + delta * 2)
-    }
-
-    let targetIn = 0
-    let targetOut = 0.3
+    let targetIn = 0;
+    let targetOut = 0.3;
     if (modeRef.current === "manual") {
       targetIn = clamp01(
-        manualInput ?? inputVolumeRef?.current ?? getInputVolume?.() ?? 0
-      )
+        manualInput ?? inputVolumeRef?.current ?? getInputVolume?.() ?? 0,
+      );
       targetOut = clamp01(
-        manualOutput ?? outputVolumeRef?.current ?? getOutputVolume?.() ?? 0
-      )
+        manualOutput ?? outputVolumeRef?.current ?? getOutputVolume?.() ?? 0,
+      );
     } else {
-      const t = u.uTime.value * 2
+      const t = u.uTime.value * 2;
       if (agentRef.current === null) {
-        targetIn = 0
-        targetOut = 0.3
+        targetIn = 0;
+        targetOut = 0.3;
       } else if (agentRef.current === "listening") {
-        targetIn = clamp01(0.55 + Math.sin(t * 3.2) * 0.35)
-        targetOut = 0.45
+        targetIn = clamp01(0.55 + Math.sin(t * 3.2) * 0.35);
+        targetOut = 0.45;
       } else if (agentRef.current === "talking") {
-        targetIn = clamp01(0.65 + Math.sin(t * 4.8) * 0.22)
-        targetOut = clamp01(0.75 + Math.sin(t * 3.6) * 0.22)
+        targetIn = clamp01(0.65 + Math.sin(t * 4.8) * 0.22);
+        targetOut = clamp01(0.75 + Math.sin(t * 3.6) * 0.22);
       } else {
-        const base = 0.38 + 0.07 * Math.sin(t * 0.7)
-        const wander = 0.05 * Math.sin(t * 2.1) * Math.sin(t * 0.37 + 1.2)
-        targetIn = clamp01(base + wander)
-        targetOut = clamp01(0.48 + 0.12 * Math.sin(t * 1.05 + 0.6))
+        const base = 0.38 + 0.07 * Math.sin(t * 0.7);
+        const wander = 0.05 * Math.sin(t * 2.1) * Math.sin(t * 0.37 + 1.2);
+        targetIn = clamp01(base + wander);
+        targetOut = clamp01(0.48 + 0.12 * Math.sin(t * 1.05 + 0.6));
       }
     }
 
     // Ataque rápido y caída suave; ningún pulso simula voz en modo manual.
-    curInRef.current += (targetIn - curInRef.current) * (1 - Math.exp(-delta * (targetIn > curInRef.current ? 18 : 7)))
-    curOutRef.current += (targetOut - curOutRef.current) * (1 - Math.exp(-delta * (targetOut > curOutRef.current ? 18 : 7)))
+    curInRef.current +=
+      (targetIn - curInRef.current) *
+      (1 - Math.exp(-delta * (targetIn > curInRef.current ? 18 : 7)));
+    curOutRef.current +=
+      (targetOut - curOutRef.current) *
+      (1 - Math.exp(-delta * (targetOut > curOutRef.current ? 18 : 7)));
 
-    const targetSpeed = 0.1 + (1 - Math.pow(curOutRef.current - 1, 2)) * 0.9
-    animSpeedRef.current += (targetSpeed - animSpeedRef.current) * (1 - Math.exp(-delta * 8))
+    const targetSpeed = 0.1 + (1 - Math.pow(curOutRef.current - 1, 2)) * 0.9;
+    animSpeedRef.current +=
+      (targetSpeed - animSpeedRef.current) * (1 - Math.exp(-delta * 8));
 
-    u.uAnimation.value += delta * animSpeedRef.current
-    u.uInputVolume.value = curInRef.current
-    u.uOutputVolume.value = curOutRef.current
-    u.uColor1.value.lerp(targetColor1Ref.current, 1 - Math.exp(-delta * 5))
-    u.uColor2.value.lerp(targetColor2Ref.current, 1 - Math.exp(-delta * 5))
-  })
+    u.uAnimation.value += delta * animSpeedRef.current;
+    u.uInputVolume.value = curInRef.current;
+    u.uOutputVolume.value = curOutRef.current;
+
+    // Respiración de reposo; la deformación de voz sigue los niveles reales.
+    // Adaptación local (antares): cuando el agente habla (modo manual), el
+    // nivel real de salida agrega pulso de escala y bamboleo orgánico — con
+    // niveles altos la orbe "habla" con el cadence de la voz, sin rígido.
+    const speakingPulse =
+      modeRef.current === "manual" && agentRef.current === "talking"
+        ? curOutRef.current
+        : 0;
+    circleRef.current!.scale.setScalar(
+      1 + Math.sin(u.uTime.value * 1.4) * 0.014 + speakingPulse * 0.055,
+    );
+    circleRef.current!.position.x =
+      Math.sin(u.uTime.value * 0.37) * 0.025 +
+      speakingPulse * Math.sin(u.uTime.value * 2.6) * 0.018;
+
+    if (u.uOpacity.value < 1) {
+      u.uOpacity.value = Math.min(1, u.uOpacity.value + delta * 2);
+    }
+
+    u.uColor1.value.lerp(targetColor1Ref.current, 1 - Math.exp(-delta * 5));
+    u.uColor2.value.lerp(targetColor2Ref.current, 1 - Math.exp(-delta * 5));
+  });
 
   const uniforms = useMemo(() => {
-    perlinNoiseTexture.wrapS = THREE.RepeatWrapping
-    perlinNoiseTexture.wrapT = THREE.RepeatWrapping
+    perlinNoiseTexture.wrapS = THREE.RepeatWrapping;
+    perlinNoiseTexture.wrapT = THREE.RepeatWrapping;
     return {
       uColor1: new THREE.Uniform(new THREE.Color(initialColorsRef.current[0])),
       uColor2: new THREE.Uniform(new THREE.Color(initialColorsRef.current[1])),
@@ -245,8 +265,8 @@ function Scene({
       uInputVolume: new THREE.Uniform(0),
       uOutputVolume: new THREE.Uniform(0),
       uOpacity: new THREE.Uniform(0),
-    }
-  }, [perlinNoiseTexture, offsets])
+    };
+  }, [perlinNoiseTexture, offsets]);
 
   return (
     <mesh ref={circleRef}>
@@ -258,24 +278,24 @@ function Scene({
         transparent={true}
       />
     </mesh>
-  )
+  );
 }
 
 function splitmix32(a: number) {
   return function () {
-    a |= 0
-    a = (a + 0x9e3779b9) | 0
-    let t = a ^ (a >>> 16)
-    t = Math.imul(t, 0x21f0aaad)
-    t = t ^ (t >>> 15)
-    t = Math.imul(t, 0x735a2d97)
-    return ((t = t ^ (t >>> 15)) >>> 0) / 4294967296
-  }
+    a |= 0;
+    a = (a + 0x9e3779b9) | 0;
+    let t = a ^ (a >>> 16);
+    t = Math.imul(t, 0x21f0aaad);
+    t = t ^ (t >>> 15);
+    t = Math.imul(t, 0x735a2d97);
+    return ((t = t ^ (t >>> 15)) >>> 0) / 4294967296;
+  };
 }
 
 function clamp01(n: number) {
-  if (!Number.isFinite(n)) return 0
-  return Math.min(1, Math.max(0, n))
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(1, Math.max(0, n));
 }
 const vertexShader = /* glsl */ `
 uniform float uTime;
@@ -286,7 +306,7 @@ void main() {
   vUv = uv;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
-`
+`;
 
 const fragmentShader = /* glsl */ `
 uniform float uTime;
@@ -493,4 +513,4 @@ void main() {
 
     gl_FragColor = color;
 }
-`
+`;
