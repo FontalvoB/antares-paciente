@@ -3989,23 +3989,6 @@ button.hpill:active {
   padding: 16px;
   color: #fff;
 }
-.pod-wave {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 3px;
-  height: 52px;
-  margin-bottom: 10px;
-}
-.pod-wave span {
-  width: 4px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.35);
-}
-.pod-wave span.on {
-  background: var(--ice);
-  animation: wave 0.9s ease-in-out infinite;
-}
 @keyframes wave {
   50% {
     transform: scaleY(0.45);
@@ -32308,8 +32291,6 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .podcast-player .pod-copy > span { font-size: 14px; color: var(--teal); }
 .podcast-player .pod-copy small { color: var(--mu); }
 .podcast-player .pod-stage { order: -2; padding: 0; background: transparent; border: 0; box-shadow: none; color: var(--tx); }
-.podcast-player .pod-wave { height: 32px; opacity: .65; }
-.podcast-player .pod-wave span { background: var(--teal); max-height: 26px; }
 .podcast-player .pod-now { color: var(--teal); font-size: 12px; }
 .podcast-player .pod-times { color: var(--mu); font-size: 12px; }
 .podcast-player ion-range { padding: 0; --bar-background: var(--bd); --bar-background-active: var(--teal); --knob-background: var(--teal); --bar-height: 4px; }
@@ -32409,7 +32390,7 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
   .lesson-page:not(.lesson-vitals) .lesson-sheet { padding: 32px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sr-view .sr-fire, .sr-view .sr-orbit::before, .sr-embers i, .podcast-player .pod-wave span { animation: none !important; }
+  .sr-view .sr-fire, .sr-view .sr-orbit::before, .sr-embers i { animation: none !important; }
   .sr-embers { display: none; }
 }
 /* Ajustes tras comprobar en móvil real del navegador. */
@@ -33314,3 +33295,23 @@ ion-button.nutrition-plan-today { margin:4px 0 0; min-height:44px; --color:var(-
 .pgh-day-context { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 9px; margin-bottom:5px; }
 .pgh-program-day { font-size:15px; line-height:1.4; font-weight:800; color:var(--brand-navy); }
 .hm-program-day { font-size:12px; line-height:1.5; font-weight:750; color:var(--brand-navy); }
+/* Inicio: la tarjeta nutricional conserva la celda de 184px junto a los accesos. */
+ion-button.hm-appt.hm-nutrition-card {
+  margin: 0; padding: 0; height: auto; min-height: 184px; min-width: 0;
+  --background: transparent; --background-hover: transparent;
+  --background-activated: transparent; --color: var(--wh);
+  --padding-start: 0; --padding-end: 0; --padding-top: 0; --padding-bottom: 0;
+  --border-radius: 24px; --box-shadow: none;
+  text-transform: none; letter-spacing: normal; white-space: normal;
+}
+.hm-nutrition-card::part(native) { min-height: 0; height: auto; width: 100%; align-items: stretch; flex: 1; }
+.hm-nutrition-content { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 180px; padding: 14px 48px 13px 15px; text-align: left; white-space: normal; }
+.hm-nutrition-leaf { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: color-mix(in srgb, var(--wh) 16%, transparent); }
+.hm-nutrition-leaf ion-icon { font-size: 23px; }
+.hm-modules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px; }
+ion-button.hm-module-card { margin: 0; min-width: 0; height: auto; align-self: stretch; border: 1px solid color-mix(in srgb, var(--a) 16%, var(--g1)); border-radius: 24px; overflow: hidden; --background: var(--wh); --color: var(--navy); --border-radius: 24px; --padding-start: 0; --padding-end: 0; --padding-top: 0; --padding-bottom: 0; --box-shadow: none; text-transform: none; letter-spacing: normal; white-space: normal; }
+.hm-module-card::part(native) { width: 100%; height: 100%; align-items: stretch; }
+ion-button.hm-module-card { --background-hover: var(--g0); --background-focused: var(--g0); --background-activated: var(--ice-l); }
+.hm-module-content { display: flex; flex-direction: column; align-items: stretch; width: 100%; padding-bottom: 12px; text-align: left; }
+.hm-modules .mcar-txt { flex: 1; }
+.hm-modules .mcar-cta { opacity: 1; transform: none; }

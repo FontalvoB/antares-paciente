@@ -160,18 +160,6 @@ export function PodcastLesson({
         />
       </div>
       <div className="pod-stage">
-        <div className="pod-wave" aria-hidden="true">
-          {Array.from({ length: 22 }, (_, i) => (
-            <span
-              key={i}
-              className={playing ? "on" : undefined}
-              style={{
-                animationDelay: `${i * 0.05}s`,
-                height: `${18 + ((i * 17) % 28)}px`,
-              }}
-            />
-          ))}
-        </div>
         <div className="pod-now">{chapter ? t(chapter.label) : ""}</div>
         <div className="pod-times">
           <span>{mmss(elapsed)}</span>
