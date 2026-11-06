@@ -60,6 +60,7 @@ import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useScoresHistory } from "../hooks/useScoresHistory";
 import { useWearable } from "../context/WearableContext";
 import { deriveIntakeTotals } from "../utils/nutritionIntake";
+import { programDayNumber } from "../utils/programDayNumber";
 import logoIcon from "../assets/LogoIndividual.png";
 import coverCitas from "../assets/modules/citas.png";
 import coverComunidad from "../assets/modules/comunidad.png";
@@ -89,6 +90,7 @@ export function HomePage() {
     openRoom,
   } = useApp();
   const { snapshot } = useProgram();
+  const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
   const { unreadCount } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuEvent, setMenuEvent] = useState<Event>();
@@ -482,6 +484,7 @@ export function HomePage() {
             <div className="hm-day-copy">
               <span>{t("Hoy es")}</span>
               <strong className="hm-date">{today}</strong>
+              {activeProgramDay != null && <span className="hm-program-day">{t('Día {day} del programa', { day: String(activeProgramDay) })}</span>}
               <span className="hm-chip navy">
                 {t("Semana {cur} de {total}", {
                   cur: String(activeProgramWeek),

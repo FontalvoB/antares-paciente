@@ -1,8 +1,6 @@
-import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { IonButton, IonSkeletonText, IonIcon, IonSelect, IonSelectOption, IonProgressBar } from "@ionic/react";
-import { leafOutline, waterOutline, restaurantOutline, timeOutline, checkmarkCircleOutline, analyticsOutline, shieldCheckmarkOutline, calendarOutline, refreshOutline } from "ionicons/icons";
-import { RingProgress } from "../RingProgress";
+import { leafOutline, waterOutline, restaurantOutline, timeOutline, checkmarkCircleOutline, analyticsOutline, shieldCheckmarkOutline, calendarOutline, refreshOutline, cafeOutline, sunnyOutline, moonOutline, informationCircleOutline } from "ionicons/icons";
 import { useT } from "../../i18n/I18nContext";
 import { formatMetricValue } from "../../data/metrics";
 import { mealTypeToCode } from "../../utils/mealTypeToCode";
@@ -36,24 +34,26 @@ export interface NutritionPlanTabProps {
   onOpenProgram?: () => void;
 }
 
-/** Meta fija por código de comida del plan (clave t() + emoji). */
-const PLAN_MEAL_META: Record<string, { label: string; emoji: string }> = {
-  des: { label: "Desayuno", emoji: "🌅" },
-  alm: { label: "Almuerzo", emoji: "☀️" },
-  mer: { label: "Merienda", emoji: "🍎" },
-  cen: { label: "Cena", emoji: "🌙" },
+/** Meta fija por código de comida del plan (clave t() + icono Ionic). */
+const PLAN_MEAL_META: Record<string, { label: string; icon: string }> = {
+  des: { label: "Desayuno", icon: cafeOutline },
+  alm: { label: "Almuerzo", icon: sunnyOutline },
+  mer: { label: "Merienda / snack", icon: leafOutline },
+  cen: { label: "Cena", icon: moonOutline },
 };
 
 interface AssignedMealCard {
   key: string;
   label: string;
   labelIsKey: boolean;
-  emoji: string;
+  icon: string;
+  code: MealCode | null;
+  waterMl: number | null;
   kcal: number | null;
   foods: string | null;
   notes: string | null;
   schedule: string | null;
-  macros: Array<{ text: string; tone: string }>;
+  macros: Array<{ text: string; tone: string; label: string }>;
   description?: string | null;
   missing?: boolean;
 }
@@ -75,7 +75,9 @@ export function NutritionPlanTab({
   onOpenProgram,
 }: NutritionPlanTabProps) {
   const t = useT();
-  const [chosenDay, setChosenDay] = useState<number | null>(null);
+  const [selection, setSelection] = useState<{ plan: string; day: number } | null>(null);
+  const planKey = `${plan?.id ?? ""}:${plan?.revision ?? ""}`;
+  const chosenDay = selection?.plan === planKey ? selection.day : null;
   const days = [...(plan?.days ?? [])].filter(day => Number.isInteger(day.dayNumber) && (day.dayNumber ?? 0) > 0).sort((a, b) => a.dayNumber! - b.dayNumber!);
   const defaultDay = status?.currentDay ?? plan?.currentDay ?? days[0]?.dayNumber ?? 1;
   const shownDay = (chosenDay != null ? days.find(day => day.dayNumber === chosenDay) : days.find(day => day.dayNumber === defaultDay) ?? days[(Math.max(1, defaultDay) - 1) % days.length]) ?? days[0];
@@ -84,14 +86,7 @@ export function NutritionPlanTab({
   const startDate = status?.startDate ?? plan?.startDate;
   const endDate = status?.endDate ?? plan?.endDate;
 
-  const waterMl = useMemo(() => {
-    if (!plan) return null;
-    if (plan.dailyWaterMl != null) return plan.dailyWaterMl;
-    for (const day of plan.days ?? []) {
-      if (day.dailyWaterMl != null) return day.dailyWaterMl;
-    }
-    return null;
-  }, [plan]);
+  const waterMl = shownDay?.dailyWaterMl ?? plan?.dailyWaterMl ?? null;
 
   // Metas del plan: mismo formato que las filas del snapshot más el agua
   // diaria. Solo filas con meta persistida (sin fabricados).
@@ -117,15 +112,12 @@ export function NutritionPlanTab({
     return rows;
   }, [plan, locale]);
 
-  // Comidas configuradas (plano `meals` o primer día con comidas). Tipos
+  // Comidas del día mostrado (o contrato plano legacy). Tipos
   // desconocidos se muestran con su nombre crudo, nunca se descartan.
   const mealCards = useMemo<AssignedMealCard[]>(() => {
     if (!plan) return [];
     const raw =
-      plan.meals?.length != null && plan.meals.length > 0
-        ? plan.meals
-        : (shownDay?.meals ??
-          []);
+      shownDay ? shownDay.meals ?? [] : plan.meals ?? [];
     const configured: AssignedMealCard[] = [...raw]
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((m, i) => {
@@ -133,51 +125,61 @@ export function NutritionPlanTab({
           ? (mealTypeToCode(m.mealType) ?? null)
           : null;
         const meta = code ? PLAN_MEAL_META[code] : undefined;
-        const macros: Array<{ text: string; tone: string }> = [
+        const macros: Array<{ text: string; tone: string; label: string }> = [
           m.carbsG != null
             ? {
-                text: `${formatMetricValue(m.carbsG, 0, locale)}g C`,
+                text: `${formatMetricValue(m.carbsG, 0, locale)} g`,
+                label: "Carbohidratos",
                 tone: "fm-c",
               }
             : null,
           m.proteinG != null
             ? {
-                text: `${formatMetricValue(m.proteinG, 0, locale)}g P`,
+                text: `${formatMetricValue(m.proteinG, 0, locale)} g`,
+                label: "Proteínas",
                 tone: "fm-p",
               }
             : null,
           m.fatG != null
             ? {
-                text: `${formatMetricValue(m.fatG, 0, locale)}g G`,
+                text: `${formatMetricValue(m.fatG, 0, locale)} g`,
+                label: "Grasas",
                 tone: "fm-g",
               }
             : null,
           m.fiberG != null
             ? {
-                text: `${formatMetricValue(m.fiberG, 0, locale)}g F`,
+                text: `${formatMetricValue(m.fiberG, 0, locale)} g`,
+                label: "Fibra",
                 tone: "fm-f",
               }
             : null,
-        ].filter((x): x is { text: string; tone: string } => x !== null);
+        ].filter((x): x is { text: string; tone: string; label: string } => x !== null);
         return {
           key: `${code ?? "plan"}-${i}`,
           label: meta ? meta.label : (m.mealType ?? ""),
           labelIsKey: meta != null,
-          emoji: meta ? meta.emoji : "🍽️",
+          icon: meta?.icon ?? restaurantOutline,
+          code,
+          waterMl: m.waterMl ?? null,
           kcal: m.calories ?? null,
           foods: m.foods ?? null,
           description: m.description ?? null,
           notes: m.notes ?? null,
-          schedule: m.suggestedTime ?? plan.mealTiming ?? null,
+          schedule: m.suggestedTime ?? null,
           macros,
         };
       });
-    // La merienda siempre tiene su lugar, sin inventar una prescripción.
-    const ordered = Object.entries(PLAN_MEAL_META).flatMap<AssignedMealCard>(([code, meta]) => {
-      const matches = configured.filter(card => card.key.startsWith(`${code}-`));
-      return matches.length ? matches : [{ key: `${code}-missing`, label: meta.label, labelIsKey: true, emoji: meta.emoji, kcal: null, foods: null, notes: null, schedule: null, macros: [], missing: true }];
-    });
-    return [...ordered, ...configured.filter(card => !Object.keys(PLAN_MEAL_META).some(code => card.key.startsWith(`${code}-`)))];
+    // Conserva todas las filas y su orden prescrito, incluso varios snacks legacy.
+    const ordered = [...configured];
+    const codes = Object.keys(PLAN_MEAL_META);
+    for (const [code, meta] of Object.entries(PLAN_MEAL_META)) {
+      if (configured.some(card => card.code === code)) continue;
+      const index = ordered.findIndex(card => card.code != null && codes.indexOf(card.code) > codes.indexOf(code));
+      const missing: AssignedMealCard = { key: `${code}-missing`, code: code as MealCode, label: meta.label, labelIsKey: true, icon: meta.icon, waterMl: null, kcal: null, foods: null, notes: null, schedule: null, macros: [], missing: true };
+      ordered.splice(index < 0 ? ordered.length : index, 0, missing);
+    }
+    return ordered;
   }, [plan, locale, shownDay]);
 
   if (status && status.status !== 'active') {
@@ -242,127 +244,49 @@ export function NutritionPlanTab({
   }
 
   if (plan) {
+    const menuTitle = chosenDay == null ? t('Tu menú de hoy') : t('Menú del día {day}', { day: String(shownDay?.dayNumber ?? chosenDay) });
     return (
-      <div className="ntr-plan-view">
-        <div className="ntr-card ntr-plan-overview">
-          <div className="ntr-section-title"><IonIcon icon={leafOutline} /><h2>{t("Tu plan nutricional")}</h2></div>
-          <span className="nut-plan-approved"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />{t("Indicaciones de tu nutricionista")}</span>
-          {plan.name && <div className="nut-plan-name">{plan.name}</div>}
-          {currentDay != null && duration != null && <div className="nutrition-cycle"><span>{t('Tu ciclo nutricional')}</span><strong>{t('Día {day} de {total}', { day: String(currentDay), total: String(duration) })}</strong>{duration > 0 && <IonProgressBar value={Math.min(1, Math.max(0, currentDay / duration))} aria-label={t('Tu ciclo nutricional')} />}{startDate && endDate && <p>{t('Del {start} al {end}', { start: formatDateForDisplay(startDate), end: formatDateForDisplay(endDate) })}</p>}</div>}
-          {plan.targetCondition && (
-            <div className="nut-plan-cond">
-              {t("Condición objetivo")}: {plan.targetCondition}
-            </div>
-          )}
-          {plan.description && (
-            <div className="nut-plan-desc">{plan.description}</div>
-          )}
-
-          <div className="ntr-plan-targets">
-          {plan.dailyCalorieTarget != null && <div className="ntr-calorie-target"><RingProgress value={1} size={132} stroke={11} trackColor="var(--blue-l)" gradient={['var(--blue)', 'var(--teal)']}><strong>{formatMetricValue(plan.dailyCalorieTarget, 0, locale)} kcal</strong></RingProgress><b>{t("Calorías diarias")}</b><span>{t("Objetivo del plan")}</span></div>}
-          <div className="ntr-target-list">
-          {goalRows.filter(row => row.label !== 'Calorías diarias').map((row) => (
-            <div key={row.label} className="nut-plan-row">
-              <span className="nut-plan-ico" aria-hidden="true">
-                {row.emoji}
-              </span>
-              <span className="nut-plan-label">{t(row.label)}</span>
-              <span className="nut-plan-val">{row.value}</span>
-            </div>
-          ))}
-          </div>
-          </div>
-          <p className="ntr-plan-caption">{t("Metas diarias indicadas por tu nutricionista.")}</p>
+      <div className="ntr-plan-view nutrition-plan-redesign">
+        <header className="nutrition-plan-intro">
+          <h2>{t('Tu plan nutricional')}</h2>
+          {plan.name && <p className="nutrition-plan-name">{plan.name}</p>}
+          {plan.description && <p className="nutrition-plan-description">{plan.description}</p>}
+          {currentDay != null && duration != null && <div className="nutrition-plan-cycle">
+            <div><span>{t('Tu ciclo nutricional')}</span><strong>{t('Día {day} de {total}', { day: String(currentDay), total: String(duration) })}</strong></div>
+            <IonProgressBar value={Math.min(1, Math.max(0, currentDay / duration))} aria-label={t('Día {day} de {total}', { day: String(currentDay), total: String(duration) })} />
+            {startDate && endDate && <p><IonIcon icon={calendarOutline} aria-hidden="true" />{t('Del {start} al {end}', { start: formatDateForDisplay(startDate), end: formatDateForDisplay(endDate) })}</p>}
+          </div>}
+        </header>
+        {error && <div className="nutrition-plan-refresh-error" role="alert"><p>{t('No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.')}</p><IonButton fill="clear" onClick={onRetry}>{t('Reintentar')}</IonButton></div>}
+        <section className="nutrition-plan-menu" aria-labelledby="nutrition-menu-heading">
+          <div className="nutrition-plan-menu-head"><h2 id="nutrition-menu-heading">{menuTitle}</h2><p>{t('Tus comidas, porciones y horarios en un solo lugar.')}</p></div>
+          {days.length > 1 && <IonSelect className="nutrition-plan-day" interface="popover" label={t('Ver el menú de otro día')} labelPlacement="stacked" value={shownDay?.dayNumber} onIonChange={e => setSelection({ plan: planKey, day: Number(e.detail.value) })}>{days.map(day => <IonSelectOption key={day.dayNumber} value={day.dayNumber}>{t('Día {day}', { day: String(day.dayNumber) })}</IonSelectOption>)}</IonSelect>}
+          {chosenDay != null && <IonButton className="nutrition-plan-today" fill="clear" onClick={() => setSelection(null)}>{t('Volver al menú de hoy')}</IonButton>}
           <nav className="nutrition-meal-navigation" aria-label={t('Comidas de tu plan')}>
-            <h3>{t('Tu menú de hoy')}</h3>
-            <p>{t('Desayuno, almuerzo, merienda y cena: toca una comida para ver tus indicaciones.')}</p>
-            <div className="nutrition-meal-shortcuts">
-              {mealCards.map(meal => <IonButton key={meal.key} fill="clear" onClick={() => {
-                const target = document.getElementById(`nutrition-meal-${meal.key}`);
+            <div className="nutrition-meal-shortcuts">{Object.entries(PLAN_MEAL_META).map(([code, meta]) => {
+              const matches = mealCards.filter(meal => meal.code === code);
+              const meal = matches[0];
+              return <IonButton key={code} fill="clear" onClick={() => {
+                const target = document.getElementById(`nutrition-meal-${meal?.key}`);
                 target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
                 target?.focus({ preventScroll: true });
-              }}><span aria-hidden="true">{meal.emoji}</span><span><strong>{meal.labelIsKey ? t(meal.label) : meal.label}</strong><small>{t(meal.missing ? 'Por indicar' : 'Ver mi comida')}</small></span></IonButton>)}
-            </div>
+              }}><IonIcon icon={meta.icon} aria-hidden="true" /><span><strong>{t(code === 'mer' ? 'Meriendas y snacks' : meta.label)}</strong><small>{matches.every(m => m.missing) ? t('Por indicar') : matches.length > 1 ? t('{count} comidas', { count: String(matches.length) }) : meal?.schedule ?? t('Ver indicaciones')}</small></span></IonButton>;
+            })}</div>
           </nav>
-        </div>
-        {(waterMl != null || plan.mealTiming) && <section className="ntr-card">
-          <div className="ntr-section-title"><IonIcon icon={restaurantOutline} /><h2>{t("Objetivos del día")}</h2></div>
-          <div className="ntr-daily-goals">
-          {waterMl != null && (
-            <div className="ntr-daily-goal">
-              <IonIcon icon={waterOutline} aria-hidden="true" />
-              <span>{t("Agua diaria")}</span>
-              <strong>
-                {formatMetricValue(waterMl, 0, locale)} ml
-              </strong>
-            </div>
-          )}
-          {plan.mealTiming && <div className="ntr-daily-goal"><IonIcon icon={timeOutline} aria-hidden="true" /><span>{t("Horario sugerido")}</span><strong>{plan.mealTiming}</strong></div>}
-          </div>
-        </section>}
-        {mealCards.length > 0 && <div className="ntr-meals-heading"><span className="ntr-eyebrow">{t("Recomendaciones personalizadas")}</span><h2>{t("Tu alimentación, paso a paso")}</h2></div>}
-        {days.length > 1 && <IonSelect className="fld nutrition-day-select" interface="popover" label={t('Ver el menú de otro día')} labelPlacement="stacked" value={shownDay?.dayNumber} onIonChange={e => setChosenDay(Number(e.detail.value))}>{days.map(day => <IonSelectOption key={day.dayNumber} value={day.dayNumber}>{t('Día {day}', { day: String(day.dayNumber) })}</IonSelectOption>)}</IonSelect>}
-        {mealCards.map((m, idx) => (
-          <motion.article
-            key={m.key}
-            id={`nutrition-meal-${m.key}`}
-            tabIndex={-1}
-            className="meal-card ntr-prescribed-meal"
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-32px" }}
-            transition={{
-              duration: 0.38,
-              delay: Math.min(idx * 0.06, 0.18),
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            <div className="meal-hdr">
-              <span className="meal-ico" aria-hidden="true">
-                {String(idx + 1).padStart(2, '0')}
-              </span>
-              <span className="meal-title">
-                {m.labelIsKey ? t(m.label) : m.label}
-              </span>
-              {m.kcal != null && (
-                <span className="meal-kcal">
-                  {formatMetricValue(m.kcal, 0, locale)} kcal
-                </span>
-              )}
-            </div>
-            <div className="nut-plan-details">
-              {m.missing && <p className="nutrition-unconfigured">{t('Tu nutricionista aún no ha indicado esta comida para este día.')}</p>}
-              {m.description && <p className="nutrition-meal-description">{m.description}</p>}
-              {m.foods && (
-                <div className="nut-plan-detail">
-                  <strong>{t("Alimentos recomendados")}: </strong>
-                  {m.foods}
-                </div>
-              )}
-              {m.schedule && (
-                <div className="nut-plan-detail">
-                  <strong>{t("Horario sugerido")}: </strong>
-                  {m.schedule}
-                </div>
-              )}
-              {m.notes && (
-                <div className="nut-plan-detail">
-                  <strong>{t("Notas del nutricionista")}: </strong>
-                  {m.notes}
-                </div>
-              )}
-              {m.macros.length > 0 && (
-                <div className="nut-plan-macros">
-                  {m.macros.map((macro) => (
-                    <span key={macro.text} className={`fm ${macro.tone}`}>
-                      {macro.text}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.article>
-        ))}
+          <div className="nutrition-plan-meals">{mealCards.map(m => <article key={m.key} id={`nutrition-meal-${m.key}`} tabIndex={-1} className={`nutrition-plan-meal${m.code === 'mer' ? ' nutrition-plan-snack' : ''}${m.missing ? ' nutrition-plan-unconfigured' : ''}`}>
+            <header className="nutrition-plan-meal-head"><span className="nutrition-plan-meal-icon"><IonIcon icon={m.icon} aria-hidden="true" /></span><div><h3>{m.labelIsKey ? t(m.label) : m.label}</h3>{m.schedule && <p><IonIcon icon={timeOutline} aria-hidden="true" />{m.schedule}</p>}</div>{m.kcal != null && <span className="nutrition-plan-kcal">{formatMetricValue(m.kcal, 0, locale)}<small>kcal</small></span>}</header>
+            {m.missing ? <p className="nutrition-plan-missing">{t(m.code === 'mer' ? 'Tu nutricionista aún no ha indicado una merienda o snack para este día.' : 'Tu nutricionista aún no ha indicado esta comida para este día.')}</p> : <div className="nutrition-plan-meal-body">
+              {m.description && <h4>{m.description}</h4>}
+              {m.foods && <div className="nutrition-plan-foods"><strong>{t('Alimentos y porciones')}</strong><p>{m.foods.replace(/;\s*/g, "\n")}</p></div>}
+              {!m.description && !m.foods && <p className="nutrition-plan-missing">{t('Consulta con tu nutricionista las porciones de esta comida.')}</p>}
+              {m.macros.length > 0 && <div className="nutrition-plan-macros">{m.macros.map(macro => <span key={macro.tone}><small>{t(macro.label)}</small><strong>{macro.text}</strong></span>)}</div>}
+              {m.waterMl != null && <p className="nutrition-plan-meal-water"><IonIcon icon={waterOutline} aria-hidden="true" />{t('Agua con esta comida: {amount} ml', { amount: formatMetricValue(m.waterMl, 0, locale) })}</p>}
+              {m.notes && <div className="nutrition-plan-note"><IonIcon icon={informationCircleOutline} aria-hidden="true" /><div><strong>{t('Indicación de tu nutricionista')}</strong><p>{m.notes}</p></div></div>}
+            </div>}
+          </article>)}</div>
+        </section>
+        <section className="nutrition-plan-goals" aria-labelledby="nutrition-goals-heading"><h2 id="nutrition-goals-heading">{t('Tus metas diarias')}</h2><p>{t('Son objetivos de tu plan, no alimentos que ya registraste.')}</p><dl>{goalRows.map(row => <div key={row.label}><dt>{t(row.label)}</dt><dd>{row.value}</dd></div>)}{waterMl != null && <div><dt>{t('Agua diaria')}</dt><dd>{formatMetricValue(waterMl, 0, locale)} ml</dd></div>}</dl>{!goalRows.length && waterMl == null && <p>{t('Tu nutricionista aún no ha indicado metas diarias.')}</p>}</section>
+        {(plan.allergens || plan.mealTiming || plan.targetCondition) && <section className="nutrition-plan-guidance"><h2>{t('Ten presente')}</h2>{plan.targetCondition && <div><h3>{t('Condición objetivo')}</h3><p>{plan.targetCondition}</p></div>}{plan.allergens && <div><h3>{t('Restricciones y alérgenos del plan')}</h3><p>{plan.allergens}</p></div>}{plan.mealTiming && <div><h3>{t('Horario general del plan')}</h3><p>{plan.mealTiming}</p></div>}</section>}
       </div>
     );
   }

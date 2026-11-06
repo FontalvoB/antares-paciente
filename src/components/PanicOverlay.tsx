@@ -34,7 +34,7 @@ import {
   informationCircleOutline,
   hourglass,
 } from "ionicons/icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useApp } from "../context/AppContext";
@@ -55,6 +55,9 @@ import { normalizeEmergencyPhone } from "../utils/emergencyPhone";
 import { openNativeDialer } from "../utils/nativeDialer";
 import { emergencyNumberForCountry } from "../utils/emergencyNumbers";
 import type { EmergencyCountry } from "../utils/emergencyNumbers";
+import { loadEmergencyCityDirectory, resolveEmergencyCityRouting } from "../utils/emergencyCityRouting";
+import type { EmergencyCityDirectory, EmergencyService } from "../utils/emergencyCityRouting";
+import type { SosCoordinates } from "../services/sos/sos-service";
 
 import logoIcon from "../assets/LogoIndividual.png";
 
@@ -127,6 +130,19 @@ export function PanicOverlay() {
   manualCountryRef.current = manualCountry;
   const [locationStatus, setLocationStatus] = useState<"locating" | "located" | "unavailable" | "unsupported">("locating");
   const [sharedVitals, setSharedVitals] = useState(false);
+  const [emergencyCoordinates, setEmergencyCoordinates] = useState<SosCoordinates | null>(null);
+  const [emergencyDirectory, setEmergencyDirectory] = useState<EmergencyCityDirectory | null>(null);
+  const [routingNow, setRoutingNow] = useState(Date.now);
+
+  useEffect(() => {
+    if (!panicOpen) return;
+    const controller = new AbortController();
+    setEmergencyDirectory(null);
+    void loadEmergencyCityDirectory(controller.signal).then(directory => {
+      if (!controller.signal.aborted) { setEmergencyDirectory(directory); if (directory) setRoutingNow(Date.now()); }
+    });
+    return () => controller.abort();
+  }, [panicOpen]);
 
   // Overlay de emergencia custom: conserva el foco al cerrar. Los controles
   // siguen siendo componentes Ionic.
@@ -153,6 +169,17 @@ export function PanicOverlay() {
   const emergencyCountry = manualCountry ?? detectedCountry;
   const emergencyNumber = emergencyCountry ? emergencyNumberForCountry(emergencyCountry) : null;
   const countryLabel = emergencyCountry === "CO" ? t("Colombia") : t("Estados Unidos");
+  const emergencyRouting = useMemo(() => resolveEmergencyCityRouting(emergencyCountry, manualCountry ? null : emergencyCoordinates,
+    emergencyDirectory, routingNow), [emergencyCountry, manualCountry, emergencyCoordinates, emergencyDirectory, routingNow]);
+  const hasLocalEmergencyContact = Object.values(emergencyRouting.services).some(route => route.source === "local");
+
+  useEffect(() => {
+    if (!panicOpen) return;
+    const deadlines = Object.values(emergencyRouting.services).flatMap(route => route.validUntil === undefined ? [] : [route.validUntil]);
+    if (!deadlines.length) return;
+    const timeout = window.setTimeout(() => setRoutingNow(Date.now()), Math.max(1, Math.min(...deadlines) - Date.now()));
+    return () => window.clearTimeout(timeout);
+  }, [panicOpen, emergencyRouting]);
 
   // La selección manual prevalece. El país obtenido por GPS se renueva al
   // volver a la app y cada minuto mientras esta pantalla siga abierta.
@@ -164,6 +191,7 @@ export function PanicOverlay() {
     let lastAttempt = 0;
     let expiry: number | undefined;
     setDetectedCountry(null);
+    setEmergencyCoordinates(null);
     setManualCountry(null);
     manualCountryRef.current = null;
     const detect = () => {
@@ -171,10 +199,13 @@ export function PanicOverlay() {
       pending = true;
       lastAttempt = Date.now();
       setDetectedCountry(null);
+      setEmergencyCoordinates(null);
       setLocationStatus("locating");
       void getEmergencyLocation().then((result) => {
         if (cancelled) return;
         setDetectedCountry(result.country);
+        setEmergencyCoordinates(result.coordinates);
+        setRoutingNow(Date.now());
         setLocationStatus(result.status);
         if (result.status === "located" && !manualCountryRef.current) expiry = window.setTimeout(detect, COUNTRY_REFRESH_MS);
       }).catch(() => {
@@ -274,9 +305,14 @@ export function PanicOverlay() {
    * del contacto de emergencia. REQ-SOS-07: abrir una llamada ya NO activa
    * SOS implícitamente. Sin número configurado se avisa y no se navega.
    */
-  const startCall = (target: DialTarget) => {
+  const startCall = (target: DialTarget, service?: EmergencyService) => {
     if (target === "callEmergency") {
-      if (emergencyNumber) openNativeDialer(emergencyNumber);
+      // Revalida también en el toque: una entrada caducada nunca se marca.
+      const now = Date.now();
+      const current = resolveEmergencyCityRouting(emergencyCountry, manualCountry ? null : emergencyCoordinates, emergencyDirectory, now);
+      const number = service ? current.services[service].phone : emergencyNumber;
+      if (service && number !== emergencyRouting.services[service].phone) setRoutingNow(now);
+      if (number) openNativeDialer(number);
       return;
     }
 
@@ -658,7 +694,9 @@ export function PanicOverlay() {
                         {manualCountry
                           ? t("País confirmado por ti: {pais}", { pais: countryLabel })
                           : detectedCountry
-                            ? t("Ubicación del dispositivo: {pais}", { pais: countryLabel })
+                            ? emergencyRouting.city
+                              ? t("Ubicación del dispositivo: {ciudad}, {pais}", { ciudad: emergencyRouting.city.name, pais: countryLabel })
+                              : t("Ubicación del dispositivo: {pais}", { pais: countryLabel })
                             : locationStatus === "locating"
                               ? t("Buscando tu ubicación. Puedes confirmar el país ahora.")
                               : locationStatus === "unsupported"
@@ -681,30 +719,37 @@ export function PanicOverlay() {
                         ))}
                       </div>
                       <div className="sos-service-actions" role="group" aria-label={t("Servicios de emergencia")}>
-                        {EMERGENCY_SERVICES.map((service) => (
+                        {EMERGENCY_SERVICES.map((service) => {
+                          const route = emergencyRouting.services[service.key];
+                          return (
                           <IonButton
                             key={service.key}
                             fill="solid"
                             className={`sos-service-action service-${service.key}`}
-                            disabled={!emergencyNumber}
-                            aria-label={emergencyNumber
-                              ? t("Llamar: {servicio} · {numero}", { servicio: t(service.label), numero: emergencyNumber })
+                            data-emergency-service={service.key}
+                            data-route-source={route.source}
+                            disabled={!route.phone}
+                            aria-label={route.phone
+                              ? t("Llamar: {servicio} · {numero}", { servicio: t(service.label), numero: route.phone })
                               : t("Confirma el país para llamar: {servicio}", { servicio: t(service.label) })}
-                            onClick={() => startCall("callEmergency")}
+                            onClick={() => startCall("callEmergency", service.key)}
                           >
                             <span className="sos-service-content">
                               <span className="sos-service-symbol"><IonIcon icon={service.icon} aria-hidden="true" /></span>
-                              <span className="sos-service-copy"><strong>{t(service.label)}</strong><span>{t(service.description)}</span></span>
-                              <span className="sos-service-dial"><IonIcon icon={call} aria-hidden="true" /><b>{emergencyNumber ? t("Llamar {numero}", { numero: emergencyNumber }) : t("Confirma el país")}</b></span>
+                              <span className="sos-service-copy"><strong>{t(service.label)}</strong><span>{t(service.description)}</span><small className="sos-service-route">{route.source === "local" ? t("Línea local verificada") : route.source === "national" ? t("Central de emergencias") : t("Confirma el país")}</small></span>
+                              <span className={`sos-service-dial${route.source === "local" ? " sos-service-dial-local" : ""}`}><IonIcon icon={call} aria-hidden="true" />{route.source === "local" ? <><span>{t("Llamar")}</span><b>{route.displayNumber}</b></> : <b>{route.phone ? t("Llamar {numero}", { numero: route.displayNumber }) : t("Confirma el país")}</b>}</span>
                             </span>
                           </IonButton>
-                        ))}
+                        )})}
                       </div>
-                      <p className="sos-services-note">
+                      <p className="sos-services-note sos-city-routing-note">
                         {emergencyNumber
-                          ? t("Las tres opciones llaman al {numero}. Indica al operador si necesitas ambulancia, policía o bomberos.", { numero: emergencyNumber })
+                          ? hasLocalEmergencyContact && emergencyRouting.city
+                            ? t("Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.", { ciudad: emergencyRouting.city.name, numero: emergencyNumber })
+                            : t("Las tres opciones llaman al {numero}. Indica al operador si necesitas ambulancia, policía o bomberos.", { numero: emergencyNumber })
                           : t("Confirma Colombia o Estados Unidos para mostrar el número de emergencias.")}
                       </p>
+                      {hasLocalEmergencyContact && emergencyNumber && <IonButton fill="outline" expand="block" className="sos-national-fallback" aria-label={t("Llamar a la central de emergencias · {numero}", { numero: emergencyNumber })} onClick={() => startCall("callEmergency")}><IonIcon slot="start" icon={call} />{t("Si la línea local no responde, llama al {numero}", { numero: emergencyNumber })}</IonButton>}
                       <p className="sos-services-separate">{t("Estas llamadas son independientes de la alerta a tu contacto y equipo clínico.")}</p>
                     </section>
                     <section className="sos-alert-card">

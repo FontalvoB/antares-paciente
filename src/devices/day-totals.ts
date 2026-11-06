@@ -101,7 +101,7 @@ export function applySample(store: DayStore, sample: HealthSample): boolean {
       // despertar. Sin esta guarda, un volcado con noches viejas (la banda
       // etiqueta la última sin importar cuándo fue) se mostraba como la de hoy.
       if (toLocalISODate(new Date(sample.ts)) !== store.date) return false;
-      if (!store.sleep || sample.ts > store.sleep.ts) {
+      if (!store.sleep || sample.ts > store.sleep.ts || (sample.ts === store.sleep.ts && sample.sleepDurationVersion === 1 && sample.value !== store.sleep.minutes)) {
         store.sleep = { ts: sample.ts, minutes: sample.value };
         return true;
       }

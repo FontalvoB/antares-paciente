@@ -71,8 +71,9 @@ describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
   });
   it("incluye merienda sin inventar alimentos si no está prescrita", () => {
     render(<NutritionPlanTab {...baseProps} plan={planFixture} />);
-    expect(screen.getAllByText('Merienda')).toHaveLength(2);
-    expect(screen.getAllByText('Tu nutricionista aún no ha indicado esta comida para este día.')).toHaveLength(2);
+    expect(screen.getAllByText('Merienda / snack')).toHaveLength(1);
+    expect(screen.getAllByText('Tu nutricionista aún no ha indicado esta comida para este día.')).toHaveLength(1);
+    expect(screen.getByText('Tu nutricionista aún no ha indicado una merienda o snack para este día.')).toBeTruthy();
   });
 
   it("muestra el día del ciclo y el menú que corresponde tras repetir la semana", () => {
@@ -81,7 +82,7 @@ describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
     expect(screen.getByText('Merienda del menú 3')).toBeTruthy();
     expect(screen.queryByText('Merienda del menú 1')).toBeNull();
     expect(screen.getByText('Día 10 de 30')).toBeTruthy();
-    expect(screen.getAllByText('Merienda')).toHaveLength(2);
+    expect(screen.getAllByText('Merienda / snack')).toHaveLength(1);
     view.rerender(<NutritionPlanTab {...baseProps} plan={plan} status={{ status: 'active', durationDays: 30, currentDay: 11 }} />);
     expect(screen.getByText('Día 11 de 30')).toBeTruthy();
     expect(screen.getByText('Merienda del menú 4')).toBeTruthy();
@@ -91,6 +92,43 @@ describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
     render(<NutritionPlanTab {...baseProps} status={{ status: 'pending_review', durationDays: 30 }} fallbackRows={[{ emoji: '🔥', label: 'Calorías diarias', value: '1800 kcal' }]} />);
     expect(screen.getByText('En revisión por nutrición')).toBeTruthy();
     expect(screen.queryByText('1800 kcal')).toBeNull();
+  });
+
+  it("conserva cada snack y su orden prescrito sin copiar el horario general", () => {
+    const { container } = render(<NutritionPlanTab {...baseProps} plan={{ ...planFixture,
+      mealTiming: '07:00, 12:00, 15:30, 19:00',
+      meals: [
+        { mealType: 'Snack', foods: 'Fruta de la tarde', suggestedTime: '15:30', sortOrder: 3 },
+        { mealType: 'Desayuno', foods: 'Desayuno prescrito', sortOrder: 1 },
+        { mealType: 'Snack', foods: 'Snack legacy adicional', suggestedTime: '10:00', sortOrder: 2 },
+      ],
+    }} />);
+    const prescribed = [...container.querySelectorAll('.nutrition-plan-meal:not(.nutrition-plan-unconfigured)')];
+    expect(prescribed.map(meal => meal.querySelector('.nutrition-plan-foods p')?.textContent)).toEqual(['Desayuno prescrito', 'Snack legacy adicional', 'Fruta de la tarde']);
+    expect(prescribed[0].querySelector('.nutrition-plan-meal-head p')).toBeNull();
+    expect(screen.getAllByText('07:00, 12:00, 15:30, 19:00')).toHaveLength(1);
+    expect(screen.getByText('Meriendas y snacks').closest('ion-button')?.textContent).toContain('2 comidas');
+  });
+
+  it("usa el agua del día vigente y no inventa una merienda al estar ausente", () => {
+    render(<NutritionPlanTab {...baseProps} plan={{ ...planFixture, meals: undefined, currentDay: 2,
+      days: [{ dayNumber: 1, dailyWaterMl: 1800, meals: [{ mealType: 'Snack', foods: 'Snack solo del día uno' }] },
+        { dayNumber: 2, dailyWaterMl: 2300, meals: [{ mealType: 'Almuerzo', foods: 'Menú del día dos' }] }],
+    }} />);
+    expect(screen.getByText('2300 ml')).toBeTruthy();
+    expect(screen.queryByText('2000 ml')).toBeNull();
+    expect(screen.queryByText('Snack solo del día uno')).toBeNull();
+    expect(screen.getByText('Tu nutricionista aún no ha indicado una merienda o snack para este día.')).toBeTruthy();
+  });
+
+  it("mantiene visibles las restricciones prescritas y las porciones del snack", () => {
+    render(<NutritionPlanTab {...baseProps} plan={{ ...planFixture, allergens: 'Evitar maní',
+      meals: [{ mealType: 'Snack', foods: 'Yogur natural: 150 g', notes: 'Sin azúcar añadida', waterMl: 250 }],
+    }} />);
+    expect(screen.getByText('Evitar maní')).toBeTruthy();
+    expect(screen.getByText('Yogur natural: 150 g')).toBeTruthy();
+    expect(screen.getByText('Agua con esta comida: 250 ml')).toBeTruthy();
+    expect(screen.getByText('Sin azúcar añadida')).toBeTruthy();
   });
   beforeEach(() => {
     baseProps.onRetry = vi.fn();
@@ -108,9 +146,9 @@ describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
     // Comidas: alimentos, notas y horario del nutricionista.
     expect(screen.getByText("Avena, plátano")).toBeTruthy();
     expect(screen.getByText(/Sin azúcar añadida/)).toBeTruthy();
-    expect(screen.getByText(/7:00/)).toBeTruthy();
-    expect(screen.getByText("400 kcal")).toBeTruthy();
-    expect(screen.getByText("20g P")).toBeTruthy();
+    expect(screen.getAllByText(/7:00/)[0]).toBeTruthy();
+    expect(screen.getByText("400")).toBeTruthy();
+    expect(screen.getByText("20 g")).toBeTruthy();
   });
 
   it("sin plan muestra el vacío honesto", () => {

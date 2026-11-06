@@ -38,7 +38,7 @@ const indexed = countries.map((country) => ({
   }),
 }));
 
-function insideRing(longitude: number, latitude: number, ring: Ring): boolean {
+export function insideRing(longitude: number, latitude: number, ring: Ring): boolean {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const [xi, yi] = ring[i];
@@ -48,7 +48,7 @@ function insideRing(longitude: number, latitude: number, ring: Ring): boolean {
   return inside;
 }
 
-function borderDistanceMeters(coordinates: EmergencyCoordinates, [a, b]: [Point, Point]): number {
+export function borderDistanceMeters(coordinates: EmergencyCoordinates, [a, b]: [Point, Point]): number {
   const xScale = 111_320 * Math.cos((coordinates.latitude * Math.PI) / 180);
   const ax = (a[0] - coordinates.longitude) * xScale;
   const ay = (a[1] - coordinates.latitude) * 111_320;

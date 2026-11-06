@@ -50,10 +50,17 @@ describe("bc — blob de sueño (0x27)", () => {
     const samples = decodeSleepBlob(body, DEVICE);
     expect(samples).toHaveLength(1);
     expect(samples[0]!.metric).toBe("sleep");
-    expect(samples[0]!.value).toBe(460);
+    expect(samples[0]!.value).toBe(350);
+    expect(samples[0]!.sleepDurationVersion).toBe(1);
     const wake = new Date(samples[0]!.ts);
     expect(wake.getHours()).toBe(6);
     expect(wake.getMinutes()).toBe(40);
+  });
+
+  it("no presenta una noche truncada o totalmente despierta como sueño", () => {
+    const header = [1, 0, 0, 0x64, 0x05, 0x90, 0x01];
+    expect(decodeSleepBlob(Uint8Array.from([...header, 2, 100]), DEVICE)).toEqual([]);
+    expect(decodeSleepBlob(Uint8Array.from([...header, 5, 230, 5, 230]), DEVICE)).toEqual([]);
   });
 
   it("ignora un blob vacío o truncado", () => {

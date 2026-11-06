@@ -4,7 +4,9 @@
 
 El panel SOS muestra **Ambulancia**, **Policía** y **Bomberos** como tres
 acciones propias, con nombre, icono, descripción y número visibles. Las tres
-abren el marcador del teléfono: **123 en Colombia** y **911 en Estados Unidos**.
+abren el marcador del teléfono. Si existe un contacto local verificado para el
+servicio y la ciudad actual, se muestra ese número. Para cualquier servicio sin
+contacto local utilizable se conserva **123 en Colombia** o **911 en Estados Unidos**.
 Son centrales unificadas; el usuario indica al operador qué servicio necesita.
 No se afirma que exista una línea directa distinta ni que la app despache una
 ambulancia automáticamente.
@@ -35,6 +37,59 @@ Fuentes: [Policía Nacional de Colombia](https://www.policia.gov.co/sites/defaul
 Las declaraciones de permisos Android/iOS se incluyen en los proyectos nativos.
 La respuesta API de coordenadas planas se adapta a `location`, y un HTTP 204
 en `/alerts/active` significa que no hay alerta activa.
+
+## Directorio por ciudad y fallback
+
+El catálogo incluido en el build es
+[`src/data/emergency-city-directory.json`](../src/data/emergency-city-directory.json).
+No consulta directorios externos ni transmite GPS a terceros. La descarga del
+archivo local no bloquea la llamada: mientras carga o si falla, se mantiene la
+central nacional. No depende del backend SOS ni de tener un contacto familiar.
+
+Cobertura local inicial: **Manizales, Bomberos 119**, y **San José, California,
+Policía +1 408 277 8911**. Las demás combinaciones ciudad/servicio usan 123/911.
+Las fuentes oficiales, entidades, método y fechas de revisión están en cada
+contacto. «Verificado» significa contrastado con una publicación oficial; no se
+han realizado llamadas reales ni confirmado disponibilidad con los organismos.
+No se cargan números administrativos ni números con información contradictoria.
+
+La ciudad se identifica por polígonos DANE MGN 2025 y U.S. Census TIGERweb ACS
+2025. Se conservan islas y huecos: una localidad próxima o un área no incorporada
+no hereda el número de una ciudad vecina. La precisión GPS debe estar disponible,
+la posición tener menos de un minuto y su incertidumbre quedar dentro del límite.
+Un margen mínimo de 250 m ante el borde evita elegir una jurisdicción dudosa.
+Dos ciudades superpuestas, geometría inválida o país seleccionado manualmente
+usan la central nacional. No se usa el domicilio del perfil como ubicación actual.
+
+Las revisiones de contactos y límites caducan a los **90 días como máximo**.
+Una entrada pendiente, futura, expirada, duplicada para el mismo servicio o con
+teléfono inválido no se utiliza. La pantalla renueva el destino al caducar, y
+cada toque lo valida nuevamente. Si un número local no contesta, el usuario
+tiene un botón independiente para llamar a la central; la app no puede conocer
+el resultado de la llamada ni hacer reintentos automáticos al servicio público.
+
+Para añadir una ciudad, agregar una entrada con país, identificador DANE/GEOID,
+nombre, límite y fuentes oficiales. Añadir únicamente los servicios cuyo destino
+de emergencias esté comprobado; los ausentes ya tienen fallback. Antes de activar
+`status: verified`, revisar jurisdicción, finalidad de emergencias y conflictos
+recientes, y registrar `verifiedAt`, `expiresAt`, `verificationMethod`, `agency`
+y `sourceUrl`. Nunca renovar las fechas automáticamente.
+
+Para descargar los límites y preservar los contactos y fechas existentes:
+
+```sh
+python3 scripts/update-emergency-city-directory.py --output /tmp/emergency-city-directory-review.json
+```
+
+Revisar el archivo y las fuentes antes de reemplazar el catálogo. El catálogo es
+parte del paquete: las ampliaciones y revisiones requieren un nuevo build de la
+app. La expiración sigue aplicando a instalaciones antiguas y devuelve la central
+nacional. Sin país conocido, los botones piden confirmar Colombia o EE. UU.; no
+se inventa el país ni se muestra un teléfono vacío.
+
+El E2E actual está en `e2e/emergency-city-routing.mjs`. Simula sesión, coordenadas,
+variantes del catálogo y la entrega de `tel:` al sistema, sin alertas ni llamadas
+reales. Las capturas y logs deben dirigirse a una carpeta temporal externa al repo.
 
 ## Datos y mensajes
 

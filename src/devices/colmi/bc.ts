@@ -322,23 +322,27 @@ export function decodeSleepBlob(
     cursor += 6;
 
     let total = 0;
+    let asleep = 0;
     while (cursor + 2 <= body.length && total < duration) {
       const stage = body[cursor] ?? 0;
       const minutes = body[cursor + 1] ?? 0;
       if (!(stage in SLEEP_STAGES)) break;
       total += minutes;
+      if (stage !== 5) asleep += minutes;
       cursor += 2;
     }
-    if (total <= 0) continue;
+    // No publicar una noche truncada ni contar el tiempo despierto como sueño.
+    if (duration <= 0 || total !== duration || asleep <= 0) continue;
 
     const wake = midnightMinus(index, endMin);
     out.push({
       metric: "sleep",
-      value: total,
+      value: asleep,
       unit: "min",
       ts: wake,
       deviceId,
       source: "history",
+      sleepDurationVersion: 1,
     });
   }
   return out;

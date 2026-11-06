@@ -68,6 +68,12 @@ vi.mock("../../utils/nativeDialer", () => ({
   openNativeDialer: dialMock,
 }));
 
+// El directorio local se verifica en el E2E; este fixture no accede a archivos por HTTP.
+vi.mock("../../utils/emergencyCityRouting", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../../utils/emergencyCityRouting")>(),
+  loadEmergencyCityDirectory: async () => null,
+}));
+
 const context = vi.hoisted(() => ({
   panicOpen: true,
   sosActive: false,

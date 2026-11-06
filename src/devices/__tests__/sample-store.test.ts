@@ -47,6 +47,17 @@ describe("sample-store", () => {
     vi.unstubAllGlobals();
   });
 
+  it("conserva la semántica nueva y corrige el total antiguo de la misma noche", () => {
+    const original = recordSampleSnapshot(createSampleSnapshot(ACCOUNT, DEVICE, NOW),
+      sample({ metric: "sleep", value: 460, unit: "min", source: "history" }), NOW);
+    const corrected = recordSampleSnapshot(original,
+      sample({ metric: "sleep", value: 350, unit: "min", source: "history", sleepDurationVersion: 1 }), NOW);
+    expect(totalsOf(corrected.day).sleepMinutes).toBe(350);
+    const restored = loadSampleSnapshot(ACCOUNT, DEVICE, NOW)!;
+    expect(restored.latest.sleep?.sleepDurationVersion).toBe(1);
+    expect(restored.latest.sleep?.value).toBe(350);
+  });
+
   it("rehidrata lecturas, info parcial, sincronización y cubetas sin perder sus claves", () => {
     let state = createSampleSnapshot(ACCOUNT, DEVICE, NOW);
     state = recordSampleSnapshot(state, sample({ metric: "steps", value: 300, agg: "sum" }), NOW);

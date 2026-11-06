@@ -189,6 +189,7 @@ export function ProgramPage() {
   const activeProgramWeek =
     snapshot?.template?.currentWeekNumber ?? appProgramWeek;
   const activeTotalWeeks = snapshot?.template?.totalWeeks ?? PROGRAM_WEEKS;
+  const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
   const weekPct =
     activeTotalWeeks > 0 ? activeProgramWeek / activeTotalWeeks : 0;
 
@@ -715,6 +716,7 @@ export function ProgramPage() {
 
         <ProgramHeader
           programWeek={activeProgramWeek}
+          dayNumber={activeProgramDay}
           doneCount={doneCount}
           total={progress.total}
           allDone={allDone}
@@ -786,7 +788,7 @@ export function ProgramPage() {
         {task && (
           <Scroll key={active} noNav className={`lesson-page-scroll${active === "vitals" ? " wearable-scroll" : ""}`}>
             <div className="lesson-sheet">
-              <div className="lesson-sheet-head">
+              <div className={`lesson-sheet-head${active === "emocional" ? " lesson-sheet-head--emotional" : ""}`}>
                 <div>
                   <div className="kicker" style={{ color: "var(--mu)" }}>
                     {task.emoji}{" "}
@@ -899,9 +901,9 @@ export function ProgramPage() {
                   pending={serverActiveTask?.clientPending === true}
                   recordedAt={serverActiveTask?.clientPending ? null : serverActiveTask?.completedAt}
                   nbWeekDays={snapshot?.streak?.nbWeekDays}
-                  dayNumber={programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate)}
+                  dayNumber={activeProgramDay}
                   onShare={serverActiveTask?.status === "Completed" && !serverActiveTask.clientPending ? () => {
-                    const day = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
+                    const day = activeProgramDay;
                     queueCommunityShareDraft(user.id || user.cedula, day ? t("Día {day} para estar más sano. Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!", { day: String(day) }) : t("Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!"));
                     setActive(null);
                     navigate("com");
@@ -921,6 +923,9 @@ export function ProgramPage() {
                 <EmotionalLesson
                   done={program.emocional}
                   pending={serverActiveTask?.clientPending === true}
+                  saving={completeTaskMutation.isPending}
+                  localDate={snapshot?.todayLocalDate}
+                  saved={serverActiveTask?.emotionalAssessment}
                   pts={taskPts}
                   onComplete={({ mood, barrier, emotional }) => {
                     finish(
