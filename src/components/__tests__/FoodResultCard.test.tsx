@@ -47,10 +47,14 @@ function renderCard(f: DetectedFood) {
 
 describe("FoodResultCard", () => {
   it("muestra kcal y macros con fibra cuando hay datos", () => {
+    // Chip de macros nuevo (markup strong+small introducido en 83c8ed9):
+    // el valor vive en un <strong> separado de la etiqueta <small>.
     const { container } = renderCard(food());
     expect(screen.getByText("164")).toBeTruthy();
-    expect(screen.getByText(/Proteínas 3g/)).toBeTruthy();
-    expect(screen.getByText(/Fibra 1g/)).toBeTruthy();
+    expect(screen.getByText("3 g")).toBeTruthy();
+    expect(screen.getByText("Proteínas")).toBeTruthy();
+    expect(screen.getByText("1 g")).toBeTruthy();
+    expect(screen.getByText("Fibra")).toBeTruthy();
     expect(container.querySelector(".nut-missing")).toBeNull();
   });
 
