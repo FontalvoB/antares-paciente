@@ -47,6 +47,14 @@ const baseProps = {
 };
 
 describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
+  it('un error del plan sigue visible aunque el snapshot tenga metas de referencia', () => {
+    const onRetry = vi.fn();
+    render(<NutritionPlanTab {...baseProps} error={new ApiError({ message: 'No se pudo consultar el plan', status: 503 })} fallbackRows={[{ emoji: '🔥', label: 'Calorías diarias', value: '1800 kcal' }]} onRetry={onRetry} />);
+    expect(screen.getByRole('alert').textContent).toContain('No se pudo consultar el plan');
+    expect(screen.queryByText('1800 kcal')).toBeNull();
+    fireEvent.click(screen.getByText('Reintentar'));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
   it('un estado pendiente o vencido oculta el menú aprobado que quedó en cache', () => {
     const view = render(<NutritionPlanTab {...baseProps} plan={planFixture} status={{ status: 'pending_review', durationDays: 30 }} />);
     expect(screen.queryByText('Avena, plátano')).toBeNull();

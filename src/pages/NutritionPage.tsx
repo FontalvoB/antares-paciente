@@ -24,9 +24,14 @@ import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import { useI18n } from "../i18n/I18nContext";
 import { useNutritionLog } from "../hooks/useNutritionLog";
+import { applyOptimistic, useCompleteTask } from "../hooks/useCompleteTask";
+import { useQueryClient } from "@tanstack/react-query";
+import { programKeys } from "../hooks/queryKeys";
+import type { ProgramSnapshotDto } from "../services/program/types";
 import {
   isOnline,
   queueHydration,
+  queueTaskCompletion,
 } from "../services/offline/offline-queue-service";
 import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
 import { useNutritionPlanStatus } from "../hooks/useNutritionPlanStatus";
@@ -77,7 +82,7 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
 };
 
 export function NutritionPage() {
-  const { showToast, navigate, openTests } = useApp();
+  const { showToast, navigate, openTests, completeStep } = useApp();
   // Sin snapshot → sin contenido fabricado: la pantalla entera deriva de la
   // verdad del servidor. isLoading distingue carga inicial de estados
   // terminales honestos; productMessage (estados paused/withdrawn/
@@ -85,6 +90,8 @@ export function NutritionPage() {
   const { snapshot, isLoading, isMockFallback, productMessage } = useProgram();
   const { t, lang } = useI18n();
   const nutritionMutation = useNutritionLog();
+  const completeNutrition = useCompleteTask();
+  const queryClient = useQueryClient();
   // Verdad del servidor para Semana (dimensions.nutrition) e Historial
   // (serie weight/bmi/hba1c). Queries compartidas con ProgramPage/Home —
   // TanStack deduplica por queryKey; errores degradan a estados vacíos
@@ -148,6 +155,22 @@ export function NutritionPage() {
   const nutContent = snapshot?.todayTasks?.find(
     (t) => t.taskCode === "nut",
   )?.content;
+  const nutritionTask = snapshot?.todayTasks?.find(task => task.taskCode === 'nut');
+  const nutritionDone = nutritionTask?.status === 'Completed' && !nutritionTask.clientPending;
+  function confirmNutrition() {
+    if (!snapshot || !nutritionTask || nutritionDone || nutritionTask.clientPending || completeNutrition.isPending) return;
+    // Conserva la misma cola offline y el mismo gate del protocolo original.
+    if (!isOnline()) {
+      queueTaskCompletion({ enrollmentId: snapshot.enrollmentId, localDate: snapshot.todayLocalDate, taskCode: 'nut', clientRequestId: crypto.randomUUID(), clientCompletedAt: new Date().toISOString() });
+      queryClient.setQueryData<ProgramSnapshotDto>(programKeys.snapshot, old => old ? applyOptimistic(old, 'nut') : old);
+      showToast(t("Pendiente de sincronización"), 'warn');
+      return;
+    }
+    completeNutrition.completeTask({ taskCode: 'nut' }, {
+      onSuccess: () => { completeStep('nut', nutritionTask.points); showToast(t("+{pts} pts nutrición", { pts: String(nutritionTask.points) }), 'ok'); },
+      onError: error => { if (error.errorType === 'business' && !error.errors?.missingMealCodes?.length) showToast(error.message || t("No se pudo completar la actividad"), 'err'); },
+    });
+  }
   // Nombre real del plan o estado vacío honesto (sin 'Ana Torres' inventado).
   const planTitle =
     nutContent?.nutritionPlanName || t("Sin plan nutricional asignado");
@@ -540,28 +563,17 @@ export function NutritionPage() {
 
   const captureCard = (
 <div
-          className="card nut-ai-card"
-          style={{
-            margin: "10px 14px 0",
-            background: "var(--navy)",
-            borderColor: "transparent",
-            color: "#fff",
-          }}
+          className="card nut-ai-card nut-photo-entry"
         >
           {!flowOpen && flow && <IonButton expand="block" onClick={() => setFlowOpen(true)}>{t("Continuar con mi foto")}</IonButton>}
           {!flowOpen && (
             <>
-              <div className="ntr-ai-title">
-                <IonIcon icon={cameraOutline} aria-hidden="true" /> {t("Analiza tu comida con IA")}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
-                {t("Toma una foto y recibe calorías, macros y porción reales.")}
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className="nut-photo-entry-top"><span className="nut-photo-entry-icon"><IonIcon icon={cameraOutline} aria-hidden="true" /></span><span>{t("FOTO IA")}</span></div>
+              <h2>{t("Analiza tu comida con IA")}</h2>
+              <p>{t("Una foto para estimar porciones, calorías y macros. Tú revisas antes de guardar.")}</p>
+              <div className="nut-photo-entry-actions">
                 <IonButton
-                  style={
-                    { flex: 1, "--background": "var(--teal)" } as CSSProperties
-                  }
+                  className="nut-photo-entry-camera"
                   disabled={!canMutate}
                   onClick={() => setMealPickerSource("camera")}
                 >
@@ -569,7 +581,6 @@ export function NutritionPage() {
                   {t("Usar cámara")}
                 </IonButton>
                 <IonButton
-                  style={{ flex: 1 }}
                   fill="outline"
                   disabled={!canMutate}
                   onClick={() => setMealPickerSource("gallery")}
@@ -578,6 +589,7 @@ export function NutritionPage() {
                   {t("Seleccionar imagen")}
                 </IonButton>
               </div>
+              <span className="nut-photo-entry-note">{t("Foto clara · Plato completo · Sin guardar automáticamente")}</span>
             </>
           )}
         </div>
@@ -605,7 +617,7 @@ export function NutritionPage() {
           <div className="ntd-hero-copy"><span className="ntd-eyebrow"><IonIcon icon={leafOutline} />{t('Tu alimentación de hoy')}</span><h2>{t('Tu día, bien nutrido.')}</h2><p>{t('Un momento para ti. Una comida a la vez.')}</p><span className="ntd-date">{formatDateForDisplay(snapshot.todayLocalDate)}</span></div>
           <span className="ntd-photo-note">{t('Imagen ilustrativa')}</span>
         </section>}
-        {(tab === "indicaciones" || tab === "historial") && <NutritionMetrics metrics={metricsHistory?.metrics ?? []} loading={metricsLoading} locale={locale} />}
+        {tab === "historial" && <NutritionMetrics metrics={metricsHistory?.metrics ?? []} loading={metricsLoading} locale={locale} />}
         {tab === "historial" && captureCard}
         {tab === "hoy" && <div className="nut-goals-card ntd-progress">
           <div className="nut-goals-head">
@@ -891,6 +903,14 @@ export function NutritionPage() {
             ))}
             </div>
             </section>
+            {nutritionTask && <section className="ntr-card nut-protocol-checkin">
+              <div className="ntr-section-title"><IonIcon icon={checkmarkOutline} aria-hidden="true" /><h2>{t("Tu protocolo nutricional")}</h2></div>
+              <p>{t("Registra tus comidas y confirma cuando hayas cumplido las indicaciones de hoy.")}</p>
+              <IonButton expand="block" className="bt bt-primary" disabled={!canMutate || nutritionDone || completeNutrition.isPending || Boolean(nutritionTask.clientPending) || Boolean(nutContent?.contentUnavailable) || !nutContent?.nutritionMeals?.length} onClick={confirmNutrition}>
+                {completeNutrition.isPending ? <IonSpinner slot="start" name="crescent" /> : <IonIcon slot="start" icon={checkmarkOutline} />}
+                {completeNutrition.isPending ? t("Guardando…") : nutritionDone ? t("Plan de hoy completado") : nutritionTask.clientPending ? t("Pendiente de sincronización") : t("Cumplí el plan hoy · +{pts} pts", { pts: String(nutritionTask.points) })}
+              </IonButton>
+            </section>}
           </>
         )}
 
@@ -1088,6 +1108,7 @@ export function NutritionPage() {
               plan={nutritionPlan}
               planLoading={planLoading}
               planFailed={Boolean(planError)}
+              onRetryPlan={() => void refetchPlan()}
               meal={flow.meal}
               mode={flow.mode}
               autoSource={flow.autoSource}

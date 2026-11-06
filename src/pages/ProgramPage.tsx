@@ -20,7 +20,6 @@ import {
 } from "../data/program";
 import type { ProgramDay, ProgramTaskId } from "../types";
 import { weekdayMondayIndex } from "../utils/dates";
-import { deriveLoggedMeals } from "../utils/nutritionProgress";
 import { buildMonthCells } from "../utils/monthCells";
 import {
   emptyWeekCells,
@@ -32,7 +31,6 @@ import {
   EmotionalLesson,
   ExerciseLesson,
   NutraceuticLesson,
-  NutritionLesson,
   PodcastLesson,
   VitalsLesson,
   type ProgramTab,
@@ -142,13 +140,6 @@ export function ProgramPage() {
   // to static defs when the backend field is absent (chests module, T8).
   const { chests } = useStreakChests();
 
-  // S4: comidas registradas hoy desde la verdad server-side del snapshot
-  // (nutritionIntakeLogs + capa optimista del cache). Reemplaza el consumo
-  // de AppContext.mealsLogged en flujos conectados (sin shim).
-  const serverLoggedMeals = useMemo(
-    () => deriveLoggedMeals(snapshot),
-    [snapshot],
-  );
 
   const now = new Date();
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -871,40 +862,6 @@ export function ProgramPage() {
                       { vitals },
                     )
                   }
-                />
-              )}
-              {task.id === "nut" && (
-                <NutritionLesson
-                  done={program.nut}
-                  pts={taskPts}
-                  title={
-                    serverActiveTask?.content?.nutritionPlanName ||
-                    serverActiveTask?.content?.title ||
-                    undefined
-                  }
-                  dailyCalorieTarget={
-                    serverActiveTask?.content?.dailyCalorieTarget
-                  }
-                  dailyProteinTarget={
-                    serverActiveTask?.content?.dailyProteinTarget
-                  }
-                  dailyCarbsTarget={serverActiveTask?.content?.dailyCarbsTarget}
-                  dailyFatTarget={serverActiveTask?.content?.dailyFatTarget}
-                  dailyFiberTarget={serverActiveTask?.content?.dailyFiberTarget}
-                  nutritionMeals={serverActiveTask?.content?.nutritionMeals}
-                  mealsLogged={serverLoggedMeals}
-                  onGoPlan={() => {
-                    setActive(null);
-                    navigate("nut");
-                  }}
-                  onComplete={() =>
-                    finish(
-                      "nut",
-                      taskPts,
-                      t("+{pts} pts nutrición", { pts: String(taskPts) }),
-                    )
-                  }
-                  unavailable={activeContentUnavailable}
                 />
               )}
               {task.id === "ejercicio" && (

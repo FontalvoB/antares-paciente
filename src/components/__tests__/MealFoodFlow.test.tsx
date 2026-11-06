@@ -41,6 +41,24 @@ vi.mock('@ionic/react', async (original) => ({
  IonButton: ({children,onClick,disabled,...props}: {children?:ReactNode;onClick?:()=>void;disabled?:boolean;'aria-label'?:string}) => <button disabled={disabled} onClick={onClick} aria-label={props['aria-label']}>{children}</button>,
  IonSpinner: () => <span />,
 }));
+
+it('conserva la foto fallida y permite reintentar sin volver a capturar', async () => {
+  vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:retry');
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  api.analyze.mockReset();
+  api.analyze.mockRejectedValueOnce(new Error('Servicio temporalmente no disponible'));
+  api.analyze.mockResolvedValueOnce({ analysisId: 'retry', foods: [{ name: 'Food', nutritionStatus: 'available' }], summary: { calories: 250 } });
+  render(<MealFoodFlow meal="alm" mode="register" onClose={vi.fn()} onManual={vi.fn()} />);
+  fireEvent.click(screen.getByText('Capture fixture'));
+  await screen.findByText('No pudimos analizar esta foto');
+  expect(screen.queryByText('Capture fixture')).toBeNull();
+  expect(screen.getByAltText('Fotografía de la comida').getAttribute('src')).toBe('blob:retry');
+  const original = api.analyze.mock.calls[0];
+  fireEvent.click(screen.getByRole('button', { name: 'Volver a analizar' }));
+  await screen.findByText('Detected food detail');
+  expect(api.analyze).toHaveBeenCalledTimes(2);
+  expect(api.analyze.mock.calls[1]).toEqual(original);
+});
 vi.mock('framer-motion', async (original) => ({
   ...(await original<typeof import('framer-motion')>()),
   useReducedMotion: () => true,

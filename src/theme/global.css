@@ -33094,3 +33094,70 @@ ion-button.program-state-back { width: 44px; min-width: 44px; height: 44px; min-
   .program-state h1 { font-size: 26px; }
   .program-state-actions { margin-top: 22px; }
 }
+/* KAN-45 · composiciones de dominio sobre los controles Ionic existentes. */
+.ntr-screen .nut-photo-entry {
+  margin: 14px; padding: 24px; color: var(--wh); border: 0;
+  background: var(--grad-brand-v) !important;
+}
+.nut-photo-entry-top { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 800; letter-spacing: 1.8px; }
+.nut-photo-entry-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: color-mix(in srgb, var(--wh) 14%, transparent); }
+.nut-photo-entry-icon ion-icon { font-size: 23px; }
+.nut-photo-entry h2 { font-family: 'Space Grotesk', sans-serif; font-size: 25px; line-height: 1.2; letter-spacing: -.6px; margin: 16px 0 10px; max-width: 310px; color: var(--wh); }
+.nut-photo-entry p { margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: color-mix(in srgb, var(--wh) 88%, transparent); max-width: 480px; }
+.nut-photo-entry-actions { display: grid; gap: 10px; grid-template-columns: 1fr; }
+.ntr-screen .nut-photo-entry-actions ion-button { margin: 0; min-height: 48px; font-size: 14px; --border-radius: 14px; --border-color: color-mix(in srgb, var(--wh) 55%, transparent); --box-shadow: none; }
+.ntr-screen .nut-photo-entry-actions ion-button::part(native) { white-space: normal; }
+.ntr-screen .nut-photo-entry-actions .nut-photo-entry-camera { --background: var(--wh); --color: var(--navy); }
+.nut-photo-entry-note { display: block; margin-top: 16px; font-size: 11px; line-height: 1.6; color: color-mix(in srgb, var(--wh) 85%, transparent); }
+.food-flow-steps { display: flex; align-items: center; justify-content: space-between; list-style: none; padding: 0 0 18px; margin: 0 0 22px; border-bottom: 1px solid var(--bd); gap: 8px; }
+.food-flow-steps li { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--mu); }
+.food-flow-steps li > span { display: grid; place-items: center; height: 25px; width: 25px; border-radius: 50%; background: var(--g0); font-size: 11px; font-weight: 700; }
+.food-flow-steps li.is-current { color: var(--navy); font-weight: 800; }
+.food-flow-steps li.is-current > span { color: var(--wh); background: var(--navy); }
+.food-flow-steps li.is-complete > span { color: var(--teal); background: var(--teal-l); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .food-flow-steps { border-color: color-mix(in srgb, var(--wh) 24%, transparent); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .food-flow-steps li { color: var(--bd); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .food-flow-steps li.is-current { color: var(--wh); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .food-flow-steps li.is-current > span { background: var(--wh); color: var(--navy); }
+.nut-food-flow:has(.nut-cam, .nut-cam-busy) .food-flow-steps li > span { color: var(--bd); background: var(--cosmos-2); }
+.food-review-intro > span { font-size: 10px; font-weight: 800; letter-spacing: 1.6px; color: var(--teal); }
+.food-review-intro h2 { font: 700 27px/1.2 'Space Grotesk', sans-serif; margin: 8px 0; letter-spacing: -.6px; color: var(--navy); }
+.food-review-intro p { font-size: 14px; line-height: 1.6; color: var(--mu); margin: 0 0 20px; }
+.nut-review-content .nut-fig { aspect-ratio: 16 / 9; overflow: hidden; border-radius: 20px; background: var(--ice-l); margin: 0; }
+.nut-review-content .nut-fig .nut-ai-preview { height: 100%; width: 100%; object-fit: contain; border-radius: 0; margin: 0; }
+.nut-review-content .nut-flow-sec { text-align: left; }
+.nut-review-content .nut-summary-panel { box-shadow: none; }
+.nut-review-content .food-plan-check { padding: 18px; border-radius: 22px; background: var(--g0); box-shadow: none; }
+.food-plan-check .food-plan-name { font-size: 12px; margin-bottom: 18px; }
+.food-plan-check .food-plan-heading > ion-icon { background: var(--wh); color: var(--teal); font-size: 22px; padding: 10px; }
+.food-plan-check .food-plan-heading h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; }
+.food-plan-check .food-plan-columns, .food-plan-check .food-plan-row { display: grid; grid-template-columns: minmax(0, 1fr) 58px 58px; gap: 8px; }
+.food-plan-check .food-plan-columns > span:not(:first-child) { text-align: right; }
+.food-plan-row > div { min-width: 0; }
+.food-plan-row > b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.food-plan-row > b small { display: block; font-size: 11px; font-weight: 500; color: var(--mu); margin-top: 3px; }
+.food-plan-estimated { color: var(--blue); }
+.food-plan-target { color: var(--teal); }
+.food-plan-check .food-plan-note { background: var(--wh); font-size: 12px; }
+.food-photo-status ion-progress-bar { margin: 15px 0 18px; --background: var(--blue-l); --progress-background: var(--teal); border-radius: 8px; }
+.food-analysis-error > .nut-cam-error { display: block; background: var(--red-l); color: var(--navy); padding: 16px; border-radius: 16px; margin-bottom: 20px; }
+.food-analysis-error > .nut-cam-error strong { font-size: 15px; }
+.food-analysis-error > .nut-cam-error p { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--mu); }
+.food-result-card .food-result-macros { gap: 8px; }
+.food-result-card ion-chip.food-result-macro { margin: 0; min-height: 62px; padding: 10px; border-radius: 13px; gap: 6px; }
+.food-result-macro strong { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 17px; color: var(--navy); }
+.food-result-macro small { display: block; font-size: 11px; color: var(--mu); line-height: 1.5; }
+.food-result-card .food-result-macro ion-icon { font-size: 20px; }
+.nut-plan-approved { display: inline-flex; gap: 7px; align-items: center; color: var(--teal); background: var(--teal-l); border-radius: 10px; padding: 8px 10px; font-size: 11px; line-height: 1.4; margin-bottom: 6px; }
+.nutrition-cycle ion-progress-bar { margin: 14px 0 12px; height: 5px; border-radius: 5px; --background: color-mix(in srgb, var(--wh) 20%, transparent); --progress-background: var(--ice); }
+.ntr-plan-overview .nutrition-meal-navigation { margin-top: 22px; }
+.ntr-plan-overview .nutrition-meal-shortcuts ion-button { min-height: 60px; --background: var(--ice-l); --border-radius: 14px; }
+.ntr-prescribed-meal .meal-hdr .meal-ico { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: var(--teal); background: var(--teal-l); border-radius: 12px; }
+.nut-protocol-checkin p { font-size: 14px; color: var(--mu); line-height: 1.6; }
+.ntd-today .nut-protocol-checkin { order: 5; margin: 0; }
+.nut-protocol-checkin ion-button { min-height: 50px; --border-radius: 14px; font-size: 13px; }
+.nut-protocol-checkin ion-button::part(native) { white-space: normal; }
+@media (min-width: 700px) {
+  .nut-photo-entry-actions { grid-template-columns: 1fr 1fr; max-width: 520px; }
+  .ntd-today .nut-protocol-checkin { grid-column: 1 / -1; }
+}

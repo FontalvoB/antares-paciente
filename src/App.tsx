@@ -90,6 +90,7 @@ function Router() {
         content = <BodyProfilePage />;
         break;
       case "nut":
+      case "program-nut":
         content = <NutritionPage />;
         break;
       case "edu":
@@ -112,7 +113,6 @@ function Router() {
         break;
       case "program-podcast":
       case "program-vitals":
-      case "program-nut":
       case "program-ejercicio":
       case "program-nutraceutico":
       case "program-emocional":

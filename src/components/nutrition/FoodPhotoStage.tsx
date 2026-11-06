@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { IonIcon, IonSpinner } from "@ionic/react";
+import { IonIcon, IonProgressBar, IonSpinner } from "@ionic/react";
 import { scanOutline, shieldCheckmarkOutline, restaurantOutline, scaleOutline, nutritionOutline } from "ionicons/icons";
 import { FOOD_SPRING } from "./foodMotion";
 import { useT } from "../../i18n/I18nContext";
@@ -37,6 +37,7 @@ export function FoodPhotoStage({ src, analyzing = false, children }: {
     </div>
     {analyzing ? <div className="food-photo-status" role="status">
       <strong>{t("Preparando tu resumen nutricional")}</strong>
+      <IonProgressBar type="indeterminate" aria-label={t("Análisis en curso")} />
       <ol className="food-analysis-steps" aria-label={t("Análisis en curso")}>
         {steps.map((item, index) => <li key={item.label} className={index === step ? 'is-active' : ''} aria-current={index === step ? 'step' : undefined}>
           <AnimatePresence mode="wait" initial={false}>

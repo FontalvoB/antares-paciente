@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { IonButton, IonSkeletonText, IonIcon, IonSelect, IonSelectOption } from "@ionic/react";
+import { IonButton, IonSkeletonText, IonIcon, IonSelect, IonSelectOption, IonProgressBar } from "@ionic/react";
 import { leafOutline, waterOutline, restaurantOutline, timeOutline, checkmarkCircleOutline, analyticsOutline, shieldCheckmarkOutline, calendarOutline, refreshOutline } from "ionicons/icons";
 import { RingProgress } from "../RingProgress";
 import { useT } from "../../i18n/I18nContext";
@@ -221,7 +221,7 @@ export function NutritionPlanTab({
   }
 
 
-  if (isLoading && fallbackRows.length === 0 && !plan) {
+  if (isLoading && !plan) {
     return (
       <div
         className="card"
@@ -246,8 +246,9 @@ export function NutritionPlanTab({
       <div className="ntr-plan-view">
         <div className="ntr-card ntr-plan-overview">
           <div className="ntr-section-title"><IonIcon icon={leafOutline} /><h2>{t("Tu plan nutricional")}</h2></div>
+          <span className="nut-plan-approved"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />{t("Indicaciones de tu nutricionista")}</span>
           {plan.name && <div className="nut-plan-name">{plan.name}</div>}
-          {currentDay != null && duration != null && <div className="nutrition-cycle"><span>{t('Tu ciclo nutricional')}</span><strong>{t('Día {day} de {total}', { day: String(currentDay), total: String(duration) })}</strong>{startDate && endDate && <p>{t('Del {start} al {end}', { start: formatDateForDisplay(startDate), end: formatDateForDisplay(endDate) })}</p>}</div>}
+          {currentDay != null && duration != null && <div className="nutrition-cycle"><span>{t('Tu ciclo nutricional')}</span><strong>{t('Día {day} de {total}', { day: String(currentDay), total: String(duration) })}</strong>{duration > 0 && <IonProgressBar value={Math.min(1, Math.max(0, currentDay / duration))} aria-label={t('Tu ciclo nutricional')} />}{startDate && endDate && <p>{t('Del {start} al {end}', { start: formatDateForDisplay(startDate), end: formatDateForDisplay(endDate) })}</p>}</div>}
           {plan.targetCondition && (
             <div className="nut-plan-cond">
               {t("Condición objetivo")}: {plan.targetCondition}
@@ -256,17 +257,7 @@ export function NutritionPlanTab({
           {plan.description && (
             <div className="nut-plan-desc">{plan.description}</div>
           )}
-          <nav className="nutrition-meal-navigation" aria-label={t('Comidas de tu plan')}>
-            <h3>{t('Tu menú de hoy')}</h3>
-            <p>{t('Desayuno, almuerzo, merienda y cena: toca una comida para ver tus indicaciones.')}</p>
-            <div className="nutrition-meal-shortcuts">
-              {mealCards.map(meal => <IonButton key={meal.key} fill="clear" onClick={() => {
-                const target = document.getElementById(`nutrition-meal-${meal.key}`);
-                target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
-                target?.focus({ preventScroll: true });
-              }}><span aria-hidden="true">{meal.emoji}</span><span><strong>{meal.labelIsKey ? t(meal.label) : meal.label}</strong><small>{t(meal.missing ? 'Por indicar' : 'Ver mi comida')}</small></span></IonButton>)}
-            </div>
-          </nav>
+
           <div className="ntr-plan-targets">
           {plan.dailyCalorieTarget != null && <div className="ntr-calorie-target"><RingProgress value={1} size={132} stroke={11} trackColor="var(--blue-l)" gradient={['var(--blue)', 'var(--teal)']}><strong>{formatMetricValue(plan.dailyCalorieTarget, 0, locale)} kcal</strong></RingProgress><b>{t("Calorías diarias")}</b><span>{t("Objetivo del plan")}</span></div>}
           <div className="ntr-target-list">
@@ -282,6 +273,17 @@ export function NutritionPlanTab({
           </div>
           </div>
           <p className="ntr-plan-caption">{t("Metas diarias indicadas por tu nutricionista.")}</p>
+          <nav className="nutrition-meal-navigation" aria-label={t('Comidas de tu plan')}>
+            <h3>{t('Tu menú de hoy')}</h3>
+            <p>{t('Desayuno, almuerzo, merienda y cena: toca una comida para ver tus indicaciones.')}</p>
+            <div className="nutrition-meal-shortcuts">
+              {mealCards.map(meal => <IonButton key={meal.key} fill="clear" onClick={() => {
+                const target = document.getElementById(`nutrition-meal-${meal.key}`);
+                target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+                target?.focus({ preventScroll: true });
+              }}><span aria-hidden="true">{meal.emoji}</span><span><strong>{meal.labelIsKey ? t(meal.label) : meal.label}</strong><small>{t(meal.missing ? 'Por indicar' : 'Ver mi comida')}</small></span></IonButton>)}
+            </div>
+          </nav>
         </div>
         {(waterMl != null || plan.mealTiming) && <section className="ntr-card">
           <div className="ntr-section-title"><IonIcon icon={restaurantOutline} /><h2>{t("Objetivos del día")}</h2></div>
@@ -317,7 +319,7 @@ export function NutritionPlanTab({
           >
             <div className="meal-hdr">
               <span className="meal-ico" aria-hidden="true">
-                <IonIcon icon={restaurantOutline} />
+                {String(idx + 1).padStart(2, '0')}
               </span>
               <span className="meal-title">
                 {m.labelIsKey ? t(m.label) : m.label}
@@ -366,22 +368,6 @@ export function NutritionPlanTab({
   }
 
 
-  if (fallbackRows.length > 0) {
-    return (
-      <div className="card nut-plan-card">
-        {fallbackRows.map((row) => (
-          <div key={row.label} className="nut-plan-row">
-            <span className="nut-plan-ico" aria-hidden="true">
-              {row.emoji}
-            </span>
-            <span className="nut-plan-label">{t(row.label)}</span>
-            <span className="nut-plan-val">{row.value}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="card" style={{ margin: 14 }}>
@@ -407,6 +393,23 @@ export function NutritionPlanTab({
       </div>
     );
   }
+
+  if (fallbackRows.length > 0) {
+    return (
+      <div className="card nut-plan-card">
+        {fallbackRows.map((row) => (
+          <div key={row.label} className="nut-plan-row">
+            <span className="nut-plan-ico" aria-hidden="true">
+              {row.emoji}
+            </span>
+            <span className="nut-plan-label">{t(row.label)}</span>
+            <span className="nut-plan-val">{row.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
 
   return (
     <div className="card" style={{ margin: 14 }}>
