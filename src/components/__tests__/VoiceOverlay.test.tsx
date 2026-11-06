@@ -22,6 +22,7 @@ vi.mock("@elevenlabs/react", () => ({
   ConversationProvider: ({ children }: { children: React.ReactNode }) => children,
   useConversation: () => mocks.eleven,
 }));
+vi.mock("../VoiceOrb", () => ({ VoiceOrb: () => null }));
 vi.mock("@ionic/react", async () => {
   const React = await import("react");
   return {
@@ -40,7 +41,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     mocks.eleven.status = "connected";
     mocks.speech.supported = true;
     mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid" });
-    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn().mockResolvedValue({}) } });
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [] }) } });
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
   afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
