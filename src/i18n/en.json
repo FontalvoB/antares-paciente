@@ -3433,6 +3433,8 @@
   "Horario general del plan": "General plan schedule",
   "No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.": "We couldn’t refresh your plan. These are the latest available instructions.",
   "Día {day} del programa": "Day {day} of your program",
+  "Abrir protocolo de nutrición": "Open nutrition protocol",
+  "Tu plan diario": "Your daily plan",
   "{name} ya recibió tu alerta, ubicación y signos.": "{name} already received your alert, location and vital signs.",
   "Alerta enviada · {phone}": "Alert sent · {phone}",
   "Alerta enviada · despacho en curso": "Alert sent · dispatch in progress",

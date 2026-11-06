@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  IonAvatar,
   IonBadge,
   IonButton,
   IonPopover,
@@ -12,7 +11,6 @@ import {
 } from "@ionic/react";
 import { useI18n } from "../i18n/I18nContext";
 import {
-  add,
   bodyOutline,
   calendarOutline,
   chevronForward,
@@ -28,17 +26,14 @@ import {
   medkitOutline,
   micOutline,
   notificationsOutline,
-  refreshOutline,
   school,
-  videocamOutline,
+  restaurantOutline,
+  leafOutline,
+  arrowForward,
   walk,
   watchOutline,
   water,
 } from "ionicons/icons";
-import {
-  ModuleCarousel,
-  type CarouselModule,
-} from "../components/ModuleCarousel";
 import { ProtocolWheel } from "../components/ProtocolWheel";
 import { Mascot } from "../components/Mascot";
 import { Screen, Scroll } from "../components/Screen";
@@ -62,13 +57,8 @@ import { useWearable } from "../context/WearableContext";
 import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import { programDayNumber } from "../utils/programDayNumber";
 import logoIcon from "../assets/LogoIndividual.png";
-import coverCitas from "../assets/modules/citas.png";
 import coverComunidad from "../assets/modules/comunidad.png";
-import coverCuerpo from "../assets/modules/cuerpo.png";
-import coverHistoria from "../assets/modules/historia.png";
-import coverNutricion from "../assets/modules/nutricion.png";
 import coverPerfil from "../assets/modules/perfil.png";
-import doctorAvatar from "../assets/home/doctor-avatar.png";
 import type { CSSProperties } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
 
@@ -83,11 +73,6 @@ export function HomePage() {
     streak: appStreak,
     programWeek: appProgramWeek,
     realMode,
-    upcomingAppointments,
-    appointmentsLoading,
-    appointmentsError,
-    refreshAppointments,
-    openRoom,
   } = useApp();
   const { snapshot } = useProgram();
   const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
@@ -126,116 +111,10 @@ export function HomePage() {
       ?.dailyCalorieTarget ?? null;
   const kcalValue = snapshot ? intake.calories : null;
 
-  // Cita destacada real (modo sesión) — misma tarjeta, dato del backend.
-  const featuredReal =
-    realMode && upcomingAppointments && upcomingAppointments.length > 0
-      ? upcomingAppointments[0]
-      : undefined;
   const [metricId, setMetricId] = useState<MetricId | null>(null);
 
-  /**
-   * La tarjeta de cita siempre ocupa su celda junto a los accesos rápidos: sin
-   * datos del backend muestra carga, error o vacío en vez de desaparecer (eso
-   * reordenaba el inicio y rompía la distribución del diseño).
-   */
-  const apptState = !realMode
-    ? "demo"
-    : featuredReal
-      ? "ready"
-      : appointmentsLoading
-        ? "loading"
-        : appointmentsError
-          ? "error"
-          : "empty";
-  const openAppt = () => {
-    if (featuredReal) openRoom(featuredReal);
-    else if (apptState === "error") void refreshAppointments();
-    else navigate("book");
-  };
-  const apptCopy = {
-    demo: {
-      time: "15:00 · " + t("Hoy"),
-      name: "Dr. Carlos Ramírez",
-      meta: t("Telemedicina · Control semana 12"),
-      chip: t("Unirse"),
-      label: t("Unirse a tu cita"),
-    },
-    ready: {
-      time: `${featuredReal?.time ?? ""} · ${t(featuredReal?.day ?? "Hoy")}`,
-      name: featuredReal?.name ?? "",
-      meta: featuredReal
-        ? `${t(featuredReal.mode)} · ${t(featuredReal.motivo)}`
-        : "",
-      chip: t("Unirse"),
-      label: t("Unirse a tu cita"),
-    },
-    loading: {
-      time: "",
-      name: "",
-      meta: "",
-      chip: "",
-      label: t("Cargando tus citas"),
-    },
-    empty: {
-      time: t("Sin citas"),
-      name: t("Agenda tu control"),
-      meta: t("Elige profesional y horario disponible"),
-      chip: t("Agendar"),
-      label: t("Agendar una cita"),
-    },
-    error: {
-      time: t("Sin datos"),
-      name: t("No pudimos cargar tus citas"),
-      meta: t("Revisa tu conexión e intenta de nuevo"),
-      chip: t("Reintentar"),
-      label: t("Reintentar cargar tus citas"),
-    },
-  }[apptState];
-
-  /**
-   * Módulos del carrusel. El dato vivo solo se declara donde hay una verdad
-   * que mostrar; el resto se apoya en su descripción. El acento (`--mod-*`)
-   * identifica al módulo en la tarjeta, el botón y el punto de paginación.
-   */
-  const modules: (CarouselModule & { id: ScreenId })[] = [
-    {
-      id: "book",
-      title: t("Citas"),
-      sub: t("Agenda, control y telemedicina"),
-      accent: "var(--mod-appt)",
-      cover: coverCitas,
-      cta: t("Ver agenda"),
-      data: featuredReal
-        ? `${featuredReal.time} · ${t(featuredReal.day)}`
-        : realMode
-          ? t("Sin citas")
-          : t("Hoy 3:00 PM"),
-    },
-    {
-      id: "nut",
-      title: t("Nutrición"),
-      sub: t("Tu plan y el registro del día"),
-      accent: "var(--mod-nut)",
-      cover: coverNutricion,
-      cta: t("Ver plan"),
-      data: realMode ? t("Sin datos") : t("1,650 / 1,800 kcal"),
-    },
-    {
-      id: "body",
-      title: t("Visualización del perfil"),
-      sub: t("Índices y mediciones corporales"),
-      accent: "var(--mod-body)",
-      cover: coverCuerpo,
-      cta: t("Ver mi cuerpo"),
-    },
-    {
-      id: "hc",
-      title: t("Historia clínica"),
-      sub: t("Diagnósticos, lab y medicamentos"),
-      accent: "var(--mod-record)",
-      cover: coverHistoria,
-      cta: t("Abrir expediente"),
-    },
+  // Dos accesos permanentes: sin paginación, arrastre ni autoavance.
+  const modules: { id: ScreenId; title: string; sub: string; accent: string; cover: string; cta: string }[] = [
     {
       id: "com",
       title: t("Comunidad"),
@@ -631,62 +510,35 @@ export function HomePage() {
             ))}
           </div>
 
-          <button
-            type="button"
-            className="hm-appt"
-            onClick={openAppt}
-            aria-label={apptCopy.label}
-            aria-busy={apptState === "loading"}
+          <IonButton
+            className="hm-appt hm-nutrition-card"
+            onClick={() => navigate("program-nut")}
+            aria-label={t("Abrir protocolo de nutrición")}
           >
-            <span className="hm-appt-tele" aria-hidden="true">
-              <IonIcon icon={videocamOutline} />
-            </span>
-            {apptState === "loading" ? (
-              <span className="hm-appt-skeleton">
-                <IonSkeletonText
-                  animated
-                  style={{ width: "64%", height: 17 }}
-                />
-                <IonSkeletonText
-                  animated
-                  style={{ width: "88%", height: 13 }}
-                />
-                <IonSkeletonText
-                  animated
-                  style={{ width: "76%", height: 10 }}
-                />
-                <IonSkeletonText
-                  animated
-                  style={{ width: 58, height: 18, borderRadius: 999 }}
-                />
+            <span className="hm-nutrition-content">
+              <span className="hm-appt-tele" aria-hidden="true"><IonIcon icon={restaurantOutline} /></span>
+              <span className="hm-appt-time">{t("Nutrición")}</span>
+              <span className="hm-appt-name">{t("Tu plan diario")}</span>
+              <span className="hm-appt-meta">{t("Tu plan y el registro del día")}</span>
+              <span className="hm-appt-chip">{t("Ver plan")}</span>
+              <span className="hm-appt-people" aria-hidden="true">
+                <span className="hm-nutrition-leaf"><IonIcon icon={leafOutline} /></span>
+                <span className="hm-appt-add"><IonIcon icon={arrowForward} /></span>
               </span>
-            ) : (
-              <>
-                <span className="hm-appt-time">{apptCopy.time}</span>
-                <span className="hm-appt-name">{apptCopy.name}</span>
-                <span className="hm-appt-meta">{apptCopy.meta}</span>
-                <span className="hm-appt-chip">{apptCopy.chip}</span>
-                <span className="hm-appt-people">
-                  <IonAvatar className="hm-appt-doc" aria-hidden="true">
-                    <img src={doctorAvatar} alt="" />
-                  </IonAvatar>
-                  <span className="hm-appt-add">
-                    <IonIcon
-                      icon={apptState === "error" ? refreshOutline : add}
-                    />
-                  </span>
-                </span>
-              </>
-            )}
-          </button>
+            </span>
+          </IonButton>
         </div>
 
-        <div className="sec">{t("Tus módulos")}</div>
-        <ModuleCarousel
-          modules={modules}
-          label={t("Tus módulos")}
-          onSelect={(id) => navigate(id as ScreenId)}
-        />
+        <div className="sec" id="home-modules-title">{t("Tus módulos")}</div>
+        <section className="hm-modules" aria-labelledby="home-modules-title">
+          {modules.map(module => <IonButton key={module.id} className="hm-module-card" style={{ "--a": module.accent } as CSSProperties} onClick={() => navigate(module.id)}>
+            <span className="hm-module-content">
+              <img className="mcar-cover" src={module.cover} alt="" aria-hidden="true" />
+              <span className="mcar-txt"><strong>{module.title}</strong><small>{module.sub}</small></span>
+              <span className="mcar-cta">{module.cta}<IonIcon icon={arrowForward} aria-hidden="true" /></span>
+            </span>
+          </IonButton>)}
+        </section>
 
         {!realMode && (
           <>

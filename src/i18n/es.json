@@ -3443,6 +3443,8 @@
   "Horario general del plan": "Horario general del plan",
   "No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.": "No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.",
   "Día {day} del programa": "Día {day} del programa",
+  "Abrir protocolo de nutrición": "Abrir protocolo de nutrición",
+  "Tu plan diario": "Tu plan diario",
   "Simulación": "Simulación",
   "Protocolo activado en modo simulación: no se envió ninguna alerta real.": "Protocolo activado en modo simulación: no se envió ninguna alerta real.",
   "El SOS no marca al 911 automáticamente. Usa el botón Llamar 911.": "El SOS no marca al 911 automáticamente. Usa el botón Llamar 911.",
