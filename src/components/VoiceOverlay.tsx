@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonInput, IonModal } from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import { createVoiceMicLevel } from "../utils/voiceMicLevel";
+import { readAgentOutputLevel } from "../utils/agentLevel";
+import { VoiceOrb } from "./VoiceOrb";
+import type { VoicePhase } from "./VoiceOrb";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { useSpeechAssistant } from "../hooks/useSpeechAssistant";
@@ -36,17 +40,11 @@ import {
 
 type VoiceMode = "idle" | "eleven" | "webspeech";
 
-/** Fase visual del turno: alimenta el orb, el punto de estado y las ondas. */
-type VoicePhase =
-  | "connecting"
-  | "listening"
-  | "thinking"
-  | "speaking"
-  | "muted"
-  | "unavailable";
-
 /** Props de la cápsula visual compartida por ambos motores. */
 interface VoiceShellProps {
+  active: boolean;
+  micLevel: ReturnType<typeof createVoiceMicLevel>;
+  getOutputVolume?: () => number;
   phase: VoicePhase;
   statusLabel: string;
   transcriptLine: string;
@@ -61,6 +59,9 @@ interface VoiceShellProps {
  * transcripción en tarjeta glass y controles circulares grandes (mute +
  * colgar) con regreso claro al chat de texto. Solo presentación. */
 function VoiceShell({
+  active,
+  micLevel,
+  getOutputVolume,
   phase,
   statusLabel,
   transcriptLine,
@@ -71,6 +72,9 @@ function VoiceShell({
 }: VoiceShellProps) {
   const t = useT();
   const [text, setText] = useState("");
+  useEffect(() => {
+    micLevel.setMuted(muted);
+  }, [micLevel, muted]);
   const orbClass = `voice-orb vc-orb is-${phase}`;
   const submitText = (event: React.FormEvent) => {
     event.preventDefault();
@@ -81,16 +85,33 @@ function VoiceShell({
   };
   return (
     <div className="vc-shell">
-      <IonButton fill="clear" className="vc-back" aria-label={t("Volver al chat")} onClick={onHangUp}>
-        <IonIcon icon={chevronBack} />
-      </IonButton>
+      <div className="vc-header">
+        <IonButton
+          fill="clear"
+          className="vc-back"
+          aria-label={t("Volver al chat")}
+          onClick={onHangUp}
+        >
+          <IonIcon icon={chevronBack} />
+        </IonButton>
+        <span className="vc-brand">
+          COPP-ADRESD<span>{t("Asistente de voz")}</span>
+        </span>
+      </div>
       <div className="vc-center">
         <div className={orbClass} aria-hidden="true">
-          {phase === "thinking" ? <span className="vc-orb-dots">•••</span> : null}
+          <VoiceOrb
+            phase={phase}
+            active={active}
+            getInputVolume={micLevel.getVolume}
+            getOutputVolume={getOutputVolume}
+          />
         </div>
-        <div className={`vc-status is-${phase}`} aria-live="polite">{statusLabel}</div>
+        <div className={`vc-status is-${phase}`} aria-live="polite">
+          {statusLabel}
+        </div>
         <div className="vc-transcript" aria-live="polite">
-          {transcriptLine || t("Presiona el micrófono y háblame: te escucho en tiempo real.")}
+          {transcriptLine || t("Estoy aquí para acompañarte.")}
         </div>
       </div>
       <form className="vc-controls" onSubmit={submitText}>
@@ -132,6 +153,11 @@ export function VoiceOverlay() {
     appendChatMessages,
   } = useApp();
   const { t, lang } = useI18n();
+  const micLevel = useMemo(() => createVoiceMicLevel(), []);
+  useEffect(() => {
+    if (!voiceOpen) return;
+    return () => micLevel.release();
+  }, [voiceOpen, micLevel]);
   const [mode, setMode] = useState<VoiceMode>("idle");
   // Estado del turno en curso en modo ElevenLabs.
   const [thinking, setThinking] = useState(false);
@@ -317,6 +343,7 @@ export function VoiceOverlay() {
   }, [voiceOpen, mode, assistant.supported]);
 
   const hangUp = () => {
+    micLevel.release();
     if (mode === "webspeech") {
       assistant.cancelSpeech();
       assistant.teardown();
@@ -335,7 +362,7 @@ export function VoiceOverlay() {
         className="voice-modal"
       >
         <div className="overlay overlay-voice">
-          <div className="voice-orb vc-orb is-unavailable">
+          <div className="voice-orb vc-orb is-unavailable" aria-hidden="true">
             <IonIcon icon={micOff} className="vc-orb-ico" />
           </div>
           <div className="display vc-title">
@@ -373,6 +400,8 @@ export function VoiceOverlay() {
             onError={onError}
           >
             <ElevenVoiceBody
+              micLevel={micLevel}
+              active={voiceOpen}
               onHangUp={hangUp}
               thinking={thinking}
               userLine={userLine}
@@ -394,6 +423,8 @@ export function VoiceOverlay() {
           </ConversationProvider>
         ) : (
           <VoiceShell
+            micLevel={micLevel}
+            active={voiceOpen}
             phase={
               assistant.state === "processing"
                 ? "thinking"
@@ -433,6 +464,8 @@ export function VoiceOverlay() {
 // ── Cuerpo de la sesión ElevenLabs (consume useConversation del provider) ──
 
 interface ElevenVoiceBodyProps {
+  micLevel: ReturnType<typeof createVoiceMicLevel>;
+  active: boolean;
   thinking: boolean;
   onHangUp: () => void;
   userLine: string;
@@ -441,6 +474,8 @@ interface ElevenVoiceBodyProps {
 }
 
 function ElevenVoiceBody({
+  micLevel,
+  active,
   thinking,
   onHangUp,
   userLine,
@@ -457,55 +492,81 @@ function ElevenVoiceBody({
     langRef.current = lang;
   }, [lang]);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (isCancelled: () => boolean) => {
     try {
       // Permiso de micrófono primero (falla temprano con degradación clara).
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      await micLevel.request();
+      if (isCancelled()) return;
       // Idioma de la app en el request: el backend lo propaga al AI Service
       // y este deja el agente hablando ese idioma (PATCH server-side ANTES
       // de emitir el signed URL — con signed URL los overrides del cliente
       // no aplican de forma fiable; commit 8a7b746). Sin idioma ⇒ el agente
       // usa su configuración del dashboard (comportamiento histórico).
       const session = await requestVoiceSession(langRef.current);
+      if (isCancelled()) return;
       if (!session) {
         onFallback();
         return;
       }
       eleven.startSession({ signedUrl: session.signedUrl });
     } catch {
-      onFallback();
+      if (!isCancelled()) onFallback();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    void start();
-  }, [start]);
+    if (!active) return;
+    let cancelled = false;
+    void start(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [start, active]);
 
   const phase: VoicePhase =
-    eleven.status === "connecting"
+    eleven.status !== "connected"
       ? "connecting"
-      : thinking
-        ? "thinking"
-        : eleven.isSpeaking
-          ? "speaking"
-          : eleven.isMuted
-            ? "muted"
+      : eleven.isMuted
+        ? "muted"
+        : thinking
+          ? "thinking"
+          : eleven.isSpeaking
+            ? "speaking"
             : "listening";
 
+  // Lector estable por ref: el orbe lo llama ~60/s y nunca debe capturar un
+  // cierre obsoleto del hook de la conversación.
+  const elevenRef = useRef(eleven);
+  elevenRef.current = eleven;
+  const readAgentLevel = useCallback(
+    () =>
+      readAgentOutputLevel(
+        elevenRef.current.getOutputVolume,
+        elevenRef.current.getOutputByteFrequencyData,
+      ),
+    [],
+  );
+
   const label =
-    eleven.status === "connecting"
+    eleven.status !== "connected"
       ? t("Conectando…")
-      : thinking
-        ? t("Pensando…")
-        : eleven.isSpeaking
-          ? t("Respondiendo…")
-          : eleven.isMuted
-            ? t("Micrófono silenciado")
+      : eleven.isMuted
+        ? t("Micrófono silenciado")
+        : thinking
+          ? t("Pensando…")
+          : eleven.isSpeaking
+            ? t("Respondiendo…")
             : t("Escuchando…");
 
   return (
     <VoiceShell
+      active={active}
+      // Nivel del agente compuesto: RMS del SDK + energía espectral real
+      // (getOutputByteFrequencyData) con ganancia perceptual — el orbe
+      // acompana la cadencia de la voz aunque la amplitud bruta sea baja.
+      micLevel={micLevel}
+      getOutputVolume={readAgentLevel}
       phase={phase}
       statusLabel={label}
       transcriptLine={eleven.isSpeaking ? botLine : userLine}

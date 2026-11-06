@@ -52,7 +52,8 @@ El usuario autorizó después publicar la app; SOS sigue aparcado.
 ## Publicación autorizada
 
 El usuario confirmó la pasada física y autorizó merge/push de la app a `dev`.
-Se incorpora `483f7df` con la orbe de voz nueva y se valida la combinación.
+Se incorporó `483f7df` con la orbe de voz nueva. La combinación aprobó
+1.500 tests/187 archivos, lint e i18n; ambos catálogos tienen 3.677 claves.
 Los estados sin publicar citados abajo corresponden a checkpoints anteriores.
 AI/backend ya están desplegados; el push de la app activa iOS/TestFlight.
 
@@ -336,3 +337,27 @@ productivo, AI7c0acd0 desplegado saludable y nueva app instalada. No quedan
 hallazgos de traducción conocidos abiertos en los recorridos revisados. La
 publicación de la app sigue esperando una instrucción del usuario; no se
 hicieron submits clínicos para verificar esta corrección.
+
+## Integración final para publicar en dev
+
+Auditoría guardada como `607d926` de Kenma y merge con `483f7df`. Se resolvieron
+tres conflictos: catálogos ES/EN conservan todas las 3.675 entradas de auditoría
+y agregan las dos claves de voz; FoodResultCard conserva aserciones acotadas
+al chip correcto y el comentario upstream. Se preservaron las 14 rutas de voz
+no solapadas (solo se limpiaron cinco líneas de whitespace en el shader).
+102 archivos del backup de auditoría permanecen byte a byte iguales; los otros
+cinco tienen únicamente la integración/documentación esperada. Los 12 stashes
+anteriores, incluido SOS, siguen intactos. Backup verificado:
+`/tmp/diomedes-english-prepublish-63ff3ilt/manifest.json`.
+
+La suite combinada aprueba 1.500 tests/187 archivos y ambos catálogos suman
+3.677 claves, sin faltantes. El usuario autorizó el push a `dev`, que activa
+el workflow iOS/TestFlight. Una validación local aprobada no significa que el
+IPA ya esté procesado por App Store Connect; consultar el workflow de la
+revisión publicada para ese resultado. No se enviaron mensajes ni alertas reales.
+
+La combinación final con `483f7df` aprobó también build/sync de producción,
+release/BLE y Xcode firmado. Se cotejaron los 40 assets web de la
+compilación nativa con la salida verificada, sin diferencias ni sobrantes.
+El merge/push a `dev` está autorizado; disponibilidad en TestFlight depende
+del resultado del workflow de la revisión publicada.

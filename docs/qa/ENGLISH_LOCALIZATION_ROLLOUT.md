@@ -3,7 +3,7 @@
 ## Estado verificable
 
 El usuario autorizó también el merge/push de la app a `dev` después de
-confirmar las traducciones y la corrección de evaluaciones. Se integra
+confirmar las traducciones y la corrección de evaluaciones. Se integró
 `origin/dev` `483f7df` preservando la nueva orbe de voz; la entrega activa
 el workflow iOS/TestFlight. Los checkpoints locales anteriores se conservan
 como historial de validación.
@@ -12,14 +12,14 @@ como historial de validación.
 Pasan los 22 GET reales de lista/resultados/nueve versiones, con invariantes
 clínicos conservados. Nueva app (1.481 tests/183 archivos) instalada. El usuario confirmó carga
 correcta de evaluaciones y primera pregunta/opciones inglesas; hallazgo cerrado.
-Publicación de la app autorizada; merge y validación de la revisión vigente en curso.
+Publicación de la app autorizada; merge combinado validado con 1.500 tests/187 archivos.
 
 - App: `FontalvoB/antares-paciente`, rama `fix/diomedes-english-app-audit`,
   base inicial `dev` `15b3217`, integrada con `83c8ed9` al pedir el usuario pull
   y build. Build local firmado instalado en `iPhoneです`, apuntando
-  a `https://erp.coppadresd.com`; suite completa actual de 1.481 tests/183 archivos aprobados, incluidas
+  a `https://erp.coppadresd.com`; suite completa combinada de 1.500 tests/187 archivos aprobados, incluidas
   las regresiones de conversaciones y recuperación de evaluaciones.
-  3.675 claves por idioma.
+  3.677 claves por idioma después de integrar las dos claves nuevas de voz.
 - Backend: `LFDIAZDEV2209/coppAddresdBack`, publicado en `dev`, integrado con
   `daa3619`. 1.883 tests unitarios aprobados, 105 omisiones existentes por
   entorno, cero fallos. Cinco pruebas reales PostgreSQL aisladas aprobadas.
@@ -88,7 +88,7 @@ el fallback de errores de Comunidad y dos textos alternativos de imágenes. Se
 corrigieron manteniendo mensajes/nombres de autor y estado local; una revisión
 estática adicional de 293 archivos no encontró otro literal alcanzable confirmado.
 La compilación local vigente incluye esas correcciones y recuperación de
-evaluaciones: 1.481 tests/183 archivos,
+evaluaciones y la voz de `dev`: 1.500 tests/187 archivos,
 lint, i18n, build/sync de producción, release/BLE, Xcode e instalación USB
 aprobaron. Se cotejaron los 38 assets web del bundle instalado con la salida
 verificada. Receipt: `Designs/english-app-audit/final-local-english-ios-receipt.json`.
@@ -124,3 +124,9 @@ equivale a certificar que el contenido conservado ya está en inglés. Las fuent
 originales y el estado de aprobación siempre se mantienen.
 
 Detalle de cobertura y límites: [auditoría](./ENGLISH_LOCALIZATION_AUDIT.md).
+
+La combinación final con `483f7df` aprobó también build/sync de producción,
+release/BLE y Xcode firmado. Se cotejaron los 40 assets web de la
+compilación nativa con la salida verificada, sin diferencias ni sobrantes.
+El merge/push a `dev` está autorizado; disponibilidad en TestFlight depende
+del resultado del workflow de la revisión publicada.
