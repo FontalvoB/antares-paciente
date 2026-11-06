@@ -49,7 +49,20 @@ export interface NutritionIntakeLogDto {
   createdAt: string
 }
 
+export interface MediaProvenanceDto {
+  authorUrl?: string | null
+  derivativeSourceUrl?: string | null
+  provider: string
+  title: string
+  author: string
+  sourceUrl: string
+  licenseName: string
+  licenseUrl: string
+  changes: string
+}
+
 export interface ExerciseItemDto {
+  provenance?: MediaProvenanceDto | null
   name: string
   description?: string | null
   sets?: number | null

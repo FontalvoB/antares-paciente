@@ -33113,3 +33113,12 @@ ion-button.program-state-back { width: 44px; min-width: 44px; height: 44px; min-
   .sos-reference .sos-service-copy > span { min-height: 0; font-size: 11px; }
   .sos-reference .sos-service-dial { width: 88px; flex: 0 0 88px; }
 }
+
+/* Créditos legibles y separados de la indicación clínica. */
+.exercise-media-credits { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; color: var(--mu); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.exercise-media-credits strong { color: var(--cosmos); }
+.exercise-media-credits > div { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.exercise-media-credits a, .exercise-provider-notice a { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
+.exercise-media-credits a { min-height: 44px; display: inline-flex; align-items: center; }
+.exercise-provider-notice { margin: 0; padding: 12px 16px; font-size: 11px; line-height: 1.6; color: var(--mu); background: var(--ice-l); }
+.ex-video-stage:has(iframe) { min-height: 200px; }

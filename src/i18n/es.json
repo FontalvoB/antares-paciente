@@ -3349,5 +3349,15 @@
   "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.": "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.",
   "Llamar a la central de emergencias · {numero}": "Llamar a la central de emergencias · {numero}",
   "Si la línea local no responde, llama al {numero}": "Si la línea local no responde, llama al {numero}",
-  "Llamar": "Llamar"
+  "Llamar": "Llamar",
+  "Autor no indicado por la fuente": "Autor no indicado por la fuente",
+  "Cambios: {changes}": "Cambios: {changes}",
+  "Fuente original": "Fuente original",
+  "La licencia corresponde a esta demostración; no implica respaldo de su autor al programa.": "La licencia corresponde a esta demostración; no implica respaldo de su autor al programa.",
+  "Condiciones de YouTube": "Condiciones de YouTube",
+  "No se pudo cargar el reproductor. Puedes abrir el vídeo en su fuente original.": "No se pudo cargar el reproductor. Puedes abrir el vídeo en su fuente original.",
+  "Privacidad de Google": "Privacidad de Google",
+  "Reproducir en YouTube": "Reproducir en YouTube",
+  "YouTube gestiona la reproducción y puede limitar la disponibilidad del vídeo.": "YouTube gestiona la reproducción y puede limitar la disponibilidad del vídeo.",
+  "Fuente de la obra original": "Fuente de la obra original"
 }

@@ -3339,5 +3339,15 @@
   "Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.": "Verified local contacts in {ciudad}. Services without a local contact use {numero}.",
   "Llamar a la central de emergencias · {numero}": "Call emergency dispatch · {numero}",
   "Si la línea local no responde, llama al {numero}": "If the local line does not answer, call {numero}",
-  "Llamar": "Call"
+  "Llamar": "Call",
+  "Autor no indicado por la fuente": "Author not specified by the source",
+  "Cambios: {changes}": "Changes: {changes}",
+  "Fuente original": "Original source",
+  "La licencia corresponde a esta demostración; no implica respaldo de su autor al programa.": "This license applies to this demonstration; it does not imply that its author endorses the program.",
+  "Condiciones de YouTube": "YouTube Terms",
+  "No se pudo cargar el reproductor. Puedes abrir el vídeo en su fuente original.": "The player could not load. You can open the video at its original source.",
+  "Privacidad de Google": "Google Privacy",
+  "Reproducir en YouTube": "Play on YouTube",
+  "YouTube gestiona la reproducción y puede limitar la disponibilidad del vídeo.": "YouTube manages playback and may limit video availability.",
+  "Fuente de la obra original": "Source of the original work"
 }

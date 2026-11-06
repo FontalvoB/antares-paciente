@@ -1,3 +1,4 @@
+import { ExerciseMediaCredits } from "./ExerciseMediaCredits";
 import { useState } from "react";
 import { IonButton, IonIcon, IonItem, IonLabel, IonChip, IonAccordion, IonAccordionGroup, IonProgressBar } from "@ionic/react";
 import { arrowBackOutline, barbellOutline, checkmarkCircleOutline, imageOutline } from "ionicons/icons";
@@ -39,10 +40,10 @@ function ExerciseDemonstration({ exercise, onPlay }: { exercise: ExerciseItemDto
       <p>{t("Tu equipo aún no ha añadido una imagen o un vídeo para este ejercicio.")}</p>
     </div>;
   }
-  if (failed) return <div className="exercise-media-empty" role="alert">
+  if (failed) return <><div className="exercise-media-empty" role="alert">
     <strong>{t("No se pudo cargar la demostración.")}</strong>
     <IonButton fill="outline" onClick={() => { setFailed(false); setAttempt((value) => value + 1); }}>{t("Reintentar")}</IonButton>
-  </div>;
+  </div><ExerciseMediaCredits provenance={exercise.provenance} /></>;
   // El reproductor HTML es el control nativo de vídeo; Ionic no ofrece uno.
   return <figure className="exercise-demonstration">
     {exercise.mediaType === "Video"
@@ -50,7 +51,7 @@ function ExerciseDemonstration({ exercise, onPlay }: { exercise: ExerciseItemDto
           aria-label={t("Vídeo de {exercise}", { exercise: exercise.name })} onPlay={onPlay} onError={() => setFailed(true)} />
       : <img key={attempt} src={source} alt={t("Técnica de {exercise}", { exercise: exercise.name })}
           loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />}
-    <figcaption>{t("Demostración de tu equipo clínico")}</figcaption>
+    <figcaption>{exercise.provenance ? <ExerciseMediaCredits provenance={exercise.provenance} /> : t("Demostración de tu equipo clínico")}</figcaption>
   </figure>;
 }
 
