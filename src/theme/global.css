@@ -33177,3 +33177,30 @@ ion-button.hm-module-card { --background-hover: var(--g0); --background-focused:
 .hm-module-content { display: flex; flex-direction: column; align-items: stretch; width: 100%; padding-bottom: 12px; text-align: left; }
 .hm-modules .mcar-txt { flex: 1; }
 .hm-modules .mcar-cta { opacity: 1; transform: none; }
+
+/* Aviso del proveedor de geocodificación antes de confirmar SOS. */
+ion-note.sos-location-disclosure {
+  display: block;
+  margin-top: 14px;
+  padding: 14px 16px 6px;
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  background: var(--wh);
+  color: var(--navy);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.sos-location-disclosure p { margin: 0; }
+ion-button.sos-location-sources {
+  margin: 4px 0 0;
+  min-height: 44px;
+  max-width: 100%;
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--brand-blue-mid);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+}

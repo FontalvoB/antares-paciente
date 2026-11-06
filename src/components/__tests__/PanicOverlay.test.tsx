@@ -26,7 +26,7 @@ vi.mock("@ionic/react", async () => {
     const { children, icon: _icon, expand: _expand, fill: _fill, lines: _lines, ...rest } = props;
     return React.createElement(tag, rest, children as React.ReactNode);
   };
-  return { IonActionSheet: () => null, IonButton: element("button"), IonIcon: element("span"), IonBadge: element("span"), IonList: element("div"), IonItem: element("div"), IonLabel: element("div") };
+  return { IonNote: element("aside"), IonActionSheet: () => null, IonButton: element("button"), IonIcon: element("span"), IonBadge: element("span"), IonList: element("div"), IonItem: element("div"), IonLabel: element("div") };
 });
 
 // Mock del servicio SOS: captura las llamadas de red.

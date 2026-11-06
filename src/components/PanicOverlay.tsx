@@ -1,3 +1,4 @@
+import { Browser } from "@capacitor/browser";
 import {
   AnimatePresence,
   MotionConfig,
@@ -14,6 +15,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonNote,
 } from "@ionic/react";
 import {
   call,
@@ -1070,6 +1072,19 @@ export function PanicOverlay() {
                         </p>
                       </div>
                     </section>
+                    <IonNote className="sos-location-disclosure">
+                      <p>{t("Si compartes tu ubicación, enviaremos el punto GPS a Amazon Location para obtener una dirección aproximada y avisar a tus contactos. Si no se puede obtener la dirección, se compartirá el mapa.")}</p>
+                      <IonButton
+                        fill="clear"
+                        className="sos-location-sources"
+                        onClick={() => {
+                          void Browser.open({ url: "https://docs.aws.amazon.com/location/latest/developerguide/data-attribution.html" })
+                            .catch(() => showToast(t("No pudimos abrir las fuentes de ubicación. Intenta de nuevo."), "err"));
+                        }}
+                      >
+                        {t("Fuentes de ubicación")}
+                      </IonButton>
+                    </IonNote>
                   </div>
                   <footer className="sos-action-dock">
                     <div className="sos-actions">

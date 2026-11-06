@@ -3702,5 +3702,8 @@
   "Descubre tu punto de partida": "Discover your starting point",
   "Una lectura personal": "A personal overview",
   "Pasos para hoy": "Steps for today",
-  "Valor": "Value"
+  "Valor": "Value",
+  "Si compartes tu ubicación, enviaremos el punto GPS a Amazon Location para obtener una dirección aproximada y avisar a tus contactos. Si no se puede obtener la dirección, se compartirá el mapa.": "If you share your location, we will send the GPS point to Amazon Location to obtain an approximate address and notify your contacts. If the address cannot be obtained, the map will still be shared.",
+  "Fuentes de ubicación": "Location data sources",
+  "No pudimos abrir las fuentes de ubicación. Intenta de nuevo.": "We couldn't open the location data sources. Please try again."
 }
