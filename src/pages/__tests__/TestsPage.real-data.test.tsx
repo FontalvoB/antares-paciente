@@ -17,6 +17,7 @@ vi.mock('@ionic/react', () => ({
   IonIcon: () => null, IonSkeletonText: () => null, IonLoading: () => null, IonProgressBar: () => null, IonSpinner: () => <span>Loading</span>,
   IonAccordionGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonAccordion: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  IonAvatar: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonItem: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   IonLabel: ({ children }: { children: ReactNode }) => <div>{children}</div>,

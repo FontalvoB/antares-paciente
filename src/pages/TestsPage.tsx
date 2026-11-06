@@ -309,9 +309,8 @@ export function TestsPage() {
               <IonIcon slot="icon-only" icon={arrowBackOutline} />
             </IonButton>
             <div className="ar-hero-copy">
-              <div className="ar-eyebrow">{t("TU PERFIL DE SALUD")}</div>
-              <h1>{t("Resultados de tus evaluaciones")}</h1>
-              <p>{t("Conoce tus resultados, a tu ritmo.")}</p>
+              <div className="ar-eyebrow">{t("RESULTADOS")}</div>
+              <h1>{t("Tu perfil de salud")}</h1>
             </div>
           </div>
         </div>
