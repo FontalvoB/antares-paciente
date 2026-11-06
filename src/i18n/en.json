@@ -3426,5 +3426,7 @@
   "Restricciones y alérgenos del plan": "Plan restrictions and allergens",
   "Horario general del plan": "General plan schedule",
   "No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.": "We couldn’t refresh your plan. These are the latest available instructions.",
-  "Día {day} del programa": "Day {day} of your program"
+  "Día {day} del programa": "Day {day} of your program",
+  "Asistente de voz": "Voice assistant",
+  "Estoy aquí para acompañarte.": "I’m here for you."
 }
