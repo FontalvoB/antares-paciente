@@ -28,7 +28,8 @@ import {
   walletOutline,
 } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 import { Mascot } from "../components/Mascot";
 import { formatDateForDisplay } from "../utils/dates";
 import {
@@ -45,7 +46,8 @@ import type { UserProfile } from "../types";
 
 export function OnboardingPage() {
   const { finishOnboarding, showToast, backToLogin } = useApp();
-  const t = useT();
+  const i18n = useI18n();
+  const { t, lang } = i18n;
   const [step, setStep] = useState(1);
 
   const STEPS = [
@@ -157,7 +159,7 @@ export function OnboardingPage() {
       finishOnboarding(form);
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : t("No se pudo guardar tu perfil"),
+        localizedError(err, i18n, "No se pudo guardar tu perfil"),
         "err",
       );
     } finally {
@@ -336,8 +338,8 @@ export function OnboardingPage() {
                         <IonIcon icon={personOutline} />
                       </span>
                       <div>
-                        <strong>Datos personales</strong>
-                        <span>Como aparecen en tu documento</span>
+                        <strong>{t("Datos personales")}</strong>
+                        <span>{t("Como aparecen en tu documento")}</span>
                       </div>
                     </div>
                     <div className="field">
@@ -516,9 +518,9 @@ export function OnboardingPage() {
                       {t(
                         "“{name} ({relation}) recibirá una alerta en {cell} si activas pánico.”",
                         {
-                          name: form.fam1Nombre || "Tu familiar",
-                          relation: form.fam1Parentesco,
-                          cell: form.fam1Cel || "su celular",
+                          name: form.fam1Nombre || t("Tu familiar"),
+                          relation: form.fam1Parentesco ? t(form.fam1Parentesco) : t("Sin especificar"),
+                          cell: form.fam1Cel || t("su celular"),
                         },
                       )}
                     </div>
@@ -672,7 +674,7 @@ export function OnboardingPage() {
         </div>
         <IonDatetime
           presentation="date"
-          locale="es-ES"
+          locale={lang === "en" ? "en-US" : "es-ES"}
           value={form.dob}
           onIonChange={(e) => set("dob", String(e.detail.value).split("T")[0])}
         />

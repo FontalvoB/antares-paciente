@@ -68,7 +68,7 @@ type InnerTab = "info" | "feed" | "eventos" | "lives";
 /** Sección "Clubes" integrada en la Comunidad: lista de clubes + detalle
  *  con feed (PostCard), eventos y lives. Datos mock (contrato congelado). */
 export function ClubsSection({ me, onToast }: ClubsSectionProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [myClubs, setMyClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
@@ -736,7 +736,7 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                     </div>
                     <p className="club-live-title">{live.title}</p>
                     <p className="club-live-date">
-                      {formatDateTime(live.scheduledStartAt)}
+                      {formatDateTime(live.scheduledStartAt, lang)}
                     </p>
                     {live.status === "ACTIVO" && (
                       <IonButton
@@ -1147,6 +1147,7 @@ function StatPill({ icon, text }: { icon: string; text: string }) {
 
 /** Pill de fecha estilo IG: día grande + mes + icono de tipo. */
 function DatePill({ iso, type }: { iso: string; type: ClubEvent["type"] }) {
+  const { lang } = useI18n();
   const d = new Date(iso);
   return (
     <span
@@ -1157,7 +1158,7 @@ function DatePill({ iso, type }: { iso: string; type: ClubEvent["type"] }) {
     >
       <span className="club-date-day">{d.getDate()}</span>
       <span className="club-date-month">
-        {d.toLocaleDateString("es-CO", { month: "short" }).replace(".", "")}
+        {d.toLocaleDateString(lang === "en" ? "en-US" : "es-CO", { month: "short" }).replace(".", "")}
       </span>
       <IonIcon
         icon={type === "PRESENCIAL" ? calendarOutline : radioOutline}

@@ -5,7 +5,7 @@ import {PostCard} from '../PostCard'
 vi.mock('@ionic/react',()=>({IonIcon:()=>null,IonModal:()=>null,IonAlert:()=>null}))
 vi.mock('../OwnPostDeleteButton',()=>({OwnPostDeleteButton:()=>null}))
 vi.mock('../community',()=>({Avatar:()=>null,timeAgo:()=> 'ahora'}))
-vi.mock('../../../i18n/I18nContext',()=>({useI18n:()=>({t:(s:string)=>s})}))
+vi.mock('../../../i18n/I18nContext',()=>({useI18n:()=>({t:(source:string,params:Record<string,string>={})=>source.replace(/\{([^}]+)\}/g,(match,key)=>params[key]??match)})}))
 afterEach(()=>vi.useRealTimers())
 function setup(liked=false, mediaType: 'IMAGE'|'VIDEO' = 'IMAGE', mutation?: () => Promise<void>) {
  const post={id:'p',body:'Foto',profile:{id:'a',displayName:'Ana'},imageUrl:'/photo.png',mediaType,likes:[],reposts:[],comments:[],poll:null} as unknown as Post

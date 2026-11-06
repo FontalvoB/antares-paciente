@@ -2,12 +2,16 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, expect, it, vi } from "vitest";
 import { VirtualRoomPage } from "../VirtualRoomPage";
 
-const state = vi.hoisted(() => ({ room: null as any, join: vi.fn() }));
+const state = vi.hoisted(() => ({ room: null as any, join: vi.fn(), lang: "es" as "es" | "en" }));
 vi.mock("../../context/AppContext", () => ({ useApp: () => ({
   roomAppointment: { id: "qa", name: "Lucía", motivo: "Consulta", time: "10:00", day: "Hoy", status: "InProgress" },
   user: {nombre: "Paciente QA"}, closeRoom: vi.fn(), navigate: vi.fn(),
 }) }));
-vi.mock("../../i18n/I18nContext", () => ({useT: () => (s: string) => s, useI18n: () => ({lang: "es"})}));
+vi.mock("../../i18n/I18nContext", async () => {
+  const { default: english } = await import("../../i18n/en.json");
+  const t = (source: string) => state.lang === "en" ? (english as Record<string, string>)[source] ?? source : source;
+  return { useT: () => t, useI18n: () => ({ lang: state.lang, t }) };
+});
 vi.mock("../../utils/appointmentsApi", () => ({
   fetchJoinToken: () => state.join(), fetchAppointmentRoom: vi.fn(async () => ({participants: [{identity:"professional",displayName:"Mauricio",role:"Professional"},{identity:"supervisor",displayName:"Supervisor QA",role:"Supervisor"}]})),
   ApiClientError: class extends Error {},
@@ -28,6 +32,7 @@ function track(kind: string, enabled = true) {
 }
 let remote: ReturnType<typeof track>, local: ReturnType<typeof track>;
 beforeEach(() => {
+  state.lang = "es";
   remote = track("video", false); local = track("video");
   const audio = track("audio");
   const participant = (identity: string, tracks: any[]) => ({identity,
@@ -82,4 +87,17 @@ it("keeps three participants' cameras, labels and main-video selection separate"
   expect(supervisorTile.classList.contains("room-person-main")).toBe(true);
   expect(professionalTile.contains(remote.attach.mock.results[0].value)).toBe(true);
   expect(supervisorTrack.attach).toHaveBeenCalledOnce();
+});
+
+it.each([
+  [{ code: 53105 }, "The room reached the maximum number of participants."],
+  [new Error("Detalle nuevo de servidor en español"), "Couldn't join the room"],
+])("shows a translated room failure or safe English fallback", async (failure, expected) => {
+  state.lang = "en";
+  state.join.mockRejectedValueOnce(failure);
+  render(<VirtualRoomPage />);
+  fireEvent.click(screen.getByText("Join consultation"));
+  await waitFor(() => expect(screen.getAllByText(expected).length).toBeGreaterThan(0));
+  expect(screen.queryByText("Detalle nuevo de servidor en español")).toBeNull();
+  expect(screen.queryByText("La sala alcanzó el máximo de participantes.")).toBeNull();
 });

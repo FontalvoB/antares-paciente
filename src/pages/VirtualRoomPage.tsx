@@ -47,6 +47,7 @@ import {
   preVisitIntakeVisible,
 } from "../utils/preVisitIntake";
 import { useI18n, useT } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 
 /**
  * Sala virtual de telemedicina (pantalla nueva, no toca las existentes).
@@ -519,22 +520,20 @@ export function VirtualRoomPage() {
           // REQ-APP-03 bugfix: el 404 (sala aún no creada o id sin cita)
           // jamás muestra "Error del servidor (404)" en la UI.
           (status === 404
-            ? t("La sala todavía no está abierta")
+            ? "La sala todavía no está abierta"
             : status === 409
-              ? t(
-                  "La sala no está disponible en este momento. Actualiza tus citas e inténtalo más tarde.",
-                )
+              ? "La sala no está disponible en este momento. Actualiza tus citas e inténtalo más tarde."
               : err instanceof Error &&
                   /No se pudo cargar el SDK/.test(err.message)
-                ? t("No se pudo cargar el video. Verifica tu conexión.")
+                ? "No se pudo cargar el video. Verifica tu conexión."
                 : err instanceof Error && err.message
                   ? err.message
-                  : t("No se pudo entrar a la sala"));
+                  : "No se pudo entrar a la sala");
         setError(message);
         setPhase("error");
       }
     },
-    [apptId, roomAppointment, wireRoom, mediaProbe, t, finalizeEnd],
+    [apptId, roomAppointment, wireRoom, mediaProbe, finalizeEnd],
   );
 
   useEffect(() => {
@@ -767,7 +766,7 @@ export function VirtualRoomPage() {
               ? `${t("En consulta")} · ${duration}`
               : phase === "connecting"
                 ? t("Conectando…")
-                : `${roomAppointment.motivo} · ${roomAppointment.time} ${t(roomAppointment.day)}`}
+                : `${t(roomAppointment.motivo)} · ${roomAppointment.time} ${t(roomAppointment.day)}`}
           </span>
         </div>
         {phase === "connected" ? (
@@ -786,7 +785,7 @@ export function VirtualRoomPage() {
                 <IonIcon icon={videocamOffOutline} />
               </span>
               <strong>{t("No se pudo entrar a la sala")}</strong>
-              <p>{error}</p>
+              <p>{localizedError(error, { t, lang }, "No se pudo entrar a la sala")}</p>
               {windowOpen ? (
                 <IonButton
                   className="bt bt-primary"

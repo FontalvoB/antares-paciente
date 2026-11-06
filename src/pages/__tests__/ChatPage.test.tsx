@@ -101,10 +101,11 @@ vi.mock("../../context/AppContext", () => ({
   }),
 }));
 
-vi.mock("../../i18n/I18nContext", () => ({
-  useT: () => (key: string) => key,
-  useI18n: () => ({ t: (key: string) => key, lang: mockState.lang }),
-}));
+vi.mock("../../i18n/I18nContext", async () => {
+  const { default: english } = await import("../../i18n/en.json");
+  const t = (key: string) => mockState.lang === "en" ? (english as Record<string, string>)[key] ?? key : key;
+  return { useT: () => t, useI18n: () => ({ t, lang: mockState.lang }) };
+});
 
 const welcomeMessage = {
   id: "msg-1",
@@ -116,7 +117,7 @@ const welcomeMessage = {
 describe("ChatPage — Lab Exam Upload Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockState.lang = "en";
+    mockState.lang = "es";
     mockState.chat = [welcomeMessage];
   });
 
@@ -179,6 +180,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
   });
 
   it("uploads valid file, sends the UI language, and tags the bot bubble as lab-exam", async () => {
+    mockState.lang = "en";
     vi.mocked(uploadLabExam).mockResolvedValueOnce({
       batchId: "batch-123",
       summary: "Se detectó glucosa en ayunas (95 mg/dL).",
@@ -242,6 +244,14 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     });
 
     expect(appendChatMessagesMock).not.toHaveBeenCalled();
+  });
+
+  it("translates a known Spanish lab upload error in English", async () => {
+    mockState.lang = "en";
+    vi.mocked(uploadLabExam).mockRejectedValueOnce(new Error("El servicio de IA no pudo procesar el examen de laboratorio."));
+    const { container } = render(<ChatPage />);
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(["result"], "exam.pdf", { type: "application/pdf" })] } });
+    await waitFor(() => expect(showToastMock).toHaveBeenCalledWith("The AI service could not process the lab test.", "err"));
   });
 
   it("renders the exam-processed badge and the metrics button on lab-exam messages", () => {

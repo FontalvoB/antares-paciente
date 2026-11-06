@@ -21,6 +21,11 @@ function catalogItem(
 }
 
 describe('realTeamFromCatalog — equipo real, jamás el mock', () => {
+  it('clasifica por la fuente y muestra la profesión localizada', () => {
+    const team = realTeamFromCatalog([catalogItem({ id: 'nutrition', fullName: 'Ana Ruiz',
+      professionalTypeName: 'Registered Dietitian', professionalTypeDisplayName: 'Dietista registrada' })])
+    expect(team?.[0]).toMatchObject({ typeId: 'nutricion', role: 'Dietista registrada', name: 'Ana Ruiz' })
+  })
   it('catálogo nulo → null (la UI no puede afirmar nada)', () => {
     expect(realTeamFromCatalog(null)).toBeNull()
   })

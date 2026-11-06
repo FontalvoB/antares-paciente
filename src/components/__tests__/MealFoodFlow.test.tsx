@@ -5,7 +5,7 @@ import { MealFoodFlow } from '../MealFoodFlow';
 const api = vi.hoisted(() => ({ analyze: vi.fn() }));
 vi.mock('../../utils/foodAiApi', () => ({ analyzeFoodImage: api.analyze }));
 vi.mock('../../context/AppContext', () => ({ useApp: () => ({ showToast: vi.fn() }) }));
-vi.mock('../../i18n/I18nContext', () => ({ useT: () => (s: string) => s }));
+vi.mock('../../i18n/I18nContext', () => ({ useT: () => (s: string) => s, useI18n: () => ({ lang: 'es', t: (s: string) => s }) }));
 vi.mock('../../hooks/useNutritionLog', () => ({ useNutritionLog: () => ({ mutate: vi.fn() }), useUpdateNutritionLog: () => ({ mutate: vi.fn() }) }));
 vi.mock('../CameraCapture', () => ({ CameraCapture: ({ onCapture }: { onCapture: (b: Blob, n: string) => void }) => <button onClick={() => onCapture(new Blob(['photo']), 'meal.jpg')}>Capture fixture</button> }));
 vi.mock('../FoodResultCard', () => ({ FoodResultCard: () => <div>Detected food detail</div> }));

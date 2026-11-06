@@ -5,6 +5,16 @@ const appointment = (id: string, status: AppointmentDto["status"], start: string
 const request = (id: string, status: AppointmentRequestDto["status"], start: string | null) => ({ id, status, preferredStart: start, createdAt: "2026-09-01", reason: "QA" }) as AppointmentRequestDto;
 afterEach(() => vi.useRealTimers());
 describe("agenda real", () => {
+  it("usa nombres de especialidad del catálogo por id sin cambiar motivos ni fuentes", () => {
+    const source = { ...appointment("completed", "Completed", "2026-10-02T12:00:00Z"), specialtyId: "family", specialtyName: "Medicina de familia" };
+    const pending = { ...request("future", "Pending", null), specialtyId: "family", specialtyName: "Medicina de familia", reason: "Mi dolor de espalda" };
+    const { upcoming, past } = buildRealAppointments([source], [pending], [{ id: "family", name: "Family medicine" }]);
+    expect(past[0].role).toBe("Family medicine");
+    expect(upcoming[0].role).toBe("Family medicine");
+    expect(upcoming[0].motivo).toBe("Mi dolor de espalda");
+    expect(source.specialtyName).toBe("Medicina de familia");
+    expect(pending.specialtyName).toBe("Medicina de familia");
+  });
   it("mueve solicitudes vencidas al historial y no duplica solicitudes aprobadas", () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-08T12:00:00Z"));
     const { upcoming, past } = buildRealAppointments([appointment("confirmed", "Confirmed", "2026-10-09T12:00:00Z")], [

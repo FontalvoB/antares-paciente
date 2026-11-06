@@ -46,6 +46,7 @@ export function dataUrlToBlob(
  */
 export async function captureChatImage(
   source: CameraSource = CameraSource.Prompt,
+  lang: "es" | "en" = "es",
 ): Promise<ChatImageAttachment | null> {
   try {
     const photo = await Camera.getPhoto({
@@ -55,9 +56,10 @@ export async function captureChatImage(
       // Redimensionado nativo: limita el peso del base64 en el body.
       width: 1280,
       correctOrientation: true,
-      promptLabelHeader: "Adjuntar imagen",
-      promptLabelPhoto: "Galería",
-      promptLabelPicture: "Cámara",
+      promptLabelHeader: lang === "en" ? "Attach image" : "Adjuntar imagen",
+      promptLabelPhoto: lang === "en" ? "Gallery" : "Galería",
+      promptLabelPicture: lang === "en" ? "Camera" : "Cámara",
+      promptLabelCancel: lang === "en" ? "Cancel" : "Cancelar",
     });
     if (!photo.base64String) return null;
     // CameraResultType.Base64 transcodifica a JPEG salvo origen PNG; el

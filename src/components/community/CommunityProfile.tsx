@@ -1,3 +1,4 @@
+import { localizedError } from "../../utils/localizedError";
 import { CommunityVideo } from "./CommunityVideo";
 import coppMark from "../../assets/LogoIndividual.png";
 import { sparklesOutline } from "ionicons/icons";
@@ -28,7 +29,8 @@ const PROFILE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 const PROFILE_IMAGE_MAX_MB = 8
 
 /** Formatea conteos grandes: 1700 → "1,7 mil". */
-export function formatCount(n: number): string {
+export function formatCount(n: number, lang: 'en' | 'es' = 'es'): string {
+  if (lang === 'en') return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
   if (n >= 1000) {
     const m = n / 1000
     return `${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace('.', ',')} mil`
@@ -89,7 +91,7 @@ export function CommunityProfile({
   const [coverPick, setCoverPick] = useState<{ file: File; url: string } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
   const coverInputRef = useRef<HTMLInputElement | null>(null)
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   function pickProfileImage(kind: 'AVATAR' | 'COVER', e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -128,7 +130,7 @@ export function CommunityProfile({
 
   async function save() {
     if (!dn.trim()) {
-      onToast('El nombre no puede estar vacío', 'warn')
+      onToast(t('El nombre no puede estar vacío'), 'warn')
       return
     }
     setSaving(true)
@@ -145,9 +147,9 @@ export function CommunityProfile({
       }
       await onSaveProfile(dn.trim(), bio.trim() || null, avatarKey, coverKey)
       setEditing(false)
-      onToast('Perfil actualizado', 'ok')
+      onToast(t('Perfil actualizado'), 'ok')
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo actualizar el perfil. Intenta de nuevo.'), 'err')
     } finally {
       setSaving(false)
     }
@@ -283,12 +285,12 @@ export function CommunityProfile({
       <p className="compf-bio">{me?.bio?.trim() || t('Comparte lo que haces con la comunidad.')}</p>
       <div className="compf-secondary-meta">
         <span className="compf-brand-badge"><img src={coppMark} alt="" />COPP-ADRESD</span>
-        <span className="compf-points-badge"><IonIcon icon={sparklesOutline} /><b>{formatCount(pointsTotal)}</b><span>pts</span></span>
+        <span className="compf-points-badge"><IonIcon icon={sparklesOutline} /><b>{formatCount(pointsTotal, lang)}</b><span>pts</span></span>
       </div>
       {meLoading && !me ? <div className="compf-skel" /> : <div className="compf-stat-buttons">
-        <div><b>{formatCount(posts.length)}</b><span>{t('publicaciones')}</span></div>
-        <button type="button" onClick={() => onShowList('followers')}><b>{formatCount(followersCount)}</b><span>{t('seguidores')}</span></button>
-        <button type="button" onClick={() => onShowList('following')}><b>{formatCount(followingCount)}</b><span>{t('siguiendo')}</span></button>
+        <div><b>{formatCount(posts.length, lang)}</b><span>{t('publicaciones')}</span></div>
+        <button type="button" onClick={() => onShowList('followers')}><b>{formatCount(followersCount, lang)}</b><span>{t('seguidores')}</span></button>
+        <button type="button" onClick={() => onShowList('following')}><b>{formatCount(followingCount, lang)}</b><span>{t('siguiendo')}</span></button>
       </div>}
       </div>
       <IonActionSheet isOpen={profileMenuOpen} onDidDismiss={() => setProfileMenuOpen(false)} buttons={[

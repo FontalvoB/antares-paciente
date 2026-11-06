@@ -12,7 +12,7 @@ import { displayName, FOOD_EMOJI, type DetectedFood } from "../utils/foodAiApi";
 export function FoodResultCard({ food, index = 0 }: { food: DetectedFood; index?: number }) {
   const reduced = useReducedMotion();
   const { t, lang } = useI18n();
-  const name = lang === "en" && food.nameEn?.trim() ? food.nameEn : displayName(food.name);
+  const name = lang === "en" && food.nameEn?.trim() ? food.nameEn : displayName(food.name, lang);
   const emoji = FOOD_EMOJI[food.name];
   const available = food.nutritionStatus === "available" && food.nutrition;
   const estimated = food.nutritionSource === "llm_estimate" || food.source === "llm_estimate";

@@ -12,6 +12,7 @@ import {
   fireEvent,
   cleanup,
   waitFor,
+  act,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 
@@ -28,12 +29,14 @@ vi.mock("../../utils/appointmentsApi", () => ({
 // `t` estable (en la app es useCallback): si cambia de identidad, los efectos
 // con [t] en dependencias se re-ejecutan en bucle.
 const i18nState = vi.hoisted(() => ({
+  lang: "es" as "es" | "en",
   t: (key: string, params?: Record<string, string>) =>
     key.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? name),
 }));
 
 vi.mock("../../i18n/I18nContext", () => ({
   useT: () => i18nState.t,
+  useI18n: () => ({ lang: i18nState.lang, t: i18nState.t }),
 }));
 
 vi.mock("@ionic/react", () => ({
@@ -55,8 +58,8 @@ vi.mock("@ionic/react", () => ({
   IonContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   IonHeader: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   IonIcon: () => <span />,
-  IonInfiniteScroll: ({ children }: { children?: ReactNode }) => (
-    <div>{children}</div>
+  IonInfiniteScroll: ({ children, onIonInfinite }: { children?: ReactNode; onIonInfinite: (event: unknown) => Promise<void> }) => (
+    <div>{children}<button onClick={() => void onIonInfinite({ target: { complete: async () => {} } })}>Load next page</button></div>
   ),
   IonInfiniteScrollContent: () => <div />,
   IonItem: ({
@@ -129,6 +132,7 @@ function renderModal(props: Partial<{ selectedId: string }> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  i18nState.lang = "es";
   apiState.fetchProfessionalsCatalogPage.mockResolvedValue({
     data: [pro("p2", "Zoe Última"), pro("p1", "Ana Primera")],
     total: 2,
@@ -154,6 +158,27 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ProfessionalPickerModal", () => {
+  it("descarta una página española tardía al cambiar el idioma", async () => {
+    const page = (data: ProfessionalCatalogItem[], n: number) => ({ data, total: 40, page: n, pageSize: 20, totalPages: 2 });
+    let resolveSpanish!: (value: ReturnType<typeof page>) => void;
+    apiState.fetchProfessionalsCatalogPage.mockImplementation(({ page: n }: { page: number }) => {
+      if (n === 2) return new Promise(resolve => { resolveSpanish = resolve; });
+      return Promise.resolve(page([{ ...pro("first", "Ana Ruiz"), professionalTypeDisplayName: i18nState.lang === "en" ? "Physician" : "Médico" }], 1));
+    });
+    const props = { isOpen: true, specialtyId: "spec-1", organizationId: "org-1", selectedId: "", onClose, onSelect };
+    const { rerender } = render(<ProfessionalPickerModal {...props} />);
+    await screen.findByText("Médico");
+    fireEvent.click(screen.getByText("Load next page"));
+    await waitFor(() => expect(resolveSpanish).toBeTypeOf("function"));
+    const oldRequest = apiState.fetchProfessionalsCatalogPage.mock.calls.find(([request]) => request.page === 2)![0];
+    i18nState.lang = "en";
+    rerender(<ProfessionalPickerModal {...props} />);
+    await screen.findByText("Physician");
+    expect(oldRequest.signal.aborted).toBe(true);
+    await act(async () => resolveSpanish(page([pro("old", "Spanish late row")], 2)));
+    expect(screen.queryByText("Spanish late row")).toBeNull();
+    expect(screen.getByText("Physician")).toBeTruthy();
+  });
   it("carga el catálogo de la especialidad y pinta nombre, tipo y cupo", async () => {
     renderModal();
 

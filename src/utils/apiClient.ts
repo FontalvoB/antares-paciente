@@ -1,10 +1,11 @@
+import { patientReadTimeout, requestLanguage } from "./requestLanguage";
 /**
  * Authenticated fetch wrapper for backend API calls.
  *
  * Features:
  * - Bearer token from sessionStorage via getAccessToken()
  * - credentials: 'include' for HttpOnly refresh cookie
- * - 15s timeout via AbortController
+ * - Timeout acotado: 15 s normal, 45 s en lecturas traducidas al inglés
  * - Single-flight refresh on 401 (POST /api/auth/refresh)
  * - RFC 7807 / ProblemDetails → ApiError mapping
  * - 204 No Content acceptance
@@ -135,7 +136,9 @@ function parseApiError(
       ? String((body as { message: unknown }).message)
       : `HTTP ${status}`;
 
-  return new ApiError({ message, status, errorType, code: extractCodeFromDetail(message) });
+  const code = typeof body === "object" && body !== null && "code" in body && typeof body.code === "string"
+    ? body.code : extractCodeFromDetail(message);
+  return new ApiError({ message, status, errorType, code });
 }
 
 // --- Main fetch wrapper ---
@@ -143,7 +146,7 @@ function parseApiError(
 export interface ApiFetchOptions extends Omit<RequestInit, "method" | "body"> {
   method?: string;
   body?: unknown;
-  /** Override timeout (default 15s) */
+  /** Override timeout (15 s normal; 45 s para lecturas de contenido traducido en inglés). */
   timeoutMs?: number;
 }
 
@@ -171,10 +174,14 @@ export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { timeoutMs = 15_000, body, headers: customHeaders, ...rest } = options;
+  const { timeoutMs: configuredTimeout, body, headers: customHeaders, ...rest } = options;
+  const method = rest.method ?? (body !== undefined ? "POST" : "GET");
   const url = resolveUrl(path);
 
   const headers = new Headers(customHeaders);
+  if (!headers.has("Accept-Language")) headers.set("Accept-Language", requestLanguage());
+  // Distingue una elección de la app del idioma automático del navegador/SO.
+  if (!headers.has("X-App-Language")) headers.set("X-App-Language", headers.get("Accept-Language")!);
   const token = getAccessToken();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -183,7 +190,9 @@ export async function apiFetch<T>(
     headers.set("Content-Type", "application/json");
   }
 
+  const timeoutMs = configuredTimeout ?? patientReadTimeout(path, method, headers.get("X-App-Language") ?? "es");
   const controller = new AbortController();
+  let retryTimeout: ReturnType<typeof setTimeout> | undefined;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   // La señal externa (p. ej. desmontaje del wizard) también debe cancelar:
   // se combina con el timeout en vez de ignorarla (QA-009).
@@ -194,7 +203,7 @@ export async function apiFetch<T>(
   try {
     const res = await fetch(url, {
       ...rest,
-      method: rest.method ?? (body !== undefined ? "POST" : "GET"),
+      method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
       credentials: "include",
@@ -238,6 +247,8 @@ export async function apiFetch<T>(
       // Retry original request ONCE with new token
       const retryToken = getAccessToken();
       const retryHeaders = new Headers(customHeaders);
+      if (!retryHeaders.has("Accept-Language")) retryHeaders.set("Accept-Language", requestLanguage());
+      if (!retryHeaders.has("X-App-Language")) retryHeaders.set("X-App-Language", retryHeaders.get("Accept-Language")!);
       if (retryToken) {
         retryHeaders.set("Authorization", `Bearer ${retryToken}`);
       }
@@ -246,14 +257,15 @@ export async function apiFetch<T>(
       }
 
       const retryController = new AbortController();
-      const retryTimeout = setTimeout(() => retryController.abort(), timeoutMs);
+      const retryTimeoutMs = configuredTimeout ?? patientReadTimeout(path, method, retryHeaders.get("X-App-Language") ?? "es");
+      retryTimeout = setTimeout(() => retryController.abort(), retryTimeoutMs);
       const retrySignal = rest.signal
         ? AbortSignal.any([retryController.signal, rest.signal])
         : retryController.signal;
 
       const retryRes = await fetch(url, {
         ...rest,
-        method: rest.method ?? (body !== undefined ? "POST" : "GET"),
+        method,
         headers: retryHeaders,
         body: body !== undefined ? JSON.stringify(body) : undefined,
         credentials: "include",
@@ -283,6 +295,7 @@ export async function apiFetch<T>(
     return parsed as T;
   } catch (err) {
     clearTimeout(timeoutId);
+    clearTimeout(retryTimeout);
 
     // Already an ApiError from our logic
     if (err instanceof ApiError) throw err;

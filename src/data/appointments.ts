@@ -8,6 +8,7 @@ import type {
   AppointmentDto,
   AppointmentRequestDto,
   ProfessionalCatalogItem,
+  SpecialtyDto,
 } from "../utils/appointmentsApi";
 
 export type ConsultTypeId = "medica" | "psicologia" | "nutricion" | "urgencia";
@@ -270,7 +271,7 @@ function findRealProfessional(
     id: match.id,
     typeId,
     name: match.fullName,
-    role: match.professionalTypeName ?? "Profesional COPP-ADRESD",
+    role: match.professionalTypeDisplayName ?? match.professionalTypeName ?? "Profesional COPP-ADRESD",
     ...styleForType(type),
   };
 }
@@ -444,8 +445,18 @@ export function pastAppointmentChip(
 export function buildRealAppointments(
   appointments: AppointmentDto[],
   requests: AppointmentRequestDto[],
+  specialties?: readonly Pick<SpecialtyDto, "id" | "name">[],
 ): { upcoming: ListedAppointment[]; past: ListedAppointment[] } {
   const now = Date.now();
+  // Los DTO de Telemedicina conservan su fuente; usa el catálogo de lectura
+  // del idioma activo por identidad, sin cambiar motivos ni datos guardados.
+  const names = new Map(specialties?.map(s => [s.id, s.name]));
+  const localized = <T extends AppointmentDto | AppointmentRequestDto>(item: T): T => {
+    const name = names.get(item.specialtyId);
+    return name ? { ...item, specialtyName: name } : item;
+  };
+  appointments = appointments.map(localized);
+  requests = requests.map(localized);
 
   // Una cita en curso permanece visible; las citas sin iniciar y vencidas van al historial.
   const stillActive = (a: AppointmentDto) => a.status === "InProgress" ||

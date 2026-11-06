@@ -128,10 +128,12 @@ export async function lookupId(
 export async function sendOtp(
   documentNumber: string,
   contactId: string,
+  language: "es" | "en" = "es",
 ): Promise<SendOtpResult> {
   return postJson<SendOtpResult>(`${getAuthBaseUrl()}/api/auth/send-otp`, {
     documentNumber,
     contactId,
+    language,
   });
 }
 
@@ -418,10 +420,10 @@ async function performSharedRefresh(): Promise<SharedRefreshResult> {
 }
 
 /** Recuperación real para una cuenta existente; el código nunca inicia sesión ni crea usuarios. */
-export function sendRecoveryCode(documentNumber: string, contactId: string): Promise<SendOtpResult> {
-  return postJson(`${getAuthBaseUrl()}/api/auth/recovery-code`, { documentNumber, contactId, application: getApplicationCode() });
+export function sendRecoveryCode(documentNumber: string, contactId: string, language: "es" | "en" = "es"): Promise<SendOtpResult> {
+  return postJson(`${getAuthBaseUrl()}/api/auth/recovery-code`, { documentNumber, contactId, language, application: getApplicationCode() });
 }
-export async function recoverPassword(documentNumber: string, contactId: string, otp: string, newPassword: string): Promise<void> {
-  await postJson(`${getAuthBaseUrl()}/api/auth/recover-password`, { documentNumber, contactId, otp, newPassword, application: getApplicationCode() });
+export async function recoverPassword(documentNumber: string, contactId: string, otp: string, newPassword: string, language: "es" | "en" = "es"): Promise<void> {
+  await postJson(`${getAuthBaseUrl()}/api/auth/recover-password`, { documentNumber, contactId, otp, newPassword, language, application: getApplicationCode() });
   clearAccessToken();
 }

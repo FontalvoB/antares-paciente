@@ -38,6 +38,7 @@ import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
 import { captureChatImage } from "../services/media/camera-service";
+import { localizedError } from "../utils/localizedError";
 import logoIcon from "../assets/LogoIndividual.png";
 
 const quick = [
@@ -265,7 +266,7 @@ export function ChatPage() {
   const attachFromSource = async (source: CameraSource) => {
     if (uploading) return;
     try {
-      const photo = await captureChatImage(source);
+      const photo = await captureChatImage(source, lang);
       if (photo) setPendingImage(photo);
     } catch {
       // El usuario canceló: no mostrar ruido.
@@ -315,9 +316,7 @@ export function ChatPage() {
         },
       ]);
     } catch (err: unknown) {
-      const errorMsg =
-        err instanceof Error ? err.message : t("Error al procesar el examen.");
-      showToast(errorMsg, "err");
+      showToast(localizedError(err, { t, lang }, "Error al procesar el examen."), "err");
     } finally {
       setUploading(false);
     }

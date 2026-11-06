@@ -24,7 +24,8 @@ import { CameraCapture } from "./CameraCapture";
 import { FoodResultCard } from "./FoodResultCard";
 import { MealIntakeForm } from "./MealIntakeForm";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n, useT } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 import {
   useNutritionLog,
   useUpdateNutritionLog,
@@ -166,6 +167,7 @@ function formToPayload(
 function analysisItemToDetected(item: FoodAnalysisItem): DetectedFood {
   return {
     name: item.name,
+    nameEn: item.nameEn,
     confidence: item.confidence,
     boundingBox: item.boundingBox,
     segmentation: null,
@@ -275,7 +277,7 @@ export function MealFoodFlow({
   onClose,
   onManual,
 }: Props) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const { showToast } = useApp();
   const reduced = useReducedMotion();
   const mealLabel = t(FLOW_MEAL_LABELS[meal]);
@@ -298,6 +300,7 @@ export function MealFoodFlow({
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [detailError, setDetailError] = useState(false);
   const [detailAttempt, setDetailAttempt] = useState(0);
+  const detailKey = log?.foodAnalysisId ? `${log.foodAnalysisId}:${lang}` : null;
   // Re-análisis desde el detalle (cambiar foto): estados separados del flujo
   // de registro para no mezclar contextos. Siempre actualiza (PUT), nunca crea.
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
@@ -322,15 +325,15 @@ export function MealFoodFlow({
   // hueco silencioso; la comida registrada siempre se conserva.
   useEffect(() => {
     if (step !== "detail" || !log?.foodAnalysisId) return;
-    if (loadedFor === log.foodAnalysisId) return;
+    if (loadedFor === detailKey) return;
     let cancelled = false;
     setDetailLoading(true);
     setDetailError(false);
-    getFoodAnalysis(log.foodAnalysisId)
+    getFoodAnalysis(log.foodAnalysisId, lang)
       .then(async (detail) => {
         if (cancelled) return;
         setDetailFoods(detail.foods.map(analysisItemToDetected));
-        setLoadedFor(log.foodAnalysisId ?? null);
+        setLoadedFor(detailKey);
         if (detail.imageKey) {
           try {
             setDetailImg(await getSignedImageUrl(detail.imageKey));
@@ -354,7 +357,7 @@ export function MealFoodFlow({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, log?.foodAnalysisId, loadedFor, detailAttempt]);
+  }, [step, log?.foodAnalysisId, detailKey, lang, loadedFor, detailAttempt]);
 
   function retryDetail() {
     setDetailFoods(null);
@@ -373,13 +376,13 @@ export function MealFoodFlow({
     setEditingValues(false);
     setStep("analyzing");
     try {
-      const data = await analyzeFoodImage(blob, fileName);
+      const data = await analyzeFoodImage(blob, fileName, lang);
       setResult(data);
       if (data.foods.length > 0) {
         setStep("review");
       } else {
         setAnalysisError(
-          t("No se identificaron alimentos con suficiente confianza."),
+          "No se identificaron alimentos con suficiente confianza.",
         );
         setStep("capture");
       }
@@ -387,7 +390,7 @@ export function MealFoodFlow({
       setAnalysisError(
         err instanceof Error
           ? err.message
-          : t("Ocurrió un error al analizar la imagen."),
+          : "Ocurrió un error al analizar la imagen.",
       );
       setStep("capture");
     }
@@ -434,13 +437,13 @@ export function MealFoodFlow({
     setEditingNewValues(false);
     setStep("reanalyzing");
     try {
-      const data = await analyzeFoodImage(blob, fileName);
+      const data = await analyzeFoodImage(blob, fileName, lang);
       setNewResult(data);
       if (data.foods.length > 0) {
         setStep("rereview");
       } else {
         setNewError(
-          t("No se identificaron alimentos con suficiente confianza."),
+          "No se identificaron alimentos con suficiente confianza.",
         );
         setStep("recapture");
       }
@@ -448,7 +451,7 @@ export function MealFoodFlow({
       setNewError(
         err instanceof Error
           ? err.message
-          : t("Ocurrió un error al analizar la imagen."),
+          : "Ocurrió un error al analizar la imagen.",
       );
       setStep("recapture");
     }
@@ -485,7 +488,7 @@ export function MealFoodFlow({
             return;
           }
           showToast(
-            error.message || t("No se pudo registrar la comida"),
+            localizedError(error, { t, lang }, "No se pudo registrar la comida"),
             "err",
           );
         },
@@ -512,7 +515,7 @@ export function MealFoodFlow({
         },
         onError: (error) => {
           showToast(
-            error.message || t("No se pudo actualizar la comida"),
+            localizedError(error, { t, lang }, "No se pudo actualizar la comida"),
             "err",
           );
         },
@@ -558,7 +561,7 @@ export function MealFoodFlow({
         },
         onError: (error) => {
           showToast(
-            error.message || t("No se pudo actualizar la comida"),
+            localizedError(error, { t, lang }, "No se pudo actualizar la comida"),
             "err",
           );
         },
@@ -580,7 +583,7 @@ export function MealFoodFlow({
   // o tras cambiar la foto): se muestra esqueleto, nunca hueco ni salto.
   const awaitingAnalysis =
     log?.foodAnalysisId != null &&
-    loadedFor !== log.foodAnalysisId &&
+    loadedFor !== detailKey &&
     !detailError;
 
   // Cabecera única del flujo: la comida como título, el paso como subtítulo.
@@ -641,7 +644,7 @@ export function MealFoodFlow({
             </FoodPhotoStage>
           ) : (step === 'recapture' ? newError && newPhoto : analysisError && photo) ? (
             <div className="food-analysis-error">
-              <div className="nut-cam-error" role="alert"><strong>{t("No pudimos analizar esta foto")}</strong><p>{step === 'recapture' ? newError : analysisError}</p></div>
+              <div className="nut-cam-error" role="alert"><strong>{t("No pudimos analizar esta foto")}</strong><p>{localizedError({ message: step === "recapture" ? newError : analysisError }, { t, lang }, "Ocurrió un error al analizar la imagen.")}</p></div>
               <FoodPhotoStage src={(step === 'recapture' ? newPhoto : photo) as string}>
                 <div className="food-photo-actions">
                   <IonButton className="food-photo-primary" expand="block" onClick={() => {
@@ -656,7 +659,7 @@ export function MealFoodFlow({
             <>
               {(step === "recapture" ? newError : analysisError) && (
                 <div className="nut-cam-error" role="alert">
-                  <span>{step === "recapture" ? newError : analysisError}</span>
+                  <span>{localizedError({ message: step === "recapture" ? newError : analysisError }, { t, lang }, "Ocurrió un error al analizar la imagen.")}</span>
                 </div>
               )}
               {step === "recapture" && (

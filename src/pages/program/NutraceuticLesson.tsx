@@ -12,7 +12,7 @@ export function NutraceuticLesson({ done, pending = false, pts, takenAt, recorde
 }) {
   const { t, lang } = useI18n()
   const today = weekdayMondayIndex()
-  const timestamp = recordedAt ? new Date(recordedAt) : null
+  const timestamp = recordedAt || takenAt.includes("T") ? new Date(recordedAt || takenAt) : null
   const time = timestamp && Number.isFinite(timestamp.getTime()) ? timestamp.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-ES', { hour: 'numeric', minute: '2-digit' }) : takenAt
   return <div className="lsn-stack nutraceutic-detail">
     {dayNumber != null && dayNumber > 0 && <section className="nutraceutic-day-celebration" aria-label={t('Día {day} para estar más sano', { day: String(dayNumber) })}>

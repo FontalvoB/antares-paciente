@@ -194,7 +194,7 @@ export function PodcastLesson({
 
       {audioError && (
         <div className="pod-error text-xs text-red-500 text-center py-1">
-          {audioError}
+          {t(audioError)}
         </div>
       )}
 

@@ -24,6 +24,7 @@ const hookState = vi.hoisted(() => ({
   refresh: vi.fn(),
 }));
 
+const translatedKeys = vi.hoisted(() => new Set<string>());
 const navigateMock = vi.fn();
 const openTestsMock = vi.fn();
 
@@ -38,8 +39,10 @@ vi.mock("../../../context/AppContext", () => ({
 vi.mock("../../../i18n/I18nContext", () => ({
   useI18n: () => ({
     lang: "es",
-    t: (key: string, params?: Record<string, string>) =>
-      key.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? name),
+    t: (key: string, params?: Record<string, string>) => {
+      translatedKeys.add(key);
+      return key.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? name);
+    },
   }),
 }));
 
@@ -141,6 +144,7 @@ describe("formatNotificationTime — tiempos relativos", () => {
 
 describe("NotificationsModal — agrupación y acciones", () => {
   beforeEach(() => {
+    translatedKeys.clear();
     // Jueves fijo: hace tres días pertenece a la misma semana también en CI.
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
@@ -227,6 +231,19 @@ describe("NotificationsModal — agrupación y acciones", () => {
     fireEvent.click(screen.getByText("Hidratación"));
     expect(hookState.markAsRead).toHaveBeenCalledWith("n-week");
     expect(navigateMock).toHaveBeenCalledWith("nut");
+  });
+
+  it("translates canonical server labels once and preserves localized achievement copy", () => {
+    hookState.notifications.push(notif({
+      id: "local-achievement:streak-5", type: "achievement_earned",
+      title: "5 days of consistency", message: "I earned a streak milestone in my program.",
+    }));
+    render(<NotificationsModal isOpen onClose={() => {}} />);
+    expect(screen.getByText("5 days of consistency")).toBeTruthy();
+    expect(screen.getByText("I earned a streak milestone in my program.")).toBeTruthy();
+    expect(translatedKeys.has("Hidratación")).toBe(true);
+    expect(translatedKeys.has("5 days of consistency")).toBe(false);
+    expect(translatedKeys.has("I earned a streak milestone in my program.")).toBe(false);
   });
 
   it("botón superior marca todas como leídas", () => {

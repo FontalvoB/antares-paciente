@@ -10,14 +10,15 @@ import {
 } from "@ionic/react";
 import { calendarOutline } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 import type { ListedAppointment } from "../data/appointments";
 import { splitSlotViews, toAvailableSlotViews } from "../data/careOptions";
 import {
   fetchAvailabilitySlots,
   type AvailabilitySlotDto,
 } from "../utils/appointmentsApi";
-import { addDaysToISO, formatLongDateEs, toLocalISODate } from "../utils/dates";
+import { addDaysToISO, formatLongDate, toLocalISODate } from "../utils/dates";
 
 /**
  * Reprogramación directa del paciente (2.A.5, Decisión 2 Opción A): elige una
@@ -37,7 +38,8 @@ export function RescheduleAppointmentSheet({
   onDone: (ok: boolean) => void;
 }) {
   const { rescheduleAppointmentById } = useApp();
-  const t = useT();
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "es-ES";
   const today = toLocalISODate();
   const [date, setDate] = useState("");
   const [slotStart, setSlotStart] = useState("");
@@ -68,14 +70,14 @@ export function RescheduleAppointmentSheet({
         setError(
           err instanceof Error
             ? err.message
-            : t("No se pudo cargar la disponibilidad"),
+            : "No se pudo cargar la disponibilidad",
         );
         setSlots(null);
       } finally {
         if (!signal.aborted) setLoading(false);
       }
     },
-    [professionalId, t],
+    [professionalId],
   );
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export function RescheduleAppointmentSheet({
         onDone(true);
       } else {
         setSaveError(
-          result.error ?? t("No se pudo reprogramar. Intenta de nuevo."),
+          result.error ?? "No se pudo reprogramar. Intenta de nuevo.",
         );
       }
     });
@@ -152,6 +154,7 @@ export function RescheduleAppointmentSheet({
                   <IonDatetime
                     id="resched-date"
                     presentation="date"
+                    locale={locale}
                     min={today}
                     max={addDaysToISO(today, 30)}
                     value={date || undefined}
@@ -168,13 +171,13 @@ export function RescheduleAppointmentSheet({
                     <div className="req-times-head">
                       <div>
                         <div className="req-times-title">
-                          {formatLongDateEs(date)}
+                          {formatLongDate(date, locale)}
                         </div>
                         <div className="req-times-sub">
                           {loading
                             ? t("Cargando horarios…")
                             : views.length > 0
-                              ? t("{count} horarios disponibles", {
+                              ? t(views.length === 1 ? "{count} horario disponible" : "{count} horarios disponibles", {
                                   count: String(views.length),
                                 })
                               : t("Sin cupo este día")}
@@ -196,7 +199,7 @@ export function RescheduleAppointmentSheet({
                         <strong>
                           {t("No se pudo cargar la disponibilidad")}
                         </strong>
-                        <p>{error}</p>
+                        <p>{localizedError(error, { t, lang }, "No se pudo cargar la disponibilidad")}</p>
                         <IonButton
                           className="bt bt-sm bt-ghost"
                           onClick={() => {
@@ -275,7 +278,7 @@ export function RescheduleAppointmentSheet({
                 {saveError && (
                   <div className="req-empty" role="alert">
                     <strong>{t("No se pudo reprogramar")}</strong>
-                    <p>{saveError}</p>
+                    <p>{localizedError(saveError, { t, lang }, "No se pudo reprogramar. Intenta de nuevo.")}</p>
                   </div>
                 )}
               </>
