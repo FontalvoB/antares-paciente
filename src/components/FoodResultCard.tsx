@@ -77,7 +77,7 @@ export function FoodResultCard({ food, index = 0 }: { food: DetectedFood; index?
             {macros.map(macro => (
               <IonChip key={macro.tone} className={`food-result-macro ${macro.tone}`}>
                 <IonIcon icon={macro.icon} aria-hidden="true" />
-                <span>{macro.label} {Math.round(macro.value)}g</span>
+                <span><strong>{Math.round(macro.value)} g</strong><small>{macro.label}</small></span>
               </IonChip>
             ))}
           </div>

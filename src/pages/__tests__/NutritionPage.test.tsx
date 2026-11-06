@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render as renderView, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { ProgramSnapshotDto } from "../../services/program/types";
+
+function render(children: ReactNode) {
+  return renderView(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>);
+}
 
 vi.mock("../../hooks/useNutritionPlanStatus", () => ({
   useNutritionPlanStatus: () => ({ status: null, isLoading: false, error: null, refetch: vi.fn() }),

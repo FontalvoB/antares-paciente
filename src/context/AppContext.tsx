@@ -1086,7 +1086,8 @@ export function AppProvider({
       // Destino unificado: «Mi Avatar» abre Perfil corporal (screen='body').
       // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
       // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
-      navigate: (s) => setScreen(s === "avatar" ? "body" : s),
+      // El protocolo nutricional abre el mismo módulo completo que la pestaña Nutrición.
+      navigate: (s) => setScreen(s === "avatar" ? "body" : s === "program-nut" ? "nut" : s),
       openBookingWizard: () => {
         setBookingWizardAutoOpen(true);
         setScreen("book");

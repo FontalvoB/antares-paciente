@@ -87,6 +87,7 @@ function sampleFrom(value: unknown, deviceId: string): HealthSample | null {
     ...(value.value2 !== undefined ? { value2: value.value2 as number } : {}),
     ...(value.agg !== undefined ? { agg: value.agg as HealthSample["agg"] } : {}),
     ...(value.source !== undefined ? { source: value.source as HealthSample["source"] } : {}),
+    ...(value.sleepDurationVersion === 1 ? { sleepDurationVersion: 1 as const } : {}),
   };
 }
 

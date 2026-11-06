@@ -88,6 +88,7 @@ interface Props {
   plan?: MyNutritionPlanDto | null;
   planLoading?: boolean;
   planFailed?: boolean;
+  onRetryPlan?: () => void;
   meal: Exclude<MealCode, "agua">;
   mode: MealFlowMode;
   autoSource?: "camera" | "gallery";
@@ -265,7 +266,7 @@ function NutritionSummary({
 
 export function MealFoodFlow({
   active = true, onBack,
-  plan, planLoading, planFailed,
+  plan, planLoading, planFailed, onRetryPlan,
   meal,
   mode,
   autoSource,
@@ -296,6 +297,7 @@ export function MealFoodFlow({
   // log cambia de foodAnalysisId (p. ej. tras cambiar la foto), se recarga.
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [detailError, setDetailError] = useState(false);
+  const [detailAttempt, setDetailAttempt] = useState(0);
   // Re-análisis desde el detalle (cambiar foto): estados separados del flujo
   // de registro para no mezclar contextos. Siempre actualiza (PUT), nunca crea.
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
@@ -303,6 +305,8 @@ export function MealFoodFlow({
   const [newError, setNewError] = useState<string | null>(null);
   const [newCaptureKey, setNewCaptureKey] = useState(0);
   const [editingNewValues, setEditingNewValues] = useState(false);
+  const lastCapture = useRef<{ blob: Blob; fileName: string } | null>(null);
+  const lastNewCapture = useRef<{ blob: Blob; fileName: string } | null>(null);
 
   // Libera los objectURL al desmontar (sin subidas duplicadas: el blob vive
   // solo en memoria hasta el análisis; el backend guarda su propia copia).
@@ -350,16 +354,18 @@ export function MealFoodFlow({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, log?.foodAnalysisId, loadedFor]);
+  }, [step, log?.foodAnalysisId, loadedFor, detailAttempt]);
 
   function retryDetail() {
     setDetailFoods(null);
     setDetailImg(null);
     setLoadedFor(null);
     setDetailError(false);
+    setDetailAttempt(attempt => attempt + 1);
   }
 
   async function handleCapture(blob: Blob, fileName: string) {
+    lastCapture.current = { blob, fileName };
     if (photo) URL.revokeObjectURL(photo);
     setPhoto(URL.createObjectURL(blob));
     setAnalysisError(null);
@@ -420,6 +426,7 @@ export function MealFoodFlow({
   }
 
   async function handleNewCapture(blob: Blob, fileName: string) {
+    lastNewCapture.current = { blob, fileName };
     if (newPhoto) URL.revokeObjectURL(newPhoto);
     setNewPhoto(URL.createObjectURL(blob));
     setNewError(null);
@@ -581,10 +588,9 @@ export function MealFoodFlow({
   const stepSub =
     step === "review" || step === "rereview"
       ? t("Revisa tu comida")
-      : step === "capture" ||
-          step === "analyzing" ||
-          step === "recapture" ||
-          step === "reanalyzing"
+      : isAnalyzing
+        ? t("Análisis en curso")
+        : step === "capture" || step === "recapture"
         ? t("Toma una foto o elige una imagen")
         : step === "edit"
           ? t("Editar comida")
@@ -616,6 +622,12 @@ export function MealFoodFlow({
         </div>
       </div>
 
+      {mode === 'register' && <ol className="food-flow-steps" aria-label={t("Pasos de tu foto")}>
+        {[t("Foto"), t("Análisis"), t("Revisión")].map((label, index) => {
+          const current = step === 'review' ? 2 : isAnalyzing ? 1 : 0;
+          return <li key={label} className={index === current ? 'is-current' : index < current ? 'is-complete' : ''} aria-current={index === current ? 'step' : undefined}><span>{index < current ? <IonIcon icon={checkmarkOutline} aria-hidden="true" /> : index + 1}</span>{label}</li>;
+        })}
+      </ol>}
       <AnimatePresence mode="wait" initial={false}>
       <motion.div key={step} className="nut-flow-scene" {...foodScene(reduced)}>
       {(step === "capture" ||
@@ -627,6 +639,19 @@ export function MealFoodFlow({
             <FoodPhotoStage src={(step === "analyzing" ? photo : newPhoto) as string} analyzing>
               {step === "reanalyzing" && <p className="nut-ai-hint">{t("Tu comida registrada se conserva.")}</p>}
             </FoodPhotoStage>
+          ) : (step === 'recapture' ? newError && newPhoto : analysisError && photo) ? (
+            <div className="food-analysis-error">
+              <div className="nut-cam-error" role="alert"><strong>{t("No pudimos analizar esta foto")}</strong><p>{step === 'recapture' ? newError : analysisError}</p></div>
+              <FoodPhotoStage src={(step === 'recapture' ? newPhoto : photo) as string}>
+                <div className="food-photo-actions">
+                  <IonButton className="food-photo-primary" expand="block" onClick={() => {
+                    const capture = step === 'recapture' ? lastNewCapture.current : lastCapture.current;
+                    if (capture) void (step === 'recapture' ? handleNewCapture(capture.blob, capture.fileName) : handleCapture(capture.blob, capture.fileName));
+                  }}><IonIcon icon={refreshOutline} slot="start" />{t("Volver a analizar")}</IonButton>
+                  <IonButton expand="block" fill="clear" onClick={step === 'recapture' ? newRetake : retake}>{t("Elegir otra foto")}</IonButton>
+                </div>
+              </FoodPhotoStage>
+            </div>
           ) : (
             <>
               {(step === "recapture" ? newError : analysisError) && (
@@ -661,6 +686,7 @@ export function MealFoodFlow({
 
       {step === "review" && result && photo && (
         <div className="nut-review-content">
+          <div className="food-review-intro"><span>{t("LISTO PARA REVISAR")}</span><h2>{t("Tu foto, en nutrientes")}</h2><p>{t("Confirma los alimentos y las porciones antes de registrar tu comida.")}</p></div>
           <figure className="nut-fig">
             <img
               className="nut-ai-preview"
@@ -689,7 +715,7 @@ export function MealFoodFlow({
               {t("Estimación IA · confirma o ajusta")}
             </motion.div>
           )}
-          <FoodPlanComparison result={result} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
+          <FoodPlanComparison result={result} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} onRetry={onRetryPlan} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({result.foods.length})
           </div>
@@ -783,7 +809,7 @@ export function MealFoodFlow({
               {t("Estimación IA · confirma o ajusta")}
             </motion.div>
           )}
-          <FoodPlanComparison result={newResult} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} />
+          <FoodPlanComparison result={newResult} mealCode={meal} plan={plan} loading={planLoading} failed={planFailed} onRetry={onRetryPlan} />
           <div className="nut-ai-title nut-flow-sec">
             {t("Alimentos detectados")} ({newResult.foods.length})
           </div>

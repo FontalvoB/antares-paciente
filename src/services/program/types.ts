@@ -161,6 +161,7 @@ export interface TodayTaskDto {
   status: TaskStatus
   completedAt: string | null
   content?: TodayTaskContentDto | null
+  emotionalAssessment?: { moodScore: number; barriers?: string | null; answers: EmotionalAssessmentPayload } | null
 }
 
 export interface XpInfoDto {
@@ -257,8 +258,11 @@ export interface EmotionalAssessmentPayload {
   stressScore?: number
   motivationScore?: number
   sleepMinutes?: number
-  sleepSource?: 'manual' | 'wearable'
+  sleepSource?: 'manual' | 'wearable' | 'unknown'
   sleepRecordedAt?: string
+  sleepDeviceId?: string
+  sleepNightDate?: string
+  sleepQuality?: 'poor' | 'fair' | 'restorative'
   notes?: string
 }
 

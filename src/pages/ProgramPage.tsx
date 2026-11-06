@@ -20,7 +20,6 @@ import {
 } from "../data/program";
 import type { ProgramDay, ProgramTaskId } from "../types";
 import { weekdayMondayIndex } from "../utils/dates";
-import { deriveLoggedMeals } from "../utils/nutritionProgress";
 import { buildMonthCells } from "../utils/monthCells";
 import {
   emptyWeekCells,
@@ -32,7 +31,6 @@ import {
   EmotionalLesson,
   ExerciseLesson,
   NutraceuticLesson,
-  NutritionLesson,
   PodcastLesson,
   VitalsLesson,
   type ProgramTab,
@@ -142,13 +140,6 @@ export function ProgramPage() {
   // to static defs when the backend field is absent (chests module, T8).
   const { chests } = useStreakChests();
 
-  // S4: comidas registradas hoy desde la verdad server-side del snapshot
-  // (nutritionIntakeLogs + capa optimista del cache). Reemplaza el consumo
-  // de AppContext.mealsLogged en flujos conectados (sin shim).
-  const serverLoggedMeals = useMemo(
-    () => deriveLoggedMeals(snapshot),
-    [snapshot],
-  );
 
   const now = new Date();
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -198,6 +189,7 @@ export function ProgramPage() {
   const activeProgramWeek =
     snapshot?.template?.currentWeekNumber ?? appProgramWeek;
   const activeTotalWeeks = snapshot?.template?.totalWeeks ?? PROGRAM_WEEKS;
+  const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
   const weekPct =
     activeTotalWeeks > 0 ? activeProgramWeek / activeTotalWeeks : 0;
 
@@ -724,6 +716,7 @@ export function ProgramPage() {
 
         <ProgramHeader
           programWeek={activeProgramWeek}
+          dayNumber={activeProgramDay}
           doneCount={doneCount}
           total={progress.total}
           allDone={allDone}
@@ -795,7 +788,7 @@ export function ProgramPage() {
         {task && (
           <Scroll key={active} noNav className={`lesson-page-scroll${active === "vitals" ? " wearable-scroll" : ""}`}>
             <div className="lesson-sheet">
-              <div className="lesson-sheet-head">
+              <div className={`lesson-sheet-head${active === "emocional" ? " lesson-sheet-head--emotional" : ""}`}>
                 <div>
                   <div className="kicker" style={{ color: "var(--mu)" }}>
                     {task.emoji}{" "}
@@ -873,40 +866,6 @@ export function ProgramPage() {
                   }
                 />
               )}
-              {task.id === "nut" && (
-                <NutritionLesson
-                  done={program.nut}
-                  pts={taskPts}
-                  title={
-                    serverActiveTask?.content?.nutritionPlanName ||
-                    serverActiveTask?.content?.title ||
-                    undefined
-                  }
-                  dailyCalorieTarget={
-                    serverActiveTask?.content?.dailyCalorieTarget
-                  }
-                  dailyProteinTarget={
-                    serverActiveTask?.content?.dailyProteinTarget
-                  }
-                  dailyCarbsTarget={serverActiveTask?.content?.dailyCarbsTarget}
-                  dailyFatTarget={serverActiveTask?.content?.dailyFatTarget}
-                  dailyFiberTarget={serverActiveTask?.content?.dailyFiberTarget}
-                  nutritionMeals={serverActiveTask?.content?.nutritionMeals}
-                  mealsLogged={serverLoggedMeals}
-                  onGoPlan={() => {
-                    setActive(null);
-                    navigate("nut");
-                  }}
-                  onComplete={() =>
-                    finish(
-                      "nut",
-                      taskPts,
-                      t("+{pts} pts nutrición", { pts: String(taskPts) }),
-                    )
-                  }
-                  unavailable={activeContentUnavailable}
-                />
-              )}
               {task.id === "ejercicio" && (
                 <ExerciseLesson
                   done={program.ejercicio}
@@ -942,9 +901,9 @@ export function ProgramPage() {
                   pending={serverActiveTask?.clientPending === true}
                   recordedAt={serverActiveTask?.clientPending ? null : serverActiveTask?.completedAt}
                   nbWeekDays={snapshot?.streak?.nbWeekDays}
-                  dayNumber={programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate)}
+                  dayNumber={activeProgramDay}
                   onShare={serverActiveTask?.status === "Completed" && !serverActiveTask.clientPending ? () => {
-                    const day = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
+                    const day = activeProgramDay;
                     queueCommunityShareDraft(user.id || user.cedula, day ? t("Día {day} para estar más sano. Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!", { day: String(day) }) : t("Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!"));
                     setActive(null);
                     navigate("com");
@@ -964,6 +923,9 @@ export function ProgramPage() {
                 <EmotionalLesson
                   done={program.emocional}
                   pending={serverActiveTask?.clientPending === true}
+                  saving={completeTaskMutation.isPending}
+                  localDate={snapshot?.todayLocalDate}
+                  saved={serverActiveTask?.emotionalAssessment}
                   pts={taskPts}
                   onComplete={({ mood, barrier, emotional }) => {
                     finish(

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IonIcon, IonSelect, IonSelectOption } from "@ionic/react";
+import { IonButton, IonIcon, IonSelect, IonSelectOption, IonSkeletonText } from "@ionic/react";
 import { leafOutline } from "ionicons/icons";
 import { useT } from "../../i18n/I18nContext";
 import type { FoodAnalysisResult } from "../../utils/foodAiApi";
@@ -15,12 +15,14 @@ export function FoodPlanComparison({
   plan,
   loading,
   failed,
+  onRetry,
 }: {
   result: FoodAnalysisResult;
   mealCode: MealCode;
   plan?: MyNutritionPlanDto | null;
   loading?: boolean;
   failed?: boolean;
+  onRetry?: () => void;
 }) {
   const t = useT();
   const [selectedDay, setSelectedDay] = useState<string>("");
@@ -53,13 +55,13 @@ export function FoodPlanComparison({
         </div>
       </div>
       {loading ? (
-        <p role="status">{t("Cargando tu plan…")}</p>
+        <div role="status" aria-busy="true"><p>{t("Cargando tu plan…")}</p><IonSkeletonText animated style={{ height: 60 }} /></div>
       ) : failed ? (
-        <p>
+        <div role="alert"><p>
           {t(
             "No pudimos consultar tu plan. No se puede evaluar la coincidencia.",
           )}
-        </p>
+        </p>{onRetry && <IonButton fill="outline" onClick={onRetry}>{t("Reintentar")}</IonButton>}</div>
       ) : !plan ? (
         <p>
           {t(
@@ -68,9 +70,12 @@ export function FoodPlanComparison({
         </p>
       ) : (
         <>
-          <p>{plan.name}</p>
+          <p className="food-plan-name">{plan.name}</p>
           {needsDay && (
             <IonSelect
+              className="fld"
+              interface="popover"
+              labelPlacement="stacked"
               label={t("Día del plan")}
               placeholder={t("Selecciona el día que estás siguiendo")}
               value={selectedDay}
@@ -87,7 +92,7 @@ export function FoodPlanComparison({
             <>
               <div className="food-plan-columns">
                 <span>{t("Nutriente")}</span>
-                <span>{t("Foto / plan")}</span>
+                <span>{t("Tu foto")}</span><span>{t("Tu plan")}</span>
               </div>
               {rows.map((row) => (
                 <div className="food-plan-row" key={row.key}>
@@ -105,10 +110,8 @@ export function FoodPlanComparison({
                             })}
                     </small>
                   </div>
-                  <b>
-                    {Math.round(row.estimated * 10) / 10} / {row.target}{" "}
-                    <small>{row.key === "calories" ? "kcal" : "g"}</small>
-                  </b>
+                  <b className="food-plan-estimated">{Math.round(row.estimated * 10) / 10}<small>{row.key === "calories" ? "kcal" : "g"}</small></b>
+                  <b className="food-plan-target">{row.target}<small>{row.key === "calories" ? "kcal" : "g"}</small></b>
                 </div>
               ))}
               <p className="food-plan-note">

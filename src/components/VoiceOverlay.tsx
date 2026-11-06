@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonInput, IonModal } from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import { VoiceOrb } from "./VoiceOrb";
+import type { VoicePhase } from "./VoiceOrb";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { useSpeechAssistant } from "../hooks/useSpeechAssistant";
@@ -36,17 +38,10 @@ import {
 
 type VoiceMode = "idle" | "eleven" | "webspeech";
 
-/** Fase visual del turno: alimenta el orb, el punto de estado y las ondas. */
-type VoicePhase =
-  | "connecting"
-  | "listening"
-  | "thinking"
-  | "speaking"
-  | "muted"
-  | "unavailable";
-
 /** Props de la cápsula visual compartida por ambos motores. */
 interface VoiceShellProps {
+  active: boolean;
+  getVolume?: () => number;
   phase: VoicePhase;
   statusLabel: string;
   transcriptLine: string;
@@ -61,6 +56,8 @@ interface VoiceShellProps {
  * transcripción en tarjeta glass y controles circulares grandes (mute +
  * colgar) con regreso claro al chat de texto. Solo presentación. */
 function VoiceShell({
+  active,
+  getVolume,
   phase,
   statusLabel,
   transcriptLine,
@@ -86,6 +83,7 @@ function VoiceShell({
       </IonButton>
       <div className="vc-center">
         <div className={orbClass} aria-hidden="true">
+          <VoiceOrb phase={phase} active={active} getVolume={getVolume} />
           {phase === "thinking" ? <span className="vc-orb-dots">•••</span> : null}
         </div>
         <div className={`vc-status is-${phase}`} aria-live="polite">{statusLabel}</div>
@@ -335,7 +333,7 @@ export function VoiceOverlay() {
         className="voice-modal"
       >
         <div className="overlay overlay-voice">
-          <div className="voice-orb vc-orb is-unavailable">
+          <div className="voice-orb vc-orb is-unavailable" aria-hidden="true">
             <IonIcon icon={micOff} className="vc-orb-ico" />
           </div>
           <div className="display vc-title">
@@ -373,6 +371,7 @@ export function VoiceOverlay() {
             onError={onError}
           >
             <ElevenVoiceBody
+              active={voiceOpen}
               onHangUp={hangUp}
               thinking={thinking}
               userLine={userLine}
@@ -394,6 +393,7 @@ export function VoiceOverlay() {
           </ConversationProvider>
         ) : (
           <VoiceShell
+            active={voiceOpen}
             phase={
               assistant.state === "processing"
                 ? "thinking"
@@ -433,6 +433,7 @@ export function VoiceOverlay() {
 // ── Cuerpo de la sesión ElevenLabs (consume useConversation del provider) ──
 
 interface ElevenVoiceBodyProps {
+  active: boolean;
   thinking: boolean;
   onHangUp: () => void;
   userLine: string;
@@ -441,6 +442,7 @@ interface ElevenVoiceBodyProps {
 }
 
 function ElevenVoiceBody({
+  active,
   thinking,
   onHangUp,
   userLine,
@@ -506,6 +508,9 @@ function ElevenVoiceBody({
 
   return (
     <VoiceShell
+      active={active}
+      // Los getters del SDK exponen el nivel real, no la ganancia volume/setVolume.
+      getVolume={phase === "speaking" ? eleven.getOutputVolume : eleven.getInputVolume}
       phase={phase}
       statusLabel={label}
       transcriptLine={eleven.isSpeaking ? botLine : userLine}

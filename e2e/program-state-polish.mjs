@@ -22,7 +22,7 @@ const reasons = {
 };
 const recoverableScenarios = ['recoverable', 'network', 'timeout', 'server', 'assessments'];
 for (const width of [320, 390, 768]) for (const scenario of ['recoverable', 'network', 'timeout', 'server', 'assessments', 'loading', 'paused', 'withdrawn', 'no-template', 'nutra', 'nutra-completed']) {
-  if (process.env.COP_E2E_CASE && `${scenario}-${width}` !== process.env.COP_E2E_CASE) continue;
+  if (process.env.COP_E2E_CASE && !process.env.COP_E2E_CASE.split(',').includes(`${scenario}-${width}`)) continue;
   const context = await browser.newContext({ viewport: { width, height: 900 } });
   const page = await context.newPage(); page.setDefaultTimeout(7000);
   await page.clock.setFixedTime(new Date('2026-11-06T14:00:00Z'));
@@ -66,9 +66,16 @@ for (const width of [320, 390, 768]) for (const scenario of ['recoverable', 'net
   });
   try {
     await page.goto(origin);
+    if (scenario.startsWith('nutra')) {
+      await expect(page.locator('.hm-program-day')).toHaveText('Día 19 del programa');
+      await page.locator('.hm-day-panel').screenshot({ path: path.join(out, `home-program-day-${width}.png`), animations: 'disabled' });
+    }
     await page.locator('.hm-day-link').click();
     await expect(page.locator('.router-page')).toHaveCSS('opacity', '1');
     if (scenario.startsWith('nutra')) {
+      await expect(page.locator('.pgh-program-day')).toHaveText('Día 19');
+      await expect(page.locator('.pgh-program-day')).toHaveAttribute('aria-label', 'Día 19 del programa');
+      await page.locator('.pgh-unit').screenshot({ path: path.join(out, `protocol-program-day-${width}.png`), animations: 'disabled' });
       const card = page.locator('button.pcard').filter({ hasText: '¿Ya tomaste tu Nutracéutico?' });
       await expect(card).toHaveCount(1);
       const extra = page.locator('.pg-nb');

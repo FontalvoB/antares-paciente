@@ -15,6 +15,7 @@ import type { ProgramTab } from './Lessons'
  */
 export function ProgramHeader({
   programWeek,
+  dayNumber,
   doneCount,
   total,
   allDone,
@@ -26,6 +27,7 @@ export function ProgramHeader({
   onOpenChests,
 }: {
   programWeek: number
+  dayNumber?: number | null
   doneCount: number
   total: number
   allDone: boolean
@@ -91,9 +93,10 @@ export function ProgramHeader({
           <small>/{total}</small>
         </RingProgress>
         <div className="pgh-unit-copy">
-          <span className="pgh-unit-kicker">
-            {t('Unidad')} {programWeek}
-          </span>
+          <div className="pgh-day-context">
+            {Number.isInteger(dayNumber) && dayNumber! > 0 && <span className="pgh-program-day" aria-label={t('Día {day} del programa', { day: String(dayNumber) })}>{t('Día {day}', { day: String(dayNumber) })}</span>}
+            <span className="pgh-unit-kicker">{t('Unidad')} {programWeek}</span>
+          </div>
           <strong>{allDone ? t('Día perfecto') : t('Protocolo de hoy')}</strong>
           <small>
             {allDone

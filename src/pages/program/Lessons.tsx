@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
-  NutritionMealDto,
   PodcastChapterDto,
   RecentVitalsDto,
   VitalsPayload,
@@ -48,7 +47,6 @@ import {
   formatDateForDisplay,
   toLocalISODate,
 } from "../../utils/dates";
-import { mealTypeToCode } from "../../utils/mealTypeToCode";
 import { useI18n, useT } from "../../i18n/I18nContext";
 
 function mmss(sec: number) {
@@ -640,172 +638,6 @@ function vitalIconFor(id: string) {
     default:
       return pulseOutline;
   }
-}
-
-export function NutritionLesson({
-  done,
-  pts,
-  title,
-  dailyCalorieTarget,
-  dailyProteinTarget,
-  dailyCarbsTarget,
-  dailyFatTarget,
-  dailyFiberTarget,
-  nutritionMeals,
-  mealsLogged,
-  onGoPlan,
-  onComplete,
-  unavailable,
-}: {
-  done: boolean;
-  pts: number;
-  title?: string;
-  dailyCalorieTarget?: number | null;
-  dailyProteinTarget?: number | null;
-  dailyCarbsTarget?: number | null;
-  dailyFatTarget?: number | null;
-  dailyFiberTarget?: number | null;
-  nutritionMeals?: NutritionMealDto[] | null;
-  mealsLogged: string[];
-  onGoPlan: () => void;
-  onComplete: () => void;
-  unavailable?: boolean;
-}) {
-  const t = useT();
-
-  // Sin plan del servidor (content null/contentUnavailable o sin comidas):
-  // estado honesto — nunca un plan fabricado.
-  if (unavailable || !nutritionMeals || nutritionMeals.length === 0) {
-    return <LessonUnavailable />;
-  }
-
-  const meals = nutritionMeals.map((m, idx) => {
-    const mealTypeLower = m.mealType.toLowerCase();
-    let emoji = "🥗";
-    if (mealTypeLower.includes("desayuno")) emoji = "🌅";
-    else if (mealTypeLower.includes("almuerzo")) emoji = "☀️";
-    else if (mealTypeLower.includes("cena")) emoji = "🌙";
-    else if (
-      mealTypeLower.includes("snack") ||
-      mealTypeLower.includes("merienda")
-    )
-      emoji = "🍎";
-
-    const details: string[] = [];
-    if (m.description) details.push(m.description);
-    if (m.foods) details.push(`(${m.foods})`);
-    const macros: string[] = [];
-    if (m.proteinG) macros.push(`P: ${m.proteinG}g`);
-    if (m.carbsG) macros.push(`C: ${m.carbsG}g`);
-    if (m.fatG) macros.push(`G: ${m.fatG}g`);
-    if (m.fiberG) macros.push(`Fib: ${m.fiberG}g`);
-    if (macros.length > 0) details.push(`[${macros.join(" · ")}]`);
-
-    return {
-      // D4: el id es el mealCode canónico (des/alm/mer/cen), NO el
-      // mealTypeLower crudo ('desayuno') — que nunca matcheaba los
-      // códigos de nutritionIntakeLogs y rompía ring/kcal/checkmarks
-      // (bug vivo Lessons.tsx:417/437). Tipos desconocidos → id único
-      // sin match (no registrado).
-      id: mealTypeToCode(m.mealType) ?? `meal-${idx}`,
-      emoji,
-      title: ({ des: "Desayuno", alm: "Almuerzo", mer: "Merienda", cen: "Cena" } as Record<string, string>)[mealTypeToCode(m.mealType) ?? ""] ?? m.mealType,
-      items: details.join(" ") || "Comida planificada",
-      kcal: m.calories || 0,
-    };
-  });
-
-  // S1: sin meta calórica REAL del servidor (null/0/negativo) no se inventa
-  // el 1.800 de la demo — el titular muestra "—" y los macros siguen si vienen.
-  const targetKcal =
-    dailyCalorieTarget != null && dailyCalorieTarget > 0
-      ? dailyCalorieTarget
-      : null;
-  const targetProtein = dailyProteinTarget
-    ? `${dailyProteinTarget} g proteína`
-    : null;
-  const targetFat = dailyFatTarget ? `${dailyFatTarget} g grasa` : null;
-  const targetCarbs = dailyCarbsTarget ? `${dailyCarbsTarget} g carbs` : null;
-  const targetFiber = dailyFiberTarget ? `${dailyFiberTarget} g fibra` : null;
-
-  const macroSubtext = [targetProtein, targetFat, targetCarbs, targetFiber]
-    .filter(Boolean)
-    .join(" · ");
-
-  const kcal = meals
-    .filter((m) => mealsLogged.includes(m.id))
-    .reduce((s, m) => s + m.kcal, 0);
-  const pct = meals.length > 0 ? meals.filter(m => mealsLogged.includes(m.id)).length / meals.length : 0;
-
-  return (
-    <div className="lsn-stack">
-      <div className="nut-hero">
-        <div>
-          <div className="kicker" style={{ color: "var(--teal-d)" }}>
-            {t(title || "Plan de Alimentación")}
-          </div>
-          <strong>
-            {targetKcal != null ? `${targetKcal} kcal` : "—"}
-            {macroSubtext ? ` · ${macroSubtext}` : ""}
-          </strong>
-          <span>
-            {t("Hoy llevas {kcal} kcal registradas · {pct}% de comidas", {
-              kcal: String(kcal),
-              pct: String(Math.round(pct * 100)),
-            })}
-          </span>
-        </div>
-        <div className="nut-ring" aria-hidden="true">
-          <svg width="64" height="64" viewBox="0 0 64 64">
-            <circle
-              cx="32"
-              cy="32"
-              r="24"
-              fill="none"
-              stroke="var(--g1)"
-              strokeWidth="7"
-            />
-            <circle
-              cx="32"
-              cy="32"
-              r="24"
-              fill="none"
-              stroke="var(--teal)"
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeDasharray={`${pct * 150.8} 150.8`}
-              transform="rotate(-90 32 32)"
-            />
-          </svg>
-          <b>{Math.round(pct * 100)}%</b>
-        </div>
-      </div>
-      {meals.map((m) => (
-        <div
-          key={m.id}
-          className={`lsn-meal ${mealsLogged.includes(m.id) ? "on" : ""}`}
-        >
-          <span className="lsn-meal-ico">{m.emoji}</span>
-          <div>
-            <strong>{t(m.title)}</strong>
-            <span>
-              {t(m.items)} {m.kcal > 0 ? `· ${m.kcal} kcal` : ""}
-            </span>
-          </div>
-          <em>{mealsLogged.includes(m.id) ? "✓" : ""}</em>
-        </div>
-      ))}
-      {meals.every(m => m.id !== "mer") && <section className="lsn-meal nutrition-missing-snack"><span className="lsn-meal-ico" aria-hidden="true">🍎</span><div><strong>{t("Merienda")}</strong><span>{t("Tu nutricionista aún no ha indicado esta comida para este día.")}</span></div></section>}
-      <IonButton expand="block" className="bt bt-primary" onClick={onGoPlan}>
-        {t("Ir a registrar comidas")}
-      </IonButton>
-      {!done && (
-        <IonButton expand="block" className="bt bt-gold" onClick={onComplete}>
-          {t("Cumplí el plan hoy · +{pts} pts", { pts: String(pts) })}
-        </IonButton>
-      )}
-    </div>
-  );
 }
 
 export { ExerciseLesson } from "./ExerciseLesson";
