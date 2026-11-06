@@ -40,7 +40,8 @@ import { Capacitor } from "@capacitor/core";
 import { useApp } from "../context/AppContext";
 import { useWearable } from "../context/WearableContext";
 import type { HealthSample, MetricKind } from "../devices/types";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 import {
   SosServiceError,
   activateSosAlert,
@@ -100,7 +101,7 @@ const EMERGENCY_SERVICES = [
 export function PanicOverlay() {
   const { panicOpen, sosActive, closePanic, activateSos, user, showToast } =
     useApp();
-  const t = useT();
+  const { t, lang } = useI18n();
   const wearable = useWearable();
   const wearableRef = useRef(wearable);
   wearableRef.current = wearable;
@@ -376,10 +377,10 @@ export function PanicOverlay() {
               "ok",
             );
           } else {
-            showToast(err.message, "err");
+            showToast(localizedError(err, { t, lang }, "No se pudo enviar la alerta. Intenta de nuevo."), "err");
           }
         } else {
-          showToast(err.message, "err");
+          showToast(localizedError(err, { t, lang }, "No se pudo enviar la alerta. Intenta de nuevo."), "err");
         }
       } else {
         showToast(t("No se pudo enviar la alerta. Intenta de nuevo."), "err");

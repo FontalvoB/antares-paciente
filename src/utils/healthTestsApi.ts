@@ -1,5 +1,4 @@
-import { getAccessToken } from "./authApi";
-import { getApiBaseUrl } from "./apiBaseUrl";
+import { apiFetch } from "./apiClient";
 
 /**
  * Cliente del módulo Tests de Salud (backend .NET, gateway YARP).
@@ -129,31 +128,12 @@ export interface MeSubmitAnswer {
   valueText?: string | null;
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  const token = getAccessToken();
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
-  if (!res.ok) {
-    throw new Error(`HealthTests API error ${res.status} en ${path}`);
-  }
-  return res.json() as Promise<T>;
+function getJson<T>(path: string): Promise<T> {
+  return apiFetch<T>(path, { method: "GET" });
 }
 
-async function postJson<T>(path: string, body?: unknown): Promise<T> {
-  const token = getAccessToken();
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
-    method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : undefined),
-      ...(body ? { "Content-Type": "application/json" } : undefined),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    throw new Error(`HealthTests API error ${res.status} en ${path}`);
-  }
-  return res.json() as Promise<T>;
+function postJson<T>(path: string, body?: unknown): Promise<T> {
+  return apiFetch<T>(path, { method: "POST", body });
 }
 
 /** Mis tests asignados: pendientes, en curso y completados. */

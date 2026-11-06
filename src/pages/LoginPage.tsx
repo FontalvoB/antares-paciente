@@ -19,7 +19,8 @@ import {
   shieldCheckmarkOutline,
 } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { Mascot } from "../components/Mascot";
 import { SlideCtaButton } from "../components/SlideCtaButton";
@@ -49,7 +50,8 @@ const panelMotion = {
 
 export function LoginPage() {
   const { finishLogin, showToast } = useApp();
-  const t = useT();
+  const i18n = useI18n();
+  const { t } = i18n;
   const [mode, setMode] = useState<LoginMode>("login");
   const [firstStep, setFirstStep] = useState<FirstStep>("id");
 
@@ -101,7 +103,7 @@ export function LoginPage() {
     } catch (e) {
       setBusy(false);
       showToast(
-        e instanceof Error ? e.message : t("Error al iniciar sesión"),
+        localizedError(e, i18n, "Error al iniciar sesión"),
         "err",
       );
     }
@@ -114,7 +116,7 @@ export function LoginPage() {
       return;
     }
     startAction();
-    setBusyMessage(t("Buscando tu identificación…"));
+    setBusyMessage("Buscando tu identificación…");
     try {
       const result = await lookupId(doc);
       setLookup(result);
@@ -126,7 +128,7 @@ export function LoginPage() {
     } catch (e) {
       setBusy(false);
       showToast(
-        e instanceof Error ? e.message : t("No se pudo verificar la identidad"),
+        localizedError(e, i18n, "No se pudo verificar la identidad"),
         "err",
       );
     }
@@ -134,11 +136,11 @@ export function LoginPage() {
 
   const pickContact = async (c: ContactMethod) => {
     startAction();
-    setBusyMessage(t("Enviando tu código…"));
+    setBusyMessage("Enviando tu código…");
     try {
       const result = mode === "recovery"
-        ? await sendRecoveryCode(idInput.trim(), c.id)
-        : await sendOtp(idInput.trim(), c.id);
+        ? await sendRecoveryCode(idInput.trim(), c.id, i18n.lang)
+        : await sendOtp(idInput.trim(), c.id, i18n.lang);
       setContact(c);
       setDevCode(result.devCode ?? null);
       setOtp(["", "", "", "", "", ""]);
@@ -154,7 +156,7 @@ export function LoginPage() {
     } catch (e) {
       setBusy(false);
       showToast(
-        e instanceof Error ? e.message : t("No se pudo enviar el código"),
+        localizedError(e, i18n, "No se pudo enviar el código"),
         "err",
       );
     }
@@ -175,11 +177,11 @@ export function LoginPage() {
       showToast(t("Usa al menos 8 caracteres y confirma la misma contraseña."), "warn"); return;
     }
     startAction();
-    setBusyMessage(t("Verificando tu código…"));
+    setBusyMessage("Verificando tu código…");
     try {
       if (mode === "recovery") {
         if (!contact) throw new Error(t("Selecciona un método de contacto."));
-        await recoverPassword(idInput.trim(), contact.id, code, newPassword);
+        await recoverPassword(idInput.trim(), contact.id, code, newPassword, i18n.lang);
         setBusy(false); setMode("login"); setPwd(""); setDocumentNumber(idInput.trim());
         setNewPassword(""); setConfirmPassword("");
         showToast(t("Contraseña actualizada. Inicia sesión con tu nueva contraseña."), "ok");
@@ -197,7 +199,7 @@ export function LoginPage() {
     } catch (e) {
       setBusy(false);
       showToast(
-        e instanceof Error ? e.message : t("Código inválido o expirado"),
+        localizedError(e, i18n, "Código inválido o expirado"),
         "err",
       );
     }
@@ -267,7 +269,7 @@ export function LoginPage() {
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         >
           <IonSpinner name="crescent" style={{ width: 16, height: 16 }} />
-          <span>{busyMessage}</span>
+          <span>{t(busyMessage || "Verificando…")}</span>
           <IonProgressBar type="indeterminate" className="auth-busy-bar" />
         </motion.div>
       )}
@@ -488,14 +490,10 @@ export function LoginPage() {
                       )}
 
                       <p className="auth-hint">
-                        {t("Encontramos")}{" "}
-                        <strong>{lookup.contacts.length}</strong>{" "}
-                        {lookup.contacts.length === 1
-                          ? t("método de contacto")
-                          : t("métodos de contacto")}{" "}
-                        {t("asociado")}
-                        {lookup.contacts.length === 1 ? "" : "s"}{" "}
-                        {t("a tu identificación.")}
+                        {t(lookup.contacts.length === 1
+                          ? "Encontramos {n} método de contacto asociado a tu identificación."
+                          : "Encontramos {n} métodos de contacto asociados a tu identificación.",
+                          { n: String(lookup.contacts.length) })}
                       </p>
 
                       <div

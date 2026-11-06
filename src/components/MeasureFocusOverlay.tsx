@@ -168,7 +168,7 @@ export function MeasureFocusContent({
         <div className="mfocus-result is-err">
           <IonIcon icon={warning} aria-hidden="true" />
           <span className="mfocus-metric">{metric}</span>
-          <p>{result.message}</p>
+          <p>{t(result.message)}</p>
           <IonButton expand="block" className="bt bt-primary" onClick={onRetry}>
             <IonIcon icon={refresh} slot="start" />
             {t("Reintentar")}

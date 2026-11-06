@@ -36,6 +36,8 @@ export interface MyNutritionPlanMealDto {
   waterMl?: number | null;
   /** Notas del nutricionista (porciones, preparación). */
   notes?: string | null;
+  /** Traducción clínica aprobada de la misma indicación, cuando está disponible. */
+  notesEn?: string | null;
   /** Horario sugerido de la comida (ej. "7:00"). */
   suggestedTime?: string | null;
   /** Orden de la comida dentro del día. */

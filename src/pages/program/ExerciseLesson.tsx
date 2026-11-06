@@ -47,8 +47,8 @@ function ExerciseDemonstration({ exercise, onPlay }: { exercise: ExerciseItemDto
   return <figure className="exercise-demonstration">
     {exercise.mediaType === "Video"
       ? <video key={attempt} src={source} poster={poster} controls playsInline preload="metadata"
-          aria-label={t("Vídeo de {exercise}", { exercise: exercise.name })} onPlay={onPlay} onError={() => setFailed(true)} />
-      : <img key={attempt} src={source} alt={t("Técnica de {exercise}", { exercise: exercise.name })}
+          aria-label={t("Vídeo de {exercise}", { exercise: t(exercise.name) })} onPlay={onPlay} onError={() => setFailed(true)} />
+      : <img key={attempt} src={source} alt={t("Técnica de {exercise}", { exercise: t(exercise.name) })}
           loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />}
     <figcaption>{t("Demostración de tu equipo clínico")}</figcaption>
   </figure>;
@@ -79,7 +79,7 @@ export function ExerciseLesson({ done, pts, title, exercises, step, left, runnin
     </IonButton>
     <header className="exercise-detail-heading">
       <p className="kicker">{t("Técnica y movimiento")}</p>
-      <h2>{viewed.name}</h2>
+      <h2>{t(viewed.name)}</h2>
       {viewed.description && <p>{viewed.description}</p>}
     </header>
     {viewed.referenceVideo && !viewed.mediaUrl
@@ -96,8 +96,8 @@ export function ExerciseLesson({ done, pts, title, exercises, step, left, runnin
         {viewed.tempo && <div><dt>{t("Tempo")}</dt><dd>{viewed.tempo}</dd></div>}
         {viewed.rpe != null && <div><dt>{t("Esfuerzo percibido")}</dt><dd>{viewed.rpe}/10</dd></div>}
       </dl>
-      {viewed.targetMuscle && <p><strong>{t("Músculo objetivo")}:</strong> {viewed.targetMuscle}</p>}
-      {viewed.equipment && <p><strong>{t("Equipamiento")}:</strong> {viewed.equipment}</p>}
+      {viewed.targetMuscle && <p><strong>{t("Músculo objetivo")}:</strong> {t(viewed.targetMuscle)}</p>}
+      {viewed.equipment && <p><strong>{t("Equipamiento")}:</strong> {t(viewed.equipment)}</p>}
     </section>
     {viewed.tips && <section className="exercise-technique"><h3>{t("Cuida tu técnica")}</h3><p>{viewed.tips}</p></section>}
   </div>;
@@ -112,7 +112,7 @@ export function ExerciseLesson({ done, pts, title, exercises, step, left, runnin
     <section className="exercise-current" aria-label={t("Estación actual")}>
       <ExerciseGuide key={`${safeStep}:${current.mediaUrl ?? current.name}`} exercise={current} onWatch={pauseForGuide}
         media={hasAssignedMedia ? <ExerciseDemonstration exercise={current} onPlay={pauseForGuide} /> : undefined} />
-      <IonButton fill="clear" aria-label={t('Ver indicaciones de {exercise}', { exercise: current.name })} onClick={() => { pauseForGuide(); setSelected(safeStep); }}>{t('Ver mis indicaciones')}</IonButton>
+      <IonButton fill="clear" aria-label={t('Ver indicaciones de {exercise}', { exercise: t(current.name) })} onClick={() => { pauseForGuide(); setSelected(safeStep); }}>{t('Ver mis indicaciones')}</IonButton>
     </section>
     <div className="ex-timer">
       <div className="ex-ring-wrap">
@@ -143,7 +143,7 @@ export function ExerciseLesson({ done, pts, title, exercises, step, left, runnin
           {exercise.targetMuscle && <p><strong>{t('Zona de trabajo')}: </strong>{t(exercise.targetMuscle)}</p>}
           {exercise.equipment && <p><strong>{t('Equipamiento')}: </strong>{t(exercise.equipment)}</p>}
           {exercise.tips && <p className="ex-coach-tip">{t(exercise.tips)}</p>}
-          {index !== safeStep && <IonButton fill="clear" aria-label={t('Ver indicaciones de {exercise}', {exercise:exercise.name})} onClick={() => {pauseForGuide();setSelected(index);}}>{t('Ver técnica y demostración')}</IonButton>}
+          {index !== safeStep && <IonButton fill="clear" aria-label={t('Ver indicaciones de {exercise}', {exercise:t(exercise.name)})} onClick={() => {pauseForGuide();setSelected(index);}}>{t('Ver técnica y demostración')}</IonButton>}
         </div>
       </IonAccordion>)}</IonAccordionGroup>
     </section>

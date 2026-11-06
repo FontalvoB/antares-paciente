@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { IonButton, IonIcon, IonSelect, IonSelectOption, IonSkeletonText } from "@ionic/react";
 import { leafOutline } from "ionicons/icons";
-import { useT } from "../../i18n/I18nContext";
+import { useI18n } from "../../i18n/I18nContext";
 import type { FoodAnalysisResult } from "../../utils/foodAiApi";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { MealCode } from "../../services/program/nutrition-service";
@@ -24,7 +24,7 @@ export function FoodPlanComparison({
   failed?: boolean;
   onRetry?: () => void;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const [selectedDay, setSelectedDay] = useState<string>("");
   const days = plan?.days ?? [];
   // Un ciclo de varios días no identifica el día de hoy: el paciente lo elige explícitamente.
@@ -38,6 +38,7 @@ export function FoodPlanComparison({
     ) ?? [];
   const meal = matches.length === 1 ? matches[0] : null;
   const rows = meal ? compareFoodToMeal(result, meal) : [];
+  const mealNotes = lang === "en" && meal?.notesEn?.trim() ? meal.notesEn : meal?.notes;
   const labels = {
     calories: t("Calorías"),
     proteinG: t("Proteínas"),
@@ -135,7 +136,7 @@ export function FoodPlanComparison({
               {meal.foods}
             </p>
           )}
-          {meal?.notes && <p>{meal.notes}</p>}
+          {mealNotes && <p>{mealNotes}</p>}
           {plan.allergens && (
             <p>
               <strong>{t("Restricciones del plan")}: </strong>

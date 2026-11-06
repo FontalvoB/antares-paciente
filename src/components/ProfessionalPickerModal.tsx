@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IonBadge,
   IonButton,
@@ -24,7 +24,8 @@ import {
   fetchProfessionalsCatalogPage,
   type ProfessionalCatalogItem,
 } from "../utils/appointmentsApi";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 
 const PAGE_SIZE = 20;
 
@@ -50,7 +51,7 @@ export function ProfessionalPickerModal({
   onClose: () => void;
   onSelect: (professional: ProfessionalCatalogItem) => void;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<ProfessionalCatalogItem[]>([]);
@@ -64,6 +65,8 @@ export function ProfessionalPickerModal({
     new Map(),
   );
   const [reloadTick, setReloadTick] = useState(0);
+  const pageGeneration = useRef(0);
+  const moreRequest = useRef<AbortController | null>(null);
 
   // Debounce del buscador (300 ms) contra el catálogo del backend.
   useEffect(() => {
@@ -102,6 +105,9 @@ export function ProfessionalPickerModal({
 
   // Página 1 cada vez que cambia la búsqueda (o se reintenta).
   useEffect(() => {
+    pageGeneration.current += 1;
+    moreRequest.current?.abort();
+    setLoadingMore(false);
     if (!isOpen || !specialtyId) return;
     const ctrl = new AbortController();
     setLoading(true);
@@ -126,17 +132,24 @@ export function ProfessionalPickerModal({
         setError(
           err instanceof Error
             ? err.message
-            : t("No se pudieron cargar los profesionales"),
+            : "No se pudieron cargar los profesionales",
         );
       })
       .finally(() => {
         if (!ctrl.signal.aborted) setLoading(false);
       });
-    return () => ctrl.abort();
-  }, [isOpen, specialtyId, query, reloadTick, t]);
+    return () => {
+      ctrl.abort();
+      moreRequest.current?.abort();
+      pageGeneration.current += 1;
+    };
+  }, [isOpen, specialtyId, query, reloadTick, lang]);
 
   const loadMore = async () => {
     if (loading || loadingMore || page >= totalPages) return;
+    const generation = pageGeneration.current;
+    const ctrl = new AbortController();
+    moreRequest.current = ctrl;
     setLoadingMore(true);
     try {
       const res = await fetchProfessionalsCatalogPage({
@@ -145,14 +158,16 @@ export function ProfessionalPickerModal({
         page: page + 1,
         pageSize: PAGE_SIZE,
         search: query || undefined,
+        signal: ctrl.signal,
       });
+      if (ctrl.signal.aborted || generation !== pageGeneration.current) return;
       setItems((prev) => [...prev, ...res.data]);
       setPage(res.page);
       setTotalPages(res.totalPages);
     } catch {
       /* la página siguiente es best-effort: el usuario puede reintentar */
     } finally {
-      setLoadingMore(false);
+      if (generation === pageGeneration.current) setLoadingMore(false);
     }
   };
 
@@ -206,7 +221,7 @@ export function ProfessionalPickerModal({
         ) : error ? (
           <div className="req-empty" role="alert">
             <strong>{t("No se pudieron cargar los profesionales")}</strong>
-            <p>{error}</p>
+            <p>{localizedError(error, { t, lang }, "No se pudieron cargar los profesionales")}</p>
             <IonButton
               className="bt bt-sm bt-ghost"
               onClick={() => setReloadTick((n) => n + 1)}
@@ -236,8 +251,8 @@ export function ProfessionalPickerModal({
                   </span>
                   <IonLabel className="pro-picker-copy">
                     <strong>{pro.fullName}</strong>
-                    {pro.professionalTypeName ? (
-                      <small>{pro.professionalTypeName}</small>
+                    {(pro.professionalTypeDisplayName || pro.professionalTypeName) ? (
+                      <small>{pro.professionalTypeDisplayName || pro.professionalTypeName}</small>
                     ) : null}
                   </IonLabel>
                   {days ? (

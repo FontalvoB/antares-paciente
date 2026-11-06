@@ -10,7 +10,7 @@ export function InfinitoPage() {
     <Screen>
       <Scroll>
         <div className="hero hero-pur">
-          <div className="kicker" style={{ color: '#A78BFA' }}>LA CONSCIENCIA</div>
+          <div className="kicker" style={{ color: '#A78BFA' }}>{t('LA CONSCIENCIA')}</div>
           <div className="h1">∞ INFINITO</div>
           <div className="sub">{t('Consciencia aplicada a la transformación humana · B2C')}</div>
           <div className="chips">
@@ -28,7 +28,7 @@ export function InfinitoPage() {
             <div className="sec">{t(String(sec))}</div>
             <div className="grid-2">
               {(cards as string[][]).map(([label, s]) => (
-                <button key={label} className="card" style={{ textAlign: 'left' }} onClick={() => showToast(t('Abriendo {label}…', { label }), 'info')}>
+                <button key={label} className="card" style={{ textAlign: 'left' }} onClick={() => showToast(t('Abriendo {label}…', { label: t(label) }), 'info')}>
                   <div className="ico" style={{ background: 'var(--pur-l)', color: 'var(--pur)' }}>∞</div>
                   <div className="ct">{t(label)}</div>
                   <div className="cs">{t(s)}</div>
@@ -39,7 +39,7 @@ export function InfinitoPage() {
         ))}
         <div className="sec">{t('Sistema UPPER MIND')}</div>
         <div style={{ margin: '0 14px 12px', background: 'linear-gradient(135deg,#2D1B69,#1A0A3C)', borderRadius: 16, padding: 16, color: '#fff' }}>
-          <div style={{ fontWeight: 800, marginBottom: 8 }}>∞ Sistema UPPER MIND</div>
+          <div style={{ fontWeight: 800, marginBottom: 8 }}>∞ {t('Sistema UPPER MIND')}</div>
           <div style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.6 }}>{t('Integra neurociencia, espiritualidad y biohacking para crear una nueva versión de ti.')}</div>
           <IonButton expand="block" className="bt bt-pur" style={{ marginTop: 12 }} onClick={() => showToast(t('Accediendo a UPPER MIND…'), 'info')}>
             {t('Acceder al sistema')}

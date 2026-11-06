@@ -49,15 +49,16 @@ export function formatRelative(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString();
 }
 
-export function formatDateTime(isoDate: string): string {
+export function formatDateTime(isoDate: string, lang: 'en' | 'es' = 'es'): string {
   const d = new Date(isoDate);
+  const locale = lang === 'en' ? 'en-US' : 'es-CO';
   return (
-    d.toLocaleDateString("es-CO", {
+    d.toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
       year: "numeric",
     }) +
     " · " +
-    d.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })
+    d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
   );
 }

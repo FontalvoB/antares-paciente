@@ -8,6 +8,7 @@ import {
 } from "react";
 import es from "./es.json";
 import en from "./en.json";
+import { persistRequestLanguage, requestLanguage } from "../utils/requestLanguage";
 
 type Language = "es" | "en";
 
@@ -20,19 +21,12 @@ interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-const STORAGE_KEY = "antares_lang";
 const dictionaries: Record<Language, Record<string, string>> = { es, en };
 const warnedKeys = new Set<string>();
 const isDev = import.meta.env.DEV || __DEV_TOOLS__;
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Language>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "es" || stored === "en") return stored;
-    }
-    return "es";
-  });
+  const [lang, setLangState] = useState<Language>(requestLanguage);
 
   const t = useCallback(
     (source: string, params?: Record<string, string>): string => {
@@ -56,14 +50,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 
   const setLang = useCallback((newLang: Language) => {
+    persistRequestLanguage(newLang);
     setLangState(newLang);
-    localStorage.setItem(STORAGE_KEY, newLang);
   }, []);
 
   const toggleLang = useCallback(() => {
     setLangState((prev) => {
       const next = prev === "es" ? "en" : "es";
-      localStorage.setItem(STORAGE_KEY, next);
+      persistRequestLanguage(next);
       return next;
     });
   }, []);

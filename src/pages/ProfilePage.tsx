@@ -41,7 +41,7 @@ import { NotificationsModal } from "../components/notifications/NotificationsMod
 import logoIcon from "../assets/LogoIndividual.png";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 import { useI18n } from "../i18n/I18nContext";
 import type { Screen as ScreenId } from "../types";
 import { useLeague } from "../hooks/useLeague";
@@ -67,7 +67,8 @@ import type { LeagueResponseDto } from "../services/program/types";
  */
 function ContactSection() {
   const { user, showToast } = useApp();
-  const t = useT();
+  const i18n = useI18n();
+  const { t } = i18n;
   const [email, setEmail] = useState(user.email);
   const [cel, setCel] = useState(user.celular);
   const [saving, setSaving] = useState(false);
@@ -99,9 +100,7 @@ function ContactSection() {
       setEmail(preSaveRef.current.email);
       setCel(preSaveRef.current.cel);
       showToast(
-        err instanceof Error
-          ? err.message
-          : t("No se pudo actualizar tu contacto"),
+        localizedError(err, i18n, "No se pudo actualizar tu contacto"),
         "err",
       );
     } finally {
@@ -163,7 +162,8 @@ function ContactSection() {
  */
 function EmergencyContactSection() {
   const { user, showToast, refreshPatientProfile } = useApp();
-  const t = useT();
+  const i18n = useI18n();
+  const { t } = i18n;
   const [primary, setPrimary] = useState(() => contactFromProfile(user, 1));
   const [secondary, setSecondary] = useState(() => contactFromProfile(user, 2));
   const [saving, setSaving] = useState(false);
@@ -176,7 +176,7 @@ function EmergencyContactSection() {
   const save = async () => {
     if (saving) return;
     const error = emergencyContactsError(primary, secondary);
-    if (error) { setContactError(t(error)); return; }
+    if (error) { setContactError(error); return; }
     setContactError(null);
     setSaving(true);
     const first = trimEmergencyContact(primary);
@@ -187,13 +187,13 @@ function EmergencyContactSection() {
       await refreshPatientProfile();
       showToast(t("Contacto de emergencia actualizado"), "ok");
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t("No se pudo actualizar el contacto de emergencia"), "err");
+      showToast(localizedError(err, i18n, "No se pudo actualizar el contacto de emergencia"), "err");
     } finally { setSaving(false); }
   };
   return <div className="pf-contact" style={{ marginTop: 18 }}>
     <h3>{t("Contacto de emergencia")}</h3>
     <EmergencyContactsForm prefix="pf-emg" primary={primary} secondary={secondary} onPrimaryChange={value => { setContactError(null); setPrimary(value); }} onSecondaryChange={value => { setContactError(null); setSecondary(value); }} disabled={saving} />
-    {contactError && <p role="alert" className="emergency-contact-error">{contactError}</p>}
+    {contactError && <p role="alert" className="emergency-contact-error">{t(contactError)}</p>}
     <IonButton expand="block" className="bt bt-primary" disabled={saving || !dirty} onClick={() => void save()}>{saving ? t("Guardando…") : t("Guardar contacto de emergencia")}</IonButton>
   </div>;
 }
@@ -208,11 +208,12 @@ function LeagueSection() {
   const { league, isLoading, isError, refetch } = useLeague();
   const queryClient = useQueryClient();
   const { showToast } = useApp();
-  const t = useT();
+  const i18n = useI18n();
+  const { t } = i18n;
   const [optedIn, setOptedIn] = useState(false);
   const [nickname, setNickname] = useState("");
   const [saving, setSaving] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<ApiError | null>(null);
   // Snapshot pre-guardado: si el PUT falla se REVIERTE toggle+input a estos
   // valores (sin writes al cache, sin verdades a medias).
   const preSaveRef = useRef<{ optedIn: boolean; nickname: string }>({
@@ -264,8 +265,8 @@ function LeagueSection() {
         // El 400 de validación trae el mensaje real en `errors` (RFC 7807);
         // passthrough inline. El resto → toast.
         const first = e.errors ? Object.values(e.errors).flat()[0] : undefined;
-        if (first) setServerError(first);
-        else showToast(e.message, "err");
+        if (first) setServerError(e);
+        else showToast(localizedError(e, i18n, "No pudimos guardar tus preferencias."), "err");
       } else {
         showToast(t("No pudimos guardar tus preferencias."), "err");
       }
@@ -314,7 +315,7 @@ function LeagueSection() {
           aria-label={t("Aparecer en la Liga")}
         />
       </div>
-      {serverError && <small className="league-prefs-err">{serverError}</small>}
+      {serverError && <small className="league-prefs-err">{localizedError(serverError, i18n, "No pudimos guardar tus preferencias.")}</small>}
       {optedIn && (
         <div className="league-prefs-nick">
           <IonInput
@@ -768,7 +769,7 @@ export function ProfilePage() {
                               <IonIcon icon={arrowForward} aria-hidden="true" />
                             </span>
                             <strong>{pro.name}</strong>
-                            <small>{pro.role}</small>
+                            <small>{t(pro.role)}</small>
                           </span>
                         </IonButton>
                       ))}

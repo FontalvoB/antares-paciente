@@ -96,8 +96,8 @@ const wearableMock = vi.hoisted(() => ({
 vi.mock("../../context/WearableContext", () => ({ useWearable: () => wearableMock }));
 vi.mock("../../context/AppContext", () => ({ useApp: () => context }));
 vi.mock("../../i18n/I18nContext", () => ({
-  useT: () => (key: string, params?: Record<string, string>) =>
-    key.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? name),
+  useI18n: () => ({ lang: "es", t: (key: string, params?: Record<string, string>) =>
+    key.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? name) }),
 }));
 
 // framer-motion mockeado: AnimatePresence/motion en happy-dom genera

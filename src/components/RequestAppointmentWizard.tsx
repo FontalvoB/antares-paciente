@@ -58,15 +58,16 @@ import {
 } from "../utils/appointmentsApi";
 import { ProfessionalPickerModal } from "./ProfessionalPickerModal";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 import {
   addDaysToISO,
   formatDateForDisplay,
-  formatLongDateEs,
+  formatLongDate,
   isTodayISO,
   isoYearMonth,
   monthGrid,
-  monthTitleEs,
+  monthTitle,
   shiftMonth,
   toLocalISODate,
 } from "../utils/dates";
@@ -128,12 +129,14 @@ export function RequestAppointmentWizard({
     teamProfessional,
     realMode,
     specialties,
+    professionalsCatalog,
     patientCareContext,
     refreshAppointments,
     submitAppointmentRequest,
     showToast,
   } = useApp();
-  const t = useT();
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "es-ES";
   const today = toLocalISODate();
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
@@ -168,6 +171,7 @@ export function RequestAppointmentWizard({
   const [availablePros, setAvailablePros] = useState<Set<string>>(new Set());
   const [selectedPro, setSelectedPro] =
     useState<ProfessionalCatalogItem | null>(null);
+  const [selectedProLanguage, setSelectedProLanguage] = useState(lang);
   const dir = useRef(1);
   const scrollRef = useRef<HTMLIonContentElement>(null);
 
@@ -214,7 +218,23 @@ export function RequestAppointmentWizard({
         }
       });
     return () => ctrl.abort();
-  }, [useCatalogPath, specialtyId]);
+  }, [useCatalogPath, specialtyId, lang]);
+
+  // Un profesional elegido en otra página puede no pertenecer al top de seis.
+  // Actualiza su presentación por identidad sin reiniciar la selección o el motivo.
+  useEffect(() => {
+    if (!selectedPro || selectedProLanguage === lang || !specialtyId) return;
+    const ctrl = new AbortController();
+    const selectedId = selectedPro.id;
+    void fetchProfessionalsCatalogPage({ specialtyId, status: "Active", page: 1,
+      pageSize: 100, search: selectedPro.fullName, signal: ctrl.signal })
+      .then(result => {
+        if (ctrl.signal.aborted) return;
+        const match = result.data.find(item => item.id === selectedId);
+        if (match) { setSelectedPro(match); setSelectedProLanguage(lang); }
+      }).catch(() => { /* El picker permite volver a consultar sin perder la elección. */ });
+    return () => ctrl.abort();
+  }, [selectedPro, selectedProLanguage, specialtyId, lang]);
 
   // Con cupo primero (orden estable), luego alfabético.
   const quickProsSorted = useMemo(() => {
@@ -228,9 +248,12 @@ export function RequestAppointmentWizard({
 
   const selectedProfessional = useMemo(() => {
     if (!professionalId) return null;
+    const refreshed = quickPros?.find((p) => p.id === professionalId)
+      ?? professionalsCatalog?.find((p) => p.id === professionalId);
+    if (refreshed) return refreshed;
     if (selectedPro?.id === professionalId) return selectedPro;
-    return quickPros?.find((p) => p.id === professionalId) ?? null;
-  }, [professionalId, selectedPro, quickPros]);
+    return null;
+  }, [professionalId, selectedPro, quickPros, professionalsCatalog]);
 
   const range = bookingWindow();
   const professional = typeId ? teamProfessional(typeId) : null;
@@ -394,7 +417,7 @@ export function RequestAppointmentWizard({
   const cells = monthGrid(year, month);
   const meta = STEPS[step - 1] ?? STEPS[0];
   const proShort = useCatalogPath
-    ? (selectedProfessional?.fullName.split(",")[0] ?? selectedCare?.name ?? "")
+    ? (selectedProfessional?.fullName.split(",")[0] ?? (selectedCare ? t(selectedCare.name) : ""))
     : (professional?.name.split(",")[0] ?? "");
   const minCursor = isoYearMonth(range.min);
   const maxCursor = isoYearMonth(range.max);
@@ -530,7 +553,7 @@ export function RequestAppointmentWizard({
         const summaryName =
           selectedProfessional?.fullName ?? "Equipo COPP-ADRESD";
         const summaryRole =
-          selectedProfessional?.professionalTypeName ?? selectedCare.name;
+          selectedProfessional?.professionalTypeDisplayName ?? selectedProfessional?.professionalTypeName ?? selectedCare.name;
         void submitAppointmentRequest(payload).then((ok) => {
           if (ok) {
             onSubmitted({
@@ -551,7 +574,7 @@ export function RequestAppointmentWizard({
             });
           } else {
             showToast(
-              "No se pudo enviar la solicitud. Intenta de nuevo.",
+              t("No se pudo enviar la solicitud. Intenta de nuevo."),
               "err",
             );
           }
@@ -568,7 +591,7 @@ export function RequestAppointmentWizard({
             );
           } else {
             showToast(
-              "No se pudo enviar la solicitud. Intenta de nuevo.",
+              t("No se pudo enviar la solicitud. Intenta de nuevo."),
               "err",
             );
           }
@@ -599,8 +622,8 @@ export function RequestAppointmentWizard({
   ) => {
     const display = entryDisplayFor(opt.code, index);
     const selected = specialtyId === opt.specialtyId;
-    const title = display.titleKey ? t(display.titleKey) : opt.name;
-    const desc = display.descKey ? t(display.descKey) : (opt.description ?? "");
+    const title = display.titleKey ? t(display.titleKey) : t(opt.name);
+    const desc = display.descKey ? t(display.descKey) : t(opt.description ?? "");
     const kicker = display.kickerKey
       ? t(display.kickerKey)
       : categoryKicker
@@ -672,7 +695,7 @@ export function RequestAppointmentWizard({
     ? (selectedProfessional?.fullName ?? "Equipo COPP-ADRESD")
     : (professional?.name ?? "");
   const summaryProRole = useCatalogPath
-    ? (selectedProfessional?.professionalTypeName ?? selectedCare?.name ?? "")
+    ? (selectedProfessional?.professionalTypeDisplayName ?? selectedProfessional?.professionalTypeName ?? selectedCare?.name ?? "")
     : (professional?.role ?? "");
   const summaryAccent = useCatalogPath
     ? "linear-gradient(90deg,#0C3D2C,var(--teal))"
@@ -948,6 +971,7 @@ export function RequestAppointmentWizard({
                                 ? (quickPros?.find((p) => p.id === value) ?? null)
                                 : null,
                             );
+                            setSelectedProLanguage(lang);
                           }}
                         >
                           <IonIcon
@@ -1088,7 +1112,7 @@ export function RequestAppointmentWizard({
                         <IonIcon slot="icon-only" icon={chevronBack} />
                       </IonButton>
                       <div className="req-cal-month">
-                        {monthTitleEs(year, month)}
+                        {monthTitle(year, month, locale)}
                       </div>
                       <IonButton
                         className="bt bt-round req-cal-nav-btn"
@@ -1101,7 +1125,7 @@ export function RequestAppointmentWizard({
                     </div>
                     <div className="req-cal-week">
                       {WEEKDAYS.map((d) => (
-                        <span key={d}>{d}</span>
+                        <span key={d}>{t(d)}</span>
                       ))}
                     </div>
                     <div
@@ -1124,7 +1148,7 @@ export function RequestAppointmentWizard({
                             fill={selected ? "solid" : "clear"}
                             className={`bt req-cal-day${selected ? " sel" : ""}${todayCell && !selected ? " today" : ""}${!enabled ? " off" : ""}${hasSlots ? " open" : ""}`}
                             disabled={!enabled}
-                            aria-label={`${formatLongDateEs(iso)}${hasSlots ? ` · ${t("Con cupo")}` : ""}`}
+                            aria-label={`${formatLongDate(iso, locale)}${hasSlots ? ` · ${t("Con cupo")}` : ""}`}
                             aria-pressed={selected}
                             onClick={() => pickDate(iso)}
                           >
@@ -1137,7 +1161,7 @@ export function RequestAppointmentWizard({
                       <span>
                         <i className="req-cal-dot" /> {t("Con cupo")}
                       </span>
-                      <span>{t("Citas de {mins}", { mins: "30" })}</span>
+                      <span>{t("Citas de {mins} min", { mins: "30" })}</span>
                     </div>
                   </section>
 
@@ -1145,12 +1169,12 @@ export function RequestAppointmentWizard({
                     <div className="req-times-head">
                       <div>
                         <div className="req-times-title">
-                          {date ? formatLongDateEs(date) : t("Elige un día")}
+                          {date ? formatLongDate(date, locale) : t("Elige un día")}
                         </div>
                         <div className="req-times-sub">
                           {date
                             ? slotViews.length > 0
-                              ? t("{count} horarios · {name}", {
+                              ? t(slotViews.length === 1 ? "{count} horario · {name}" : "{count} horarios · {name}", {
                                   count: String(slotViews.length),
                                   name: proShort,
                                 })
@@ -1256,7 +1280,7 @@ export function RequestAppointmentWizard({
                             <strong>
                               {t("No se pudo cargar la disponibilidad")}
                             </strong>
-                            <p>{dayError}</p>
+                            <p>{localizedError(dayError, { t, lang }, 'No se pudo cargar la disponibilidad')}</p>
                             <IonButton
                               className="bt bt-sm bt-ghost"
                               onClick={() => setRetryTick((n) => n + 1)}
@@ -1347,7 +1371,7 @@ export function RequestAppointmentWizard({
                     {date && slotStart && (
                       <div className="req-pick">
                         <IonIcon icon={calendarOutline} />
-                        <span>{formatLongDateEs(date)}</span>
+                        <span>{formatLongDate(date, locale)}</span>
                         <strong>{time}</strong>
                         <em>{t(DURATION)}</em>
                       </div>
@@ -1580,6 +1604,7 @@ export function RequestAppointmentWizard({
           onSelect={(pro) => {
             setProfessionalId(pro.id);
             setSelectedPro(pro);
+            setSelectedProLanguage(lang);
             setProPickerOpen(false);
           }}
         />

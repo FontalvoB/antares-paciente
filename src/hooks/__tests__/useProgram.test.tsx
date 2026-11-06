@@ -58,6 +58,17 @@ describe('asignación post-tests', () => {
     expect(result.current.snapshot).toBeNull()
     expect(mocks.batteries).not.toHaveBeenCalled()
   })
+  it('explica la traducción no disponible y permite reintentar sin inventar una asignación', async () => {
+    mocks.snapshot.mockRejectedValue(new ApiError({ message: 'English content unavailable', status: 503, code: 'CONTENT_TRANSLATION_UNAVAILABLE' }))
+    const { result } = setup()
+    await waitFor(() => expect(result.current.programState).toBe('recoverable'), { timeout: 6000 })
+    expect(result.current.productMessage).toBe('No pudimos preparar este contenido en inglés. Vuelve a intentarlo.')
+    expect(result.current.snapshot).toBeNull()
+    expect(mocks.batteries).not.toHaveBeenCalled()
+    mocks.snapshot.mockResolvedValue({ enrollmentId: 'active', todayTasks: [] })
+    await act(async () => { result.current.refetch() })
+    await waitFor(() => expect(result.current.programState).toBe('active'))
+  })
   it('la carga de batería no muestra tareas', async () => {
     mocks.batteries.mockReturnValue(new Promise(() => {}))
     const { result } = setup()

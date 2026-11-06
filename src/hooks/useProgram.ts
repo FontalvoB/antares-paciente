@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { ApiError } from '../utils/apiClient'
+import { CONTENT_TRANSLATION_RETRY_SOURCE } from '../utils/localizedError'
 import { getSnapshot } from '../services/program/program-service'
 import { programKeys } from './queryKeys'
 import { fetchMyBatteries, fetchMyAssignments } from '../utils/healthTestsApi'
@@ -31,6 +32,8 @@ export interface UseProgramResult {
   isEnrolling: boolean
   /** True during the initial load (no data, no error yet). */
   isLoading: boolean
+  /** Renueva texto del snapshot sin retirar los datos confirmados de lecciones activas. */
+  isRefreshing?: boolean
   /** True when the query ended in an error we did not absorb into a fallback. */
   isError: boolean
   /** Compatibilidad con consumidores existentes: nunca se fabrican snapshots. */
@@ -125,7 +128,7 @@ export function useProgram(): UseProgramResult {
 
   const { snapshot, programState, productMessage } = useMemo(() => {
     if (data) {
-      return { snapshot: data, programState: 'active' as ProgramState, productMessage: null }
+      return { snapshot: data, programState: 'active' as ProgramState, productMessage: error?.code === 'CONTENT_TRANSLATION_UNAVAILABLE' ? CONTENT_TRANSLATION_RETRY_SOURCE : null }
     }
 
     if (error) {
@@ -135,6 +138,9 @@ export function useProgram(): UseProgramResult {
           programState: (battery.isError ? 'recoverable' : battery.data === undefined ? 'active' : battery.data >= 9 ? 'pending-assignment' : 'pending-tests') as ProgramState,
           productMessage: battery.isError ? ASSESSMENTS_UNAVAILABLE_MSG : null,
         }
+      }
+      if (error.code === 'CONTENT_TRANSLATION_UNAVAILABLE') {
+        return { snapshot: null, programState: 'recoverable' as ProgramState, productMessage: CONTENT_TRANSLATION_RETRY_SOURCE }
       }
       // Withdrawn (future recognition, G1).
       if (error.code === 'ENROLLMENT_WITHDRAWN') {
@@ -207,6 +213,7 @@ export function useProgram(): UseProgramResult {
     programState,
     isEnrolling: false,
     isLoading: isLoading || (!data && noActiveEnrollment && battery.isPending),
+    isRefreshing: query.isFetching && Boolean(data),
     isError: (isError && !noActiveEnrollment) || battery.isError,
     isMockFallback: false,
     error,

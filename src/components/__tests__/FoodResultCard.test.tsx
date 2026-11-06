@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import { FoodResultCard } from "../FoodResultCard";
 import { I18nProvider } from "../../i18n/I18nContext";
@@ -47,10 +47,16 @@ function renderCard(f: DetectedFood) {
 
 describe("FoodResultCard", () => {
   it("muestra kcal y macros con fibra cuando hay datos", () => {
+    // Chip de macros nuevo (markup strong+small introducido en 83c8ed9):
+    // el valor vive en un <strong> separado de la etiqueta <small>.
     const { container } = renderCard(food());
     expect(screen.getByText("164")).toBeTruthy();
-    expect(screen.getByText(/Proteínas 3g/)).toBeTruthy();
-    expect(screen.getByText(/Fibra 1g/)).toBeTruthy();
+    const protein = container.querySelector<HTMLElement>(".food-result-macro.protein")!;
+    expect(within(protein).getByText("Proteínas")).toBeTruthy();
+    expect(within(protein).getByText("3 g")).toBeTruthy();
+    const fiber = container.querySelector<HTMLElement>(".food-result-macro.fiber")!;
+    expect(within(fiber).getByText("Fibra")).toBeTruthy();
+    expect(within(fiber).getByText("1 g")).toBeTruthy();
     expect(container.querySelector(".nut-missing")).toBeNull();
   });
 

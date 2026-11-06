@@ -1,6 +1,5 @@
 import { getAccessToken } from "./authApi";
-import { getGatewayBaseUrl } from "./apiBaseUrl";
-import { apiGet, apiPost } from "./apiClient";
+import { ApiError, apiFetch, apiGet, apiPost } from "./apiClient";
 
 /**
  * Cliente del módulo de citas/telemedicina del paciente contra el API Gateway
@@ -146,6 +145,7 @@ export interface ProfessionalCatalogItem {
   employeeId: string;
   fullName: string;
   professionalTypeName: string | null;
+  professionalTypeDisplayName?: string | null;
   specialties: Array<{ id: string; name: string }>;
   locations: Array<{ id: string; name: string }>;
   clinicIds: string[];
@@ -224,43 +224,30 @@ export function hasRealSession(): boolean {
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = getAccessToken();
-  const res = await fetch(`${getGatewayBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
-  });
-
-  if (!res.ok) {
-    let message = `Error del servidor (${res.status})`;
-    try {
-      const data = (await res.json()) as {
-        message?: string;
-        title?: string;
-        detail?: string;
-      };
-      if (data?.detail) message = data.detail;
-      else if (data?.message) message = data.message;
-      else if (data?.title) message = data.title;
-    } catch {
-      /* sin cuerpo JSON */
-    }
-    throw new ApiClientError(res.status, message);
+  const { body, headers: customHeaders, ...rest } = init ?? {};
+  const headers = new Headers(customHeaders);
+  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  try {
+    // Este cliente prepara únicamente JSON; apiFetch controla idioma, timeout y refresh.
+    return await apiFetch<T>(path, {
+      ...rest,
+      body: body === undefined || body === null ? undefined : JSON.parse(String(body)),
+      headers,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) throw new ApiClientError(error.status, error.message, error.code);
+    throw error;
   }
-
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
 }
 
 export class ApiClientError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ApiClientError";
     this.status = status;
+    this.code = code;
   }
 }
 

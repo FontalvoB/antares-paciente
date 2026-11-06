@@ -12,7 +12,7 @@ export function AcademyPage() {
       <Scroll>
         <div className="hero hero-cosmos">
           <div className="kicker">COPP ADRESD BIOHACKING</div>
-          <div className="h1">🎓 Academia BIO</div>
+          <div className="h1">🎓 {t('Academia BIO')}</div>
           <div className="sub">{t('Formación y certificación profesional · COPP-ADRESD')}</div>
           <div className="chips">
             <span className="chip chip-gold">{t('18 hrs completadas')}</span>
@@ -39,7 +39,7 @@ export function AcademyPage() {
             <div className="ico" style={{ background: 'var(--blue-l)' }}>🏃</div>
             <div>
               <div className="ct">{t('Actividad física y control del peso')}</div>
-              <div className="cs">CDC · ACSM 2024 · Módulo 5 activo</div>
+              <div className="cs">{t('CDC · ACSM 2024 · Módulo 5 activo')}</div>
             </div>
           </div>
           <IonProgressBar className="pb" style={{ margin: '12px 0', '--progress-background': 'var(--blue)' } as CSSProperties} value={0.68} />
@@ -74,7 +74,7 @@ export function AcademyPage() {
             ['🎤', 'SUMMIT virtuales', 'Eventos · Comunidad'],
             ['🛒', 'Tiendas de salud', 'Wellness · Conveniencia'],
           ].map(([e, title, s]) => (
-            <button key={title} className="card" style={{ textAlign: 'left' }} onClick={() => showToast(t('Abriendo {title}…', { title }), 'info')}>
+            <button key={title} className="card" style={{ textAlign: 'left' }} onClick={() => showToast(t('Abriendo {title}…', { title: t(title) }), 'info')}>
               <div style={{ fontSize: 22 }}>{e}</div>
               <div className="ct">{t(title)}</div>
               <div className="cs">{t(s)}</div>

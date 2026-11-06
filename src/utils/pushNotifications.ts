@@ -22,6 +22,7 @@ import { getApiBaseUrl } from './apiBaseUrl'
  * Sin esos archivos el plugin registra pero FCM no entrega notificaciones.
  */
 interface PushRegistrationOptions {
+  language?: 'es' | 'en'
   /** Se invoca al tocar una notificación (navegar al chat con el threadId si viene en la carga). */
   onOpenChat?: (threadId?: string) => void
   /** Se invoca al tocar una notificación de sala (quien navega resuelve la cita). */
@@ -31,6 +32,47 @@ interface PushRegistrationOptions {
 // Los listeners del plugin se registran una sola vez por sesión; el guard evita
 // duplicarlos si registerForPush se llama más de una vez.
 let started = false
+let currentLanguage: 'es' | 'en' = 'es'
+let latestDevice: { token: string; platform: string } | null = null
+// Serialize language updates: a slower old request must not overwrite a newer preference.
+let registrationQueue: Promise<void> = Promise.resolve()
+let registrationEnabled = true
+
+/** Refresh an existing token using the current JWT; never prompts or registers listeners. */
+export function syncPushLanguage(language: 'es' | 'en'): Promise<void> {
+  currentLanguage = language
+  registrationEnabled = true
+  return queueDeviceRegistration()
+}
+
+function queueDeviceRegistration(): Promise<void> {
+  registrationQueue = registrationQueue.then(async () => {
+    if (registrationEnabled && latestDevice) await registerDeviceToken(latestDevice.token, latestDevice.platform, currentLanguage)
+  })
+  return registrationQueue
+}
+
+/** Call before clearing auth on logout. Late native token events stay suspended until the next authenticated sync. */
+export function unregisterPushDevice(): Promise<void> {
+  registrationEnabled = false
+  const accessToken = getAccessToken()
+  const token = latestDevice?.token
+  registrationQueue = registrationQueue.then(async () => {
+    if (!accessToken || !token) return
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 3000)
+    try {
+      await fetch(`${getApiBaseUrl()}/api/v1/notifications/devices/${encodeURIComponent(token)}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal,
+      })
+    } catch {
+      console.warn('[push] Could not unregister the device during logout')
+    } finally {
+      clearTimeout(timeout)
+    }
+  })
+  return registrationQueue
+}
 
 // Callbacks vigentes: el listener se registra una sola vez, pero los handlers
 // pueden llegar después (el contexto de navegación monta más tarde que el
@@ -67,12 +109,17 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
   // Refresca los handlers en cada llamada: el listener es único por sesión,
   // pero el contexto que navega puede montar después (cold start).
   currentOptions = { ...currentOptions, ...options }
+  if (options.language) currentLanguage = options.language
 
-  if (started) return
+  if (started) {
+    await syncPushLanguage(currentLanguage)
+    return
+  }
   started = true
 
   void PushNotifications.addListener('registration', (token: Token) => {
-    void registerDeviceToken(token.value, platform)
+    latestDevice = { token: token.value, platform }
+    void queueDeviceRegistration()
   })
   void PushNotifications.addListener('registrationError', (error: RegistrationError) => {
     console.warn('[push] Error al registrar el dispositivo en FCM:', error.error)
@@ -120,16 +167,20 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
 }
 
 /** Registra el token del dispositivo en el backend (best-effort, nunca lanza). */
-async function registerDeviceToken(token: string, platform: string): Promise<void> {
+async function registerDeviceToken(token: string, platform: string, language: 'es' | 'en'): Promise<void> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 3000)
   try {
     const accessToken = getAccessToken()
+    if (!accessToken) return
     const res = await fetch(`${getApiBaseUrl()}/api/v1/notifications/devices`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
-      body: JSON.stringify({ token, platform }),
+      body: JSON.stringify({ token, platform, language }),
+      signal: controller.signal,
     })
     if (!res.ok) {
       // 401 esperado en demo (login no conectado): se reintenta en la próxima
@@ -140,5 +191,7 @@ async function registerDeviceToken(token: string, platform: string): Promise<voi
     console.log('[push] Token registrado en el backend')
   } catch (error) {
     console.warn('[push] No se pudo contactar el backend para registrar el token:', error)
+  } finally {
+    clearTimeout(timeout)
   }
 }

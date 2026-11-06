@@ -7,6 +7,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -25,6 +26,7 @@ import {
   toUserProfile,
 } from "../utils/patientProfileApi";
 import { refreshAccessToken } from "../utils/apiClient";
+import { unregisterPushDevice } from "../utils/pushNotifications";
 import {
   fetchThreadState,
   sendChatMessage,
@@ -252,14 +254,14 @@ function createWelcomeMessage(name = "", lang: "es" | "en" = "es"): ChatMessage 
       lang === "en"
         ? `Hi${firstName ? ` ${firstName}` : ""} 👋 I'm your Copp Adresd health agent. How can I help you today?`
         : `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
-    time: nowLabel(),
+    time: nowLabel(lang),
   };
 }
 
 const AppContext = createContext<AppState | null>(null);
 
-function nowLabel() {
-  return new Date().toLocaleTimeString("es-US", {
+function nowLabel(lang: "es" | "en" = "es") {
+  return new Date().toLocaleTimeString(lang === "en" ? "en-US" : "es-ES", {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -345,6 +347,10 @@ export function AppProvider({
   // Idioma actual de la app: se envía en cada turno de chat (señal explícita
   // para el AI Service — habilita cambiar de idioma a mitad de conversación).
   const { lang } = useI18n();
+  const currentLanguage = useRef(lang);
+  currentLanguage.current = lang;
+  const appointmentRequest = useRef(0);
+  const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
   // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
@@ -430,7 +436,7 @@ export function AppProvider({
     resetSessionQueryCache();
     setUser(defaultUser);
     setActiveThreadId(null);
-    setChat([createWelcomeMessage(defaultUser.nombre)]);
+    setChat([createWelcomeMessage(defaultUser.nombre, currentLanguage.current)]);
     setChatUnread(false);
     lastRemoteCountRef.current = null;
     setTestsDone([]);
@@ -461,6 +467,10 @@ export function AppProvider({
   const refreshAppointments = useCallback(async () => {
     if (!hasRealSession()) return;
     const generation = sessionGeneration.current;
+    const request = ++appointmentRequest.current;
+    const language = currentLanguage.current;
+    const isCurrent = () => generation === sessionGeneration.current
+      && request === appointmentRequest.current && language === currentLanguage.current;
     setAppointmentsLoading(true);
     setAppointmentsError(null);
     try {
@@ -475,11 +485,12 @@ export function AppProvider({
         fetchMyAppointments({ pageSize: 100 }),
         fetchMyRequests(),
       ]);
+      if (!isCurrent()) return;
       const [catalogData, specialtiesData] = await Promise.all([
         fetchProfessionalsCatalog().catch(() => null),
         fetchSpecialties().catch(() => null),
       ]);
-      if (generation !== sessionGeneration.current) return;
+      if (!isCurrent()) return;
       setCatalog(catalogData?.data ?? null);
       setSpecialties(specialtiesData);
       setPatientCtx({
@@ -491,15 +502,28 @@ export function AppProvider({
       setAppointments(appts.items);
       setRequests(reqs);
     } catch (err) {
-      if (generation !== sessionGeneration.current) return;
+      if (!isCurrent()) return;
       console.warn("[appointments] No se pudieron cargar las citas:", err);
       setAppointmentsError(
         err instanceof Error ? err.message : "No se pudieron cargar las citas",
       );
     } finally {
-      if (generation === sessionGeneration.current) setAppointmentsLoading(false);
+      if (isCurrent()) setAppointmentsLoading(false);
     }
   }, []);
+
+  // Los catálogos viven fuera de QueryClient: invalida su lectura anterior
+  // sin reiniciar sesión, conversación, sala ni formularios al cambiar idioma.
+  useLayoutEffect(() => {
+    if (catalogLanguage.current === lang) return;
+    catalogLanguage.current = lang;
+    appointmentRequest.current += 1;
+    setCatalog(null);
+    setSpecialties(null);
+    setChat(messages => messages.map(message => message.id === "welcome"
+      ? createWelcomeMessage(user.nombre, lang) : message));
+    if (flow !== "login" && realMode) void refreshAppointments();
+  }, [lang, flow, realMode, refreshAppointments, user.nombre]);
 
   // Con sesión real, refresca al entrar a Citas (design §3.2: refresco por
   // visibilidad) y tras cada mutación (los handlers llaman a refresh).
@@ -837,7 +861,7 @@ export function AppProvider({
         id: crypto.randomUUID(),
         role: "user",
         text,
-        time: nowLabel(),
+        time: nowLabel(lang),
         threadId,
         image: image ? { dataUrl: image.dataUrl } : undefined,
       };
@@ -859,7 +883,7 @@ export function AppProvider({
             id: crypto.randomUUID(),
             role: "bot",
             text: result.answer ?? result.reply,
-            time: nowLabel(),
+            time: nowLabel(lang),
             threadId: result.threadId || threadId,
             cta: suggestion,
             executionId: result.executionId,
@@ -889,7 +913,7 @@ export function AppProvider({
       let painted = "";
       setChat((prev) => [
         ...prev,
-        { id: liveId, role: "bot", text: "", time: nowLabel(), threadId },
+        { id: liveId, role: "bot", text: "", time: nowLabel(lang), threadId },
       ]);
       const appendToken = (piece: string) => {
         if (generation !== sessionGeneration.current) return;
@@ -920,7 +944,7 @@ export function AppProvider({
           id: liveId,
           role: "bot",
           text: canonical,
-          time: nowLabel(),
+          time: nowLabel(lang),
           threadId: result.threadId || threadId,
           cta: suggestion,
           executionId: result.executionId,
@@ -947,7 +971,7 @@ export function AppProvider({
               id: crypto.randomUUID(),
               role: local.role,
               text: local.text,
-              time: nowLabel(),
+              time: nowLabel(lang),
               threadId,
             });
           }
@@ -955,7 +979,7 @@ export function AppProvider({
       }
       return turnBotMessage;
     },
-    [threadId, t],
+    [threadId, t, lang],
   );
 
   /**
@@ -1054,7 +1078,7 @@ export function AppProvider({
 
   const builtReal =
     appointments && requests
-      ? buildRealAppointments(appointments, requests)
+      ? buildRealAppointments(appointments, requests, specialties ?? undefined)
       : null;
 
   const value = useMemo<AppState>(
@@ -1187,7 +1211,7 @@ export function AppProvider({
             id: crypto.randomUUID(),
             role: (m.role ?? "bot") as "bot" | "user",
             text: m.text,
-            time: nowLabel(),
+            time: nowLabel(lang),
             threadId,
           }));
 
@@ -1210,7 +1234,7 @@ export function AppProvider({
           id: crypto.randomUUID(),
           role: (m.role ?? "bot") as "bot" | "user",
           text: m.text,
-          time: nowLabel(),
+          time: nowLabel(lang),
           threadId,
         }));
         setChat((prev) => {
@@ -1224,7 +1248,7 @@ export function AppProvider({
           id: crypto.randomUUID(),
           role: m.role,
           text: m.text,
-          time: nowLabel(),
+          time: nowLabel(lang),
           threadId,
           cta: m.cta,
           kind: m.kind,
@@ -1261,6 +1285,8 @@ export function AppProvider({
         });
       },
       logout: () => {
+        // Captura el JWT anterior antes de borrarlo; la limpieza no retrasa salir.
+        void unregisterPushDevice();
         resetPatientSession();
         setVitaWelcomePending(false);
         setFlow("login");
@@ -1320,7 +1346,8 @@ export function AppProvider({
       chatUnread,
       markChatRead,
       onResetCommunityClient,
-      t,
+      lang,
+      runChatTurn,
       realMode,
       builtReal,
       appointmentsLoading,

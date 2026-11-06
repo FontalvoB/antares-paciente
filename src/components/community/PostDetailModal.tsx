@@ -1,3 +1,4 @@
+import { localizedError } from "../../utils/localizedError";
 import { OwnPostDeleteButton } from "./OwnPostDeleteButton";
 import { CommunityVideo } from "./CommunityVideo";
 import { createAnimation, IonAlert, IonButton, IonIcon, IonModal, IonTextarea } from '@ionic/react'
@@ -282,7 +283,7 @@ export function PostDetailModal({
   const [sending, setSending] = useState(false)
   const [freshId, setFreshId] = useState<string | null>(null)
   const taRef = useRef<HTMLIonTextareaElement | null>(null)
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   // El modal conserva el último post abierto mientras se anima el cierre
   // (animación nativa de dismiss de Ionic), en vez de desmontarse de golpe.
@@ -323,7 +324,7 @@ export function PostDetailModal({
       setView(current => current ? {...current, likes: current.likes.some(l => l.profileId === me.id)
         ? current.likes.filter(l => l.profileId !== me.id)
         : [...current.likes, {id: `local-${me.id}`, profileId: me.id}]} : current)
-    } catch (error) { onToast((error as Error).message, 'err') }
+    } catch (error) { onToast(localizedError(error, { t, lang }, 'No se pudo actualizar la reacción. Intenta de nuevo.'), 'err') }
     finally { setLikeBusy(false) }
   }
   // --- Estado: reporte ---
@@ -413,7 +414,7 @@ export function PostDetailModal({
       const result = replyTarget
         ? await onReply(replyTarget.id, text)
         : await onAddComment(postId, text)
-      if (!result) throw new Error(t('No se pudo guardar el comentario. Intenta de nuevo.'))
+      if (!result) throw new Error('No se pudo guardar el comentario. Intenta de nuevo.')
       commentsSinceOpen.current = mergeCommunityComments(commentsSinceOpen.current, [result])
       setComments((current) => mergeCommunityComments(current, [result]))
       setFreshId(result.id)
@@ -421,7 +422,7 @@ export function PostDetailModal({
       setReplyTarget(null)
       setDraft('')
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo guardar el comentario. Intenta de nuevo.'), 'err')
     } finally {
       setSending(false)
     }
@@ -431,11 +432,11 @@ export function PostDetailModal({
     if (!onToggleRepost || !view) return
     try {
       const updated = await onToggleRepost(view)
-      if (!updated) throw new Error(t('No se pudo actualizar el repost. Intenta de nuevo.'))
+      if (!updated) throw new Error('No se pudo actualizar el repost. Intenta de nuevo.')
       setView((current) => current ? { ...current, reposts: updated.reposts } : current)
       onToast(repostedByMe ? t('Repost eliminado') : t('Reposteado'), 'ok')
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo actualizar el repost. Intenta de nuevo.'), 'err')
     }
   }
 
@@ -454,7 +455,7 @@ export function PostDetailModal({
       }
       onToast(t('Reporte enviado'), 'ok')
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo enviar el reporte. Intenta de nuevo.'), 'err')
     }
     setReportTarget(null)
   }
@@ -492,7 +493,7 @@ export function PostDetailModal({
       }
       return result
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo actualizar la reacción. Intenta de nuevo.'), 'err')
       return null
     }
   }
@@ -556,7 +557,7 @@ export function PostDetailModal({
               <img
                 className="com-post-image"
                 src={view.imageUrl}
-                alt={`Imagen de ${view.profile.displayName}`}
+                alt={t("Imagen de {name}", { name: view.profile.displayName })}
                 onClick={() => onOpenImage?.(view.imageUrl!, view.mediaType)}
               />
             ))}
@@ -621,7 +622,7 @@ export function PostDetailModal({
                       commentsSinceOpen.current = remove(commentsSinceOpen.current)
                       if (replyTarget?.id === id) setReplyTarget(null)
                       onToast(t('Comentario eliminado'), 'ok')
-                    } catch (error) { onToast((error as Error).message, 'err') }
+                    } catch (error) { onToast(localizedError(error, { t, lang }, 'No se pudo eliminar el comentario. Intenta de nuevo.'), 'err') }
                   }}
                   onReportComment={onReportComment}
                   onToggleCommentLike={handleCommentLike}

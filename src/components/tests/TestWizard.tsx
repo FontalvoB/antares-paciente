@@ -37,6 +37,7 @@ export function TestWizard({
   onBackendMulti,
   onComplete,
   saving = false,
+  hidden = false,
 }: {
   theme: TestTheme;
   steps: WizardStep[];
@@ -47,6 +48,7 @@ export function TestWizard({
   onBackendMulti: (index: number, option: number) => void;
   onComplete: () => void;
   saving?: boolean;
+  hidden?: boolean;
 }) {
   const t = useT();
   const reduce = useReducedMotion();
@@ -67,10 +69,11 @@ export function TestWizard({
     [current, answers, extras],
   );
 
+  const stepSequence = JSON.stringify(steps.map(item => item.key));
   useEffect(() => {
     setStep(0);
     setDir(1);
-  }, [steps]);
+  }, [stepSequence]);
 
   // Fidelidad al HTML: la pregunta num responde con su valor por defecto en
   // cuanto se muestra (el stepper parte de ahí), sin exigir tocar +/−.
@@ -112,7 +115,7 @@ export function TestWizard({
     answered;
 
   return (
-    <div className={`ht-wizard mood-${theme.mood}`}>
+    <div className={`ht-wizard mood-${theme.mood}`} hidden={hidden} style={hidden ? { display: "none" } : undefined}>
       {current?.kind !== "intro" && (
         <div className="ht-progress">
           <span>
@@ -533,7 +536,7 @@ function ScaleControl({
               animate={on ? { scale: 1.12 } : { scale: 1 }}
               transition={{ type: "spring", stiffness: 480, damping: 22 }}
             >
-              {s}
+              {t(s)}
             </motion.button>
           );
         })}

@@ -1,3 +1,4 @@
+import { localizedError } from "../../utils/localizedError";
 import { CommunityVideo } from "./CommunityVideo";
 import { CommunityMediaPreparationError } from "../../utils/community-media";
 import {
@@ -114,7 +115,7 @@ export function ComposePostModal({
     null,
   );
   const suppressClickRef = useRef(false);
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const filledOptions = pollOptions
     .map((o) => o.trim())
     .filter((o) => o.length > 0);
@@ -256,7 +257,7 @@ export function ComposePostModal({
       try {
         onQueue({body:type === 'poll' ? pollQuestion.trim() : text, file:media, options:type === 'poll' ? filledOptions : undefined});
         setDraft(''); clearMedia(); setPollQuestion(''); setPollOptions(['','']); onClose();
-      } catch(error) {onToast((error as Error).message,'err')}
+      } catch(error) {onToast(localizedError(error, { t, lang }, 'No se pudo publicar. Tu contenido se conserva; puedes volver a intentarlo.'),'err')}
       return;
     }
     setPublishing(true);
@@ -284,8 +285,8 @@ export function ComposePostModal({
       onToast(t("Publicado en la comunidad"), "ok");
       onClose();
     } catch (e) {
-      setPublishError(e instanceof CommunityMediaPreparationError ? t("El servicio no pudo preparar la subida del archivo. Tu contenido se conserva; vuelve a intentarlo.") : t("No se pudo publicar. Tu contenido se conserva; puedes volver a intentarlo."));
-      onToast((e as Error).message, "err");
+      setPublishError(e instanceof CommunityMediaPreparationError ? "El servicio no pudo preparar la subida del archivo. Tu contenido se conserva; vuelve a intentarlo." : "No se pudo publicar. Tu contenido se conserva; puedes volver a intentarlo.");
+      onToast(localizedError(e, { t, lang }, "No se pudo publicar. Tu contenido se conserva; puedes volver a intentarlo."), "err");
     } finally {
       setPublishing(false);
     }
@@ -301,7 +302,7 @@ export function ComposePostModal({
     >
       <div className="com-detail">
         <h2 className="cpm-heading">{t("Nueva publicación")}</h2>
-        {publishError && <div role="alert" className="com-publish-error">{publishError}</div>}
+        {publishError && <div role="alert" className="com-publish-error">{t(publishError)}</div>}
         <div className="com-detail-head">
           <Avatar
             name={me?.displayName ?? "MG"}
@@ -415,7 +416,7 @@ export function ComposePostModal({
               onIonInput={(e) => setPollQuestion(e.detail.value ?? "")}
             />
             <div className="cpm-poll-label">
-              {t("Opciones")} <span>({pollOptions.length}/4 · mínimo 2)</span>
+              {t("Opciones")} <span>{t("({count}/4 · mínimo 2)", { count: String(pollOptions.length) })}</span>
             </div>
             {pollOptions.map((opt, i) => (
               <div className="cpm-poll-row" key={i}>

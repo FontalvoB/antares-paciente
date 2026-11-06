@@ -1,24 +1,26 @@
 import { useMemo, type CSSProperties } from "react";
-import { IonAccordion, IonAccordionGroup, IonButton, IonIcon, IonItem, IonLabel, IonList } from "@ionic/react";
+import { IonAccordion, IonAccordionGroup, IonButton, IonIcon, IonItem, IonLabel, IonList, IonSpinner } from "@ionic/react";
 import { checkmarkCircleOutline, documentTextOutline, peopleOutline } from "ionicons/icons";
-import { useT } from "../../i18n/I18nContext";
+import { useI18n } from "../../i18n/I18nContext";
 import type { MeResult } from "../../utils/healthTestsApi";
 import { PATIENT_TITLES, themeFor } from "./model";
 
 import { groupAssessmentResults } from "../../utils/assessmentResults";
 import { AssessmentProfileAnalysis } from "./AssessmentProfileAnalysis";
 
-export function AssessmentResults({ results, error, onEnter, onCommunity }: {
+export function AssessmentResults({ results, error, loading = false, onEnter, onCommunity }: {
   error: boolean;
+  loading?: boolean;
   results: MeResult[];
   onEnter: () => void;
   onCommunity: () => void;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
+  const formatScore = (value: number) => value.toLocaleString(lang === "en" ? "en-US" : "es-ES", { maximumFractionDigits: 20 });
   const groups = useMemo(() => groupAssessmentResults(results), [results]);
   return (
     <div className="screen-scroll no-nav assessment-results">
-      {error || groups.length === 0 ? (
+      {loading ? <div className="ar-empty" role="status"><IonSpinner /><h2>{t("Cargando tus evaluaciones…")}</h2></div> : error || groups.length === 0 ? (
         <div className="ar-empty" role={error ? "alert" : undefined}>
           <IonIcon icon={documentTextOutline} aria-hidden="true" />
           <h2>{t(error ? "No se pudieron cargar los resultados." : "Aún no hay resultados calculados disponibles.")}</h2>
@@ -43,7 +45,7 @@ export function AssessmentResults({ results, error, onEnter, onCommunity }: {
                     <IonLabel className="ar-card-title"><h3>{t(title)}</h3>{title !== score.label && <p>{t(score.label)}</p>}
                       <span className="ar-classification">{classification ? t(classification) : t("Puntuación registrada")}</span>
                     </IonLabel>
-                    <div slot="end" className="ar-score"><strong>{score.value}</strong>{score.resultType !== "indicator" && <span>{t("puntos")}</span>}</div>
+                    <div slot="end" className="ar-score"><strong>{formatScore(score.value)}</strong>{score.resultType !== "indicator" && <span>{t("puntos")}</span>}</div>
                   </IonItem>
                   <div slot="content" className="ar-card-details">
                     <div className="ar-detail-kicker">{t("Detalle de la evaluación")}</div>
@@ -51,7 +53,7 @@ export function AssessmentResults({ results, error, onEnter, onCommunity }: {
                     {details.length > 0 ? <IonList lines="none" className="ar-detail-list">
                       {details.map(result => <IonItem key={result.id} className="ar-detail-row">
                         <IonLabel><h4>{t(result.label)}</h4>{result.qualifier && <p>{t(result.qualifier)}</p>}</IonLabel>
-                        <span slot="end" className="ar-detail-value">{result.value}</span>
+                        <span slot="end" className="ar-detail-value">{formatScore(result.value)}</span>
                       </IonItem>)}
                     </IonList> : <p className="ar-no-details">{t("Sin resultados adicionales para esta evaluación.")}</p>}
                   </div>

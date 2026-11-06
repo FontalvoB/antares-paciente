@@ -119,12 +119,14 @@ vi.mock("../../hooks/useMetricsHistory", () => ({
   }),
 }));
 
-vi.mock("../../i18n/I18nContext", () => ({
+vi.mock("../../i18n/I18nContext", async () => {
+  const { default: english } = await import("../../i18n/en.json");
+  return ({
   useI18n: () => ({
     lang: mockState.lang,
     toggleLang: vi.fn(),
     t: (key: string, params?: Record<string, string>) => {
-      let out = key;
+      let out = mockState.lang === "en" ? (english as Record<string, string>)[key] ?? key : key;
       if (params) {
         for (const [k, v] of Object.entries(params)) {
           out = out.split(`{${k}}`).join(v);
@@ -134,7 +136,8 @@ vi.mock("../../i18n/I18nContext", () => ({
     },
   }),
   useT: () => (key: string) => key,
-}));
+});
+});
 
 /** Profesional real del catálogo mockeado (nombre viene de este fixture). */
 const realProfessionalFixture = {
@@ -228,6 +231,15 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
     expect(screen.getByText("Dra. Sofía Vargas")).toBeTruthy();
     expect(screen.getByText("Physician")).toBeTruthy();
+  });
+
+  it("traduce el cargo profesional en inglés y conserva el nombre real", () => {
+    mockState.lang = "en";
+    mockState.teamProfessionals = [{ ...realProfessionalFixture, role: "Médico COPP-ADRESD" }];
+    renderPage();
+    expect(screen.getByText("COPP-ADRESD physician")).toBeTruthy();
+    expect(screen.getByText("Dra. Sofía Vargas")).toBeTruthy();
+    expect(screen.queryByText("Médico COPP-ADRESD")).toBeNull();
   });
 
   it("con catálogo vacío muestra estado vacío honesto, sin nombres fabricados", () => {

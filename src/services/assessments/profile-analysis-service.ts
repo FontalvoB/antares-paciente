@@ -7,6 +7,19 @@ export interface AssessmentProfileGuidance {
   questions: string[];
   generatedAt: string;
   sourceRevision: string;
+  isPartial?: boolean;
+  sources?: Array<{
+    evidenceCode: string;
+    testCode: string;
+    testName: string;
+    code: string;
+    label: string;
+    resultType: 'score' | 'subscale' | 'indicator';
+    value: number;
+    qualifier: string | null;
+    severity: string | null;
+    completedAt: string | null;
+  }>;
 }
 const route = '/api/v1/health-tests/me/profile-analysis';
 

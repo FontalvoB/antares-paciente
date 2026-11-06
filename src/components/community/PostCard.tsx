@@ -1,3 +1,4 @@
+import { localizedError } from "../../utils/localizedError";
 import { OwnPostDeleteButton } from "./OwnPostDeleteButton";
 import { shareCommunityContent } from "../../utils/community-sharing";
 import { countCommunityComments } from "../../utils/community-comments"
@@ -79,7 +80,7 @@ export function PostCard({
 }) {
   const { likeCount: serverLikeCount, likedByMe: serverLikedByMe, repostCount, repostedByMe } = view
   const { post } = view
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   // Copia local del post: el voto actualiza los resultados al instante.
   const [viewPost, setViewPost] = useState(view.post)
   useEffect(() => setViewPost(view.post), [view.post])
@@ -144,7 +145,7 @@ export function PostCard({
       await onToggleLike(requestPost)
     } catch (e) {
       setOptimisticLike({liked: wasLiked, count: previousCount})
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo actualizar la reacción. Intenta de nuevo.'), 'err')
     } finally {
       likePending.current = false
       setLiking(false)
@@ -157,7 +158,7 @@ export function PostCard({
       await onToggleRepost(viewPost)
       onToast(repostedByMe ? t('Repost eliminado') : t('Reposteado'), 'ok')
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo actualizar el repost. Intenta de nuevo.'), 'err')
     }
   }
 
@@ -176,7 +177,7 @@ export function PostCard({
       }
       onToast(t('Reporte enviado'), 'ok')
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo enviar el reporte. Intenta de nuevo.'), 'err')
     }
     setReportTarget(null)
   }
@@ -214,7 +215,7 @@ export function PostCard({
         }))
       }
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo actualizar la reacción. Intenta de nuevo.'), 'err')
     }
   }
 
@@ -296,7 +297,7 @@ export function PostCard({
             <img
               className="com-post-image"
               src={post.imageUrl}
-              alt={`Imagen de ${post.profile.displayName}`}
+              alt={t("Imagen de {name}", { name: post.profile.displayName })}
               loading="lazy"
               onClick={handleMediaClick}
               onDoubleClick={handleMediaDouble}

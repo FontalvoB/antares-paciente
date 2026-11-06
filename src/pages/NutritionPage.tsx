@@ -45,6 +45,7 @@ import type {
   NutritionIntakePayload,
 } from "../services/program/nutrition-service";
 import { ApiError } from "../utils/apiClient";
+import { localizedError } from "../utils/localizedError";
 import { mealTypeToCode } from "../utils/mealTypeToCode";
 import {
   buildHydrationIntake,
@@ -168,7 +169,7 @@ export function NutritionPage() {
     }
     completeNutrition.completeTask({ taskCode: 'nut' }, {
       onSuccess: () => { completeStep('nut', nutritionTask.points); showToast(t("+{pts} pts nutrición", { pts: String(nutritionTask.points) }), 'ok'); },
-      onError: error => { if (error.errorType === 'business' && !error.errors?.missingMealCodes?.length) showToast(error.message || t("No se pudo completar la actividad"), 'err'); },
+      onError: error => { if (error.errorType === 'business' && !error.errors?.missingMealCodes?.length) showToast(localizedError(error, { t, lang }, "No se pudo completar la actividad"), 'err'); },
     });
   }
   // Nombre real del plan o estado vacío honesto (sin 'Ana Torres' inventado).
@@ -286,16 +287,16 @@ export function NutritionPage() {
         return {
           id,
           emoji,
-          title: m.mealType,
+          title: MEAL_LABELS[mealTypeToCode(m.mealType) as MealCode] ?? m.mealType,
           kcal: m.calories ?? null,
           items: [
             [
               "🍽️",
               m.description || m.foods || m.mealType,
               m.notes || "Recomendación del plan clínico",
-              m.carbsG ? `${m.carbsG}g C` : "",
-              m.proteinG ? `${m.proteinG}g P` : "",
-              m.fatG ? `${m.fatG}g G` : "",
+              m.carbsG ? `${formatMetricValue(m.carbsG, 0, locale)}g ${t("Carbohidratos")}` : "",
+              m.proteinG ? `${formatMetricValue(m.proteinG, 0, locale)}g ${t("Proteínas")}` : "",
+              m.fatG ? `${formatMetricValue(m.fatG, 0, locale)}g ${t("Grasas")}` : "",
             ],
           ],
         };
@@ -310,7 +311,7 @@ export function NutritionPage() {
       kcal: null,
       items: [],
     }));
-  }, [nutContent]);
+  }, [nutContent, locale, t]);
 
   // Filas del tab Plan/indicaciones (server): targets REALES del content,
   // solo las filas cuyo target exista (sin sodio/azúcar/agua fabricados).
@@ -449,14 +450,14 @@ export function NutritionPage() {
           ) {
             showToast(
               t("Faltan comidas del plan: {meals}", {
-                meals: error.errors.missingMealCodes.join(", "),
+                meals: error.errors.missingMealCodes.map(code => t(MEAL_LABELS[code as MealCode] ?? code)).join(", "),
               }),
               "err",
             );
             return;
           }
           showToast(
-            error.message || t("No se pudo registrar la comida"),
+            localizedError(error, { t, lang }, "No se pudo registrar la comida"),
             "err",
           );
         },
@@ -501,7 +502,7 @@ export function NutritionPage() {
           }
           setPendingGlasses(null);
           showToast(
-            error.message || t("No se pudo registrar la comida"),
+            localizedError(error, { t, lang }, "No se pudo registrar la comida"),
             "err",
           );
         },
@@ -551,7 +552,7 @@ export function NutritionPage() {
                     marginTop: 4,
                   }}
                 >
-                  {productMessage}
+                  {t(productMessage)}
                 </div>
               )}
             </div>
@@ -938,7 +939,7 @@ export function NutritionPage() {
               <IonList lines="none">
                 {(nutContent?.nutritionIntakeLogs ?? []).filter(log => log.mealCode !== 'agua').map(log => <IonItem key={log.mealCode} button detail={false} onClick={() => setFlow({ meal: log.mealCode as Exclude<MealCode, "agua">, mode: "detail", startAt: "detail" })}>
                   <span className="ntr-log-icon" slot="start"><IonIcon icon={restaurantOutline} /></span>
-                  <IonLabel><h3>{t(MEAL_LABELS[log.mealCode])}</h3><p>{formatDateForDisplay(log.localDate)}</p><p>{[log.calories != null ? formatMetricValue(log.calories, 0, locale) + ' kcal' : '', log.proteinG != null ? formatMetricValue(log.proteinG, 0, locale) + 'g P' : '', log.carbsG != null ? formatMetricValue(log.carbsG, 0, locale) + 'g C' : '', log.fatG != null ? formatMetricValue(log.fatG, 0, locale) + 'g G' : ''].filter(Boolean).join(' · ')}</p></IonLabel>
+                  <IonLabel><h3>{t(MEAL_LABELS[log.mealCode])}</h3><p>{formatDateForDisplay(log.localDate)}</p><p>{[log.calories != null ? formatMetricValue(log.calories, 0, locale) + ' kcal' : '', log.proteinG != null ? formatMetricValue(log.proteinG, 0, locale) + 'g ' + t('Proteínas') : '', log.carbsG != null ? formatMetricValue(log.carbsG, 0, locale) + 'g ' + t('Carbohidratos') : '', log.fatG != null ? formatMetricValue(log.fatG, 0, locale) + 'g ' + t('Grasas') : ''].filter(Boolean).join(' · ')}</p></IonLabel>
                   <IonIcon icon={chevronForwardOutline} slot="end" />
                 </IonItem>)}
               </IonList>

@@ -1,3 +1,4 @@
+import { localizedError } from "../../utils/localizedError";
 import { IonButton, IonCheckbox, IonIcon, IonInput, IonModal } from '@ionic/react'
 import { close, people, personAddOutline } from 'ionicons/icons'
 import { useState } from 'react'
@@ -27,7 +28,7 @@ export function CreateGroupModal({
   const [name, setName] = useState('')
   const [selected, setSelected] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   const toggle = (id: string) => {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
@@ -43,7 +44,7 @@ export function CreateGroupModal({
       setSelected([])
       onClose()
     } catch (e) {
-      onToast((e as Error).message, 'err')
+      onToast(localizedError(e, { t, lang }, 'No se pudo crear el grupo. Intenta de nuevo.'), 'err')
     } finally {
       setCreating(false)
     }
