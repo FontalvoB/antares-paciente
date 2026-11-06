@@ -3438,5 +3438,11 @@
   "No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.": "No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.",
   "Día {day} del programa": "Día {day} del programa",
   "Asistente de voz": "Asistente de voz",
-  "Estoy aquí para acompañarte.": "Estoy aquí para acompañarte."
+  "Estoy aquí para acompañarte.": "Estoy aquí para acompañarte.",
+  "Análisis parcial": "Análisis parcial",
+  "Está basado en las evaluaciones que ya completaste. Podrás actualizarlo cuando tengas nuevos resultados.": "Está basado en las evaluaciones que ya completaste. Podrás actualizarlo cuando tengas nuevos resultados.",
+  "Resultados que Vita tuvo en cuenta": "Resultados que Vita tuvo en cuenta",
+  "Se usa la última evaluación completada de cada test. Cada puntuación conserva su propia escala.": "Se usa la última evaluación completada de cada test. Cada puntuación conserva su propia escala.",
+  "Buscando tu análisis guardado…": "Buscando tu análisis guardado…",
+  "Has solicitado varios análisis. Espera un minuto e intenta de nuevo.": "Has solicitado varios análisis. Espera un minuto e intenta de nuevo."
 }

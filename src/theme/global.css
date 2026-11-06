@@ -32513,6 +32513,14 @@ body.community-dark .com-club-post-label { background: #204a3b; color: #b3f1d6; 
 .assessment-ai-questions { padding-top:15px; border-top:1px solid var(--bd); }
 .assessment-ai-questions h3 { display:flex; align-items:center; gap:8px; color:var(--navy); font-size:14px; }
 .assessment-ai-questions ul { padding-left:18px; font-size:13px; line-height:1.8; color:var(--mu); }
+.assessment-ai-partial { padding:12px 14px; border-radius:14px; background:var(--wh); border:1px solid var(--bd); color:var(--blue); }
+.assessment-ai-partial strong { display:block; margin-bottom:4px; }
+.assessment-ai-evidence { margin-top:18px; }
+.assessment-ai-evidence [slot="content"] > p { padding:0 14px; color:var(--mu); font-size:12px; }
+.assessment-ai-evidence ion-list { padding:0 0 8px; background:var(--wh); }
+.assessment-ai-evidence ion-item { --background:var(--wh); --padding-start:14px; --inner-padding-end:14px; }
+.assessment-ai-evidence ion-label h3 { font-size:13px; line-height:1.5; font-weight:700; }
+.assessment-ai-evidence ion-label p { margin:4px 0; color:var(--mu); font-size:12px; font-weight:400; line-height:1.5; white-space:normal; }
 .nutraceutic-day-celebration { position:relative; overflow:hidden; padding:23px 24px 25px; border-radius:25px; background:var(--grad-brand-v); color:var(--ion-color-primary-contrast); box-shadow:var(--shadow-md); }
 .nutraceutic-day-celebration::after { content:''; position:absolute; top:42px; right:-42px; width:145px; height:145px; border:22px solid color-mix(in srgb,var(--ion-color-primary-contrast) 8%,transparent); border-radius:50%; pointer-events:none; }
 .nutraceutic-day-topline { position:relative; display:flex; align-items:center; gap:9px; font-size:10px; font-weight:750; letter-spacing:.12em; }

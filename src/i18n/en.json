@@ -3428,5 +3428,11 @@
   "No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.": "We couldn’t refresh your plan. These are the latest available instructions.",
   "Día {day} del programa": "Day {day} of your program",
   "Asistente de voz": "Voice assistant",
-  "Estoy aquí para acompañarte.": "I’m here for you."
+  "Estoy aquí para acompañarte.": "I’m here for you.",
+  "Análisis parcial": "Partial analysis",
+  "Está basado en las evaluaciones que ya completaste. Podrás actualizarlo cuando tengas nuevos resultados.": "This is based on the assessments you have completed. You can update it when you have new results.",
+  "Resultados que Vita tuvo en cuenta": "Results Vita considered",
+  "Se usa la última evaluación completada de cada test. Cada puntuación conserva su propia escala.": "The latest completed assessment for each test is used. Each score keeps its own scale.",
+  "Buscando tu análisis guardado…": "Looking for your saved analysis…",
+  "Has solicitado varios análisis. Espera un minuto e intenta de nuevo.": "You have requested several analyses. Wait a minute and try again."
 }
