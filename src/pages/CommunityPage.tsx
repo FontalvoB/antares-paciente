@@ -1,3 +1,4 @@
+import { localizedError } from "../utils/localizedError";
 import { personOutline } from "ionicons/icons";
 import communityLogo from "../assets/LogoIndividual.png";
 import { newestFirst } from '../utils/community-feed';
@@ -279,7 +280,7 @@ function BrandIcon({ path, size = 20 }: { path: string; size?: number }) {
 
 export function CommunityPage() {
   const { showToast, pointsTotal, user } = useApp();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const {
     me,
     meLoading,
@@ -605,7 +606,7 @@ export function CommunityPage() {
       showToast(t(following ? "Siguiendo a {name}" : "Dejaste de seguir a {name}", {name}), "ok");
     } catch(error) {
       setFollowOverrides(current => ({...current,[profileId]:previous}));
-      showToast((error as Error).message, "err");
+      showToast(localizedError(error, { t, lang }, "No se pudo actualizar el seguimiento. Intenta de nuevo."), "err");
     } finally {
       followPending.current.delete(profileId);
       setBusyId(current => current === profileId ? null : current);
@@ -1710,7 +1711,7 @@ export function CommunityPage() {
                             animationDelay: `${(i + 1) * 45}ms`,
                           }}
                           onClick={() =>
-                            showToast(`Abriendo ${r.name}…`, "info")
+                            showToast(t("Abriendo {name}…", { name: r.name }), "info")
                           }
                         >
                           <div className="com-net-ico">

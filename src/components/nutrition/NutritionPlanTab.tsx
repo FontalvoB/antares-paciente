@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { IonButton, IonSkeletonText, IonIcon, IonSelect, IonSelectOption, IonProgressBar } from "@ionic/react";
 import { leafOutline, waterOutline, restaurantOutline, timeOutline, checkmarkCircleOutline, analyticsOutline, shieldCheckmarkOutline, calendarOutline, refreshOutline, cafeOutline, sunnyOutline, moonOutline, informationCircleOutline } from "ionicons/icons";
-import { useT } from "../../i18n/I18nContext";
+import { useI18n } from "../../i18n/I18nContext";
+import { localizedError } from "../../utils/localizedError";
 import { formatMetricValue } from "../../data/metrics";
 import { mealTypeToCode } from "../../utils/mealTypeToCode";
 import type { MealCode } from "../../services/program/nutrition-service";
@@ -74,7 +75,7 @@ export function NutritionPlanTab({
   onOpenAssessments,
   onOpenProgram,
 }: NutritionPlanTabProps) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const [selection, setSelection] = useState<{ plan: string; day: number } | null>(null);
   const planKey = `${plan?.id ?? ""}:${plan?.revision ?? ""}`;
   const chosenDay = selection?.plan === planKey ? selection.day : null;
@@ -165,7 +166,7 @@ export function NutritionPlanTab({
           kcal: m.calories ?? null,
           foods: m.foods ?? null,
           description: m.description ?? null,
-          notes: m.notes ?? null,
+          notes: lang === "en" && m.notesEn?.trim() ? m.notesEn : m.notes ?? null,
           schedule: m.suggestedTime ?? null,
           macros,
         };
@@ -180,7 +181,7 @@ export function NutritionPlanTab({
       ordered.splice(index < 0 ? ordered.length : index, 0, missing);
     }
     return ordered;
-  }, [plan, locale, shownDay]);
+  }, [plan, locale, lang, shownDay]);
 
   if (status && status.status !== 'active') {
     const message = {
@@ -304,7 +305,7 @@ export function NutritionPlanTab({
           }}
           role="alert"
         >
-          {error.message || t("No se pudo cargar el plan alimentario")}
+          {localizedError(error, { t, lang }, "No se pudo cargar el plan alimentario")}
         </div>
         <IonButton
           expand="block"

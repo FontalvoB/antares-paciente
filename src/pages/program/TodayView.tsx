@@ -51,7 +51,7 @@ export function TodayView({
     if (todayTasks && todayTasks.length > 0) {
       return todayTasks.map((task) => {
         const fallback = PROGRAM_TASKS.find((pt) => pt.id === task.taskCode)
-        let shortText = task.short || fallback?.short || ''
+        let shortText = t(task.short || fallback?.short || '')
         if (task.taskCode === 'podcast' && task.content?.title) {
           const durationMin = task.content.durationSecs
             ? Math.round(task.content.durationSecs / 60)
@@ -83,7 +83,7 @@ export function TodayView({
     return PROGRAM_TASKS.map((pt) => ({
       id: pt.id,
       title: pt.title,
-      short: pt.short,
+      short: t(pt.short),
       pts: pt.pts,
       done: Boolean(program[pt.id]),
       tone: pt.tone,
@@ -168,7 +168,7 @@ export function TodayView({
           // "Mediterráneo · 1,800 kcal" → subtítulo a la izquierda, dato a la
           // derecha. Solo se separa cuando el último tramo es una cifra
           // ("8 min", "Semana 12"); si no, el texto va entero al subtítulo.
-          const parts = t(task.short).split(' · ')
+          const parts = task.short.split(' · ')
           const tail = parts.length > 1 && /\d/.test(parts[parts.length - 1]) ? parts.pop() : null
           const subtitle = parts.join(' · ')
           return (

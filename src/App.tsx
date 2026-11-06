@@ -1,3 +1,4 @@
+import { LanguageQuerySync } from "./components/LanguageQuerySync";
 import { AchievementCenter } from "./components/achievements/AchievementCenter";
 import { setupIonicReact, IonApp, IonSpinner } from "@ionic/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -15,12 +16,13 @@ import { createCommunityClient } from "./graphql/client";
 import {
   consumePendingRoomAppointmentId,
   registerForPush,
+  syncPushLanguage,
 } from "./utils/pushNotifications";
 import { fetchMyAppointments } from "./utils/appointmentsApi";
 import { mapAppointmentToListed } from "./data/appointments";
 import { AppProvider, useApp } from "./context/AppContext";
 import { WearableProvider } from "./context/WearableContext";
-import { I18nProvider, useT } from "./i18n/I18nContext";
+import { I18nProvider, useI18n } from "./i18n/I18nContext";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { useTabletLayout } from "./hooks/useTabletLayout";
 import { PanicOverlay } from "./components/PanicOverlay";
@@ -157,7 +159,7 @@ function Shell() {
     showToast,
     upcomingAppointments,
   } = useApp();
-  const t = useT();
+  const { t, lang } = useI18n();
   const pushStarted = useRef(false);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
@@ -199,6 +201,7 @@ function Shell() {
     if (flow !== "app" || pushStarted.current) return;
     pushStarted.current = true;
     void registerForPush({
+      language: lang,
       onOpenChat: (targetThreadId) => {
         if (targetThreadId) {
           setActiveThreadId(targetThreadId);
@@ -209,7 +212,12 @@ function Shell() {
         void openRoomFromPush(appointmentId);
       },
     });
-  }, [flow, navigate, setActiveThreadId, openRoomFromPush]);
+  }, [flow, lang, navigate, setActiveThreadId, openRoomFromPush]);
+
+  // Actualiza el token ya conocido al cambiar idioma/cuenta sin pedir permisos de nuevo.
+  useEffect(() => {
+    if (flow === "app") void syncPushLanguage(lang);
+  }, [flow, lang, user.id]);
 
   // Cold start: la notificación pudo tocarse antes de que este contexto
   // montara; el id encolado se consume una sola vez aquí.
@@ -260,6 +268,7 @@ export default function App() {
     <Provider value={communityClientState}>
       <QueryClientProvider client={queryClient}>
         <I18nProvider>
+          <LanguageQuerySync />
           <AppProvider onResetCommunityClient={resetCommunityClient}>
             <WearableProvider>
               <IonApp>

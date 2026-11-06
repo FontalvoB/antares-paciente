@@ -31,6 +31,16 @@ describe("FoodResultCard bilingüe", () => {
     expect(screen.getByText("Sushi de salmón")).toBeTruthy();
   });
 
+  it("localizes legacy canonical names without changing the analysis", () => {
+    const canonical = { ...food, name: "grilled_chicken", nameEn: undefined };
+    render(<I18nProvider><LanguageSwitch /><FoodResultCard food={canonical} /></I18nProvider>);
+    expect(screen.getByText("pollo a la plancha")).toBeTruthy();
+    fireEvent.click(screen.getByText("Idioma"));
+    expect(screen.getByText("grilled chicken")).toBeTruthy();
+    expect(screen.queryByText("pollo a la plancha")).toBeNull();
+    expect(canonical.name).toBe("grilled_chicken");
+  });
+
   it("conserva el nombre si una respuesta legacy no trae nameEn", () => {
     localStorage.setItem("antares_lang", "en");
     render(<I18nProvider><FoodResultCard food={{ ...food, nameEn: undefined }} /></I18nProvider>);

@@ -1,0 +1,9 @@
+/* Textos de permisos del sistema para la localización inglesa de iOS. */
+"NSBluetoothAlwaysUsageDescription" = "Copp Adresd uses Bluetooth to connect to your wearable (ring or band) and read your vital signs, steps and sleep.";
+"NSBluetoothPeripheralUsageDescription" = "Copp Adresd uses Bluetooth to connect to your wearable and read your vital signs.";
+"NSCameraUsageDescription" = "Copp Adresd uses the camera for telemedicine consultations and food analysis.";
+"NSLocationWhenInUseUsageDescription" = "Copp Adresd uses your location to identify the country's emergency number and share your location with your contact if you activate SOS.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Copp Adresd uses your location to identify the country's emergency number and share your location with your contact if you activate SOS.";
+"NSMicrophoneUsageDescription" = "Copp Adresd uses the microphone for telemedicine consultations.";
+"NSPhotoLibraryAddUsageDescription" = "Copp Adresd saves photos of your meals for your nutrition log.";
+"NSPhotoLibraryUsageDescription" = "Copp Adresd accesses your photos to analyze your meals.";

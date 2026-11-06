@@ -82,6 +82,8 @@ export function WeightEvolutionSection({
       maximumFractionDigits: 1,
       minimumFractionDigits: 1,
     })}`;
+  const formatWeight = (value: number) => value.toLocaleString(locale, { maximumFractionDigits: 2 });
+  const formatPrecise = (value: number) => value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const deltaKg =
     reference && selected ? selected.value - reference.value : null;
   const deltaPct =
@@ -102,7 +104,7 @@ export function WeightEvolutionSection({
           {!showEvolution && latest && status === "ready" && (
             <p>
               {t("Último registro disponible")}:{" "}
-              {formatDateForDisplay(latest.date)} · {latest.value} kg
+              {formatDateForDisplay(latest.date)} · {formatWeight(latest.value)} kg
             </p>
           )}
           {status === "loading" && (
@@ -244,14 +246,14 @@ export function WeightEvolutionSection({
                 <div>
                   <dt>{t("Referencia del período")}</dt>
                   <dd>
-                    {formatDateForDisplay(reference.date)} · {reference.value}{" "}
+                    {formatDateForDisplay(reference.date)} · {formatWeight(reference.value)}{" "}
                     kg
                   </dd>
                 </div>
                 <div>
                   <dt>{t("Último registro disponible")}</dt>
                   <dd>
-                    {formatDateForDisplay(latest.date)} · {latest.value} kg
+                    {formatDateForDisplay(latest.date)} · {formatWeight(latest.value)} kg
                   </dd>
                 </div>
               </dl>
@@ -279,7 +281,7 @@ export function WeightEvolutionSection({
                 >
                   {records.map((r) => (
                     <IonSelectOption key={r.date} value={r.date}>
-                      {formatDateForDisplay(r.date)} · {r.value} kg
+                      {formatDateForDisplay(r.date)} · {formatWeight(r.value)} kg
                     </IonSelectOption>
                   ))}
                 </IonSelect>
@@ -312,8 +314,8 @@ export function WeightEvolutionSection({
               </div>
               <p aria-live="polite" className="evo-live">
                 {t("Cambio respecto a la referencia")}:{" "}
-                {(selected.value - reference.value).toFixed(2)} kg{" "}
-                {((selected.value / reference.value - 1) * 100).toFixed(2)} %
+                {formatPrecise(selected.value - reference.value)} kg{" "}
+                {formatPrecise((selected.value / reference.value - 1) * 100)} %
               </p>
               {records.length === 1 && (
                 <p>

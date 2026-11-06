@@ -44,6 +44,15 @@ describe("captureChatImage — selección conversacional de imágenes", () => {
     expect(image?.dataUrl).toBe("data:image/jpeg;base64,aG9sYQ==");
   });
 
+  it("uses English labels for the native camera prompt", async () => {
+    getPhotoMock.mockResolvedValueOnce({ base64String: "aG9sYQ==", format: "jpeg" });
+    await captureChatImage(undefined, "en");
+    expect(getPhotoMock).toHaveBeenCalledWith(expect.objectContaining({
+      promptLabelHeader: "Attach image", promptLabelPhoto: "Gallery",
+      promptLabelPicture: "Camera", promptLabelCancel: "Cancel",
+    }));
+  });
+
   it("formato png se reporta con MIME image/png", async () => {
     getPhotoMock.mockResolvedValueOnce({ base64String: "cG5n", format: "png" });
 

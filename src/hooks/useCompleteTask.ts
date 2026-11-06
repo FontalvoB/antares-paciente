@@ -319,7 +319,7 @@ export function useCompleteTask(
       if (error instanceof ApiError && error.errors?.missingMealCodes?.length) {
         showToast(
           t('Faltan comidas del plan: {meals}', {
-            meals: error.errors.missingMealCodes.join(', '),
+            meals: error.errors.missingMealCodes.map(code => t(({ des: 'Desayuno', alm: 'Almuerzo', mer: 'Merienda', cen: 'Cena', agua: 'Hidratación' } as Record<string, string>)[code] ?? code)).join(', '),
           }),
           'err',
         )
@@ -360,7 +360,7 @@ export function useCompleteTask(
           })
         }
         showToast(
-          'Sin conexión. Tu progreso se sincronizará cuando vuelvas a estar en línea.',
+          t('Sin conexión. Tu progreso se sincronizará cuando vuelvas a estar en línea.'),
           'warn',
         )
         return

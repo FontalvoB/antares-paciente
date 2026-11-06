@@ -425,7 +425,7 @@ export function WearablePage() {
         // última se queda más para leer la tira completa antes de salir.
         const reading = formatMeasureReading(kind, samplesRef.current[kind]);
         if (reading) {
-          const unit = t(reading.unit);
+          const unit = reading.unit;
           const entry = { kind, value: reading.value, unit };
           setSessionValues((prev) =>
             prev.some((item) => item.kind === kind)
@@ -466,21 +466,17 @@ export function WearablePage() {
         // la vista de foco ofrece Reintentar esa métrica.
         const message =
           reason === "refused"
-            ? t("El wearable rechazó esta medición.")
+            ? "El wearable rechazó esta medición."
             : reason === "failed"
-              ? t("La medición falló por falta de contacto o movimiento.")
+              ? "La medición falló por falta de contacto o movimiento."
               : reason === "no-signal"
-                ? t(
-                    "Sin señal del anillo. Ajusta el anillo, quédate quieto e inténtalo de nuevo.",
-                  )
-                : t(
-                    "La medición no se completó. Mantén el wearable en contacto e inténtalo de nuevo.",
-                  );
+                ? "Sin señal del anillo. Ajusta el anillo, quédate quieto e inténtalo de nuevo."
+                : "La medición no se completó. Mantén el wearable en contacto e inténtalo de nuevo.";
         setFocusResult({ ok: false, kind, message });
         setFailedKinds((prev) =>
           prev.includes(kind) ? prev : [...prev, kind],
         );
-        showToast(message, "err");
+        showToast(t(message), "err");
       }
     },
     [showToast, syncQueue, t],
@@ -1413,7 +1409,7 @@ export function WearablePage() {
             elapsedSec={focusElapsed}
             liveValue={focusReading?.value ?? null}
             liveUnit={focusReading ? t(focusReading.unit) : ""}
-            steps={focusSteps}
+            steps={focusSteps.map(step => ({ ...step, unit: step.unit ? t(step.unit) : undefined }))}
             queue={queuedKinds.length}
             result={showingResult}
             complete={flashKind !== null}

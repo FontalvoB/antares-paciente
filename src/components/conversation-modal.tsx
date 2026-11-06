@@ -38,7 +38,8 @@ import {
   type MessageAddedResult,
   type Profile,
 } from "../graphql/community";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { localizedError } from "../utils/localizedError";
 
 const AVATAR_GRADS = [
   "linear-gradient(135deg,#1B6CA8,#0A1F36)",
@@ -106,7 +107,7 @@ export function ConversationModal({
   onAddMember?: (groupId: string, profileId: string) => Promise<unknown>;
   onLeaveGroup?: (groupId: string) => Promise<unknown>;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const isGroup = !!group;
   const key = peer ? conversationKey(me.id, peer.id) : (group?.id ?? "");
 
@@ -289,7 +290,7 @@ export function ConversationModal({
       }
       setDraft("");
     } catch (e) {
-      onToast((e as Error).message, "err");
+      onToast(localizedError(e, { t, lang }, "No se pudo completar la acción. Intenta de nuevo."), "err");
     } finally {
       setSending(false);
     }
@@ -301,9 +302,9 @@ export function ConversationModal({
     if (!group || !onAddMember) return;
     try {
       await onAddMember(group.id, profileId);
-      onToast("Miembro añadido", "ok");
+      onToast(t("Miembro añadido"), "ok");
     } catch (e) {
-      onToast((e as Error).message, "err");
+      onToast(localizedError(e, { t, lang }, "No se pudo completar la acción. Intenta de nuevo."), "err");
     }
   }
 
@@ -311,10 +312,10 @@ export function ConversationModal({
     if (!group || !onRemoveMember) return;
     try {
       await onRemoveMember(group.id, m.id);
-      onToast("Miembro quitado", "ok");
+      onToast(t("Miembro quitado"), "ok");
       setMembersOpen(false);
     } catch (e) {
-      onToast((e as Error).message, "err");
+      onToast(localizedError(e, { t, lang }, "No se pudo completar la acción. Intenta de nuevo."), "err");
     }
   }
 
@@ -324,9 +325,9 @@ export function ConversationModal({
     if (trimmed.length < 1) return;
     try {
       await onRenameGroup(group.id, trimmed);
-      onToast("Grupo renombrado", "ok");
+      onToast(t("Grupo renombrado"), "ok");
     } catch (e) {
-      onToast((e as Error).message, "err");
+      onToast(localizedError(e, { t, lang }, "No se pudo completar la acción. Intenta de nuevo."), "err");
     }
   }
 
@@ -334,11 +335,11 @@ export function ConversationModal({
     if (!group || !onLeaveGroup) return;
     try {
       await onLeaveGroup(group.id);
-      onToast("Saliste del grupo", "ok");
+      onToast(t("Saliste del grupo"), "ok");
       setMembersOpen(false);
       onClose();
     } catch (e) {
-      onToast((e as Error).message, "err");
+      onToast(localizedError(e, { t, lang }, "No se pudo completar la acción. Intenta de nuevo."), "err");
     }
   }
 
@@ -397,7 +398,7 @@ export function ConversationModal({
                     onClick={() => setMembersOpen(true)}
                   >
                     <IonIcon icon={people} style={{ fontSize: 12 }} />
-                    {`${group!.memberCount} ${group!.memberCount === 1 ? "miembro" : "miembros"}`}
+                    {`${group!.memberCount.toLocaleString(lang === "en" ? "en-US" : "es-ES")} ${group!.memberCount === 1 ? t("miembro") : t("miembros")}`}
                   </div>
                 </>
               ) : (
@@ -411,7 +412,7 @@ export function ConversationModal({
                 </>
               )}
             </div>
-            <IonButton fill="clear" size="small" onClick={onClose}>
+            <IonButton fill="clear" size="small" aria-label={t("Cerrar")} onClick={onClose}>
               <IonIcon icon={close} />
             </IonButton>
           </div>
@@ -462,7 +463,7 @@ export function ConversationModal({
                     marginTop: 30,
                   }}
                 >
-                  Sin mensajes todavía. ¡Saluda!
+                  {t("Sin mensajes todavía. ¡Saluda!")}
                 </div>
               ) : (
                 messages.map((m, i) => {
@@ -537,7 +538,7 @@ export function ConversationModal({
                     gap: 5,
                   } as CSSProperties
                 }
-                aria-label="Ir al último mensaje"
+                aria-label={t("Ir al último mensaje")}
               >
                 <IonIcon icon={arrowDown} />
                 <span>{unreadCount}</span>
@@ -551,7 +552,8 @@ export function ConversationModal({
             <IonTextarea
               className="fld draft-tx"
               value={draft}
-              placeholder="Escribe un mensaje…"
+              aria-label={t("Escribe un mensaje…")}
+              placeholder={t("Escribe un mensaje…")}
               onIonInput={(e) => {
                 setDraft(e.detail.value ?? "");
                 rePinAfterLayout();
@@ -572,14 +574,14 @@ export function ConversationModal({
                 onClick={() => void handleSend()}
               >
                 {sending ? (
-                  "Enviando…"
+                  t("Enviando…")
                 ) : (
                   <>
                     <IonIcon
                       icon={send}
                       style={{ marginRight: 4, verticalAlign: "-2px" }}
                     />{" "}
-                    Enviar
+                    {t("Enviar")}
                   </>
                 )}
               </IonButton>
@@ -608,11 +610,12 @@ export function ConversationModal({
             }}
           >
             <div style={{ fontWeight: 800, fontSize: 15, flex: 1 }}>
-              Miembros
+              {t("Miembros")}
             </div>
             <IonButton
               fill="clear"
               size="small"
+              aria-label={t("Cerrar")}
               onClick={() => setMembersOpen(false)}
             >
               <IonIcon icon={close} />
@@ -628,7 +631,7 @@ export function ConversationModal({
                   marginTop: 20,
                 }}
               >
-                Cargando miembros…
+                {t("Cargando miembros…")}
               </div>
             ) : (
               members.map((m) => {
@@ -676,7 +679,7 @@ export function ConversationModal({
                           alignItems: "center",
                         }}
                       >
-                        Creador
+                        {t("Creador")}
                       </span>
                     )}
                     {isMe && (
@@ -692,7 +695,7 @@ export function ConversationModal({
                           alignItems: "center",
                         }}
                       >
-                        Tú
+                        {t("Tú")}
                       </span>
                     )}
                   </div>
@@ -717,13 +720,13 @@ export function ConversationModal({
                 icon={personAddOutline}
                 style={{ marginRight: 4, verticalAlign: "-2px" }}
               />{" "}
-              Añadir miembro
+              {t("Añadir miembro")}
             </IonButton>
             <IonButton
               className="bt bt-outline bt-mini"
               onClick={() => setRenameOpen(true)}
             >
-              Renombrar grupo
+              {t("Renombrar grupo")}
             </IonButton>
             <IonButton
               fill="outline"
@@ -736,7 +739,7 @@ export function ConversationModal({
               }
               onClick={() => setLeaveOpen(true)}
             >
-              Salir del grupo
+              {t("Salir del grupo")}
             </IonButton>
           </div>
         </div>
@@ -762,11 +765,12 @@ export function ConversationModal({
             }}
           >
             <div style={{ fontWeight: 800, fontSize: 15, flex: 1 }}>
-              Añadir miembro
+              {t("Añadir miembro")}
             </div>
             <IonButton
               fill="clear"
               size="small"
+              aria-label={t("Cerrar")}
               onClick={() => setAddOpen(false)}
             >
               <IonIcon icon={close} />
@@ -783,7 +787,7 @@ export function ConversationModal({
                   padding: "0 20px",
                 }}
               >
-                Todos tus amigos ya están en el grupo.
+                {t("Todos tus amigos ya están en el grupo.")}
               </div>
             ) : (
               friendsToAdd.map((f) => (
@@ -821,7 +825,7 @@ export function ConversationModal({
                     }}
                   >
                     <IonIcon icon={personAddOutline} style={{ fontSize: 14 }} />{" "}
-                    Añadir
+                    {t("Añadir")}
                   </span>
                 </div>
               ))
@@ -842,9 +846,9 @@ export function ConversationModal({
             : ""
         }
         buttons={[
-          "Cancelar",
+          t("Cancelar"),
           {
-            text: "Quitar",
+            text: t("Quitar"),
             role: "destructive",
             handler: () => {
               if (removeTarget) void handleRemoveMember(removeTarget);
@@ -857,19 +861,19 @@ export function ConversationModal({
       {/* Renombrar grupo */}
       <IonAlert
         isOpen={renameOpen}
-        header="Renombrar grupo"
+        header={t("Renombrar grupo")}
         inputs={[
           {
             name: "name",
             type: "text",
-            placeholder: "Nombre del grupo",
+            placeholder: t("Nombre del grupo"),
             value: group?.name ?? "",
           },
         ]}
         buttons={[
-          "Cancelar",
+          t("Cancelar"),
           {
-            text: "Guardar",
+            text: t("Guardar"),
             handler: (values: { name?: string }) => {
               void handleRename(values.name ?? "");
             },
@@ -881,12 +885,12 @@ export function ConversationModal({
       {/* Salir del grupo */}
       <IonAlert
         isOpen={leaveOpen}
-        header="Salir del grupo"
-        message="¿Seguro que quieres salir de este grupo?"
+        header={t("Salir del grupo")}
+        message={t("¿Seguro que quieres salir de este grupo?")}
         buttons={[
-          "Cancelar",
+          t("Cancelar"),
           {
-            text: "Salir",
+            text: t("Salir"),
             role: "destructive",
             handler: () => {
               void handleLeave();

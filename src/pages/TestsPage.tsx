@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   IonButton,
@@ -14,7 +14,10 @@ import {
   sparkles,
 } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
+import { requestLanguage } from "../utils/requestLanguage";
+import { ApiError } from "../utils/apiClient";
+import { localizedError } from "../utils/localizedError";
 import {
   fetchMyAssignments,
   fetchMyResults,
@@ -52,39 +55,58 @@ function isListedAssignment(a: MeAssignment): boolean {
   );
 }
 
-/** Conserva los completados si el API aún no los incluye (p. ej. caché o lista solo-activa). */
+/** Conserva estados completados, pero solo retiene tarjetas ausentes del mismo idioma. */
 function mergeAssignmentList(
   previous: MeAssignment[] | null,
   incoming: MeAssignment[],
+  retainMissing = true,
 ): MeAssignment[] {
   const incomingIds = new Set(incoming.map((a) => a.id));
   const retained = (previous ?? []).filter(
-    (a) => a.status === "completed" && !incomingIds.has(a.id),
+    (a) => retainMissing && a.status === "completed" && !incomingIds.has(a.id),
   );
   return [...incoming.filter(isListedAssignment).map(a => {
     const confirmed = previous?.find(p => p.id === a.id && p.status === "completed");
-    return confirmed && (a.status === "pending" || a.status === "in_progress") ? confirmed : a;
+    return confirmed && (a.status === "pending" || a.status === "in_progress")
+      ? { ...a, status: confirmed.status, completedAt: confirmed.completedAt } : a;
   }), ...retained];
+}
+
+interface AssessmentReadError {
+  language: "es" | "en";
+  error: unknown;
 }
 
 export function TestsPage() {
   const { skipTests, finishTests, showToast, navigate } =
     useApp();
-  const t = useT();
+  const i18n = useI18n();
+  const { t, lang } = i18n;
+  const languageRef = useRef(lang);
+  languageRef.current = lang;
+  const readErrorText = (error: unknown, fallback: string) => error instanceof ApiError && error.code === "CONTENT_TRANSLATION_UNAVAILABLE"
+    ? localizedError(error, i18n, fallback) : t(fallback);
   const reduce = useReducedMotion();
 
   const [assignments, setAssignments] = useState<MeAssignment[] | null>(null);
   const [openQuestions, setOpenQuestions] = useState<MeQuestion[] | null>(null);
   const [backendResults, setBackendResults] = useState<MeResult[] | null>(null);
-  const [resultsError, setResultsError] = useState(false);
+  const [assignmentsLanguage, setAssignmentsLanguage] = useState(lang);
+  const [resultsLanguage, setResultsLanguage] = useState(lang);
+  const [questionsLanguage, setQuestionsLanguage] = useState(lang);
+  const questionsRef = useRef(openQuestions);
+  questionsRef.current = openQuestions;
+  const [questionsError, setQuestionsError] = useState<unknown>(null);
+  const [questionsRetry, setQuestionsRetry] = useState(0);
+  const [resultsError, setResultsError] = useState<AssessmentReadError | null>(null);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
-  const [assignmentsError, setAssignmentsError] = useState(false);
+  const [assignmentsError, setAssignmentsError] = useState<AssessmentReadError | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [openId, setOpenId] = useState<number | null>(null);
   const [openAssignmentId, setOpenAssignmentId] = useState<string | null>(null);
-  const [openTitle, setOpenTitle] = useState("");
+  const [openTitle, setOpenTitle] = useState({ text: "", language: lang });
   const [openCode, setOpenCode] = useState<string | null>(null);
   const [answers, setAnswers] = useState<
     Record<number, Record<number, number | number[] | string>>
@@ -93,7 +115,11 @@ export function TestsPage() {
   const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const listedAssignments = assignments?.filter(isListedAssignment) ?? null;
+  const currentAssignmentsError = assignmentsError?.language === lang ? assignmentsError : null;
+  const currentResultsError = resultsError?.language === lang ? resultsError : null;
+  const visibleAssignments = assignmentsLanguage === lang ? assignments : null;
+  const visibleResults = resultsLanguage === lang ? backendResults : null;
+  const listedAssignments = visibleAssignments?.filter(isListedAssignment) ?? null;
   const totalTests = listedAssignments?.length ?? 0;
   const completed = listedAssignments
     ? listedAssignments.filter((a) => a.status === "completed").length
@@ -102,26 +128,40 @@ export function TestsPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setAssignmentsLoading(true);
+    setAssignmentsError(null);
+    setResultsError(null);
     fetchMyAssignments()
       .then((list) => {
-        if (!cancelled)
-          setAssignments((prev) => mergeAssignmentList(prev, list));
+        if (!cancelled) {
+          setAssignments((prev) => mergeAssignmentList(prev, list, assignmentsLanguage === lang));
+          setAssignmentsLanguage(lang);
+        }
       })
-      .catch(() => { if (!cancelled) setAssignmentsError(true); })
+      .catch(error => { if (!cancelled) setAssignmentsError({ language: lang, error }); })
       .finally(() => { if (!cancelled) setAssignmentsLoading(false); });
     fetchMyResults()
       .then((results) => {
-        if (!cancelled) { setBackendResults(results); setResultsError(false); }
+        if (!cancelled) { setBackendResults(results); setResultsError(null); setResultsLanguage(lang); }
       })
-      .catch(() => { if (!cancelled) setResultsError(true); });
+      .catch(error => { if (!cancelled) setResultsError({ language: lang, error }); });
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+    // El idioma del dato confirmado solo cambia con una respuesta correcta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey, lang]);
+
+  const retryReads = () => {
+    setAssignmentsError(null);
+    setResultsError(null);
+    setAssignmentsLoading(true);
+    setRefreshKey(key => key + 1);
+  };
 
   const listItems = useMemo(() => {
-    if (assignments) {
-      return assignments.filter(isListedAssignment).map((a, idx) => {
+    if (visibleAssignments) {
+      return visibleAssignments.filter(isListedAssignment).map((a, idx) => {
         const visual = themeFor(a.testCode ?? "");
         return {
           key: a.id,
@@ -143,45 +183,56 @@ export function TestsPage() {
       });
     }
     return [];
-  }, [assignments]);
+  }, [visibleAssignments]);
 
   const theme: TestTheme =
     openId !== null
       ? themeFor(openCode)
       : FALLBACK_THEME;
 
-  const openTest = async (item: (typeof listItems)[number]) => {
+  const openTest = (item: (typeof listItems)[number]) => {
     if (item.done) {
       showToast(t("Ya completaste esta evaluación"), "ok");
       return;
     }
     setOpenId(item.id);
     setOpenAssignmentId(item.assignmentId);
-    setOpenTitle(item.title);
+    setOpenTitle({ text: item.title, language: lang });
     setOpenCode(item.code);
     setOpenQuestions(null);
-    if (item.assignmentId) {
-      setQuestionsLoading(true);
-      try {
-        const detail = await fetchMyTest(item.assignmentId);
-        if (!detail.questions.length) throw new Error("No questions");
-        setOpenQuestions(detail.questions);
-      } catch {
-        setOpenId(null);
-        setOpenAssignmentId(null);
-        setOpenQuestions(null);
-        showToast(t("No se pudieron cargar las preguntas. Intenta nuevamente."), "err");
-      } finally {
-        setQuestionsLoading(false);
-      }
-    }
+    setQuestionsError(null);
+    setQuestionsLoading(true);
   };
+
+  useEffect(() => {
+    if (!openAssignmentId) return;
+    let cancelled = false;
+    const hadQuestions = questionsRef.current !== null;
+    setQuestionsLoading(true);
+    setQuestionsError(null);
+    void fetchMyTest(openAssignmentId).then(detail => {
+      if (cancelled) return;
+      if (!detail.questions.length) throw new Error("No questions");
+      setOpenQuestions(detail.questions);
+      setQuestionsLanguage(lang);
+      if (detail.name?.trim()) setOpenTitle({ text: detail.name, language: lang });
+    }).catch(error => {
+      if (cancelled) return;
+      if (hadQuestions) setQuestionsError(error || new Error("Questions unavailable"));
+      else { setOpenId(null); setOpenAssignmentId(null); setOpenQuestions(null); }
+      showToast(t("No se pudieron cargar las preguntas. Intenta nuevamente."), "err");
+    }).finally(() => { if (!cancelled) setQuestionsLoading(false); });
+    return () => { cancelled = true; };
+    // Solo cambia la copia de presentación; conserva respuestas y la posición del wizard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openAssignmentId, lang, questionsRetry]);
 
   const closeTest = () => {
     setOpenId(null);
     setOpenAssignmentId(null);
     setOpenQuestions(null);
     setOpenCode(null);
+    setQuestionsError(null);
   };
 
   const saveTest = async () => {
@@ -233,11 +284,24 @@ export function TestsPage() {
               )
             : prev,
         );
-        const list = await fetchMyAssignments().catch(() => null);
-        if (list) setAssignments((prev) => mergeAssignmentList(prev, list));
-        const results = await fetchMyResults().catch(() => null);
-        if (results) { setBackendResults(results); setResultsError(false); }
-        else setResultsError(true);
+        const listLanguage = requestLanguage();
+        await fetchMyAssignments().then(list => {
+          if (listLanguage !== languageRef.current) return;
+          setAssignments((prev) => mergeAssignmentList(prev, list, assignmentsLanguage === listLanguage));
+          setAssignmentsLanguage(listLanguage);
+          setAssignmentsError(null);
+        }).catch(error => {
+          if (listLanguage === languageRef.current) setAssignmentsError({ language: listLanguage, error });
+        });
+        const resultLanguage = requestLanguage();
+        await fetchMyResults().then(results => {
+          if (resultLanguage !== languageRef.current) return;
+          setBackendResults(results);
+          setResultsError(null);
+          setResultsLanguage(resultLanguage);
+        }).catch(error => {
+          if (resultLanguage === languageRef.current) setResultsError({ language: resultLanguage, error });
+        });
         showToast(t("Evaluación guardada"), "ok");
         closeTest();
       } catch {
@@ -252,10 +316,12 @@ export function TestsPage() {
 
   const openIA = () => setShowResult(true);
 
+  const displayedTitle = listItems.find(item => item.assignmentId === openAssignmentId)?.title
+    ?? (openTitle.language === lang ? openTitle.text : PATIENT_TITLES[openCode ?? ""] ?? theme.kicker);
   const steps = useMemo(() => {
     if (openId === null || !openAssignmentId || !openQuestions) return [];
-    return buildBackendSteps(openQuestions, openTitle, theme);
-  }, [openId, openAssignmentId, openQuestions, openTitle, theme]);
+    return buildBackendSteps(openQuestions, displayedTitle, theme);
+  }, [openId, openAssignmentId, openQuestions, displayedTitle, theme]);
 
   const currentAnswers = openId !== null ? (answers[openId] ?? {}) : {};
   const canSkip = completed >= MIN_REQUIRED_TESTS;
@@ -331,7 +397,7 @@ export function TestsPage() {
               <div className="kicker">{t("COPP ADRESD · PERFIL DE SALUD")}</div>
               <div className="h2">
                 {openId !== null
-                  ? t(openTitle || theme.kicker)
+                  ? t(displayedTitle || theme.kicker)
                   : t("Batería de evaluación inicial")}
               </div>
             </div>
@@ -370,18 +436,25 @@ export function TestsPage() {
       )}
 
       {showResult ? (
-        <AssessmentResults
-          results={backendResults ?? []}
-          error={resultsError}
-          onEnter={() => {
-            finishTests();
-            navigate("prof");
-          }}
-          onCommunity={() => {
-            finishTests();
-            navigate("com");
-          }}
-        />
+        <>
+          {currentResultsError && <div role="alert" className="ht-loading">
+            <p>{readErrorText(currentResultsError.error, "No se pudieron cargar los resultados.")}</p>
+            <IonButton onClick={retryReads}>{t("Reintentar")}</IonButton>
+          </div>}
+          {(!currentResultsError || visibleResults !== null) && <AssessmentResults
+            results={visibleResults ?? []}
+            loading={visibleResults === null && !currentResultsError}
+            error={false}
+            onEnter={() => {
+              finishTests();
+              navigate("prof");
+            }}
+            onCommunity={() => {
+              finishTests();
+              navigate("com");
+            }}
+          />}
+        </>
       ) : openId === null ? (
         <div className="screen-scroll no-nav ht-list">
           <p className="ht-lead">
@@ -390,13 +463,13 @@ export function TestsPage() {
               { n: String(MIN_REQUIRED_TESTS) },
             )}
           </p>
-          {assignmentsLoading ? <div className="ht-loading-list" role="status" aria-label={t("Cargando tus evaluaciones…")}>
+          {assignmentsLoading || (assignmentsLanguage !== lang && !currentAssignmentsError) ? <div className="ht-loading-list" role="status" aria-label={t("Cargando tus evaluaciones…")}>
             <div className="ht-loading-caption"><IonSpinner name="crescent" /><span>{t("Estamos preparando tu perfil de salud")}</span></div>
             {[0, 1, 2].map(index => <div key={index} className="ht-loading-card" aria-hidden="true"><IonSkeletonText animated className="ht-loading-icon" /><div><IonSkeletonText animated style={{ width: "78%" }} /><IonSkeletonText animated style={{ width: "95%" }} /></div></div>)}
-          </div> : assignmentsError ? (
+          </div> : currentAssignmentsError ? (
             <div role="alert">
-              <p>{t("No se pudieron cargar tus evaluaciones.")}</p>
-              <IonButton onClick={() => { setAssignmentsError(false); setAssignmentsLoading(true); setRefreshKey(k => k + 1); }}>{t("Reintentar")}</IonButton>
+              <p>{readErrorText(currentAssignmentsError.error, "No se pudieron cargar tus evaluaciones.")}</p>
+              <IonButton onClick={retryReads}>{t("Reintentar")}</IonButton>
             </div>
           ) : listItems.length === 0 ? <p>{t("No tienes evaluaciones asignadas.")}</p> : null}
           {listItems.map((test, i) => (
@@ -471,13 +544,16 @@ export function TestsPage() {
             </>
           )}
         </div>
-      ) : questionsLoading ? (
-        <div className="ht-loading">
-          <IonSpinner name="crescent" />
-          <p>{t("Preparando tu evaluación…")}</p>
-        </div>
       ) : (
-        <TestWizard
+        <>
+          {questionsError ? <div role="alert" className="ht-loading">
+            <p>{readErrorText(questionsError, "No se pudieron cargar las preguntas. Intenta nuevamente.")}</p>
+            <IonButton onClick={() => setQuestionsRetry(value => value + 1)}>{t("Reintentar")}</IonButton>
+          </div> : (questionsLoading || questionsLanguage !== lang) && <div className="ht-loading">
+            <IonSpinner name="crescent" /><p>{t("Preparando tu evaluación…")}</p>
+          </div>}
+          {openQuestions && <TestWizard
+          hidden={questionsLoading || questionsLanguage !== lang || Boolean(questionsError)}
           theme={theme}
           steps={steps}
           answers={currentAnswers}
@@ -511,7 +587,8 @@ export function TestsPage() {
           }}
           saving={loading}
           onComplete={() => void saveTest()}
-        />
+        />}
+        </>
       )}
 
 

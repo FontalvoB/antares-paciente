@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { arrowBack, flame, gift, refresh } from "ionicons/icons";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
-import { useT } from "../i18n/I18nContext";
+import { useI18n } from "../i18n/I18nContext";
 import {
   DAY_BONUS_PTS,
   PROGRAM_POINTS_MAX,
@@ -89,7 +89,8 @@ export function ProgramPage() {
     wearableConnected,
   } = useApp();
 
-  const t = useT();
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "es-ES";
   const [tab, setTab] = useState<ProgramTab>(screen === "program-racha" ? "racha" : "hoy");
   const active = PROGRAM_TASKS.find(item => screen === `program-${item.id}`)?.id ?? null;
   const setActive = useCallback((id: ProgramTaskId | null) => navigate(id ? `program-${id}` : "prog"), [navigate]);
@@ -108,7 +109,7 @@ export function ProgramPage() {
   const [exLeft, setExLeft] = useState(45);
   const [takenAt, setTakenAt] = useState("");
   const [openedChest, setOpenedChest] = useState<{
-    title: string;
+    days: number;
     xp: number;
   } | null>(null);
   // Baseline null (patrón chest-granted): el primer snapshot SOLO calibra;
@@ -121,6 +122,7 @@ export function ProgramPage() {
   const {
     snapshot,
     isLoading: programLoading,
+    isRefreshing: programRefreshing,
     programState,
     productMessage,
     initialAssessmentsCompleted,
@@ -269,7 +271,7 @@ export function ProgramPage() {
       const seconds = serverActiveTask.content.exercises.reduce((sum, exercise) => sum + resolveStationSec(exercise), 0);
       return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} min · ${t("Semana {n}", { n: String(snapshot?.template.currentWeekNumber ?? "—") })}`;
     }
-    return serverActiveTask?.short || (task ? t(task.hint) : "");
+    return serverActiveTask?.short ? t(serverActiveTask.short) : task ? t(task.hint) : "";
   }, [active, serverActiveTask, task, t, podDuration, snapshot?.template.currentWeekNumber]);
   const taskPts = serverActiveTask?.points ?? task?.pts ?? 0;
 
@@ -315,7 +317,7 @@ export function ProgramPage() {
       const detail = (e as CustomEvent<{ days: number; xp: number }>).detail;
       if (!detail) return;
       setOpenedChest({
-        title: t("Cofre de {days} días", { days: String(detail.days) }),
+        days: detail.days,
         xp: detail.xp,
       });
       burst(detail.xp, true);
@@ -402,13 +404,7 @@ export function ProgramPage() {
             );
             burst(willComplete ? pts + bonusPts : pts, true);
             if (id === "nutraceutico") {
-              const n = new Date();
-              setTakenAt(
-                n.toLocaleTimeString("es-ES", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                }),
-              );
+              setTakenAt(new Date().toISOString());
             }
           },
         },
@@ -441,21 +437,21 @@ export function ProgramPage() {
         cue:
           [
             ex.sets && ex.repetitions
-              ? `${ex.sets} series x ${ex.repetitions} reps`
+              ? t("{sets} series x {repetitions} repeticiones", { sets: String(ex.sets), repetitions: String(ex.repetitions) })
               : ex.sets
-                ? `${ex.sets} series`
+                ? t("{sets} series", { sets: String(ex.sets) })
                 : "",
             ex.description,
             ex.tips,
           ]
             .filter(Boolean)
-            .join(" · ") || "Ejecuta con buena postura",
+            .join(" · ") || t("Ejecuta con buena postura"),
       }));
     }
     // Sin rutina del servidor → sin estaciones: la lección degrada al estado
     // honesto "contenido no disponible" (nunca el circuito fabricado).
     return [];
-  }, [exContent]);
+  }, [exContent, t]);
 
   // W3: el timer se resetea SOLO en la transición hacia la lección de
   // ejercicio. Un refetch por window-focus re-crea `activeExerciseSteps`
@@ -586,7 +582,7 @@ export function ProgramPage() {
       audio.onerror = (e) => {
         console.error("Audio playback error", e);
         setPodPlaying(false);
-        setAudioError(t("No se pudo reproducir el archivo de audio."));
+        setAudioError("No se pudo reproducir el archivo de audio.");
       };
       audioRef.current = audio;
     }
@@ -600,10 +596,10 @@ export function ProgramPage() {
       audioRef.current.play().catch((err) => {
         console.error("Failed to play podcast audio", err);
         setPodPlaying(false);
-        setAudioError(t("Error al iniciar la reproducción de audio."));
+        setAudioError("Error al iniciar la reproducción de audio.");
       });
     }
-  }, [serverActiveTask?.content?.mediaUrl, podPlaying, podProgress, t]);
+  }, [serverActiveTask?.content?.mediaUrl, podPlaying, podProgress]);
 
   const handleSkipPodcast = useCallback(
     (delta: number) => {
@@ -698,7 +694,7 @@ export function ProgramPage() {
             }}
           >
             <p style={{ margin: 0, fontSize: 13, color: "var(--text)" }}>
-              {productMessage}
+              {t(productMessage)}
             </p>
             {programState === "recoverable" && (
               <IonButton
@@ -795,7 +791,7 @@ export function ProgramPage() {
                     {t("Misión · +{pts} pts", { pts: String(taskPts) })}
                   </div>
                   <h2>{t(taskTitle)}</h2>
-                  <p>{t(taskHint)}</p>
+                  <p>{taskHint}</p>
                 </div>
                 <IonButton
                   fill="clear"
@@ -811,9 +807,9 @@ export function ProgramPage() {
                 </div>
               )}
 
-              {programLoading && <div className="lesson-loading" role="status"><IonSpinner /><p>{t("Cargando tu programa…")}</p></div>}
+              {(programLoading || programRefreshing) && <div className="lesson-loading" role="status"><IonSpinner /><p>{t("Cargando tu programa…")}</p></div>}
               {productMessage && <div className="lsn-unavailable" role="status"><p>{t(productMessage)}</p><IonButton fill="clear" onClick={() => refetchProgram()}>{t("Reintentar")}</IonButton></div>}
-              {!programLoading && !productMessage && <>
+              {!programLoading && <>
               {task.id === "podcast" && (
                 <PodcastLesson
                   done={program.podcast}
@@ -1035,13 +1031,13 @@ export function ProgramPage() {
                   className="display"
                   style={{ fontSize: 22, fontWeight: 800 }}
                 >
-                  {t(openedChest.title)}
+                  {t("Cofre de {days} días", { days: String(openedChest.days) })}
                 </div>
                 <p>
                   {t("El cofre se abrió. La experiencia ya está en tu nivel.")}
                 </p>
                 <div className="cx-open-xp">
-                  +{openedChest.xp.toLocaleString("es-ES")} XP
+                  +{openedChest.xp.toLocaleString(locale)} XP
                 </div>
                 <IonButton
                   expand="block"
@@ -1055,7 +1051,7 @@ export function ProgramPage() {
           </AnimatePresence>
         </div>
       </IonModal>
-      {xpPop !== null && <div className="xp-pop">+{xpPop} pts</div>}
+      {xpPop !== null && <div className="xp-pop">+{xpPop} {t("pts")}</div>}
       {confetti.map((c) => (
         <span
           key={c.id}

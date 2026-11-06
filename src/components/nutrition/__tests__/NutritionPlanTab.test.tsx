@@ -5,7 +5,7 @@ import type { MyNutritionPlanDto } from "../../../services/nutrition/my-nutritio
 import { ApiError } from "../../../utils/apiClient";
 
 vi.mock("../../../i18n/I18nContext", () => ({
-  useT: () => (key: string, params?: Record<string, string>) => key.replace(/\{([^}]+)\}/g, (match, name) => params?.[name] ?? match),
+  useI18n: () => ({ lang: "es", t: (key: string, params?: Record<string, string>) => key.replace(/\{([^}]+)\}/g, (match, name) => params?.[name] ?? match) }),
 }));
 
 const planFixture: MyNutritionPlanDto = {

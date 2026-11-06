@@ -72,6 +72,7 @@ export interface MealIntake {
 
 /** Item de un análisis persistido (GET /api/v1/foodai/analyses/{id}). */
 export interface FoodAnalysisItem {
+  nameEn?: string | null;
   nutritionSource?: "usda" | "llm_estimate" | null;
   name: string;
   confidence: number;
@@ -97,8 +98,9 @@ export interface FoodAnalysisDetail {
  */
 export async function getFoodAnalysis(
   analysisId: string,
+  language: "es" | "en" = "es",
 ): Promise<FoodAnalysisDetail> {
-  return apiFetch<FoodAnalysisDetail>(`/api/v1/foodai/analyses/${analysisId}`);
+  return apiFetch<FoodAnalysisDetail>(`/api/v1/foodai/analyses/${analysisId}?language=${language}`);
 }
 
 /**
@@ -178,7 +180,8 @@ export const FOOD_EMOJI: Record<string, string> = {
 };
 
 /** Nombre legible del canonical (el backend devuelve canonical en snake_case). */
-export function displayName(name: string): string {
+export function displayName(name: string, lang: "es" | "en" = "es"): string {
+  if (lang === "en") return name.replace(/_/g, " ");
   const es = FOOD_DISPLAY_ES[name.trim().toLowerCase()];
   if (es) return es;
   return name.replace(/_/g, " ");
@@ -252,6 +255,7 @@ const FOOD_DISPLAY_ES: Record<string, string> = {
 export async function analyzeFoodImage(
   image: Blob,
   fileName: string,
+  language: "es" | "en" = "es",
 ): Promise<FoodAnalysisResult> {
   const form = new FormData();
   form.append("image", image, fileName);
@@ -267,7 +271,7 @@ export async function analyzeFoodImage(
   const timer = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS);
 
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/v1/foodai/analyze`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/foodai/analyze?language=${language}`, {
       method: "POST",
       body: form,
       signal: controller.signal,

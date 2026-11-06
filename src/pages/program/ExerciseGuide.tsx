@@ -16,7 +16,7 @@ export function ExerciseGuide({ exercise, onWatch, media }: { exercise: Exercise
     {media ?? <div className="ex-video-stage">
       {opened && video ? <>
         {!loaded && <IonSpinner className="ex-video-loading" aria-label={t('Cargando video')} />}
-        <iframe title={t('Demostración de {exercise}', { exercise: exercise.name })}
+        <iframe title={t('Demostración de {exercise}', { exercise: t(exercise.name) })}
           src={video.embedUrl} allow="fullscreen; picture-in-picture" allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin" onLoad={() => setLoaded(true)} />
       </> : <>

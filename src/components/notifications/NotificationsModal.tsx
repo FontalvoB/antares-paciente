@@ -279,22 +279,25 @@ function NotificationCard({
   const { t } = useI18n();
   const theme = themeForNotification(item.type);
   const unread = item.readAt === null;
+  const localAchievement = item.id.startsWith("local-achievement:");
+  const title = localAchievement ? item.title : t(item.title);
+  const message = localAchievement ? item.message : t(item.message);
   return (
     <button
       type="button"
       className={`nt-card${unread ? " unread" : ""}`}
       onClick={() => onSelect(item)}
-      aria-label={`${item.title}. ${formatNotificationTime(item.sentAt, t)}${unread ? `. ${t("Sin leer")}` : ""}`}
+      aria-label={`${title}. ${formatNotificationTime(item.sentAt, t)}${unread ? `. ${t("Sin leer")}` : ""}`}
     >
       <span className={`nt-ico nt-ico-${theme.tone}`} aria-hidden="true">
         <IonIcon icon={theme.icon} />
       </span>
       <span className="nt-body">
         <span className="nt-title-row">
-          <strong>{item.title}</strong>
+          <strong>{title}</strong>
           {unread && <i className="nt-dot" aria-hidden="true" />}
         </span>
-        <span className="nt-msg">{item.message}</span>
+        <span className="nt-msg">{message}</span>
         {item.type.startsWith("achievement_") && <span className="nt-achievement-share">{t("Compartir logro")} →</span>}
         <time className="nt-time" dateTime={item.sentAt}>
           {formatNotificationTime(item.sentAt, t)}

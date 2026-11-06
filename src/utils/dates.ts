@@ -45,16 +45,24 @@ export function dayOfMonth(iso: string): string {
   return String(Number(iso.split('-')[2] ?? ''))
 }
 
-export function formatLongDateEs(iso: string): string {
+export function formatLongDate(iso: string, locale: string): string {
   const [y, m, d] = iso.split('-').map(Number)
   const dt = new Date(y, (m ?? 1) - 1, d ?? 1)
-  const text = dt.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+  const text = dt.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-export function monthTitleEs(year: number, month: number): string {
-  const text = new Date(year, month - 1, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+export function monthTitle(year: number, month: number, locale: string): string {
+  const text = new Date(year, month - 1, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })
   return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+export function formatLongDateEs(iso: string): string {
+  return formatLongDate(iso, 'es-ES')
+}
+
+export function monthTitleEs(year: number, month: number): string {
+  return monthTitle(year, month, 'es-ES')
 }
 
 export function shiftMonth(year: number, month: number, delta: number): { year: number; month: number } {
