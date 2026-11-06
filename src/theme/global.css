@@ -28264,13 +28264,7 @@ ion-button.chat-panic {
 .overlay-voice {
   padding: calc(12px + env(safe-area-inset-top, 0px)) 16px
     calc(14px + env(safe-area-inset-bottom, 0px));
-  background:
-    radial-gradient(
-      circle at 50% 43%,
-      color-mix(in srgb, var(--blue) 48%, transparent),
-      transparent 34%
-    ),
-    linear-gradient(160deg, var(--cosmos), var(--navy) 72%);
+  background: var(--voice-orb-black);
 }
 .vc-shell {
   position: relative;
@@ -28362,6 +28356,41 @@ ion-button.vc-back ion-icon {
 .vc-orb.is-thinking::before {
   opacity: 0.14;
   animation: none;
+}
+/* El CSS original queda debajo como fallback si WebGL falla. */
+.vc-orb:has(.voice-orb-visual) {
+  animation: none;
+  filter: none;
+  background: var(--voice-orb-black);
+  box-shadow: none;
+}
+.vc-orb:has(.voice-orb-visual)::before,
+.vc-orb:has(.voice-orb-visual)::after,
+.vc-orb:has(.voice-orb-visual) .vc-orb-dots {
+  display: none;
+}
+.voice-orb-visual {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.voice-orb-static {
+  background: radial-gradient(circle at 35% 30%, var(--voice-orb-snow), var(--voice-orb-sky) 40%, var(--voice-orb-blue) 72%, var(--voice-orb-black));
+}
+.vc-orb.is-muted,
+.vc-orb.is-unavailable {
+  animation: none;
+  filter: grayscale(1);
+}
+.vc-orb.is-muted::before,
+.vc-orb.is-muted::after,
+.vc-orb.is-unavailable::before,
+.vc-orb.is-unavailable::after {
+  display: none;
 }
 .vc-orb-dots {
   color: var(--wh);
