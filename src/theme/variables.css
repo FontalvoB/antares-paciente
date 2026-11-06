@@ -1,4 +1,9 @@
 :root {
+  /* Paleta del orbe de voz (voz-orb-fluido). */
+  --voice-orb-blue: #5a7bff;
+  --voice-orb-sky: #8fb8ff;
+  --voice-orb-snow: #fafcff;
+  --voice-orb-black: #000000;
   --ion-font-family: "Inter", system-ui, sans-serif;
   --ion-color-primary: #142855;
   --ion-color-primary-rgb: 20, 40, 85;
