@@ -25,7 +25,7 @@ try{
   if(process.env.COP_E2E_CASE&&!process.env.COP_E2E_CASE.split(',').includes(subject.case))continue;
   const captured=new Date(Date.now()-10000).toISOString();
   const data=subject.case==='none'?{}:{latitude:subject.case==='japan'?35.68:subject.case==='us'?38.8977:10.98+index/100,longitude:subject.case==='japan'?139.76:subject.case==='us'?-77.0365:-74.8,accuracyMeters:subject.case==='coarse'?3500:subject.case==='unknown'?undefined:18,locationCapturedAt:subject.case==='future'?new Date(Date.now()+86400000).toISOString():captured};
-  if(subject.case==='precise')data.vitals={heartRate:72,spo2:98,bloodPressure:'118/76'};
+  if(['precise','unicode'].includes(subject.case))data.vitals={heartRate:72,spo2:98,bloodPressure:'118/76'};
   const headers={Authorization:'Bearer '+subject.token,'Idempotency-Key':randomUUID()};
   const start=Date.now();const activated=await api.post('/api/v1/sos/alerts',{headers,data});
   assert.equal(activated.status(),201,`Activation ${subject.case}: ${await activated.text()}`);
@@ -57,19 +57,19 @@ try{
   const septets=[...message].reduce((n,c)=>n+(extended.includes(c)?2:1),0);
   if(subject.case==='unicode'){
    assert(message.includes('李 王'),'Names without a faithful GSM representation must be preserved.');
-   assert(message.length<=134,'Unicode fallback should fit two segments for this fixture.');
+   assert(message.length<=268,'Unicode fixture should retain readings in at most four segments.');
   }else{
    assert(isGsm,'Latin test messages must use GSM-7.');
-   assert(septets<=160,`SOS SMS must fit one segment, got ${septets} septets.`);
+   assert(septets<=306,`SOS SMS must fit two GSM segments for these fixtures, got ${septets} septets.`);
   }
   const wire=(await readFile(path.join(output,'sms-wire-ledger.jsonl'),'utf8')).trim().split('\n').map(JSON.parse).filter(r=>Date.parse(r.at)>=start);
   assert.equal(wire.length,2);assert(wire.every(r=>r.method==='POST'&&r.endpoint.endsWith('/Messages.json')&&r.from==='+12025550199'));
   await page.setContent(html);
   const text=await page.locator('body').innerText();
-  assert(message.includes('necesita ayuda.'),'SMS must say what happened.');
-  assert(text.includes('Qué hacer ahora'),'Email must explain concrete next steps.');
-  if(subject.case==='precise'){
-   for(const value of ['72 lpm','98%','118/76 mmHg'])assert(text.includes(value),'Email must preserve reported readings.');
+  assert.match(message,/^Alerta SOS: .+ necesita tu ayuda\./,'SMS must use the requested direct wording.');
+  assert(!text.includes('Qué hacer ahora'),'Keep the email focused, without the long instruction section.');
+  if(['precise','unicode'].includes(subject.case)){
+   for(const value of ['72 lpm','98%','118/76 mmHg']){assert(text.includes(value),'Email must preserve reported readings.');assert(message.includes(value),'SMS must include every reported vital.');}
    assert(!text.includes('Sin lecturas compartidas'));
   }else assert(text.includes('Sin lecturas compartidas'),'Absent readings must be explicit.');
   if(subject.case!=='none')assert(text.includes('24 horas'),'Explain the map access window.');
@@ -78,13 +78,17 @@ try{
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`Email must fit ${width}px.`);
   }
   await page.setViewportSize({width:390,height:1100});
+  if(subject.case==='precise')assert(await page.evaluate(()=>document.documentElement.scrollHeight<=1100),'The normal email should be compact.');
+  if(!['precise','unicode'].includes(subject.case))assert(!message.includes('72 lpm')&&!message.includes('118/76'),'Never invent SMS readings.');
   assert(!message.includes('DOMICILIO GUARDADO'));assert(!text.includes('DOMICILIO GUARDADO'));
   assert(!/\b10\.\d+,-74\./.test(message),'SMS must use the first-party link, not raw coordinates.');
   if(subject.case==='precise'){
    assert(spoken.includes('Calle 72 45-12, Barranquilla'),'The call must speak the approximate street and city.');
    assert(spoken.includes('Dirección aproximada'));
    assert(message.includes('Calle 72 45-12, Barranquilla'), 'SMS is missing the approximate street/city address.');
-   await page.getByText('Dirección aproximada',{exact:true}).waitFor();
+   await page.getByText('Dirección',{exact:true}).waitFor();
+   assert(message.includes('Direccion: Calle 72 45-12, Barranquilla'));
+   assert(!message.includes('Aprox:'));
    assert(text.includes('Calle 72 45-12, Barranquilla'));
    assert(text.includes('18 m'));assert(text.includes('GPS capturado'));
    // Capture time, accuracy and readings remain complete in the email;
@@ -166,7 +170,7 @@ try{
    const href=await page.getByRole('link',{name:'Ver ubicación en el mapa'}).getAttribute('href');
    assert.equal((await api.get(new URL(href).pathname,{maxRedirects:0})).status(),404);
   }
-  results.push({case:subject.case,passed:true,alertId:alert.id,activationMs,smsUnits:isGsm?septets:message.length,smsEncoding:isGsm?'GSM-7':'UCS-2',smsSegments:isGsm?1:2,senderContractVerified:true});
+  results.push({case:subject.case,passed:true,alertId:alert.id,activationMs,smsUnits:isGsm?septets:message.length,smsEncoding:isGsm?'GSM-7':'UCS-2',smsSegments:isGsm?(septets<=160?1:Math.ceil(septets/153)):(message.length<=70?1:Math.ceil(message.length/67)),senderContractVerified:true});
  }
  await writeFile(path.join(artifactDir,'result.json'),JSON.stringify({passed:true,realDatabase:true,realSmsOrEmailSent:false,provider:'synthetic external boundary',results},null,2));
  console.log('Passed SOS message E2E cases:',results.map(r=>r.case).join(', '));
