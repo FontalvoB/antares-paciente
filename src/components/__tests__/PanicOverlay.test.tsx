@@ -26,7 +26,16 @@ vi.mock("@ionic/react", async () => {
     const { children, icon: _icon, expand: _expand, fill: _fill, lines: _lines, ...rest } = props;
     return React.createElement(tag, rest, children as React.ReactNode);
   };
-  return { IonNote: element("aside"), IonActionSheet: () => null, IonButton: element("button"), IonIcon: element("span"), IonBadge: element("span"), IonList: element("div"), IonItem: element("div"), IonLabel: element("div") };
+  const SegmentContext = React.createContext({ value: "medical", change: (_value: string) => {} });
+  const IonSegment = (props: Record<string, unknown>) => React.createElement(SegmentContext.Provider, {
+    value: { value: String(props.value), change: (value: string) => (props.onIonChange as (event: { detail: { value: string } }) => void)?.({ detail: { value } }) },
+  }, React.createElement("div", { role: "tablist", "aria-label": props["aria-label"] }, props.children as React.ReactNode));
+  const IonSegmentButton = (props: Record<string, unknown>) => {
+    const segment = React.useContext(SegmentContext);
+    return React.createElement("button", { role: "tab", id: props.id, "aria-controls": props["aria-controls"], "aria-selected": segment.value === props.value,
+      onClick: () => segment.change(String(props.value)) }, props.children as React.ReactNode);
+  };
+  return { IonSegment, IonSegmentButton, IonCard: element("article"), IonCardContent: element("div"), IonNote: element("aside"), IonActionSheet: () => null, IonButton: element("button"), IonIcon: element("span"), IonBadge: element("span"), IonList: element("div"), IonItem: element("div"), IonLabel: element("div") };
 });
 
 // Mock del servicio SOS: captura las llamadas de red.
@@ -95,10 +104,13 @@ const wearableMock = vi.hoisted(() => ({
 }));
 vi.mock("../../context/WearableContext", () => ({ useWearable: () => wearableMock }));
 vi.mock("../../context/AppContext", () => ({ useApp: () => context }));
-vi.mock("../../i18n/I18nContext", () => ({
-  useI18n: () => ({ lang: "es", t: (key: string, params?: Record<string, string>) =>
-    key.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? name) }),
-}));
+const languageMock = vi.hoisted(() => ({ lang: "es" }));
+vi.mock("../../i18n/I18nContext", async () => {
+  const { default: english } = await import("../../i18n/en.json");
+  return { useI18n: () => ({ lang: languageMock.lang, t: (key: string, params?: Record<string, string>) =>
+    (languageMock.lang === "en" ? (english as Record<string, string>)[key] ?? key : key)
+      .replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? name) }) };
+});
 
 // framer-motion mockeado: AnimatePresence/motion en happy-dom genera
 // AbortError no manejados al cancelar animaciones WAAPI (ruido que marca el
@@ -146,6 +158,7 @@ const flush = async () => {
 };
 
 beforeEach(() => {
+  languageMock.lang = "es";
   context.panicOpen = true;
   context.sosActive = false;
   context.activateSos.mockClear();
@@ -220,8 +233,9 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
 
   it("cada servicio en Colombia abre el 123 sin activar el SOS al contacto", async () => {
     render(<PanicOverlay />);
+    await flush();
     for (const service of ["Ambulancia", "Policía", "Bomberos"]) {
-      fireEvent.click(await screen.findByLabelText(`Llamar: ${service} · 123`));
+      fireEvent.click(await screen.findByLabelText(`Llamar: ${service}`));
     }
     expect(dialMock.mock.calls).toEqual([["123"], ["123"], ["123"]]);
     expect(context.activateSos).not.toHaveBeenCalled();
@@ -232,67 +246,151 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
     vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({ timeZone: "America/Bogota" } as Intl.ResolvedDateTimeFormatOptions);
     sosMock.locate.mockResolvedValue({ country: "US", coordinates: { latitude: 25.76, longitude: -80.19 }, status: "located" });
     render(<PanicOverlay />);
+    await flush();
     for (const service of ["Ambulancia", "Policía", "Bomberos"]) {
-      fireEvent.click(await screen.findByLabelText(`Llamar: ${service} · 911`));
+      fireEvent.click(await screen.findByLabelText(`Llamar: ${service}`));
     }
     expect(dialMock.mock.calls).toEqual([["911"], ["911"], ["911"]]);
     expect(context.activateSos).not.toHaveBeenCalled();
   });
 
-  it("sin GPS exige confirmar país y conserva cada servicio visible", async () => {
-    sosMock.locate.mockResolvedValue({ country: null, coordinates: null, status: "unavailable" });
-    render(<PanicOverlay />);
-    await screen.findByText("No pudimos obtener tu ubicación. Confirma el país para llamar.");
-    for (const service of ["Ambulancia", "Policía", "Bomberos"]) {
-      const button = screen.getByLabelText(`Confirma el país para llamar: ${service}`);
-      expect((button as HTMLButtonElement).disabled).toBe(true);
+  it("prioriza el equipo médico, sin selector de país ni teléfonos visibles", async () => {
+    const { container } = render(<PanicOverlay />);
+    await flush();
+    const sections = Array.from(container.querySelector("#sos-medical-panel")!.children);
+    expect(sections.map(section => section.className)).toEqual(["sos-alert-card", "sos-network", "sos-shared"]);
+    expect(container.querySelector(".sos-network")!.contains(screen.getByLabelText("Llamar familiar"))).toBe(true);
+    expect(container.querySelector(".sos-feed-row strong")!.textContent).toBe("Equipo clínico");
+    expect(screen.queryByRole("group", { name: "País para llamar" })).toBeNull();
+    expect(container.textContent).not.toMatch(/\b(?:911|123)\b|\+573001234567/);
+    for (const button of container.querySelectorAll("[data-emergency-service]")) {
+      expect(button.getAttribute("aria-label")).not.toMatch(/\d/);
     }
-    expect(dialMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("Estados Unidos"));
-    fireEvent.click(screen.getByLabelText("Llamar: Policía · 911"));
-    expect(dialMock).toHaveBeenCalledExactlyOnceWith("911");
-    expect(screen.getByText("País confirmado por ti: Estados Unidos")).toBeTruthy();
   });
 
-  it("una ubicación tardía no cambia el país que confirmó el usuario", async () => {
+  it("muestra Mi equipo primero y permite abrir emergencias sin activar ni llamar", async () => {
+    const { container } = render(<PanicOverlay />);
+    await flush();
+    const medical = container.querySelector<HTMLElement>("#sos-medical-panel")!;
+    const services = container.querySelector<HTMLElement>("#sos-services-panel")!;
+    expect(medical.hidden).toBe(false);
+    expect(services.hidden).toBe(true);
+    expect(screen.getByRole("tab", { name: "Mi equipo" }).getAttribute("aria-selected")).toBe("true");
+    const scroll = container.querySelector<HTMLElement>(".sos-scroll-body")!;
+    scroll.scrollTop = 240;
+    fireEvent.click(screen.getByRole("tab", { name: "Emergencias" }));
+    expect(container.querySelector<HTMLElement>("#sos-services-panel")!.hidden).toBe(false);
+    expect(container.querySelector<HTMLElement>("#sos-medical-panel")!.hidden).toBe(true);
+    expect(scroll.scrollTop).toBe(0);
+    expect(scroll.contains(screen.getByRole("tablist", { name: "Tipo de ayuda" }))).toBe(false);
+    fireEvent.click(screen.getByRole("tab", { name: "Mi equipo" }));
+    expect(container.querySelector<HTMLElement>("#sos-medical-panel")!.hidden).toBe(false);
+    expect(sosMock.activate).not.toHaveBeenCalled();
+    expect(dialMock).not.toHaveBeenCalled();
+  });
+
+  it("al cerrar y reabrir vuelve a Mi equipo", async () => {
+    const { container, rerender } = render(<PanicOverlay />);
+    await flush();
+    fireEvent.click(screen.getByRole("tab", { name: "Emergencias" }));
+    context.panicOpen = false;
+    rerender(<PanicOverlay />);
+    context.panicOpen = true;
+    rerender(<PanicOverlay />);
+    await flush();
+    expect(container.querySelector<HTMLElement>("#sos-medical-panel")!.hidden).toBe(false);
+    expect(screen.getByRole("tab", { name: "Mi equipo" }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("sin GPS permite reintentar y mantiene la ayuda médica disponible", async () => {
+    sosMock.locate.mockResolvedValue({ country: null, coordinates: null, status: "unavailable" });
+    render(<PanicOverlay />);
+    await screen.findByText("Activa la ubicación para elegir la línea de emergencia de tu zona.");
+    for (const service of ["Ambulancia", "Policía", "Bomberos"]) {
+      expect((screen.getByLabelText(`Llamar: ${service}`) as HTMLButtonElement).disabled).toBe(true);
+    }
+    fireEvent.click(screen.getByLabelText("Llamar familiar"));
+    expect(dialMock).toHaveBeenCalledExactlyOnceWith("+573001234567");
+    expect((screen.getByLabelText("Activar SOS ahora") as HTMLButtonElement).disabled).toBe(false);
+    sosMock.locate.mockResolvedValue({ country: "US", coordinates: { latitude: 25.76, longitude: -80.19 }, status: "located" });
+    fireEvent.click(screen.getByText("Reintentar ubicación"));
+    await screen.findByText("Ubicación del dispositivo: Estados Unidos");
+    fireEvent.click(screen.getByLabelText("Llamar: Policía"));
+    expect(dialMock).toHaveBeenLastCalledWith("911");
+    expect(sosMock.locate).toHaveBeenCalledTimes(2);
+    expect(sosMock.activate).not.toHaveBeenCalled();
+  });
+
+  it("mientras localiza no inventa un destino ni ofrece selección de país", async () => {
     let finish!: (result: { country: string; coordinates: null; status: string }) => void;
     sosMock.locate.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
     render(<PanicOverlay />);
-    fireEvent.click(screen.getByText("Estados Unidos"));
+    expect(screen.getByText("Buscando servicios según tu ubicación…")).toBeTruthy();
+    expect((screen.getByLabelText("Llamar: Policía") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole("group", { name: "País para llamar" })).toBeNull();
     await act(async () => { finish({ country: "CO", coordinates: null, status: "located" }); });
-    fireEvent.click(screen.getByLabelText("Llamar: Bomberos · 911"));
-    expect(dialMock).toHaveBeenCalledExactlyOnceWith("911");
-    expect(screen.getByText("País confirmado por ti: Estados Unidos")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Llamar: Bomberos"));
+    expect(dialMock).toHaveBeenCalledExactlyOnceWith("123");
   });
 
-  it("renueva el país GPS mientras la pantalla sigue abierta", async () => {
+  it("renueva automáticamente el destino al cambiar de país", async () => {
     vi.useFakeTimers();
     render(<PanicOverlay />);
     await flush();
-    expect(screen.getByLabelText("Llamar: Ambulancia · 123")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Llamar: Ambulancia"));
+    expect(dialMock).toHaveBeenLastCalledWith("123");
     sosMock.locate.mockResolvedValue({ country: "US", coordinates: { latitude: 25.76, longitude: -80.19 }, status: "located" });
     await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-    expect(screen.getByLabelText("Llamar: Ambulancia · 911")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Llamar: Ambulancia"));
+    expect(dialMock.mock.calls).toEqual([["123"], ["911"]]);
     expect(sosMock.locate).toHaveBeenCalledTimes(2);
   });
 
-  it("la confirmación manual sigue disponible sin esperar otra consulta GPS", async () => {
+  it("si falla el refresco no conserva el destino del país anterior", async () => {
     vi.useFakeTimers();
     render(<PanicOverlay />);
     await flush();
-    fireEvent.click(screen.getByText("Estados Unidos"));
+    sosMock.locate.mockRejectedValue(new Error("GPS unavailable"));
     await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-    expect(screen.getByLabelText("Llamar: Ambulancia · 911")).toBeTruthy();
-    expect(sosMock.locate).toHaveBeenCalledTimes(1);
+    expect((screen.getByLabelText("Llamar: Ambulancia") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("Reintentar ubicación")).toBeTruthy();
+    expect(dialMock).not.toHaveBeenCalled();
   });
 
-  it("una ubicación fuera de los países admitidos no inventa un destino 911", async () => {
+  it("fuera de los países admitidos no inventa un destino", async () => {
     sosMock.locate.mockResolvedValue({ country: null, coordinates: { latitude: 19.4, longitude: -99.1 }, status: "unsupported" });
     render(<PanicOverlay />);
-    await screen.findByText("Ubicación fuera de cobertura o cerca de una frontera. Confirma el país.");
-    expect(screen.queryByLabelText("Llamar: Ambulancia · 911")).toBeNull();
-    expect(screen.queryByLabelText("Llamar: Ambulancia · 123")).toBeNull();
+    await screen.findByText("No hay una línea disponible para esta ubicación. Puedes llamar a tus contactos.");
+    expect((screen.getByLabelText("Llamar: Ambulancia") as HTMLButtonElement).disabled).toBe(true);
     expect(dialMock).not.toHaveBeenCalled();
+  });
+
+  it("mantiene el equipo primero y oculta teléfonos al seguir una alerta activa", async () => {
+    context.sosActive = true;
+    sosMock.fetchActive.mockResolvedValue({ id: "a-1", status: "Activa", pushChannelStatus: "Pendiente", recipients: [
+      { id: "contact-1", contactOrder: 0, maskedPhone: "+57*****4567", smsChannelStatus: "Enviado", voiceChannelStatus: "Pendiente", emailChannelStatus: "NoConfigurado" },
+    ] });
+    const { container } = render(<PanicOverlay />);
+    await flush();
+    const network = container.querySelector(".sos-network")!;
+    const titles = Array.from(network.querySelectorAll(".sos-feed-row strong, .emergency-contact-card-title h3"));
+    expect(titles[0].textContent).toBe("Equipo clínico");
+    expect(container.textContent).not.toContain("+57*****4567");
+    expect(container.textContent).not.toContain("+573001234567");
+  });
+
+  it("traduce el nuevo contenido y la recuperación de ubicación al inglés", async () => {
+    languageMock.lang = "en";
+    sosMock.locate.mockResolvedValue({ country: null, coordinates: null, status: "unavailable" });
+    const { container } = render(<PanicOverlay />);
+    await screen.findByText("Turn on location to find the emergency line for your area.");
+    expect(screen.getByText("Your medical team and contacts")).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "My team" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Emergency services" })).toBeTruthy();
+    expect(screen.getByText("Retry location")).toBeTruthy();
+    expect(screen.getByLabelText("Call: Police")).toBeTruthy();
+    expect(container.textContent).not.toContain("Reintentar ubicación");
+    expect(container.textContent).not.toContain("Tu equipo médico y contactos");
   });
 
   it("la llamada al familiar abre el marcador nativo sin activar SOS", () => {
@@ -586,7 +684,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(copy?.textContent).toBe(
       "SMS enviado a tu contacto de emergencia. Tu ubicación fue compartida con tu equipo.",
     );
-    expect(screen.getByText("SMS enviado · +573001234567")).toBeTruthy();
+    expect(screen.getByText("SMS enviado")).toBeTruthy();
     expect(
       screen.getByText("Tu ubicación fue compartida con tu equipo."),
     ).toBeTruthy();
@@ -879,7 +977,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(copy?.textContent).toBe(
       "Llamada y SMS enviados a tu contacto de emergencia. Sin ubicación en esta alerta.",
     );
-    expect(screen.getByText("Llamada y SMS enviados · +573001234567")).toBeTruthy();
+    expect(screen.getByText("Llamada y SMS enviados")).toBeTruthy();
   });
 
   it("solo voz Enviado (SMS degradado): afirma la llamada sin afirmar SMS", async () => {
@@ -906,7 +1004,7 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
     expect(copy?.textContent).toBe(
       "Llamada realizada a tu contacto de emergencia. Sin ubicación en esta alerta.",
     );
-    expect(screen.getByText("Llamada realizada · +573001234567")).toBeTruthy();
+    expect(screen.getByText("Llamada realizada")).toBeTruthy();
     expect(screen.queryByText("SMS enviado · +573001234567")).toBeNull();
   });
 

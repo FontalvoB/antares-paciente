@@ -16,6 +16,8 @@ import {
   IonLabel,
   IonList,
   IonNote,
+  IonSegment,
+  IonSegmentButton,
 } from "@ionic/react";
 import {
   call,
@@ -65,6 +67,7 @@ import type { SosCoordinates } from "../services/sos/sos-service";
 import logoIcon from "../assets/LogoIndividual.png";
 
 type SosView = "protocol" | "confirm";
+type HelpView = "medical" | "services";
 /** Botones de llamada manual: emergencias del país (911/123) o el contacto
  * de emergencia (tel: nativo). */
 type DialTarget = "callEmergency" | "callFamily";
@@ -109,7 +112,9 @@ export function PanicOverlay() {
   wearableRef.current = wearable;
   const reduce = useReducedMotion();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<SosView>("protocol");
+  const [helpView, setHelpView] = useState<HelpView>("medical");
   // SOS real (change sos-panic-real): flujo exclusivamente real, sin
   // simulación local. La activación SIEMPRE exige doble confirmación
   // deliberada (REQ-SOS-07: nunca auto-activación por inactividad — el
@@ -128,9 +133,7 @@ export function PanicOverlay() {
   /** Sondeo rápido (3 s) durante el primer minuto tras activar. */
   const [fastPoll, setFastPoll] = useState(false);
   const [detectedCountry, setDetectedCountry] = useState<EmergencyCountry | null>(null);
-  const [manualCountry, setManualCountry] = useState<EmergencyCountry | null>(null);
-  const manualCountryRef = useRef(manualCountry);
-  manualCountryRef.current = manualCountry;
+  const [locationAttempt, setLocationAttempt] = useState(0);
   const [locationStatus, setLocationStatus] = useState<"locating" | "located" | "unavailable" | "unsupported">("locating");
   const [sharedVitals, setSharedVitals] = useState(false);
   const [emergencyCoordinates, setEmergencyCoordinates] = useState<SosCoordinates | null>(null);
@@ -166,14 +169,13 @@ export function PanicOverlay() {
     { name: user.fam1Nombre || t("Contacto principal"), phone: normalizeEmergencyPhone(user.fam1Cel), label: t("Principal") },
     { name: user.fam2Nombre || t("Contacto opcional"), phone: normalizeEmergencyPhone(user.fam2Cel), label: t("Opcional") },
   ].filter((contact, index, all) => contact.phone && all.findIndex(other => other.phone === contact.phone) === index);
-  const family = user.fam1Nombre;
+  const family = user.fam1Nombre || t("Contacto principal");
   const familyRole = user.fam1Parentesco;
-  const familyCel = user.fam1Cel;
-  const emergencyCountry = manualCountry ?? detectedCountry;
+  const emergencyCountry = detectedCountry;
   const emergencyNumber = emergencyCountry ? emergencyNumberForCountry(emergencyCountry) : null;
   const countryLabel = emergencyCountry === "CO" ? t("Colombia") : t("Estados Unidos");
-  const emergencyRouting = useMemo(() => resolveEmergencyCityRouting(emergencyCountry, manualCountry ? null : emergencyCoordinates,
-    emergencyDirectory, routingNow), [emergencyCountry, manualCountry, emergencyCoordinates, emergencyDirectory, routingNow]);
+  const emergencyRouting = useMemo(() => resolveEmergencyCityRouting(emergencyCountry, emergencyCoordinates,
+    emergencyDirectory, routingNow), [emergencyCountry, emergencyCoordinates, emergencyDirectory, routingNow]);
   const hasLocalEmergencyContact = Object.values(emergencyRouting.services).some(route => route.source === "local");
 
   useEffect(() => {
@@ -184,8 +186,8 @@ export function PanicOverlay() {
     return () => window.clearTimeout(timeout);
   }, [panicOpen, emergencyRouting]);
 
-  // La selección manual prevalece. El país obtenido por GPS se renueva al
-  // volver a la app y cada minuto mientras esta pantalla siga abierta.
+  // El destino se elige desde el GPS, sin selector de país ni inferencias
+  // por idioma/perfil. Se renueva al volver a la app y cada minuto.
   useEffect(() => {
     if (!panicOpen) return;
     let cancelled = false;
@@ -195,10 +197,8 @@ export function PanicOverlay() {
     let expiry: number | undefined;
     setDetectedCountry(null);
     setEmergencyCoordinates(null);
-    setManualCountry(null);
-    manualCountryRef.current = null;
     const detect = () => {
-      if (cancelled || pending || manualCountryRef.current || !nativeActive || document.visibilityState === "hidden") return;
+      if (cancelled || pending || !nativeActive || document.visibilityState === "hidden") return;
       pending = true;
       lastAttempt = Date.now();
       setDetectedCountry(null);
@@ -210,10 +210,12 @@ export function PanicOverlay() {
         setEmergencyCoordinates(result.coordinates);
         setRoutingNow(Date.now());
         setLocationStatus(result.status);
-        if (result.status === "located" && !manualCountryRef.current) expiry = window.setTimeout(detect, COUNTRY_REFRESH_MS);
       }).catch(() => {
         if (!cancelled) setLocationStatus("unavailable");
-      }).finally(() => { pending = false; });
+      }).finally(() => {
+        pending = false;
+        if (!cancelled) expiry = window.setTimeout(detect, COUNTRY_REFRESH_MS);
+      });
     };
     const resume = () => {
       if (!nativeActive || document.visibilityState === "hidden" || Date.now() - lastAttempt < 5_000) return;
@@ -232,11 +234,12 @@ export function PanicOverlay() {
       window.removeEventListener("pageshow", resume);
       void handle?.then((listener) => listener?.remove());
     };
-  }, [panicOpen]);
+  }, [panicOpen, locationAttempt]);
 
   useEffect(() => {
     if (!panicOpen) {
       setView("protocol");
+      setHelpView("medical");
       setAlertId(null);
       setRealAlert(null);
       setActivating(false);
@@ -312,7 +315,7 @@ export function PanicOverlay() {
     if (target === "callEmergency") {
       // Revalida también en el toque: una entrada caducada nunca se marca.
       const now = Date.now();
-      const current = resolveEmergencyCityRouting(emergencyCountry, manualCountry ? null : emergencyCoordinates, emergencyDirectory, now);
+      const current = resolveEmergencyCityRouting(emergencyCountry, emergencyCoordinates, emergencyDirectory, now);
       const number = service ? current.services[service].phone : emergencyNumber;
       if (service && number !== emergencyRouting.services[service].phone) setRoutingNow(now);
       if (number) openNativeDialer(number);
@@ -544,14 +547,14 @@ export function PanicOverlay() {
       ico: people,
       title: family,
       sub: voiceSent && smsSent
-        ? t("Llamada y SMS enviados · {phone}", { phone: familyCel })
+        ? t("Llamada y SMS enviados")
         : voiceSent
-          ? t("Llamada realizada · {phone}", { phone: familyCel })
+          ? t("Llamada realizada")
           : smsSent
-            ? t("SMS enviado · {phone}", { phone: familyCel })
+            ? t("SMS enviado")
             : sosActive && contactDegraded
               ? t("Canal de contacto no disponible en este momento")
-              : `${familyRole} · ${familyCel}`,
+              : manualContacts.length ? familyRole || t("Tu contacto de confianza") : t("Añade un contacto en tu perfil"),
       tone: "ice",
       on: contactSent,
     },
@@ -589,19 +592,19 @@ export function PanicOverlay() {
   ];
 
   const networkRows = [
+    rows[1],
     rows[0],
     ...(user.fam2Nombre?.trim() || user.fam2Cel?.trim() ? [{
       key: "secondary",
       ico: people,
       title: user.fam2Nombre?.trim() || t("Contacto opcional"),
       sub: sosActive
-        ? t("Sin confirmación de envío · {phone}", { phone: user.fam2Cel || "" })
-        : [t("Contacto opcional"), user.fam2Parentesco, user.fam2Cel].filter(Boolean).join(" · "),
+        ? t("Sin confirmación de envío")
+        : [t("Contacto opcional"), user.fam2Parentesco].filter(Boolean).join(" · "),
       tone: "ice",
       // Los estados de entrega confirmados vienen de recipients, no del perfil.
       on: false,
     }] : []),
-    rows[1],
   ];
 
   return (
@@ -664,6 +667,27 @@ export function PanicOverlay() {
                 {sosActive ? t("Cerrar") : t("Cancelar")}
               </IonButton>
             </header>
+            {view === "protocol" && (
+              <div className="sos-help-switch">
+                <IonSegment
+                  value={helpView}
+                  aria-label={t("Tipo de ayuda")}
+                  onIonChange={(event) => {
+                    const next = event.detail.value;
+                    if (next !== "medical" && next !== "services") return;
+                    setHelpView(next);
+                    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+                  }}
+                >
+                  <IonSegmentButton id="sos-medical-tab" value="medical" aria-controls="sos-medical-panel">
+                    <IonLabel>{t("Mi equipo")}</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton id="sos-services-tab" value="services" aria-controls="sos-services-panel">
+                    <IonLabel>{t("Emergencias")}</IonLabel>
+                  </IonSegmentButton>
+                </IonSegment>
+              </div>
+            )}
             {view !== "protocol" && (            <div className="sos-demo-note">
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
@@ -683,78 +707,8 @@ export function PanicOverlay() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <div className="sos-scroll-body">
-                    <section className="sos-services" aria-labelledby="sos-services-title">
-                      <div className="sos-section-heading">
-                        <div>
-                          <small>{t("LLAMAR A EMERGENCIAS")}</small>
-                          <h2 id="sos-services-title">{t("¿Qué ayuda necesitas?")}</h2>
-                        </div>
-                        <IonIcon icon={call} aria-hidden="true" />
-                      </div>
-                      <p className="sos-country-status" role="status" aria-live="polite">
-                        <IonIcon icon={location} aria-hidden="true" />
-                        {manualCountry
-                          ? t("País confirmado por ti: {pais}", { pais: countryLabel })
-                          : detectedCountry
-                            ? emergencyRouting.city
-                              ? t("Ubicación del dispositivo: {ciudad}, {pais}", { ciudad: emergencyRouting.city.name, pais: countryLabel })
-                              : t("Ubicación del dispositivo: {pais}", { pais: countryLabel })
-                            : locationStatus === "locating"
-                              ? t("Buscando tu ubicación. Puedes confirmar el país ahora.")
-                              : locationStatus === "unsupported"
-                                ? t("Ubicación fuera de cobertura o cerca de una frontera. Confirma el país.")
-                                : t("No pudimos obtener tu ubicación. Confirma el país para llamar.")}
-                      </p>
-                      <div className="sos-country-options" role="group" aria-label={t("País para llamar")}>
-                        {(["CO", "US"] as const).map((country) => (
-                          <IonButton
-                            key={country}
-                            className={emergencyCountry === country ? "is-selected" : undefined}
-                            fill={emergencyCountry === country ? "solid" : "outline"}
-                            aria-pressed={emergencyCountry === country}
-                            onClick={() => { manualCountryRef.current = country; setManualCountry(country); }}
-                          >
-                            <IonIcon slot="start" icon={location} aria-hidden="true" />
-                            {country === "CO" ? t("Colombia") : t("Estados Unidos")}
-                            {emergencyCountry === country && <IonIcon slot="end" icon={checkmarkCircle} aria-hidden="true" />}
-                          </IonButton>
-                        ))}
-                      </div>
-                      <div className="sos-service-actions" role="group" aria-label={t("Servicios de emergencia")}>
-                        {EMERGENCY_SERVICES.map((service) => {
-                          const route = emergencyRouting.services[service.key];
-                          return (
-                          <IonButton
-                            key={service.key}
-                            fill="solid"
-                            className={`sos-service-action service-${service.key}`}
-                            data-emergency-service={service.key}
-                            data-route-source={route.source}
-                            disabled={!route.phone}
-                            aria-label={route.phone
-                              ? t("Llamar: {servicio} · {numero}", { servicio: t(service.label), numero: route.phone })
-                              : t("Confirma el país para llamar: {servicio}", { servicio: t(service.label) })}
-                            onClick={() => startCall("callEmergency", service.key)}
-                          >
-                            <span className="sos-service-content">
-                              <span className="sos-service-symbol"><IonIcon icon={service.icon} aria-hidden="true" /></span>
-                              <span className="sos-service-copy"><strong>{t(service.label)}</strong><span>{t(service.description)}</span><small className="sos-service-route">{route.source === "local" ? t("Línea local verificada") : route.source === "national" ? t("Central de emergencias") : t("Confirma el país")}</small></span>
-                              <span className={`sos-service-dial${route.source === "local" ? " sos-service-dial-local" : ""}`}><IonIcon icon={call} aria-hidden="true" />{route.source === "local" ? <><span>{t("Llamar")}</span><b>{route.displayNumber}</b></> : <b>{route.phone ? t("Llamar {numero}", { numero: route.displayNumber }) : t("Confirma el país")}</b>}</span>
-                            </span>
-                          </IonButton>
-                        )})}
-                      </div>
-                      <p className="sos-services-note sos-city-routing-note">
-                        {emergencyNumber
-                          ? hasLocalEmergencyContact && emergencyRouting.city
-                            ? t("Contactos locales verificados en {ciudad}. Los servicios sin contacto local usan el {numero}.", { ciudad: emergencyRouting.city.name, numero: emergencyNumber })
-                            : t("Las tres opciones llaman al {numero}. Indica al operador si necesitas ambulancia, policía o bomberos.", { numero: emergencyNumber })
-                          : t("Confirma Colombia o Estados Unidos para mostrar el número de emergencias.")}
-                      </p>
-                      {hasLocalEmergencyContact && emergencyNumber && <IonButton fill="outline" expand="block" className="sos-national-fallback" aria-label={t("Llamar a la central de emergencias · {numero}", { numero: emergencyNumber })} onClick={() => startCall("callEmergency")}><IonIcon slot="start" icon={call} />{t("Si la línea local no responde, llama al {numero}", { numero: emergencyNumber })}</IonButton>}
-                      <p className="sos-services-separate">{t("Estas llamadas son independientes de la alerta a tu contacto y equipo clínico.")}</p>
-                    </section>
+                  <div className="sos-scroll-body" ref={scrollRef}>
+                    <div id="sos-medical-panel" className="sos-help-panel" role="tabpanel" aria-labelledby="sos-medical-tab" hidden={helpView !== "medical"}>
                     <section className="sos-alert-card">
                       <header className="sos-head">
                         <IonBadge
@@ -923,40 +877,10 @@ export function PanicOverlay() {
                     <section className="sos-network">
                       <div className="sos-section-heading">
                         <div>
-                          <small>{t("CONTACTOS DE EMERGENCIA")}</small>
-                          <h2>{t("Tu red de ayuda")}</h2>
+                          <h2>{t("Tu equipo médico y contactos")}</h2>
                         </div>
                         <IonIcon icon={people} aria-hidden="true" />
                       </div>
-                      {hasRecipientDetails && <div className="sos-contact-deliveries">
-                        {realAlert!.recipients!.map(recipient => {
-                          const primary = recipient.contactOrder === 0;
-                          const channels = [
-                            { key: "voice", icon: call, title: t("Llamada"), status: recipient.voiceChannelStatus, delivery: recipient.voiceCallStatus, accepted: t("Llamada solicitada") },
-                            { key: "sms", icon: chatbubbles, title: "SMS", status: recipient.smsChannelStatus, delivery: recipient.smsDeliveryStatus, accepted: t("Aceptado por el proveedor") },
-                            { key: "email", icon: mailOutline, title: t("Correo"), status: recipient.emailChannelStatus ?? "SinDatos", delivery: null, accepted: t("Enviado") },
-                          ];
-                          return <IonCard key={recipient.id} className={`emergency-contact-card sos-contact-delivery ${primary ? "emergency-contact-card-primary" : "emergency-contact-card-optional"}`}>
-                            <IonCardContent>
-                              <div className="emergency-contact-card-heading">
-                                <span className="emergency-contact-card-icon"><IonIcon icon={primary ? personOutline : peopleOutline} aria-hidden="true" /></span>
-                                <div className="emergency-contact-card-title"><h3>{t(primary ? "Contacto principal" : "Contacto opcional")}</h3><p>{recipient.maskedPhone || t("Teléfono protegido")}</p></div>
-                                <IonBadge className={primary ? "emergency-contact-required" : "emergency-contact-optional-badge"}>{t(primary ? "Obligatorio" : "Opcional")}</IonBadge>
-                              </div>
-                              <dl className="sos-contact-channel-list">
-                                {channels.map(channel => {
-                                  const failed = ["no-answer", "busy", "canceled", "failed", "undelivered"].includes(channel.delivery ?? "") || ["Fallido", "Timeout"].includes(channel.status);
-                                  const unavailable = ["SinDestino", "SinDatos", "NoConfigurado"].includes(channel.status);
-                                  const confirmed = ["delivered", "completed"].includes(channel.delivery ?? "") || (channel.key === "email" && channel.status === "Enviado");
-                                  const tone = failed ? "bad" : unavailable ? "unavailable" : confirmed ? "ok" : "pending";
-                                  const label = channel.delivery === "completed" ? t("Finalizada") : deliveryLabel(channel.status, channel.accepted, channel.delivery);
-                                  return <div key={channel.key} className={`sos-contact-channel ${tone}`}><dt><IonIcon icon={channel.icon} aria-hidden="true" />{channel.title}</dt><dd>{label}</dd></div>;
-                                })}
-                              </dl>
-                            </IonCardContent>
-                          </IonCard>;
-                        })}
-                      </div>}
                       <IonList className="sos-feed" lines="none">
                         {(realAlert?.recipients?.length ? networkRows.filter(row => row.key === "doc") : networkRows).map((r) => {
                           // BUG-01: el check refleja el estado REAL del canal,
@@ -988,6 +912,46 @@ export function PanicOverlay() {
                           );
                         })}
                       </IonList>
+                      {hasRecipientDetails && <div className="sos-contact-deliveries">
+                        {realAlert!.recipients!.map(recipient => {
+                          const primary = recipient.contactOrder === 0;
+                          const channels = [
+                            { key: "voice", icon: call, title: t("Llamada"), status: recipient.voiceChannelStatus, delivery: recipient.voiceCallStatus, accepted: t("Llamada solicitada") },
+                            { key: "sms", icon: chatbubbles, title: "SMS", status: recipient.smsChannelStatus, delivery: recipient.smsDeliveryStatus, accepted: t("Aceptado por el proveedor") },
+                            { key: "email", icon: mailOutline, title: t("Correo"), status: recipient.emailChannelStatus ?? "SinDatos", delivery: null, accepted: t("Enviado") },
+                          ];
+                          return <IonCard key={recipient.id} className={`emergency-contact-card sos-contact-delivery ${primary ? "emergency-contact-card-primary" : "emergency-contact-card-optional"}`}>
+                            <IonCardContent>
+                              <div className="emergency-contact-card-heading">
+                                <span className="emergency-contact-card-icon"><IonIcon icon={primary ? personOutline : peopleOutline} aria-hidden="true" /></span>
+                                <div className="emergency-contact-card-title"><h3>{t(primary ? "Contacto principal" : "Contacto opcional")}</h3></div>
+                                <IonBadge className={primary ? "emergency-contact-required" : "emergency-contact-optional-badge"}>{t(primary ? "Obligatorio" : "Opcional")}</IonBadge>
+                              </div>
+                              <dl className="sos-contact-channel-list">
+                                {channels.map(channel => {
+                                  const failed = ["no-answer", "busy", "canceled", "failed", "undelivered"].includes(channel.delivery ?? "") || ["Fallido", "Timeout"].includes(channel.status);
+                                  const unavailable = ["SinDestino", "SinDatos", "NoConfigurado"].includes(channel.status);
+                                  const confirmed = ["delivered", "completed"].includes(channel.delivery ?? "") || (channel.key === "email" && channel.status === "Enviado");
+                                  const tone = failed ? "bad" : unavailable ? "unavailable" : confirmed ? "ok" : "pending";
+                                  const label = channel.delivery === "completed" ? t("Finalizada") : deliveryLabel(channel.status, channel.accepted, channel.delivery);
+                                  return <div key={channel.key} className={`sos-contact-channel ${tone}`}><dt><IonIcon icon={channel.icon} aria-hidden="true" />{channel.title}</dt><dd>{label}</dd></div>;
+                                })}
+                              </dl>
+                            </IonCardContent>
+                          </IonCard>;
+                        })}
+                      </div>}
+
+                      <div className="sos-actions sos-contact-actions">
+                      <IonButton
+                        className="bt sos-act-fam"
+                        aria-label={t("Llamar familiar")}
+                        onClick={() => startCall("callFamily")}
+                      >
+                        <IonIcon icon={people} slot="start" />
+                        {t("Llamar familiar")}
+                      </IonButton>
+                    </div>
                     </section>
 
                     <section className="sos-shared">
@@ -1015,19 +979,69 @@ export function PanicOverlay() {
                         ))}
                       </div>
                     </section>
+                    </div>
+                    <section id="sos-services-panel" className="sos-services sos-help-panel" role="tabpanel" aria-labelledby="sos-services-tab" hidden={helpView !== "services"}>
+                      <div className="sos-section-heading">
+                        <div>
+                          <small>{t("LLAMAR A EMERGENCIAS")}</small>
+                          <h2 id="sos-services-title">{t("¿Qué ayuda necesitas?")}</h2>
+                        </div>
+                        <IonIcon icon={call} aria-hidden="true" />
+                      </div>
+                      <p className="sos-country-status" role="status" aria-live="polite">
+                        <IonIcon icon={location} aria-hidden="true" />
+                        {detectedCountry
+                          ? emergencyRouting.city
+                            ? t("Ubicación del dispositivo: {ciudad}, {pais}", { ciudad: emergencyRouting.city.name, pais: countryLabel })
+                            : t("Ubicación del dispositivo: {pais}", { pais: countryLabel })
+                          : locationStatus === "locating"
+                            ? t("Buscando servicios según tu ubicación…")
+                            : locationStatus === "unsupported"
+                              ? t("No hay una línea disponible para esta ubicación. Puedes llamar a tus contactos.")
+                              : t("Activa la ubicación para elegir la línea de emergencia de tu zona.")}
+                      </p>
+                      {!detectedCountry && locationStatus !== "locating" && (
+                        <IonButton fill="clear" className="sos-location-retry" onClick={() => setLocationAttempt(attempt => attempt + 1)}>
+                          {t("Reintentar ubicación")}
+                        </IonButton>
+                      )}
+                      <div className="sos-service-actions" role="group" aria-label={t("Servicios de emergencia")}>
+                        {EMERGENCY_SERVICES.map((service) => {
+                          const route = emergencyRouting.services[service.key];
+                          return (
+                          <IonButton
+                            key={service.key}
+                            fill="solid"
+                            className={`sos-service-action service-${service.key}`}
+                            data-emergency-service={service.key}
+                            data-route-source={route.source}
+                            disabled={!route.phone}
+                            aria-label={t("Llamar: {servicio}", { servicio: t(service.label) })}
+                            onClick={() => startCall("callEmergency", service.key)}
+                          >
+                            <span className="sos-service-content">
+                              <span className="sos-service-symbol"><IonIcon icon={service.icon} aria-hidden="true" /></span>
+                              <span className="sos-service-copy"><strong>{t(service.label)}</strong><span>{t(service.description)}</span></span>
+                              <span className="sos-service-dial"><IonIcon icon={call} aria-hidden="true" /><b>{t("Llamar")}</b></span>
+                            </span>
+                          </IonButton>
+                        )})}
+                      </div>
+                      <p className="sos-services-note sos-city-routing-note">
+                        {hasLocalEmergencyContact && emergencyRouting.city
+                          ? t("Elegimos la línea de tu zona. Si te atiende una central, indica qué ayuda necesitas.")
+                          : t("La central de emergencias te orientará. Indica si necesitas ambulancia, policía o bomberos.")}
+                      </p>
+                      {hasLocalEmergencyContact && emergencyNumber && (
+                        <IonButton fill="outline" expand="block" className="sos-national-fallback" aria-label={t("Llamar a la central de emergencias")} onClick={() => startCall("callEmergency")}>
+                          <IonIcon slot="start" icon={call} />{t("Si no responde, llamar a la central")}
+                        </IonButton>
+                      )}
+                      <p className="sos-services-separate">{t("Estas llamadas son independientes de la alerta a tu contacto y equipo clínico.")}</p>
+                    </section>
                   </div>
 
                   <footer className="sos-action-dock">
-                    <div className="sos-actions sos-contact-actions">
-                      <IonButton
-                        className="bt sos-act-fam"
-                        aria-label={t("Llamar familiar")}
-                        onClick={() => startCall("callFamily")}
-                      >
-                        <IonIcon icon={people} slot="start" />
-                        {t("Llamar familiar")}
-                      </IonButton>
-                    </div>
                     <IonButton
                       expand="block"
                       className="bt sos-act-ok"
