@@ -3,13 +3,22 @@
 ## Acciones independientes
 
 El panel SOS muestra **Ambulancia**, **Policía** y **Bomberos** como tres
-acciones propias, con nombre, icono, descripción y número visibles. Las tres
+acciones propias, con nombre, icono, descripción y botón «Llamar». La app no
+muestra los teléfonos de destino, tampoco en las etiquetas accesibles. Las tres
 abren el marcador del teléfono. Si existe un contacto local verificado para el
-servicio y la ciudad actual, se muestra ese número. Para cualquier servicio sin
+servicio y la ciudad actual, se elige esa línea. Para cualquier servicio sin
 contacto local utilizable se conserva **123 en Colombia** o **911 en Estados Unidos**.
 Son centrales unificadas; el usuario indica al operador qué servicio necesita.
 No se afirma que exista una línea directa distinta ni que la app despache una
 ambulancia automáticamente.
+
+El selector Ionic «Mi equipo / Emergencias» permanece fuera del área de scroll.
+«Mi equipo» se abre primero con la alerta SOS, el equipo médico, los contactos
+y los datos compartidos; «Emergencias» muestra los tres servicios a un toque.
+Cambiar de sección vuelve al inicio y no activa una alerta ni realiza llamadas.
+Cerrar y reabrir SOS restaura «Mi equipo». La llamada manual a los
+contactos está dentro de la red de ayuda. No se muestran teléfonos personales
+ni números enmascarados en esta vista.
 
 Las llamadas no dependen de crear una alerta al contacto personal. Ese SOS
 conserva su confirmación explícita de dos pasos y sus estados reales por canal.
@@ -25,12 +34,15 @@ Fuentes: [Policía Nacional de Colombia](https://www.policia.gov.co/sites/defaul
 - Resolución local con polígonos de Colombia, Estados Unidos y sus territorios.
   No se envía GPS a un geocodificador externo. Fuente y límites en
   [la cartografía](../src/data/emergency-country-boundaries.SOURCE.md).
-- Ubicación desconocida, permiso denegado, baja precisión o cercanía a una
-  frontera internacional requieren confirmar Colombia o Estados Unidos. El
-  panel distingue «ubicación del dispositivo» de «país confirmado por ti».
-- La confirmación manual prevalece durante esa apertura. GPS se renueva al
-  regresar a foreground y la selección automática expira mientras el panel
-  sigue abierto. Una respuesta tardía no cambia una elección manual.
+- La selección del país y de la línea es automática; no hay selector de país.
+  Se conserva el indicador del país/ciudad obtenido por el dispositivo.
+- Sin ubicación utilizable o fuera de cobertura no se adivina un número por
+  idioma, zona horaria o perfil. Los tres servicios siguen visibles, deshabilitados,
+  con un aviso de ubicación y «Reintentar ubicación». El SOS y la llamada a los
+  contactos personales siguen disponibles.
+- GPS se renueva al regresar a foreground y cada minuto con la vista abierta,
+  también después de un fallo. Cada nuevo intento invalida el destino anterior.
+  Los resultados de consultas canceladas al cerrar/reintentar se descartan.
 - Activar el SOS espera como máximo 2,5 segundos por GPS; si falla, envía la
   alerta sin ubicación. Metadatos inválidos o posiciones viejas se omiten.
 
@@ -58,8 +70,8 @@ La ciudad se identifica por polígonos DANE MGN 2025 y U.S. Census TIGERweb ACS
 no hereda el número de una ciudad vecina. La precisión GPS debe estar disponible,
 la posición tener menos de un minuto y su incertidumbre quedar dentro del límite.
 Un margen mínimo de 250 m ante el borde evita elegir una jurisdicción dudosa.
-Dos ciudades superpuestas, geometría inválida o país seleccionado manualmente
-usan la central nacional. No se usa el domicilio del perfil como ubicación actual.
+Dos ciudades superpuestas o geometría inválida usan la central nacional del
+país detectado. No se usa el domicilio del perfil como ubicación actual.
 
 Las revisiones de contactos y límites caducan a los **90 días como máximo**.
 Una entrada pendiente, futura, expirada, duplicada para el mismo servicio o con
@@ -84,10 +96,13 @@ python3 scripts/update-emergency-city-directory.py --output /tmp/emergency-city-
 Revisar el archivo y las fuentes antes de reemplazar el catálogo. El catálogo es
 parte del paquete: las ampliaciones y revisiones requieren un nuevo build de la
 app. La expiración sigue aplicando a instalaciones antiguas y devuelve la central
-nacional. Sin país conocido, los botones piden confirmar Colombia o EE. UU.; no
+nacional. Sin país conocido, los botones esperan una ubicación utilizable; no
 se inventa el país ni se muestra un teléfono vacío.
 
-El E2E actual está en `e2e/emergency-city-routing.mjs`. Simula sesión, coordenadas,
+El E2E actual está en `e2e/emergency-city-routing.mjs`. Comprueba el orden
+médico primero, ausencia de selector/números visibles y destinos internos
+exactos de cada llamada, incluyendo cambio de país, reintento GPS y caducidad.
+Simula sesión, coordenadas,
 variantes del catálogo y la entrega de `tel:` al sistema, sin alertas ni llamadas
 reales. Las capturas y logs deben dirigirse a una carpeta temporal externa al repo.
 
