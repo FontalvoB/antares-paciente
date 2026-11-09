@@ -40,9 +40,16 @@ import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
 import { captureChatImage } from "../services/media/camera-service";
 import { localizedError } from "../utils/localizedError";
 import logoIcon from "../assets/LogoIndividual.png";
+import {
+  CHAT_NUTRITION_ENABLED,
+  canShowChatAction,
+  chatTextForDisplay,
+} from "../utils/chatNutritionVisibility";
 
 const quick = [
-  ["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline],
+  ...(CHAT_NUTRITION_ENABLED
+    ? [["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline]]
+    : []),
   ["Síntomas", "Tengo dolor en el pecho, ¿qué hago?", pulseOutline],
   ["Agendar", "Agenda una cita con el médico para hoy", calendarOutline],
   ["Progreso", "¿Cómo va mi progreso esta semana?", trendingUpOutline],
@@ -246,6 +253,16 @@ export function ChatPage() {
   const userInitial =
     (user.nombre || "?").trim().charAt(0).toUpperCase() || "?";
 
+  // Se filtra solo la presentación: el historial original sigue disponible
+  // para reactivar Nutrición. Un mensaje compuesto solo por una URL oculta
+  // no debe convertirse en una burbuja vacía con «escribiendo» permanente.
+  const visibleChat = chat.map((message) => ({
+    ...message,
+    displayText: message.role === "user" ? message.text : chatTextForDisplay(message.text),
+    visibleCta: message.cta && canShowChatAction(message.cta.type, message.cta.ctaText)
+      ? message.cta : null,
+  })).filter((message) => !message.text || message.displayText.trim() || message.image || message.visibleCta);
+
   const send = (msg = text) => {
     if (uploading) return;
     const v = msg.trim();
@@ -414,9 +431,9 @@ export function ChatPage() {
             <span>{t("Inicio de la conversación")}</span>
           </div>
         ) : null}
-        {chat.map((m, index) => {
+        {visibleChat.map((m, index) => {
           const isLastInGroup =
-            index === chat.length - 1 || chat[index + 1].role !== m.role;
+            index === visibleChat.length - 1 || visibleChat[index + 1].role !== m.role;
           const isUser = m.role === "user";
           return (
           <div
@@ -459,7 +476,7 @@ export function ChatPage() {
                     }}
                   />
                 )}
-                {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Paciente") }) : m.text} />}
+                {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Paciente") }) : m.displayText} />}
                 {m.role === "alert" && (
                   <IonButton
                     expand="block"
@@ -471,15 +488,15 @@ export function ChatPage() {
                     {t("Activar protocolo de emergencia")}
                   </IonButton>
                 )}
-                {m.role === "bot" && m.cta && (
+                {m.role === "bot" && m.visibleCta && (
                   <IonButton
                     expand="block"
                     size="small"
                     className="cta-button"
-                    aria-label={m.cta.ctaText}
+                    aria-label={m.visibleCta.ctaText}
                     onClick={openBookingWizard}
                   >
-                    {t(m.cta.ctaText)}
+                    {t(m.visibleCta.ctaText)}
                   </IonButton>
                 )}
                 {m.role === "bot" && m.kind === "lab-exam" && (

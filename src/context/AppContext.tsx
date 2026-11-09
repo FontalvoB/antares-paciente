@@ -1,3 +1,4 @@
+import { CHAT_NUTRITION_ENABLED } from "../utils/chatNutritionVisibility";
 import { App } from "@capacitor/app";
 import { resetSessionQueryCache } from "../utils/queryClient";
 import { sessionUserId } from "../utils/sessionIdentity";
@@ -286,9 +287,11 @@ function botReply(
     };
   }
   if (
-    lower.includes("comer") ||
-    lower.includes("plan") ||
-    lower.includes("comida")
+    CHAT_NUTRITION_ENABLED && (
+      lower.includes("comer") ||
+      lower.includes("plan") ||
+      lower.includes("comida")
+    )
   ) {
     return {
       role: "bot",
@@ -327,9 +330,9 @@ function botReply(
   }
   return {
     role: "bot",
-    text: t(
-      "Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?",
-    ),
+    text: CHAT_NUTRITION_ENABLED
+      ? t("Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?")
+      : t("Puedo ayudarte con citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?"),
   };
 }
 

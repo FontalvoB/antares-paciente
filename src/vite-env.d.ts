@@ -11,6 +11,8 @@ interface ImportMetaEnv {
   readonly VITE_APPLICATION_CODE?: string;
   /** Feature flag: integración API del programa (progress). */
   readonly VITE_PROGRAM_API_ENABLED?: string;
+  /** Solo "true" restaura los accesos de Nutrición dentro del chat. */
+  readonly VITE_CHAT_NUTRITION_ENABLED?: string;
   /** `"true"` habilita las herramientas de dev en un build de pruebas (`sync:dev`). */
   readonly VITE_DEV_TOOLS?: string;
 }
