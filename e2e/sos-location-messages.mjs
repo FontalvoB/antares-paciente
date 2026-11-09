@@ -39,32 +39,56 @@ try{
   }
   // Outbound email has no callback. Select only rows created after this activation.
   rows=(await ledger()).filter(row=>Date.parse(row.at)>=start);
-  const sms=rows.filter(x=>x.channel==='sms'),emails=rows.filter(x=>x.channel==='email');
+  const sms=rows.filter(x=>x.channel==='sms'),emails=rows.filter(x=>x.channel==='email'),voices=rows.filter(x=>x.channel==='voice');
   assert.equal(sms.length,2,subject.case+' SMS principal + optional');assert.equal(emails.length,2,subject.case+' email principal + optional');
+  assert.equal(voices.length,2,subject.case+' voice principal + optional');
+  assert.equal(voices[0].body,voices[1].body,'Both contacts must hear the saved location snapshot.');
+  const spoken=voices[0].body;
+  assert(spoken,'The isolated provider must capture the actual voice script.');
+  assert(!spoken.includes('DOMICILIO GUARDADO'),'Never read the profile address as current GPS.');
   assert.equal(sms[0].body,sms[1].body);assert.equal(emails[0].body,emails[1].body);
   const message=sms[0].body,html=emails[0].body;
+  const gsm='@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&\'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà';
+  const extended='\f^{}\\[~]|€';
+  const isGsm=[...message].every(c=>gsm.includes(c)||extended.includes(c));
+  const septets=[...message].reduce((n,c)=>n+(extended.includes(c)?2:1),0);
+  if(subject.case==='unicode'){
+   assert(message.includes('李 王'),'Names without a faithful GSM representation must be preserved.');
+   assert(message.length<=134,'Unicode fallback should fit two segments for this fixture.');
+  }else{
+   assert(isGsm,'Latin test messages must use GSM-7.');
+   assert(septets<=160,`SOS SMS must fit one segment, got ${septets} septets.`);
+  }
+  const wire=(await readFile(path.join(output,'sms-wire-ledger.jsonl'),'utf8')).trim().split('\n').map(JSON.parse).filter(r=>Date.parse(r.at)>=start);
+  assert.equal(wire.length,2);assert(wire.every(r=>r.method==='POST'&&r.endpoint.endsWith('/Messages.json')&&r.from==='+12025550199'));
   await page.setContent(html);
   const text=await page.locator('body').innerText();
   assert(!message.includes('DOMICILIO GUARDADO'));assert(!text.includes('DOMICILIO GUARDADO'));
   assert(!/\b10\.\d+,-74\./.test(message),'SMS must use the first-party link, not raw coordinates.');
   if(subject.case==='precise'){
+   assert(spoken.includes('Calle 72 45-12, Barranquilla'),'The call must speak the approximate street and city.');
+   assert(spoken.includes('Dirección aproximada'));
    assert(message.includes('Calle 72 45-12, Barranquilla'), 'SMS is missing the approximate street/city address.');
    await page.getByText('Dirección aproximada',{exact:true}).waitFor();
    assert(text.includes('Calle 72 45-12, Barranquilla'));
    assert(text.includes('18 m'));assert(text.includes('GPS capturado'));
-   assert(message.includes('GPS capturado'));assert(message.includes('18 m'));
+   // Capture time, accuracy and readings remain complete in the email;
+   // the compact SMS prioritizes identity, approximate address and intact map.
   }
   if(subject.case==='coarse'||subject.case==='unknown'){
+   assert(spoken.includes('Barranquilla'));assert(!spoken.includes('Calle 72'));
    assert(message.includes('Barranquilla'));assert(!message.includes('Calle 72'));assert(!text.includes('45-12'));
   }
-  if(subject.case==='us')assert(text.includes('Pennsylvania Avenue NW')&&text.includes('Washington'));
+  if(subject.case==='us'){assert(text.includes('Pennsylvania Avenue NW')&&text.includes('Washington'));assert(spoken.includes('Pennsylvania Avenue NW')&&spoken.includes('Washington'));}
   if(['timeout','empty','future','japan'].includes(subject.case)){
+   assert(spoken.includes('dirección aproximada no está disponible'));
    assert(text.includes('Dirección no disponible'));assert(!message.includes('Calle 72'));
   }
   if(subject.case==='unsafe'){
    assert(text.includes('<script>'));assert.equal(await page.locator('script').count(),0,'Provider text must be HTML-escaped.');
   }
   if(subject.case==='none'){
+   assert(spoken.includes('No se compartió la ubicación GPS'));
    assert(text.includes('Ubicación no compartida'));assert.equal(await page.getByRole('link',{name:'Ver ubicación en el mapa'}).count(),0);
    assert(!text.includes('GPS capturado'));assert(!text.includes('Precisión GPS'));
   }else{
@@ -76,6 +100,7 @@ try{
    assert.equal((await api.get(new URL(changed).pathname,{maxRedirects:0})).status(),404);
    if(subject.case==='future')assert(text.includes('Hora de captura no disponible'));
   }
+  assert(!spoken.includes('911'),'The voice script must not prescribe the wrong national number.');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Email must fit a phone.');
   if(subject.case==='japan'){
    const lookups=(await readFile(path.join(output,'geocoding-ledger.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
@@ -92,7 +117,7 @@ try{
    const href=await page.getByRole('link',{name:'Ver ubicación en el mapa'}).getAttribute('href');
    assert.equal((await api.get(new URL(href).pathname,{maxRedirects:0})).status(),404);
   }
-  results.push({case:subject.case,passed:true,alertId:alert.id,activationMs});
+  results.push({case:subject.case,passed:true,alertId:alert.id,activationMs,smsUnits:isGsm?septets:message.length,smsEncoding:isGsm?'GSM-7':'UCS-2',smsSegments:isGsm?1:2,senderContractVerified:true});
  }
  await writeFile(path.join(artifactDir,'result.json'),JSON.stringify({passed:true,realDatabase:true,realSmsOrEmailSent:false,provider:'synthetic external boundary',results},null,2));
  console.log('Passed SOS message E2E cases:',results.map(r=>r.case).join(', '));
