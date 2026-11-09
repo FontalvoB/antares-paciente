@@ -1,11 +1,12 @@
 /** Real SOS API + PostgreSQL + rendered outbound email; only external transports/geocoder are synthetic.
- * COP_E2E_OUTPUT must be a temporary directory containing subjects.json (synthetic signed JWTs).
+ * COP_E2E_OUTPUT must be a temporary directory containing subjects.json (synthetic signed JWTs) and private.json (isolated DB/key fixture).
  * Run with the CoppAddresd.E2EHost and an isolated copp_review_* database, never production.
  */
 import {chromium,request} from 'playwright';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHmac} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 const output=process.env.COP_E2E_OUTPUT;
 assert(output?.startsWith('/tmp/'),'Evidence and test secrets must be temporary.');
@@ -21,9 +22,10 @@ const results=[];
 const artifactDir=path.join(output,process.env.COP_E2E_PHASE??'green');await mkdir(artifactDir,{recursive:true});
 try{
  for(const [index,subject] of subjects.entries()){
-  if(process.env.COP_E2E_CASE&&subject.case!==process.env.COP_E2E_CASE)continue;
+  if(process.env.COP_E2E_CASE&&!process.env.COP_E2E_CASE.split(',').includes(subject.case))continue;
   const captured=new Date(Date.now()-10000).toISOString();
   const data=subject.case==='none'?{}:{latitude:subject.case==='japan'?35.68:subject.case==='us'?38.8977:10.98+index/100,longitude:subject.case==='japan'?139.76:subject.case==='us'?-77.0365:-74.8,accuracyMeters:subject.case==='coarse'?3500:subject.case==='unknown'?undefined:18,locationCapturedAt:subject.case==='future'?new Date(Date.now()+86400000).toISOString():captured};
+  if(subject.case==='precise')data.vitals={heartRate:72,spo2:98,bloodPressure:'118/76'};
   const headers={Authorization:'Bearer '+subject.token,'Idempotency-Key':randomUUID()};
   const start=Date.now();const activated=await api.post('/api/v1/sos/alerts',{headers,data});
   assert.equal(activated.status(),201,`Activation ${subject.case}: ${await activated.text()}`);
@@ -34,7 +36,8 @@ try{
   for(let tries=0;tries<100;tries++){
    rows=(await ledger()).filter(row=>row.callback?.includes(alert.id)||row.body?.includes(`/maps/`));
    const state=await (await api.get(`/api/v1/sos/alerts/${alert.id}`,{headers})).json();
-   if(state.emailChannelStatus==='Enviado'&&state.smsChannelStatus==='Enviado')break;
+   const sent=(await ledger()).filter(row=>Date.parse(row.at)>=start);
+   if(state.emailChannelStatus==='Enviado'&&state.smsChannelStatus==='Enviado'&&['sms','voice','email'].every(channel=>sent.filter(row=>row.channel===channel).length===2))break;
    await new Promise(resolve=>setTimeout(resolve,100));
   }
   // Outbound email has no callback. Select only rows created after this activation.
@@ -63,6 +66,18 @@ try{
   assert.equal(wire.length,2);assert(wire.every(r=>r.method==='POST'&&r.endpoint.endsWith('/Messages.json')&&r.from==='+12025550199'));
   await page.setContent(html);
   const text=await page.locator('body').innerText();
+  assert(message.includes('necesita ayuda.'),'SMS must say what happened.');
+  assert(text.includes('Qué hacer ahora'),'Email must explain concrete next steps.');
+  if(subject.case==='precise'){
+   for(const value of ['72 lpm','98%','118/76 mmHg'])assert(text.includes(value),'Email must preserve reported readings.');
+   assert(!text.includes('Sin lecturas compartidas'));
+  }else assert(text.includes('Sin lecturas compartidas'),'Absent readings must be explicit.');
+  if(subject.case!=='none')assert(text.includes('24 horas'),'Explain the map access window.');
+  for(const width of [320,390,768]){
+   await page.setViewportSize({width,height:1100});
+   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`Email must fit ${width}px.`);
+  }
+  await page.setViewportSize({width:390,height:1100});
   assert(!message.includes('DOMICILIO GUARDADO'));assert(!text.includes('DOMICILIO GUARDADO'));
   assert(!/\b10\.\d+,-74\./.test(message),'SMS must use the first-party link, not raw coordinates.');
   if(subject.case==='precise'){
@@ -93,9 +108,43 @@ try{
    assert(!text.includes('GPS capturado'));assert(!text.includes('Precisión GPS'));
   }else{
    const href=await page.getByRole('link',{name:'Ver ubicación en el mapa'}).getAttribute('href');
-   assert(href.startsWith('https://sos.example.test/api/v1/sos/maps/'));
+   assert.match(href,/^https:\/\/alert\.example\.test\/api\/v1\/s\/[A-Za-z0-9_-]{22}$/,'Use the shorter first-party private link.');
+   assert(message.includes('Mapa: '+href),'SMS must label its intact map link.');
    const resolved=await api.get(new URL(href).pathname,{maxRedirects:0});assert.equal(resolved.status(),302);
+   assert(resolved.headers()['cache-control'].includes('no-store'));
+   assert.equal(resolved.headers()['referrer-policy'],'no-referrer');
    assert(new URL(resolved.headers().location).hostname==='www.google.com');
+   assert.equal(new URL(resolved.headers().location).searchParams.get('query'),`${data.latitude.toFixed(6)},${data.longitude.toFixed(6)}`,'The private code must open this alert’s coordinates.');
+   if(subject.case==='precise'){
+    const fixture=JSON.parse(await readFile(path.join(output,'private.json'),'utf8'));
+    assert(fixture.container.startsWith('copp-sos-')&&fixture.database.startsWith('copp_review_'));
+    const sql=query=>execFileSync('docker',['exec',fixture.container,'psql','-U','postgres','-d',fixture.database,'-tAc',query],{encoding:'utf8'}).trim();
+    // Mutate only this synthetic alert to exercise terminal-state/expiry behavior.
+    assert.match(alert.id,/^[0-9a-f-]{36}$/);
+    const saved=sql(`SELECT location_link_hash FROM app.sos_alerts WHERE id='${alert.id}'`);
+    assert.match(saved,/^[0-9A-Fa-f]{64}$/,'Store only a digest of the private code.');
+    const guid=Buffer.from(alert.id.replaceAll('-',''),'hex');
+    guid.subarray(0,4).reverse();guid.subarray(4,6).reverse();guid.subarray(6,8).reverse();
+    const key=createHmac('sha256',fixture.storage).update('coppadresd:sos-location:v1:').digest();
+    const oldToken=Buffer.concat([guid,createHmac('sha256',key).update(guid).digest().subarray(0,16)]).toString('base64url');
+    const oldPath='/api/v1/sos/maps/'+oldToken;
+    assert.equal((await api.get(oldPath,{maxRedirects:0})).status(),302,'Existing signed links remain usable.');
+    sql(`UPDATE app.sos_alerts SET status='Atendida' WHERE id='${alert.id}'`);
+    assert.equal((await api.get(new URL(href).pathname,{maxRedirects:0})).status(),302,'Attending does not revoke contact access.');
+    sql(`UPDATE app.sos_alerts SET created_at=now()-interval '25 hours' WHERE id='${alert.id}'`);
+    assert.equal((await api.get(new URL(href).pathname,{maxRedirects:0})).status(),404,'Short links expire.');
+    assert.equal((await api.get(oldPath,{maxRedirects:0})).status(),404,'Legacy links also expire.');
+    sql(`UPDATE app.sos_alerts SET status='Activa',created_at='${alert.createdAt}'::timestamptz WHERE id='${alert.id}'`);
+    // Force a real persistence error only in this isolated schema to verify
+    // the public error/log boundary never exposes the bearer capability.
+    sql('ALTER TABLE app.sos_alerts RENAME COLUMN location_link_hash TO e2e_hidden_location_hash');
+    try{
+     const failed=await api.get(new URL(href).pathname,{maxRedirects:0});
+     assert.equal(failed.status(),500);
+     assert.equal((await failed.json()).instance,'/api/v1/s/[redacted]');
+     assert(!(await readFile(path.join(output,'api.log'),'utf8')).includes(new URL(href).pathname.split('/').pop()),'Never log the private code.');
+    }finally{sql('ALTER TABLE app.sos_alerts RENAME COLUMN e2e_hidden_location_hash TO location_link_hash');}
+   }
    const u=new URL(href);const token=u.pathname.split('/').pop();const changed=href.replace(token,(token[0]==='a'?'b':'a')+token.slice(1));
    assert.equal((await api.get(new URL(changed).pathname,{maxRedirects:0})).status(),404);
    if(subject.case==='future')assert(text.includes('Hora de captura no disponible'));
