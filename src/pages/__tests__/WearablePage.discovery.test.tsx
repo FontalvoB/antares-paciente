@@ -173,6 +173,17 @@ describe('WearablePage — compatibilidad y alta', () => {
     expect(screen.queryByText('Conectando…')).toBeNull();
   });
 
+  it('en producción conserva el diagnóstico BLE sin ofrecer muestras sintéticas', () => {
+    vi.stubGlobal('__DEV_TOOLS__', false);
+    fixture.app.wearableConnected = true;
+    fixture.state.phase = 'connected';
+    fixture.state.diagnostics = true;
+    render(<WearablePage />);
+    expect(screen.getByText('Servicios GATT')).toBeTruthy();
+    expect(screen.queryByText('Inyectar muestra de prueba')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
   it('el historial automático mantiene Reloj visible y Conectado, sin abrir el foco', () => {
     fixture.app.wearableConnected = true;
     fixture.state.phase = 'connected';

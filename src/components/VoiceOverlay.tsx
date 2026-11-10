@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { IonButton, IonIcon, IonInput, IonModal } from "@ionic/react";
+import { IonButton, IonIcon, IonInput, IonModal, IonSpinner } from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { createVoiceMicLevel } from "../utils/voiceMicLevel";
@@ -9,6 +9,9 @@ import type { VoicePhase } from "./VoiceOrb";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { useSpeechAssistant } from "../hooks/useSpeechAssistant";
+import { consentFailure, isLegalConsentError, legalConsentMessage, onLegalConsentChange, requireLegalConsent, verifyLegalConsent } from "../utils/legalConsents";
+import { getAccessToken } from "../utils/authApi";
+import { sessionUserId } from "../utils/sessionIdentity";
 import {
   requestVoiceSession,
   toolCancelAppointment,
@@ -32,13 +35,15 @@ import {
  *     suplantación (ElevenLabs nunca define quién es el paciente).
  *  2. `webspeech` — fallback MVP (change agente-asistente-citas D4): Web
  *     Speech API del WebView + chat IA. Se activa si el backend no tiene voz
- *     configurada o ElevenLabs no arranca; degradación invisible al usuario.
+ *     configurada o ElevenLabs no arranca; requiere una elección explícita
+ *     y autorizaciones vigentes de voz y chat antes de arrancar.
  *
  * Sin mensajes técnicos al paciente: los fallos se traducen a frases
  * amigables y opciones claras (reintentar / chat de texto).
  */
 
-type VoiceMode = "idle" | "eleven" | "webspeech";
+type VoiceMode = "idle" | "eleven" | "fallback-choice" | "webspeech";
+interface ActiveVoiceSession { generation: number; owner: string | null; controller: AbortController }
 
 /** Props de la cápsula visual compartida por ambos motores. */
 interface VoiceShellProps {
@@ -159,6 +164,25 @@ export function VoiceOverlay() {
     return () => micLevel.release();
   }, [voiceOpen, micLevel]);
   const [mode, setMode] = useState<VoiceMode>("idle");
+  const modeRef = useRef(mode); modeRef.current = mode;
+  const openRef = useRef(voiceOpen); openRef.current = voiceOpen;
+  const voiceGeneration = useRef(0);
+  const activeSession = useRef<ActiveVoiceSession | null>(null);
+  const consentRequest = useRef<AbortController | null>(null);
+  const invalidateSession = useCallback(() => {
+    voiceGeneration.current += 1;
+    activeSession.current = null;
+    consentRequest.current?.abort();
+  }, []);
+  const assertSession = useCallback((session: ActiveVoiceSession | null, requireSdk = false) => {
+    if (!session || !openRef.current || activeSession.current !== session
+      || voiceGeneration.current !== session.generation || session.controller.signal.aborted
+      || session.owner !== sessionUserId(getAccessToken()) || (requireSdk && modeRef.current !== "eleven")) {
+      throw consentFailure("CONSENT_CANCELLED");
+    }
+  }, []);
+  const speechActive = useRef(false);
+  speechActive.current = voiceOpen && mode === "webspeech";
   // Estado del turno en curso en modo ElevenLabs.
   const [thinking, setThinking] = useState(false);
   const [userLine, setUserLine] = useState("");
@@ -173,12 +197,20 @@ export function VoiceOverlay() {
     // soportado: el recognizer se relanza con el locale nuevo).
     lang,
     onFinalTranscript: (text) => {
-      if (assistantBusyRef.current) return;
+      if (assistantBusyRef.current || !speechActive.current) return;
       assistantBusyRef.current = true;
       assistant.setProcessing();
       void (async () => {
         try {
           const botMessage = await sendVoiceMessage(text);
+          if (!speechActive.current) return;
+          if (!botMessage) {
+            speechActive.current = false;
+            assistant.teardown(); micLevel.release(); closeVoice();
+            return;
+          }
+          await verifyLegalConsent("voice", lang);
+          if (!speechActive.current) return;
           const answer = botMessage?.text ?? "";
           if (answer) {
             setBotLine(answer);
@@ -189,17 +221,14 @@ export function VoiceOverlay() {
               t("No pude escuchar bien. Inténtalo de nuevo."),
             );
           }
-        } catch {
-          setBotLine(
-            t("Hubo un problema con el asistente. Inténtalo de nuevo."),
-          );
-          await assistant.speak(
-            t("Hubo un problema con el asistente. Inténtalo de nuevo."),
-          );
+        } catch (error) {
+          speechActive.current = false;
+          assistant.teardown(); micLevel.release(); closeVoice();
+          showToast(t(isLegalConsentError(error) ? legalConsentMessage(error) : "Hubo un problema con el asistente. Inténtalo de nuevo."), "err");
         } finally {
           assistantBusyRef.current = false;
           // Fin del turno: vuelve a escuchar (modo voz conversacional).
-          assistant.startListening();
+          if (speechActive.current) assistant.startListening();
         }
       })();
     },
@@ -210,15 +239,30 @@ export function VoiceOverlay() {
 
   // ── Client tools (FASE 7/8): ejecutadas por el dispositivo con el JWT ─────
   const clientTools = useMemo(() => {
+    const session = mode === "eleven" ? activeSession.current : null;
     // Marca "pensando" mientras el dispositivo ejecuta la tool real.
     const withThinking =
-      (fn: (params: Record<string, unknown>) => Promise<string>) =>
+      (fn: (params: Record<string, unknown>, assertActive: () => void) => Promise<string>) =>
       async (params: Record<string, unknown>) => {
+        const assertActive = () => assertSession(session, true);
+        assertActive();
         setThinking(true);
         try {
-          return await fn(params);
+          assertActive();
+          await verifyLegalConsent("voice", lang, session!.controller.signal);
+          assertActive();
+          const result = await fn(params, assertActive);
+          assertActive();
+          await verifyLegalConsent("voice", lang, session!.controller.signal);
+          assertActive();
+          return result;
+        } catch (error) {
+          if (isLegalConsentError(error) && activeSession.current === session) {
+            invalidateSession(); micLevel.release(); closeVoice();
+          }
+          throw error;
         } finally {
-          setThinking(false);
+          if (activeSession.current === session) setThinking(false);
         }
       };
     return {
@@ -228,23 +272,23 @@ export function VoiceOverlay() {
       get_my_requests: withThinking(() => toolGetMyRequests()),
       list_specialties: withThinking(() => toolListSpecialties()),
       list_professionals: withThinking(() => toolListProfessionals()),
-      get_availability_slots: withThinking((params) =>
+      get_availability_slots: withThinking((params, assertActive) =>
         toolGetAvailabilitySlots(
           params as {
             date: string;
             specialty_id?: string;
             professional_id?: string;
-          },
+          }, assertActive,
         ),
       ),
-      request_appointment: withThinking((params) =>
+      request_appointment: withThinking((params, assertActive) =>
         toolRequestAppointment(
           params as {
             specialty_id: string;
             reason: string;
             professional_id?: string;
             preferred_start?: string;
-          },
+          }, assertActive,
         ),
       ),
       reschedule_appointment: withThinking((params) =>
@@ -262,7 +306,7 @@ export function VoiceOverlay() {
         ),
       ),
     };
-  }, []);
+  }, [lang, mode, micLevel, closeVoice, assertSession, invalidateSession]);
 
   // Espeja el intercambio de voz al chat del paciente (queda en el hilo).
   const mirrorTurn = useCallback(
@@ -320,6 +364,8 @@ export function VoiceOverlay() {
   // ── Ciclo de vida del overlay ──────────────────────────────────────────────
   useEffect(() => {
     if (!voiceOpen) {
+      invalidateSession();
+      assistant.cancelSpeech(); assistant.teardown();
       wasConnectedRef.current = false;
       setMode("idle");
       setThinking(false);
@@ -328,11 +374,48 @@ export function VoiceOverlay() {
       return;
     }
     if (mode === "idle") {
-      // Intenta ElevenLabs siempre; el body degrada a Web Speech si falla.
-      setMode("eleven");
+      let cancelled = false;
+      const controller = new AbortController();
+      consentRequest.current = controller;
+      const session = { generation: ++voiceGeneration.current, owner: sessionUserId(getAccessToken()), controller };
+      activeSession.current = session;
+      void requireLegalConsent("voice", lang, controller.signal).then(() => {
+        if (!cancelled) { assertSession(session); setMode("eleven"); }
+      }).catch(error => {
+        if (!cancelled) { showToast(t(legalConsentMessage(error)), "warn"); closeVoice(); }
+      });
+      return () => {
+        cancelled = true;
+        if (activeSession.current === session) invalidateSession();
+        controller.abort();
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceOpen]);
+
+  useEffect(() => {
+    if (!voiceOpen) return;
+    const stop = () => {
+      invalidateSession();
+      speechActive.current = false;
+      assistant.cancelSpeech(); assistant.teardown(); micLevel.release();
+      setMode("idle"); closeVoice();
+    };
+    const unsubscribe = onLegalConsentChange(scope => {
+      if (scope === null || scope === "voice" || scope === "chat") stop();
+    });
+    const check = () => {
+      if (mode !== "eleven" && mode !== "webspeech") return;
+      void Promise.all([verifyLegalConsent("voice", lang), ...(mode === "webspeech" ? [verifyLegalConsent("chat", lang)] : [])])
+        .catch(() => { stop(); showToast(t("La autorización cambió o no pudo comprobarse. La sesión de voz se cerró."), "warn"); });
+    };
+    const timer = window.setInterval(check, 30_000);
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { unsubscribe(); window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
+    // La sesión se cierra al retirar una autorización, incluso desde otra entrada.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceOpen, mode, lang]);
 
   // Fallback Web Speech: arranca la escucha al activarse.
   useEffect(() => {
@@ -343,6 +426,8 @@ export function VoiceOverlay() {
   }, [voiceOpen, mode, assistant.supported]);
 
   const hangUp = () => {
+    invalidateSession();
+    speechActive.current = false;
     micLevel.release();
     if (mode === "webspeech") {
       assistant.cancelSpeech();
@@ -352,6 +437,7 @@ export function VoiceOverlay() {
     closeVoice();
     showToast(t("Llamada de voz finalizada"), "ok");
   };
+  const sdkSession = mode === "eleven" ? activeSession.current : null;
 
   if (assistant.supported === false && mode === "webspeech") {
     // Fallback D4: WebView sin Web Speech API y ElevenLabs no disponible.
@@ -392,7 +478,22 @@ export function VoiceOverlay() {
       className="voice-modal"
     >
       <div className="overlay overlay-voice">
-        {mode === "eleven" ? (
+        {mode === "idle" ? <div role="status"><IonSpinner name="crescent" />{t("Comprobando autorización…")}</div>
+        : mode === "fallback-choice" ? <div>
+          <p>{t("La conexión de voz no está disponible. Puedes revisar la autorización para usar voz del dispositivo y chat.")}</p>
+          {assistant.supported && <IonButton expand="block" className="bt bt-primary" onClick={() => {
+            void (async () => {
+              const signal = consentRequest.current?.signal;
+              try {
+                await requireLegalConsent("voice", lang, signal);
+                await requireLegalConsent("chat", lang, signal);
+                if (signal?.aborted) return;
+                setMode("webspeech");
+              } catch (error) { if (!signal?.aborted) { showToast(t(legalConsentMessage(error)), "warn"); hangUp(); } }
+            })();
+          }}>{t("Revisar y usar voz del dispositivo")}</IonButton>}
+          <IonButton expand="block" className="bt bt-ghost" onClick={hangUp}>{t("Usar chat de texto")}</IonButton>
+        </div> : mode === "eleven" ? (
           <ConversationProvider
             clientTools={clientTools}
             onMessage={handleVoiceMessage}
@@ -406,18 +507,15 @@ export function VoiceOverlay() {
               thinking={thinking}
               userLine={userLine}
               botLine={botLine}
+              assertActive={() => assertSession(sdkSession, true)}
               onFallback={() => {
-                // Degradación profesional: Web Speech si el WebView la soporta.
                 wasConnectedRef.current = false;
-                setMode(assistant.supported ? "webspeech" : "eleven");
-                if (!assistant.supported) {
-                  showToast(
-                    t(
-                      "No pudimos conectar con el asistente. Intenta nuevamente.",
-                    ),
-                    "err",
-                  );
-                }
+                micLevel.release();
+                setMode("fallback-choice");
+              }}
+              onConsentBlocked={error => {
+                if (activeSession.current !== sdkSession) return;
+                showToast(t(legalConsentMessage(error)), "warn"); hangUp();
               }}
             />
           </ConversationProvider>
@@ -471,6 +569,8 @@ interface ElevenVoiceBodyProps {
   userLine: string;
   botLine: string;
   onFallback: () => void;
+  onConsentBlocked: (error: unknown) => void;
+  assertActive: () => void;
 }
 
 function ElevenVoiceBody({
@@ -481,6 +581,8 @@ function ElevenVoiceBody({
   userLine,
   botLine,
   onFallback,
+  onConsentBlocked,
+  assertActive,
 }: ElevenVoiceBodyProps) {
   const eleven = useConversation();
   const { t, lang } = useI18n();
@@ -494,9 +596,11 @@ function ElevenVoiceBody({
 
   const start = useCallback(async (isCancelled: () => boolean) => {
     try {
+      assertActive();
       // Permiso de micrófono primero (falla temprano con degradación clara).
       await micLevel.request();
       if (isCancelled()) return;
+      assertActive();
       // Idioma de la app en el request: el backend lo propaga al AI Service
       // y este deja el agente hablando ese idioma (PATCH server-side ANTES
       // de emitir el signed URL — con signed URL los overrides del cliente
@@ -504,13 +608,18 @@ function ElevenVoiceBody({
       // usa su configuración del dashboard (comportamiento histórico).
       const session = await requestVoiceSession(langRef.current);
       if (isCancelled()) return;
+      assertActive();
       if (!session) {
         onFallback();
         return;
       }
-      eleven.startSession({ signedUrl: session.signedUrl });
-    } catch {
-      if (!isCancelled()) onFallback();
+      await eleven.startSession({ signedUrl: session.signedUrl });
+      if (isCancelled()) void eleven.endSession();
+    } catch (error) {
+      if (!isCancelled()) {
+        if (isLegalConsentError(error)) onConsentBlocked(error);
+        else onFallback();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -521,6 +630,7 @@ function ElevenVoiceBody({
     void start(() => cancelled);
     return () => {
       cancelled = true;
+      void elevenRef.current.endSession();
     };
   }, [start, active]);
 
@@ -573,7 +683,13 @@ function ElevenVoiceBody({
       muted={eleven.isMuted}
       onToggleMute={() => eleven.setMuted(!eleven.isMuted)}
       onHangUp={onHangUp}
-      onSendText={(text) => eleven.sendUserMessage(text)}
+      onSendText={text => {
+        try { assertActive(); } catch (error) { onConsentBlocked(error); return; }
+        void verifyLegalConsent("voice", langRef.current).then(() => {
+          assertActive();
+          eleven.sendUserMessage(text);
+        }).catch(onConsentBlocked);
+      }}
     />
   );
 }

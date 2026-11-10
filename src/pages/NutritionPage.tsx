@@ -748,7 +748,7 @@ export function NutritionPage() {
                           goal: String(waterGoalGlasses),
                           liters: formatMetricValue(
                             planWaterMl / 1000,
-                            1,
+                            planWaterMl % 100 === 0 ? 1 : 2,
                             locale,
                           ),
                         },
@@ -779,7 +779,7 @@ export function NutritionPage() {
                 )}
               />
               <div className="nut-hyd-grid">
-                {Array.from({ length: 8 }).map((_, i) => (
+                {Array.from({ length: waterGoalGlasses }).map((_, i) => (
                   <IonButton
                     key={i}
                     type="button"
@@ -789,7 +789,7 @@ export function NutritionPage() {
                     aria-pressed={i < displayedGlasses ? 'true' : 'false'}
                     aria-label={t("Vaso {n} de {goal}", {
                       n: String(i + 1),
-                      goal: String(8),
+                      goal: String(waterGoalGlasses),
                     })}
                     onClick={() => tapGlass(i + 1)}
                   >

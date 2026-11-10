@@ -87,6 +87,7 @@ export function ConversationModal({
   me,
   open,
   onClose,
+  onOpenProfile,
   onSend,
   onToast,
   onRemoveMember,
@@ -100,6 +101,7 @@ export function ConversationModal({
   me: Profile;
   open: boolean;
   onClose: () => void;
+  onOpenProfile?: (profileId: string) => void;
   onSend: (body: string) => Promise<Message | null | undefined>;
   onToast: (msg: string, kind?: "ok" | "err" | "info" | "warn") => void;
   onRemoveMember?: (groupId: string, profileId: string) => Promise<unknown>;
@@ -114,27 +116,30 @@ export function ConversationModal({
   const [query] = useQuery<ConversationResult>({
     query: CONVERSATION_QUERY,
     variables: { peerId: peer?.id ?? "", take: 50, skip: 0 },
-    pause: !peer,
+    pause: !open || !peer,
+    requestPolicy: 'network-only',
   });
   const [sub] = useSubscription<MessageAddedResult>({
     query: MESSAGE_ADDED,
     variables: { conversationKey: key },
-    pause: !peer,
+    pause: !open || !peer,
   });
   const [groupQuery] = useQuery<GroupHistoryResult>({
     query: GROUP_QUERY,
     variables: { groupId: group?.id ?? "", take: 50, skip: 0 },
-    pause: !group,
+    pause: !open || !group,
+    requestPolicy: 'network-only',
   });
   const [groupSub] = useSubscription<GroupMessageAddedResult>({
     query: GROUP_MESSAGE_ADDED,
     variables: { groupId: group?.id ?? "" },
-    pause: !group,
+    pause: !open || !group,
   });
   const [membersQuery] = useQuery<GroupMembersResult>({
     query: GROUP_MEMBERS_QUERY,
     variables: { groupId: group?.id ?? "" },
-    pause: !group,
+    pause: !open || !group,
+    requestPolicy: 'network-only',
   });
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -403,9 +408,12 @@ export function ConversationModal({
                 </>
               ) : (
                 <>
-                  <div style={{ fontWeight: 800, fontSize: 14 }}>
+                  {onOpenProfile ? <IonButton fill="clear" aria-label={t('Ver perfil de {name}', { name: profileName(peer!, t) })}
+                    onClick={() => onOpenProfile(peer!.id)}
+                    style={{ margin: 0, minHeight: 44, maxWidth: '100%', fontWeight: 800, fontSize: 14,
+                      '--padding-start': '0', '--padding-end': '0' }}>
                     {profileName(peer!, t)}
-                  </div>
+                  </IonButton> : <div style={{ fontWeight: 800, fontSize: 14 }}>{profileName(peer!, t)}</div>}
                   <div style={{ fontSize: 11, color: "var(--mu)" }}>
                     {t("Amigos en la comunidad")}
                   </div>

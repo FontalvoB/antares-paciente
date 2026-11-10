@@ -31,6 +31,8 @@ import {
   type PatientContextDto,
 } from "./appointmentsApi";
 import { formatDateForDisplay, toLocalISODate } from "./dates";
+import { assertLegalConsentOwner, consentFailure, isLegalConsentError, legalConsentOwner, legalConsentResponseError, requireLegalConsent } from "./legalConsents";
+import { sessionUserId } from "./sessionIdentity";
 
 /** Contrato del backend (camelCase, ASP.NET). */
 export interface VoiceSession {
@@ -40,14 +42,17 @@ export interface VoiceSession {
 }
 
 /**
- * Solicita una sesión de voz al backend. Devuelve null ante cualquier fallo
- * (sin sesión, backend sin voz configurada, red) — el caller degrada al
- * agente de voz Web Speech y nunca muestra detalles técnicos al paciente.
+ * Solicita una sesión de voz tras verificar su autorización. Los rechazos de
+ * consentimiento se propagan tipados y nunca habilitan otro motor. Otros
+ * fallos devuelven null para ofrecer una elección explícita de alternativa.
  */
 export async function requestVoiceSession(
   language?: "es" | "en",
 ): Promise<VoiceSession | null> {
+  const owner = legalConsentOwner();
   try {
+    await requireLegalConsent("voice", language);
+    assertLegalConsentOwner(owner);
     const accessToken = getAccessToken();
     if (!accessToken) return null;
     const res = await fetch(`${getApiBaseUrl()}/api/v1/chat/voice/session`, {
@@ -62,10 +67,17 @@ export async function requestVoiceSession(
       // lo ignoran (compatible hacia atrás).
       body: JSON.stringify({ ...(language ? { language } : {}) }),
     });
-    if (!res.ok) return null;
+    assertLegalConsentOwner(owner);
+    if (!res.ok) {
+      const consentError = await legalConsentResponseError(res);
+      if (consentError) throw consentError;
+      return null;
+    }
     const data = (await res.json()) as VoiceSession;
+    assertLegalConsentOwner(owner);
     return data.signedUrl ? data : null;
   } catch (error) {
+    if (isLegalConsentError(error)) throw error;
     console.warn("[voice] No se pudo iniciar la sesión de voz:", error);
     return null;
   }
@@ -84,16 +96,19 @@ function timeOf(iso: string): string {
   });
 }
 
-/** Contexto del paciente (para organizationId y patientId de solicitudes). */
-let cachedContext: PatientContextDto | null = null;
-async function patientContext(): Promise<PatientContextDto | null> {
-  if (cachedContext) return cachedContext;
+/** El contexto se obtiene por acción y nunca se comparte entre cuentas/sesiones. */
+async function patientContext(assertActive: () => void): Promise<PatientContextDto | null> {
+  const owner = sessionUserId(getAccessToken());
   try {
-    cachedContext = await fetchMyContext();
-  } catch {
-    cachedContext = null;
+    assertActive();
+    const context = await fetchMyContext();
+    assertActive();
+    if (owner !== sessionUserId(getAccessToken())) throw consentFailure("CONSENT_CANCELLED");
+    return context;
+  } catch (error) {
+    if (isLegalConsentError(error)) throw error;
+    return null;
   }
-  return cachedContext;
 }
 
 /** Citas confirmadas del paciente, compactas y legibles por voz. */
@@ -204,12 +219,13 @@ export async function toolGetAvailabilitySlots(args: {
   date: string;
   specialty_id?: string;
   professional_id?: string;
-}): Promise<string> {
+}, assertActive: () => void = () => {}): Promise<string> {
   try {
     const date = /^\d{4}-\d{2}-\d{2}$/.test(args.date ?? "")
       ? args.date
       : toLocalISODate();
-    const ctx = await patientContext();
+    const ctx = await patientContext(assertActive);
+    assertActive();
     const slots = await fetchAvailabilitySlots({
       date,
       specialtyId: args.specialty_id,
@@ -219,6 +235,7 @@ export async function toolGetAvailabilitySlots(args: {
         ? (ctx?.patient?.organizationId ?? undefined)
         : undefined,
     });
+    assertActive();
     const disponibles = slots.slots
       .filter((s) => s.isAvailable)
       .slice(0, 12)
@@ -231,7 +248,8 @@ export async function toolGetAvailabilitySlots(args: {
         ? undefined
         : "No hay horarios disponibles ese día.",
     });
-  } catch {
+  } catch (error) {
+    if (isLegalConsentError(error)) throw error;
     return JSON.stringify({
       error: "No se pudo consultar la disponibilidad ahora.",
     });
@@ -244,9 +262,10 @@ export async function toolRequestAppointment(args: {
   reason: string;
   professional_id?: string;
   preferred_start?: string;
-}): Promise<string> {
+}, assertActive: () => void = () => {}): Promise<string> {
   try {
-    const ctx = await patientContext();
+    const ctx = await patientContext(assertActive);
+    assertActive();
     const patientId = ctx?.patient?.id;
     const organizationId = ctx?.patient?.organizationId;
     if (!patientId || !organizationId) {
@@ -263,6 +282,7 @@ export async function toolRequestAppointment(args: {
       preferredStart: args.preferred_start || undefined,
       reason: args.reason,
     });
+    assertActive();
     return JSON.stringify({
       ok: true,
       id: request.id,
@@ -270,7 +290,8 @@ export async function toolRequestAppointment(args: {
       mensaje:
         "Solicitud creada. El personal la revisará y confirmará la cita.",
     });
-  } catch {
+  } catch (error) {
+    if (isLegalConsentError(error)) throw error;
     return JSON.stringify({ error: "No se pudo crear la solicitud ahora." });
   }
 }

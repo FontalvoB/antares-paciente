@@ -19,6 +19,7 @@
  */
 
 import { apiFetch, ApiError } from "../../utils/apiClient";
+import { isLegalConsentError, requireLegalConsent } from "../../utils/legalConsents";
 import type { ChatLanguage } from "../../utils/threadApi";
 import type {
   ChatResult,
@@ -39,6 +40,7 @@ export const CHAT_UNAVAILABLE_MESSAGE =
  * (401 sesión inválida, 4xx de negocio, timeout, red) se propaga intacto.
  */
 function toFriendlyChatError(error: unknown): unknown {
+  if (isLegalConsentError(error)) return error;
   if (
     error instanceof ApiError &&
     (error.status === 502 || error.status === 503)
@@ -76,6 +78,7 @@ export async function sendChatMessage(
   const text = message.trim();
   if (!text) throw new Error("El mensaje no puede estar vacío.");
   if (!threadId.trim()) throw new Error("El threadId no puede estar vacío.");
+  await requireLegalConsent("chat", language);
   try {
     return await apiFetch<ChatResult>(CHAT_PATH, {
       method: "POST",
@@ -110,6 +113,7 @@ export async function sendChatFeedback(
   ) {
     throw new Error("La calificación debe ser un entero entre 1 y 5.");
   }
+  await requireLegalConsent("chat");
   try {
     return await apiFetch<FeedbackResult>(CHAT_FEEDBACK_PATH, {
       method: "POST",

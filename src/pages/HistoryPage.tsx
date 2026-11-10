@@ -311,7 +311,6 @@ export function HistoryPage() {
           </div>
 
           <div className="hc-chips">
-            <span className="hc-chip green">{t("HIPAA protegida")}</span>
             {programWeek != null && totalWeeks != null ? (
               <span className="hc-chip navy">
                 {t("Semana {cur} de {total}", {

@@ -1,3 +1,4 @@
+import { sessionUserId } from "./sessionIdentity";
 import { patientReadTimeout, requestLanguage } from "./requestLanguage";
 /**
  * Authenticated fetch wrapper for backend API calls.
@@ -148,6 +149,8 @@ export interface ApiFetchOptions extends Omit<RequestInit, "method" | "body"> {
   body?: unknown;
   /** Override timeout (15 s normal; 45 s para lecturas de contenido traducido en inglés). */
   timeoutMs?: number;
+  /** Bind a deliberate action to its original account, including a 401 retry. */
+  expectedUserId?: string | null;
 }
 
 /**
@@ -174,7 +177,12 @@ export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { timeoutMs: configuredTimeout, body, headers: customHeaders, ...rest } = options;
+  const { timeoutMs: configuredTimeout, body, headers: customHeaders, expectedUserId, ...rest } = options;
+  const assertAccount = () => {
+    if (expectedUserId !== undefined && sessionUserId(getAccessToken()) !== expectedUserId)
+      throw new ApiError({ message: "Session changed", code: "SESSION_CHANGED", status: 401, errorType: "business" });
+    if (rest.signal?.aborted) throw new DOMException("Request cancelled", "AbortError");
+  };
   const method = rest.method ?? (body !== undefined ? "POST" : "GET");
   const url = resolveUrl(path);
 
@@ -201,6 +209,7 @@ export async function apiFetch<T>(
     : controller.signal;
 
   try {
+    assertAccount();
     const res = await fetch(url, {
       ...rest,
       method,
@@ -211,6 +220,7 @@ export async function apiFetch<T>(
     });
 
     clearTimeout(timeoutId);
+    assertAccount();
 
     // 204 No Content
     if (res.status === 204) {
@@ -231,6 +241,7 @@ export async function apiFetch<T>(
       }
     }
 
+    assertAccount();
     // 401 → attempt single-flight refresh + retry once
     if (res.status === 401) {
       // El refresh usa cookie HttpOnly: sin Bearer, no tiene sentido reintentar.
@@ -239,6 +250,7 @@ export async function apiFetch<T>(
       }
 
       const refreshed = await doRefresh();
+      assertAccount();
       if (!refreshed) {
         // Refresh failed — session bridge will handle redirect
         throw parseApiError(401, parsed);
@@ -273,6 +285,7 @@ export async function apiFetch<T>(
       });
 
       clearTimeout(retryTimeout);
+      assertAccount();
 
       if (retryRes.status === 204) return undefined as T;
       if (!retryRes.ok) {
@@ -284,7 +297,9 @@ export async function apiFetch<T>(
         throw parseApiError(retryRes.status, retryParsed);
       }
 
-      return (await retryRes.json()) as T;
+      const retryResult = (await retryRes.json()) as T;
+      assertAccount();
+      return retryResult;
     }
 
     // Non-2xx error

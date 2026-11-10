@@ -192,6 +192,13 @@ describe("deriveWaterGlasses — vasos reales (floor, 250 ml por vaso)", () => {
     expect(deriveWaterGlasses(snap)).toBe(5); // 1250 / 250
   });
 
+  it("conserva los 11 vasos persistidos por encima del estándar de 2 L", () => {
+    const snap = snapshotWith(
+      nutTask({ nutritionIntakeLogs: [log({ mealCode: "agua", waterMl: 2750 })] }),
+    );
+    expect(deriveWaterGlasses(snap)).toBe(11);
+  });
+
   it("redondea hacia abajo (floor) y salta waterMl null", () => {
     const snap = snapshotWith(
       nutTask({

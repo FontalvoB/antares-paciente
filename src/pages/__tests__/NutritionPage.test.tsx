@@ -1,13 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render as renderView, screen, fireEvent } from "@testing-library/react";
+import { render as renderView, screen, fireEvent, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { ProgramSnapshotDto } from "../../services/program/types";
+import { ApiError } from "../../utils/apiClient";
 
 function render(children: ReactNode) {
-  return renderView(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>);
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderView(children, {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  });
 }
 
 vi.mock("../../hooks/useNutritionPlanStatus", () => ({
@@ -39,6 +45,11 @@ vi.mock("@ionic/react", async (importOriginal) => {
 const mockState = vi.hoisted(() => ({
   plan: null as MyNutritionPlanDto | null,
   snapshot: null as unknown as ProgramSnapshotDto,
+  isMockFallback: false,
+  online: true,
+  mutate: vi.fn(),
+  queueHydration: vi.fn(),
+  showToast: vi.fn(),
 }));
 
 const snapshotFixture = {
@@ -64,7 +75,7 @@ const planFixture: MyNutritionPlanDto = {
 };
 
 vi.mock("../../context/AppContext", () => ({
-  useApp: () => ({ showToast: vi.fn() }),
+  useApp: () => ({ showToast: mockState.showToast }),
 }));
 
 vi.mock("../../i18n/I18nContext", () => ({
@@ -85,7 +96,13 @@ vi.mock("../../i18n/I18nContext", () => ({
 }));
 
 vi.mock("../../hooks/useNutritionLog", () => ({
-  useNutritionLog: () => ({ mutate: vi.fn(), isPending: false }),
+  useNutritionLog: () => ({ mutate: mockState.mutate, isPending: false }),
+}));
+
+vi.mock("../../services/offline/offline-queue-service", () => ({
+  isOnline: () => mockState.online,
+  queueHydration: mockState.queueHydration,
+  queueTaskCompletion: vi.fn(),
 }));
 
 vi.mock("../../hooks/useMyNutritionPlan", () => ({
@@ -101,7 +118,7 @@ vi.mock("../../hooks/useProgram", () => ({
   useProgram: () => ({
     snapshot: mockState.snapshot,
     isLoading: false,
-    isMockFallback: false,
+    isMockFallback: mockState.isMockFallback,
     productMessage: null,
   }),
 }));
@@ -148,6 +165,11 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
   beforeEach(() => {
     mockState.plan = planFixture;
     mockState.snapshot = snapshotFixture;
+    mockState.isMockFallback = false;
+    mockState.online = true;
+    mockState.mutate.mockReset();
+    mockState.queueHydration.mockReset();
+    mockState.showToast.mockReset();
   });
 
   it("usa la meta de calorías del plan como referencia del anillo", () => {
@@ -169,6 +191,14 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     expect(
       screen.getByText("💧 Hidratación · 0 vasos · meta 6 vasos (1,5 L)"),
     ).toBeTruthy();
+    expect(screen.getAllByLabelText(/^Vaso \d+ de 6$/)).toHaveLength(6);
+    expect(screen.queryByLabelText("Vaso 7 de 6")).toBeNull();
+
+    fireEvent.click(screen.getByLabelText("Vaso 6 de 6"));
+    expect(mockState.mutate.mock.calls[0][0]).toEqual({
+      mealCode: "agua",
+      intake: { waterMl: 1500, source: "manual" },
+    });
   });
 
   it("sin plan conserva la tarjeta de hidratación estándar", () => {
@@ -178,6 +208,119 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     expect(
       screen.getByText("💧 Hidratación · 0 vasos · meta 8 vasos (2L)"),
     ).toBeTruthy();
+    expect(screen.getAllByLabelText(/^Vaso \d+ de 8$/)).toHaveLength(8);
+    fireEvent.click(screen.getByLabelText("Vaso 8 de 8"));
+    expect(mockState.mutate.mock.calls[0][0]).toEqual({
+      mealCode: "agua",
+      intake: { waterMl: 2000, source: "manual" },
+    });
+  });
+
+  it("ofrece y registra los 11 vasos prescritos sin limitar el total a 2 L", () => {
+    mockState.plan = { ...planFixture, dailyWaterMl: 2750 };
+    render(<NutritionPage />);
+
+    expect(screen.getAllByLabelText(/^Vaso \d+ de 11$/)).toHaveLength(11);
+    expect(screen.getByText("💧 Hidratación · 0 vasos · meta 11 vasos (2,75 L)")).toBeTruthy();
+    expect(screen.getByText("0 / 2750 ml")).toBeTruthy();
+
+    fireEvent.click(screen.getByLabelText("Vaso 8 de 11"));
+    fireEvent.click(screen.getByLabelText("Vaso 9 de 11"));
+    fireEvent.click(screen.getByLabelText("Vaso 11 de 11"));
+
+    expect(mockState.mutate.mock.calls.map(([variables]) => variables)).toEqual([
+      { mealCode: "agua", intake: { waterMl: 2000, source: "manual" } },
+      { mealCode: "agua", intake: { waterMl: 2250, source: "manual" } },
+      { mealCode: "agua", intake: { waterMl: 2750, source: "manual" } },
+    ]);
+    expect(screen.getByText("2750 / 2750 ml")).toBeTruthy();
+    expect(screen.getByLabelText("Vaso 11 de 11").getAttribute("aria-pressed")).toBe("true");
+
+    // Los taps iguales o menores conservan el total acumulado sin otro write.
+    fireEvent.click(screen.getByLabelText("Vaso 11 de 11"));
+    fireEvent.click(screen.getByLabelText("Vaso 9 de 11"));
+    expect(mockState.mutate).toHaveBeenCalledTimes(3);
+  });
+
+  it("usa el agua del día asignado cuando no hay meta global del plan", () => {
+    mockState.plan = {
+      ...planFixture,
+      dailyWaterMl: null,
+      days: [{ dayNumber: 1, dailyWaterMl: 2750 }],
+    };
+    render(<NutritionPage />);
+
+    expect(screen.getAllByLabelText(/^Vaso \d+ de 11$/)).toHaveLength(11);
+    expect(screen.getByText("0 / 2750 ml")).toBeTruthy();
+  });
+
+  it("encola el objetivo completo de 2750 ml sin red y conserva el optimismo", () => {
+    mockState.plan = { ...planFixture, dailyWaterMl: 2750 };
+    mockState.online = false;
+    render(<NutritionPage />);
+
+    fireEvent.click(screen.getByLabelText("Vaso 11 de 11"));
+    fireEvent.click(screen.getByLabelText("Vaso 10 de 11"));
+
+    expect(mockState.queueHydration).toHaveBeenCalledExactlyOnceWith({ waterMl: 2750, source: "manual" });
+    expect(mockState.mutate).not.toHaveBeenCalled();
+    expect(screen.getByText("2750 / 2750 ml")).toBeTruthy();
+  });
+
+  it("reconcilia 2750 ml desde el snapshot y no vuelve a registrar el mismo total", () => {
+    mockState.plan = { ...planFixture, dailyWaterMl: 2750 };
+    const { rerender } = render(<NutritionPage />);
+    fireEvent.click(screen.getByLabelText("Vaso 11 de 11"));
+    mockState.snapshot = {
+      ...snapshotWithLog,
+      todayTasks: [{
+        ...snapshotWithLog.todayTasks[0],
+        content: {
+          nutritionIntakeLogs: [{
+            mealCode: "agua",
+            localDate: "2026-09-24",
+            waterMl: 2750,
+          }],
+        },
+      }],
+    } as ProgramSnapshotDto;
+    rerender(<NutritionPage />);
+
+    expect(screen.getByText("2750 / 2750 ml")).toBeTruthy();
+    expect(screen.getAllByLabelText(/^Vaso \d+ de 11$/).every(
+      glass => glass.getAttribute("aria-pressed") === "true",
+    )).toBe(true);
+    fireEvent.click(screen.getByLabelText("Vaso 11 de 11"));
+    expect(mockState.mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([400, 409])("revierte el optimismo tras error %s y mantiene el 409 silencioso", (status) => {
+    mockState.plan = { ...planFixture, dailyWaterMl: 2750 };
+    render(<NutritionPage />);
+    fireEvent.click(screen.getByLabelText("Vaso 11 de 11"));
+    const callbacks = mockState.mutate.mock.calls[0][1];
+
+    act(() => callbacks.onError(new ApiError({
+      message: "Registro rechazado",
+      status,
+      errorType: "business",
+    })));
+
+    expect(screen.getByText("0 / 2750 ml")).toBeTruthy();
+    expect(screen.getByLabelText("Vaso 11 de 11").getAttribute("aria-pressed")).toBe("false");
+    expect(mockState.showToast).toHaveBeenCalledTimes(status === 409 ? 0 : 1);
+  });
+
+  it("el fallback sin verdad del servidor bloquea los 11 vasos", () => {
+    mockState.plan = { ...planFixture, dailyWaterMl: 2750 };
+    mockState.isMockFallback = true;
+    render(<NutritionPage />);
+
+    const lastGlass = screen.getByLabelText("Vaso 11 de 11");
+    expect((lastGlass as HTMLIonButtonElement).disabled).toBe(true);
+    fireEvent.click(lastGlass);
+    expect(mockState.mutate).not.toHaveBeenCalled();
+    expect(mockState.queueHydration).not.toHaveBeenCalled();
   });
 
   it("hero muestra el porcentaje del objetivo y ml acumulados", () => {

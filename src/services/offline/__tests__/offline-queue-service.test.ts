@@ -136,14 +136,15 @@ describe("enqueueOfflineMutation y constructores", () => {
     expect(loadQueue()).toHaveLength(0);
   });
 
-  it("queueHydration arma el shape wire agua + valida", () => {
-    const queued = queueHydration({ waterMl: 500 });
+  it.each([500, 1500, 2000, 2750])("queueHydration persiste %s ml con el shape wire agua + valida", (waterMl) => {
+    const queued = queueHydration({ waterMl });
     expect(queued.type).toBe("hydration");
     expect(queued.endpoint).toBe("/api/v1/program/nutrition/log");
     expect(queued.payload).toEqual({
       mealCode: "agua",
-      intake: { waterMl: 500, source: "manual" },
+      intake: { waterMl, source: "manual" },
     });
+    expect(loadQueue()[0].payload).toEqual(queued.payload);
     expect(() => queueHydration({ waterMl: 0 })).toThrow("waterMl positivo");
   });
 

@@ -13,6 +13,7 @@ import {
 import {
   arrowBack,
   arrowUp,
+  banOutline,
   chatbubbleEllipsesOutline,
   createOutline,
   chatbubblesOutline,
@@ -71,6 +72,7 @@ import { initials } from "../utils/clubs-helpers";
 import { PostDetailModal } from "../components/community/PostDetailModal";
 import { ComposePostModal } from "../components/community/ComposePostModal";
 import { MemberProfile } from "../components/community/MemberProfile";
+import { BlockedUsersPanel } from "../components/community/BlockedUsersPanel";
 import { CreateGroupModal } from "../components/community/CreateGroupModal";
 import {
   CommunityFab,
@@ -283,6 +285,16 @@ export function CommunityPage() {
   const { t, lang } = useI18n();
   const {
     me,
+    blockedProfileIds,
+    communityRevision,
+    blockedProfiles,
+    blockedProfilesLoading,
+    blockedProfilesError,
+    blockedProfilesHasMore,
+    loadMoreBlockedProfiles,
+    retryBlockedProfiles,
+    blockUser,
+    unblockUser,
     meLoading,
     meTimelinePosts,
     feed,
@@ -349,6 +361,7 @@ export function CommunityPage() {
   const [tab, setTab] = useState<
     "feed" | "perfil" | "chat" | "amigos" | "redes" | "clubes"
   >("feed");
+  const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
   /** Posts públicos de clubes integrados cronológicamente en el feed general. */
   const [clubFeed, setClubFeed] = useState<
     { club: Club; view: FeedPostView }[]
@@ -356,7 +369,8 @@ export function CommunityPage() {
   const chronologicalFeed = useMemo(() => [
     ...clubFeed.map(item => ({ ...item, key: `club-${item.view.post.id}` })),
     ...feed.filter(view => !clubFeed.some(item => item.view.post.id === view.post.id)).map(view => ({ club: null, view, key: `post-${view.post.id}` })),
-  ].sort((a, b) => newestFirst(a.view.post, b.view.post)), [clubFeed, feed]);
+  ].filter(item => !blockedProfileIds.has(item.view.post.profile.id))
+    .sort((a, b) => newestFirst(a.view.post, b.view.post)), [clubFeed, feed, blockedProfileIds]);
   const [clubCommentDraft, setClubCommentDraft] = useState<
     Record<string, string>
   >({});
@@ -441,18 +455,21 @@ export function CommunityPage() {
     query: PROFILE_QUERY,
     variables: { id: viewingId ?? "" },
     pause: !viewingId,
+    requestPolicy: 'network-only',
   });
   const [memberFollowersResult, reexecuteMemberFollowers] =
     useQuery<ProfileFollowersResult>({
       query: PROFILE_FOLLOWERS_QUERY,
       variables: { profileId: viewingId ?? "", take: 50, skip: 0 },
       pause: !viewingId,
+      requestPolicy: 'network-only',
     });
   const [memberFollowingResult, reexecuteMemberFollowing] =
     useQuery<ProfileFollowingResult>({
       query: PROFILE_FOLLOWING_QUERY,
       variables: { profileId: viewingId ?? "", take: 50, skip: 0 },
       pause: !viewingId,
+      requestPolicy: 'network-only',
     });
   const memberListItems =
     memberList === "followers"
@@ -505,7 +522,7 @@ export function CommunityPage() {
       } })));
     }).catch(() => { if (active) setClubFeed([]); });
     return () => { active = false; };
-  }, [tab, me]);
+  }, [tab, me, communityRevision]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [newPostsCount, setNewPostsCount] = useState(0);
@@ -560,18 +577,19 @@ export function CommunityPage() {
 
   const [postAddedResult] = useSubscription<PostAddedResult>({
     query: POST_ADDED,
-    pause: !(tab === "feed" && !viewingId) || me?.status === "BANNED",
+    pause: !(tab === "feed" && !viewingId && !blockedUsersOpen) || me?.status === "BANNED",
   });
 
   useEffect(() => {
     const post = postAddedResult.data?.postAdded;
     if (!post || !post.profile) return;
     if (post.profile.id === me?.id) return;
+    if (blockedProfileIds.has(post.profile.id)) return;
     if (feedScope === "following" && !followedIds.has(post.profile.id)) return;
     if (seenPostIdsRef.current.has(post.id)) return;
     seenPostIdsRef.current.add(post.id);
     setNewPostsCount((c) => c + 1);
-  }, [postAddedResult.data, me?.id, feedScope, followedIds]);
+  }, [postAddedResult.data, me?.id, feedScope, followedIds, blockedProfileIds]);
 
   useEffect(() => {
     seenPostIdsRef.current.clear();
@@ -615,6 +633,40 @@ export function CommunityPage() {
   async function handleUnfollow(profileId: string, name: string) { await changeFollow(profileId,name,false) }
   async function handleFollow(profileId: string, name: string) { await changeFollow(profileId,name,true) }
 
+  function clearCommunityViews() {
+    setActivePeer(null);
+    setActiveGroup(null);
+    setActivePost(null);
+    setViewingId(null);
+    setMemberList(null);
+    setPerfilList(null);
+    setLightbox(null);
+    setUnfollowTarget(null);
+    setNewChatOpen(false);
+    setCreateOpen(false);
+    setFollowOverrides({});
+    followPending.current.clear();
+    setBusyId(null);
+    seenPostIdsRef.current.clear();
+    setNewPostsCount(0);
+    setClubFeed([]);
+    setClubCommentDraft({});
+  }
+
+  async function handleBlock(profileId: string) {
+    await blockUser(profileId);
+    clearCommunityViews();
+    setBlockedUsersOpen(false);
+    setTab('feed');
+    showToast(t('Usuario bloqueado.'), 'ok');
+  }
+
+  async function handleUnblock(profileId: string) {
+    await unblockUser(profileId);
+    clearCommunityViews();
+    showToast(t('Usuario desbloqueado. El seguimiento no se restableció.'), 'ok');
+  }
+
   const chatQuery = chatQ.trim().toLowerCase();
   const filteredConversations = conversations.filter(
     (c) => !chatQuery || c.peer.displayName.toLowerCase().includes(chatQuery),
@@ -627,6 +679,7 @@ export function CommunityPage() {
     id: "feed" | "perfil" | "chat" | "amigos" | "redes" | "clubes",
   ) => {
     setTab(id);
+    setBlockedUsersOpen(false);
     setViewingId(null);
     setMemberList(null);
   };
@@ -693,13 +746,20 @@ export function CommunityPage() {
       ) : me && me.status === "BANNED" ? (
         <BannedScreen reason={me.banReason} />
       ) : (
-        <Screen hideNav className={`community-screen${comDark ? " com-dark" : ""}${tab === "feed" && !viewingId ? " community-feed-active" : ""}`}>
+        <Screen hideNav className={`community-screen${comDark ? " com-dark" : ""}${tab === "feed" && !viewingId && !blockedUsersOpen ? " community-feed-active" : ""}`}>
           <Scroll
             ref={scrollRef}
             noNav
             className={`com-scroll${themeAnim ? " com-theme-anim" : ""}`}
           >
-            {viewingId ? (
+            {blockedUsersOpen ? (
+              <>
+                <BackButton onClick={() => setBlockedUsersOpen(false)} />
+                <BlockedUsersPanel profiles={blockedProfiles} loading={blockedProfilesLoading} error={blockedProfilesError}
+                  hasMore={blockedProfilesHasMore} onLoadMore={loadMoreBlockedProfiles} onRetry={retryBlockedProfiles}
+                  onUnblock={handleUnblock} />
+              </>
+            ) : viewingId ? (
               memberList ? (
                 <>
                   <BackButton onClick={() => setMemberList(null)} />
@@ -832,6 +892,7 @@ export function CommunityPage() {
                         }
                         onUnfollow={() => setUnfollowTarget(profile)}
                         onMessage={() => setActivePeer(profile)}
+                        onBlock={() => handleBlock(profile.id)}
                         onOpenPost={setActivePost}
                       />
                       <BackButton overlay onClick={() => setViewingId(null)} />
@@ -845,6 +906,9 @@ export function CommunityPage() {
                   <>
                     <div className="com-feed-header" ref={heroRef}>
                       <div className="com-feed-heading"><div className="com-brand-lockup"><span className="com-brand-mark"><img src={communityLogo} alt="COPP-ADRESD" /></span><div><span className="com-feed-eyebrow">COPP-ADRESD</span><h1>{t("Comunidad")}</h1></div></div><IonButton className="com-create-btn" onClick={() => setComposeOpen(true)}><IonIcon icon={createOutline} slot="start" />{t("Publicar")}</IonButton></div>
+                      <IonButton fill="clear" onClick={() => { setBlockedUsersOpen(true); retryBlockedProfiles(); }} style={{ minHeight: 44, fontSize: 13 }}>
+                        <IonIcon icon={banOutline} slot="start" />{t('Usuarios bloqueados')}
+                      </IonButton>
                     </div>
                       <div className="com-me-scope-row com-feed-sticky-tabs">
                         <div className="com-scope">
@@ -1733,7 +1797,7 @@ export function CommunityPage() {
               </>
             )}
 
-            {tab === "clubes" && <ClubsSection me={me} onToast={showToast} />}
+            {tab === "clubes" && !blockedUsersOpen && <ClubsSection key={communityRevision} me={me} onToast={showToast} />}
 
             {/* Espacio transparente al final del feed para el FAB */}
             <div style={{ height: 88 }} aria-hidden />
@@ -1771,10 +1835,12 @@ export function CommunityPage() {
 
           {me && (
             <ConversationModal
+              key={`peer-${activePeer?.id ?? 'closed'}-${communityRevision}`}
               peer={activePeer ?? undefined}
               me={me}
               open={!!activePeer}
               onClose={() => setActivePeer(null)}
+              onOpenProfile={(profileId) => { setActivePeer(null); openProfile(profileId); }}
               onToast={showToast}
               onSend={async (body) => {
                 return await sendMessage(activePeer?.id ?? "", body);
@@ -1784,6 +1850,7 @@ export function CommunityPage() {
 
           {me && (
             <ConversationModal
+              key={`group-${activeGroup?.id ?? 'closed'}-${communityRevision}`}
               group={activeGroup ?? undefined}
               friends={friends}
               me={me}

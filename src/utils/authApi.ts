@@ -217,6 +217,7 @@ async function restoreSessionOnce(): Promise<LoginResult | null> {
     clearSessionAndNotify();
     return null;
   }
+  if (status === 409) return null; // A newer login/logout superseded this refresh.
   if (result) return result;
   // Fallo de red (status 0): la sesión se conserva con el token local previo.
   if (existingToken) {
@@ -395,6 +396,7 @@ export function sharedRefresh(): Promise<SharedRefreshResult> {
 }
 
 async function performSharedRefresh(): Promise<SharedRefreshResult> {
+  const originalToken = getAccessToken();
   try {
     // Timeout defensivo (10 s), igual que postJson: en WebView nativo una
     // IP inalcanzable puede dejar el fetch colgado para siempre.
@@ -408,13 +410,16 @@ async function performSharedRefresh(): Promise<SharedRefreshResult> {
       body: JSON.stringify({ application: getApplicationCode() }),
       signal: AbortSignal.timeout(10000),
     });
+    if (getAccessToken() !== originalToken) return { status: 409, result: null };
     if (!res.ok) return { status: res.status, result: null };
     const result = (await res.json()) as LoginResult;
+    if (getAccessToken() !== originalToken) return { status: 409, result: null };
     // Rotación: persistir el access token nuevo para los callers que solo
     // esperaban `true` (antes solo restoreSession lo persistía).
     persistAccessToken(result.accessToken);
     return { status: res.status, result };
   } catch {
+    if (getAccessToken() !== originalToken) return { status: 409, result: null };
     return { status: 0, result: null };
   }
 }

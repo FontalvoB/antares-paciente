@@ -1,4 +1,5 @@
 import { apiFetch, ApiError } from '../../utils/apiClient';
+import { requireLegalConsent } from '../../utils/legalConsents';
 
 export interface AssessmentProfileGuidance {
   summary: string;
@@ -28,6 +29,7 @@ export async function getProfileGuidance(language: 'es' | 'en', signal?: AbortSi
   try { return await apiFetch<AssessmentProfileGuidance>(`${route}?language=${language}`, { signal }); }
   catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
-export function generateProfileGuidance(language: 'es' | 'en', signal?: AbortSignal) {
+export async function generateProfileGuidance(language: 'es' | 'en', signal?: AbortSignal) {
+  await requireLegalConsent('patient-ai', language, signal);
   return apiFetch<AssessmentProfileGuidance>(`${route}?language=${language}`, { method: 'POST', signal, timeoutMs: 90_000 });
 }

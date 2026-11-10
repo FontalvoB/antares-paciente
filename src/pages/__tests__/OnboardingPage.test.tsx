@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { OnboardingPage } from "../OnboardingPage";
+import { consentFailure, requireLegalConsent } from "../../utils/legalConsents";
+vi.mock("../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined), verifyLegalConsent: vi.fn().mockResolvedValue({ accepted: true }) }));
 
 // Los overlays nativos de Ionic requieren navegador; aquí verificamos sus props.
 vi.mock("@ionic/react", async importOriginal => ({
@@ -31,6 +33,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.insurers.mockResolvedValue([{ id: "insurer-id", name: "Aseguradora real" }]);
   state.profile.mockRejectedValue(new Error("first access"));
+  vi.mocked(requireLegalConsent).mockResolvedValue(undefined);
 });
 const enter = (id: string, value: string) => fireEvent(document.getElementById(id)!, new CustomEvent("ionInput", { detail: { value }, bubbles: true }));
 const next = () => fireEvent.click(screen.getByText("Continuar"));
@@ -67,24 +70,26 @@ describe("onboarding requirements", () => {
     expect(state.toast).toHaveBeenCalledWith("Completa el nombre y el teléfono del segundo contacto o déjalo vacío.", "err");
     expect(screen.queryByText("Consentimiento informado")).toBeNull();
   });
-  it("enables consent controls only after the document end, then requires all acceptances", async () => {
+  it("continues only after the shared flow confirms a server program receipt", async () => {
     render(<OnboardingPage />);
     next();
     enter("onb-fam-name", "Ana");
     enter("onb-fam-cel", "+573001234567");
     next();
-    const checkboxes = Array.from(document.querySelectorAll("ion-checkbox")) as HTMLIonCheckboxElement[];
-    expect(checkboxes).toHaveLength(3);
-    expect(checkboxes.every(checkbox => checkbox.disabled)).toBe(true);
-    const region = screen.getByRole("region");
-    Object.defineProperties(region, { clientHeight: { value: 180 }, scrollHeight: { value: 400 }, scrollTop: { value: 220 } });
-    fireEvent.scroll(region);
-    await waitFor(() => expect(checkboxes.every(checkbox => !checkbox.disabled)).toBe(true));
-    expect((screen.getByText("Continuar") as HTMLIonButtonElement).disabled).toBe(true);
-    for (const checkbox of checkboxes) fireEvent(checkbox, new CustomEvent("ionChange", { detail: { checked: true }, bubbles: true }));
-    expect((screen.getByText("Continuar") as HTMLIonButtonElement).disabled).toBe(false);
+    expect(document.querySelectorAll("ion-checkbox")).toHaveLength(0);
+    expect(screen.queryByText(/HIPAA/)).toBeNull();
     next();
-    expect(document.getElementById("onb-pwd")).toBeTruthy();
+    await waitFor(() => expect(document.getElementById("onb-pwd")).toBeTruthy());
+    expect(requireLegalConsent).toHaveBeenCalledWith("program", "es");
+    expect(state.update).not.toHaveBeenCalled();
+  });
+  it("does not claim accepted program consent when approved text is unavailable", async () => {
+    vi.mocked(requireLegalConsent).mockRejectedValueOnce(consentFailure("CONSENT_DOCUMENT_UNAVAILABLE", 503));
+    render(<OnboardingPage />); next();
+    enter("onb-fam-name", "Ana"); enter("onb-fam-cel", "+573001234567"); next(); next();
+    await waitFor(() => expect(state.toast).toHaveBeenCalledWith("La autorización aprobada todavía no está disponible. Esta función no puede iniciarse.", "warn"));
+    expect(document.getElementById("onb-pwd")).toBeNull();
+    expect(state.finish).not.toHaveBeenCalled();
     expect(state.update).not.toHaveBeenCalled();
   });
 });

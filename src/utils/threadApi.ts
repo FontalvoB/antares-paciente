@@ -2,6 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import { getAccessToken } from "./authApi";
 import { getApiBaseUrl } from "./apiBaseUrl";
 import type { ChatImageAttachment, ChatSuggestion } from "../types";
+import { assertLegalConsentOwner, legalConsentOwner, legalConsentResponseError, requireLegalConsent } from "./legalConsents";
 
 /** Idioma de la app ('es' | 'en'), espejo de `Language` en i18n/I18nContext. */
 export type ChatLanguage = "es" | "en";
@@ -135,6 +136,9 @@ export async function sendChatMessage(
   image?: ChatImageAttachment,
   language?: ChatLanguage,
 ): Promise<ChatResult> {
+  const owner = legalConsentOwner();
+  await requireLegalConsent("chat", language);
+  assertLegalConsentOwner(owner);
   const token = getAccessToken();
   const res = await fetch(`${getApiBaseUrl()}/api/v1/chat`, {
     method: "POST",
@@ -144,8 +148,11 @@ export async function sendChatMessage(
     },
     body: chatBody(message, threadId, image, language),
   });
+  assertLegalConsentOwner(owner);
 
   if (!res.ok) {
+    const consentError = await legalConsentResponseError(res);
+    if (consentError) throw consentError;
     let errorMsg = `Error al enviar mensaje (${res.status})`;
     try {
       const data = (await res.json()) as Record<string, unknown>;
@@ -157,6 +164,7 @@ export async function sendChatMessage(
   }
 
   const result = (await res.json()) as ChatResult;
+  assertLegalConsentOwner(owner);
   // El .NET devuelve camelCase; la normalización es defensiva para aceptar
   // también passthrough directo del AI Service (snake_case).
   return { ...result, suggestions: normalizeSuggestions(result.suggestions) };
@@ -180,6 +188,9 @@ export async function uploadLabExam(
   threadId?: string,
   language: "es" | "en" = "es",
 ): Promise<LabExamUploadResult> {
+  const owner = legalConsentOwner();
+  await requireLegalConsent("lab", language);
+  assertLegalConsentOwner(owner);
   const token = getAccessToken();
   const formData = new FormData();
   formData.append("file", file);
@@ -193,8 +204,11 @@ export async function uploadLabExam(
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: formData,
   });
+  assertLegalConsentOwner(owner);
 
   if (!res.ok) {
+    const consentError = await legalConsentResponseError(res);
+    if (consentError) throw consentError;
     let errorMsg = `Error al procesar el examen (${res.status})`;
     try {
       const data = (await res.json()) as Record<string, unknown>;
@@ -229,7 +243,9 @@ export async function uploadLabExam(
     throw new Error(errorMsg);
   }
 
-  return (await res.json()) as LabExamUploadResult;
+  const result = (await res.json()) as LabExamUploadResult;
+  assertLegalConsentOwner(owner);
+  return result;
 }
 
 export interface StreamCallbacks {
@@ -254,15 +270,19 @@ export async function streamChatMessage(
   image?: ChatImageAttachment,
   language?: ChatLanguage,
 ): Promise<ChatResult> {
+  const owner = legalConsentOwner();
   // Nativo + CapacitorHttp: el fetch del WebView está parcheado (HTTP nativo,
   // sin streaming de body) — SSE se degradaría a buffering completo. Fallback
   // C1 (design): chat síncrono en nativo, el texto llega en un solo bloque.
   if (Capacitor.isNativePlatform()) {
     const result = await sendChatMessage(message, threadId, image, language);
+    assertLegalConsentOwner(owner);
     if (result.reply) callbacks.onToken?.(result.reply);
     return result;
   }
 
+  await requireLegalConsent("chat", language);
+  assertLegalConsentOwner(owner);
   const token = getAccessToken();
   const res = await fetch(`${getApiBaseUrl()}/api/v1/chat/stream`, {
     method: "POST",
@@ -273,8 +293,11 @@ export async function streamChatMessage(
     },
     body: chatBody(message, threadId, image, language),
   });
+  assertLegalConsentOwner(owner);
 
   if (!res.ok || !res.body) {
+    const consentError = await legalConsentResponseError(res);
+    if (consentError) throw consentError;
     throw new Error(`Error al enviar mensaje (${res.status})`);
   }
 
@@ -336,6 +359,7 @@ export async function streamChatMessage(
   try {
     for (;;) {
       const { done, value } = await reader.read();
+      assertLegalConsentOwner(owner);
       if (done) break;
       pending += decoder.decode(value, { stream: true });
       const lines = pending.split("\n");
@@ -344,6 +368,7 @@ export async function streamChatMessage(
     }
     if (pending.trim()) handleLine(pending);
   } finally {
+    if (owner !== legalConsentOwner()) await reader.cancel().catch(() => {});
     reader.releaseLock();
   }
 

@@ -27055,8 +27055,9 @@ sin cambios en los datos. */
   font-size: 10px;
 }
 .hm-day-link {
-  width: 96px;
+  width: 112px;
   min-width: 0;
+  flex-shrink: 0;
   height: auto;
   align-self: stretch;
   margin: 0;
@@ -27070,7 +27071,11 @@ sin cambios en los datos. */
   white-space: normal;
   text-align: left;
   margin: 0 4px;
-  max-width: 51px;
+  width: min-content;
+  min-width: min-content;
+  max-width: none;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .hm-day-link ion-icon {
   font-size: 20px;

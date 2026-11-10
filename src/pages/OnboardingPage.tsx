@@ -40,7 +40,7 @@ import {
 } from "../utils/patientProfileApi";
 import { setFirstPassword } from "../utils/authApi";
 import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
-import { InformedConsentSection } from "../components/InformedConsentSection";
+import { isLegalConsentError, legalConsentMessage, requireLegalConsent, verifyLegalConsent } from "../utils/legalConsents";
 import { contactFromProfile, emergencyContactsError } from "../utils/emergencyContacts";
 import type { UserProfile } from "../types";
 
@@ -64,7 +64,7 @@ export function OnboardingPage() {
     {
       title: t("Consentimiento"),
       sub: t("Lee y acepta tu autorización"),
-      name: t("HIPAA"),
+      name: t("Consentimiento"),
     },
     {
       title: t("Crea tu contraseña"),
@@ -73,8 +73,8 @@ export function OnboardingPage() {
     },
   ];
   const [done, setDone] = useState(false);
-  const [checks, setChecks] = useState([false, false, false]);
-  const [consentRead, setConsentRead] = useState(false);
+  const [programAccepted, setProgramAccepted] = useState(false);
+  const [checkingConsent, setCheckingConsent] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [pwd, setPwd] = useState("");
   const [pwd2, setPwd2] = useState("");
@@ -142,6 +142,7 @@ export function OnboardingPage() {
     if (saving) return;
     setSaving(true);
     try {
+      await verifyLegalConsent("program", lang);
       if (pwd) await setFirstPassword(pwd);
       const insurerId = form.seguro || null;
       await updateMyPatientProfile({
@@ -158,6 +159,7 @@ export function OnboardingPage() {
       });
       finishOnboarding(form);
     } catch (err) {
+      if (isLegalConsentError(err)) { setProgramAccepted(false); setDone(false); setStep(3); }
       showToast(
         localizedError(err, i18n, "No se pudo guardar tu perfil"),
         "err",
@@ -189,7 +191,7 @@ export function OnboardingPage() {
         ? "var(--org)"
         : "var(--teal)";
 
-  const next = () => {
+  const next = async () => {
     if (step === 1) {
       setStep(2);
       return;
@@ -204,11 +206,13 @@ export function OnboardingPage() {
       return;
     }
     if (step === 3) {
-      if (!consentRead || !checks.every(Boolean)) {
-        showToast(t("Acepta los términos para continuar"), "warn");
-        return;
-      }
-      setStep(4);
+      if (checkingConsent) return;
+      setCheckingConsent(true);
+      try {
+        await requireLegalConsent("program", lang);
+        setProgramAccepted(true); setStep(4);
+      } catch (error) { setProgramAccepted(false); showToast(t(legalConsentMessage(error)), "warn"); }
+      finally { setCheckingConsent(false); }
       return;
     }
     if (step === 4) {
@@ -310,7 +314,7 @@ export function OnboardingPage() {
                 {[
                   t("Identidad confirmada"),
                   t("Emergencia: {name}", { name: form.fam1Nombre }),
-                  t("Consentimiento HIPAA aceptado"),
+                  ...(programAccepted ? [t("Autorización del programa confirmada")] : []),
                   t("Contraseña segura"),
                 ].map((item) => (
                   <div key={item}>
@@ -479,7 +483,7 @@ export function OnboardingPage() {
                     <IonIcon icon={shieldCheckmarkOutline} />
                     <span>
                       {t(
-                        "Tus datos viajan cifrados (TLS 1.3) y se tratan como PHI bajo HIPAA.",
+                        "Puedes revisar tus autorizaciones desde tu perfil.",
                       )}
                     </span>
                   </div>
@@ -528,7 +532,13 @@ export function OnboardingPage() {
                 </>
               )}
 
-              {step === 3 && <InformedConsentSection read={consentRead} checks={checks} onRead={() => setConsentRead(true)} onChecked={(index, checked) => setChecks(current => current.map((value, i) => i === index ? checked : value))} />}
+              {step === 3 && <section className="onb-card tone-teal">
+                <h2>{t("Consentimiento informado")}</h2>
+                <p>{t("Consulta el documento aprobado antes de autorizar tu participación en el programa.")}</p>
+                <IonButton expand="block" className="bt bt-primary" disabled={checkingConsent} onClick={() => void next()}>
+                  {t(checkingConsent ? "Comprobando autorización…" : "Revisar autorización del programa")}
+                </IonButton>
+              </section>}
 
               {step === 4 && (
                 <>
@@ -648,7 +658,7 @@ export function OnboardingPage() {
             <IonButton expand="block" className="bt bt-ghost" onClick={back}>
               {step === 1 ? t("Cancelar") : t("Volver")}
             </IonButton>
-            <IonButton expand="block" className="bt bt-primary" disabled={step === 3 && (!consentRead || !checks.every(Boolean))} onClick={next}>
+            <IonButton expand="block" className="bt bt-primary" disabled={checkingConsent} onClick={() => void next()}>
               {cta}
             </IonButton>
           </div>

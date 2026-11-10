@@ -34,6 +34,7 @@ import {
   scaleOutline,
   star,
   locationOutline,
+  openOutline,
 } from "ionicons/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { Mascot } from "../components/Mascot";
@@ -43,6 +44,7 @@ import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { localizedError } from "../utils/localizedError";
 import { useI18n } from "../i18n/I18nContext";
+import { useLegalConsents } from "../context/LegalConsentContext";
 import type { Screen as ScreenId } from "../types";
 import { useLeague } from "../hooks/useLeague";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
@@ -59,6 +61,8 @@ import { createAccountDeletionHandoff, restoreSession } from "../utils/authApi";
 import { updateMyPatientProfile } from "../utils/patientProfileApi";
 import { isValidNickname } from "../utils/league";
 import type { LeagueResponseDto } from "../services/program/types";
+
+const PRIVACY_POLICY_URL = "https://diomedescerda.github.io/coppadresd-privacy/";
 
 /**
  * Tarjeta de contacto editable del paciente (FASE 2): email + celular con
@@ -365,11 +369,23 @@ export function ProfilePage() {
   const { snapshot, isMockFallback } = useProgram();
   const { history: metricsHistory } = useMetricsHistory();
   const { lang, toggleLang, t } = useI18n();
+  const { openPrivacyChoices } = useLegalConsents();
   const locale = lang === "en" ? "en-US" : "es-ES";
   const reduce = useReducedMotion();
   const accountRef = useRef<HTMLElement>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const openPrivacyPolicy = async () => {
+    try {
+      await Browser.open({
+        url: PRIVACY_POLICY_URL,
+        presentationStyle: "popover",
+      });
+    } catch {
+      showToast(t("No se pudo abrir el sitio web. Inténtalo más tarde."), "err");
+    }
+  };
+
   // La eliminación de la cuenta se completa en el microfrontend web. La app NO pone
   // ningún token en la URL: pide al backend un código opaco de un solo uso (vida de
   // segundos) y la web lo canjea por una cookie de sesión HttpOnly. El código va en
@@ -860,6 +876,27 @@ export function ProfilePage() {
                 <IonButton
                   fill="clear"
                   expand="block"
+                  className="bt bt-ghost"
+                  style={{ marginTop: 12 }}
+                  onClick={openPrivacyChoices}
+                >
+                  <IonIcon icon={optionsOutline} slot="start" aria-hidden="true" />
+                  {t("Autorizaciones y privacidad")}
+                </IonButton>
+                <IonButton
+                  fill="clear"
+                  expand="block"
+                  className="bt bt-ghost"
+                  style={{ marginTop: 12 }}
+                  onClick={() => void openPrivacyPolicy()}
+                >
+                  <IonIcon icon={shieldCheckmarkOutline} slot="start" aria-hidden="true" />
+                  {t("Política de privacidad")}
+                  <IonIcon icon={openOutline} slot="end" aria-hidden="true" />
+                </IonButton>
+                <IonButton
+                  fill="clear"
+                  expand="block"
                   className="pf-logout"
                   onClick={() => {
                     logout();
@@ -895,7 +932,7 @@ export function ProfilePage() {
           onDidDismiss={() => setDeleteOpen(false)}
           header={t("Eliminar cuenta")}
           message={t(
-            "Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación. Tus datos se conservarán 90 días antes de borrarse de forma definitiva.",
+            "Para eliminar tu cuenta te llevaremos a nuestro sitio web, donde revisarás lo que implica y confirmarás la eliminación.",
           )}
           buttons={[
             { text: t("Cancelar"), role: "cancel" },

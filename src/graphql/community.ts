@@ -194,6 +194,26 @@ export interface UnfollowUserResult {
   unfollowUser: Profile
 }
 
+/** Solo los bloqueos creados por el perfil autenticado. */
+export interface BlockedProfile {
+  profileId: string
+  displayName: string
+  avatarUrl: string | null
+  createdAt: string
+}
+
+export interface BlockedProfilesResult {
+  blockedProfiles: BlockedProfile[]
+}
+
+export interface BlockUserResult {
+  blockUser: boolean
+}
+
+export interface UnblockUserResult {
+  unblockUser: boolean
+}
+
 export interface SendMessageResult {
   sendMessage: Message
 }
@@ -801,6 +821,29 @@ export const UNFOLLOW_USER = /* GraphQL */ `
     unfollowUser(profileId: $profileId) {
       id
     }
+  }
+`
+
+export const BLOCKED_PROFILES_QUERY = /* GraphQL */ `
+  query BlockedProfiles($take: Int!, $skip: Int!) {
+    blockedProfiles(take: $take, skip: $skip) {
+      profileId
+      displayName
+      avatarUrl
+      createdAt
+    }
+  }
+`
+
+export const BLOCK_USER = /* GraphQL */ `
+  mutation BlockUser($profileId: UUID!) {
+    blockUser(profileId: $profileId)
+  }
+`
+
+export const UNBLOCK_USER = /* GraphQL */ `
+  mutation UnblockUser($profileId: UUID!) {
+    unblockUser(profileId: $profileId)
   }
 `
 

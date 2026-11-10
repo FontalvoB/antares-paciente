@@ -1001,13 +1001,14 @@ export function WearableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Muestra inyectada a mano (solo con Modo diagnóstico): recorre el MISMO
+   * Muestra inyectada a mano (solo en builds de desarrollo): recorre el MISMO
    * camino que una muestra real (tarjetas, agregado del día, día del store),
    * pero restaura la marca de ingreso para que una prueba nunca escriba filas
    * falsas en el backend.
    */
   const injectDebugSample = useCallback(
     (sample: Omit<HealthSample, "deviceId">) => {
+      if (typeof __DEV_TOOLS__ === "undefined" || !__DEV_TOOLS__) return;
       const wasDirty = ingestDirty.current;
       handleSample({ ...sample, deviceId: "debug" }, false);
       ingestDirty.current = wasDirty;

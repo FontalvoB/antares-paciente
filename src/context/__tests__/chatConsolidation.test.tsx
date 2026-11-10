@@ -8,7 +8,8 @@ import {
 } from "@testing-library/react";
 import { AppProvider, useApp } from "../AppContext";
 import { I18nProvider } from "../../i18n/I18nContext";
-import { streamChatMessage } from "../../utils/threadApi";
+import { sendChatMessage, streamChatMessage } from "../../utils/threadApi";
+import { consentFailure, requireLegalConsent } from "../../utils/legalConsents";
 import type { ChatMessage } from "../../types";
 
 /**
@@ -24,6 +25,7 @@ vi.mock("../../utils/threadApi", () => ({
   sendChatMessage: vi.fn(),
   streamChatMessage: vi.fn(),
 }));
+vi.mock("../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
 
 vi.mock("../../utils/authApi", () => ({
   restoreSession: vi
@@ -103,6 +105,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     localStorage.setItem("copp_access_token", "demo-access-token");
     mirror.chat = [];
     mirror.voiceResult = null;
+    vi.mocked(requireLegalConsent).mockResolvedValue(undefined);
   });
 
   it("sobreescribe el mensaje con la respuesta canónica del done (sin pasadas concatenadas)", async () => {
@@ -177,5 +180,22 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     await waitFor(() => {
       expect(mirror.voiceResult?.text).toBe("Tu plan está listo.");
     });
+  });
+
+  it("no hace streaming ni POST si el paciente cancela la autorización", async () => {
+    vi.mocked(requireLegalConsent).mockRejectedValueOnce(consentFailure("CONSENT_CANCELLED"));
+    renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(requireLegalConsent).toHaveBeenCalledWith("chat", "es"));
+    expect(streamChatMessage).not.toHaveBeenCalled();
+    expect(sendChatMessage).not.toHaveBeenCalled();
+  });
+
+  it.each(["CONSENT_REQUIRED", "CONSENT_DOCUMENT_UNAVAILABLE"])("no reintenta chat bloqueante tras %s del stream", async code => {
+    vi.mocked(streamChatMessage).mockRejectedValueOnce(consentFailure(code, code === "CONSENT_REQUIRED" ? 403 : 503));
+    renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(streamChatMessage).toHaveBeenCalledTimes(1));
+    await act(async () => { await Promise.resolve(); });
+    expect(sendChatMessage).not.toHaveBeenCalled();
+    expect(mirror.chat.filter(message => message.role === "bot" && message.id !== "welcome")).toHaveLength(0);
   });
 });

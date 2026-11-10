@@ -72,6 +72,25 @@ describe("authApi — restoreSession ante refresh definitivo vs red caída", () 
     expect(getAccessToken()).toBeNull();
   });
 
+  it.each([200, 401, 0])("late refresh %s cannot overwrite or clear a newer account", async status => {
+    sessionStorage.setItem("copp_access_token", fakeJwt({ sub: "A", exp: 1 }));
+    let finish!: (value: Response) => void;
+    let fail!: (reason: Error) => void;
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve, reject) => { finish = resolve; fail = reject; })));
+    const restoring = restoreSession();
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    const tokenB = fakeJwt({ sub: "B", exp: Math.floor(Date.now() / 1000) + 900 });
+    sessionStorage.setItem("copp_access_token", tokenB);
+    localStorage.setItem("copp_access_token", tokenB);
+    if (status === 0) fail(new Error("offline"));
+    else finish(new Response(JSON.stringify({ accessToken: fakeJwt({ sub: "A", exp: 100 }) }), {
+      status, headers: { "Content-Type": "application/json" },
+    }));
+    expect(await restoring).toBeNull();
+    expect(getAccessToken()).toBe(tokenB);
+    expect(localStorage.getItem("copp_access_token")).toBe(tokenB);
+  });
+
   it("fallo de red con token local previo: conserva la sesión (modo offline)", async () => {
     const token = fakeJwt({ exp: Math.floor(Date.now() / 1000) + 600 });
     sessionStorage.setItem("copp_access_token", token);

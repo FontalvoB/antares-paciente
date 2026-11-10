@@ -107,6 +107,17 @@ beforeEach(() => {
 afterEach(() => { cleanup(); localStorage.clear(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('ConversationModal language interaction', () => {
+  it('opens the peer profile from a direct conversation header', async () => {
+    const graph = fakeGraphQL()
+    const onOpenProfile = vi.fn()
+    const { actions } = mountConversation(graph, { peer, onOpenProfile })
+    await screen.findByText('No messages yet. Say hello!')
+    fireEvent.click(screen.getByRole('button', { name: 'View Creador’s profile' }))
+    expect(onOpenProfile).toHaveBeenCalledWith(peer.id)
+    expect(actions.onSend).not.toHaveBeenCalled()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('keeps a peer draft and original messages through EN/ES changes, and exposes the live unread action in the selected language', async () => {
     const graph = fakeGraphQL()
     const { actions } = mountConversation(graph, { peer })

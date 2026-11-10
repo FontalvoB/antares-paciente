@@ -1267,6 +1267,7 @@ export function WearablePage() {
 
                     {diagnostics && (
                       <>
+                        {typeof __DEV_TOOLS__ !== "undefined" && __DEV_TOOLS__ && <>
                         <div className="cs" style={{ marginTop: 12 }}>
                           {t("Inyectar muestra de prueba")}
                         </div>
@@ -1296,6 +1297,8 @@ export function WearablePage() {
                             </IonButton>
                           ))}
                         </div>
+
+                        </>}
 
                         <div className="cs" style={{ marginTop: 12 }}>
                           {t("Servicios GATT")}

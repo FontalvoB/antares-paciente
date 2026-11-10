@@ -27,6 +27,7 @@ import {
   toUserProfile,
 } from "../utils/patientProfileApi";
 import { refreshAccessToken } from "../utils/apiClient";
+import { isLegalConsentError, legalConsentMessage, requireLegalConsent, resetLegalConsentSession } from "../utils/legalConsents";
 import { unregisterPushDevice } from "../utils/pushNotifications";
 import {
   fetchThreadState,
@@ -359,6 +360,10 @@ export function AppProvider({
   // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
   const [bookingWizardAutoOpen, setBookingWizardAutoOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const showToast = useCallback((message: string, kind: ToastKind = "ok") => {
+    setToast({ id: Date.now(), message, kind });
+    window.setTimeout(() => setToast(null), 2600);
+  }, []);
   const [panicOpen, setPanicOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [sosActive, setSosActive] = useState(false);
@@ -436,6 +441,7 @@ export function AppProvider({
   const sessionGeneration = useRef(0);
   const resetPatientSession = useCallback(() => {
     sessionGeneration.current += 1;
+    resetLegalConsentSession();
     resetSessionQueryCache();
     setUser(defaultUser);
     setActiveThreadId(null);
@@ -860,6 +866,13 @@ export function AppProvider({
       image?: ChatImageAttachment,
     ): Promise<ChatMessage | null> => {
       const generation = sessionGeneration.current;
+      try {
+        await requireLegalConsent("chat", lang);
+        if (generation !== sessionGeneration.current) return null;
+      } catch (error) {
+        if (generation === sessionGeneration.current) showToast(t(legalConsentMessage(error)), "warn");
+        return null;
+      }
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
@@ -891,7 +904,8 @@ export function AppProvider({
             cta: suggestion,
             executionId: result.executionId,
           };
-        } catch {
+        } catch (error) {
+          if (isLegalConsentError(error)) throw error;
           return null;
         }
       };
@@ -956,10 +970,20 @@ export function AppProvider({
         turnBotMessage = finalBot;
       } catch (err) {
         if (generation !== sessionGeneration.current) return null;
+        if (isLegalConsentError(err)) {
+          setChat(prev => prev.filter(message => message.id !== liveId));
+          showToast(t(legalConsentMessage(err)), "warn");
+          return null;
+        }
         if (!painted) {
           // Sin streaming ni respuesta: se retira el vacío y va el fallback.
           setChat((prev) => prev.filter((m) => m.id !== liveId));
-          const reply = await tryBlockingChat();
+          let reply: ChatMessage | null;
+          try { reply = await tryBlockingChat(); }
+          catch (error) {
+            showToast(t(legalConsentMessage(error)), "warn");
+            return null;
+          }
           if (reply) {
             emitBotMessage(reply);
           } else {
@@ -982,7 +1006,7 @@ export function AppProvider({
       }
       return turnBotMessage;
     },
-    [threadId, t, lang],
+    [threadId, t, lang, showToast],
   );
 
   /**
@@ -1091,6 +1115,7 @@ export function AppProvider({
       flow,
       screen,
       toast,
+      showToast,
       panicOpen,
       voiceOpen,
       sosActive,
@@ -1184,10 +1209,6 @@ export function AppProvider({
       openTests: () => setFlow("tests"),
       markTest: (id) =>
         setTestsDone((prev) => (prev.includes(id) ? prev : [...prev, id])),
-      showToast: (message, kind = "ok") => {
-        setToast({ id: Date.now(), message, kind });
-        window.setTimeout(() => setToast(null), 2600);
-      },
       openPanic: () => {
         setSosActive(false);
         setPanicOpen(true);
@@ -1331,6 +1352,7 @@ export function AppProvider({
       screen,
       bookingWizardAutoOpen,
       toast,
+      showToast,
       panicOpen,
       voiceOpen,
       sosActive,

@@ -9,6 +9,7 @@
  */
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
+vi.mock("../../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
 
 const apiFetchMock = vi.fn();
 

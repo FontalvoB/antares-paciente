@@ -21,6 +21,7 @@ import {
 import { fetchMyAppointments } from "./utils/appointmentsApi";
 import { mapAppointmentToListed } from "./data/appointments";
 import { AppProvider, useApp } from "./context/AppContext";
+import { LegalConsentProvider } from "./context/LegalConsentContext";
 import { WearableProvider } from "./context/WearableContext";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
@@ -269,13 +270,15 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <I18nProvider>
           <LanguageQuerySync />
-          <AppProvider onResetCommunityClient={resetCommunityClient}>
-            <WearableProvider>
-              <IonApp>
-                <Shell />
-              </IonApp>
-            </WearableProvider>
-          </AppProvider>
+          <IonApp>
+            <LegalConsentProvider>
+              <AppProvider onResetCommunityClient={resetCommunityClient}>
+                <WearableProvider>
+                  <Shell />
+                </WearableProvider>
+              </AppProvider>
+            </LegalConsentProvider>
+          </IonApp>
         </I18nProvider>
       </QueryClientProvider>
     </Provider>

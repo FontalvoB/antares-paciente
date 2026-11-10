@@ -71,5 +71,6 @@ describe('buildHydrationIntake (SPEC "Hydration log execution")', () => {
     expect(buildHydrationIntake(1)).toEqual({ waterMl: 250, source: 'manual' })
     expect(buildHydrationIntake(3)).toEqual({ waterMl: 750, source: 'manual' })
     expect(buildHydrationIntake(8)).toEqual({ waterMl: 2000, source: 'manual' })
+    expect(buildHydrationIntake(11)).toEqual({ waterMl: 2750, source: 'manual' })
   })
 })

@@ -1,9 +1,12 @@
 import { getApiBaseUrl } from "./apiBaseUrl";
 import { apiFetch } from "./apiClient";
+import { getAccessToken, ensureFreshAccessToken } from "./authApi";
+import { sessionUserId } from "./sessionIdentity";
+import { consentFailure, isLegalConsentError, legalConsentResponseError, requireLegalConsent } from "./legalConsents";
 
 /**
  * Cliente del módulo Food AI (backend .NET → food-ai-service).
- * Endpoint real: POST /api/v1/foodai/analyze (multipart, AllowAnonymous).
+ * Endpoint real: POST /api/v1/foodai/analyze (multipart autenticado).
  * El backend es la ÚNICA fuente de verdad nutricional — este cliente solo
  * envía la imagen y tipa la respuesta, nunca calcula nutrición.
  */
@@ -257,6 +260,16 @@ export async function analyzeFoodImage(
   fileName: string,
   language: "es" | "en" = "es",
 ): Promise<FoodAnalysisResult> {
+  const owner = sessionUserId(getAccessToken());
+  const assertAccount = () => {
+    if (sessionUserId(getAccessToken()) !== owner) throw consentFailure("CONSENT_CANCELLED");
+  };
+  await requireLegalConsent("food", language);
+  assertAccount();
+  const token = await ensureFreshAccessToken();
+  assertAccount();
+  if (sessionUserId(token) !== owner) throw consentFailure("CONSENT_CANCELLED");
+  if (!token) throw new FoodAiError("Tu sesión ha expirado. Inicia sesión de nuevo.", 401);
   const form = new FormData();
   form.append("image", image, fileName);
   // crypto.randomUUID exige contexto seguro; en web http por IP LAN no
@@ -273,15 +286,19 @@ export async function analyzeFoodImage(
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/v1/foodai/analyze?language=${language}`, {
       method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
       body: form,
       signal: controller.signal,
     });
 
     if (!res.ok) {
+      const consentError = await legalConsentResponseError(res);
+      if (consentError) throw consentError;
       throw new FoodAiError(await messageForStatus(res.status), res.status);
     }
 
     const data = (await res.json()) as FoodAnalysisResult;
+    assertAccount();
     if (!data || !Array.isArray(data.foods)) {
       throw new FoodAiError(
         "El servicio devolvió una respuesta inesperada.",
@@ -290,6 +307,7 @@ export async function analyzeFoodImage(
     }
     return data;
   } catch (err) {
+    if (isLegalConsentError(err)) throw err;
     if (err instanceof FoodAiError) throw err;
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new FoodAiError(

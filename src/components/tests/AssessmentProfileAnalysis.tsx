@@ -7,6 +7,7 @@ import { generateProfileGuidance, getProfileGuidance, type AssessmentProfileGuid
 import { formatDateForDisplay, toLocalISODate } from "../../utils/dates";
 import type { MeResult } from "../../utils/healthTestsApi";
 import { ApiError } from "../../utils/apiClient";
+import { isLegalConsentError, legalConsentMessage } from "../../utils/legalConsents";
 import vitaPortrait from "../../assets/vita-coach.png";
 
 export function AssessmentProfileAnalysis({ results }: { results: MeResult[] }) {
@@ -18,7 +19,7 @@ export function AssessmentProfileAnalysis({ results }: { results: MeResult[] }) 
   const currentKey = useRef(key); currentKey.current = key;
   const generation = useRef<AbortController | null>(null);
   const cachedRequest = useRef<AbortController | null>(null);
-  const [state, setState] = useState<{ key: string; guidance: AssessmentProfileGuidance | null; loading: boolean; error: boolean; rateLimited?: boolean }>({ key: '', guidance: null, loading: false, error: false });
+  const [state, setState] = useState<{ key: string; guidance: AssessmentProfileGuidance | null; loading: boolean; error: boolean; rateLimited?: boolean; consentError?: string }>({ key: '', guidance: null, loading: false, error: false });
   const [checkingKey, setCheckingKey] = useState<string | null>(null);
   const labels = useMemo(() => new Map(results.map(result => [result.code, result.label])), [results]);
   const guidance = state.key === key ? state.guidance : null;
@@ -47,7 +48,7 @@ export function AssessmentProfileAnalysis({ results }: { results: MeResult[] }) 
     try {
       const next = await generateProfileGuidance(lang, request.signal);
       if (!request.signal.aborted && currentKey.current === key) setState({ key, guidance: next, loading: false, error: false });
-    } catch (error) { if (!request.signal.aborted && currentKey.current === key) setState({ key, guidance: null, loading: false, error: true, rateLimited: error instanceof ApiError && error.status === 429 }); }
+    } catch (error) { if (!request.signal.aborted && currentKey.current === key) setState({ key, guidance: null, loading: false, error: true, rateLimited: error instanceof ApiError && error.status === 429, consentError: isLegalConsentError(error) ? legalConsentMessage(error) : undefined }); }
   }
   const sourceCount = new Set(guidance?.sources?.map(source => source.testCode)).size;
   const summaryExpanded = expandedSummaryKey === key;
@@ -139,7 +140,7 @@ export function AssessmentProfileAnalysis({ results }: { results: MeResult[] }) 
         <h3>{t('Descubre tu punto de partida')}</h3>
         <p>{t('Tus respuestas tienen pistas para cuidarte mejor. Vita puede explicarlas en palabras sencillas y sugerirte por dónde empezar.')}</p>
         <div className="assessment-ai-start-hints"><span><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" />{t('Una lectura personal')}</span><span><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" />{t('Pasos para hoy')}</span></div>
-        {failed && <p className="assessment-ai-error" role="alert">{t(state.rateLimited ? 'Has solicitado varios análisis. Espera un minuto e intenta de nuevo.' : 'Vita no pudo preparar el análisis. Tus resultados siguen disponibles; intenta de nuevo.')}</p>}
+        {failed && <p className="assessment-ai-error" role="alert">{t(state.consentError ?? (state.rateLimited ? 'Has solicitado varios análisis. Espera un minuto e intenta de nuevo.' : 'Vita no pudo preparar el análisis. Tus resultados siguen disponibles; intenta de nuevo.'))}</p>}
         <IonButton expand="block" className="apa-generate" disabled={checking || loading || !realMode} onClick={() => void generate()}>
           {checking || loading ? <><IonSpinner slot="start" name="crescent" />{t(checking ? 'Buscando tu análisis guardado…' : 'Vita está leyendo tus evaluaciones…')}</> : <><IonIcon slot="start" icon={sparklesOutline} aria-hidden="true" />{t('Analizar mis resultados con Vita')}</>}
         </IonButton>

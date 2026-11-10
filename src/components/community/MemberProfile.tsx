@@ -1,9 +1,10 @@
 import coppMark from "../../assets/LogoIndividual.png";
 import { CommunityVideo } from "./CommunityVideo";
 import { ProfileTimeline, type TimelineActions } from "./ProfileTimeline";
-import { IonButton, IonIcon } from '@ionic/react'
+import { IonAlert, IonButton, IonIcon, IonSpinner } from '@ionic/react'
 import {
   chatbubbleEllipsesOutline,
+  banOutline,
   checkmark,
   documentTextOutline,
   filmOutline,
@@ -32,6 +33,7 @@ export function MemberProfile({
   onFollow,
   onUnfollow,
   onMessage,
+  onBlock,
   onOpenPost,
   onOpenImage,
   timelineActions,
@@ -46,12 +48,24 @@ export function MemberProfile({
   onFollow: () => void
   onUnfollow: () => void
   onMessage: () => void
+  onBlock: () => Promise<void>
   onOpenImage: (url: string, mediaType: 'IMAGE' | 'VIDEO' | null) => void
   timelineActions: TimelineActions
   onOpenPost: (p: Post) => void
 }) {
   const [view, setView] = useState<ProfileView>('all')
+  const [confirmBlock, setConfirmBlock] = useState(false)
+  const [blocking, setBlocking] = useState(false)
+  const [blockError, setBlockError] = useState(false)
   const { t } = useI18n()
+
+  async function confirmBlockUser() {
+    if (blocking) return
+    setBlocking(true)
+    try { await onBlock() }
+    catch { setBlockError(true) }
+    finally { setBlocking(false) }
+  }
 
   const filtered = useMemo(
     () =>
@@ -98,6 +112,11 @@ export function MemberProfile({
           </IonButton>
           {isFriend && <IonButton fill="outline" onClick={onMessage}><IonIcon slot="start" icon={chatbubbleEllipsesOutline} />{t('Enviar mensaje')}</IonButton>}
         </div>
+        <IonButton fill="clear" color="danger" disabled={busy || blocking} onClick={() => setConfirmBlock(true)}
+          style={{ minHeight: 44, margin: '0 20px 4px', fontSize: 13, '--color': 'var(--red)' }}>
+          {blocking ? <IonSpinner slot="start" name="crescent" /> : <IonIcon slot="start" icon={banOutline} />}
+          {t('Bloquear usuario')}
+        </IonButton>
       </div>
 
       {/* Tabs con filtro */}
@@ -151,6 +170,23 @@ export function MemberProfile({
           ))}
         </div>
       )}
+      <IonAlert
+        isOpen={confirmBlock}
+        header={t('Bloquear usuario')}
+        message={t('¿Bloquear a {name}? No verán las publicaciones, comentarios ni mensajes del otro. Se eliminará el seguimiento entre ambos.', { name: profile.displayName })}
+        buttons={[
+          { text: t('Cancelar'), role: 'cancel' },
+          { text: t('Bloquear'), role: 'destructive', handler: () => { void confirmBlockUser() } },
+        ]}
+        onDidDismiss={() => setConfirmBlock(false)}
+      />
+      <IonAlert
+        isOpen={blockError}
+        header={t('No se pudo bloquear al usuario.')}
+        message={t('Revisa tu conexión e intenta de nuevo')}
+        buttons={[t('Aceptar')]}
+        onDidDismiss={() => setBlockError(false)}
+      />
     </div>
   )
 }

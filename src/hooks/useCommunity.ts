@@ -9,6 +9,8 @@ import {
   DELETE_OWN_COMMENT,
   ADD_COMMENT,
   ADD_GROUP_MEMBER,
+  BLOCKED_PROFILES_QUERY,
+  BLOCK_USER,
   CONVERSATIONS_QUERY,
   CREATE_GROUP,
   CREATE_POLL_POST,
@@ -40,6 +42,7 @@ import {
   SEND_GROUP_MESSAGE,
   SEND_MESSAGE,
   UNFOLLOW_USER,
+  UNBLOCK_USER,
   UNLIKE_POST,
   UNLIKE_COMMENT,
   UNREPOST_POST,
@@ -48,6 +51,9 @@ import {
   conversationKey,
   type AddCommentResult,
   type AddGroupMemberResult,
+  type BlockedProfile,
+  type BlockedProfilesResult,
+  type BlockUserResult,
   type ChatGroup,
   type Conversation,
   type ConversationsResult,
@@ -84,6 +90,7 @@ import {
   type SendGroupMessageResult,
   type SendMessageResult,
   type UnfollowUserResult,
+  type UnblockUserResult,
   type UnlikeCommentResult,
   type UnrepostPostResult,
   type UpdateProfileResult,
@@ -92,6 +99,14 @@ import {
 
 const PAGE_SIZE = 20
 const LIST_SIZE = 50
+
+/** Oculta contenido retenido en memoria mientras llegan las consultas del servidor. */
+function hideBlockedContent(post: Post, blocked: ReadonlySet<string>): Post {
+  const filterComments = (comments: Post['comments']): Post['comments'] => comments
+    .filter(comment => !blocked.has(comment.profile.id))
+    .map(comment => ({ ...comment, replies: filterComments(comment.replies ?? []) }))
+  return { ...post, comments: filterComments(post.comments) }
+}
 
 /** Estado del feed (derivado): likes, reposts y si el perfil actual ya interactuó. */
 export interface FeedPostView {
@@ -193,6 +208,14 @@ export function useCommunity() {
   const [followingTake, setFollowingTake] = useState(PAGE_SIZE)
   const [discoverPeople, setDiscoverPeople] = useState(false)
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+  const [moreBlockedProfiles, setMoreBlockedProfiles] = useState<BlockedProfile[]>([])
+  const [moreBlockedLoading, setMoreBlockedLoading] = useState(false)
+  const [moreBlockedError, setMoreBlockedError] = useState<Error | null>(null)
+  const [moreBlockedHasMore, setMoreBlockedHasMore] = useState<boolean | null>(null)
+  const blockedPageRequestId = useRef(0)
+  const [blockOverrides, setBlockOverrides] = useState<Record<string, boolean>>({})
+  const [clearedRelationshipIds, setClearedRelationshipIds] = useState<Set<string>>(new Set())
+  const [communityRevision, setCommunityRevision] = useState(0)
   const [meResult, reexecuteMe] = useQuery<MeResult>({ query: ME_QUERY })
   const [feedResult, reexecuteFeed] = useQuery<FeedResult>({
     query: FEED_QUERY,
@@ -229,14 +252,71 @@ export function useCommunity() {
     variables: { take: LIST_SIZE, skip: 0 },
   })
 
-  const client = useClient()
+  const [blockedResult, reexecuteBlocked] = useQuery<BlockedProfilesResult>({
+    query: BLOCKED_PROFILES_QUERY,
+    variables: { take: LIST_SIZE, skip: 0 },
+  })
+  const allBlockedProfiles = useMemo(() => [...new Map([
+    ...(blockedResult.data?.blockedProfiles ?? []), ...moreBlockedProfiles,
+  ].map(profile => [profile.profileId, profile])).values()], [blockedResult.data, moreBlockedProfiles])
+  const blockedProfileIds = useMemo(() => {
+    const ids = new Set(allBlockedProfiles.map(row => row.profileId))
+    for (const [id, blocked] of Object.entries(blockOverrides)) {
+      if (blocked) ids.add(id)
+      else ids.delete(id)
+    }
+    return ids
+  }, [allBlockedProfiles, blockOverrides])
 
-  const me: Profile | null = meResult.data?.me ?? null
+  const client = useClient()
+  const resetBlockedPagination = useCallback(() => {
+    blockedPageRequestId.current += 1
+    setMoreBlockedProfiles([])
+    setMoreBlockedHasMore(null)
+    setMoreBlockedError(null)
+    setMoreBlockedLoading(false)
+  }, [])
+  useEffect(resetBlockedPagination, [blockedResult.data, resetBlockedPagination])
+
+  const loadMoreBlockedProfiles = useCallback(async () => {
+    if (blockedResult.fetching || moreBlockedLoading) return
+    const requestId = ++blockedPageRequestId.current
+    setMoreBlockedLoading(true)
+    setMoreBlockedError(null)
+    try {
+      const result = await client.query<BlockedProfilesResult>(BLOCKED_PROFILES_QUERY,
+        { take: LIST_SIZE, skip: allBlockedProfiles.length }, { requestPolicy: 'network-only' }).toPromise()
+      if (requestId !== blockedPageRequestId.current) return
+      if (result.error || !result.data) throw new Error('Blocked profiles unavailable')
+      const page = result.data.blockedProfiles
+      setMoreBlockedProfiles(current => [...new Map([...current, ...page].map(profile => [profile.profileId, profile])).values()])
+      setMoreBlockedHasMore(page.length === LIST_SIZE)
+    } catch (error) {
+      if (requestId === blockedPageRequestId.current) setMoreBlockedError(error instanceof Error ? error : new Error('Blocked profiles unavailable'))
+    } finally {
+      if (requestId === blockedPageRequestId.current) setMoreBlockedLoading(false)
+    }
+  }, [client, allBlockedProfiles.length, blockedResult.fetching, moreBlockedLoading])
+
+  const retryBlockedProfiles = useCallback(() => {
+    resetBlockedPagination()
+    reexecuteBlocked({ requestPolicy: 'network-only' })
+  }, [resetBlockedPagination, reexecuteBlocked])
+
+  const me = useMemo<Profile | null>(() => {
+    const profile = meResult.data?.me
+    return profile ? { ...profile,
+      posts: profile.posts.map(post => hideBlockedContent(post, blockedProfileIds)),
+      reposts: profile.reposts.filter(repost => !blockedProfileIds.has(repost.post.profile.id))
+        .map(repost => ({ ...repost, post: hideBlockedContent(repost.post, blockedProfileIds) })),
+    } : null
+  }, [meResult.data, blockedProfileIds])
   const myProfileId = me?.id ?? null
   // Keep server-confirmed submissions visible while the refreshed feed catches up.
   const outboxPosts = useSyncExternalStore(communityOutbox.subscribe, communityOutbox.snapshot)
   const [publishedPosts, setPublishedPosts] = useState<Post[]>([])
   useEffect(() => { setPublishedPosts([]) }, [myProfileId])
+  useEffect(() => { setBlockOverrides({}); setClearedRelationshipIds(new Set()) }, [myProfileId])
   useEffect(() => {
     const ids = new Set((feedResult.data?.feed ?? []).map(post => post.id))
     setPublishedPosts(current => current.some(post => ids.has(post.id))
@@ -258,7 +338,8 @@ export function useCommunity() {
       isRepost: true,
       repostedAt: r.createdAt,
     }))
-    const merged = [...own, ...reposted].filter(post => !deletedIds.has(post.id))
+    const merged = [...own, ...reposted].filter(post => !deletedIds.has(post.id) && !blockedProfileIds.has(post.profile.id))
+      .map(post => ({ ...hideBlockedContent(post, blockedProfileIds), isRepost: post.isRepost, repostedAt: post.repostedAt }))
     // Deduplicar: si un post aparece como propio y reposteado, conservar la
     // versión own (isRepost: false) ya que fue creado por el usuario.
     const seen = new Set<string>()
@@ -277,7 +358,7 @@ export function useCommunity() {
       }
     }
     return deduped
-  }, [me, deletedIds, outboxPosts])
+  }, [me, deletedIds, outboxPosts, blockedProfileIds])
 
   const [, deleteCommentMutation] = useMutation<{ deleteComment: { id: string } | null }>(DELETE_OWN_COMMENT)
   const deleteOwnComment = useCallback(async (id: string) => {
@@ -308,6 +389,8 @@ export function useCommunity() {
   const [, updateProfileMutation] = useMutation<UpdateProfileResult>(UPDATE_PROFILE)
   const [, followMutation] = useMutation<FollowUserResult>(FOLLOW_USER)
   const [, unfollowMutation] = useMutation<UnfollowUserResult>(UNFOLLOW_USER)
+  const [, blockMutation] = useMutation<BlockUserResult>(BLOCK_USER)
+  const [, unblockMutation] = useMutation<UnblockUserResult>(UNBLOCK_USER)
   const [, sendMessageMutation] = useMutation<SendMessageResult>(SEND_MESSAGE)
   const [, createGroupMutation] = useMutation<CreateGroupResult>(CREATE_GROUP)
   const [, renameGroupMutation] = useMutation<RenameGroupResult>(RENAME_GROUP)
@@ -330,31 +413,85 @@ export function useCommunity() {
 
   const feed = useMemo<FeedPostView[]>(() => {
     const list = mergePostsNewest(feedResult.data?.feed ?? [], [...publishedPosts, ...outboxPosts.filter(post => post.profile.id === myProfileId)])
-    return list.filter(post => !deletedIds.has(post.id)).map((post) => ({
-      post,
+    return list.filter(post => !deletedIds.has(post.id) && !blockedProfileIds.has(post.profile.id)).map((post) => ({
+      post: hideBlockedContent(post, blockedProfileIds),
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
       repostCount: post.reposts.length,
       repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
-  }, [feedResult.data, myProfileId, publishedPosts, deletedIds, outboxPosts])
+  }, [feedResult.data, myProfileId, publishedPosts, deletedIds, outboxPosts, blockedProfileIds])
 
   const followingFeed = useMemo<FeedPostView[]>(() => {
     const list = mergePostsNewest(followingFeedResult.data?.followingFeed ?? [], [])
-    return list.filter(post => !deletedIds.has(post.id)).map((post) => ({
-      post,
+    return list.filter(post => !deletedIds.has(post.id) && !blockedProfileIds.has(post.profile.id)).map((post) => ({
+      post: hideBlockedContent(post, blockedProfileIds),
       likeCount: post.likes.length,
       likedByMe: myProfileId != null && post.likes.some((l) => l.profileId === myProfileId),
       repostCount: post.reposts.length,
       repostedByMe: myProfileId != null && post.reposts.some((r) => r.profileId === myProfileId),
     }))
-  }, [followingFeedResult.data, myProfileId, deletedIds])
+  }, [followingFeedResult.data, myProfileId, deletedIds, blockedProfileIds])
 
-  const friends: Profile[] = friendsResult.data?.friends ?? []
-  const peopleFollowing: Profile[] = followingResult.data?.following ?? []
-  const followers: Profile[] = followersResult.data?.followers ?? []
-  const people: Person[] = peopleResult.data?.people ?? []
-  const conversations: Conversation[] = conversationsResult.data?.conversations ?? []
+  const friends: Profile[] = (friendsResult.data?.friends ?? []).filter(profile => !blockedProfileIds.has(profile.id) && !clearedRelationshipIds.has(profile.id))
+  const peopleFollowing: Profile[] = (followingResult.data?.following ?? []).filter(profile => !blockedProfileIds.has(profile.id) && !clearedRelationshipIds.has(profile.id))
+  const followers: Profile[] = (followersResult.data?.followers ?? []).filter(profile => !blockedProfileIds.has(profile.id) && !clearedRelationshipIds.has(profile.id))
+  const people: Person[] = (peopleResult.data?.people ?? []).filter(person => !blockedProfileIds.has(person.profile.id))
+    .map(person => clearedRelationshipIds.has(person.profile.id)
+      ? { ...person, isFollowing: false, isFollower: false, isFriend: false } : person)
+  const conversations: Conversation[] = (conversationsResult.data?.conversations ?? []).filter(conversation => !blockedProfileIds.has(conversation.peer.id))
+
+  // Las mutaciones Boolean no invalidan por sí solas todas las listas de urql.
+  const refreshAfterBlockChange = useCallback(() => {
+    refreshPosts()
+    reexecuteFriends({ requestPolicy: 'network-only' })
+    reexecuteFollowing({ requestPolicy: 'network-only' })
+    reexecuteFollowers({ requestPolicy: 'network-only' })
+    reexecutePeople({ requestPolicy: 'network-only' })
+    reexecuteConversations({ requestPolicy: 'network-only' })
+    reexecuteGroups({ requestPolicy: 'network-only' })
+    retryBlockedProfiles()
+    setPublishedPosts([])
+    setCommunityRevision(current => current + 1)
+  }, [refreshPosts, reexecuteFriends, reexecuteFollowing, reexecuteFollowers, reexecutePeople,
+    reexecuteConversations, reexecuteGroups, retryBlockedProfiles])
+
+  const blockUser = useCallback(async (profileId: string) => {
+    const res = await blockMutation({ profileId }, {
+      additionalTypenames: ['Profile', 'Post', 'Comment', 'Message', 'ChatGroup'],
+    })
+    if (res.error || res.data?.blockUser !== true) throw new Error('Block failed')
+    setClearedRelationshipIds(current => new Set([...current, profileId]))
+    setBlockOverrides(current => ({ ...current, [profileId]: true }))
+    refreshAfterBlockChange()
+  }, [blockMutation, refreshAfterBlockChange])
+
+  const unblockUser = useCallback(async (profileId: string) => {
+    const res = await unblockMutation({ profileId }, {
+      additionalTypenames: ['Profile', 'Post', 'Comment', 'Message', 'ChatGroup'],
+    })
+    if (res.error || res.data?.unblockUser !== true) throw new Error('Unblock failed')
+    setClearedRelationshipIds(current => new Set([...current, profileId]))
+    setBlockOverrides(current => ({ ...current, [profileId]: false }))
+    refreshAfterBlockChange()
+  }, [unblockMutation, refreshAfterBlockChange])
+
+  // Espera a que todas las listas confirmen la eliminación de las relaciones.
+  // Así desbloquear nunca restaura follows que solo seguían en la caché.
+  useEffect(() => {
+    if (!clearedRelationshipIds.size) return
+    const oldRelationshipIds = new Set([
+      ...(friendsResult.data?.friends ?? []), ...(followingResult.data?.following ?? []),
+      ...(followersResult.data?.followers ?? []),
+    ].map(profile => profile.id))
+    for (const person of peopleResult.data?.people ?? []) {
+      if (person.isFollowing || person.isFollower || person.isFriend) oldRelationshipIds.add(person.profile.id)
+    }
+    setClearedRelationshipIds(current => {
+      const remaining = new Set([...current].filter(id => oldRelationshipIds.has(id)))
+      return remaining.size === current.size ? current : remaining
+    })
+  }, [clearedRelationshipIds, friendsResult.data, followingResult.data, followersResult.data, peopleResult.data])
 
   const createPost = useCallback(
     async (body: string, imageKey?: string | null) => {
@@ -571,6 +708,7 @@ export function useCommunity() {
     async (profileId: string) => {
       const res = await followMutation({ profileId })
       if (res.error) throw new Error(res.error.message)
+      setClearedRelationshipIds(current => new Set([...current].filter(id => id !== profileId)))
       reexecuteFriends({ requestPolicy: 'network-only' })
       reexecuteFollowing({ requestPolicy: 'network-only' })
       reexecuteFollowers({ requestPolicy: 'network-only' })
@@ -678,12 +816,24 @@ export function useCommunity() {
   )
 
   /** Lista de grupos de chat y estado de carga/error derivados. */
-  const groups: ChatGroup[] = groupsResult.data?.groups ?? []
+  const groups: ChatGroup[] = (groupsResult.data?.groups ?? []).map(group =>
+    group.lastMessage && blockedProfileIds.has(group.lastMessage.senderProfileId)
+      ? { ...group, lastMessage: null } : group)
   const groupsLoading = groupsResult.fetching
   const groupsError = groupsResult.error ? groupsResult.error.message : null
 
   return {
     me,
+    blockedProfileIds,
+    communityRevision,
+    blockedProfiles: allBlockedProfiles.filter(row => blockOverrides[row.profileId] !== false),
+    blockedProfilesLoading: blockedResult.fetching || moreBlockedLoading,
+    blockedProfilesError: blockedResult.error ?? moreBlockedError,
+    blockedProfilesHasMore: moreBlockedHasMore ?? (blockedResult.data?.blockedProfiles.length ?? 0) === LIST_SIZE,
+    loadMoreBlockedProfiles,
+    retryBlockedProfiles,
+    blockUser,
+    unblockUser,
     deleteOwnPost,
     deleteOwnComment,
     meLoading: meResult.fetching,

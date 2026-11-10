@@ -1,3 +1,5 @@
+import { isLegalConsentError, legalConsentMessage } from "./legalConsents";
+
 export const CONTENT_TRANSLATION_RETRY_SOURCE = "No pudimos preparar este contenido en inglés. Vuelve a intentarlo.";
 
 type Translator = (source: string, params?: Record<string, string>) => string;
@@ -9,6 +11,7 @@ interface ErrorLanguage {
 
 /** Presenta errores conocidos sin exponer mensajes técnicos ni texto libre al usuario. */
 export function localizedError(error: unknown, { t, lang }: ErrorLanguage, fallback: string): string {
+  if (isLegalConsentError(error)) return t(legalConsentMessage(error));
   const detail = error && typeof error === "object" ? error as {
     message?: unknown;
     code?: unknown;
