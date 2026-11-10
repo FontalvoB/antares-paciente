@@ -538,12 +538,12 @@ export function VitalsLesson({
         {lastSyncAt !== null && <p className="vitals-sync-stamp">{t("Última sincronización: {when}", { when: agoLabel(lastSyncAt, t) })}</p>}
       </div>
       <section className="vitals-records">
-        <div className="vitals-records-heading"><div><span className="kicker">{t("Check-in clínico")}</span><h2>{t("Signos de ahora")}</h2></div><span>{filled}/{VITAL_FIELDS.length}</span></div>
+        <div className="vitals-records-heading"><div><span className="kicker">{t("Registro de mediciones")}</span><h2>{t("Signos de ahora")}</h2></div><span>{filled}/{VITAL_FIELDS.length}</span></div>
         <div className="vitals-record-grid">
           {VITAL_FIELDS.map(f => {
             const value = displayVal(f.id);
             const n = vitalNumber(value) * (f.scale ?? 1);
-            const status = vitalStatus(n, f.lo, f.hi, t, f.goal);
+            const status = vitalStatus(n, t, f.goal);
             return <article className="vitals-record" key={f.id}>
               <span className="wearable-summary-icon"><IonIcon icon={vitalIconFor(f.id)} /></span>
               <div className="vitals-record-body">

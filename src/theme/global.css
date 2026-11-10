@@ -5608,12 +5608,16 @@ button.metric-card::after {
   color: rgba(224, 239, 255, 0.65);
 }
 
-/* Traza tipo ECG (canvas, ver components/EcgTrace.tsx): el ritmo lo pone la FC
-   real y la forma del latido es sintética. El canvas lee estos tokens. */
-.vital-hero,
-.vt-hero {
-  --ecg-trace: #4ade80;
-  --ecg-grid: rgba(74, 222, 128, 0.16);
+/* Pulso circular decorativo, independiente de cualquier lectura del wearable. */
+.decorative-measure-pulse { margin: 0; color: var(--ice); }
+.decorative-measure-pulse figcaption { margin: 4px 0; font-size: 12px; line-height: 1.5; }
+.decorative-measure-pulse-ring { transform-box: fill-box; transform-origin: center; opacity: .65; }
+@media (prefers-reduced-motion: no-preference) {
+  .decorative-measure-pulse-ring { animation: decorative-measure-pulse 2.4s ease-in-out infinite; }
+}
+@keyframes decorative-measure-pulse {
+  0%, 100% { transform: scale(.85); opacity: .4; }
+  50% { transform: scale(1.15); opacity: .8; }
 }
 
 ion-list.group-list {
@@ -30773,8 +30777,7 @@ ion-modal.pro-picker-modal .pro-picker-total {
     letter-spacing: 0;
   }
 }
-/* Visuales vivas de la vista de foco: icono grande pulsante + animación por
-   métrica (ECG real en FC, burbujas en SpO2, onda en presión). */
+/* Visuales decorativas de foco: no representan señales clínicas medidas. */
 .mfocus-bigico {
   display: grid;
   place-items: center;
@@ -30788,25 +30791,13 @@ ion-modal.pro-picker-modal .pro-picker-total {
 .mfocus-bigico ion-icon {
   font-size: 36px;
   color: var(--blue);
-  animation: mfocus-beat 1s ease-in-out infinite;
 }
-@keyframes mfocus-beat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  25% {
-    transform: scale(1.18);
-  }
-  45% {
-    transform: scale(1.05);
-  }
-}
-.mfocus-ecg {
+.mfocus-pulse {
   width: 100%;
-  --ecg-trace: var(--teal-d);
-  --ecg-grid: color-mix(in srgb, var(--teal) 16%, var(--wh));
+  color: var(--teal-d);
 }
+.mfocus-decoration { margin: 0; color: var(--teal-d); }
+.mfocus-decoration figcaption { margin: 4px 0; font-size: 12px; line-height: 1.5; text-align: center; }
 .mmo-spo2 {
   width: 76px;
   height: 84px;

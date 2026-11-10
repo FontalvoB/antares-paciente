@@ -601,11 +601,9 @@ function ElevenVoiceBody({
       await micLevel.request();
       if (isCancelled()) return;
       assertActive();
-      // Idioma de la app en el request: el backend lo propaga al AI Service
-      // y este deja el agente hablando ese idioma (PATCH server-side ANTES
-      // de emitir el signed URL — con signed URL los overrides del cliente
-      // no aplican de forma fiable; commit 8a7b746). Sin idioma ⇒ el agente
-      // usa su configuración del dashboard (comportamiento histórico).
+      // El servidor selecciona y verifica una versión aprobada para este
+      // idioma antes de emitir la credencial. El cliente no sustituye su
+      // prompt/configuración ni modifica el agente global del proveedor.
       const session = await requestVoiceSession(langRef.current);
       if (isCancelled()) return;
       assertActive();

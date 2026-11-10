@@ -1018,7 +1018,7 @@ export function WearablePage() {
               </div>
             </section>
 
-            {/* Un solo hero: FC grande + traza del pulso al ritmo real. */}
+            {/* Lectura numérica y decoración independiente de la medición. */}
             <div
               className={`vital-hero ${
                 cardMeasurable("heart_rate") ? "is-measurable" : ""
@@ -1036,7 +1036,7 @@ export function WearablePage() {
                   <span>{t("lpm")}</span>
                 </div>
               </div>
-              <EcgTrace bpm={hr} height={56} />
+              <EcgTrace height={56} />
               <div className="vital-hero-hint">
                 {isMeasuringKind("heart_rate")
                   ? measurePhaseLabel("heart_rate", measureProgress, t)

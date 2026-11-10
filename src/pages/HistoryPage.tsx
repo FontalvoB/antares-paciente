@@ -36,6 +36,7 @@ import {
   SOURCE_META,
 } from "../utils/measurement-source";
 import { Screen, Scroll } from "../components/Screen";
+import { MyDocumentsSection } from "../components/MyDocumentsSection";
 import { useApp } from "../context/AppContext";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useMyMeasurements } from "../hooks/useMyMeasurements";
@@ -404,6 +405,7 @@ export function HistoryPage() {
               </div>
             </IonAccordion>
           ))}
+          <MyDocumentsSection ownerId={user.id} />
           <IonAccordion value="meas">
             <IonItem slot="header" lines="none">
               <span className="hc-acc-ico" aria-hidden="true">

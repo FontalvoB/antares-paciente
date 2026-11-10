@@ -67,7 +67,7 @@ const mockState = vi.hoisted(() => ({
     text: string;
     time: string;
     threadId?: string;
-    kind?: "lab-exam";
+    kind?: "lab-exam" | "lab-exam-pending" | "service-error";
     executionId?: string;
     cta?: { type: string; ctaText: string } | null;
     image?: { dataUrl: string } | null;
@@ -179,7 +179,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     expect(appendChatMessagesMock).not.toHaveBeenCalled();
   });
 
-  it("uploads valid file, sends the UI language, and tags the bot bubble as lab-exam", async () => {
+  it("envía el idioma y no presenta la interpretación de un servidor antiguo como validada", async () => {
     mockState.lang = "en";
     vi.mocked(uploadLabExam).mockResolvedValueOnce({
       batchId: "batch-123",
@@ -214,10 +214,24 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
       },
       {
         role: "bot",
-        text: "Se detectó glucosa en ayunas (95 mg/dL).",
+        text: "Document received. Check the original file with your care team to verify its values.",
         kind: "lab-exam",
       },
     ]);
+  });
+
+  it("muestra la verificación pendiente sin confundir candidatos OCR con mediciones guardadas", async () => {
+    vi.mocked(uploadLabExam).mockResolvedValueOnce({
+      batchId: "batch-pending", summary: "No usar como juicio clínico", measurementCount: 0,
+      detectedMetrics: ["glucose_fasting"], verificationStatus: "pending_review", documentId: "doc-1",
+      extractedMetrics: [{ metricName: "Glucosa", metricCode: "glucose_fasting", value: 95, source: "ocr_unverified" }],
+    });
+    const { container } = render(<ChatPage />);
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(["result"], "exam.pdf", { type: "application/pdf" })] } });
+    await waitFor(() => expect(appendChatMessagesMock).toHaveBeenCalledWith([
+      { role: "user", text: "📄 exam.pdf" },
+      { role: "bot", text: "Documento guardado. Los valores detectados están pendientes de verificación y no se han añadido a tus mediciones. Tu equipo puede revisar el archivo original.", kind: "lab-exam-pending" },
+    ]));
   });
 
   it("shows error toast when upload fails", async () => {
@@ -254,7 +268,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     await waitFor(() => expect(showToastMock).toHaveBeenCalledWith("The AI service could not process the lab test.", "err"));
   });
 
-  it("renders the exam-processed badge and the metrics button on lab-exam messages", () => {
+  it("identifica los adjuntos históricos como recibidos sin afirmar verificación clínica", () => {
     mockState.chat = [
       {
         id: "msg-lab",
@@ -267,8 +281,9 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
 
     render(<ChatPage />);
 
-    expect(screen.getByText("Examen procesado")).toBeTruthy();
-    expect(screen.getByLabelText("Ver todas las métricas")).toBeTruthy();
+    expect(screen.getByText("Documento recibido")).toBeTruthy();
+    expect(screen.queryByText("Examen procesado")).toBeNull();
+    expect(screen.getByLabelText("Ver mi historia")).toBeTruthy();
   });
 
   it("navigates to the metrics history screen (hc) when tapping view all metrics", () => {
@@ -283,7 +298,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     ];
 
     render(<ChatPage />);
-    fireEvent.click(screen.getByLabelText("Ver todas las métricas"));
+    fireEvent.click(screen.getByLabelText("Ver mi historia"));
 
     expect(navigateMock).toHaveBeenCalledWith("hc");
   });
@@ -292,7 +307,16 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     render(<ChatPage />);
 
     expect(screen.queryByText("Examen procesado")).toBeNull();
-    expect(screen.queryByLabelText("Ver todas las métricas")).toBeNull();
+    expect(screen.queryByLabelText("Ver mi historia")).toBeNull();
+  });
+
+  it("identifica el documento pendiente en inglés y mantiene acceso a la historia", () => {
+    mockState.lang = "en";
+    mockState.chat = [{ id: "pending", role: "bot", text: "Document saved.", time: "10:05 AM", kind: "lab-exam-pending" }];
+    render(<ChatPage />);
+    expect(screen.getByText("Pending verification")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("View my history"));
+    expect(navigateMock).toHaveBeenCalledWith("hc");
   });
 });
 
@@ -351,10 +375,10 @@ describe("ChatPage — CTA de agendamiento y imagen conversacional (REQ-AG-02/03
     expect(thumb?.src).toContain("data:image/jpeg;base64,aW1hZ2Vu");
 
     // El envío (quick chip → send con imagen pendiente) incluye el adjunto.
-    fireEvent.click(screen.getByText("Síntomas"));
+    fireEvent.click(screen.getByText("Hábitos"));
     await waitFor(() => {
       expect(sendChatMock).toHaveBeenCalledWith(
-        "Tengo dolor en el pecho, ¿qué hago?",
+        "¿Cómo puedo organizar mis hábitos diarios?",
         {
           base64: "aW1hZ2Vu",
           mimeType: "image/jpeg",
@@ -519,12 +543,12 @@ describe("ChatPage — disclaimer clínico y feedback (Fase 9)", () => {
     mockState.chat = [welcomeMessage];
   });
 
-  it("muestra el banner de disclaimer clínico al inicio del listado", () => {
+  it("explica el alcance educativo y el apoyo al plan aprobado", () => {
     render(<ChatPage />);
 
     expect(
       screen.getByText(
-        "Asistente clínico inteligente (no sustituye una consulta médica de urgencia)",
+        "Vita te orienta sobre hábitos y te ayuda a seguir el plan aprobado por tu equipo. No diagnostica ni cambia tratamientos.",
       ),
     ).toBeTruthy();
   });

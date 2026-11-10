@@ -61,10 +61,8 @@ export async function requestVoiceSession(
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      // Idioma de la app: el backend lo propaga al AI Service para que el
-      // agente de voz arranque hablando ese idioma (con signed URL los
-      // overrides del cliente no aplican). Opcional: backends anteriores
-      // lo ignoran (compatible hacia atrás).
+      // Selección de una versión verificada para el idioma de la app. No
+      // autoriza overrides del cliente ni mutaciones del agente compartido.
       body: JSON.stringify({ ...(language ? { language } : {}) }),
     });
     assertLegalConsentOwner(owner);

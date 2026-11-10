@@ -60,14 +60,15 @@ const mirror = vi.hoisted(() => ({
   voiceResult: null as ChatMessage | null,
 }));
 
-function Harness() {
-  const { chat, sendChat, sendVoiceMessage } = useApp();
+function Harness({ message = "hola" }: { message?: string }) {
+  const { chat, sendChat, sendVoiceMessage, backToLogin } = useApp();
   mirror.chat = chat;
   return (
     <div>
-      <button type="button" onClick={() => sendChat("hola")}>
+      <button type="button" onClick={() => sendChat(message)}>
         send
       </button>
+      <button type="button" onClick={backToLogin}>logout</button>
       <button
         type="button"
         onClick={() => {
@@ -88,11 +89,11 @@ function Harness() {
   );
 }
 
-function renderApp() {
+function renderApp(message?: string) {
   return render(
     <I18nProvider>
       <AppProvider>
-        <Harness />
+        <Harness message={message} />
       </AppProvider>
     </I18nProvider>,
   );
@@ -101,6 +102,8 @@ function renderApp() {
 describe("AppContext — consolidación del streaming del asistente", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(streamChatMessage).mockReset();
+    vi.mocked(sendChatMessage).mockReset();
     localStorage.clear();
     localStorage.setItem("copp_access_token", "demo-access-token");
     mirror.chat = [];
@@ -197,5 +200,76 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     await act(async () => { await Promise.resolve(); });
     expect(sendChatMessage).not.toHaveBeenCalled();
     expect(mirror.chat.filter(message => message.role === "bot" && message.id !== "welcome")).toHaveLength(0);
+  });
+
+  it.each(["es", "en"])("un fallo no inventa síntomas, progreso ni citas (%s)", async language => {
+    localStorage.setItem("antares_lang", language);
+    vi.mocked(streamChatMessage).mockRejectedValue(new Error("Network unavailable"));
+    vi.mocked(sendChatMessage).mockRejectedValue(new Error("Network unavailable"));
+    const message = "Me duele el pecho; quiero ver mi progreso y agendar una cita";
+    renderApp(message);
+    fireEvent.click(screen.getByText("send"));
+    const expected = language === "en"
+      ? "The assistant is unavailable right now. Please try again in a few minutes."
+      : "El asistente no está disponible en este momento. Inténtalo de nuevo en unos minutos.";
+    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe(expected));
+    expect(mirror.chat.filter(m => m.role === "user").map(m => m.text)).toEqual([message]);
+    const replies = mirror.chat.filter(m => m.role !== "user");
+    expect(replies).toHaveLength(1);
+    expect(replies[0]).toMatchObject({ role: "bot", kind: "service-error" });
+    expect(replies[0].executionId).toBeUndefined();
+    expect(replies[0].cta).toBeUndefined();
+    expect(replies[0].text).not.toMatch(/HbA1c|Carlos|65 kg|alarma/);
+  });
+
+  it("usa una respuesta real bloqueante cuando el stream falla antes de emitir tokens", async () => {
+    vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Stream unavailable"));
+    vi.mocked(sendChatMessage).mockResolvedValueOnce({
+      reply: "Consulta las instrucciones de tu plan aprobado.",
+      threadId: "proactive-10247381",
+      executionId: "real-execution",
+    });
+    renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("Consulta las instrucciones de tu plan aprobado."));
+    expect(mirror.chat.find(m => m.role === "bot")?.executionId).toBe("real-execution");
+    expect(mirror.chat.some(m => m.kind === "service-error")).toBe(false);
+  });
+
+  it("retira una respuesta parcial interrumpida sin repetir herramientas automáticamente", async () => {
+    vi.mocked(streamChatMessage).mockImplementationOnce(async (_text, _thread, callbacks) => {
+      callbacks?.onToken?.("Tu presión significa que debes");
+      throw new Error("Stream interrupted");
+    });
+    renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(mirror.chat.some(m => m.kind === "service-error")).toBe(true));
+    expect(mirror.chat.some(m => m.text.includes("Tu presión significa"))).toBe(false);
+    expect(sendChatMessage).not.toHaveBeenCalled();
+  });
+
+  it("una respuesta vacía termina como indisponibilidad, no como burbuja vacía", async () => {
+    vi.mocked(streamChatMessage).mockResolvedValueOnce({ reply: " ", threadId: "thread" });
+    vi.mocked(sendChatMessage).mockResolvedValueOnce({ reply: "", threadId: "thread" });
+    renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(mirror.chat.some(m => m.kind === "service-error")).toBe(true));
+    expect(mirror.chat.filter(m => m.role === "bot").every(m => m.text.trim().length > 0)).toBe(true);
+  });
+
+  it("la vía de voz devuelve el mismo aviso honesto si ambos transportes fallan", async () => {
+    vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Offline"));
+    vi.mocked(sendChatMessage).mockRejectedValueOnce(new Error("Offline"));
+    renderApp(); fireEvent.click(screen.getByText("voice"));
+    await waitFor(() => expect(mirror.voiceResult?.kind).toBe("service-error"));
+    expect(mirror.voiceResult?.text).toBe("El asistente no está disponible en este momento. Inténtalo de nuevo en unos minutos.");
+  });
+
+  it("un fallo tardío no inserta avisos en otra sesión", async () => {
+    let rejectBlocking!: (error: Error) => void;
+    vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Offline"));
+    vi.mocked(sendChatMessage).mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectBlocking = reject; }));
+    renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(sendChatMessage).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByText("logout"));
+    await act(async () => { rejectBlocking(new Error("Offline")); });
+    expect(mirror.chat.some(m => m.kind === "service-error")).toBe(false);
   });
 });

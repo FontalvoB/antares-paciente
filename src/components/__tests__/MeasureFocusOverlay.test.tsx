@@ -131,16 +131,18 @@ describe("MeasureFocusOverlay", () => {
 });
 
 describe("MeasureFocusOverlay — visuales por métrica", () => {
-  it("FC muestra ECG y el icono late al ritmo medido", () => {
+  it("FC muestra solo un pulso decorativo independiente de la lectura", () => {
     const { container } = render(
       <MeasureFocusOverlay {...base} isOpen result={null} />,
     );
-    expect(container.querySelector("canvas")).not.toBeNull();
+    expect(container.querySelector("canvas")).toBeNull();
+    expect(container.querySelector(".decorative-measure-pulse svg")).not.toBeNull();
+    expect(screen.getByText("Animación decorativa; no es un electrocardiograma (ECG).")).toBeTruthy();
     const icon = container.querySelector(".mfocus-bigico ion-icon");
-    expect(icon?.getAttribute("style") ?? "").toContain("0.83s");
+    expect(icon?.getAttribute("style") ?? "").not.toContain("animation-duration");
   });
 
-  it("FC sin lectura: ECG plano y ritmo de reposo", () => {
+  it("FC sin lectura: decoración sin señal clínica fabricada", () => {
     const { container } = render(
       <MeasureFocusOverlay
         {...base}
@@ -150,9 +152,11 @@ describe("MeasureFocusOverlay — visuales por métrica", () => {
         liveUnit=""
       />,
     );
-    expect(container.querySelector("canvas")).not.toBeNull();
+    expect(container.querySelector("canvas")).toBeNull();
+    expect(container.querySelector(".decorative-measure-pulse svg")).not.toBeNull();
+    expect(screen.getByText("Animación decorativa; no es un electrocardiograma (ECG).")).toBeTruthy();
     const icon = container.querySelector(".mfocus-bigico ion-icon");
-    expect(icon?.getAttribute("style") ?? "").toContain("1.00s");
+    expect(icon?.getAttribute("style") ?? "").not.toContain("animation-duration");
   });
 
   it("SpO2 muestra la gota con tres burbujas", () => {
@@ -171,7 +175,7 @@ describe("MeasureFocusOverlay — visuales por métrica", () => {
     expect(container.querySelector("canvas")).toBeNull();
   });
 
-  it("presión muestra la onda", () => {
+  it("presión muestra un arco decorativo sin onda QRS", () => {
     const { container } = render(
       <MeasureFocusOverlay
         {...base}
@@ -183,6 +187,8 @@ describe("MeasureFocusOverlay — visuales por métrica", () => {
       />,
     );
     expect(container.querySelector("svg.mmo-bp path")).not.toBeNull();
+    expect(container.querySelector("svg.mmo-bp path")?.getAttribute("d")).toBe("M28 36 A32 32 0 0 1 92 36");
+    expect(screen.getByText("Animación decorativa; no representa una señal medida.")).toBeTruthy();
     expect(container.querySelector("canvas")).toBeNull();
   });
 });

@@ -10,10 +10,11 @@ const toast = vi.hoisted(() => vi.fn());
 const language = vi.hoisted(() => ({ current: 'es' as 'es' | 'en' }));
 vi.mock('../../utils/healthTestsApi', () => api);
 vi.mock('../../context/AppContext', () => ({ useApp: () => ({ showToast: toast, skipTests: vi.fn(), finishTests: vi.fn(), navigate: vi.fn() }) }));
-vi.mock('../../i18n/I18nContext', () => ({
-  useT: () => (key: string) => key,
-  useI18n: () => ({ t: (key: string) => key, lang: language.current }),
-}));
+vi.mock('../../i18n/I18nContext', () => {
+  const t = (key: string, params: Record<string, string> = {}) =>
+    Object.entries(params).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), key);
+  return { useT: () => t, useI18n: () => ({ t, lang: language.current }) };
+});
 vi.mock('../../components/tests/TestWizard', async () => {
   const { useState } = await import('react');
   return { TestWizard: function TestWizardDouble({ onComplete, steps, extras, hidden }: { hidden?: boolean; onComplete: () => void; steps: Array<{ kind: string; question?: string }>; extras: { openNotes: string[]; onOpenNote: (index: number, value: string) => void } }) {
@@ -110,8 +111,8 @@ describe('real assessment flow', () => {
     await screen.findByText('Análisis y detalle');
     expect(screen.getByText('20')).toBeTruthy();
     expect(screen.getByText('4')).toBeTruthy();
-    expect(screen.getAllByText('alto').length).toBeGreaterThan(0);
-    expect(screen.queryByText('bajo')).toBeNull();
+    expect(screen.getAllByText('Según el cuestionario: alto').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Según el cuestionario: bajo')).toBeNull();
     expect(screen.getByText('Las dimensiones muestran puntuaciones sin etiquetas de nivel: no tienen rangos propios configurados.')).toBeTruthy();
   });
 

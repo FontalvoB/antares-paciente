@@ -50,7 +50,7 @@ const quick = [
   ...(CHAT_NUTRITION_ENABLED
     ? [["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline]]
     : []),
-  ["Síntomas", "Tengo dolor en el pecho, ¿qué hago?", pulseOutline],
+  ["Hábitos", "¿Cómo puedo organizar mis hábitos diarios?", pulseOutline],
   ["Agendar", "Agenda una cita con el médico para hoy", calendarOutline],
   ["Progreso", "¿Cómo va mi progreso esta semana?", trendingUpOutline],
 ];
@@ -328,8 +328,12 @@ export function ChatPage() {
         },
         {
           role: "bot",
-          text: result.summary,
-          kind: "lab-exam",
+          // No presentar el análisis de un servidor antiguo como verificación
+          // clínica. El estado pendiente también permanece visible sin conexión.
+          text: result.verificationStatus === "pending_review"
+            ? t("Documento guardado. Los valores detectados están pendientes de verificación y no se han añadido a tus mediciones. Tu equipo puede revisar el archivo original.")
+            : t("Documento recibido. Consulta el archivo original con tu equipo para verificar sus valores."),
+          kind: result.verificationStatus === "pending_review" ? "lab-exam-pending" : "lab-exam",
         },
       ]);
     } catch (err: unknown) {
@@ -398,9 +402,7 @@ export function ChatPage() {
         className="screen-scroll chat-list"
         onScroll={handleScroll}
       >
-        {/* Disclaimer clínico preventivo (Fase 9): no invasivo, siempre
-            visible al inicio del listado. No sustituye atención de urgencia:
-            ante síntomas de alarma el chat sugiere activar SOS. */}
+        {/* Alcance de Vita: educación y apoyo al plan aprobado, sin sustituir al equipo. */}
         <div className="chat-disclaimer" role="note">
           <IonIcon
             icon={informationCircle}
@@ -409,7 +411,7 @@ export function ChatPage() {
           />
           <span>
             {t(
-              "Asistente clínico inteligente (no sustituye una consulta médica de urgencia)",
+              "Vita te orienta sobre hábitos y te ayuda a seguir el plan aprobado por tu equipo. No diagnostica ni cambia tratamientos.",
             )}
           </span>
         </div>
@@ -457,6 +459,7 @@ export function ChatPage() {
             <div className="chat-msg">
               <div
                 className={`bub ${isUser ? "bub-usr" : m.role === "alert" ? "bub-alert" : "bub-bot"}`}
+                role={m.kind === "service-error" ? "status" : undefined}
                 data-execution-id={m.executionId}
               >
                 {m.role === "user" && m.image && (
@@ -499,7 +502,7 @@ export function ChatPage() {
                     {t(m.visibleCta.ctaText)}
                   </IonButton>
                 )}
-                {m.role === "bot" && m.kind === "lab-exam" && (
+                {m.role === "bot" && (m.kind === "lab-exam" || m.kind === "lab-exam-pending") && (
                   <div
                     style={{
                       display: "flex",
@@ -509,14 +512,14 @@ export function ChatPage() {
                       marginTop: 8,
                     }}
                   >
-                    <IonBadge color="success">{t("Examen procesado")}</IonBadge>
+                    <IonBadge color="medium">{t(m.kind === "lab-exam-pending" ? "Pendiente de verificación" : "Documento recibido")}</IonBadge>
                     <IonButton
                       size="small"
                       fill="clear"
-                      aria-label={t("Ver todas las métricas")}
+                      aria-label={t("Ver mi historia")}
                       onClick={() => navigate("hc")}
                     >
-                      {t("Ver todas las métricas")}
+                      {t("Ver mi historia")}
                     </IonButton>
                   </div>
                 )}

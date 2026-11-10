@@ -31,83 +31,31 @@ describe("vitalNumber", () => {
   });
 });
 
-describe("vitalStatus — rango", () => {
-  const lo = 50;
-  const hi = 100;
-
-  it("sin valor no hay estado", () => {
-    expect(vitalStatus(NaN, lo, hi, t)).toEqual({ label: "—", cls: "" });
+describe("vitalStatus — registro neutral", () => {
+  it.each([45, 72, 120, 250, 88, 39.2, 200])("el valor %s no produce una conclusión clínica", (value) => {
+    expect(vitalStatus(value, t)).toEqual({ label: "Valor ingresado", cls: "" });
   });
-
-  it("por debajo y por encima avisan", () => {
-    expect(vitalStatus(45, lo, hi, t)).toEqual({
-      label: "Bajo",
-      cls: "warn",
-    });
-    expect(vitalStatus(120, lo, hi, t)).toEqual({
-      label: "Alto",
-      cls: "warn",
-    });
+  it.each([NaN, Infinity, -Infinity])("sin número finito no hay estado", (value) => {
+    expect(vitalStatus(value, t)).toEqual({ label: "—", cls: "" });
   });
-
-  it("dentro del rango queda en verde", () => {
-    expect(vitalStatus(72, lo, hi, t)).toEqual({
-      label: "En rango",
-      cls: "ok",
-    });
+  it("conserva el progreso de una meta explícita de actividad", () => {
+    expect(vitalStatus(540, t, 8000)).toEqual({ label: "En progreso", cls: "" });
+    expect(vitalStatus(8000, t, 8000)).toEqual({ label: "Meta alcanzada", cls: "ok" });
   });
 });
 
-describe("vitalStatus — meta", () => {
-  it("por debajo de la meta queda en progreso (sin aviso rojo)", () => {
-    expect(vitalStatus(540, 0, 8000, t, 8000)).toEqual({
-      label: "En progreso",
-      cls: "",
-    });
+describe("vitalBar — sin bandas clínicas locales", () => {
+  it("conserva la posición del dato sin marcar una banda saludable", () => {
+    const sleep = vitalBar(414, { lo: 420, hi: 540, min: 0, max: 720 });
+    expect(sleep.pct).toBeCloseTo(57.5);
+    expect([sleep.bandLeft, sleep.bandWidth]).toEqual([0, 0]);
+    expect(vitalBar(45, { lo: 50, hi: 100, min: 30, max: 180 })).toEqual({ pct: 10, bandLeft: 0, bandWidth: 0 });
   });
-
-  it("al llegar a la meta la marca", () => {
-    expect(vitalStatus(8000, 0, 8000, t, 8000)).toEqual({
-      label: "Meta alcanzada",
-      cls: "ok",
-    });
+  it("no utiliza lo/hi como un dominio clínico implícito", () => {
+    expect(vitalBar(45, { lo: 50, hi: 100 })).toEqual({ pct: 0, bandLeft: 0, bandWidth: 0 });
   });
-});
-
-describe("vitalBar — rango con dominio visible", () => {
-  // Sueño: rango 420–540 min, dominio 0–720 (12 h).
-  const sleep = { lo: 420, hi: 540, min: 0, max: 720 };
-
-  it("414 min queda al 57.5% (no pegado al inicio)", () => {
-    const bar = vitalBar(414, sleep);
-    expect(bar.pct).toBeCloseTo(57.5, 1);
-    expect(bar.bandLeft).toBeCloseTo(58.33, 1);
-    expect(bar.bandWidth).toBeCloseTo(16.67, 1);
-  });
-
-  it("dentro del rango el puntero cae sobre la banda", () => {
-    const bar = vitalBar(480, sleep);
-    expect(bar.pct).toBeCloseTo(66.67, 1);
-    expect(bar.pct).toBeGreaterThanOrEqual(bar.bandLeft);
-    expect(bar.pct).toBeLessThanOrEqual(bar.bandLeft + bar.bandWidth);
-  });
-
-  it("apenas bajo el rango sigue visible (fc 45 con dominio 30–180)", () => {
-    expect(vitalBar(45, { lo: 50, hi: 100, min: 30, max: 180 }).pct).toBe(10);
-  });
-
-  it("fuera del dominio se recorta a los bordes", () => {
-    const fc = { lo: 50, hi: 100, min: 30, max: 180 };
-    expect(vitalBar(20, fc).pct).toBe(0);
-    expect(vitalBar(200, fc).pct).toBe(100);
-  });
-
-  it("sin min/max el dominio es el rango saludable", () => {
-    expect(vitalBar(45, { lo: 50, hi: 100 })).toEqual({
-      pct: 0,
-      bandLeft: 0,
-      bandWidth: 100,
-    });
+  it("limita solo la geometría al dominio visible explícito", () => {
+    expect(vitalBar(250, { lo: 50, hi: 100, min: 30, max: 180 })).toEqual({ pct: 100, bandLeft: 0, bandWidth: 0 });
   });
 });
 

@@ -40,7 +40,7 @@ vi.mock('@ionic/react', async (importOriginal) => ({
   </div> : null,
 }));
 vi.mock('../../context/AppContext', () => ({ useApp: () => fixture.app }));
-vi.mock('../../i18n/I18nContext', () => ({ useI18n: () => ({ t: fixture.t, lang: 'es' }) }));
+vi.mock('../../i18n/I18nContext', () => ({ useI18n: () => ({ t: fixture.t, lang: 'es' }), useT: () => fixture.t }));
 vi.mock('../../components/icons3d', () => ({ WatchIcon3D: () => null }));
 vi.mock('../../components/MeasureFocusOverlay', async (importOriginal) => ({
   ...await importOriginal<typeof import('../../components/MeasureFocusOverlay')>(),
@@ -58,9 +58,24 @@ describe('WearablePage — compatibilidad y alta', () => {
   beforeEach(() => {
     vi.clearAllMocks(); fixture.app.wearableConnected = false; fixture.state.sessionStale = false;
     fixture.state.syncing = false; fixture.state.diagnostics = false; fixture.state.error = null; fixture.state.phase = 'idle';
+    fixture.state.samples = {};
     fixture.state.syncHistory.mockReset(); fixture.state.cancelSync.mockReset();
   });
   afterEach(cleanup);
+
+  it('conserva una lectura histórica atípica sin convertirla en juicio clínico ni ECG', () => {
+    fixture.app.wearableConnected = true;
+    fixture.state.phase = 'connected';
+    fixture.state.samples = { heart_rate: { metric: 'heart_rate', value: 250, unit: 'bpm', deviceId: 'band', ts: Date.now() - 86_400_000, source: 'history' } };
+    const recorded = JSON.stringify(fixture.state.samples);
+    const { container } = render(<WearablePage />);
+    expect(container.querySelector('.vital-hero-val')?.textContent).toContain('250');
+    expect(container.querySelector('.vital-hero-hint')?.textContent).not.toBe('Sin datos aún');
+    expect(screen.queryByText(/^(Alto|Bajo|En rango)$/)).toBeNull();
+    expect(screen.getByText('Animación decorativa; no es un electrocardiograma (ECG).')).toBeTruthy();
+    expect(container.querySelector('canvas')).toBeNull();
+    expect(JSON.stringify(fixture.state.samples)).toBe(recorded);
+  });
 
   it('muestra los modelos compatibles y ofrece el selector iOS', () => {
     render(<WearablePage />);

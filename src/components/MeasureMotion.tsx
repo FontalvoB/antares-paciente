@@ -1,6 +1,6 @@
 /**
  * Visuales vivas de la vista de foco (una por métrica). SVG + CSS puros, sin
- * librerías: la FC reutiliza EcgTrace (traza real al ritmo medido), aquí van
+ * librerías: la FC reutiliza EcgTrace (pulso circular decorativo), aquí van
  * las dos ambientales (SpO2 y presión). Con `prefers-reduced-motion` quedan
  * estáticas (ver global.css).
  */
@@ -25,10 +25,7 @@ export function Spo2Bubbles() {
   );
 }
 
-/**
- * Onda de presión arterial en bucle (un latido con muesca dicrótica,
- * estilizado). El trazado se dibuja solo con stroke-dashoffset.
- */
+/** Arco decorativo de espera. No representa presión ni una onda del sensor. */
 export function BpWave() {
   return (
     <svg
@@ -40,7 +37,7 @@ export function BpWave() {
       <path
         className="mmo-wave-path"
         pathLength={100}
-        d="M2 34 H28 L36 34 L42 12 L48 34 L54 34 L60 26 L64 34 H90 L96 34 L102 12 L108 34 H118"
+        d="M28 36 A32 32 0 0 1 92 36"
         fill="none"
       />
     </svg>

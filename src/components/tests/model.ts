@@ -317,7 +317,7 @@ export const PATIENT_TITLES: Record<string, string> = {
   movimiento: "¿Qué tan activo/a eres?",
   sueno: "¿Cómo duermes?",
   "iac-adresd": "¿Qué tan comprometido/a estás?",
-  orp: "¿Cuál es tu riesgo cardiovascular?",
+  orp: "Tu cuestionario cardiovascular",
   ers: "¿Cómo está tu entorno?",
   "bateria-antares": "¿Cuál es tu propósito?",
 };

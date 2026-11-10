@@ -1,4 +1,4 @@
-import { CHAT_NUTRITION_ENABLED } from "../utils/chatNutritionVisibility";
+import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
 import { App } from "@capacitor/app";
 import { resetSessionQueryCache } from "../utils/queryClient";
 import { sessionUserId } from "../utils/sessionIdentity";
@@ -267,74 +267,6 @@ function nowLabel(lang: "es" | "en" = "es") {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function botReply(
-  text: string,
-  t: (s: string, p?: Record<string, string>) => string,
-): { role: ChatMessage["role"]; text: string } {
-  const lower = text.toLowerCase();
-  if (
-    lower.includes("pecho") ||
-    lower.includes("brazo") ||
-    lower.includes("urgencia") ||
-    lower.includes("síntoma")
-  ) {
-    return {
-      role: "alert",
-      text: t(
-        "Detecté un posible síntoma de alarma. Si el dolor es intenso, activa SOS. Mientras tanto: siéntate, no te acuestes plana y avisa a tu contacto de emergencia.",
-      ),
-    };
-  }
-  if (
-    CHAT_NUTRITION_ENABLED && (
-      lower.includes("comer") ||
-      lower.includes("plan") ||
-      lower.includes("comida")
-    )
-  ) {
-    return {
-      role: "bot",
-      text: t(
-        "Hoy tu plan es dieta mediterránea 1,800 kcal. Cena sugerida: sopa de lentejas + pan integral, antes de las 7:30 PM. Adherencia actual: 88%.",
-      ),
-    };
-  }
-  if (lower.includes("cita") || lower.includes("agendar")) {
-    return {
-      role: "bot",
-      text: t(
-        "Tu próxima cita es hoy 3:00 PM con Dr. Carlos Ramírez (telemedicina). Puedo recordártela 30 min antes. Para una nueva cita usa Solicitar cita en el módulo Citas.",
-      ),
-    };
-  }
-  if (lower.includes("progreso")) {
-    return {
-      role: "bot",
-      text: t(
-        "Semana 12/24 · IMC 26.4 (↓1.2) · HbA1c 5.9% · adherencia 88% · 840 pts. Vas por buen camino hacia 65 kg e HbA1c < 5.7%.",
-      ),
-    };
-  }
-  if (
-    lower.includes("medit") ||
-    lower.includes("ansiedad") ||
-    lower.includes("infinito")
-  ) {
-    return {
-      role: "bot",
-      text: t(
-        "Prueba 4-7-8: inhala 4, retén 7, exhala 8. En INFINITO tienes frecuencias y mindfulness. El video PSICO de hoy dura 12 min.",
-      ),
-    };
-  }
-  return {
-    role: "bot",
-    text: CHAT_NUTRITION_ENABLED
-      ? t("Entendido. Puedo ayudarte con tu plan nutricional, citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?")
-      : t("Puedo ayudarte con citas, medicamentos, progreso o activar SOS. ¿Qué necesitas ahora?"),
-  };
 }
 
 export function AppProvider({
@@ -856,8 +788,8 @@ export function AppProvider({
    * streaming del bot token a token y, al finalizar, SOBREESCRIBE el texto
    * del turno con la respuesta canónica (`answer`) para que las pasadas
    * duplicadas alrededor de tool-calls jamás queden en la burbuja. Ante
-   * fallo sin tokens pintados cae a la vía bloqueante y luego al fallback
-   * local. Usado por `sendChat` (fire-and-forget) y por el agente de voz
+   * fallo sin tokens pintados cae a la vía bloqueante. Si ninguna termina,
+   * muestra indisponibilidad, nunca respuestas clínicas locales. Usado por `sendChat` y por el agente de voz
    * (`sendVoiceMessage`), que necesita el mensaje final para vocalizarlo.
    */
   const runChatTurn = useCallback(
@@ -892,13 +824,15 @@ export function AppProvider({
       const tryBlockingChat = async (): Promise<ChatMessage | null> => {
         try {
           const result = await sendChatMessage(text, threadId, image, lang);
+          const answer = result.answer ?? result.reply;
+          if (!answer?.trim()) return null;
           const suggestion = result.suggestions?.find(
             (s) => s.type === "appointment",
           );
           return {
             id: crypto.randomUUID(),
             role: "bot",
-            text: result.answer ?? result.reply,
+            text: answer,
             time: nowLabel(lang),
             threadId: result.threadId || threadId,
             cta: suggestion,
@@ -923,9 +857,18 @@ export function AppProvider({
         });
       };
 
+      const emitUnavailable = () => emitBotMessage({
+        id: crypto.randomUUID(),
+        role: "bot",
+        kind: "service-error",
+        text: t(CHAT_UNAVAILABLE_MESSAGE),
+        time: nowLabel(lang),
+        threadId,
+      });
+
       // Streaming: el mensaje del bot se crea vacío y se rellena token
       // a token. Si el stream falla sin haber pintado nada, se intenta
-      // la vía bloqueante y al final el fallback local.
+      // la vía bloqueante. Una respuesta interrumpida nunca queda como definitiva.
       const liveId = crypto.randomUUID();
       let painted = "";
       setChat((prev) => [
@@ -957,6 +900,7 @@ export function AppProvider({
         // burbuja, ni siquiera con desincronización de red.
         if (generation !== sessionGeneration.current) return null;
         const canonical = result.answer ?? result.reply;
+        if (!canonical?.trim()) throw new Error("Empty chat response");
         const finalBot: ChatMessage = {
           id: liveId,
           role: "bot",
@@ -975,33 +919,24 @@ export function AppProvider({
           showToast(t(legalConsentMessage(err)), "warn");
           return null;
         }
+        // Ni un stream incompleto ni un fallo pueden convertirse en consejo o
+        // datos inventados. Se conserva el mensaje del paciente para reintentar.
+        setChat((prev) => prev.filter((m) => m.id !== liveId));
         if (!painted) {
-          // Sin streaming ni respuesta: se retira el vacío y va el fallback.
-          setChat((prev) => prev.filter((m) => m.id !== liveId));
           let reply: ChatMessage | null;
           try { reply = await tryBlockingChat(); }
           catch (error) {
-            showToast(t(legalConsentMessage(error)), "warn");
+            if (generation === sessionGeneration.current) showToast(t(legalConsentMessage(error)), "warn");
             return null;
           }
           if (reply) {
             emitBotMessage(reply);
           } else {
-            // Safari serializa Error como {}: loguear el mensaje para ver
-            // el status real (p. ej. "Error al enviar mensaje (401)").
-            console.warn(
-              "[chat] Falló respuesta del AI service, usando fallback:",
-              err instanceof Error ? err.message : err,
-            );
-            const local = botReply(text, t);
-            emitBotMessage({
-              id: crypto.randomUUID(),
-              role: local.role,
-              text: local.text,
-              time: nowLabel(lang),
-              threadId,
-            });
+            emitUnavailable();
           }
+        } else {
+          // No repetir automáticamente un turno que pudo ejecutar herramientas.
+          emitUnavailable();
         }
       }
       return turnBotMessage;

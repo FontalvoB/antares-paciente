@@ -9,50 +9,42 @@ export function vitalNumber(raw: string): number {
 
 export interface VitalStatus {
   label: string;
-  cls: "" | "ok" | "warn";
+  cls: "" | "ok";
 }
 
 type Translate = (source: string, params?: Record<string, string>) => string;
 
 /**
- * Estado de una tarjeta a partir del valor CANÓNICO (NaN = sin valor). Sin
- * `goal` es un rango (Bajo / Alto / En rango); con `goal` es una meta acumulada
- * (pasos): "Meta alcanzada" al llegar, "En progreso" mientras tanto.
+ * Presentación del registro, sin interpretar su significado clínico. Solo una
+ * meta de actividad explícita permite mostrar progreso de adherencia.
  */
 export function vitalStatus(
   n: number,
-  lo: number,
-  hi: number,
   t: Translate,
   goal?: number,
 ): VitalStatus {
-  if (Number.isNaN(n)) return { label: "—", cls: "" };
+  if (!Number.isFinite(n)) return { label: "—", cls: "" };
   if (goal !== undefined) {
     return n >= goal
       ? { label: t("Meta alcanzada"), cls: "ok" }
       : { label: t("En progreso"), cls: "" };
   }
-  if (n < lo) return { label: t("Bajo"), cls: "warn" };
-  if (n > hi) return { label: t("Alto"), cls: "warn" };
-  return { label: t("En rango"), cls: "ok" };
+  return { label: t("Valor ingresado"), cls: "" };
 }
 
 /** Geometría de la barra de una tarjeta (porcentajes 0–100 del dominio visible). */
 export interface VitalBar {
   /** Posición del valor dentro del dominio visible. */
   pct: number;
-  /** Inicio de la banda saludable (rango) o del relleno de progreso (meta). */
+  /** Inicio del relleno de progreso de una meta explícita. */
   bandLeft: number;
-  /** Ancho de la banda saludable (rango) o del relleno hasta el valor (meta). */
+  /** Relleno hasta el valor (meta); cero para mediciones sin meta. */
   bandWidth: number;
 }
 
 /**
- * Barra "real" de una tarjeta: el valor se ubica en el DOMINIO VISIBLE
- * (`min`/`max` de la métrica; por defecto el rango saludable), no en `lo..hi`
- * — así un valor apenas fuera del rango no queda pegado al borde. La banda
- * marca el rango saludable; en métricas con meta (pasos) es el relleno de
- * progreso 0 → valor.
+ * Posición dentro de un dominio visual explícito. Los límites locales lo/hi
+ * no producen bandas clínicas. Solo una meta de actividad tiene relleno.
  */
 export function vitalBar(
   n: number,
@@ -70,17 +62,15 @@ export function vitalBar(
     max === min ? 0 : ((v - min) / (max - min)) * 100;
 
   if (field.kind === "goal") {
-    const goal = field.goal ?? field.hi;
-    const pct = Number.isNaN(n) || goal === 0 ? 0 : clamp(at(n, 0, goal));
+    const goal = field.goal;
+    const pct = !Number.isFinite(n) || !goal || !Number.isFinite(goal) || goal < 0 ? 0 : clamp(at(n, 0, goal));
     return { pct, bandLeft: 0, bandWidth: pct };
   }
 
-  const min = field.min ?? field.lo;
-  const max = field.max ?? field.hi;
-  const pct = Number.isNaN(n) ? 0 : clamp(at(n, min, max));
-  const bandLeft = clamp(at(field.lo, min, max));
-  const bandWidth = Math.max(0, clamp(at(field.hi, min, max)) - bandLeft);
-  return { pct, bandLeft, bandWidth };
+  const { min, max } = field;
+  const pct = !Number.isFinite(n) || min === undefined || max === undefined || max <= min
+    ? 0 : clamp(at(n, min, max));
+  return { pct, bandLeft: 0, bandWidth: 0 };
 }
 
 /** Minutos → horas con 2 decimales (414 → 6.9). El canónico sigue siendo minutos. */

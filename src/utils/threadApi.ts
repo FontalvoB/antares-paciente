@@ -176,12 +176,25 @@ export interface LabExamUploadResult {
   measurementCount: number;
   detectedMetrics: string[];
   storageKey?: string | null;
+  /** OCR pendiente de contrastar con el original; nunca equivale a validación clínica. */
+  verificationStatus?: string | null;
+  documentId?: string | null;
+  extractionStorageKey?: string | null;
+  extractedMetrics?: Array<{
+    metricName: string;
+    metricCode?: string | null;
+    value: number;
+    unitSymbol?: string | null;
+    observedAt?: string | null;
+    source: "ocr_unverified";
+  }>;
 }
 
 /**
  * Sube un archivo de examen de laboratorio (imagen o PDF) al backend .NET
  * (POST /api/v1/lab-exams). El backend valida, comprime, almacena en S3,
- * extrae métricas mediante el AI Service y persiste en clinical_measurements.
+ * extrae candidatos mediante el AI Service. El original se conserva como
+ * documento; los candidatos pendientes no son mediciones clínicas verificadas.
  */
 export async function uploadLabExam(
   file: File,

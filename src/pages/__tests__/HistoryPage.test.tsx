@@ -13,6 +13,10 @@ vi.mock("../../components/Screen", () => ({
   Scroll: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("../../components/MyDocumentsSection", () => ({
+  MyDocumentsSection: () => <div>Mis documentos</div>,
+}));
+
 // Estado mutable compartido con los mocks (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   lang: "es" as "es" | "en",

@@ -78,14 +78,6 @@ export function MeasureFocusContent({
   const t = useT();
   const metric = t(MEASURE_SHORT[kind] ?? "Medición");
   const running = result === null;
-  // Latido al ritmo medido (FC con lectura): sin lectura, ritmo de reposo.
-  const liveBpm =
-    kind === "heart_rate" && liveValue !== null
-      ? Number.parseFloat(liveValue)
-      : NaN;
-  const beatSeconds =
-    Number.isFinite(liveBpm) && liveBpm > 0 ? 60 / liveBpm : 1;
-
   return (
     <div className="mfocus-wrap">
       {running ? (
@@ -121,7 +113,6 @@ export function MeasureFocusContent({
           <span className="mfocus-bigico" aria-hidden="true">
             <IonIcon
               icon={measureIcon(kind)}
-              style={{ animationDuration: `${beatSeconds.toFixed(2)}s` }}
             />
           </span>
           <div className="mfocus-live" aria-live="polite">
@@ -138,15 +129,14 @@ export function MeasureFocusContent({
           </div>
           {kind === "heart_rate" && (
             <EcgTrace
-              bpm={
-                Number.isFinite(liveBpm) && liveBpm > 0 ? liveBpm : undefined
-              }
               height={84}
-              className="mfocus-ecg"
+              className="mfocus-pulse"
             />
           )}
-          {kind === "spo2" && <Spo2Bubbles />}
-          {kind === "blood_pressure" && <BpWave />}
+          {(kind === "spo2" || kind === "blood_pressure") && <figure className="mfocus-decoration">
+            {kind === "spo2" ? <Spo2Bubbles /> : <BpWave />}
+            <figcaption>{t("Animación decorativa; no representa una señal medida.")}</figcaption>
+          </figure>}
           <MeasureProgressCard
             kind={kind}
             phase={phase}
