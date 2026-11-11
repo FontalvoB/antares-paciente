@@ -31,6 +31,8 @@ export interface LegalConsentReceipt {
   disclosureId: string; acceptedAt: string; withdrawnAt: string | null;
 }
 
+export const legalConsentEnforcementEnabled = () => import.meta.env.VITE_ENFORCE_LEGAL_CONSENTS === "true";
+
 const route = "/api/v1/me/legal-consents";
 export const legalConsentOwner = () => sessionUserId(getAccessToken());
 export function assertLegalConsentOwner(owner: string | null) {
@@ -94,6 +96,8 @@ export function availableLegalDocument(requirement: LegalConsentRequirement | un
   return document.locale === locale && document.versionId && document.content.trim() ? document : null;
 }
 export async function verifyLegalConsent(scope: LegalConsentScope, locale: ConsentLocale = requestLanguage(), signal?: AbortSignal) {
+  if (signal?.aborted) throw consentFailure("CONSENT_CANCELLED");
+  if (!legalConsentEnforcementEnabled()) return null;
   let status: LegalConsentStatus;
   try { status = await getLegalConsents(locale, signal); }
   catch (error) {
@@ -108,6 +112,7 @@ export async function verifyLegalConsent(scope: LegalConsentScope, locale: Conse
 /** Siempre consulta al servidor; un recibo local nunca autoriza una nueva petición. */
 export async function requireLegalConsent(scope: LegalConsentScope, locale: ConsentLocale = requestLanguage(), signal?: AbortSignal) {
   if (signal?.aborted) throw consentFailure("CONSENT_CANCELLED");
+  if (!legalConsentEnforcementEnabled()) return;
   if (prompt) {
     let accepted: boolean;
     try { accepted = await prompt(scope, locale, signal); }

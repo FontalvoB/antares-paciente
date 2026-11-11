@@ -1,3 +1,10 @@
+> Restauración de TestFlight solicitada por el propietario: la exigencia de
+> documentos está desactivada por defecto. `VITE_ENFORCE_LEGAL_CONSENTS=true`
+> la reactiva al compilar. Las pruebas mantienen este valor explícito para
+> conservar cobertura del proceso legal. Desactivarlo no registra aceptaciones
+> ni elimina identidad, cancelación o controles de acceso. Los flujos normales
+> FoodAI/chat/voz/laboratorios/programa pueden continuar sin abrir el modal legal.
+
 # Autorizaciones versionadas en la app
 
 Esta preparación no publica documentos ni habilita proveedores. La política

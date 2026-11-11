@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'happy-dom',
+    env: { VITE_ENFORCE_LEGAL_CONSENTS: 'true' },
     globals: true,
     include: ['src/**/__tests__/**/*.test.{ts,tsx}'],
     setupFiles: ['./src/test/setup.ts'],

@@ -5,7 +5,7 @@ vi.mock("../apiClient", async original => ({ ...await original<object>(), apiFet
 vi.mock("../authApi", async original => ({ ...await original<object>(), ensureFreshAccessToken: api.token, getAccessToken: () => api.currentToken }));
 import {
   acceptLegalConsent, onLegalConsentChange, registerLegalConsentPrompt, requireLegalConsent,
-  withdrawLegalConsent, type LegalConsentRequirement, type LegalConsentStatus,
+  verifyLegalConsent, withdrawLegalConsent, type LegalConsentRequirement, type LegalConsentStatus,
 } from "../legalConsents";
 import { analyzeFoodImage } from "../foodAiApi";
 import { requestVoiceSession } from "../voiceApi";
@@ -26,6 +26,22 @@ beforeEach(() => { api.currentToken = "test-token"; api.fetch.mockReset(); api.t
 afterEach(() => { unregister?.(); unregister = undefined; vi.unstubAllGlobals(); });
 
 describe("approved-document consent boundary", () => {
+  it("restores feature access without prompting or recording acceptance when review enforcement is off", async () => {
+    vi.stubEnv("VITE_ENFORCE_LEGAL_CONSENTS", "false");
+    const decide = vi.fn();
+    unregister = registerLegalConsentPrompt(decide);
+    try {
+      await requireLegalConsent("food", "es");
+      await requireLegalConsent("voice", "en");
+      await requireLegalConsent("program", "es");
+      expect(await verifyLegalConsent("voice", "en")).toBeNull();
+      expect(decide).not.toHaveBeenCalled();
+      expect(api.fetch).not.toHaveBeenCalled();
+      const cancelled = new AbortController(); cancelled.abort();
+      await expect(requireLegalConsent("food", "es", cancelled.signal)).rejects.toMatchObject({ code: "CONSENT_CANCELLED" });
+    } finally { vi.unstubAllEnvs(); }
+  });
+
   it("unavailable documents fail closed before an upload", async () => {
     api.fetch.mockResolvedValue(status(requirement({ available: false, accepted: false, documents: [] })));
     await expect(analyzeFoodImage(new Blob(["private image"]), "meal.jpg")).rejects.toMatchObject({ code: "CONSENT_DOCUMENT_UNAVAILABLE", status: 503 });
