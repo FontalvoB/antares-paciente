@@ -10,6 +10,7 @@ import {
 import { CameraSource } from "@capacitor/camera";
 import {
   attachOutline,
+  barbellOutline,
   cameraOutline,
   closeCircle,
   documentOutline,
@@ -42,18 +43,16 @@ import { captureChatImage } from "../services/media/camera-service";
 import { localizedError } from "../utils/localizedError";
 import logoIcon from "../assets/LogoIndividual.png";
 import {
-  CHAT_NUTRITION_ENABLED,
   canShowChatAction,
   chatTextForDisplay,
 } from "../utils/chatNutritionVisibility";
 
 const quick = [
-  ...(CHAT_NUTRITION_ENABLED
-    ? [["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline]]
-    : []),
   ["Hábitos", "¿Cómo puedo organizar mis hábitos diarios?", pulseOutline],
-  ...(APPOINTMENTS_ENABLED ? [["Agendar", "Agenda una cita con el médico para hoy", calendarOutline]] : []),
   ["Progreso", "¿Cómo va mi progreso esta semana?", trendingUpOutline],
+  ["Ejercicios", "¿Qué ejercicios me corresponden hoy según mi rutina?", barbellOutline],
+  ["Nutrición", "¿Qué debo comer hoy según mi plan?", nutritionOutline],
+  ...(APPOINTMENTS_ENABLED ? [["Agendar", "Agenda una cita con el médico para hoy", calendarOutline]] : []),
 ];
 
 /** Mensajes visibles por tramo del historial progresivo. */
