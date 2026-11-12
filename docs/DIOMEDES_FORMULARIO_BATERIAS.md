@@ -37,6 +37,31 @@ Las dimensiones históricas sin rangos propios siguen sin etiquetas de riesgo.
 
 ## Verificación
 
+### Ajustes locales de propósito y bienvenida (2026-11-12)
+
+El acento de «¿Cuál es tu propósito?» usa azul de marca en selección, foco y botón
+principal. Los chips exponen `aria-pressed`; no cambia el color de otras baterías.
+
+La bienvenida de Vita espera todas las evaluaciones requeridas de la cohorte
+inicial. El servidor devuelve `isRequired` y `batteryRequiredCount`; un requerido
+ausente, una lectura fallida o metadatos anteriores no habilitan la bienvenida.
+Una evaluación opcional pendiente no bloquea la bienvenida ni muestra el aviso
+de plan pendiente. El texto deja de imponer nueve como requisito fijo.
+
+El onboarding guarda una marca pendiente por cuenta, sin datos clínicos, en esta
+instalación. Se conserva al recargar y se consume al cerrar la bienvenida. Las
+cuentas existentes sin marca no reciben una bienvenida retroactiva. La identidad
+del coach sigue siendo la Vita ya presente en bienvenida/chat: no se agregó un
+catálogo de coaches ni confirmación de bienvenida entre dispositivos.
+
+`e2e/easy-local-fixes.mjs` verifica estos comportamientos mediante la UI real y
+respuestas HTTP sintéticas, además del texto de plan publicado en Chat. La
+integración PostgreSQL del backend comprueba los metadatos del catálogo real de
+prueba. Este cambio requiere publicar conjuntamente la API y la app; no se han
+publicado estos ajustes ni se ha realizado una prueba en un iPhone real.
+
+### Verificación anterior del formulario
+
 - 38 pruebas focalizadas de app: onboarding, contactos, persistencia de payload,
   consentimiento, resultados y perfil.
 - 104 pruebas `Features.Patients` del backend; compilación del módulo correcta.

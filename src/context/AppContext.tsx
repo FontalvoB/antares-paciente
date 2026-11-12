@@ -3,6 +3,7 @@ import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
 import { App } from "@capacitor/app";
 import { resetSessionQueryCache } from "../utils/queryClient";
 import { sessionUserId } from "../utils/sessionIdentity";
+import { queueVitaWelcome } from "../utils/vitaWelcome";
 import { Capacitor } from "@capacitor/core";
 import {
   createContext,
@@ -1142,6 +1143,7 @@ export function AppProvider({
         setScreen("home");
       },
       finishOnboarding: (u) => {
+        queueVitaWelcome(sessionUserId(getAccessToken()));
         setVitaWelcomePending(true);
         setUser(u);
         setFlow("tests");

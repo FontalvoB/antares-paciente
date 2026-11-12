@@ -189,7 +189,7 @@ export function NutritionPlanTab({
       no_assessment_assignment: 'Tu equipo te asignará las baterías iniciales para preparar tu plan.',
       assessments_pending: 'Completa tus baterías para preparar tu plan personalizado.',
       generating: 'Estamos preparando tu plan con los resultados de tus baterías.',
-      pending_review: 'Tu nutricionista está revisando tu plan. Lo verás aquí cuando lo apruebe.',
+      pending_review: 'Estamos terminando de publicar tu plan automático. No necesitas esperar aprobación de un nutricionista.',
       expired: 'Tu ciclo nutricional terminó. Tu equipo revisará tu siguiente plan.',
       generation_failed: 'Tu equipo está revisando la preparación de tu plan. No necesitas repetir las baterías.',
     }[status.status] ?? 'Tu plan aún no está disponible. Consulta con tu equipo de atención.';
@@ -199,7 +199,7 @@ export function NutritionPlanTab({
     const steps = [
       { title: batteriesReady ? 'Baterías completadas' : 'Tus baterías iniciales', detail: 'Tus respuestas son el punto de partida.', icon: analyticsOutline },
       { title: 'Borrador con tus resultados', detail: 'La IA propone un menú a partir de tu perfil.', icon: leafOutline },
-      { title: 'Revisión de tu nutricionista', detail: 'Tu profesional puede ajustar las comidas antes de aprobarlas.', icon: shieldCheckmarkOutline },
+      { title: 'Publicación automática', detail: 'Tu plan estará disponible al terminar su generación.', icon: shieldCheckmarkOutline },
       { title: 'Tu plan de 30 días', detail: 'Verás el menú, la merienda y las fechas de tu ciclo.', icon: calendarOutline },
     ];
     return <div className="nutrition-preparation">
@@ -214,7 +214,7 @@ export function NutritionPlanTab({
           </li>)}
         </ol>
       </section>
-      <section className="ntr-card nutrition-preparation-review"><h3>{t('Qué cuidará tu nutricionista')}</h3><p>{t('Revisará tus resultados, las alergias y restricciones registradas, y las comidas del ciclo. La dieta se publica cuando aprueba el borrador.')}</p><div className="nutrition-preparation-duration"><IonIcon icon={calendarOutline} aria-hidden="true" /><span>{t('Cada plan aprobado te acompaña durante 30 días.')}</span></div></section>
+      <section className="ntr-card nutrition-preparation-review"><h3>{t('Sobre tu plan automático')}</h3><p>{t('El programa usa tus evaluaciones y la información registrada para preparar el menú. Consulta las recomendaciones y el aviso antes de comenzar.')}</p><div className="nutrition-preparation-duration"><IonIcon icon={calendarOutline} aria-hidden="true" /><span>{t('Cada plan te acompaña durante 30 días.')}</span></div></section>
       <section className="ntr-card nutrition-preparation-actions"><h3>{t('Mientras llega tu plan')}</h3><p>{t('Puedes revisar tus evaluaciones y continuar con las actividades disponibles de tu programa.')}</p>
         {onOpenAssessments && <IonButton expand="block" fill="outline" onClick={onOpenAssessments}>{t('Ver mis evaluaciones')}</IonButton>}
         {onOpenProgram && <IonButton expand="block" className="bt bt-primary" onClick={onOpenProgram}>{t('Abrir mi protocolo')}</IonButton>}
@@ -241,7 +241,7 @@ export function NutritionPlanTab({
   }
 
   if (status?.status === 'active' && plan && ((status.planId && plan.id && status.planId !== plan.id) || (status.revision != null && plan.revision != null && status.revision !== plan.revision))) {
-    return <section className="ntr-card" role="status" aria-busy={!error}><h2>{t('Actualizando tu plan aprobado')}</h2><p>{t('Cargando las indicaciones de tu nutricionista.')}</p>{error ? <IonButton onClick={onRetry}>{t('Reintentar')}</IonButton> : <IonSkeletonText animated style={{ height: 90 }} />}</section>;
+    return <section className="ntr-card" role="status" aria-busy={!error}><h2>{t('Actualizando tu plan')}</h2><p>{t('Cargando las indicaciones de tu plan.')}</p>{error ? <IonButton onClick={onRetry}>{t('Reintentar')}</IonButton> : <IonSkeletonText animated style={{ height: 90 }} />}</section>;
   }
 
   if (plan) {

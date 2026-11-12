@@ -11,7 +11,7 @@ describe('Nutrición: visualizaciones con datos reales', () => {
   it('no convierte la ausencia de adherencia en un porcentaje cero', () => {
     const retry = vi.fn()
     render(<NutritionWeek current={null} previous={null} loading={false} failed onRetry={retry} locale="es-ES" />)
-    expect(screen.getByText('Sin datos de adherencia esta semana todavía')).toBeTruthy()
+    expect(screen.getByText('Sin datos esta semana')).toBeTruthy()
     expect(screen.queryByText('0%')).toBeNull()
     fireEvent.click(screen.getByText('Reintentar'))
     expect(retry).toHaveBeenCalledOnce()
@@ -21,7 +21,7 @@ describe('Nutrición: visualizaciones con datos reales', () => {
     render(<NutritionWeek current={0} previous={12} loading={false} failed={false} onRetry={() => {}} locale="es-ES" />)
     expect(screen.getByText(/↓ 12/)).toBeTruthy()
     expect(screen.getByText('12%')).toBeTruthy()
-    expect(screen.queryByText('Sin datos de adherencia esta semana todavía')).toBeNull()
+    expect(screen.queryByText('Sin datos esta semana')).toBeNull()
   })
 
   it('selecciona el peso más reciente aunque la serie llegue desordenada y permite consultar otro', () => {

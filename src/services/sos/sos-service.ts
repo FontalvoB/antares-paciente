@@ -39,10 +39,14 @@ export interface SosVitalsDto {
   heartRate?: number | null;
   spo2?: number | null;
   bloodPressure?: string | null;
+  heartRateObservedAt?: string | null;
+  spo2ObservedAt?: string | null;
+  bloodPressureObservedAt?: string | null;
 }
 
 /** Alerta SOS (DTO mínimo según REQ-SOS-01/03; campos extra ignorados). */
 export interface SosAlertDto {
+  vitals?: SosVitalsDto & { readings?: Array<{metricCode: string; value: number; unit: string; observedAt: string | null; source: string}> } | null;
   id: string;
   recipients?: Array<{
     id: string; contactOrder: number; maskedPhone?: string | null;

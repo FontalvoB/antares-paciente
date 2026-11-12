@@ -426,6 +426,7 @@ function StepView({
                 key={`${it.label}-${i}`}
                 type="button"
                 className={`ht-chip ${on ? "sel" : ""}`}
+                aria-pressed={on}
                 onClick={() => apply(exclusiveNext(selected, i, step.items))}
                 whileTap={reduce ? undefined : { scale: 0.96 }}
                 animate={on ? { scale: 1.02 } : { scale: 1 }}

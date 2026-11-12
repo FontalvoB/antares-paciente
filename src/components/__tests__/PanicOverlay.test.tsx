@@ -460,10 +460,10 @@ describe("SOS real — despacho y ciclo de vida", () => {
     expect(context.activateSos).toHaveBeenCalledTimes(1);
   });
 
-  it("comparte solo los signos vitales reales y recientes del wearable conectado", async () => {
+  it("comparte las últimas tomas reales fechadas aunque el wearable esté desconectado", async () => {
     sosMock.activate.mockResolvedValue({ id: "real-vitals", status: "Activa", createdAt: "" });
-    wearableMock.phase = "connected";
-    const sample = (metric: MetricKind, value: number, extra: Partial<HealthSample> = {}): HealthSample => ({ metric, value, ts: Date.now(), unit: "", deviceId: "ring-1", source: "live", ...extra });
+    wearableMock.phase = "disconnected";
+    const sample = (metric: MetricKind, value: number, extra: Partial<HealthSample> = {}): HealthSample => ({ metric, value, ts: Date.now() - 60 * 60_000, unit: "", deviceId: "ring-1", source: "live", ...extra });
     wearableMock.samples = {
       heart_rate: sample("heart_rate", 72),
       spo2: sample("spo2", 98),
@@ -476,7 +476,7 @@ describe("SOS real — despacho y ciclo de vida", () => {
     await flush();
     expect(sosMock.activate).toHaveBeenCalledWith(
       { latitude: 4.6, longitude: -74.1 },
-      { heartRate: 72, spo2: 98, bloodPressure: "118/76" },
+      { heartRate: 72, spo2: 98, bloodPressure: "118/76", heartRateObservedAt: expect.any(String), spo2ObservedAt: expect.any(String), bloodPressureObservedAt: expect.any(String) },
     );
   });
 
@@ -496,8 +496,9 @@ describe("SOS real — despacho y ciclo de vida", () => {
       blood_pressure: sample("blood_pressure", 118, { value2: 76 }),
     };
     wearableMock.samples[metric] = sample(metric, value, { value2: 76 });
-    const expected: Record<string, number | string> = { heartRate: 72, spo2: 98, bloodPressure: "118/76" };
+    const expected: Record<string, unknown> = { heartRate: 72, spo2: 98, bloodPressure: "118/76", heartRateObservedAt: expect.any(String), spo2ObservedAt: expect.any(String), bloodPressureObservedAt: expect.any(String) };
     delete expected[omitted];
+    delete expected[`${omitted}ObservedAt`];
     render(<PanicOverlay />);
     fireEvent.click(screen.getByLabelText("Activar SOS ahora"));
     await screen.findByText("¿Activar tu alerta SOS real?");
@@ -512,7 +513,7 @@ describe("SOS real — despacho y ciclo de vida", () => {
     wearableMock.phase = "connected";
     const sample = (metric: MetricKind, value: number, extra: Partial<HealthSample> = {}): HealthSample => ({ metric, value, ts: Date.now(), unit: "", deviceId: "ring-1", source: "live", ...extra });
     wearableMock.samples = {
-      heart_rate: sample("heart_rate", 72, { ts: Date.now() - 6 * 60_000 }),
+      heart_rate: sample("heart_rate", 72, { ts: Date.now() - 25 * 60 * 60_000 }),
       spo2: sample("spo2", 98, { source: "history" }),
       blood_pressure: sample("blood_pressure", 118, { value2: 76, deviceId: "debug" }),
     };

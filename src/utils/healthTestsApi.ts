@@ -24,6 +24,9 @@ export interface MeAssignment {
   expiresAt: string | null;
   dueDate: string | null;
   notes: string | null;
+  /** Metadatos del catálogo inicial; ausentes en servidores anteriores. */
+  isRequired?: boolean | null;
+  batteryRequiredCount?: number | null;
 }
 
 /** Batería asignada al paciente. */
@@ -138,7 +141,7 @@ function postJson<T>(path: string, body?: unknown): Promise<T> {
 
 /** Mis tests asignados: pendientes, en curso y completados. */
 export async function fetchMyAssignments(): Promise<MeAssignment[]> {
-  return getJson<MeAssignment[]>("/api/v1/health-tests/me/assignments");
+  return getJson<MeAssignment[]>("/api/v1/health-tests/me/assignments?scope=initial");
 }
 
 /** Mis baterías asignadas. */

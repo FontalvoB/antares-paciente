@@ -166,8 +166,8 @@ export const THEMES_BY_ID: Record<number, TestTheme> = {
   },
   9: {
     emoji: "🌱",
-    accent: "var(--cyan)",
-    accentSoft: "var(--ice-l)",
+    accent: "var(--blue)",
+    accentSoft: "var(--blue-l)",
     hero: "hero-cosmos",
     mood: "cosmos",
     sub: "Las respuestas más importantes del programa. Sé completamente honesto/a.",

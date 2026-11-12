@@ -75,8 +75,8 @@ type DialTarget = "callEmergency" | "callFamily";
 const RING = 2 * Math.PI * 78;
 /** Sondeo ligero del estado real de la alerta (REQ-SOS-07). */
 const ACTIVE_POLL_MS = 15_000;
-/** Solo lecturas en vivo de los últimos cinco minutos; nunca datos de prueba. */
-const SOS_VITAL_MAX_AGE_MS = 5 * 60_000;
+/** Últimas tomas reales de hasta 24 horas, con su fecha; nunca lecturas de diagnóstico. */
+const SOS_VITAL_MAX_AGE_MS = 24 * 60 * 60_000;
 const COUNTRY_REFRESH_MS = 60_000;
 
 function recentVitals(samples: Partial<Record<MetricKind, HealthSample>>, now: number): SosVitalsDto | null {
@@ -87,11 +87,11 @@ function recentVitals(samples: Partial<Record<MetricKind, HealthSample>>, now: n
   const hr = samples.heart_rate;
   const oxygen = samples.spo2;
   const pressure = samples.blood_pressure;
-  if (fresh(hr) && hr.value >= 20 && hr.value <= 300) vitals.heartRate = Math.round(hr.value);
-  if (fresh(oxygen) && oxygen.value >= 50 && oxygen.value <= 100) vitals.spo2 = Math.round(oxygen.value);
+  if (fresh(hr) && hr.value >= 20 && hr.value <= 300) { vitals.heartRate = Math.round(hr.value); vitals.heartRateObservedAt = new Date(hr.ts).toISOString(); }
+  if (fresh(oxygen) && oxygen.value >= 50 && oxygen.value <= 100) { vitals.spo2 = Math.round(oxygen.value); vitals.spo2ObservedAt = new Date(oxygen.ts).toISOString(); }
   if (fresh(pressure) && pressure.value > 0 && pressure.value2 !== undefined && Number.isFinite(pressure.value2) && pressure.value2 > 0) {
     const bloodPressure = `${Math.round(pressure.value)}/${Math.round(pressure.value2)}`;
-    if (bloodPressure.length <= 20) vitals.bloodPressure = bloodPressure;
+    if (bloodPressure.length <= 20) { vitals.bloodPressure = bloodPressure; vitals.bloodPressureObservedAt = new Date(pressure.ts).toISOString(); }
   }
   return Object.keys(vitals).length ? vitals : null;
 }
@@ -135,7 +135,7 @@ export function PanicOverlay() {
   const [detectedCountry, setDetectedCountry] = useState<EmergencyCountry | null>(null);
   const [locationAttempt, setLocationAttempt] = useState(0);
   const [locationStatus, setLocationStatus] = useState<"locating" | "located" | "unavailable" | "unsupported">("locating");
-  const [sharedVitals, setSharedVitals] = useState(false);
+  const sharedVitals = !!realAlert?.vitals && (realAlert.vitals.heartRate != null || realAlert.vitals.spo2 != null || !!realAlert.vitals.bloodPressure);
   const [emergencyCoordinates, setEmergencyCoordinates] = useState<SosCoordinates | null>(null);
   const [emergencyDirectory, setEmergencyDirectory] = useState<EmergencyCityDirectory | null>(null);
   const [routingNow, setRoutingNow] = useState(Date.now);
@@ -245,7 +245,6 @@ export function PanicOverlay() {
       setActivating(false);
       setRateLimitSecs(0);
       setFastPoll(false);
-      setSharedVitals(false);
       setChoosingContact(false);
     }
   }, [panicOpen]);
@@ -344,10 +343,9 @@ export function PanicOverlay() {
     try {
       const coords = await getCoordinatesBestEffort();
       const current = wearableRef.current;
-      const vitals = current.phase === "connected" && !current.sessionStale && current.info.wearing !== false
+      const vitals = current.info.wearing !== false
         ? recentVitals(current.samples, Date.now()) : null;
       const alert: SosAlertDto = await activateSosAlert(coords, vitals);
-      setSharedVitals(vitals !== null);
       setAlertId(alert.id);
       // La respuesta real del backend alimenta el copy (BUG-01):
       // smsChannelStatus + location deciden qué se puede afirmar.
@@ -584,8 +582,8 @@ export function PanicOverlay() {
       ico: heart,
       title: t("Signos vitales"),
       sub: sosActive && sharedVitals
-        ? t("Lecturas recientes del wearable compartidas")
-        : t("Sin lecturas recientes confirmadas en esta alerta"),
+        ? t("Últimas lecturas registradas compartidas")
+        : t("Sin lecturas disponibles para esta alerta"),
       tone: "org",
       on: sosActive && sharedVitals,
     },

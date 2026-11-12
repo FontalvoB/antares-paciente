@@ -10,6 +10,7 @@ import {
 import { CameraSource } from "@capacitor/camera";
 import {
   attachOutline,
+  barbellOutline,
   cameraOutline,
   closeCircle,
   documentOutline,
@@ -42,18 +43,16 @@ import { captureChatImage } from "../services/media/camera-service";
 import { localizedError } from "../utils/localizedError";
 import logoIcon from "../assets/LogoIndividual.png";
 import {
-  CHAT_NUTRITION_ENABLED,
   canShowChatAction,
   chatTextForDisplay,
 } from "../utils/chatNutritionVisibility";
 
 const quick = [
-  ...(CHAT_NUTRITION_ENABLED
-    ? [["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline]]
-    : []),
   ["Hábitos", "¿Cómo puedo organizar mis hábitos diarios?", pulseOutline],
-  ...(APPOINTMENTS_ENABLED ? [["Agendar", "Agenda una cita con el médico para hoy", calendarOutline]] : []),
   ["Progreso", "¿Cómo va mi progreso esta semana?", trendingUpOutline],
+  ["Ejercicios", "¿Qué ejercicios me corresponden hoy según mi rutina?", barbellOutline],
+  ["Nutrición", "¿Qué debo comer hoy según mi plan?", nutritionOutline],
+  ...(APPOINTMENTS_ENABLED ? [["Agendar", "Agenda una cita con el médico para hoy", calendarOutline]] : []),
 ];
 
 /** Mensajes visibles por tramo del historial progresivo. */
@@ -403,7 +402,7 @@ export function ChatPage() {
         className="screen-scroll chat-list"
         onScroll={handleScroll}
       >
-        {/* Alcance de Vita: educación y apoyo al plan aprobado, sin sustituir al equipo. */}
+        {/* Alcance de Vita: educación y apoyo al plan publicado, sin sustituir al equipo. */}
         <div className="chat-disclaimer" role="note">
           <IonIcon
             icon={informationCircle}
@@ -412,7 +411,7 @@ export function ChatPage() {
           />
           <span>
             {t(
-              "Vita te orienta sobre hábitos y te ayuda a seguir el plan aprobado por tu equipo. No diagnostica ni cambia tratamientos.",
+              "Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.",
             )}
           </span>
         </div>

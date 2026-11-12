@@ -18,6 +18,7 @@ import { useI18n } from "../i18n/I18nContext";
 import { requestLanguage } from "../utils/requestLanguage";
 import { ApiError } from "../utils/apiClient";
 import { localizedError } from "../utils/localizedError";
+import { isInitialBatteryComplete } from "../utils/initialBattery";
 import {
   fetchMyAssignments,
   fetchMyResults,
@@ -55,21 +56,16 @@ function isListedAssignment(a: MeAssignment): boolean {
   );
 }
 
-/** Conserva estados completados, pero solo retiene tarjetas ausentes del mismo idioma. */
+/** El servidor define la cohorte actual; no se suman completados de otras baterías al contador. */
 function mergeAssignmentList(
   previous: MeAssignment[] | null,
   incoming: MeAssignment[],
-  retainMissing = true,
 ): MeAssignment[] {
-  const incomingIds = new Set(incoming.map((a) => a.id));
-  const retained = (previous ?? []).filter(
-    (a) => retainMissing && a.status === "completed" && !incomingIds.has(a.id),
-  );
   return [...incoming.filter(isListedAssignment).map(a => {
     const confirmed = previous?.find(p => p.id === a.id && p.status === "completed");
     return confirmed && (a.status === "pending" || a.status === "in_progress")
       ? { ...a, status: confirmed.status, completedAt: confirmed.completedAt } : a;
-  }), ...retained];
+  })];
 }
 
 interface AssessmentReadError {
@@ -134,7 +130,7 @@ export function TestsPage() {
     fetchMyAssignments()
       .then((list) => {
         if (!cancelled) {
-          setAssignments((prev) => mergeAssignmentList(prev, list, assignmentsLanguage === lang));
+          setAssignments((prev) => mergeAssignmentList(prev, list));
           setAssignmentsLanguage(lang);
         }
       })
@@ -287,7 +283,7 @@ export function TestsPage() {
         const listLanguage = requestLanguage();
         await fetchMyAssignments().then(list => {
           if (listLanguage !== languageRef.current) return;
-          setAssignments((prev) => mergeAssignmentList(prev, list, assignmentsLanguage === listLanguage));
+          setAssignments((prev) => mergeAssignmentList(prev, list));
           setAssignmentsLanguage(listLanguage);
           setAssignmentsError(null);
         }).catch(error => {
@@ -336,7 +332,9 @@ export function TestsPage() {
       );
       return;
     }
-    if (completed < 9) showToast(t("Tu plan queda pendiente hasta completar las 9 evaluaciones."), "warn");
+    if (!isInitialBatteryComplete(listedAssignments ?? [])) {
+      showToast(t("Tu plan queda pendiente hasta completar las evaluaciones requeridas."), "warn");
+    }
     skipTests();
   };
 
@@ -458,7 +456,7 @@ export function TestsPage() {
         <div className="screen-scroll no-nav ht-list">
           <p className="ht-lead">
             {t(
-              "Puedes omitir el resto después de {n} evaluaciones. Tu plan queda pendiente hasta completar las 9 evaluaciones.",
+              "Puedes omitir el resto después de {n} evaluaciones. El plan se prepara al completar las evaluaciones requeridas.",
               { n: String(MIN_REQUIRED_TESTS) },
             )}
           </p>
