@@ -128,7 +128,8 @@ def install_signing_assets(api_key, readonly: ENV.fetch("MATCH_READONLY", "true"
   match(match_options)
 end
 
-# CFBundleVersion = último build en TestFlight + 1 (o BUILD_NUMBER explícito).
+# CFBundleVersion = último build + 1, con el número de corrida como piso en CI.
+# Apple puede aceptar el upload sin publicarlo aún en la consulta de builds.
 # Nunca toca CFBundleShortVersionString.
 def next_build_number(api_key)
   override = ENV["BUILD_NUMBER"].to_s.strip
@@ -145,9 +146,9 @@ def next_build_number(api_key)
       api_key: api_key
     ).to_i
   rescue StandardError => e
-    UI.important("No se pudo leer el último build de TestFlight (#{e.class}: #{e.message}); se asume 0.")
+    UI.user_error!("No se pudo leer el último build de TestFlight (#{e.class}); no se reutilizará un número de build.")
   end
-  latest + 1
+  [latest + 1, ENV.fetch("GITHUB_RUN_NUMBER", "0").to_i].max
 end
 
 # Aplica firma manual (Apple Distribution + profile de Match) SOLO en la copia
@@ -297,7 +298,8 @@ platform :ios do
     upload_options = {
       api_key: api_key,
       ipa: ipa,
-      skip_waiting_for_build_processing: ENV["WAIT_FOR_PROCESSING"] == "false"
+      skip_waiting_for_build_processing: ENV["WAIT_FOR_PROCESSING"] == "false",
+      wait_processing_timeout_duration: 900
     }
     upload_options[:groups] = groups unless groups.empty?
     upload_options[:changelog] = ENV["TESTFLIGHT_CHANGELOG"] unless ENV["TESTFLIGHT_CHANGELOG"].to_s.empty?

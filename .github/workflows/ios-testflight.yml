@@ -129,6 +129,9 @@ jobs:
           ruby-version: "3.4"
           bundler-cache: true
 
+      - name: Verificar numeración de builds
+        run: bundle exec ruby fastlane/tests/build_number_test.rb
+
       - name: Node 24
         uses: actions/setup-node@v7
         with:

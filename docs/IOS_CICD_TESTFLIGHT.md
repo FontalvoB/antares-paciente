@@ -251,6 +251,12 @@ El IPA y los dSYMs quedan en `ios/App/output/` (ignorado por git).
   (lint, tests, i18n, release:check, build) **detiene el despliegue**.
 - `concurrency: ios-testflight-<ref>` evita subidas simultáneas (números de
   build duplicados).
+- El build usa el mayor entre el último visible en Apple + 1 y el número de
+  corrida de GitHub. Así una nueva corrida no reutiliza un upload que Apple
+  todavía no muestra. Si la consulta falla, se detiene antes de compilar.
+- La espera de procesamiento de Apple tiene un límite de 15 minutos. Un timeout
+  puede ocurrir después de un upload exitoso: revisar App Store Connect antes
+  de reintentar; no implica que el archive o la firma hayan fallado.
 - Nota: `workflow_dispatch` aparece en la UI (y en la API) recién cuando el
   workflow vive en la rama por defecto del repo (`main`). Hasta entonces, para
   disparar el pipeline completo usá push a `dev`; una vez mergeado a `main`, el
