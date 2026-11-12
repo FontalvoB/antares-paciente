@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED, appointmentLinksForDisplay, isAppointmentAction} from "../utils/appointmentsVisibility";
 import {
   IonActionSheet,
   IonBadge,
@@ -51,7 +52,7 @@ const quick = [
     ? [["¿Qué comer?", "¿Qué debo comer hoy según mi plan?", nutritionOutline]]
     : []),
   ["Hábitos", "¿Cómo puedo organizar mis hábitos diarios?", pulseOutline],
-  ["Agendar", "Agenda una cita con el médico para hoy", calendarOutline],
+  ...(APPOINTMENTS_ENABLED ? [["Agendar", "Agenda una cita con el médico para hoy", calendarOutline]] : []),
   ["Progreso", "¿Cómo va mi progreso esta semana?", trendingUpOutline],
 ];
 
@@ -258,8 +259,8 @@ export function ChatPage() {
   // no debe convertirse en una burbuja vacía con «escribiendo» permanente.
   const visibleChat = chat.map((message) => ({
     ...message,
-    displayText: message.role === "user" ? message.text : chatTextForDisplay(message.text),
-    visibleCta: message.cta && canShowChatAction(message.cta.type, message.cta.ctaText)
+    displayText: message.role === "user" ? message.text : appointmentLinksForDisplay(chatTextForDisplay(message.text)),
+    visibleCta: message.cta && (APPOINTMENTS_ENABLED || !isAppointmentAction(message.cta.type, message.cta.ctaText)) && canShowChatAction(message.cta.type, message.cta.ctaText)
       ? message.cta : null,
   })).filter((message) => !message.text || message.displayText.trim() || message.image || message.visibleCta);
 

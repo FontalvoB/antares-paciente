@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED,isAppointmentNotification} from "./appointmentsVisibility";
 import { Capacitor } from '@capacitor/core'
 import { PushNotifications, type RegistrationError, type Token } from '@capacitor/push-notifications'
 import { getAccessToken } from './authApi'
@@ -88,6 +89,7 @@ let pendingRoomAppointmentId: string | null = null
 
 /** Encola la sala a abrir cuando todavía no hay contexto de navegación. */
 export function queuePendingRoomAppointmentId(appointmentId: string): void {
+  if(!APPOINTMENTS_ENABLED)return
   pendingRoomAppointmentId = appointmentId
 }
 
@@ -130,11 +132,13 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
   })
   void PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
     const data = notification.notification?.data as Record<string, unknown> | undefined
+    if(!APPOINTMENTS_ENABLED && (isAppointmentNotification(String(data?.type??"")) || ["appointment","book","room"].includes(String(data?.screen??""))))return
     const rawAppointmentId = data?.appointmentId ?? data?.appointment_id
     const appointmentId =
       typeof rawAppointmentId === 'string' && rawAppointmentId ? rawAppointmentId : undefined
     // Notificación de sala: screen === "room" (y/o appointmentId en la carga).
     if (data?.screen === 'room' || appointmentId) {
+      if(!APPOINTMENTS_ENABLED)return
       if (!appointmentId) {
         console.warn('[push] Notificación de sala sin appointmentId; se ignora')
         return

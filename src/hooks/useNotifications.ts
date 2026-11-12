@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED,isAppointmentNotification} from "../utils/appointmentsVisibility";
 import { useAchievements } from "./useAchievements";
 import { markAchievementRead } from "../services/achievements/achievement-store";
 import { achievementCopy } from "../services/achievements/achievement-copy";
@@ -142,7 +143,7 @@ export function useNotifications(): UseNotificationsResult {
     markAchievementRead(owner);
     const current = queryClient.getQueryData<PaginatedNotificationsResult>(key);
     const unreadIds = (current?.items ?? [])
-      .filter((item) => item.readAt === null)
+      .filter((item) => item.readAt === null && (APPOINTMENTS_ENABLED || !isAppointmentNotification(item.type)))
       .map((item) => item.id);
     if (unreadIds.length === 0) return;
     // Optimismo primero: todo lo no leído se marca al instante.
@@ -152,9 +153,9 @@ export function useNotifications(): UseNotificationsResult {
       return {
         ...prev,
         items: prev.items.map((item) =>
-          item.readAt === null ? { ...item, readAt: now } : item,
+          item.readAt === null && (APPOINTMENTS_ENABLED || !isAppointmentNotification(item.type)) ? { ...item, readAt: now } : item,
         ),
-        unreadCount: 0,
+        unreadCount: Math.max(0,prev.unreadCount-unreadIds.length),
       };
     });
     const results = await Promise.allSettled(
@@ -193,11 +194,11 @@ export function useNotifications(): UseNotificationsResult {
   }, [refetch]);
 
   return {
-    notifications: [...(data?.items ?? []), ...achievements.map(a => ({
+    notifications: [...(data?.items ?? []).filter(item=>APPOINTMENTS_ENABLED || !isAppointmentNotification(item.type)), ...achievements.map(a => ({
       id: `local-achievement:${a.id}`, type: 'achievement_earned', ...achievementCopy(a, t),
       priority: 'normal', channel: 'local', sentAt: a.earnedAt, readAt: a.readAt,
     }))].sort((a, b) => b.sentAt.localeCompare(a.sentAt)),
-    unreadCount: (data?.unreadCount ?? 0) + achievements.filter(a => !a.readAt).length,
+    unreadCount: (APPOINTMENTS_ENABLED ? (data?.unreadCount ?? 0) : (data?.items ?? []).filter(item=>!item.readAt&&!isAppointmentNotification(item.type)).length) + achievements.filter(a => !a.readAt).length,
     isLoading,
     isError,
     error: error ?? null,

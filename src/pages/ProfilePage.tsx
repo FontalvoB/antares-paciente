@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IonAccordion,
@@ -703,13 +704,13 @@ export function ProfilePage() {
                       tone: "lilac",
                       action: () => openTests(),
                     },
-                    {
+                    ...(APPOINTMENTS_ENABLED ? [{
                       icon: calendarOutline,
                       title: "Calendario de citas",
                       sub: "Agenda, control y telemedicina",
                       tone: "sand",
                       action: () => go("book"),
-                    },
+                    }] : []),
                     {
                       icon: leafOutline,
                       title: "Plan nutricional",

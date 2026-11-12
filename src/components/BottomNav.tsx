@@ -1,7 +1,10 @@
+import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
 import { IonBadge, IonIcon } from "@ionic/react";
 import {
   calendar,
   calendarOutline,
+  nutrition,
+  nutritionOutline,
   chatbubbleEllipses,
   chatbubbleEllipsesOutline,
   home,
@@ -26,7 +29,9 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
     sos?: boolean;
   }[] = [
     { id: "home", label: t("Inicio"), icon: homeOutline, iconOn: home },
-    { id: "book", label: t("Citas"), icon: calendarOutline, iconOn: calendar },
+    APPOINTMENTS_ENABLED
+      ? { id: "book", label: t("Citas"), icon: calendarOutline, iconOn: calendar }
+      : { id: "nut", label: t("Nutrición"), icon: nutritionOutline, iconOn: nutrition },
     //{ id: 'nut', label: t('Nutrición'), icon: leafOutline, iconOn: leaf },
     { id: "home", label: t("SOS"), icon: medkit, iconOn: medkit, sos: true },
     {

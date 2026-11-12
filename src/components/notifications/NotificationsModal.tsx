@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED} from "../../utils/appointmentsVisibility";
 import { useMemo } from "react";
 import {
   IonBadge,
@@ -49,7 +50,7 @@ import type { Screen } from "../../types";
 
 /** Destino clínico por prefijo del código de aviso. null = sin navegación. */
 export function resolveNotificationTarget(type: string): Screen | null {
-  if (type.startsWith("appointment_")) return "book";
+  if (type.startsWith("appointment_")) return APPOINTMENTS_ENABLED ? "book" : null;
   if (type.startsWith("hydration_") || type.startsWith("nutrition_"))
     return "nut";
   if (type.startsWith("chat_")) return "chat";

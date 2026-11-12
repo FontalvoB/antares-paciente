@@ -41,3 +41,9 @@ bundle exec fastlane ios beta   # flujo completo local hasta TestFlight
 
 Guía completa (secretos, firma, rotación de credenciales, troubleshooting):
 [`docs/IOS_CICD_TESTFLIGHT.md`](docs/IOS_CICD_TESTFLIGHT.md)
+
+## Visibilidad de Citas
+
+Citas está oculto por defecto; Nutrición ocupa su pestaña móvil. El código, los contratos y los datos de agenda se conservan. Para reactivarlo, compilar con `VITE_APPOINTMENTS_ENABLED=true`. La opción no activa enlaces de Nutrición en el chat: esa configuración es independiente.
+
+Prueba de navegador con API simulada: `COP_E2E_APP_URL=http://localhost:5188 node e2e/appointments-hidden.mjs`. Para comprobar la reactivación contra un servidor con la opción habilitada: `COP_E2E_MODE=restored COP_E2E_APP_URL=http://localhost:5189 node e2e/appointments-hidden.mjs`. Los tests existentes del módulo se ejecutan con Citas habilitado en Vitest.

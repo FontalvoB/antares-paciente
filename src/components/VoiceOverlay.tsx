@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonInput, IonModal, IonSpinner } from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
@@ -246,6 +247,7 @@ export function VoiceOverlay() {
       async (params: Record<string, unknown>) => {
         const assertActive = () => assertSession(session, true);
         assertActive();
+        if(!APPOINTMENTS_ENABLED)return JSON.stringify({error:"La función de citas no está disponible."});
         setThinking(true);
         try {
           assertActive();

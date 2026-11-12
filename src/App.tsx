@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED} from "./utils/appointmentsVisibility";
 import { LanguageQuerySync } from "./components/LanguageQuerySync";
 import { AchievementCenter } from "./components/achievements/AchievementCenter";
 import { setupIonicReact, IonApp, IonSpinner } from "@ionic/react";
@@ -84,7 +85,7 @@ function Router() {
   } else {
     switch (screen) {
       case "book":
-        content = <AppointmentsPage />;
+        content = APPOINTMENTS_ENABLED ? <AppointmentsPage /> : <NutritionPage />;
         break;
       case "hc":
         content = <HistoryPage />;
@@ -127,7 +128,7 @@ function Router() {
         content = <CommunityPage />;
         break;
       case "room":
-        content = <VirtualRoomPage />;
+        content = APPOINTMENTS_ENABLED ? <VirtualRoomPage /> : <NutritionPage />;
         break;
       default:
         content = <HomePage />;
@@ -173,6 +174,7 @@ function Shell() {
   // o fue cancelada, avisa con un toast.
   const openRoomFromPush = useCallback(
     async (appointmentId: string) => {
+      if(!APPOINTMENTS_ENABLED)return;
       const isActive = (status?: string) =>
         status === "Confirmed" || status === "InProgress";
       const loaded = upcomingAppointments?.find((a) => a.id === appointmentId);

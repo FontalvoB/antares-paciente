@@ -1,3 +1,4 @@
+import {APPOINTMENTS_ENABLED,visibleScreen} from "../utils/appointmentsVisibility";
 import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
 import { App } from "@capacitor/app";
 import { resetSessionQueryCache } from "../utils/queryClient";
@@ -421,6 +422,14 @@ export function AppProvider({
       // Núcleo crítico (citas/solicitudes/contexto) en paralelo; catálogos
       // best-effort independientes para que su fallo no tumbe la vista
       // (QA-010): el wizard degrada a "cualquiera"/reintento en ese caso.
+      if (!APPOINTMENTS_ENABLED) {
+        const [me, team] = await Promise.all([fetchMyContext(),fetchProfessionalsCatalog().catch(()=>null)]);
+        if(!isCurrent())return;
+        setPatientCtx({patientId:me.patient?.id??null,orgId:me.patient?.organizationId??"",clinicId:me.patient?.clinicId??null,locationId:me.patient?.locationId??null});
+        setCatalog(team?.data??null);
+        setAppointments([]);setRequests([]);
+        return;
+      }
       const [me, appts, reqs] = await Promise.all([
         fetchMyContext(),
         fetchMyAppointments({ pageSize: 100 }),
@@ -1074,8 +1083,9 @@ export function AppProvider({
       // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
       // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
       // El protocolo nutricional abre el mismo módulo completo que la pestaña Nutrición.
-      navigate: (s) => setScreen(s === "avatar" ? "body" : s === "program-nut" ? "nut" : s),
+      navigate: (s) => setScreen(visibleScreen(s === "avatar" ? "body" : s === "program-nut" ? "nut" : s)),
       openBookingWizard: () => {
+        if(!APPOINTMENTS_ENABLED){setScreen("nut");return;}
         setBookingWizardAutoOpen(true);
         setScreen("book");
       },
@@ -1273,6 +1283,7 @@ export function AppProvider({
       cancelAppointmentById,
       rescheduleAppointmentById,
       openRoom: (appointment) => {
+        if(!APPOINTMENTS_ENABLED)return;
         setRoomAppointment(appointment);
         setScreen("room");
       },
