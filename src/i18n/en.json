@@ -3801,5 +3801,14 @@
   "Actualizando tu plan": "Updating your plan",
   "Cargando las indicaciones de tu plan.": "Loading your plan’s recommendations.",
   "Tu plan de alimentación": "Your dietary plan",
-  "Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.": "Vita offers guidance on habits and helps you follow your published plan. She does not diagnose or change treatments."
+  "Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.": "Vita offers guidance on habits and helps you follow your published plan. She does not diagnose or change treatments.",
+  "Frente a tu plan": "Compared with your plan",
+  "Sin plan": "No plan",
+  "Elegir día": "Choose day",
+  "Sin comparación": "No comparison",
+  "{value} de {target} kcal": "{value} of {target} kcal",
+  "No pudimos cargar tu plan.": "We couldn’t load your plan.",
+  "Sin plan para comparar.": "No plan to compare.",
+  "Selecciona el día": "Select a day",
+  "Sin datos para comparar.": "No data to compare."
 }

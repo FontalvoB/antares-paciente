@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IonButton, IonIcon, IonSelect, IonSelectOption, IonSkeletonText } from "@ionic/react";
+import { IonAccordion, IonAccordionGroup, IonButton, IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonSkeletonText } from "@ionic/react";
 import { leafOutline } from "ionicons/icons";
 import { useI18n } from "../../i18n/I18nContext";
 import type { FoodAnalysisResult } from "../../utils/foodAiApi";
@@ -46,110 +46,55 @@ export function FoodPlanComparison({
     fatG: t("Grasas"),
     fiberG: t("Fibra"),
   };
+  const calories = rows.find(row => row.key === "calories");
+  const locale = lang === "en" ? "en-US" : "es-ES";
+  const format = (value: number) => value.toLocaleString(locale, { maximumFractionDigits: 1 });
+  const summary = failed ? t("No disponible") : !plan ? t("Sin plan")
+    : needsDay && selectedDay === "" ? t("Elegir día")
+    : calories ? t("{value} de {target} kcal", { value: format(calories.estimated), target: format(calories.target) })
+    : rows.length ? t("Ver detalle") : t("Sin comparación");
   return (
     <section className="food-plan-check" aria-label={t("Tu comida y tu plan")}>
-      <div className="food-plan-heading">
-        <IonIcon icon={leafOutline} />
-        <div>
-          <small>{t("FOOD AI · TU PLAN")}</small>
-          <h3>{t("Tu comida y tu plan")}</h3>
-        </div>
-      </div>
-      {loading ? (
-        <div role="status" aria-busy="true"><p>{t("Cargando tu plan…")}</p><IonSkeletonText animated style={{ height: 60 }} /></div>
-      ) : failed ? (
-        <div role="alert"><p>
-          {t(
-            "No pudimos consultar tu plan. No se puede evaluar la coincidencia.",
-          )}
-        </p>{onRetry && <IonButton fill="outline" onClick={onRetry}>{t("Reintentar")}</IonButton>}</div>
-      ) : !plan ? (
-        <p>
-          {t(
-            "No tienes un plan nutricional asignado para comparar esta comida.",
-          )}
-        </p>
-      ) : (
-        <>
-          <p className="food-plan-name">{plan.name}</p>
-          {needsDay && (
-            <IonSelect
-              className="fld"
-              interface="popover"
-              labelPlacement="stacked"
-              label={t("Día del plan")}
-              placeholder={t("Selecciona el día que estás siguiendo")}
-              value={selectedDay}
-              onIonChange={(e) => setSelectedDay(String(e.detail.value))}
-            >
-              {days.map((day, i) => (
-                <IonSelectOption key={i} value={String(i)}>
-                  {t("Día {day}", { day: String(day.dayNumber ?? i + 1) })}
-                </IonSelectOption>
-              ))}
-            </IonSelect>
-          )}
-          {rows.length > 0 ? (
-            <>
-              <div className="food-plan-columns">
-                <span>{t("Nutriente")}</span>
-                <span>{t("Tu foto")}</span><span>{t("Tu plan")}</span>
-              </div>
-              {rows.map((row) => (
-                <div className="food-plan-row" key={row.key}>
-                  <div>
+      <IonAccordionGroup>
+        <IonAccordion value="meal-plan-comparison">
+          <IonItem slot="header" lines="none" className="food-plan-summary">
+            <IonIcon slot="start" icon={leafOutline} aria-hidden="true" />
+            <IonLabel>{t("Frente a tu plan")}</IonLabel>
+            <span slot="end" className="food-plan-summary-value" aria-busy={loading}>
+              {loading ? <IonSkeletonText animated /> : summary}
+            </span>
+          </IonItem>
+          <div slot="content" className="food-plan-details">
+            {loading ? <div role="status" aria-busy="true"><IonSkeletonText animated style={{ height: 48 }} /></div>
+              : failed ? <div role="alert"><p>{t("No pudimos cargar tu plan.")}</p>{onRetry && <IonButton fill="outline" size="small" onClick={onRetry}>{t("Reintentar")}</IonButton>}</div>
+              : !plan ? <p>{t("Sin plan para comparar.")}</p> : <>
+                {plan.name && <p className="food-plan-name">{plan.name}</p>}
+                {needsDay && <IonSelect
+                  className="fld"
+                  interface="popover"
+                  labelPlacement="stacked"
+                  label={t("Día del plan")}
+                  placeholder={t("Selecciona el día")}
+                  value={selectedDay}
+                  onIonChange={e => setSelectedDay(String(e.detail.value))}
+                >
+                  {days.map((day, i) => <IonSelectOption key={i} value={String(i)}>{t("Día {day}", { day: String(day.dayNumber ?? i + 1) })}</IonSelectOption>)}
+                </IonSelect>}
+                {rows.length ? <>
+                  <div className="food-plan-columns"><span>{t("Nutriente")}</span><span>{t("Tu foto")}</span><span>{t("Tu plan")}</span></div>
+                  {rows.map(row => <div className="food-plan-row" key={row.key}>
                     <strong>{labels[row.key]}</strong>
-                    <small>
-                      {row.delta === 0
-                        ? t("Coincide con la meta")
-                        : row.delta > 0
-                          ? t("{value} por encima", {
-                              value: `${row.delta} ${row.key === "calories" ? "kcal" : "g"}`,
-                            })
-                          : t("{value} por debajo", {
-                              value: `${Math.abs(row.delta)} ${row.key === "calories" ? "kcal" : "g"}`,
-                            })}
-                    </small>
-                  </div>
-                  <b className="food-plan-estimated">{Math.round(row.estimated * 10) / 10}<small>{row.key === "calories" ? "kcal" : "g"}</small></b>
-                  <b className="food-plan-target">{row.target}<small>{row.key === "calories" ? "kcal" : "g"}</small></b>
-                </div>
-              ))}
-              <p className="food-plan-note">
-                {t(
-                  "Comparación estimada de porciones y macros. Estar por debajo no siempre es mejor; revisa las cantidades indicadas en tu plan.",
-                )}
-              </p>
-            </>
-          ) : (
-            (!needsDay || selectedDay !== "") && (
-              <p>
-                {t(
-                  "No hay metas comparables para esta comida o el análisis está incompleto. No podemos confirmar la adherencia.",
-                )}
-              </p>
-            )
-          )}
-          {meal?.foods && (
-            <p>
-              <strong>{t("Alimentos de tu plan")}: </strong>
-              {meal.foods}
-            </p>
-          )}
-          {mealNotes && <p>{mealNotes}</p>}
-          {plan.allergens && (
-            <p>
-              <strong>{t("Restricciones del plan")}: </strong>
-              {plan.allergens}
-            </p>
-          )}
-          <small>
-            {t(
-              "La foto no permite verificar ingredientes ocultos, alergias ni todas las indicaciones de tu profesional.",
-            )}
-          </small>
-        </>
-      )}
+                    <b className="food-plan-estimated">{format(row.estimated)}<small>{row.key === "calories" ? "kcal" : "g"}</small></b>
+                    <b className="food-plan-target">{format(row.target)}<small>{row.key === "calories" ? "kcal" : "g"}</small></b>
+                  </div>)}
+                </> : (!needsDay || selectedDay !== "") && <p>{t("Sin datos para comparar.")}</p>}
+                {meal?.foods && <p><strong>{t("Alimentos de tu plan")}: </strong>{meal.foods}</p>}
+                {mealNotes && <p>{mealNotes}</p>}
+                {plan.allergens && <p><strong>{t("Restricciones del plan")}: </strong>{plan.allergens}</p>}
+              </>}
+          </div>
+        </IonAccordion>
+      </IonAccordionGroup>
     </section>
   );
 }
