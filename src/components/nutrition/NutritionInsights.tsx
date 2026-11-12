@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { IonButton, IonIcon, IonProgressBar, IonSkeletonText } from '@ionic/react'
-import { bodyOutline, waterOutline, fitnessOutline, restaurantOutline, trophyOutline, calendarOutline } from 'ionicons/icons'
-import { RingProgress } from '../RingProgress'
+import { IonAccordion, IonAccordionGroup, IonButton, IonIcon, IonItem, IonLabel, IonProgressBar, IonSkeletonText } from '@ionic/react'
+import { bodyOutline, waterOutline, fitnessOutline, calendarOutline } from 'ionicons/icons'
 import { useT } from '../../i18n/I18nContext'
 import { formatMetricValue } from '../../data/metrics'
 import { formatDateForDisplay } from '../../utils/dates'
@@ -37,23 +36,28 @@ export function NutritionWeek({ current, previous, loading, failed, onRetry, loc
   const t = useT()
   const difference = current != null && previous != null ? current - previous : null
   return <div className="ntr-view">
-    <section className="ntr-card ntr-week">
-      <div className="ntr-section-title"><IonIcon icon={calendarOutline} /><h2>{t('Adherencia semanal')}</h2></div>
-      <p className="ntr-muted">{t('Una mirada a tu constancia con la alimentación.')}</p>
-      {loading && current == null ? <div aria-busy="true"><IonSkeletonText animated className="ntr-skeleton" /></div> : current == null ? <div className="ntr-empty">{t('Sin datos de adherencia esta semana todavía')}{failed && <IonButton fill="clear" onClick={onRetry}>{t('Reintentar')}</IonButton>}</div> : <>
-        <div className="ntr-week-summary">
-          <RingProgress value={current / 100} size={142} stroke={12} trackColor="var(--teal-l)" gradient={['var(--safe)', 'var(--blue)']}>
-            <strong className="ntr-ring-number">{formatMetricValue(current, 0, locale)}<small>%</small></strong><span className="ntr-ring-label">{t('Adherencia')}</span>
-          </RingProgress>
-          <div className="ntr-week-comparison"><span>{t('Esta semana')}</span><strong>{t('Cada hábito cuenta')}</strong>
-            {difference != null ? <p><b>{difference > 0 ? '↑' : difference < 0 ? '↓' : '—'} {formatMetricValue(Math.abs(difference), 0, locale)} {t('puntos')}</b><span>{t('vs. semana anterior')}</span></p> : <p>{t('Tu primera referencia semanal')}</p>}
-          </div>
+    <IonAccordionGroup className="ntr-adherence">
+      <IonAccordion value="weekly-adherence">
+        <IonItem slot="header" lines="none" className="ntr-adherence-summary">
+          <IonIcon slot="start" icon={calendarOutline} aria-hidden="true" />
+          <IonLabel>{t('Adherencia semanal')}</IonLabel>
+          <span slot="end" className="ntr-adherence-value" aria-busy={loading && current == null}>
+            {loading && current == null ? <IonSkeletonText animated /> : current == null ? t('Sin datos') : `${formatMetricValue(current, 0, locale)}%`}
+          </span>
+        </IonItem>
+        <div slot="content" className="ntr-adherence-details">
+          {loading && current == null ? <IonSkeletonText animated className="ntr-skeleton" /> : current == null ? <div className="ntr-adherence-empty">
+            <span>{t('Sin datos esta semana')}</span>
+            {failed && <IonButton fill="clear" size="small" onClick={onRetry}>{t('Reintentar')}</IonButton>}
+          </div> : <>
+            <div className="ntr-row"><span>{t('Esta semana')}</span><strong>{formatMetricValue(current, 0, locale)}%</strong></div>
+            <IonProgressBar value={Math.max(0, Math.min(1, current / 100))} aria-label={t('Esta semana')} />
+            {previous != null && <div className="ntr-row"><span>{t('Semana anterior')}</span><strong>{formatMetricValue(previous, 0, locale)}%</strong></div>}
+            {difference != null && <p className="ntr-adherence-trend">{difference > 0 ? '↑' : difference < 0 ? '↓' : '—'} {formatMetricValue(Math.abs(difference), 0, locale)} {t('puntos')} <span>{t('vs. semana anterior')}</span></p>}
+          </>}
         </div>
-        <div className="ntr-habit"><span className="ntr-habit-icon"><IonIcon icon={restaurantOutline} /></span><div><div className="ntr-row"><strong>{t('Alimentación')}</strong><b>{formatMetricValue(current, 0, locale)}%</b></div><IonProgressBar value={Math.max(0, Math.min(1, current / 100))} aria-label={t('Alimentación')} /></div></div>
-        {previous != null && <div className="ntr-previous"><span>{t('Semana anterior')}</span><strong>{formatMetricValue(previous, 0, locale)}%</strong></div>}
-      </>}
-    </section>
-    <aside className="ntr-encouragement"><span><IonIcon icon={trophyOutline} /></span><div><strong>{t('Tu constancia tiene valor')}</strong><p>{t('Revisa tu evolución, reconoce tus avances y sigue a tu ritmo.')}</p></div></aside>
+      </IonAccordion>
+    </IonAccordionGroup>
   </div>
 }
 
