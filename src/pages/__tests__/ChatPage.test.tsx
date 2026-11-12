@@ -543,12 +543,12 @@ describe("ChatPage — disclaimer clínico y feedback (Fase 9)", () => {
     mockState.chat = [welcomeMessage];
   });
 
-  it("explica el alcance educativo y el apoyo al plan aprobado", () => {
+  it("explica el alcance educativo y el apoyo al plan publicado", () => {
     render(<ChatPage />);
 
     expect(
       screen.getByText(
-        "Vita te orienta sobre hábitos y te ayuda a seguir el plan aprobado por tu equipo. No diagnostica ni cambia tratamientos.",
+        "Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.",
       ),
     ).toBeTruthy();
   });

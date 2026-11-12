@@ -1,3 +1,4 @@
+import {NutritionDisclaimer} from "../components/nutrition/NutritionDisclaimer";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, MotionConfig } from "framer-motion";
 import {
@@ -529,6 +530,12 @@ export function NutritionPage() {
   // productMessage (crudo, como en ProgramPage) aporta el contexto del
   // estado; el fallback mock del hook es NO-null con todayTasks vacío y cae
   // en el render normal con estados vacíos derivados (nunca fabricación).
+  if(!snapshot && nutritionPlan){
+    return <Screen><PageHeader title={t("Nutrición")} sub={t("Tu plan de alimentación")}/><Scroll className="ntr-scroll">
+      <NutritionDisclaimer/>
+      <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus}/>
+    </Scroll></Screen>;
+  }
   if (!snapshot) {
     return (
       <Screen>
@@ -613,6 +620,7 @@ export function NutritionPage() {
 
       {/* Todo lo demás hace scroll: analizador + resumen + contenido del tab. */}
       <Scroll ref={scrollRef} className={`ntr-scroll${tab === 'hoy' ? ' ntd-today' : ''}`}>
+        {nutritionPlan && <NutritionDisclaimer/>}
         {tab === 'hoy' && <section className="ntd-hero">
           <img src={dailyMediterranean} alt="" fetchPriority="high" />
           <div className="ntd-hero-copy"><span className="ntd-eyebrow"><IonIcon icon={leafOutline} />{t('Tu alimentación de hoy')}</span><h2>{t('Tu día, bien nutrido.')}</h2><p>{t('Un momento para ti. Una comida a la vez.')}</p><span className="ntd-date">{formatDateForDisplay(snapshot.todayLocalDate)}</span></div>

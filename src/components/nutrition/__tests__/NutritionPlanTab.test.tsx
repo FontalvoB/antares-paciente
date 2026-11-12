@@ -67,7 +67,7 @@ describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
   it('espera la revisión aprobada actual en lugar de mostrar una versión anterior de cache', () => {
     render(<NutritionPlanTab {...baseProps} plan={{ ...planFixture, id: 'plan-A', revision: 1 }} status={{ status: 'active', planId: 'plan-A', revision: 2, durationDays: 30 }} />);
     expect(screen.queryByText('Avena, plátano')).toBeNull();
-    expect(screen.getByText('Actualizando tu plan aprobado')).toBeTruthy();
+    expect(screen.getByText('Actualizando tu plan')).toBeTruthy();
   });
   it("incluye merienda sin inventar alimentos si no está prescrita", () => {
     render(<NutritionPlanTab {...baseProps} plan={planFixture} />);

@@ -403,7 +403,7 @@ export function ChatPage() {
         className="screen-scroll chat-list"
         onScroll={handleScroll}
       >
-        {/* Alcance de Vita: educación y apoyo al plan aprobado, sin sustituir al equipo. */}
+        {/* Alcance de Vita: educación y apoyo al plan publicado, sin sustituir al equipo. */}
         <div className="chat-disclaimer" role="note">
           <IonIcon
             icon={informationCircle}
@@ -412,7 +412,7 @@ export function ChatPage() {
           />
           <span>
             {t(
-              "Vita te orienta sobre hábitos y te ayuda a seguir el plan aprobado por tu equipo. No diagnostica ni cambia tratamientos.",
+              "Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.",
             )}
           </span>
         </div>

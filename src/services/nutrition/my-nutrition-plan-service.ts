@@ -55,6 +55,7 @@ export interface MyNutritionPlanDayDto {
 
 /** Plan de alimentación activo del paciente (wire de `NutritionPlan`). */
 export interface MyNutritionPlanDto {
+  disclaimer?: string;
   id?: string;
   revision?: number | null;
   durationDays?: number;
