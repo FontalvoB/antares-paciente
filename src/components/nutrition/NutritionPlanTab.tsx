@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { IonButton, IonSkeletonText, IonIcon, IonSelect, IonSelectOption, IonProgressBar } from "@ionic/react";
-import { leafOutline, waterOutline, restaurantOutline, timeOutline, checkmarkCircleOutline, analyticsOutline, shieldCheckmarkOutline, calendarOutline, refreshOutline, cafeOutline, sunnyOutline, moonOutline, informationCircleOutline } from "ionicons/icons";
+import { leafOutline, waterOutline, restaurantOutline, timeOutline, checkmarkCircleOutline, analyticsOutline, shieldCheckmarkOutline, calendarOutline, refreshOutline, cafeOutline, sunnyOutline, moonOutline, informationCircleOutline, chevronForwardOutline } from "ionicons/icons";
 import { useI18n } from "../../i18n/I18nContext";
 import { localizedError } from "../../utils/localizedError";
 import { formatMetricValue } from "../../data/metrics";
@@ -267,11 +267,22 @@ export function NutritionPlanTab({
             <div className="nutrition-meal-shortcuts">{Object.entries(PLAN_MEAL_META).map(([code, meta]) => {
               const matches = mealCards.filter(meal => meal.code === code);
               const meal = matches[0];
-              return <IonButton key={code} fill="clear" onClick={() => {
+              const missing = matches.every(m => m.missing);
+              const label = code === 'mer' ? 'Merienda' : meta.label;
+              const detail = missing ? t('Sin menú') : matches.length > 1
+                ? t('{count} comidas', { count: String(matches.length) })
+                : meal?.schedule ?? (meal?.kcal != null ? `${formatMetricValue(meal.kcal, 0, locale)} kcal` : t('Ver menú'));
+              return <IonButton key={code} fill="clear" className={`nutrition-meal-shortcut nutrition-meal-shortcut-${code}`} data-missing={missing || undefined} aria-label={`${t(code === 'mer' ? 'Meriendas y snacks' : meta.label)}: ${detail}`} onClick={() => {
                 const target = document.getElementById(`nutrition-meal-${meal?.key}`);
                 target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
                 target?.focus({ preventScroll: true });
-              }}><IonIcon icon={meta.icon} aria-hidden="true" /><span><strong>{t(code === 'mer' ? 'Meriendas y snacks' : meta.label)}</strong><small>{matches.every(m => m.missing) ? t('Por indicar') : matches.length > 1 ? t('{count} comidas', { count: String(matches.length) }) : meal?.schedule ?? t('Ver indicaciones')}</small></span></IonButton>;
+              }}>
+                <span className="nutrition-meal-shortcut-content">
+                  <span className="nutrition-meal-shortcut-icon"><IonIcon icon={meta.icon} aria-hidden="true" /></span>
+                  <span className="nutrition-meal-shortcut-copy"><strong>{t(label)}</strong><small>{detail}</small></span>
+                  <IonIcon className="nutrition-meal-shortcut-arrow" icon={chevronForwardOutline} aria-hidden="true" />
+                </span>
+              </IonButton>;
             })}</div>
           </nav>
           <div className="nutrition-plan-meals">{mealCards.map(m => <article key={m.key} id={`nutrition-meal-${m.key}`} tabIndex={-1} className={`nutrition-plan-meal${m.code === 'mer' ? ' nutrition-plan-snack' : ''}${m.missing ? ' nutrition-plan-unconfigured' : ''}`}>
