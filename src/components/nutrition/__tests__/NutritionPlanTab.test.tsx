@@ -107,7 +107,7 @@ describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
     expect(prescribed.map(meal => meal.querySelector('.nutrition-plan-foods p')?.textContent)).toEqual(['Desayuno prescrito', 'Snack legacy adicional', 'Fruta de la tarde']);
     expect(prescribed[0].querySelector('.nutrition-plan-meal-head p')).toBeNull();
     expect(screen.getAllByText('07:00, 12:00, 15:30, 19:00')).toHaveLength(1);
-    expect(screen.getByText('Meriendas y snacks').closest('ion-button')?.textContent).toContain('2 comidas');
+    expect(screen.getByLabelText('Meriendas y snacks: 2 comidas')?.textContent).toContain('2 comidas');
   });
 
   it("usa el agua del día vigente y no inventa una merienda al estar ausente", () => {

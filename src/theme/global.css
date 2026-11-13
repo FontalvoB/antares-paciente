@@ -33082,12 +33082,31 @@ ion-button.emotion-save { margin:0; min-height:50px; --background:var(--navy); -
 ion-select.nutrition-plan-day { margin:16px 0 0; min-height:62px; padding:8px 14px; border:1px solid var(--bd); border-radius:12px; background:var(--wh); color:var(--navy); --highlight-color-focused:var(--blue); }
 ion-button.nutrition-plan-today { margin:4px 0 0; min-height:44px; --color:var(--blue); font-size:13px; letter-spacing:normal; text-transform:none; }
 .nutrition-plan-redesign .nutrition-meal-navigation { padding:0; border:0; margin:18px 0 22px; }
-.nutrition-plan-redesign .nutrition-meal-shortcuts { gap:8px; }
-.nutrition-plan-redesign .nutrition-meal-shortcuts ion-button { min-height:76px; --border-radius:12px; --padding-start:12px; --padding-end:10px; }
-.nutrition-plan-redesign .nutrition-meal-shortcuts ion-icon { font-size:22px; flex-shrink:0; color:var(--blue); }
-.nutrition-plan-redesign .nutrition-meal-shortcuts span { display:flex; flex-direction:column; gap:5px; align-items:flex-start; text-align:left; min-width:0; }
-.nutrition-plan-redesign .nutrition-meal-shortcuts strong { font-size:13px; font-weight:650; line-height:1.3; }
-.nutrition-plan-redesign .nutrition-meal-shortcuts small { font-size:11px; font-weight:500; color:var(--blue); line-height:1.4; }
+.nutrition-plan-redesign .nutrition-meal-shortcuts { gap:10px; }
+.nutrition-plan-redesign ion-button.nutrition-meal-shortcut {
+  --meal-accent:var(--blue); --meal-surface:var(--blue-l);
+  min-width:0; height:auto; min-height:84px; border:1px solid var(--bd); border-radius:16px;
+  --border-radius:15px; --background:var(--wh); --color:var(--navy); --box-shadow:none;
+  --padding-start:12px; --padding-end:10px; --padding-top:14px; --padding-bottom:14px;
+  --background-hover:var(--g0); --background-focused:var(--ice-l); --background-activated:var(--ice-l);
+}
+.nutrition-plan-redesign ion-button.nutrition-meal-shortcut-alm { --meal-accent:var(--teal); --meal-surface:var(--teal-l); }
+.nutrition-plan-redesign ion-button.nutrition-meal-shortcut-mer { --meal-accent:var(--gold-d); --meal-surface:var(--gold-l); }
+.nutrition-plan-redesign ion-button.nutrition-meal-shortcut-cen { --meal-accent:var(--indigo); --meal-surface:var(--ice-l); }
+.nutrition-plan-redesign .nutrition-meal-shortcut::part(native) { justify-content:flex-start; gap:9px; }
+.nutrition-plan-redesign .nutrition-meal-shortcut .nutrition-meal-shortcut-content { display:flex; flex-direction:row; align-items:center; gap:9px; width:100%; min-width:0; }
+.nutrition-plan-redesign .nutrition-meal-shortcut .nutrition-meal-shortcut-icon {
+  display:grid; place-items:center; flex:0 0 32px; width:32px; height:36px;
+  border-radius:11px; background:var(--meal-surface); color:var(--meal-accent);
+}
+.nutrition-plan-redesign .nutrition-meal-shortcut-icon ion-icon { margin:0; font-size:20px; }
+.nutrition-plan-redesign .nutrition-meal-shortcut .nutrition-meal-shortcut-copy { display:flex; flex:1; min-width:0; flex-direction:column; align-items:flex-start; gap:5px; text-align:left; }
+.nutrition-plan-redesign .nutrition-meal-shortcut strong { font-size:13px; font-weight:650; line-height:1.35; }
+.nutrition-plan-redesign .nutrition-meal-shortcut small { color:var(--mu); font-size:11px; font-weight:500; line-height:1.4; font-variant-numeric:tabular-nums; }
+.nutrition-plan-redesign .nutrition-meal-shortcut .nutrition-meal-shortcut-arrow { flex:0 0 12px; font-size:12px; color:var(--ice-d); margin:0; }
+.nutrition-plan-redesign .nutrition-meal-shortcut[data-missing] { --background:color-mix(in srgb,var(--wh) 85%,var(--g0)); }
+.nutrition-plan-redesign .nutrition-meal-shortcut[data-missing] .nutrition-meal-shortcut-icon { background:var(--g0); color:var(--mu); }
+.nutrition-plan-redesign .nutrition-meal-shortcut:focus-within { outline:2px solid var(--blue); outline-offset:2px; }
 .nutrition-plan-meal { padding:20px 0 23px; border-top:1px solid var(--bd); scroll-margin-top:20px; outline:none; overflow-wrap:anywhere; }
 .nutrition-plan-meal:focus-visible { outline:2px solid var(--blue); outline-offset:3px; }
 .nutrition-plan-meal-head { display:flex; gap:10px; align-items:center; }
@@ -33128,7 +33147,6 @@ ion-button.nutrition-plan-today { margin:4px 0 0; min-height:44px; --color:var(-
 .nutrition-plan-refresh-error p { margin:0; font-size:13px; line-height:1.65; }
 .nutrition-plan-refresh-error ion-button { min-height:44px; margin:4px 0 0; --color:var(--blue); }
 @media (min-width:1000px) { .ntr-plan-view.nutrition-plan-redesign { max-width:700px; margin-inline:auto; } }
-.nutrition-plan-redesign .nutrition-meal-shortcuts ion-icon { margin-inline-end:10px; }
 
 /* Contexto antes de elegir una misión: mismo día verificado en Inicio y Protocolo. */
 .pgh-day-context { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 9px; margin-bottom:5px; }
