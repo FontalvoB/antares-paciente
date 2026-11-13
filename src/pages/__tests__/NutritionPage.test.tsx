@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
-import type { ProgramSnapshotDto } from "../../services/program/types";
+import type { MetricsHistoryDto, ProgramSnapshotDto } from "../../services/program/types";
 import { ApiError } from "../../utils/apiClient";
 
 function render(children: ReactNode) {
@@ -50,6 +50,7 @@ const mockState = vi.hoisted(() => ({
   mutate: vi.fn(),
   queueHydration: vi.fn(),
   showToast: vi.fn(),
+  metricsHistory: null as MetricsHistoryDto | null,
 }));
 
 const snapshotFixture = {
@@ -128,7 +129,7 @@ vi.mock("../../hooks/useProgramScores", () => ({
 }));
 
 vi.mock("../../hooks/useMetricsHistory", () => ({
-  useMetricsHistory: () => ({ history: null, isLoading: false }),
+  useMetricsHistory: () => ({ history: mockState.metricsHistory, isLoading: false }),
 }));
 
 vi.mock("../../context/WearableContext", () => ({
@@ -170,6 +171,30 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     mockState.mutate.mockReset();
     mockState.queueHydration.mockReset();
     mockState.showToast.mockReset();
+    mockState.metricsHistory = null;
+  });
+
+  it("0.13 — muestra kg/m² y % en indicadores e historial sin modificar las unidades del contrato", () => {
+    const series = (code: string, unit: string, value: number) => ({
+      code, unit, target: null, favorableDirection: null,
+      points: [{ date: '2026-09-24', value }],
+    });
+    mockState.metricsHistory = { heightCm: 170, metrics: [
+      series('weight', 'kg', 70.5), series('bmi', 'kg_m2', 24.4),
+      series('hba1c', 'pct', 5.6), series('body_fat', 'pct', 24),
+    ] };
+    const { container } = render(<NutritionPage />);
+    fireEvent(container.querySelector('ion-segment')!, new CustomEvent('ionChange', { detail: { value: 'historial' }, bubbles: true }));
+
+    const metrics = container.querySelector('.ntr-metrics')!;
+    expect(metrics.textContent).toContain('24,4kg/m²');
+    expect(metrics.textContent).toContain('5,6%');
+    expect(metrics.textContent).toContain('24,0%');
+    expect(screen.getByText(/HbA1c 5,6 %/)).toBeTruthy();
+    expect(container.textContent).not.toContain('kg_m2');
+    expect(container.textContent).not.toContain('pct');
+    expect(mockState.metricsHistory.metrics[1].unit).toBe('kg_m2');
+    expect(mockState.metricsHistory.metrics[2].unit).toBe('pct');
   });
 
   it("usa la meta de calorías del plan como referencia del anillo", () => {

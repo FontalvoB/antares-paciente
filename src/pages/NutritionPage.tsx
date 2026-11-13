@@ -62,7 +62,7 @@ import {
   deriveWaterGlasses,
   findMealLog,
 } from "../utils/nutritionIntake";
-import { formatMetricTarget, formatMetricValue } from "../data/metrics";
+import { displayMetricUnit, formatMetricTarget, formatMetricValue } from "../data/metrics";
 import { formatDateForDisplay } from "../utils/dates";
 
 const MEAL_LABELS: Record<MealCode, string> = {
@@ -101,6 +101,10 @@ export function NutritionPage() {
   const { scores, isLoading: scoresLoading, isError: scoresFailed, refetch: refetchScores } = useProgramScores();
   const { history: metricsHistory, isLoading: metricsLoading, isError: metricsFailed, refetch: refetchMetrics } =
     useMetricsHistory();
+  const metricSeries = useMemo(() => (metricsHistory?.metrics ?? []).map(series => ({
+    ...series,
+    unit: series.unit == null ? null : displayMetricUnit(series.unit),
+  })), [metricsHistory]);
   const { today: deviceToday } = useWearable();
   // Plan alimentario asignado (self-service, sin inscripción): metas clínicas
   // reales del profesional. 404 sin plan → null (vacío honesto en Indicaciones)
@@ -126,7 +130,7 @@ export function NutritionPage() {
 
   // Gasto activo del día: anillo en vivo o la serie persistida de
   // activity_kcal (device-metrics). Sin dato no se muestra la línea.
-  const kcalSeries = metricsHistory?.metrics.find(
+  const kcalSeries = metricSeries.find(
     (m) => m.code.toLowerCase() === "activity_kcal",
   );
   const persistedKcal = kcalSeries?.points.at(-1)?.value ?? null;
@@ -228,13 +232,13 @@ export function NutritionPage() {
   const weekNutrition = hs?.dimensions?.nutrition ?? null;
   const weekPrevious = hs?.dimensions_previous?.nutrition ?? null;
   // Historial (server): serie de peso real + subtítulos bmi/hba1c por fecha.
-  const weightSeries = metricsHistory?.metrics.find(
+  const weightSeries = metricSeries.find(
     (m) => m.code.toLowerCase() === "weight",
   );
-  const bmiSeries = metricsHistory?.metrics.find(
+  const bmiSeries = metricSeries.find(
     (m) => m.code.toLowerCase() === "bmi",
   );
-  const hba1cSeries = metricsHistory?.metrics.find(
+  const hba1cSeries = metricSeries.find(
     (m) => m.code.toLowerCase() === "hba1c",
   );
   const weightUnit = weightSeries?.unit ?? "kg";
@@ -626,7 +630,7 @@ export function NutritionPage() {
           <div className="ntd-hero-copy"><span className="ntd-eyebrow"><IonIcon icon={leafOutline} />{t('Tu alimentación de hoy')}</span><h2>{t('Tu día, bien nutrido.')}</h2><p>{t('Un momento para ti. Una comida a la vez.')}</p><span className="ntd-date">{formatDateForDisplay(snapshot.todayLocalDate)}</span></div>
           <span className="ntd-photo-note">{t('Imagen ilustrativa')}</span>
         </section>}
-        {tab === "historial" && <NutritionMetrics metrics={metricsHistory?.metrics ?? []} loading={metricsLoading} locale={locale} />}
+        {tab === "historial" && <NutritionMetrics metrics={metricSeries} loading={metricsLoading} locale={locale} />}
         {tab === "historial" && captureCard}
         {tab === "hoy" && <div className="nut-goals-card ntd-progress">
           <div className="nut-goals-head">

@@ -30,6 +30,7 @@ import {
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
+import { displayMetricUnit } from "../data/metrics";
 import { bodyMorphs, bodyState } from "../components/avatar/avatar-body-state";
 import { AvatarCustomizer } from "../components/avatar/AvatarCustomizer";
 import { AvatarStage } from "../components/avatar/AvatarStage";
@@ -383,24 +384,22 @@ export function BodyProfilePage() {
                         </span>
                         <IonLabel>
                           <h3>{t(BODY_LABELS[code] ?? m.metricName)}</h3>
-                          <p>
+                          {SOURCE_LABELS[sourceKey] && <p>
                             <IonBadge
                               className={`hc-src ${meta?.className ?? "hc-src-prof"}`}
                             >
                               {meta ? (
                                 <IonIcon icon={meta.icon} aria-hidden="true" />
                               ) : null}
-                              {SOURCE_LABELS[sourceKey]
-                                ? t(SOURCE_LABELS[sourceKey])
-                                : m.source}
+                              {t(SOURCE_LABELS[sourceKey])}
                             </IonBadge>
-                          </p>
+                          </p>}
                         </IonLabel>
                         <IonNote slot="end" className="bp-note">
                           <b>
                             {formatMeasurementValue(
                               m.value,
-                              m.unitSymbol,
+                              displayMetricUnit(m.unitSymbol || m.unitCode),
                               locale,
                             )}
                           </b>

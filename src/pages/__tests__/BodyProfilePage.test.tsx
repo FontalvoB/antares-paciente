@@ -209,6 +209,22 @@ describe("BodyProfilePage — Perfil corporal con mediciones reales", () => {
     );
   });
 
+  it("0.13 — convierte pct a % y oculta orígenes técnicos conservando etiquetas conocidas", () => {
+    mockState.measurements = fullFixture.map(m => ({ ...m,
+      source: m.metricCode === 'weight' ? 'rich-seed' : m.metricCode === 'height' ? 'origen-interno' : m.source,
+      unitSymbol: m.metricCode === 'body_fat' ? 'pct' : m.unitSymbol,
+    }));
+    const { container } = render(<BodyProfilePage />);
+
+    expect(screen.getByText('24 %')).toBeTruthy();
+    expect(screen.getByText('kg/m²')).toBeTruthy();
+    expect(container.textContent).not.toContain('pct');
+    expect(container.textContent).not.toContain('rich-seed');
+    expect(container.textContent).not.toContain('origen-interno');
+    expect(container.querySelectorAll('ion-badge')).toHaveLength(2);
+    expect(screen.getAllByText('Dispositivo')).toHaveLength(2);
+  });
+
   it("sin mediciones muestra estado vacío honesto", () => {
     mockState.measurements = [];
 
