@@ -12,8 +12,8 @@ export interface EmotionalLessonResult { mood: string; barrier: string; emotiona
 const MOODS = ['Muy bajo', 'Bajo', 'Neutro', 'Bien', 'Muy bien'] as const
 const QUALITIES = [{ value: 'poor', label: 'Poco reparador' }, { value: 'fair', label: 'Regular' }, { value: 'restorative', label: 'Reparador' }] as const
 
-export function EmotionalLesson({ done, pending = false, saving = false, localDate, saved, pts, onComplete }: {
-  done: boolean; pending?: boolean; saving?: boolean; localDate?: string
+export function EmotionalLesson({ done, pending = false, saving = false, localDate, programWeek, saved, pts, onComplete }: {
+  done: boolean; pending?: boolean; saving?: boolean; localDate?: string; programWeek?: number
   saved?: TodayTaskDto['emotionalAssessment']; pts: number; onComplete: (payload: EmotionalLessonResult) => void
 }) {
   const t = useT()
@@ -78,7 +78,7 @@ export function EmotionalLesson({ done, pending = false, saving = false, localDa
   </div>
 
   return <div className="emotion-checkin">
-    <header className="emotion-intro"><h2>{t('¿Cómo te sientes hoy?')}</h2><p>{t('Tómate un momento para registrar tu ánimo y cómo descansaste.')}</p></header>
+    <header className="emotion-intro"><h2>{t('¿Cómo te sientes hoy?')}</h2><p>{programWeek != null && <>{t('Semana {n}', { n: String(programWeek) })} · </>}{t('Tómate un momento para registrar tu ánimo y cómo descansaste.')}</p></header>
     <fieldset className="emotion-field"><legend>{t('Tu ánimo ahora')}</legend><div className="emotion-moods">{MOODS.map((label, index) => <IonButton key={label} fill="clear" className={`emotion-mood${mood === String(index + 1) ? ' selected' : ''}`} aria-label={t(label)} aria-pressed={mood === String(index + 1)} onClick={() => setMood(String(index + 1))}><span><strong>{index + 1}</strong><small>{t(label)}</small></span></IonButton>)}</div></fieldset>
     <section className="emotion-sleep" aria-labelledby="emotion-sleep-title">
       <div className="emotion-sleep-heading"><h3 id="emotion-sleep-title"><IonIcon icon={moonOutline} />{t('Sueño anoche')}</h3><span>{sleepChoice === 'manual' ? t('Añadido por ti') : sleepChoice === 'unknown' ? t('Sin dato') : sleepFromDevice ? device?.name ?? t('Wearable') : t('Manual disponible')}</span></div>

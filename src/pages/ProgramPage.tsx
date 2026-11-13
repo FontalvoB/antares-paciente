@@ -40,6 +40,7 @@ import { ProgramHeader } from "./program/ProgramHeader";
 import { RankingView } from "./program/RankingView";
 import { StreakView } from "./program/StreakView";
 import { TodayView } from "./program/TodayView";
+import { nutritionMissionSubtitle } from "../utils/nutritionMissionSubtitle";
 import { paneMotion } from "./program/ui";
 import { useClinicalChests } from "../hooks/useClinicalChests";
 import { useProgram } from "../hooks/useProgram";
@@ -271,8 +272,14 @@ export function ProgramPage() {
       const seconds = serverActiveTask.content.exercises.reduce((sum, exercise) => sum + resolveStationSec(exercise), 0);
       return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} min · ${t("Semana {n}", { n: String(snapshot?.template.currentWeekNumber ?? "—") })}`;
     }
+    if (active === "nut") {
+      return nutritionMissionSubtitle(serverActiveTask?.content, locale) || t("Plan nutricional");
+    }
+    if (active === "emocional") {
+      return t("Semana {n}", { n: String(activeProgramWeek) });
+    }
     return serverActiveTask?.short ? t(serverActiveTask.short) : task ? t(task.hint) : "";
-  }, [active, serverActiveTask, task, t, podDuration, snapshot?.template.currentWeekNumber]);
+  }, [active, serverActiveTask, task, t, podDuration, snapshot?.template.currentWeekNumber, activeProgramWeek, locale]);
   const taskPts = serverActiveTask?.points ?? task?.pts ?? 0;
 
   const first = user.nombre.split(" ")[0];
@@ -921,6 +928,7 @@ export function ProgramPage() {
                   pending={serverActiveTask?.clientPending === true}
                   saving={completeTaskMutation.isPending}
                   localDate={snapshot?.todayLocalDate}
+                  programWeek={activeProgramWeek}
                   saved={serverActiveTask?.emotionalAssessment}
                   pts={taskPts}
                   onComplete={({ mood, barrier, emotional }) => {

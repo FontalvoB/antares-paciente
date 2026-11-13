@@ -8,6 +8,8 @@ import { programKeys } from '../../hooks/queryKeys'
 import { ApiError } from '../../utils/apiClient'
 import { requestLanguage } from '../../utils/requestLanguage'
 import { ProgramPage } from '../ProgramPage'
+import { TodayView } from '../program/TodayView'
+import type { ProgramDay } from '../../types'
 import type { ProgramSnapshotDto } from '../../services/program/types'
 
 const state = vi.hoisted(() => ({ screen: 'program-vitals', load: vi.fn(), complete: vi.fn() }))
@@ -19,7 +21,10 @@ vi.mock('../../hooks/useProgramScores', () => ({ useProgramScores: () => ({ scor
 vi.mock('../../hooks/useProgramCalendar', () => ({ useProgramCalendar: () => ({ data: { days: [] } }) }))
 vi.mock('../../hooks/useStreakChests', () => ({ useStreakChests: () => ({ chests: [] }) }))
 vi.mock('../../components/Screen', () => ({ Screen: ({ children }: { children: ReactNode }) => <div>{children}</div>, Scroll: ({ children }: { children: ReactNode }) => <div>{children}</div> }))
-vi.mock('framer-motion', () => ({ AnimatePresence: ({ children }: { children: ReactNode }) => children, motion: { div: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div> } }))
+vi.mock('framer-motion', () => ({ AnimatePresence: ({ children }: { children: ReactNode }) => children, motion: {
+  div: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div>,
+  button: ({ children, className, 'aria-label': label }: { children: ReactNode; className?: string; 'aria-label'?: string }) => <button className={className} aria-label={label}>{children}</button>,
+} }))
 vi.mock('@ionic/react', () => {
   const Wrap = ({ children, className }: { children?: ReactNode; className?: string }) => <div className={className}>{children}</div>
   return {
@@ -44,17 +49,63 @@ const snapshot = (english = false) => ({
 } as unknown as ProgramSnapshotDto)
 const clients: QueryClient[] = []
 function ChangeLanguage() { const { setLang } = useI18n(); return <button onClick={() => setLang('en')}>Switch English</button> }
-function setup(lesson: string) {
+function setup(lesson: string, value = snapshot()) {
   state.screen = `program-${lesson}`
   const english = deferred<ProgramSnapshotDto>()
   state.load.mockImplementation(() => requestLanguage() === 'en' ? english.promise : new Promise(() => {}))
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
-  client.setQueryData(programKeys.snapshot, snapshot()); clients.push(client)
+  client.setQueryData(programKeys.snapshot, value); clients.push(client)
   const view = render(<QueryClientProvider client={client}><I18nProvider><LanguageQuerySync /><ChangeLanguage /><ProgramPage /></I18nProvider></QueryClientProvider>)
   return { english, client, ...view }
 }
 beforeEach(() => { localStorage.setItem('antares_lang', 'es'); state.complete.mockClear(); state.load.mockReset() })
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.useRealTimers(); vi.unstubAllGlobals(); localStorage.clear() })
+
+describe('0.12 — misiones fieles al snapshot', () => {
+  const nutritionSnapshot = (): ProgramSnapshotDto => ({ ...snapshot(), todayTasks: [{
+    taskCode: 'nut' as const, title: 'Plan nutricional', short: 'Mediterráneo · 1,800 kcal',
+    status: 'Pending' as const, points: 50, completedAt: null,
+    content: { title: 'Título anterior', nutritionPlanName: 'Plan personalizado', dailyCalorieTarget: 2100 },
+  }] })
+
+  it('la cabecera nutricional muestra el plan y las calorías actuales', () => {
+    const view = setup('nut', nutritionSnapshot())
+    expect(view.container.querySelector('.lesson-sheet-head p')?.textContent).toBe('Plan personalizado · 2100 kcal')
+    expect(screen.queryByText(/1,800/)).toBeNull()
+  })
+
+  it('sin contenido nutricional muestra un rótulo genérico, sin inventar un plan', () => {
+    const value = nutritionSnapshot()
+    value.todayTasks[0].content = null
+    const view = setup('nut', value)
+    expect(view.container.querySelector('.lesson-sheet-head p')?.textContent).toBe('Plan nutricional')
+    expect(screen.queryByText(/1,800/)).toBeNull()
+  })
+
+  it('la tarjeta de Hoy usa el mismo plan y meta del snapshot en ambos idiomas', () => {
+    const value = nutritionSnapshot()
+    render(<I18nProvider><ChangeLanguage /><TodayView program={{} as ProgramDay} todayTasks={value.todayTasks}
+      allDone={false} first="Ana" programWeek={8} onOpenTask={vi.fn()} onGoEvo={vi.fn()} onGoChat={vi.fn()} /></I18nProvider>)
+    expect(screen.getByText('Plan personalizado')).toBeTruthy()
+    expect(screen.getByText('2100 kcal')).toBeTruthy()
+    fireEvent.click(screen.getByText('Switch English'))
+    expect(screen.getByText('2,100 kcal')).toBeTruthy()
+    expect(screen.queryByText(/1,800/)).toBeNull()
+  })
+
+  it('la evaluación emocional usa la semana actual aunque el subtítulo diga Semana 12', async () => {
+    const value = snapshot()
+    value.template.currentWeekNumber = 8
+    value.todayTasks[1].short = 'Estado psicológico · Semana 12'
+    const view = setup('emocional', value)
+    expect(view.container.querySelector('.lesson-sheet-head p')?.textContent).toBe('Semana 8')
+    expect(view.container.querySelector('.emotion-intro p')?.textContent).toContain('Semana 8')
+    expect(screen.queryByText(/Semana 12/)).toBeNull()
+    fireEvent.click(screen.getByText('Switch English'))
+    expect(view.container.querySelector('.lesson-sheet-head p')?.textContent).toBe('Week 8')
+    expect(view.container.querySelector('.emotion-intro p')?.textContent).toContain('Week 8')
+  })
+})
 describe('actual ProgramPage during language refresh', () => {
   it('keeps the VitalsLesson input instance and unsaved measurement throughout the new request', async () => {
     const view = setup('vitals')

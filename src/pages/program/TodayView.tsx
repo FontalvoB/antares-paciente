@@ -11,6 +11,7 @@ import type { ProgramDay, ProgramTaskId } from '../../types'
 import type { ScoresResponseDto, TodayTaskDto } from '../../services/program/types'
 import { useI18n } from '../../i18n/I18nContext'
 import { resolveStationSec } from '../../utils/exerciseSteps'
+import { nutritionMissionSubtitle } from '../../utils/nutritionMissionSubtitle'
 import { TASK_ICONS } from './ui'
 
 export function TodayView({
@@ -44,7 +45,7 @@ export function TodayView({
   onGoEvo: () => void
   onGoChat: () => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   // La lista viene del backend cuando hay snapshot; si no, del plan local.
   const taskList = useMemo(() => {
@@ -59,8 +60,8 @@ export function TodayView({
           shortText = durationMin
             ? `${task.content.title} · ${durationMin} min`
             : task.content.title
-        } else if (task.taskCode === 'nut' && task.content?.title) {
-          shortText = task.content.title
+        } else if (task.taskCode === 'nut') {
+          shortText = nutritionMissionSubtitle(task.content, lang === 'en' ? 'en-US' : 'es-ES') || t('Plan nutricional')
         } else if (task.taskCode === 'ejercicio' && task.content?.title) {
           const seconds = task.content.exercises?.reduce((sum, exercise) => sum + resolveStationSec(exercise), 0)
           shortText = seconds ? `${task.content.title} · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} min` : task.content.title
@@ -90,7 +91,7 @@ export function TodayView({
       icon: TASK_ICONS[pt.id],
       thumbnailUrl: null,
     }))
-  }, [todayTasks, program, programWeek, t])
+  }, [todayTasks, program, programWeek, t, lang])
 
   // --- Cofre del día: verdad del snapshot cuando existe ---
   // `todayBonusAvailable === false` → bonus ya otorgado; `=== true` → aún
