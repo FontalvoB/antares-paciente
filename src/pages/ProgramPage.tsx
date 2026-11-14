@@ -57,6 +57,7 @@ import { useProgramCalendar } from "../hooks/useProgramCalendar";
 import { resolveStationSec } from "../utils/exerciseSteps";
 import { programDayNumber } from "../utils/programDayNumber";
 import { queueCommunityShareDraft } from "../utils/communityShareDraft";
+import { scheduledDayTasks } from "../utils/programRest";
 import type {
   CompleteTaskInput,
   ProgramSnapshotDto,
@@ -129,6 +130,8 @@ export function ProgramPage() {
     initialAssessmentsCompleted,
     refetch: refetchProgram,
   } = useProgram();
+  const resting = snapshot?.rest === true;
+  const todayTasks = useMemo(() => scheduledDayTasks(snapshot?.todayTasks, snapshot?.rest), [snapshot]);
 
   const completeTaskMutation = useCompleteTask();
   const queryClient = useQueryClient();
@@ -166,9 +169,9 @@ export function ProgramPage() {
 
   // Derived states from server snapshot with seamless fallback to AppContext/constants
   const program: ProgramDay = useMemo(() => {
-    if (snapshot?.todayTasks && snapshot.todayTasks.length > 0) {
+    if (todayTasks) {
       const taskMap: Record<string, boolean> = {};
-      for (const task of snapshot.todayTasks) {
+      for (const task of todayTasks) {
         taskMap[task.taskCode] = task.status === "Completed";
       }
       return {
@@ -181,7 +184,7 @@ export function ProgramPage() {
       };
     }
     return appProgram;
-  }, [snapshot, appProgram]);
+  }, [todayTasks, appProgram]);
 
   const activeStreak = snapshot?.streak?.current ?? appStreak;
   // Máxima racha REAL del server; null sin snapshot → el chip "Máxima" no se
@@ -225,15 +228,15 @@ export function ProgramPage() {
   // (Task 4): con snapshot se cuenta sobre la lista SERVER (status
   // Completed); sin snapshot se cae a la derivación local del plan.
   const progress = useMemo(() => {
-    const serverCount = snapshot?.todayTasks?.length;
-    if (serverCount) {
-      const serverDone = snapshot.todayTasks.filter(
+    const serverCount = todayTasks?.length;
+    if (serverCount !== undefined) {
+      const serverDone = todayTasks!.filter(
         (t) => t.status === "Completed",
       ).length;
       return {
         doneCount: serverDone,
         total: serverCount,
-        allDone: serverDone === serverCount,
+        allDone: serverCount > 0 && serverDone === serverCount,
       };
     }
     const localDone = PROGRAM_TASKS.filter((pt) => program[pt.id]).length;
@@ -242,16 +245,18 @@ export function ProgramPage() {
       total: PROGRAM_TASKS.length,
       allDone: localDone === PROGRAM_TASKS.length,
     };
-  }, [snapshot, program]);
+  }, [todayTasks, program]);
   const { doneCount, allDone } = progress;
-  const currentId = PROGRAM_TASKS.find((pt) => !program[pt.id])?.id;
+  const currentId = todayTasks
+    ? todayTasks.find(task => task.status !== "Completed")?.taskCode
+    : PROGRAM_TASKS.find((pt) => !program[pt.id])?.id;
   const task = useMemo(
     () => PROGRAM_TASKS.find((pt) => pt.id === active) ?? null,
     [active],
   );
   const serverActiveTask = useMemo(
-    () => snapshot?.todayTasks?.find((t) => t.taskCode === active) ?? null,
-    [snapshot, active],
+    () => todayTasks?.find((t) => t.taskCode === active) ?? null,
+    [todayTasks, active],
   );
   // Lección SIN contenido real del servidor (content null o marcado
   // contentUnavailable): podcast/nut/ejercicio degradan a "contenido no
@@ -261,6 +266,7 @@ export function ProgramPage() {
     !activeContent || activeContent.contentUnavailable === true;
   const taskTitle = serverActiveTask?.title || (task ? t(task.title) : "");
   const taskHint = useMemo(() => {
+    if (active === "ejercicio" && resting) return "";
     if (active === "podcast" && serverActiveTask?.content?.title) {
       const seconds = podDuration ?? serverActiveTask.content.durationSecs;
       const durationMin = seconds ? Math.round(seconds / 60) : null;
@@ -279,8 +285,8 @@ export function ProgramPage() {
       return t("Semana {n}", { n: String(activeProgramWeek) });
     }
     return serverActiveTask?.short ? t(serverActiveTask.short) : task ? t(task.hint) : "";
-  }, [active, serverActiveTask, task, t, podDuration, snapshot?.template.currentWeekNumber, activeProgramWeek, locale]);
-  const taskPts = serverActiveTask?.points ?? task?.pts ?? 0;
+  }, [active, resting, serverActiveTask, task, t, podDuration, snapshot?.template.currentWeekNumber, activeProgramWeek, locale]);
+  const taskPts = active === "ejercicio" && resting ? 0 : serverActiveTask?.points ?? task?.pts ?? 0;
 
   const first = user.nombre.split(" ")[0];
   // Mapa mensual: verdad del server (nunca inventa días 'ok'); el marcador de
@@ -347,7 +353,7 @@ export function ProgramPage() {
         emotional?: EmotionalAssessmentPayload | null;
       },
     ) => {
-      if (program[id]) return;
+      if (program[id] || (id === "ejercicio" && snapshot?.rest === true)) return;
 
       // Fase 12 (offline-first): sin red se encola persistente el check-in
       // con el payload derivado del snapshot (enrollmentId/localDate nunca
@@ -432,7 +438,7 @@ export function ProgramPage() {
     ],
   );
 
-  const exContent = snapshot?.todayTasks?.find(
+  const exContent = todayTasks?.find(
     (t) => t.taskCode === "ejercicio",
   )?.content;
   const activeExerciseSteps = useMemo(() => {
@@ -478,7 +484,7 @@ export function ProgramPage() {
   }, [active, activeExerciseSteps]);
 
   const skipStation = () => {
-    if (program.ejercicio) return;
+    if (program.ejercicio || resting) return;
     if (exStep >= activeExerciseSteps.length - 1) {
       setExRunning(false);
       finish(
@@ -635,13 +641,13 @@ export function ProgramPage() {
   );
 
   useEffect(() => {
-    if (!exRunning) return;
+    if (!exRunning || resting) return;
     const id = window.setInterval(() => setExLeft((s) => s - 1), 1000);
     return () => window.clearInterval(id);
-  }, [exRunning]);
+  }, [exRunning, resting]);
 
   useEffect(() => {
-    if (!exRunning || exLeft > 0) return;
+    if (!exRunning || resting || exLeft > 0) return;
     if (exStep < activeExerciseSteps.length - 1) {
       const next = exStep + 1;
       setExStep(next);
@@ -659,6 +665,7 @@ export function ProgramPage() {
   }, [
     exLeft,
     exRunning,
+    resting,
     exStep,
     program.ejercicio,
     finish,
@@ -738,8 +745,9 @@ export function ProgramPage() {
             {tab === "hoy" && (
               <TodayView
                 program={program}
-                todayTasks={snapshot?.todayTasks}
+                todayTasks={todayTasks}
                 upcoming={snapshot?.upcoming}
+                rest={snapshot?.rest}
                 allDone={allDone}
                 currentId={currentId}
                 first={first}
@@ -794,11 +802,11 @@ export function ProgramPage() {
             <div className="lesson-sheet">
               <div className={`lesson-sheet-head${active === "emocional" ? " lesson-sheet-head--emotional" : ""}`}>
                 <div>
-                  <div className="kicker" style={{ color: "var(--mu)" }}>
+                  {!(task.id === "ejercicio" && resting) && <div className="kicker" style={{ color: "var(--mu)" }}>
                     {task.emoji}{" "}
                     {t("Misión · +{pts} pts", { pts: String(taskPts) })}
-                  </div>
-                  <h2>{t(taskTitle)}</h2>
+                  </div>}
+                  <h2>{task.id === "ejercicio" && resting ? t("Descanso de ejercicio") : t(taskTitle)}</h2>
                   <p>{taskHint}</p>
                 </div>
                 <IonButton
@@ -809,7 +817,7 @@ export function ProgramPage() {
                   <IonIcon slot="icon-only" icon={arrowBack} />
                 </IonButton>
               </div>
-              {program[task.id] && task.id !== "nutraceutico" && (
+              {program[task.id] && task.id !== "nutraceutico" && !(task.id === "ejercicio" && resting) && (
                 <div className="lesson-done-banner">
                   {t("Completada hoy · +{pts} pts", { pts: String(taskPts) })}
                 </div>
@@ -872,6 +880,7 @@ export function ProgramPage() {
               )}
               {task.id === "ejercicio" && (
                 <ExerciseLesson
+                  rest={resting}
                   done={program.ejercicio}
                   pts={taskPts}
                   title={

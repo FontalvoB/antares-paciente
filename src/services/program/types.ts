@@ -248,6 +248,8 @@ export interface ProgramSnapshotDto {
   dailyBonusAmount?: number | null
   /** Aditivo en 2.5; los servidores anteriores pueden omitirlo. */
   upcoming?: ProgramUpcomingDayDto[] | null
+  /** Descanso explícito del día actual; ausente en servidores anteriores. */
+  rest?: boolean | null
 }
 
 export interface ProgramEnrollmentDto {

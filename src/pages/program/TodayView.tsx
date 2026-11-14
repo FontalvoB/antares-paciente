@@ -14,11 +14,14 @@ import { resolveStationSec } from '../../utils/exerciseSteps'
 import { nutritionMissionSubtitle } from '../../utils/nutritionMissionSubtitle'
 import { TASK_ICONS } from './ui'
 import { UpcomingDays } from './UpcomingDays'
+import { ExerciseRestNotice } from './ExerciseRestNotice'
+import { scheduledDayTasks } from '../../utils/programRest'
 
 export function TodayView({
   program,
   todayTasks,
   upcoming,
+  rest,
   allDone,
   currentId,
   first,
@@ -34,6 +37,7 @@ export function TodayView({
   /** Misiones del día servidas por el backend; sin ellas se usa el plan local. */
   todayTasks?: TodayTaskDto[]
   upcoming?: ProgramUpcomingDayDto[] | null
+  rest?: boolean | null
   allDone: boolean
   currentId?: ProgramTaskId
   first: string
@@ -52,8 +56,9 @@ export function TodayView({
 
   // La lista viene del backend cuando hay snapshot; si no, del plan local.
   const taskList = useMemo(() => {
-    if (todayTasks && todayTasks.length > 0) {
-      return todayTasks.map((task) => {
+    const scheduled = scheduledDayTasks(todayTasks, rest)
+    if (scheduled) {
+      return scheduled.map((task) => {
         const fallback = PROGRAM_TASKS.find((pt) => pt.id === task.taskCode)
         let shortText = t(task.short || fallback?.short || '')
         if (task.taskCode === 'podcast' && task.content?.title) {
@@ -84,7 +89,7 @@ export function TodayView({
         }
       })
     }
-    return PROGRAM_TASKS.map((pt) => ({
+    return PROGRAM_TASKS.filter(pt => rest !== true || pt.id !== 'ejercicio').map((pt) => ({
       id: pt.id,
       title: pt.title,
       short: t(pt.short),
@@ -94,7 +99,7 @@ export function TodayView({
       icon: TASK_ICONS[pt.id],
       thumbnailUrl: null,
     }))
-  }, [todayTasks, program, programWeek, t, lang])
+  }, [todayTasks, rest, program, programWeek, t, lang])
 
   // --- Cofre del día: verdad del snapshot cuando existe ---
   // `todayBonusAvailable === false` → bonus ya otorgado; `=== true` → aún
@@ -107,11 +112,11 @@ export function TodayView({
       return {
         done: false,
         amount: dailyBonusAmount ?? DAY_BONUS_PTS,
-        n: todayTasks?.length ?? taskList.length,
+        n: taskList.length,
       }
     }
     return { done: allDone, amount: dailyBonusAmount ?? DAY_BONUS_PTS, n: taskList.length }
-  }, [todayBonusAvailable, dailyBonusAmount, todayTasks, taskList.length, allDone])
+  }, [todayBonusAvailable, dailyBonusAmount, taskList.length, allDone])
 
   // --- Burbuja del AI Health Coach: composición honesta desde los puntajes ---
   const hs = scores?.health_score ?? scores?.healthScore
@@ -165,6 +170,7 @@ export function TodayView({
 
   return (
     <div className="pg-pane">
+      {rest === true && <ExerciseRestNotice />}
       <div className="pcards">
         {taskList.map((task, i) => {
           const done = task.done
@@ -218,7 +224,7 @@ export function TodayView({
           )
         })}
 
-        <motion.div
+        {taskList.length > 0 && <motion.div
           className={`pcard pcard-chest${chest.done ? ' done' : ''}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -240,7 +246,7 @@ export function TodayView({
               <span className="pcard-pts">+{chest.amount} XP</span>
             </span>
           </span>
-        </motion.div>
+        </motion.div>}
       </div>
 
       <UpcomingDays days={upcoming} />

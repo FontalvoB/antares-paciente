@@ -33228,3 +33228,8 @@ ion-button.sos-location-sources {
 .pg-upcoming ion-label p { color: var(--mu); font-size: 13px; white-space: normal; }
 .pg-upcoming ion-list { padding: 0; background: var(--g0); }
 .pg-upcoming ion-badge { max-width: 110px; padding: 7px; white-space: normal; --background: var(--ion-color-secondary); --color: var(--ion-color-secondary-contrast); }
+
+.exercise-rest { margin-bottom: 16px; padding: 18px; border: 1px solid var(--bd); border-radius: var(--radius-md); background: var(--wh); color: var(--tx); }
+.exercise-rest ion-icon { color: var(--ion-color-secondary); font-size: 26px; }
+.exercise-rest h2 { margin: 8px 0; font-size: 19px; font-weight: 800; }
+.exercise-rest p { margin: 0; color: var(--mu); font-size: 14px; line-height: 1.5; }

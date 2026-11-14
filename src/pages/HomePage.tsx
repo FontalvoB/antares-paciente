@@ -56,6 +56,7 @@ import { useScoresHistory } from "../hooks/useScoresHistory";
 import { useWearable } from "../context/WearableContext";
 import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import { programDayNumber } from "../utils/programDayNumber";
+import { scheduledDayTasks } from "../utils/programRest";
 import logoIcon from "../assets/LogoIndividual.png";
 import coverComunidad from "../assets/modules/comunidad.png";
 import coverPerfil from "../assets/modules/perfil.png";
@@ -75,6 +76,7 @@ export function HomePage() {
     realMode,
   } = useApp();
   const { snapshot } = useProgram();
+  const todayTasks = useMemo(() => scheduledDayTasks(snapshot?.todayTasks, snapshot?.rest), [snapshot]);
   const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
   const { unreadCount } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -210,9 +212,9 @@ export function HomePage() {
   // semanas del protocolo completo, no lo que anuncia este chip).
   const activeTotalWeeks = snapshot?.template?.totalWeeks ?? 24;
   const program: ProgramDay = useMemo(() => {
-    if (!snapshot?.todayTasks?.length) return appProgram;
+    if (!todayTasks) return appProgram;
     const byCode: Record<string, boolean> = {};
-    for (const task of snapshot.todayTasks) {
+    for (const task of todayTasks) {
       byCode[task.taskCode] = task.status === "Completed";
     }
     return {
@@ -223,13 +225,18 @@ export function HomePage() {
       nutraceutico: Boolean(byCode.nutraceutico),
       emocional: Boolean(byCode.emocional),
     };
-  }, [snapshot, appProgram]);
+  }, [todayTasks, appProgram]);
 
-  const missionTotal = snapshot?.todayTasks?.length ?? PROGRAM_TASKS.length;
-  const todayDone = PROGRAM_TASKS.filter((task) => program[task.id]).length;
+  const missionTotal = todayTasks?.length ?? PROGRAM_TASKS.length;
+  const todayDone = todayTasks
+    ? todayTasks.filter(task => task.status === "Completed").length
+    : PROGRAM_TASKS.filter((task) => program[task.id]).length;
   // La rueda suma el cofre del día como último segmento.
   const todayTotal = missionTotal + 1;
-  const dayComplete = todayDone === missionTotal;
+  const dayComplete = missionTotal > 0 && todayDone === missionTotal;
+  const chestClaimed = snapshot?.todayBonusAvailable === undefined
+    ? dayComplete
+    : snapshot.todayBonusAvailable === false && missionTotal > 0;
 
   // Serie de adherencia REAL: dimensions.adherence por punto del
   // scores-history (semana persistida con cómputo). Sin puntos → requires-data.
@@ -383,9 +390,10 @@ export function HomePage() {
           <span className="hm-wheel-kicker">{t("Protocolo diario")}</span>
           <ProtocolWheel
             program={program}
-            chestClaimed={dayComplete}
+            taskCodes={todayTasks?.map(task => task.taskCode)}
+            chestClaimed={chestClaimed}
             title={t("Protocolo diario")}
-            count={todayDone}
+            count={todayDone + (chestClaimed ? 1 : 0)}
             total={todayTotal}
             onSelect={(id) => navigate(id === "chest" ? "program-racha" : `program-${id}`)}
             onOpenProgram={() => navigate("prog")}

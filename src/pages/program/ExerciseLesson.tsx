@@ -6,6 +6,7 @@ import type { ExerciseItemDto } from "../../services/program/types";
 import { resolveStationSec } from "../../utils/exerciseSteps";
 import { ExerciseGuide } from "./ExerciseGuide";
 import { exerciseMediaUrl } from "../../utils/exerciseMedia";
+import { ExerciseRestNotice } from "./ExerciseRestNotice";
 
 export interface ExerciseLessonProps {
   done: boolean;
@@ -19,6 +20,7 @@ export interface ExerciseLessonProps {
   onSkip: () => void;
   onComplete: () => void;
   unavailable?: boolean;
+  rest?: boolean;
 }
 
 function clock(value: number) {
@@ -56,9 +58,10 @@ function ExerciseDemonstration({ exercise, onPlay }: { exercise: ExerciseItemDto
 
 /** Circuito y vista propia por ejercicio. Consultar la técnica pausa el
  * cronómetro; abrir/reproducir un vídeo nunca completa una misión ni da XP. */
-export function ExerciseLesson({ done, pts, title, exercises, step, left, running, onToggle, onSkip, onComplete, unavailable }: ExerciseLessonProps) {
+export function ExerciseLesson({ done, pts, title, exercises, step, left, running, onToggle, onSkip, onComplete, unavailable, rest }: ExerciseLessonProps) {
   const t = useT();
   const [selected, setSelected] = useState<number | null>(null);
+  if (rest === true) return <ExerciseRestNotice />;
   if (unavailable || !exercises?.length) return <div className="exercise-media-empty" role="status">
     <IonIcon icon={barbellOutline} aria-hidden="true" />
     <strong>{t("Rutina no disponible")}</strong>

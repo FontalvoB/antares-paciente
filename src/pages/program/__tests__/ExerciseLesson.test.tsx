@@ -36,6 +36,16 @@ function setup(overrides: Record<string, unknown> = {}) {
 }
 
 describe("exercise routine and dedicated technique view", () => {
+  it("el descanso gana sobre una rutina en caché y no ofrece reproducción ni completación", () => {
+    const { container, props } = setup({ rest: true, running: true });
+    expect(screen.getByRole("status").textContent).toContain("Hoy descansas del ejercicio");
+    expect(screen.queryByText("Rutina no disponible")).toBeNull();
+    expect(container.querySelector("video, img")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(props.onComplete).not.toHaveBeenCalled();
+    expect(props.onToggle).not.toHaveBeenCalled();
+  });
+
   it("opens the selected exercise with its configured video and actual prescription", () => {
     const { container, props } = setup();
     fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones" }));

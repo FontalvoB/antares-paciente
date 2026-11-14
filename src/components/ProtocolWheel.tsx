@@ -15,7 +15,6 @@ const SEGMENT_KEYS: (ProgramTaskId | 'chest')[] = [
   ...PROGRAM_TASKS.map((task) => task.id),
   'chest',
 ]
-const SLICE = 360 / SEGMENT_KEYS.length
 
 /** Identidad de las misiones; nutrición comparte el naranja solicitado. */
 export const WHEEL_COLORS: Record<ProgramTaskId | 'chest', string> = {
@@ -33,10 +32,10 @@ function point(deg: number, radius: number) {
   return { x: C + radius * Math.cos(rad), y: C + radius * Math.sin(rad) }
 }
 
-function arc(center: number) {
-  const start = point(center - SLICE / 2 + 3, R_ORBIT)
-  const end = point(center + SLICE / 2 - 3, R_ORBIT)
-  return `M ${start.x} ${start.y} A ${R_ORBIT} ${R_ORBIT} 0 0 1 ${end.x} ${end.y}`
+function arc(center: number, slice: number) {
+  const start = point(center - slice / 2 + 3, R_ORBIT)
+  const end = point(center + slice / 2 - 3, R_ORBIT)
+  return `M ${start.x} ${start.y} A ${R_ORBIT} ${R_ORBIT} 0 ${slice - 6 > 180 ? 1 : 0} 1 ${end.x} ${end.y}`
 }
 
 /** Gráfico de dominio sin equivalente Ionic: órbitas inspiradas en Copp Adresd.
@@ -44,7 +43,7 @@ function arc(center: number) {
  * El estado proviene del protocolo, nunca de una animación ni de estado local.
  */
 export function ProtocolWheel({
-  program, chestClaimed = false, title, count, total, onSelect, onOpenProgram,
+  program, chestClaimed = false, title, count, total, onSelect, onOpenProgram, taskCodes,
 }: {
   program: ProgramDay
   chestClaimed?: boolean
@@ -53,15 +52,19 @@ export function ProtocolWheel({
   total: number
   onSelect?: (id: ProgramTaskId | 'chest') => void
   onOpenProgram?: () => void
+  /** Con snapshot solo se ofrecen las misiones exigibles de hoy. */
+  taskCodes?: readonly ProgramTaskId[]
 }) {
   const t = useT()
   const reduce = useReducedMotion()
-  const segments = SEGMENT_KEYS.map((key, i) => ({
+  const keys = SEGMENT_KEYS.filter(key => key === 'chest' || !taskCodes || taskCodes.includes(key))
+  const slice = 360 / keys.length
+  const segments = keys.map((key, i) => ({
     key,
     color: WHEEL_COLORS[key],
     icon: key === 'chest' ? (chestClaimed ? trophy : gift) : TASK_ICONS[key],
     done: key === 'chest' ? chestClaimed : Boolean(program[key]),
-    center: i * SLICE,
+    center: i * slice,
   }))
   const complete = total > 0 && count >= total
 
@@ -78,7 +81,7 @@ export function ProtocolWheel({
             <g key={seg.key} style={{ color: seg.color }}>
               <line x1={start.x} y1={start.y} x2={end.x} y2={end.y}
                 className={`wheel-spoke${seg.done ? ' done' : ''}`} />
-              <motion.path d={arc(seg.center)} className="wheel-progress-arc"
+              <motion.path d={arc(seg.center, slice)} className="wheel-progress-arc"
                 initial={false} animate={{ pathLength: seg.done ? 1 : 0, opacity: seg.done ? 1 : 0 }}
                 transition={{ duration: reduce ? 0 : 0.6 }} />
             </g>

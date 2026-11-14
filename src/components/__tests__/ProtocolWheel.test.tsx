@@ -13,6 +13,19 @@ const pending: ProgramDay = {
 const labels = { title: 'Protocolo diario', total: 7 }
 
 describe('ProtocolWheel', () => {
+  it('solo ofrece las tareas del snapshot y reparte sus nodos sin ejercicio residual', () => {
+    const onSelect = vi.fn()
+    const { container } = render(<ProtocolWheel title="Protocolo diario" total={3} count={1}
+      taskCodes={['podcast', 'nut']} program={{ ...pending, podcast: true, ejercicio: true }} onSelect={onSelect} />)
+    expect(container.querySelectorAll('.wheel-badge')).toHaveLength(3)
+    expect(container.querySelector('[data-task="ejercicio"]')).toBeNull()
+    expect(container.querySelectorAll('.wheel-badge.done')).toHaveLength(1)
+    expect(container.querySelector('.wheel-core-count')?.textContent).toBe('1/3')
+    fireEvent.click(container.querySelector('[data-task="nut"] ion-button')!)
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith('nut')
+    expect(Array.from(container.querySelectorAll('path')).every(path => !path.getAttribute('d')?.includes('NaN'))).toBe(true)
+  })
+
   it.each(Object.keys(pending) as ProgramTaskId[])('rellena únicamente %s al recibir su finalización', (task) => {
     const { container, rerender } = render(<ProtocolWheel {...labels} program={pending} count={0} />)
     expect(container.querySelectorAll('.wheel-badge.done')).toHaveLength(0)
