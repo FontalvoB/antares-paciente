@@ -49,7 +49,9 @@ function applyFilePatch(original, sections, name) {
 
 const hunks = new Map();
 let current;
-for (const line of readFileSync(resolve(patches, "native.patch"), "utf8").split("\n")) {
+// Git puede convertir el parche a CRLF: normalizar también rutas y contexto,
+// antes de indexar hunks, igual que los archivos cuyo hash se comprueba.
+for (const line of normalize(readFileSync(resolve(patches, "native.patch"), "utf8")).split("\n")) {
   if (line.startsWith("--- a/")) { current = undefined; continue; }
   if (line.startsWith("+++ b/")) { current = line.slice(6); hunks.set(current, []); continue; }
   if (current) hunks.get(current).push(line);
