@@ -1,34 +1,59 @@
-import { useId } from 'react';
-import { IonAccordion, IonAccordionGroup, IonItem, IonLabel } from '@ionic/react';
+import { useId, useState } from 'react';
+import { IonAccordion, IonAccordionGroup, IonBadge, IonButton, IonIcon, IonItem, IonLabel } from '@ionic/react';
+import { chevronUpOutline, nutritionOutline, refreshOutline, warningOutline } from 'ionicons/icons';
 import { useT } from '../../i18n/I18nContext';
 import { formatDateForDisplay } from '../../utils/dates';
 import type { NutritionCycleRecommendationDto } from '../../services/nutrition/nutrition-cycle-recommendation-types';
 import { NutritionRecommendations } from './NutritionRecommendations';
 
-/** Lista de presentación inyectada; no define el envoltorio HTTP pendiente de 3.10. */
-export function NutritionRecommendationHistory({ history, unavailable = false }: {
+/** D0014: previous llega seleccionado y ordenado por el backend, sin contexto de programa. */
+export function NutritionRecommendationHistory({ history, unavailable = false, onRetry, labelledBy }: {
   history?: readonly NutritionCycleRecommendationDto[] | null;
   unavailable?: boolean;
+  onRetry?: () => void;
+  labelledBy?: string;
 }) {
   const t = useT();
   const titleId = useId();
-  if (unavailable || history == null) return null;
+  const [selection, setSelection] = useState<string | null | undefined>();
+  if (!unavailable && history == null) return null;
+  const firstKey = history?.[0] ? `${history[0].cycleNumber}:${history[0].startDate}` : undefined;
+  const expanded = selection === undefined ? firstKey : selection;
 
-  return <section className="nutrition-recommendation-history" aria-labelledby={titleId}>
-    <h2 id={titleId}>{t('Ciclos anteriores')}</h2>
-    {history.length === 0
-      ? <p className="nutrition-recommendation-history-empty">{t('Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.')}</p>
-      : <IonAccordionGroup>
-        {history.map(cycle => <IonAccordion key={`${cycle.cycleNumber}:${cycle.startDate}`} value={`${cycle.cycleNumber}:${cycle.startDate}`}>
+  return <section className="nutrition-recommendation-history" aria-labelledby={labelledBy ?? titleId}>
+    {!labelledBy && <h2 id={titleId}>{t('Ciclos anteriores')}</h2>}
+    {unavailable ? <div className="nutrition-history-state">
+      <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{t('No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.')}</p>
+      <IonButton fill="outline" expand="block" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
+    </div> : history!.length === 0
+      ? <div className="nutrition-history-state nutrition-recommendations-empty">
+        <span className="nutrition-empty-icon"><IonIcon icon={nutritionOutline} aria-hidden="true" /></span>
+        <h3>{t('Todavía no hay ciclos anteriores')}</h3>
+        <p>{t('Cuando termines tu primer ciclo y tu nutricionista lo cierre, su recomendación quedará guardada aquí.')}</p>
+      </div>
+      : <>
+        <p className="nutrition-history-intro">{t('Aquí quedan las recomendaciones de ciclos que ya cerraron. La de tu ciclo actual está en Plan.')}</p>
+        <IonAccordionGroup value={expanded ?? undefined} onIonChange={event => {
+          if (event.target !== event.currentTarget) return;
+          setSelection(typeof event.detail.value === 'string' ? event.detail.value : null);
+        }}>
+        {history!.map(cycle => <IonAccordion key={`${cycle.cycleNumber}:${cycle.startDate}`} value={`${cycle.cycleNumber}:${cycle.startDate}`}>
           <IonItem slot="header" lines="none">
             <IonLabel className="ion-text-wrap">
               <h3>{t('Ciclo {number}', { number: String(cycle.cycleNumber) })}</h3>
               <p>{t('Del {start} al {end}', { start: formatDateForDisplay(cycle.startDate), end: formatDateForDisplay(cycle.endDate) })}</p>
-              <p>{cycle.professionalName}</p>
+              {expanded !== `${cycle.cycleNumber}:${cycle.startDate}` && <p>{cycle.professionalName} · {t('Publicado el {date}', { date: formatDateForDisplay(cycle.publishedAt.slice(0, 10)) })}{cycle.attachments.length === 0 ? ` · ${t('Sin imágenes')}` : ''}</p>}
             </IonLabel>
+            <IonBadge slot="end">{t('Anterior')}</IonBadge>
           </IonItem>
-          <div slot="content"><NutritionRecommendations recommendation={cycle} /></div>
+          <div slot="content"><NutritionRecommendations recommendation={cycle} presentation="history" onRetry={onRetry}/>
+            <IonButton className="nutrition-history-hide" fill="clear" expand="block" onClick={event => {
+              const header = event.currentTarget.closest('ion-accordion')?.querySelector<HTMLElement>('ion-item');
+              setSelection(null);
+              (header?.shadowRoot?.querySelector<HTMLElement>('button') ?? header)?.focus();
+            }}><span>{t('Ocultar')}<IonIcon icon={chevronUpOutline} aria-hidden="true" /></span></IonButton>
+          </div>
         </IonAccordion>)}
-      </IonAccordionGroup>}
+      </IonAccordionGroup></>}
   </section>;
 }

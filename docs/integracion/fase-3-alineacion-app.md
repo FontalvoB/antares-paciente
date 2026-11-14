@@ -43,6 +43,27 @@ fixtures verificó 36 combinaciones de seis estados × tres anchuras × ES/EN, s
 desbordamientos. Las imágenes se sirvieron localmente, sin API de negocio. El
 bloqueo de WebSocket HMR del navegador se distingue de errores de producto.
 
+## 3.19 — Ciclos anteriores
+
+La fila de Plan abre una subvista local con cabecera, botón de retorno y navegación
+global conservada. No se añaden rutas ni contexto de programa. `previous` se presenta
+en el orden recibido de D0014, con tarjetas separadas, etiqueta «Ciclo N», período,
+badge «Anterior» y primera tarjeta expandida. Se reutiliza `NutritionRecommendations`
+con presentación histórica: profesional/publicación, texto e imágenes, sin repetir
+el título del bloque actual. «Ocultar» contrae y devuelve foco a la cabecera.
+
+El vacío usa el copy exacto del artboard 5. Ante un fallo de fuente después de abrir
+el historial se mantiene el retorno a Plan y el reintento local. No se muestra la
+fila «Programa anterior» ni se deduce programa a partir de fechas o números.
+
+Validación de 3.19: 53/53 pruebas afectadas; suite completa 1660/1660, 204 archivos;
+lint/build/i18n correctos, cero claves duplicadas o faltantes. Playwright MCP verificó
+18 combinaciones adicionales de historial con datos/vacío/error × 320/390/768 × ES/EN,
+con expansión, contracción, reintento y retorno, sin desbordamientos. Junto a 3.18,
+son 54 comprobaciones visuales. La pantalla real se renderizó con fuentes de datos
+sustituidas por fixtures, sin API de negocio. Capturas finales de los siete artboards
+(el 6 tiene dos capturas) y ejemplos EN en OpenSpec `revision-app-f3-alineacion/`.
+
 ## Pendiente de consumo real
 
 Cuando codex-back cierre 3.10: confirmar prefijo/ruta y binding real de D0014,

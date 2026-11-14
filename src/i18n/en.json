@@ -3847,5 +3847,12 @@
   "Cierre del ciclo {cycle} · publicado el {date}": "Cycle {cycle} review · published on {date}",
   "Leer más": "Read more",
   "Leer menos": "Read less",
-  "Imagen caducada": "Image expired"
+  "Imagen caducada": "Image expired",
+  "Recomendaciones del ciclo {cycle}": "Recommendations for cycle {cycle}",
+  "Todavía no hay ciclos anteriores": "There are no previous cycles yet",
+  "Cuando termines tu primer ciclo y tu nutricionista lo cierre, su recomendación quedará guardada aquí.": "When you finish your first cycle and your nutritionist closes it, their recommendation will be saved here.",
+  "Aquí quedan las recomendaciones de ciclos que ya cerraron. La de tu ciclo actual está en Plan.": "Recommendations from completed cycles are saved here. Your current cycle recommendation is in Plan.",
+  "No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.": "We could not load your previous cycles. You can return to Plan and continue your activities.",
+  "Sin imágenes": "No images",
+  "Ocultar": "Hide"
 }

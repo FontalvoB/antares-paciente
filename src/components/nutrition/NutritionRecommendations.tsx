@@ -18,12 +18,13 @@ function RecommendationImage({ url, caption, onRefresh }: NutritionCycleRecommen
 }
 
 /** Bloque publicado para el paciente. No consulta APIs ni representa borradores de IA. */
-export function NutritionRecommendations({ recommendation, unavailable = false, onRetry, onOpenHistory }: {
+export function NutritionRecommendations({ recommendation, unavailable = false, onRetry, onOpenHistory, presentation = 'current' }: {
   recommendation?: NutritionCycleRecommendationDto | null;
   unavailable?: boolean;
   /** Solicita renovar el envoltorio completo; nunca altera la URL firmada. */
   onRetry?: () => void;
   onOpenHistory?: () => void;
+  presentation?: 'current' | 'history';
 }) {
   const t = useT();
   const titleId = useId();
@@ -53,14 +54,18 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
   const longMessage = Array.from(patientMessage).length > 480;
   const expanded = expandedMessage === patientMessage;
   const message = longMessage && !expanded ? `${Array.from(patientMessage).slice(0, 480).join('').trimEnd()}…` : patientMessage;
-  return <IonCard className="nutrition-recommendations" role="region" aria-labelledby={titleId}>
+  return <IonCard className="nutrition-recommendations" data-presentation={presentation} role="region"
+    aria-labelledby={presentation === 'current' ? titleId : undefined}
+    aria-label={presentation === 'history' ? t('Recomendaciones del ciclo {cycle}', { cycle: String(cycleNumber) }) : undefined}>
     <IonCardHeader>
-      <IonCardTitle id={titleId} role="heading" aria-level={2}>
+      {presentation === 'current' && <IonCardTitle id={titleId} role="heading" aria-level={2}>
         {t('Recomendaciones de tu nutricionista')}
-      </IonCardTitle>
+      </IonCardTitle>}
       <div className="nutrition-recommendations-byline"><span className="nutrition-professional-avatar" aria-hidden="true">{initials}</span><div>
         <p className="nutrition-recommendations-professional">{professionalName}</p>
-        <p className="nutrition-recommendations-published">{t('Cierre del ciclo {cycle} · publicado el {date}', { cycle: String(cycleNumber), date: formatDateForDisplay(publishedAt.slice(0, 10)) })}</p>
+        <p className="nutrition-recommendations-published">{presentation === 'history'
+          ? t('Publicado el {date}', { date: formatDateForDisplay(publishedAt.slice(0, 10)) })
+          : t('Cierre del ciclo {cycle} · publicado el {date}', { cycle: String(cycleNumber), date: formatDateForDisplay(publishedAt.slice(0, 10)) })}</p>
       </div></div>
     </IonCardHeader>
     <IonCardContent>

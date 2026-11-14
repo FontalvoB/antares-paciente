@@ -37,7 +37,7 @@ vi.mock("@ionic/react", async (importOriginal) => {
     IonIcon: () => null, IonNote: Wrap, IonProgressBar: () => null,
     IonSegment: ({ children, value, onIonChange }: { children: ReactNode; value: string; onIonChange: (event: { detail: { value: string } }) => void }) => <select aria-label="Pestaña de nutrición" value={value} onChange={event => onIonChange({ detail: { value: event.target.value } })}>{children}</select>,
     IonSegmentButton: ({ children, value }: { children: ReactNode; value: string }) => <option value={value}>{children}</option>,
-    IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap,
+    IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap, IonBadge: Wrap,
     IonCard: ({ children, ...props }: { children: ReactNode; role?: string; 'aria-labelledby'?: string }) => <section {...props}>{children}</section>,
     IonCardHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
     IonCardTitle: ({ children, ...props }: { children: ReactNode; id?: string; role?: string; 'aria-level'?: number }) => <div {...props}>{children}</div>,
@@ -215,7 +215,7 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
       expect(screen.getByText('Ciclo 1')).toBeTruthy();
       expect(container.textContent).toContain(previousNutritionRecommendationFixture.patientMessage);
     } else if (scenario === 'historial vacío') {
-      expect(screen.getByText('Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.')).toBeTruthy();
+      expect(screen.getByText('Todavía no hay ciclos anteriores')).toBeTruthy();
     } else expect(screen.queryByRole('region', { name: 'Ciclos anteriores' })).toBeNull();
     expect(mockState.mutate).not.toHaveBeenCalled();
   });
@@ -231,7 +231,20 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     fireEvent.click(screen.getByText('Volver al resumen del plan'));
     fireEvent.click(screen.getByText('Ver ciclos anteriores'));
     expect(screen.queryByText('Tu plan de este ciclo')).toBeNull();
-    fireEvent.click(screen.getByText('Volver a Plan'));
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a Plan' }));
+    expect(screen.getByText('Tu plan de este ciclo')).toBeTruthy();
+  });
+
+  it('3.19: un fallo en el historial conserva su retorno a Plan y el reintento', () => {
+    const retry = vi.fn();
+    const view = render(<NutritionPage recommendations={nutritionRecommendationsResponseFixture} onRetryRecommendations={retry}/>);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
+    fireEvent.click(screen.getByText('Ver ciclos anteriores'));
+    view.rerender(<NutritionPage recommendations={nutritionRecommendationsResponseFixture} recommendationsUnavailable onRetryRecommendations={retry}/>);
+    expect(screen.getByRole('alert').textContent).toContain('Puedes volver a Plan');
+    fireEvent.click(screen.getByText('Reintentar'));
+    expect(retry).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a Plan' }));
     expect(screen.getByText('Tu plan de este ciclo')).toBeTruthy();
   });
 

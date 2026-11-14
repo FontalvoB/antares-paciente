@@ -33320,3 +33320,24 @@ ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd)
 .nutrition-empty-icon ion-icon { font-size: 24px; }
 .nutrition-recommendations-empty h3 { margin: 0 0 10px; color: var(--brand-navy-deep); font-size: 15px; font-weight: 800; }
 .nutrition-recommendations-empty p { margin: 0; color: var(--mu); font-size: 14px; line-height: 1.5; }
+
+/* Ciclos anteriores: subvista local, solo etiquetas de ciclo (D0014). */
+.nutrition-history-heading { display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin: 22px 16px 14px; }
+.nutrition-history-heading h1 { margin: 0; min-width: 0; color: var(--brand-navy-deep); font-size: 24px; font-weight: 800; line-height: 1.25; letter-spacing: -0.5px; }
+.nutrition-history-back { flex: 0 0 44px; width: 44px; height: 44px; margin: 0; --border-radius: 16px; --background: var(--wh); --color: var(--brand-navy-deep); }
+.nutrition-recommendation-history { margin-top: 0; }
+.nutrition-history-intro { margin: 0 0 14px; color: var(--mu); font-size: 13px; line-height: 1.5; }
+.nutrition-recommendation-history ion-accordion-group { border: 0; border-radius: 0; overflow: visible; }
+.nutrition-recommendation-history ion-accordion { overflow: hidden; margin-bottom: 12px; border: 1px solid var(--wh); border-radius: 22px; background: var(--wh); box-shadow: 0 1px 2px color-mix(in srgb, var(--brand-navy) 8%, transparent), 0 18px 28px -20px color-mix(in srgb, var(--brand-navy) 35%, transparent); }
+.nutrition-recommendation-history ion-item { --padding-start: 16px; --inner-padding-end: 16px; --min-height: 82px; }
+.nutrition-recommendation-history ion-label { margin: 16px 0; }
+.nutrition-recommendation-history ion-label h3 { color: var(--brand-navy-deep); font-size: 16px; font-weight: 800; }
+.nutrition-recommendation-history ion-badge { max-width: 86px; margin-left: 10px; padding: 5px 10px; border-radius: 16px; white-space: normal; --background: var(--ice-l); --color: var(--brand-navy-deep); font-size: 12px; }
+.nutrition-recommendation-history .nutrition-recommendations[data-presentation="history"] { margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.nutrition-recommendations[data-presentation="history"] .nutrition-recommendations-byline { margin-top: 0; }
+.nutrition-recommendations[data-presentation="history"] ion-card-header { padding-top: 0; }
+.nutrition-history-hide { margin: 0 16px 12px; min-height: 44px; --padding-start: 0; --padding-end: 0; --color: var(--brand-navy-deep); font-size: 14px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.nutrition-history-hide span { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
+.nutrition-history-state { padding: 26px 16px; border: 1px solid var(--wh); border-radius: 22px; background: var(--wh); box-shadow: var(--shadow-sm); }
+.nutrition-history-state.nutrition-recommendations-empty { padding: 28px 20px; }
+.nutrition-history-state > ion-button { margin: 16px 0 0; min-height: 44px; --border-radius: 16px; --color: var(--brand-navy-deep); --border-color: var(--brand-navy-deep); font-weight: 700; text-transform: none; }

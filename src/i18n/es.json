@@ -3847,5 +3847,12 @@
   "Cierre del ciclo {cycle} · publicado el {date}": "Cierre del ciclo {cycle} · publicado el {date}",
   "Leer más": "Leer más",
   "Leer menos": "Leer menos",
-  "Imagen caducada": "Imagen caducada"
+  "Imagen caducada": "Imagen caducada",
+  "Recomendaciones del ciclo {cycle}": "Recomendaciones del ciclo {cycle}",
+  "Todavía no hay ciclos anteriores": "Todavía no hay ciclos anteriores",
+  "Cuando termines tu primer ciclo y tu nutricionista lo cierre, su recomendación quedará guardada aquí.": "Cuando termines tu primer ciclo y tu nutricionista lo cierre, su recomendación quedará guardada aquí.",
+  "Aquí quedan las recomendaciones de ciclos que ya cerraron. La de tu ciclo actual está en Plan.": "Aquí quedan las recomendaciones de ciclos que ya cerraron. La de tu ciclo actual está en Plan.",
+  "No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.": "No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.",
+  "Sin imágenes": "Sin imágenes",
+  "Ocultar": "Ocultar"
 }

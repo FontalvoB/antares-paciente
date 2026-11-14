@@ -1,5 +1,5 @@
 import {NutritionDisclaimer} from "../components/nutrition/NutritionDisclaimer";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, MotionConfig } from "framer-motion";
 import {
   IonActionSheet,
@@ -128,6 +128,7 @@ export function NutritionPage({ recommendations, recommendationsUnavailable = fa
     "hoy" | "semana" | "indicaciones" | "historial"
   >("hoy");
   const [recommendationHistoryOpen, setRecommendationHistoryOpen] = useState(false);
+  const historyTitleId = useId();
   const [moreSectionsOpen, setMoreSectionsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const changeTab = (value: typeof tab) => {
@@ -536,8 +537,8 @@ export function NutritionPage({ recommendations, recommendationsUnavailable = fa
     onOpenHistory={recommendations && (recommendations.current || recommendations.previous.length > 0) ? () => { setRecommendationHistoryOpen(true); scrollRef.current?.scrollTo({ top: 0 }); } : undefined}
   />;
   if (recommendationHistoryOpen) return <Screen className="ntr-screen ntr-cycle-history-screen">
-    <IonButton className="nutrition-history-back" fill="clear" onClick={() => setRecommendationHistoryOpen(false)}><IonIcon icon={arrowBackOutline} slot="start" />{t('Volver a Plan')}</IonButton>
-    <Scroll className="ntr-scroll"><NutritionRecommendationHistory history={recommendations?.previous} unavailable={recommendationsUnavailable}/></Scroll>
+    <header className="nutrition-history-heading"><IonButton className="nutrition-history-back" fill="clear" aria-label={t('Volver a Plan')} onClick={() => setRecommendationHistoryOpen(false)}><IonIcon icon={arrowBackOutline} slot="icon-only"/></IonButton><h1 id={historyTitleId}>{t('Ciclos anteriores')}</h1></header>
+    <Scroll className="ntr-scroll"><NutritionRecommendationHistory history={recommendations?.previous} unavailable={recommendationsUnavailable} onRetry={onRetryRecommendations} labelledBy={historyTitleId}/></Scroll>
   </Screen>;
 
   // Carga inicial: placeholder de IonSpinner centrado, sin contenido.
