@@ -3829,5 +3829,8 @@
   "Publicado el {date}": "Published on {date}",
   "Imagen no disponible": "Image unavailable",
   "Imagen adjunta de tu nutricionista": "Image attached by your nutritionist",
-  "Adjuntos": "Attachments"
+  "Adjuntos": "Attachments",
+  "Ciclos anteriores": "Previous cycles",
+  "Ciclo {number}": "Cycle {number}",
+  "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.": "When your nutritionist publishes recommendations for previous cycles, you will find them here."
 }

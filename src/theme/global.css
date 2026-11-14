@@ -33251,3 +33251,13 @@ ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd)
 .nutrition-recommendations-images ion-img::part(image) { width: 100%; height: auto; object-fit: contain; }
 .nutrition-recommendations-images figcaption { margin-top: 8px; color: var(--mu); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .nutrition-recommendations-image-error { display: flex; align-items: center; gap: 8px; padding: 20px; border: 1px solid var(--bd); border-radius: var(--radius-sm); color: var(--mu); background: var(--g0); }
+
+.nutrition-recommendation-history { margin: 24px 0; color: var(--tx); }
+.nutrition-recommendation-history > h2 { margin: 0 0 14px; font-size: 19px; font-weight: 800; }
+.nutrition-recommendation-history-empty { margin: 0; padding: 18px; border: 1px solid var(--bd); border-radius: var(--radius-md); background: var(--wh); color: var(--mu); font-size: 14px; line-height: 1.6; }
+.nutrition-recommendation-history ion-accordion-group { overflow: hidden; border: 1px solid var(--bd); border-radius: var(--radius-md); }
+.nutrition-recommendation-history ion-item { --background: var(--wh); --color: var(--tx); --padding-start: 18px; --inner-padding-end: 18px; --min-height: 96px; }
+.nutrition-recommendation-history ion-label { margin: 16px 0; }
+.nutrition-recommendation-history ion-label h3 { font-size: 15px; font-weight: 700; }
+.nutrition-recommendation-history ion-label p { margin-top: 5px; color: var(--mu); font-size: 13px; overflow-wrap: anywhere; }
+.nutrition-recommendation-history .nutrition-recommendations { margin: 0; border: 0; border-top: 1px solid var(--bd); border-radius: 0; }

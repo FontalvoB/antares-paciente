@@ -39,6 +39,7 @@ import { useNutritionPlanStatus } from "../hooks/useNutritionPlanStatus";
 import { NutritionMetrics, NutritionWeek, NutritionWeightChart } from "../components/nutrition/NutritionInsights";
 import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { NutritionRecommendations } from "../components/nutrition/NutritionRecommendations";
+import { NutritionRecommendationHistory } from "../components/nutrition/NutritionRecommendationHistory";
 import type { NutritionCycleRecommendationDto } from "../services/nutrition/nutrition-cycle-recommendation-types";
 import { useProgram } from "../hooks/useProgram";
 import { useProgramScores } from "../hooks/useProgramScores";
@@ -85,10 +86,12 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
   agua: "💧",
 };
 
-export function NutritionPage({ recommendation, recommendationsUnavailable = false }: {
+export function NutritionPage({ recommendation, recommendationsUnavailable = false, recommendationHistory }: {
   /** Preparación 3.18: inyección del DTO público; sin fuente de datos hasta integrar 3.10. */
   recommendation?: NutritionCycleRecommendationDto | null;
   recommendationsUnavailable?: boolean;
+  /** Lista local de ciclos previos para 3.19-prep; no es un DTO de respuesta HTTP. */
+  recommendationHistory?: readonly NutritionCycleRecommendationDto[] | null;
 } = {}) {
   const { showToast, navigate, openTests, completeStep } = useApp();
   // Sin snapshot → sin contenido fabricado: la pantalla entera deriva de la
@@ -545,6 +548,7 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
       <NutritionDisclaimer/>
       <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus}/>
       <NutritionRecommendations recommendation={recommendation} unavailable={recommendationsUnavailable}/>
+      <NutritionRecommendationHistory history={recommendationHistory} unavailable={recommendationsUnavailable}/>
     </Scroll></Screen>;
   }
   if (!snapshot) {
@@ -950,6 +954,7 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
             onOpenProgram={() => navigate('prog')}
           />
           <NutritionRecommendations recommendation={recommendation} unavailable={recommendationsUnavailable}/>
+          <NutritionRecommendationHistory history={recommendationHistory} unavailable={recommendationsUnavailable}/>
           </>
         )}
 

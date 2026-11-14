@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as renderView, screen, fireEvent, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { MetricsHistoryDto, ProgramSnapshotDto } from "../../services/program/types";
 import { ApiError } from "../../utils/apiClient";
-import { nutritionRecommendationFixture } from "../../components/nutrition/__tests__/fixtures/nutrition-recommendation";
+import { nutritionRecommendationFixture, previousNutritionRecommendationFixture } from "../../components/nutrition/__tests__/fixtures/nutrition-recommendation";
 
 function render(children: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -30,9 +30,12 @@ vi.mock("../../components/Screen", () => ({
 // contenido cuando isOpen, verificando el cableado click → modal + form.
 vi.mock("@ionic/react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@ionic/react")>();
+  const Wrap = ({ children, ...props }: HTMLAttributes<HTMLElement>) => <div {...props}>{children}</div>;
   return {
     ...actual,
-    IonSegmentButton: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+    IonSegment: ({ children, value, onIonChange }: { children: ReactNode; value: string; onIonChange: (event: { detail: { value: string } }) => void }) => <select aria-label="Pestaña de nutrición" value={value} onChange={event => onIonChange({ detail: { value: event.target.value } })}>{children}</select>,
+    IonSegmentButton: ({ children, value }: { children: ReactNode; value: string }) => <option value={value}>{children}</option>,
+    IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap,
     IonCard: ({ children, ...props }: { children: ReactNode; role?: string; 'aria-labelledby'?: string }) => <section {...props}>{children}</section>,
     IonCardHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
     IonCardTitle: ({ children, ...props }: { children: ReactNode; id?: string; role?: string; 'aria-level'?: number }) => <div {...props}>{children}</div>,
@@ -100,7 +103,7 @@ vi.mock("../../i18n/I18nContext", () => ({
       return out;
     },
   }),
-  useT: () => (key: string) => key,
+  useT: () => (key: string, params?: Record<string, string>) => key.replace(/\{([^}]+)\}/g, (match, name) => params?.[name] ?? match),
 }));
 
 vi.mock("../../hooks/useNutritionLog", () => ({
@@ -182,16 +185,33 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
   });
 
   it.each(['publicadas', 'sin recomendaciones', 'IA caída'])('3.18-prep: Plan funciona con %s sin consultar recomendaciones', scenario => {
-    const { container } = render(<NutritionPage
+    render(<NutritionPage
       recommendation={scenario === 'sin recomendaciones' ? null : nutritionRecommendationFixture}
       recommendationsUnavailable={scenario === 'IA caída'} />);
     expect(screen.queryByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeNull();
-    fireEvent(container.querySelector('ion-segment')!, new CustomEvent('ionChange', { detail: { value: 'indicaciones' }, bubbles: true }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
     expect(screen.getAllByText('Plan Mediterráneo 1800').length).toBeGreaterThan(0);
     if (scenario === 'publicadas') {
       expect(screen.getByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeTruthy();
       expect(screen.getByText(nutritionRecommendationFixture.professionalName)).toBeTruthy();
     } else expect(screen.queryByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeNull();
+    expect(mockState.mutate).not.toHaveBeenCalled();
+  });
+
+  it.each(['con historial', 'historial vacío', 'IA caída'])('3.19-prep: Plan conserva su contenido con %s', scenario => {
+    const { container } = render(<NutritionPage
+      recommendationHistory={scenario === 'historial vacío' ? [] : [previousNutritionRecommendationFixture]}
+      recommendationsUnavailable={scenario === 'IA caída'} />);
+    expect(screen.queryByRole('region', { name: 'Ciclos anteriores' })).toBeNull();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
+    expect(screen.getAllByText('Plan Mediterráneo 1800').length).toBeGreaterThan(0);
+    if (scenario === 'con historial') {
+      expect(screen.getByRole('region', { name: 'Ciclos anteriores' })).toBeTruthy();
+      expect(screen.getByText('Ciclo 1')).toBeTruthy();
+      expect(container.textContent).toContain(previousNutritionRecommendationFixture.patientMessage);
+    } else if (scenario === 'historial vacío') {
+      expect(screen.getByText('Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.')).toBeTruthy();
+    } else expect(screen.queryByRole('region', { name: 'Ciclos anteriores' })).toBeNull();
     expect(mockState.mutate).not.toHaveBeenCalled();
   });
 
@@ -205,7 +225,7 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
       series('hba1c', 'pct', 5.6), series('body_fat', 'pct', 24),
     ] };
     const { container } = render(<NutritionPage />);
-    fireEvent(container.querySelector('ion-segment')!, new CustomEvent('ionChange', { detail: { value: 'historial' }, bubbles: true }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'historial' } });
 
     const metrics = container.querySelector('.ntr-metrics')!;
     expect(metrics.textContent).toContain('24,4kg/m²');

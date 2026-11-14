@@ -3829,5 +3829,8 @@
   "Publicado el {date}": "Publicado el {date}",
   "Imagen no disponible": "Imagen no disponible",
   "Imagen adjunta de tu nutricionista": "Imagen adjunta de tu nutricionista",
-  "Adjuntos": "Adjuntos"
+  "Adjuntos": "Adjuntos",
+  "Ciclos anteriores": "Ciclos anteriores",
+  "Ciclo {number}": "Ciclo {number}",
+  "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.": "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí."
 }

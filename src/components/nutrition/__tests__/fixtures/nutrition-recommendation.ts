@@ -13,3 +13,22 @@ export const nutritionRecommendationFixture: NutritionCycleRecommendationDto = {
     caption: 'Guía de platos para el próximo ciclo',
   }],
 };
+
+/** Mismo DTO público; ciclos publicados de prueba, en orden local de presentación. */
+export const previousNutritionRecommendationFixture: NutritionCycleRecommendationDto = {
+  ...nutritionRecommendationFixture,
+  cycleNumber: 1,
+  startDate: '2026-10-08',
+  endDate: '2026-11-06',
+  publishedAt: '2026-11-07T14:30:00Z',
+  patientMessage: 'Ana, continúa con las pausas de hidratación acordadas con tu equipo.',
+  attachments: [{
+    url: nutritionRecommendationFixture.attachments[0].url.replace('cycle-2', 'cycle-1'),
+    caption: 'Guía de hidratación del ciclo anterior',
+  }],
+};
+
+export const nutritionRecommendationHistoryFixture: readonly NutritionCycleRecommendationDto[] = [
+  nutritionRecommendationFixture,
+  previousNutritionRecommendationFixture,
+];
