@@ -1,0 +1,52 @@
+# Alineación app con Claude Design — 3.18 y 3.19
+
+Referencia oficial: `mockups/referencia-claude-f3-nutricion-app/` del change.
+Se leyeron README, siete PNG y HTML fuente. D0014 resuelve la pregunta dejada
+por los prep: el cliente recibe `{ current, previous }`, con DTO público por ciclo.
+No se filtra por fechas en el cliente ni se añade contexto de programa.
+
+## 3.18 — Plan y recomendaciones
+
+Se sustituye la entrada de props independientes por `recommendations` del tipo
+`NutritionRecommendationsResponseDto`. La fixture usa el mismo envoltorio y solo
+vive en pruebas. No hay GET nuevo ni activación del consumo real de 3.10.
+
+| Artboard | Adaptación |
+| --- | --- |
+| 1, Plan con recomendación | Hoy/Plan como navegación principal; banner de revisión; resumen del plan; profesional con iniciales, publicación y texto; tres imágenes con pies; fila Ver ciclos anteriores. |
+| 2, sin recomendaciones | `current:null` muestra el título y la explicación amable exacta de la referencia; no se inventa una recomendación. |
+| 3, fuente no disponible | Error dentro del bloque, con Reintentar; plan y registros siguen disponibles. |
+| 6, adjuntos | Leer más/menos para texto largo; imagen fallida con pie conservado y Actualizar; sin galería si no hay imágenes. |
+| 7, 320 px | Cabecera del plan puede envolver la etiqueta; galería de tres columnas, pies con salto de línea, botones táctiles y ningún desbordamiento. |
+
+El resumen reutiliza la selección de día/comidas de `NutritionPlanTab`; «Ver plan
+completo» conserva porciones, horarios, notas, días y metas existentes. Semana e
+Historial de registros siguen accesibles desde «Más secciones de nutrición».
+La navegación global existente y el aviso nutricional se conservan; el aviso queda
+después del contenido principal de Plan, sin cambiar su texto.
+
+Los números del mockup son ilustrativos: Ciclo N procede de `current.cycleNumber`,
+y el día del contrato existente del plan. El DTO de plan no trae número de ciclo;
+con `current:null` se muestra solo el día conocido, sin inventar «Ciclo 1».
+Se mantiene la regla del repo de fechas `dd/mm/aaaa`.
+
+`onRetryRecommendations` es un callback de presentación, usado para reintentar la
+fuente y renovar adjuntos. No se añaden parámetros a una URL firmada ni se reintenta
+con una firma modificada. El futuro adaptador de 3.10 debe volver a consultar el
+envoltorio y entregar las URLs renovadas. Sin callback, la acción se deshabilita.
+El mensaje se presenta como texto y los campos internos inesperados no se imprimen.
+
+Validación de 3.18: 50/50 pruebas afectadas; suite completa 1657/1657, 204 archivos;
+lint/build/i18n correctos (avisos existentes de lint y tamaño de chunks, cero claves
+faltantes). Playwright MCP con la pantalla real y fuentes de datos sustituidas por
+fixtures verificó 36 combinaciones de seis estados × tres anchuras × ES/EN, sin
+desbordamientos. Las imágenes se sirvieron localmente, sin API de negocio. El
+bloqueo de WebSocket HMR del navegador se distingue de errores de producto.
+
+## Pendiente de consumo real
+
+Cuando codex-back cierre 3.10: confirmar prefijo/ruta y binding real de D0014,
+conectar la carga/refetch y `onRetryRecommendations`, verificar URLs firmadas y
+autorización en el backend y ejecutar QA integral. La lista `previous` llega ya
+seleccionada y ordenada por el backend. No se implementa «Programa anterior».
+No se modifica `tasks.md`, no se publica la app y no se hace push.

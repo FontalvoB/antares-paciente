@@ -1,5 +1,8 @@
 # Historial de recomendaciones — preparación 3.19
 
+> Registro histórico del prep. La pregunta de respuesta se resolvió en D0014:
+> `{ current, previous }`. Ver [fase-3-alineacion-app.md](fase-3-alineacion-app.md).
+
 Entrega en `.worktrees/app-f3`, rama `org/f3-antares-paciente`, desde `bb22669`.
 Reutiliza el DTO por ciclo y `NutritionRecommendations` de 3.18-prep.
 

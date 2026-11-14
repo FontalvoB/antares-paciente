@@ -7,7 +7,7 @@ import { nutritionRecommendationHistoryFixture as history } from './fixtures/nut
 
 vi.mock('@ionic/react', () => {
   const Wrap = ({ children, ...props }: HTMLAttributes<HTMLElement>) => <div {...props}>{children}</div>;
-  return { IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap,
+  return { IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap, IonButton: Wrap,
     IonCard: Wrap, IonCardHeader: Wrap, IonCardTitle: Wrap, IonCardContent: Wrap,
     IonIcon: () => null, IonImg: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> };
 });
@@ -20,8 +20,8 @@ describe('3.19-prep · historial con el mismo DTO público por ciclo', () => {
     expect(screen.getByRole('region', { name: 'Ciclos anteriores' })).toBeTruthy();
     expect(screen.getAllByText(/^Ciclo \d$/).map(item => item.textContent)).toEqual(['Ciclo 2', 'Ciclo 1']);
     expect(screen.getAllByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toHaveLength(2);
-    expect(screen.getByText('Publicado el 07/12/2026')).toBeTruthy();
-    expect(screen.getByText('Publicado el 07/11/2026')).toBeTruthy();
+    expect(screen.getByText('Cierre del ciclo 2 · publicado el 07/12/2026')).toBeTruthy();
+    expect(screen.getByText('Cierre del ciclo 1 · publicado el 07/11/2026')).toBeTruthy();
     for (const cycle of history) {
       expect(container.textContent).toContain(cycle.patientMessage);
       expect(screen.getAllByText(cycle.professionalName).length).toBeGreaterThan(0);

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as renderView, screen, fireEvent, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { HTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { MetricsHistoryDto, ProgramSnapshotDto } from "../../services/program/types";
 import { ApiError } from "../../utils/apiClient";
-import { nutritionRecommendationFixture, previousNutritionRecommendationFixture } from "../../components/nutrition/__tests__/fixtures/nutrition-recommendation";
+import { nutritionRecommendationFixture, previousNutritionRecommendationFixture, nutritionRecommendationsResponseFixture } from "../../components/nutrition/__tests__/fixtures/nutrition-recommendation";
 
 function render(children: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -33,6 +33,8 @@ vi.mock("@ionic/react", async (importOriginal) => {
   const Wrap = ({ children, ...props }: HTMLAttributes<HTMLElement>) => <div {...props}>{children}</div>;
   return {
     ...actual,
+    IonButton: ({ children, onClick, disabled, 'aria-label': label, 'aria-expanded': expanded, 'aria-pressed': pressed }: ButtonHTMLAttributes<HTMLButtonElement>) => <button disabled={disabled} onClick={onClick} aria-label={label} aria-expanded={expanded} aria-pressed={pressed}>{children}</button>,
+    IonIcon: () => null, IonNote: Wrap, IonProgressBar: () => null,
     IonSegment: ({ children, value, onIonChange }: { children: ReactNode; value: string; onIonChange: (event: { detail: { value: string } }) => void }) => <select aria-label="Pestaña de nutrición" value={value} onChange={event => onIonChange({ detail: { value: event.target.value } })}>{children}</select>,
     IonSegmentButton: ({ children, value }: { children: ReactNode; value: string }) => <option value={value}>{children}</option>,
     IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap,
@@ -41,6 +43,7 @@ vi.mock("@ionic/react", async (importOriginal) => {
     IonCardTitle: ({ children, ...props }: { children: ReactNode; id?: string; role?: string; 'aria-level'?: number }) => <div {...props}>{children}</div>,
     IonCardContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
     IonImg: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />,
+    IonActionSheet: ({ isOpen, header, buttons, onDidDismiss }: { isOpen: boolean; header: string; buttons: { text: string; handler?: () => void }[]; onDidDismiss?: () => void }) => isOpen ? <div role="dialog" aria-label={header}>{buttons.map(button => <button key={button.text} onClick={() => { button.handler?.(); onDidDismiss?.(); }}>{button.text}</button>)}</div> : null,
     IonModal: ({
       children,
       isOpen,
@@ -184,9 +187,9 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     mockState.metricsHistory = null;
   });
 
-  it.each(['publicadas', 'sin recomendaciones', 'IA caída'])('3.18-prep: Plan funciona con %s sin consultar recomendaciones', scenario => {
+  it.each(['publicadas', 'sin recomendaciones', 'IA caída'])('3.18: Plan funciona con %s desde el envoltorio D0014', scenario => {
     render(<NutritionPage
-      recommendation={scenario === 'sin recomendaciones' ? null : nutritionRecommendationFixture}
+      recommendations={scenario === 'sin recomendaciones' ? { current: null, previous: [] } : nutritionRecommendationsResponseFixture}
       recommendationsUnavailable={scenario === 'IA caída'} />);
     expect(screen.queryByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeNull();
     fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
@@ -194,17 +197,19 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     if (scenario === 'publicadas') {
       expect(screen.getByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeTruthy();
       expect(screen.getByText(nutritionRecommendationFixture.professionalName)).toBeTruthy();
-    } else expect(screen.queryByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeNull();
+    } else if (scenario === 'sin recomendaciones') expect(screen.getByText('Aún no tienes recomendaciones')).toBeTruthy();
+    else expect(screen.getByRole('alert').textContent).toContain('Tu plan y tus registros siguen disponibles.');
     expect(mockState.mutate).not.toHaveBeenCalled();
   });
 
   it.each(['con historial', 'historial vacío', 'IA caída'])('3.19-prep: Plan conserva su contenido con %s', scenario => {
     const { container } = render(<NutritionPage
-      recommendationHistory={scenario === 'historial vacío' ? [] : [previousNutritionRecommendationFixture]}
+      recommendations={{ current: nutritionRecommendationFixture, previous: scenario === 'historial vacío' ? [] : [previousNutritionRecommendationFixture] }}
       recommendationsUnavailable={scenario === 'IA caída'} />);
     expect(screen.queryByRole('region', { name: 'Ciclos anteriores' })).toBeNull();
     fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
     expect(screen.getAllByText('Plan Mediterráneo 1800').length).toBeGreaterThan(0);
+    if (scenario !== 'IA caída') fireEvent.click(screen.getByText('Ver ciclos anteriores'));
     if (scenario === 'con historial') {
       expect(screen.getByRole('region', { name: 'Ciclos anteriores' })).toBeTruthy();
       expect(screen.getByText('Ciclo 1')).toBeTruthy();
@@ -213,6 +218,21 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
       expect(screen.getByText('Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.')).toBeTruthy();
     } else expect(screen.queryByRole('region', { name: 'Ciclos anteriores' })).toBeNull();
     expect(mockState.mutate).not.toHaveBeenCalled();
+  });
+
+  it('3.18: muestra ciclo/día conocidos, conserva el plan completo y permite volver del historial', () => {
+    mockState.plan = { ...planFixture, currentDay: 4, durationDays: 30, meals: [{ mealType: 'Breakfast', description: 'Avena con fruta y huevo' }] };
+    render(<NutritionPage recommendations={nutritionRecommendationsResponseFixture} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
+    expect(screen.getByText('Ciclo 3 · día 4')).toBeTruthy();
+    expect(screen.getByText('Tu nutricionista revisó tu mes')).toBeTruthy();
+    fireEvent.click(screen.getByText('Ver plan completo'));
+    expect(screen.getByText('Tu menú de hoy')).toBeTruthy();
+    fireEvent.click(screen.getByText('Volver al resumen del plan'));
+    fireEvent.click(screen.getByText('Ver ciclos anteriores'));
+    expect(screen.queryByText('Tu plan de este ciclo')).toBeNull();
+    fireEvent.click(screen.getByText('Volver a Plan'));
+    expect(screen.getByText('Tu plan de este ciclo')).toBeTruthy();
   });
 
   it("0.13 — muestra kg/m² y % en indicadores e historial sin modificar las unidades del contrato", () => {
@@ -225,7 +245,8 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
       series('hba1c', 'pct', 5.6), series('body_fat', 'pct', 24),
     ] };
     const { container } = render(<NutritionPage />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'historial' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Más secciones de nutrición' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Historial' }));
 
     const metrics = container.querySelector('.ntr-metrics')!;
     expect(metrics.textContent).toContain('24,4kg/m²');

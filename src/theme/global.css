@@ -33261,3 +33261,62 @@ ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd)
 .nutrition-recommendation-history ion-label h3 { font-size: 15px; font-weight: 700; }
 .nutrition-recommendation-history ion-label p { margin-top: 5px; color: var(--mu); font-size: 13px; overflow-wrap: anywhere; }
 .nutrition-recommendation-history .nutrition-recommendations { margin: 0; border: 0; border-top: 1px solid var(--bd); border-radius: 0; }
+
+/* Referencia Claude F3 app: tarjetas compactas, byline y galería con pies. */
+.nutrition-primary-tabs { display: flex; align-items: center; gap: 6px; margin: 0 16px 8px; }
+.nutrition-primary-tabs .ntr-tabs { flex: 1; margin: 0; }
+.nutrition-primary-tabs .ntr-tabs { width: auto; padding: 4px; border: 1px solid var(--wh); background: color-mix(in srgb, var(--wh) 85%, transparent); }
+.nutrition-primary-tabs .ntr-tabs ion-segment-button { font-size: 14px; --indicator-color: var(--brand-navy-deep); --indicator-box-shadow: none; --color-checked: var(--wh); --border-radius: 14px; }
+.ntr-screen { background: linear-gradient(145deg, var(--teal-l), var(--g0) 35%); }
+.ntr-screen .page-head { padding: 24px 16px 18px; }
+.ntr-screen .page-head-title { font-size: 26px; letter-spacing: -0.8px; }
+.ntr-screen .ntr-scroll { background: transparent; }
+.nutrition-primary-tabs > ion-button { min-width: 44px; --color: var(--brand-navy-deep); }
+.ntr-screen .ntr-scroll { padding-left: 16px; padding-right: 16px; }
+.nutrition-review-banner { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 0 0 12px; border-radius: 18px; color: var(--brand-green); background: var(--teal-l); font-size: 14px; font-weight: 700; line-height: 1.4; }
+.nutrition-review-banner ion-icon { flex-shrink: 0; font-size: 21px; }
+.nutrition-cycle-summary, ion-card.nutrition-recommendations { margin: 12px 0; border: 1px solid var(--wh); border-radius: 22px; background: var(--wh); box-shadow: 0 1px 2px color-mix(in srgb, var(--brand-navy) 8%, transparent), 0 18px 28px -20px color-mix(in srgb, var(--brand-navy) 35%, transparent); }
+.nutrition-cycle-summary { padding: 16px; color: var(--tx); }
+.nutrition-cycle-summary > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.nutrition-cycle-summary h2 { margin: 0; font-size: 16px; font-weight: 800; }
+.nutrition-cycle-badge { padding: 4px 10px; border-radius: 16px; background: var(--ice-l); color: var(--brand-navy-deep); font-size: 13px; font-weight: 700; }
+.nutrition-cycle-plan-name { margin: 10px 0; color: var(--mu); font-size: 12px; }
+.nutrition-cycle-summary dl { margin: 12px 0 0; }
+.nutrition-cycle-summary dl > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 10px; margin: 6px 0; font-size: 14px; line-height: 1.5; }
+.nutrition-cycle-summary dt { color: var(--mu); }
+.nutrition-cycle-summary dd { margin: 0; text-align: right; overflow-wrap: anywhere; font-weight: 700; }
+.nutrition-cycle-details { display: block; margin: 8px 0 0; min-height: 44px; --padding-start: 0; --padding-end: 0; --color: var(--brand-navy-deep); font-size: 13px; text-transform: none; }
+.nutrition-recommendations ion-card-header { padding: 16px 16px 0; }
+.nutrition-recommendations ion-card-title { display: block; color: var(--brand-navy-deep); font-size: 16px; font-weight: 800; line-height: 1.45; }
+.nutrition-recommendations-byline { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.nutrition-recommendations-byline > div { min-width: 0; }
+.nutrition-professional-avatar { display: flex; flex: 0 0 40px; height: 40px; align-items: center; justify-content: center; border-radius: 50%; background: var(--grad-brand); color: var(--wh); font-size: 12px; font-weight: 800; }
+.nutrition-recommendations-professional { margin: 0 0 3px; color: var(--brand-navy-deep); font-size: 14px; font-weight: 700; line-height: 1.45; }
+.nutrition-recommendations-published { margin: 0; color: var(--mu); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.nutrition-recommendations ion-card-content { padding: 14px 16px 16px; }
+.nutrition-recommendations .nutrition-recommendations-message { font-size: 14px; line-height: 1.5; }
+.nutrition-recommendations-images { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 8px; margin-top: 14px; }
+.nutrition-recommendations-images[data-layout="three"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.nutrition-recommendations-images figure { min-width: 0; margin: 0; }
+.nutrition-recommendations-images ion-img { aspect-ratio: 1.12; background: linear-gradient(135deg, var(--teal-l), var(--blue-l)); }
+.nutrition-recommendations-images ion-img::part(image) { height: 100%; object-fit: contain; }
+.nutrition-recommendations-images figcaption { margin-top: 6px; font-size: 12px; line-height: 1.45; }
+.nutrition-recommendations-image-error { flex-direction: column; justify-content: center; gap: 6px; padding: 10px; aspect-ratio: 1.12; border: 1px dashed var(--ice); background: repeating-linear-gradient(45deg, var(--ice-l), var(--ice-l) 9px, var(--blue-l) 9px, var(--blue-l) 18px); text-align: center; font-size: 12px; font-weight: 700; }
+.nutrition-recommendations-image-error ion-icon { font-size: 20px; }
+.nutrition-recommendations ion-button { text-transform: none; letter-spacing: 0; font-weight: 700; --color: var(--brand-navy-deep); }
+.nutrition-image-refresh { width: 100%; margin: 8px 0 0; min-height: 44px; --border-radius: 13px; --border-color: var(--brand-navy-deep); font-size: 13px; }
+.nutrition-message-expand { min-height: 44px; margin: 6px 0; --padding-start: 0; --padding-end: 0; font-size: 14px; }
+.nutrition-recommendations-history-link { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--bd); min-height: 50px; --padding-start: 0; --padding-end: 0; font-size: 14px; }
+.nutrition-recommendations-history-link::part(native) { justify-content: space-between; text-align: start; }
+.nutrition-recommendations-history-link span { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; white-space: normal; }
+.nutrition-recommendations-warning { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 14px; border-radius: 16px; background: var(--org-l); color: var(--org-d); font-size: 14px; line-height: 1.5; }
+.nutrition-recommendations-warning ion-icon { flex-shrink: 0; font-size: 23px; }
+.nutrition-recommendations-error-lines { display: grid; gap: 12px; margin: 12px 0; }
+.nutrition-recommendations-error-lines span { height: 12px; width: 90%; border-radius: 12px; background: var(--ice-l); }
+.nutrition-recommendations-error-lines span:last-child { width: 75%; }
+.nutrition-recommendations-retry { min-height: 44px; margin: 12px 0 0; --border-radius: 16px; --border-color: var(--brand-navy-deep); }
+.nutrition-recommendations-empty { padding: 14px 4px 10px; text-align: center; }
+.nutrition-empty-icon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin: 2px 0 12px; border-radius: 50%; background: var(--teal-l); color: var(--brand-green); }
+.nutrition-empty-icon ion-icon { font-size: 24px; }
+.nutrition-recommendations-empty h3 { margin: 0 0 10px; color: var(--brand-navy-deep); font-size: 15px; font-weight: 800; }
+.nutrition-recommendations-empty p { margin: 0; color: var(--mu); font-size: 14px; line-height: 1.5; }

@@ -3832,5 +3832,20 @@
   "Adjuntos": "Adjuntos",
   "Ciclos anteriores": "Ciclos anteriores",
   "Ciclo {number}": "Ciclo {number}",
-  "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.": "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí."
+  "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.": "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.",
+  "Tu plan de este ciclo": "Tu plan de este ciclo",
+  "Ciclo {cycle} · día {day}": "Ciclo {cycle} · día {day}",
+  "Ver plan completo": "Ver plan completo",
+  "Volver al resumen del plan": "Volver al resumen del plan",
+  "Tu nutricionista revisó tu mes": "Tu nutricionista revisó tu mes",
+  "Aún no tienes recomendaciones": "Aún no tienes recomendaciones",
+  "Tu nutricionista las publicará aquí cuando cierre tu primer ciclo. Mientras tanto, sigue tu plan y registra tus comidas.": "Tu nutricionista las publicará aquí cuando cierre tu primer ciclo. Mientras tanto, sigue tu plan y registra tus comidas.",
+  "No pudimos cargar tus recomendaciones. Tu plan y tus registros siguen disponibles.": "No pudimos cargar tus recomendaciones. Tu plan y tus registros siguen disponibles.",
+  "Ver ciclos anteriores": "Ver ciclos anteriores",
+  "Volver a Plan": "Volver a Plan",
+  "Más secciones de nutrición": "Más secciones de nutrición",
+  "Cierre del ciclo {cycle} · publicado el {date}": "Cierre del ciclo {cycle} · publicado el {date}",
+  "Leer más": "Leer más",
+  "Leer menos": "Leer menos",
+  "Imagen caducada": "Imagen caducada"
 }

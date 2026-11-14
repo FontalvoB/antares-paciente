@@ -33,6 +33,8 @@ export interface NutritionPlanTabProps {
   status?: NutritionPlanStatusDto | null;
   onOpenAssessments?: () => void;
   onOpenProgram?: () => void;
+  compact?: boolean;
+  cycleNumber?: number | null;
 }
 
 /** Meta fija por código de comida del plan (clave t() + icono Ionic). */
@@ -74,9 +76,12 @@ export function NutritionPlanTab({
   status,
   onOpenAssessments,
   onOpenProgram,
+  compact = false,
+  cycleNumber,
 }: NutritionPlanTabProps) {
   const { t, lang } = useI18n();
   const [selection, setSelection] = useState<{ plan: string; day: number } | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const planKey = `${plan?.id ?? ""}:${plan?.revision ?? ""}`;
   const chosenDay = selection?.plan === planKey ? selection.day : null;
   const days = [...(plan?.days ?? [])].filter(day => Number.isInteger(day.dayNumber) && (day.dayNumber ?? 0) > 0).sort((a, b) => a.dayNumber! - b.dayNumber!);
@@ -245,9 +250,20 @@ export function NutritionPlanTab({
   }
 
   if (plan) {
+    if (compact && !detailsOpen) return <section className="nutrition-cycle-summary" aria-label={t('Tu plan de este ciclo')}>
+      <header><h2>{t('Tu plan de este ciclo')}</h2>{currentDay != null && <span className="nutrition-cycle-badge">{cycleNumber != null
+        ? t('Ciclo {cycle} · día {day}', { cycle: String(cycleNumber), day: String(currentDay) })
+        : t('Día {day}', { day: String(currentDay) })}</span>}</header>
+      {plan.name && <p className="nutrition-cycle-plan-name">{plan.name}</p>}
+      <dl>{mealCards.filter(meal => !meal.missing).map(meal => <div key={meal.key}><dt>{meal.labelIsKey ? t(meal.label) : meal.label}</dt><dd>{meal.description || meal.foods || t('Ver menú')}</dd></div>)}</dl>
+      {!mealCards.some(meal => !meal.missing) && <p className="ntr-muted">{t('Sin menú')}</p>}
+      {error && <p className="nutrition-plan-refresh-error" role="alert">{t('No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.')}</p>}
+      <IonButton fill="clear" className="nutrition-cycle-details" onClick={() => setDetailsOpen(true)}>{t('Ver plan completo')}<IonIcon slot="end" icon={chevronForwardOutline}/></IonButton>
+    </section>;
     const menuTitle = chosenDay == null ? t('Tu menú de hoy') : t('Menú del día {day}', { day: String(shownDay?.dayNumber ?? chosenDay) });
     return (
       <div className="ntr-plan-view nutrition-plan-redesign">
+        {compact && <IonButton fill="clear" onClick={() => setDetailsOpen(false)}>{t('Volver al resumen del plan')}</IonButton>}
         <header className="nutrition-plan-intro">
           <h2>{t('Tu plan nutricional')}</h2>
           {plan.name && <p className="nutrition-plan-name">{plan.name}</p>}

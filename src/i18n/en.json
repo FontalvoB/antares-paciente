@@ -3832,5 +3832,20 @@
   "Adjuntos": "Attachments",
   "Ciclos anteriores": "Previous cycles",
   "Ciclo {number}": "Cycle {number}",
-  "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.": "When your nutritionist publishes recommendations for previous cycles, you will find them here."
+  "Cuando tu nutricionista publique recomendaciones de ciclos anteriores, las encontrarás aquí.": "When your nutritionist publishes recommendations for previous cycles, you will find them here.",
+  "Tu plan de este ciclo": "Your plan for this cycle",
+  "Ciclo {cycle} · día {day}": "Cycle {cycle} · day {day}",
+  "Ver plan completo": "View full plan",
+  "Volver al resumen del plan": "Back to plan overview",
+  "Tu nutricionista revisó tu mes": "Your nutritionist reviewed your month",
+  "Aún no tienes recomendaciones": "You do not have recommendations yet",
+  "Tu nutricionista las publicará aquí cuando cierre tu primer ciclo. Mientras tanto, sigue tu plan y registra tus comidas.": "Your nutritionist will publish them here when your first cycle closes. In the meantime, follow your plan and log your meals.",
+  "No pudimos cargar tus recomendaciones. Tu plan y tus registros siguen disponibles.": "We could not load your recommendations. Your plan and meal records are still available.",
+  "Ver ciclos anteriores": "View previous cycles",
+  "Volver a Plan": "Back to Plan",
+  "Más secciones de nutrición": "More nutrition sections",
+  "Cierre del ciclo {cycle} · publicado el {date}": "Cycle {cycle} review · published on {date}",
+  "Leer más": "Read more",
+  "Leer menos": "Read less",
+  "Imagen caducada": "Image expired"
 }

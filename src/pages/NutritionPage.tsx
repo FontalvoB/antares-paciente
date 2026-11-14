@@ -13,7 +13,7 @@ import {
   IonSegmentButton,
   IonSpinner,
 } from "@ionic/react";
-import { closeOutline, cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline } from "ionicons/icons";
+import { closeOutline, cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline, arrowBackOutline, ellipsisHorizontal, notificationsOutline } from "ionicons/icons";
 import dailyMediterranean from "../assets/nutrition/daily-mediterranean.jpg";
 import dailyBreakfast from "../assets/nutrition/daily-breakfast.jpg";
 import { PageHeader } from "../components/PageHeader";
@@ -40,7 +40,7 @@ import { NutritionMetrics, NutritionWeek, NutritionWeightChart } from "../compon
 import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { NutritionRecommendations } from "../components/nutrition/NutritionRecommendations";
 import { NutritionRecommendationHistory } from "../components/nutrition/NutritionRecommendationHistory";
-import type { NutritionCycleRecommendationDto } from "../services/nutrition/nutrition-cycle-recommendation-types";
+import type { NutritionRecommendationsResponseDto } from "../services/nutrition/nutrition-cycle-recommendation-types";
 import { useProgram } from "../hooks/useProgram";
 import { useProgramScores } from "../hooks/useProgramScores";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
@@ -86,12 +86,11 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
   agua: "💧",
 };
 
-export function NutritionPage({ recommendation, recommendationsUnavailable = false, recommendationHistory }: {
-  /** Preparación 3.18: inyección del DTO público; sin fuente de datos hasta integrar 3.10. */
-  recommendation?: NutritionCycleRecommendationDto | null;
+export function NutritionPage({ recommendations, recommendationsUnavailable = false, onRetryRecommendations }: {
+  /** Envoltorio D0014 inyectado; consumo real pendiente de backend 3.10. */
+  recommendations?: NutritionRecommendationsResponseDto | null;
   recommendationsUnavailable?: boolean;
-  /** Lista local de ciclos previos para 3.19-prep; no es un DTO de respuesta HTTP. */
-  recommendationHistory?: readonly NutritionCycleRecommendationDto[] | null;
+  onRetryRecommendations?: () => void;
 } = {}) {
   const { showToast, navigate, openTests, completeStep } = useApp();
   // Sin snapshot → sin contenido fabricado: la pantalla entera deriva de la
@@ -128,6 +127,8 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
   const [tab, setTab] = useState<
     "hoy" | "semana" | "indicaciones" | "historial"
   >("hoy");
+  const [recommendationHistoryOpen, setRecommendationHistoryOpen] = useState(false);
+  const [moreSectionsOpen, setMoreSectionsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const changeTab = (value: typeof tab) => {
     setTab(value);
@@ -525,6 +526,20 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
   };
 
   // ── Estados sin verdad del servidor (de-mock) ──
+  const reviewBanner = recommendations?.current && !recommendationsUnavailable
+    ? <p className="nutrition-review-banner" role="status"><IonIcon icon={notificationsOutline} aria-hidden="true" />{t('Tu nutricionista revisó tu mes')}</p>
+    : null;
+  const recommendationBlock = <NutritionRecommendations
+    recommendation={recommendations?.current}
+    unavailable={recommendationsUnavailable}
+    onRetry={onRetryRecommendations}
+    onOpenHistory={recommendations && (recommendations.current || recommendations.previous.length > 0) ? () => { setRecommendationHistoryOpen(true); scrollRef.current?.scrollTo({ top: 0 }); } : undefined}
+  />;
+  if (recommendationHistoryOpen) return <Screen className="ntr-screen ntr-cycle-history-screen">
+    <IonButton className="nutrition-history-back" fill="clear" onClick={() => setRecommendationHistoryOpen(false)}><IonIcon icon={arrowBackOutline} slot="start" />{t('Volver a Plan')}</IonButton>
+    <Scroll className="ntr-scroll"><NutritionRecommendationHistory history={recommendations?.previous} unavailable={recommendationsUnavailable}/></Scroll>
+  </Screen>;
+
   // Carga inicial: placeholder de IonSpinner centrado, sin contenido.
   if (!snapshot && isLoading) {
     return (
@@ -545,10 +560,10 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
   // en el render normal con estados vacíos derivados (nunca fabricación).
   if(!snapshot && nutritionPlan){
     return <Screen><PageHeader title={t("Nutrición")} sub={t("Tu plan de alimentación")}/><Scroll className="ntr-scroll">
+      {reviewBanner}
+      <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus} compact cycleNumber={recommendations?.current?.cycleNumber}/>
+      {recommendationBlock}
       <NutritionDisclaimer/>
-      <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus}/>
-      <NutritionRecommendations recommendation={recommendation} unavailable={recommendationsUnavailable}/>
-      <NutritionRecommendationHistory history={recommendationHistory} unavailable={recommendationsUnavailable}/>
     </Scroll></Screen>;
   }
   if (!snapshot) {
@@ -620,22 +635,25 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
 
   return (
     <MotionConfig reducedMotion="user"><Screen className="ntr-screen">
-      <PageHeader title={t("Nutrición")} sub={nutritionPlan?.name || planTitle} />
+      <PageHeader title={t("Nutrición")} sub={tab === 'hoy' ? nutritionPlan?.name || planTitle : undefined} />
 
-      <IonSegment
+      <div className="nutrition-primary-tabs"><IonSegment
         className="plan-seg ntr-tabs"
         value={tab}
         onIonChange={(e) => changeTab((e.detail.value as typeof tab) ?? "hoy")}
       >
         <IonSegmentButton value="hoy">{t("Hoy")}</IonSegmentButton>
-        <IonSegmentButton value="semana">{t("Semana")}</IonSegmentButton>
         <IonSegmentButton value="indicaciones">{t("Plan")}</IonSegmentButton>
-        <IonSegmentButton value="historial">{t("Historial")}</IonSegmentButton>
-      </IonSegment>
+      </IonSegment><IonButton fill="clear" aria-label={t('Más secciones de nutrición')} onClick={() => setMoreSectionsOpen(true)}><IonIcon slot="icon-only" icon={ellipsisHorizontal}/></IonButton></div>
+      <IonActionSheet isOpen={moreSectionsOpen} onDidDismiss={() => setMoreSectionsOpen(false)} header={t('Más secciones de nutrición')} buttons={[
+        { text: t('Semana'), handler: () => changeTab('semana') },
+        { text: t('Historial'), handler: () => changeTab('historial') },
+        { text: t('Cancelar'), role: 'cancel' },
+      ]}/>
 
       {/* Todo lo demás hace scroll: analizador + resumen + contenido del tab. */}
       <Scroll ref={scrollRef} className={`ntr-scroll${tab === 'hoy' ? ' ntd-today' : ''}`}>
-        {nutritionPlan && <NutritionDisclaimer/>}
+        {nutritionPlan && tab !== 'indicaciones' && <NutritionDisclaimer/>}
         {tab === 'hoy' && <section className="ntd-hero">
           <img src={dailyMediterranean} alt="" fetchPriority="high" />
           <div className="ntd-hero-copy"><span className="ntd-eyebrow"><IonIcon icon={leafOutline} />{t('Tu alimentación de hoy')}</span><h2>{t('Tu día, bien nutrido.')}</h2><p>{t('Un momento para ti. Una comida a la vez.')}</p><span className="ntd-date">{formatDateForDisplay(snapshot.todayLocalDate)}</span></div>
@@ -942,6 +960,7 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
 
         {tab === "indicaciones" && (
           <>
+          {reviewBanner}
           <NutritionPlanTab
             plan={nutritionPlan}
             status={planStatus}
@@ -952,9 +971,11 @@ export function NutritionPage({ recommendation, recommendationsUnavailable = fal
             onRetry={() => { void refetchPlan(); void refreshPlanStatus(); }}
             onOpenAssessments={() => openTests()}
             onOpenProgram={() => navigate('prog')}
+            compact
+            cycleNumber={recommendations?.current?.cycleNumber}
           />
-          <NutritionRecommendations recommendation={recommendation} unavailable={recommendationsUnavailable}/>
-          <NutritionRecommendationHistory history={recommendationHistory} unavailable={recommendationsUnavailable}/>
+          {recommendationBlock}
+          {nutritionPlan && <NutritionDisclaimer/>}
           </>
         )}
 

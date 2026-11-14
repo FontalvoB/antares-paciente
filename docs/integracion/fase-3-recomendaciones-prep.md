@@ -1,5 +1,8 @@
 # Recomendaciones del nutricionista — preparación 3.18
 
+> Registro histórico del prep. La alineación posterior y el contrato D0014
+> se documentan en [fase-3-alineacion-app.md](fase-3-alineacion-app.md).
+
 Rama `org/f3-antares-paciente`, conservando como padre de esta entrega `2f85790`.
 No se integra ni cambia de base con F2 o con el fix 2.24b.
 

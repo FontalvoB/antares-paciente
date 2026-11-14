@@ -8,3 +8,9 @@ export interface NutritionCycleRecommendationDto {
   patientMessage: string;
   attachments: { url: string; caption: string }[];
 }
+
+/** Respuesta pública decidida en D0014. El backend selecciona y ordena los ciclos. */
+export interface NutritionRecommendationsResponseDto {
+  current: NutritionCycleRecommendationDto | null;
+  previous: NutritionCycleRecommendationDto[];
+}
