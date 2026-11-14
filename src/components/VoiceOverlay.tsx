@@ -582,7 +582,7 @@ export function VoiceOverlay() {
                 sdkSession.serverSession = session;
                 if (activeSession.current === sdkSession) {
                   try {
-                    voiceSessionStartOptions(session, sdkSession.threadId);
+                    voiceSessionStartOptions(session, sdkSession.threadId, lang);
                     sdkSession.boundSessionId = linkedVoiceSessionId(session, sdkSession.threadId);
                     if (sdkSession.boundSessionId) registerVoiceSession?.(sdkSession.boundSessionId, sdkSession.threadId);
                   } catch { /* Se rechaza antes de conectar. */ }
@@ -720,9 +720,10 @@ function ElevenVoiceBody({
       // El SDK solicita y conserva su propio microfono. No abrir un segundo
       // getUserMedia/AudioContext solamente para animar el orbe.
       // El servidor selecciona y verifica una versión aprobada para este
-      // idioma antes de emitir la credencial. El cliente no sustituye su
-      // prompt/configuración ni modifica el agente global del proveedor.
-      const session = await requestVoiceSession(langRef.current, threadId, signal);
+      // idioma antes de emitir la credencial. Vita replica solo ese idioma al
+      // iniciar el SDK, sin sustituir prompt, herramientas ni identidad.
+      const language = langRef.current;
+      const session = await requestVoiceSession(language, threadId, signal);
       if (session) onServerSession(session);
       if (isCancelled()) return;
       assertActive();
@@ -731,7 +732,7 @@ function ElevenVoiceBody({
         return;
       }
       sdkStarted.current = true;
-      await eleven.startSession(voiceSessionStartOptions(session, threadId));
+      await eleven.startSession(voiceSessionStartOptions(session, threadId, language));
       if (isCancelled() || signal?.aborted) await eleven.endSession();
     } catch (error) {
       if (!isCancelled() && !signal?.aborted) {

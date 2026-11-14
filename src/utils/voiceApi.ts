@@ -57,13 +57,17 @@ export function linkedVoiceSessionId(session: VoiceSession, threadId: string): s
 }
 
 /** Legacy conserva su conexión; Vita exige contexto íntegro antes de abrir el SDK. */
-export function voiceSessionStartOptions(session: VoiceSession, threadId: string) {
+export function voiceSessionStartOptions(session: VoiceSession, threadId: string, language?: "es" | "en") {
   if (!session.signedUrl || (session.runtimeMode && !["legacy", "vita"].includes(session.runtimeMode))) throw new VoiceSessionContractError();
   const linked = linkedVoiceSessionId(session, threadId);
   if (session.runtimeMode !== "vita") return { signedUrl: session.signedUrl };
   if (!linked || !session.sessionToken || !session.conversationId
     || !session.expiresAt || !Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()) throw new VoiceSessionContractError();
-  return { signedUrl: session.signedUrl, dynamicVariables: { secret__vita_session_token: session.sessionToken } };
+  return {
+    signedUrl: session.signedUrl,
+    dynamicVariables: { secret__vita_session_token: session.sessionToken },
+    ...(language ? { overrides: { agent: { language } } } : {}),
+  };
 }
 
 /** Revoca con la credencial capturada al abrir, sin refresh ni credenciales nuevas. */
@@ -100,8 +104,8 @@ export async function requestVoiceSession(
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      // Selección de una versión verificada para el idioma de la app. No
-      // autoriza overrides del cliente ni mutaciones del agente compartido.
+      // Selección de una versión verificada para el idioma de la app.
+      // Vita solo replica el idioma; no modifica prompt/tools/identidad.
       body: JSON.stringify({ supportsVitaVoice: true, ...(language ? { language } : {}), ...(threadId ? { threadId } : {}) }),
       signal,
     });

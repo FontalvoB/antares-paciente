@@ -10,6 +10,19 @@ describe("contrato de sesión Vita", () => {
     expect(voiceSessionStartOptions({ ...session, runtimeMode: "legacy" }, "thread")).toEqual({ signedUrl: session.signedUrl });
     expect(voiceSessionStartOptions({ signedUrl: session.signedUrl, agentId: "legacy" }, "thread")).toEqual({ signedUrl: session.signedUrl });
   });
+  it.each(["en", "es"] as const)("Vita integral admite únicamente el override de idioma %s", language => {
+    expect(voiceSessionStartOptions(session, "thread", language)).toEqual({
+      signedUrl: session.signedUrl,
+      dynamicVariables: { secret__vita_session_token: "opaque-synthetic" },
+      overrides: { agent: { language } },
+    });
+  });
+  it.each(["en", "es"] as const)("legacy conserva sus opciones exactas incluso con idioma %s", language => {
+    expect(voiceSessionStartOptions({ ...session, runtimeMode: "legacy" }, "thread", language))
+      .toEqual({ signedUrl: session.signedUrl });
+    expect(voiceSessionStartOptions({ signedUrl: session.signedUrl, agentId: "legacy" }, "thread", language))
+      .toEqual({ signedUrl: session.signedUrl });
+  });
   it.each(["threadId", "sessionId", "sessionToken", "expiresAt", "conversationId"])("falla cerrado si falta %s", key => {
     expect(() => voiceSessionStartOptions({ ...session, [key]: undefined }, "thread")).toThrow();
   });

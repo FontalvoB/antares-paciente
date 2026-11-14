@@ -107,3 +107,32 @@ Para repetir el navegador, iniciar Vite en este worktree en background con
 puerto libre 5197 y ejecutar `python e2e/vita-history.py`. `VITA_QA_URL`
 permite otro origen local. El runner cierra su Chromium; el servidor
 temporal de esta entrega se detuvo al terminar.
+
+## Corrección posterior: idioma inicial de Vita
+
+`voiceSessionStartOptions(session, threadId, language?)` acepta `es`/`en`.
+Solo con `runtimeMode: "vita"` y un idioma explícito agrega
+`overrides: { agent: { language } }`, forma admitida por el SDK instalado.
+Conserva `dynamicVariables.secret__vita_session_token`. Sin idioma explícito
+mantiene las opciones anteriores; legacy devuelve exactamente `{ signedUrl }`.
+No se envían overrides de prompt, herramientas o identidad.
+
+VoiceOverlay captura el idioma de `useI18n` al comenzar la solicitud y usa
+ese mismo valor para la petición de sesión y el inicio del SDK, aunque la
+preferencia cambie mientras llega la credencial. Sin cambios visuales.
+
+Verificación de esta corrección: **100/100 tests, 5 archivos**, mediante
+`npm run test -- src/utils/__tests__/voiceSessionContract.test.ts src/utils/__tests__/voiceApi.session.test.ts src/components/__tests__/VoiceOverlay.test.tsx src/components/__tests__/VoiceOrb.test.tsx src/context/__tests__/chatConsolidation.test.tsx`.
+Incluye Vita integral EN/ES, legacy EN/ES sin cambios y credencial demorada
+con cambio de idioma. Build correcto, lint exit 0 (26 warnings existentes),
+i18n con 0 claves faltantes y `git diff --check` correcto.
+
+Las pruebas de la app usan SDK/API simulados. Según la confirmación de root
+recibida de `vita-eleven-audit` vía MCP, el permiso
+`platform_settings.overrides.conversation_config_override.agent.language`
+ya estaba en `true` y la lectura posterior confirmó `true`. Ningún otro
+permiso cambió. La versión permaneció intacta:
+`agtvrsn_0601m7dwk6x3fs7txk78k568ca15`.
+Esta evidencia corresponde a la lectura del proveedor, no a una llamada
+real ni a una prueba en dispositivo. Root integra por cherry-pick y valida
+TestFlight. Commit local separado, sin push.

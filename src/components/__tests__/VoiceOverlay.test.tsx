@@ -4,6 +4,7 @@ import { VoiceOverlay } from "../VoiceOverlay";
 import { consentFailure, requireLegalConsent, verifyLegalConsent, withdrawLegalConsent } from "../../utils/legalConsents";
 
 const mocks = vi.hoisted(() => ({
+  lang: "es" as "es" | "en",
   stop: null as (() => Promise<void>) | null,
   sdkCallbacks: {} as { onDisconnect?: () => void },
   app: { voiceOpen: true, voiceMinimized: false, threadId: "thread-a", minimizeVoice: vi.fn(), openVoice: vi.fn(), closeVoice: vi.fn(), showToast: vi.fn(), sendVoiceMessage: vi.fn(), upsertVoiceMessage: vi.fn(), appendChatMessages: vi.fn(), registerVoiceSession: vi.fn(), markVoiceSessionClosed: vi.fn(), refreshChatHistory: vi.fn() },
@@ -25,7 +26,7 @@ vi.mock("../../utils/legalConsents", async original => ({ ...await original<obje
 vi.mock("../../utils/apiClient", async original => ({ ...await original<object>(), apiFetch: vi.fn().mockResolvedValue(undefined) }));
 
 vi.mock("../../context/AppContext", () => ({ useApp: () => ({ ...mocks.app, registerVoiceStop: (stop: () => Promise<void>) => { mocks.stop = stop; return () => { mocks.stop = null; }; } }) }));
-vi.mock("../../i18n/I18nContext", () => ({ useT: () => (s: string) => s, useI18n: () => ({ t: (s: string) => s, lang: "es" }) }));
+vi.mock("../../i18n/I18nContext", () => ({ useT: () => (s: string) => s, useI18n: () => ({ t: (s: string) => s, lang: mocks.lang }) }));
 vi.mock("../../hooks/useSpeechAssistant", () => ({ useSpeechAssistant: () => mocks.speech }));
 vi.mock("../../utils/voiceApi", async original => ({
   ...await original<object>(), revokeVoiceSession: mocks.revoke,
@@ -56,6 +57,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     localStorage.clear(); sessionStorage.clear();
     localStorage.setItem("copp_access_token", `header.${btoa(JSON.stringify({ sub: "voice-owner-a" }))}.signature`);
     mocks.app.voiceOpen = true;
+    mocks.lang = "es";
     mocks.app.voiceMinimized = false;
     mocks.eleven.isMuted = false;
     mocks.eleven.isSpeaking = false;
@@ -72,6 +74,37 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
   afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+  it.each([
+    ["vita", "en"], ["vita", "es"], ["legacy", "en"], ["legacy", "es"],
+  ] as const)("inicia %s con idioma app %s y solo permite override de language en Vita", async (runtimeMode, language) => {
+    mocks.lang = language;
+    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode, conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() });
+    render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({
+      signedUrl: "wss://example.invalid",
+      ...(runtimeMode === "vita" ? {
+        dynamicVariables: { secret__vita_session_token: "synthetic-context" },
+        overrides: { agent: { language } },
+      } : {}),
+    }));
+    expect(mocks.session).toHaveBeenCalledWith(language, "thread-a", expect.any(AbortSignal));
+  });
+
+  it("conserva el idioma enviado al backend si cambia mientras llega la credencial Vita", async () => {
+    mocks.lang = "en";
+    let finish!: (value: unknown) => void;
+    mocks.session.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const { rerender } = render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.session).toHaveBeenCalledWith("en", "thread-a", expect.any(AbortSignal)));
+    mocks.lang = "es"; rerender(<VoiceOverlay />);
+    await act(async () => finish({ signedUrl: "wss://example.invalid", runtimeMode: "vita", conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() }));
+    expect(mocks.eleven.startSession).toHaveBeenCalledExactlyOnceWith({
+      signedUrl: "wss://example.invalid",
+      dynamicVariables: { secret__vita_session_token: "synthetic-context" },
+      overrides: { agent: { language: "en" } },
+    });
+  });
 
   it("la limpieza espera el SDK y la revocación, y descarta eventos anteriores", async () => {
     mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "server-session", threadId: "thread-a", conversationId: "linked-legacy" });
@@ -333,7 +366,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode, conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", ...(runtimeMode === "vita" ? { sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() } : {}) });
     const originalToken = localStorage.getItem("copp_access_token");
     const { unmount } = render(<VoiceOverlay />);
-    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({ signedUrl: "wss://example.invalid", ...(runtimeMode === "vita" ? { dynamicVariables: { secret__vita_session_token: "synthetic-context" } } : {}) }));
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({ signedUrl: "wss://example.invalid", ...(runtimeMode === "vita" ? { dynamicVariables: { secret__vita_session_token: "synthetic-context" }, overrides: { agent: { language: "es" } } } : {}) }));
     expect(mocks.app.registerVoiceSession).toHaveBeenCalledWith("server-session", "thread-a");
     act(() => mocks.callbacks.onMessage({ message: "Mensaje sintético", role: "user", source: "user", event_id: 2 }));
     expect(mocks.app.upsertVoiceMessage.mock.calls.at(-1)![0]).toMatchObject({ voiceSessionId: "server-session", voiceRuntime: runtimeMode });
