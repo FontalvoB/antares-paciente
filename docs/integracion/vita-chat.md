@@ -85,10 +85,17 @@ compartido por user/agent: la identidad fuente debe incluir conversación y rol.
 El event_id de agente coincidió en esa muestra; response_id era otro UUID. Esto no
 prueba correlación con chunk.id. La sustitución por grupo cerrado evita depender
 de esa correlación y conserva frases iguales con identidades distintas.
+El segundo POC del coordinador recibió interruption con audio sintético y obtuvo
+interrupted:true en API: message de 106 caracteres frente a original_message de
+135, con source_event_id que salta de 2 a 14. Se conserva el mensaje visible
+corregido; ni esos eventos son ordinales ni original_message acredita audio oído.
+La APP ya conecta onAgentResponseCorrection y onInterruption; su regresión sintética
+comprueba sustitución por identidad, marca interrupted y rechazo del original tardío.
 El modo Vita permanece apagado en los servidores. **4.5 no está acreditada con el
 proveedor**: falta integración del importador AI con vínculo server-side, prueba
 de lo realmente pronunciado, correcciones/interrupciones persistidas y reapertura
-en dispositivo. El POC textual no acredita interrupción ni reproducción de audio.
+en dispositivo. El pase con la lista client_events de dev/prod (que ya contiene
+agent_response_correction) queda a cargo del coordinador; no requiere cambio remoto.
 No se abrió
 ni reintentó el túnel rechazado por revisión automática del POC del coordinador.
 
@@ -195,10 +202,17 @@ ejecutaron nuevos borrados recursivos ni se alteró la flota original.
   apagado devuelve 404 y la APP lo comunica. La APP no lo activa.
 - AI: migración `alembic/versions/fe62a09c1741_vita_voice_sessions.py` para sesiones
   y recibos durables del schema `ai`; revisar/aplicar desde el carril AI antes de
-  ensayar modo Vita. No hay migraciones de APP en este lote.
+  ensayar modo Vita. El contrato ampliado ajusta esa revisión aún no desplegada:
+  root debe usar el SQL/modelos regenerados más recientes del carril AI, que incluyen
+  vínculo y sincronización. No hay migraciones de APP en este lote.
+- El importador AI usa `VITA_TRANSCRIPT_SYNC_ENABLED=false` por defecto y autorización
+  interna sync_voice de BACK tras validar consentimiento chat/voz y opt-in del cliente.
+  APP no envía esa autorización interna ni llama directamente al proveedor. Un
+  transcript aún processing/unavailable conserva los mensajes existentes; una lectura
+  posterior puede completar la sincronización. Root debe validar ese roundtrip.
 - Mantener apagados los flags del nuevo motor de voz descritos en INTEGRACION
-  hasta la prueba integral autorizada. Los POC de transporte y transcript no
-  acreditan audio móvil ni interrupciones. La autorización de push de Luis corresponde
+  hasta la prueba integral autorizada. Los POC acreditan transporte, transcript y
+  señal de interrupción sintética; no audio móvil. La autorización de push de Luis corresponde
   al coordinador; esta rama no hace push ni cambia configuración remota.
 - Integrar **solo por cherry-pick de los commits Vita** sobre F2 punta `5d232b1`
   o dev, a cargo de root. No fusionar esta rama completa: su padre es F3 `2f85790`,
@@ -227,6 +241,8 @@ Logs locales ignorados: `.vita-voice-compat-all.log`,
 `.vita-voice-compat-tests.log`, `.vita-voice-compat-build.log`,
 `.vita-voice-compat-lint.log`, `.vita-voice-compat-i18n.log`.
 El pase completo registró el código de salida nativo 0 y duró 74,43 s.
+Resumen versionado de este seguimiento:
+[verificacion-seguimiento.json](evidencia-vita/verificacion-seguimiento.json).
 
 No se añadieron claves i18n, capturas, cambios de diseño ni configuración remota
 en este seguimiento. Las pruebas locales usan fixtures; el POC proveedor pertenece

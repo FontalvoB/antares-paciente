@@ -1,0 +1,37 @@
+{
+  "codeCommit": "169385bbc24c631d1f5f4b9ad8c500ce417ab488",
+  "nativeLoaderCommit": "e4633bf3a2f019523e1a00e0247a93b1acc17778",
+  "checks": {
+    "cleanInstallWithPostinstall": { "command": "npm ci --no-audit --no-fund", "exitCode": 0, "appliedFiles": 14 },
+    "nativeCheck": { "command": "npm run native:ble:check", "exitCode": 0, "pendingFiles": 0 },
+    "nativeReapply": { "exitCode": 0, "pendingFiles": 0, "unchangedFileHashes": 14 },
+    "loaderRegression": { "passed": 9, "oldLoaderCrlfFailures": 2 },
+    "vitestFull": { "command": "npx vitest run --maxWorkers=8", "files": 209, "passed": 1701, "exitCode": 0, "durationSeconds": 74.43 },
+    "vitestFocused": { "files": 5, "passed": 88, "exitCode": 0 },
+    "build": { "command": "npm run build", "exitCode": 0, "warnings": "chunks grandes heredados" },
+    "lint": { "command": "npm run lint", "exitCode": 0, "warnings": "heredadas" },
+    "i18n": { "command": "npm run i18n:check", "exitCode": 0, "missingKeys": 0, "newKeysInFollowup": 0 }
+  },
+  "localIgnoredLogs": [
+    ".vita-ble-clean-install.log",
+    ".vita-ble-loader-red.log",
+    ".vita-ble-loader-tests.log",
+    ".vita-voice-compat-all.log",
+    ".vita-voice-compat-tests.log",
+    ".vita-voice-compat-build.log",
+    ".vita-voice-compat-lint.log",
+    ".vita-voice-compat-i18n.log"
+  ],
+  "voice": {
+    "supportsVitaVoice": true,
+    "testedModes": ["vita", "linked legacy", "legacy without metadata"],
+    "reconciliation": "validated closed session group; opaque canonical suffix; no text deduplication or runtime/provider ID inference",
+    "providerCallbacksTestedLocally": "synthetic SDK fixture",
+    "providerPocOwner": "coordinator; POC-TRANSCRIPT-PROVEEDOR.md",
+    "integratedImporterVerifiedByApp": false,
+    "phoneAudioVerified": false,
+    "remoteConfigurationChanged": false
+  },
+  "visualEvidence": "Initial verificacion.json and before/after PNG remain valid; no additional visual pass in followup.",
+  "integration": "Cherry-pick only onto F2/dev by root; no branch merge, rebase or individual push."
+}
