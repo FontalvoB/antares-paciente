@@ -59,3 +59,18 @@ Sin desbordamiento a 320/390/768 px. Evidencia en
 Esta revisión visual usa una fixture de componentes; no es una prueba end-to-end
 contra la API ni escribe datos en ella. El entorno del navegador bloquea el
 WebSocket de HMR de Vite; no se atribuye ese aviso a la API o al descanso.
+
+## 2.24b — Observador de snapshot sin aviso de queryFn
+
+Rama `org/f2-antares-2.24b` desde F2 `5d232b1`, worktree `.worktrees/app-224b`.
+El aviso `No queryFn` se reproduce tanto en descanso como en un día normal:
+`DailyProtocolReminder` observa la caché con `enabled:false` pero no declaraba
+función de consulta. TanStack valida esa opción aunque la consulta esté deshabilitada.
+Ahora declara el mismo `getSnapshot` que `useProgram`, conservando `enabled:false`;
+el recordatorio no inicia peticiones ni cambia UI o contrato.
+
+La regresión usa QueryClient y useQuery reales: tres casos fallaban antes del
+arreglo por el aviso y pasan después. Cubre descanso, día normal y caché inicialmente
+vacía que se puebla después; invalidar la consulta no genera lecturas adicionales.
+Suite afectada: recordatorio existente/nuevo y ProgramPage con descanso, 18/18.
+Lint/build correctos con advertencias existentes; i18n sin claves faltantes.

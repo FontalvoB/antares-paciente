@@ -6,13 +6,14 @@ import { useApp } from '../context/AppContext'
 import { useT } from '../i18n/I18nContext'
 import { programKeys } from '../hooks/queryKeys'
 import type { ProgramSnapshotDto } from '../services/program/types'
+import { getSnapshot } from '../services/program/program-service'
 import { markProtocolReminderSeen, protocolReminderDelay, reminderKey } from '../utils/dailyProtocolReminder'
 
 /** Observa la consulta existente: no inscribe ni consulta de nuevo al paciente. */
 export function DailyProtocolReminder() {
   const { flow, screen, panicOpen, voiceOpen, realMode, user, navigate } = useApp()
   const t = useT()
-  const { data: snapshot } = useQuery<ProgramSnapshotDto>({ queryKey: programKeys.snapshot, enabled: false })
+  const { data: snapshot } = useQuery<ProgramSnapshotDto>({ queryKey: programKeys.snapshot, queryFn: getSnapshot, enabled: false })
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(document.visibilityState !== 'hidden')
   const pending = snapshot?.todayTasks.filter(task => task.status !== 'Completed').length ?? 0
