@@ -739,6 +739,7 @@ export function ProgramPage() {
               <TodayView
                 program={program}
                 todayTasks={snapshot?.todayTasks}
+                upcoming={snapshot?.upcoming}
                 allDone={allDone}
                 currentId={currentId}
                 first={first}

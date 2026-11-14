@@ -8,15 +8,17 @@ import {
 } from '../../data/program'
 import { MISSION_PHOTOS } from '../../data/missionPhotos'
 import type { ProgramDay, ProgramTaskId } from '../../types'
-import type { ScoresResponseDto, TodayTaskDto } from '../../services/program/types'
+import type { ProgramUpcomingDayDto, ScoresResponseDto, TodayTaskDto } from '../../services/program/types'
 import { useI18n } from '../../i18n/I18nContext'
 import { resolveStationSec } from '../../utils/exerciseSteps'
 import { nutritionMissionSubtitle } from '../../utils/nutritionMissionSubtitle'
 import { TASK_ICONS } from './ui'
+import { UpcomingDays } from './UpcomingDays'
 
 export function TodayView({
   program,
   todayTasks,
+  upcoming,
   allDone,
   currentId,
   first,
@@ -31,6 +33,7 @@ export function TodayView({
   program: ProgramDay
   /** Misiones del día servidas por el backend; sin ellas se usa el plan local. */
   todayTasks?: TodayTaskDto[]
+  upcoming?: ProgramUpcomingDayDto[] | null
   allDone: boolean
   currentId?: ProgramTaskId
   first: string
@@ -239,6 +242,8 @@ export function TodayView({
           </span>
         </motion.div>
       </div>
+
+      <UpcomingDays days={upcoming} />
 
       <div className="pg-encouragement">
         <IonIcon icon={leaf} aria-hidden="true" />

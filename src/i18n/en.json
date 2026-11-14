@@ -3816,5 +3816,10 @@
   "Selecciona el día": "Select a day",
   "Sin datos para comparar.": "No data to compare.",
   "Sin menú": "No menu yet",
-  "Ver menú": "View menu"
+  "Ver menú": "View menu",
+  "Lo que viene": "Coming up",
+  "Próximos días de tu programa": "The next days of your program",
+  "Día {day} · Semana {week}": "Day {day} · Week {week}",
+  "Descanso de ejercicio": "Exercise rest day",
+  "Tu equipo está preparando este contenido.": "Your team is preparing this content."
 }

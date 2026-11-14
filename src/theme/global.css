@@ -33217,3 +33217,14 @@ ion-button.sos-location-sources {
 }
 .sos-reference .sos-help-switch ion-label { margin: 8px 0; }
 .sos-reference .sos-help-panel[hidden] { display: none; }
+
+/* Vista previa de programa: Ionic controla expansión, foco y teclado. */
+.pg-upcoming { margin-top: 24px; color: var(--tx); }
+.pg-upcoming > h2 { margin: 0; font-size: 19px; font-weight: 800; }
+.pg-upcoming > p { margin: 6px 0 14px; color: var(--mu); font-size: 14px; }
+.pg-upcoming ion-accordion-group { overflow: hidden; border: 1px solid var(--bd); border-radius: var(--radius-md); }
+.pg-upcoming ion-item { --background: var(--g0); --color: var(--tx); --min-height: 64px; --padding-start: 14px; --inner-padding-end: 14px; }
+.pg-upcoming ion-label h3 { font-size: 15px; font-weight: 700; }
+.pg-upcoming ion-label p { color: var(--mu); font-size: 13px; white-space: normal; }
+.pg-upcoming ion-list { padding: 0; background: var(--g0); }
+.pg-upcoming ion-badge { max-width: 110px; padding: 7px; white-space: normal; --background: var(--ion-color-secondary); --color: var(--ion-color-secondary-contrast); }

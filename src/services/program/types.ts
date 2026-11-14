@@ -207,6 +207,25 @@ export interface ProgramTemplateDto {
 
 // --- Top-level DTOs ---
 
+/** Vista previa de 2.5: referencias separadas y sin completaciones futuras. */
+export interface ProgramUpcomingMissionDto {
+  type: TaskCode
+  title: string
+  routineId?: string | null
+  mediaId?: string | null
+  nutritionPlanId?: string | null
+  sourcePrescriptionId?: string | null
+  contentUnavailable: boolean
+}
+
+export interface ProgramUpcomingDayDto {
+  date: string
+  day: number
+  weekNumber: number
+  missions: ProgramUpcomingMissionDto[]
+  rest?: boolean | null
+}
+
 export interface ProgramSnapshotDto {
   enrollmentId: string
   template: ProgramTemplateDto
@@ -227,6 +246,8 @@ export interface ProgramSnapshotDto {
    * null solo en respuestas previas (R7.1).
    */
   dailyBonusAmount?: number | null
+  /** Aditivo en 2.5; los servidores anteriores pueden omitirlo. */
+  upcoming?: ProgramUpcomingDayDto[] | null
 }
 
 export interface ProgramEnrollmentDto {
