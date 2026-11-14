@@ -32,7 +32,7 @@ export function NutritionRecommendationHistory({ history, unavailable = false, o
         <p>{t('Cuando termines tu primer ciclo y tu nutricionista lo cierre, su recomendación quedará guardada aquí.')}</p>
       </div>
       : <>
-        <p className="nutrition-history-intro">{t('Aquí quedan las recomendaciones de ciclos que ya cerraron. La de tu ciclo actual está en Plan.')}</p>
+        <p className="nutrition-history-intro">{t('Aquí quedan las recomendaciones de ciclos que ya cerraron. La recomendación más reciente está en Plan.')}</p>
         <IonAccordionGroup value={expanded ?? undefined} onIonChange={event => {
           if (event.target !== event.currentTarget) return;
           setSelection(typeof event.detail.value === 'string' ? event.detail.value : null);

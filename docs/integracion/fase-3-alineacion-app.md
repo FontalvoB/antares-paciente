@@ -77,6 +77,15 @@ Validación del ajuste: 40/40 pruebas focalizadas de pantalla y recomendaciones,
 suite completa 1661/1661 en 204 archivos, lint sin errores, build correcto e i18n
 sin claves faltantes. No se cambia el resto de la UI ni se conecta el consumo real.
 
+QA real posterior con Playwright MCP: 66/66 recorridos en Plan e historial,
+320/390/768 y ES/EN, incluidos carga, vacío, error, retorno, acordeones, foco,
+Leer más/menos y renovación de imagen desde el callback. Consola y red limpias,
+sin desbordamiento; 50 capturas y resultados en OpenSpec `revision-app-f3-d0014/`.
+Se detectó y corrigió el copy del historial: remite a la recomendación más reciente,
+no al ciclo vigente, con dos regresiones ES/EN. Suite final 1663/1663; lint/build/i18n
+verdes. Chrome-devtools MCP no pudo adquirir el perfil ocupado; el diagnóstico de
+consola/red se hizo con Playwright, sin afirmar una medición de performance.
+
 Cuando codex-back cierre 3.10: confirmar prefijo/ruta y binding real de D0014,
 conectar la carga/refetch y `onRetryRecommendations`, verificar URLs firmadas y
 autorización en el backend y ejecutar QA integral. La lista `previous` llega ya

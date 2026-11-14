@@ -14,6 +14,16 @@ vi.mock('@ionic/react', () => {
 afterEach(() => { cleanup(); localStorage.clear(); });
 
 describe('3.19 · historial público alineado con D0014 y los artboards', () => {
+  it.each([
+    ['es', 'Aquí quedan las recomendaciones de ciclos que ya cerraron. La recomendación más reciente está en Plan.'],
+    ['en', 'Recommendations from completed cycles are saved here. The most recent recommendation is in Plan.'],
+  ])('remite a la publicación más reciente sin confundirla con el ciclo vigente en %s', (lang, copy) => {
+    localStorage.setItem('antares_lang', lang);
+    render(<I18nProvider><NutritionRecommendationHistory history={history}/></I18nProvider>);
+    expect(screen.getByText(copy)).toBeTruthy();
+    expect(screen.queryByText(/La de tu ciclo actual|Your current cycle recommendation/)).toBeNull();
+  });
+
   it('lista los ciclos proporcionados y reutiliza sus recomendaciones completas sin alterar datos o URLs', () => {
     const input = Object.freeze([...history]);
     const { container } = render(<I18nProvider><NutritionRecommendationHistory history={input} /></I18nProvider>);
