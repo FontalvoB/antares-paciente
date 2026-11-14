@@ -2,6 +2,8 @@ import { VitaActions } from "../components/chat/VitaActions";
 import {APPOINTMENTS_ENABLED, appointmentLinksForDisplay, isAppointmentAction} from "../utils/appointmentsVisibility";
 import {
   IonActionSheet,
+  IonAlert,
+  IonToast,
   IonBadge,
   IonButton,
   IonIcon,
@@ -12,6 +14,7 @@ import {
 import { CameraSource } from "@capacitor/camera";
 import {
   attachOutline,
+  trashOutline,
   barbellOutline,
   cameraOutline,
   closeCircle,
@@ -67,6 +70,7 @@ export function ChatPage() {
   const {
     chat,
     chatGenerating, cancelChat, retryChat, voiceOpen, voiceMinimized, chatHistoryRevision,
+    chatClearing, clearChat, captureChatGuard, observeChatHistory, chatHistoryEpoch,
     sendChat,
     openPanic,
     openVoice,
@@ -81,6 +85,22 @@ export function ChatPage() {
     navigate,
   } = useApp();
   const [text, setText] = useState("");
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const [clearError, setClearError] = useState(false);
+  const [clearSuccess, setClearSuccess] = useState(false);
+  const clearingRef = useRef(false);
+  const clearTarget = useRef<string | null>(null);
+  const clearConversation = async () => {
+    if (clearingRef.current || clearTarget.current !== historyScopeRef.current) return;
+    clearingRef.current = true;
+    const sourceScope = historyScopeRef.current;
+    try {
+      await clearChat();
+      if (sourceScope === historyScopeRef.current) setClearSuccess(true);
+    } catch {
+      if (sourceScope === historyScopeRef.current) setClearError(true);
+    } finally { clearingRef.current = false; }
+  };
   const [uploading, setUploading] = useState(false);
   // Progressive disclosure del compositor (+): hoja de acciones de adjuntos.
   const [attachSheetOpen, setAttachSheetOpen] = useState(false);
@@ -129,6 +149,8 @@ export function ChatPage() {
   chatRef.current = chat;
   const historyScrollRef = useRef<number | null>(null);
   const historyHydratingRef = useRef(false);
+  const historyApiRef = useRef({ captureChatGuard, observeChatHistory });
+  historyApiRef.current = { captureChatGuard, observeChatHistory };
 
   // Al abrir el chat se intenta cargar la última página del thread estable: si
   // el backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
@@ -140,7 +162,7 @@ export function ChatPage() {
     historyRevisionSeen.current = chatHistoryRevision;
     previousVoiceOpen.current = voiceOpen;
     if (historyLoaded.current === historyScope) return;
-    if (!userId) return;
+    if (!userId || chatClearing) return;
     const controller = new AbortController();
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
     let cancelled = false;
@@ -150,10 +172,14 @@ export function ChatPage() {
     anchorRef.current = null;
     prependingRef.current = false;
     const read = async (attempt: number) => {
+      const current = historyApiRef.current.captureChatGuard?.();
       const applySnapshot = captureHistoryRef.current?.();
       const applyLegacy = hydrateRef.current;
       const state = await fetchThreadState(threadId, userId, { limit: PAGE_SIZE, syncVoice: true, signal: controller.signal });
       if (cancelled || controller.signal.aborted || historyScopeRef.current !== historyScope) return;
+      if (current && !current()) return;
+      const observation = state && historyApiRef.current.observeChatHistory?.(state);
+      if (observation && observation !== "current") return;
       // Marcar al terminar el intento vigente, nunca antes de la respuesta:
       // StrictMode puede cancelar el primero. Incluso un historial vacío
       // evita volver a consultar por cada token o callback de voz.
@@ -199,7 +225,7 @@ export function ChatPage() {
       clearTimeout(retryTimer);
       controller.abort();
     };
-  }, [threadId, userId, historyScope, voiceOpen, chatHistoryRevision]);
+  }, [threadId, userId, historyScope, voiceOpen, chatHistoryRevision, chatClearing]);
 
   useLayoutEffect(() => {
     if (historyScrollRef.current != null && listRef.current) listRef.current.scrollTop = historyScrollRef.current;
@@ -227,19 +253,21 @@ export function ChatPage() {
     setHasMore(false);
     setNextCursor(null);
     setLoadingMore(false);
+    setNewMessages(false); nearEnd.current = true;
+    setText(""); setPendingImage(null); setUploading(false); setAttachSheetOpen(false);
     anchorRef.current = null;
     // Un prepend en vuelo del hilo anterior quedará descartado: se libera la
     // marca para que el próximo mensaje del hilo nuevo vuelva a scrollear.
     prependingRef.current = false;
     return () => { paginationController.current?.abort(); };
-  }, [threadId, userId]);
+  }, [threadId, userId, chatHistoryEpoch]);
 
   const handleScroll = () => {
     const el = listRef.current;
     if (!el) return;
     nearEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96;
     if (nearEnd.current) setNewMessages(false);
-    if (loadingMore || !hasMore || !userId) return;
+    if (chatClearing || loadingMore || !hasMore || !userId) return;
     if (el.scrollTop > SCROLL_TOP_THRESHOLD) return;
     if (nextCursor == null) {
       // hasMore sin cursor (backend viejo o inconsistente): se apaga la
@@ -255,6 +283,7 @@ export function ChatPage() {
     setLoadingMore(true);
     const requestThreadId = threadId;
     const requestScope = historyScope;
+    const current = captureChatGuard?.();
     const controller = new AbortController();
     paginationController.current = controller;
     void fetchThreadState(threadId, userId, {
@@ -265,6 +294,9 @@ export function ChatPage() {
       // El hilo cambió mientras el fetch estaba en vuelo (push): la página
       // pertenece al hilo anterior y se descarta por completo.
       if (controller.signal.aborted || requestThreadId !== threadIdRef.current || requestScope !== historyScopeRef.current) return;
+      if (current && !current()) return;
+      if (state && observeChatHistory?.(state) === "stale") return;
+      if (current && !current()) return;
       // Respuesta degradada (messageCount 0): el backend devolvió 200 con el
       // historial vacío tras un fallo del AI service. No significa "no hay
       // más páginas": se conservan hasMore/nextCursor para reintentar.
@@ -332,7 +364,7 @@ export function ChatPage() {
   })).filter((message) => !message.text || message.displayText.trim() || message.image || message.visibleCta);
 
   const send = (msg = text) => {
-    if (uploading || chatGenerating) return;
+    if (uploading || chatGenerating || chatClearing) return;
     const v = msg.trim();
     if (!v) return;
     nearEnd.current = true; setNewMessages(false);
@@ -350,10 +382,11 @@ export function ChatPage() {
    * denegado → silencioso (nunca rompe el compositor).
    */
   const attachFromSource = async (source: CameraSource) => {
-    if (uploading) return;
+    if (uploading || chatClearing) return;
+    const current = captureChatGuard?.();
     try {
       const photo = await captureChatImage(source, lang);
-      if (photo) setPendingImage(photo);
+      if (photo && (!current || current())) setPendingImage(photo);
     } catch {
       // El usuario canceló: no mostrar ruido.
     }
@@ -365,6 +398,8 @@ export function ChatPage() {
       fileInputRef.current.value = "";
     }
     if (!file) return;
+    if (chatClearing) return;
+    const current = captureChatGuard?.();
 
     if (file.size > 20 * 1024 * 1024) {
       showToast(t("El archivo excede el límite de 20 MB."), "err");
@@ -390,6 +425,7 @@ export function ChatPage() {
     setUploading(true);
     try {
       const result = await uploadLabExam(file, threadId, lang);
+      if (current && !current()) return;
       appendChatMessages([
         {
           role: "user",
@@ -406,15 +442,15 @@ export function ChatPage() {
         },
       ]);
     } catch (err: unknown) {
-      showToast(localizedError(err, { t, lang }, "Error al procesar el examen."), "err");
+      if (!current || current()) showToast(localizedError(err, { t, lang }, "Error al procesar el examen."), "err");
     } finally {
-      setUploading(false);
+      if (!current || current()) setUploading(false);
     }
   };
 
   const isEmpty = !chat.length || chat.every(message => message.id === "welcome");
   const quickActions = <div className={`chat-quick-actions${isEmpty ? " is-empty" : ""}`} aria-label={t("Acciones rápidas del chat")}>
-    {quick.filter(([label]) => canShowChatAction("", label)).map(([label, question, icon]) => <IonButton key={label} fill="clear" className="chat-quick-action" disabled={chatGenerating || uploading} onClick={() => send(t(question))}>
+    {quick.filter(([label]) => canShowChatAction("", label)).map(([label, question, icon]) => <IonButton key={label} fill="clear" className="chat-quick-action" disabled={chatClearing || chatGenerating || uploading} onClick={() => send(t(question))}>
       <IonIcon icon={icon} aria-hidden="true" /><span>{t(label)}</span>
     </IonButton>)}
   </div>;
@@ -424,7 +460,10 @@ export function ChatPage() {
       <header className="vita-chat-header">
         <IonAvatar className="vita-header-avatar"><img src={vitaPortrait} alt="" /></IonAvatar>
         <div className="vita-header-copy"><h1>Vita</h1><p role="status">{chatGenerating ? t("Preparando tu respuesta…") : t("Tu coach de salud y bienestar")}</p></div>
-        <IonButton fill="clear" className="vita-header-call" aria-label={t("Agente de voz")} onClick={openVoice}><IonIcon icon={mic} /></IonButton>
+        <IonButton fill="clear" className="vita-header-clear" disabled={chatClearing || clearConfirm || clearError} aria-label={t("Limpiar conversación")} title={t("Limpiar conversación")} onClick={() => { clearTarget.current = historyScope; setClearConfirm(true); }}>
+          {chatClearing ? <IonSpinner name="crescent" /> : <IonIcon icon={trashOutline} />}
+        </IonButton>
+        <IonButton fill="clear" className="vita-header-call" disabled={chatClearing} aria-label={t("Agente de voz")} onClick={openVoice}><IonIcon icon={mic} /></IonButton>
         <IonButton fill="clear" className="vita-header-sos" aria-label={t("Botón de pánico")} onClick={openPanic}><IonIcon icon={medkit} /></IonButton>
       </header>
       {voiceOpen && voiceMinimized && <div className="vita-call-space" />}
@@ -637,7 +676,7 @@ export function ChatPage() {
         <IonButton
           className="bt bt-round chat-plus"
           aria-label={t("Adjuntar al chat")}
-          disabled={uploading}
+          disabled={uploading || chatClearing}
           onClick={() => setAttachSheetOpen(true)}
         >
           <IonIcon icon={attachOutline} style={{ fontSize: 22 }} />
@@ -645,7 +684,7 @@ export function ChatPage() {
         <IonButton
           className="bt bt-round chat-voice"
           aria-label={t("Agente de voz")}
-          disabled={uploading}
+          disabled={uploading || chatClearing}
           onClick={openVoice}
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
@@ -657,7 +696,7 @@ export function ChatPage() {
           className="chat-inp"
           aria-label={t("Escribe un mensaje…")}
           value={text}
-          disabled={uploading}
+          disabled={uploading || chatClearing}
           onIonInput={(e) => setText(e.detail.value ?? "")}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
           placeholder={t("Escribe un mensaje…")}
@@ -670,13 +709,22 @@ export function ChatPage() {
           <IonButton
             className="bt bt-round chat-send"
             aria-label={chatGenerating ? t("Detener respuesta") : t("Enviar")}
-            disabled={uploading || (!chatGenerating && !text.trim())}
+            disabled={chatClearing || uploading || (!chatGenerating && !text.trim())}
             onClick={() => chatGenerating ? cancelChat() : send()}
           >
             <IonIcon icon={chatGenerating ? stopIcon : sendIcon} style={{ fontSize: 20 }} />
           </IonButton>
         </motion.span>
       </div>
+      <IonAlert isOpen={clearConfirm} onDidDismiss={event => { setClearConfirm(false); if (event.detail.role === "destructive") void clearConversation(); }}
+        header={t("¿Limpiar conversación?")}
+        message={t("Se finalizará cualquier llamada y se eliminarán el historial y el contexto de Vita. Tus planes, resultados, documentos e historia clínica se conservan. Esta acción no se puede deshacer.")}
+        buttons={[{ text: t("Cancelar"), role: "cancel" }, { text: t("Limpiar conversación"), role: "destructive" }]} />
+      <IonAlert isOpen={clearError} onDidDismiss={event => { setClearError(false); if (event.detail.role === "retry") void clearConversation(); }}
+        header={t("No se pudo confirmar la limpieza")}
+        message={t("No pudimos confirmar el cierre de la llamada o el borrado en el servidor. Reintenta para comprobar y completar la limpieza.")}
+        buttons={[{ text: t("Cancelar"), role: "cancel" }, { text: t("Reintentar"), role: "retry" }]} />
+      <IonToast isOpen={clearSuccess} message={t("Conversación limpiada")} duration={2600} onDidDismiss={() => setClearSuccess(false)} />
       <IonActionSheet
         isOpen={attachSheetOpen}
         onDidDismiss={() => setAttachSheetOpen(false)}

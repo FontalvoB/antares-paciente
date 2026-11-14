@@ -10,6 +10,7 @@
  */
 
 import type { HistoryMessage } from "../../utils/chatHistory";
+import type { ThreadHistoryMetadata } from "../../utils/threadHistoryMetadata";
 import type { ChatSuggestion as SharedChatSuggestion } from "../../types";
 
 /** Mensaje individual del historial del thread (rol user | bot). */
@@ -49,7 +50,7 @@ export interface FeedbackResult {
 }
 
 /** Página del historial de un thread (GET /api/v1/threads/{id}/messages). */
-export interface ThreadState {
+export interface ThreadState extends ThreadHistoryMetadata {
   threadId: string;
   messageCount: number;
   lastMessage: string | null;

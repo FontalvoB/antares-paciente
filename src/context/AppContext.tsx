@@ -36,8 +36,10 @@ import { isLegalConsentError, legalConsentMessage, requireLegalConsent, resetLeg
 import { unregisterPushDevice } from "../utils/pushNotifications";
 import {
   fetchThreadState,
+  clearThreadMessages,
   streamChatMessage,
 } from "../utils/threadApi";
+import type { ThreadState } from "../utils/threadApi";
 import {
   cancelAppointment as cancelAppointmentApi,
   createRequest,
@@ -94,6 +96,12 @@ interface AppState {
   markVoiceSessionClosed: (sessionId: string, threadId: string) => void;
   registerVoiceSession: (sessionId: string, threadId: string) => void;
   chatHistoryRevision: number;
+  chatHistoryEpoch: number;
+  chatClearing: boolean;
+  clearChat: () => Promise<void>;
+  captureChatGuard: () => () => boolean;
+  observeChatHistory: (state: ThreadState) => "current" | "reset" | "stale";
+  registerVoiceStop: (stop: () => Promise<void>) => () => void;
   refreshChatHistory: (threadId: string) => void;
   chatGenerating: boolean;
   cancelChat: () => void;
@@ -320,6 +328,12 @@ export function AppProvider({
   const chatTurnGeneration = useRef(0);
   const retryTurn = useRef<{ text: string; image?: ChatImageAttachment; userId: string; botId: string } | null>(null);
   const [chatHistoryRevision, setChatHistoryRevision] = useState(0);
+  const [chatClearing, setChatClearing] = useState(false);
+  const historyGeneration = useRef(0);
+  const clearingHistory = useRef(false);
+  const clearController = useRef<AbortController | null>(null);
+  const remoteHistoryRevisions = useRef(new Map<string, number>());
+  const voiceStop = useRef<(() => Promise<void>) | null>(null);
   const voiceSessions = useRef(new Map<string, { threadId: string; closed: boolean }>());
   const [sosActive, setSosActive] = useState(false);
   const [user, setUser] = useState<UserProfile>(defaultUser);
@@ -399,6 +413,10 @@ export function AppProvider({
     chatController.current?.abort(); chatController.current = null;
     retryTurn.current = null; setChatGenerating(false); setVoiceMinimized(false);
     voiceSessions.current.clear();
+    historyGeneration.current += 1;
+    clearingHistory.current = false; setChatClearing(false);
+    clearController.current?.abort(); clearController.current = null;
+    remoteHistoryRevisions.current.clear();
     setChatHistoryRevision(0);
     resetLegalConsentSession();
     resetSessionQueryCache();
@@ -818,6 +836,79 @@ export function AppProvider({
     [user.id, user.cedula, user.email],
   );
 
+  const captureChatGuard = useCallback(() => {
+    const owner = sessionGeneration.current;
+    const history = historyGeneration.current;
+    const sourceThread = currentThread.current;
+    const startedIdle = !clearingHistory.current;
+    return () => startedIdle && owner === sessionGeneration.current && history === historyGeneration.current
+      && sourceThread === currentThread.current && !clearingHistory.current;
+  }, []);
+
+  // Invalida callbacks y reintentos aunque AbortController llegue tarde.
+  const invalidateChatHistory = useCallback(() => {
+    historyGeneration.current += 1;
+    chatTurnGeneration.current += 1;
+    chatController.current?.abort(); chatController.current = null;
+    retryTurn.current = null; setChatGenerating(false);
+    voiceSessions.current.clear();
+    setChatHistoryRevision(revision => revision + 1);
+  }, []);
+
+  const resetChatHistory = useCallback(() => {
+    invalidateChatHistory();
+    setChat([]); setChatUnread(false); lastRemoteCountRef.current = 0;
+    const uid = chatUserId();
+    if (uid) localStorage.setItem(`${CHAT_LAST_SEEN_PREFIX}${uid}`, "0");
+  }, [invalidateChatHistory, chatUserId]);
+
+  const observeChatHistory = useCallback((state: ThreadState): "current" | "reset" | "stale" => {
+    if (clearingHistory.current || state.threadId !== currentThread.current) return "stale";
+    const revision = state.historyRevision;
+    const seen = remoteHistoryRevisions.current.get(state.threadId) ?? 0;
+    if (revision == null) return seen > 0 ? "stale" : "current";
+    if (revision < seen) return "stale";
+    remoteHistoryRevisions.current.set(state.threadId, revision);
+    if (revision > seen) {
+      resetChatHistory();
+      void voiceStop.current?.().catch(() => {});
+      setVoiceOpen(false); setVoiceMinimized(false);
+      return "reset";
+    }
+    return "current";
+  }, [resetChatHistory]);
+
+  const registerVoiceStop = useCallback((stop: () => Promise<void>) => {
+    voiceStop.current = stop;
+    return () => { if (voiceStop.current === stop) voiceStop.current = null; };
+  }, []);
+
+  const clearChat = useCallback(async () => {
+    if (clearingHistory.current) return;
+    const owner = sessionGeneration.current;
+    const sourceThread = threadId;
+    const controller = new AbortController(); clearController.current = controller;
+    clearingHistory.current = true; setChatClearing(true);
+    invalidateChatHistory();
+    const current = () => owner === sessionGeneration.current && sourceThread === currentThread.current;
+    try {
+      if (voiceOpen && !voiceStop.current) throw new Error("Voice shutdown unavailable");
+      await voiceStop.current?.();
+      if (!current()) throw new Error("History owner changed");
+      setVoiceOpen(false); setVoiceMinimized(false);
+      const state = await clearThreadMessages(sourceThread, controller.signal);
+      if (!current()) throw new Error("History owner changed");
+      remoteHistoryRevisions.current.set(sourceThread, state.historyRevision);
+      resetChatHistory();
+    } finally {
+      if (clearController.current === controller) {
+        clearController.current = null;
+        clearingHistory.current = false; setChatClearing(false);
+        setChatHistoryRevision(revision => revision + 1);
+      }
+    }
+  }, [threadId, voiceOpen, invalidateChatHistory, resetChatHistory]);
+
   /**
    * Turno completo de conversación con el asistente (change
    * agente-asistente-citas D1.2): pinta el mensaje del usuario, hace
@@ -831,12 +922,13 @@ export function AppProvider({
    */
   const runChatTurn = useCallback(
     async (text: string, image?: ChatImageAttachment, retry = false): Promise<ChatMessage | null> => {
-      if (chatController.current || !text.trim()) return null;
+      if (clearingHistory.current || chatController.current || !text.trim()) return null;
         chatTurnGeneration.current += 1;
-      const controller = new AbortController();
+      let controller = new AbortController();
       chatController.current = controller;
       const generation = sessionGeneration.current;
-      const isCurrent = () => generation === sessionGeneration.current && currentThread.current === threadId && !controller.signal.aborted;
+      let history = historyGeneration.current;
+      const isCurrent = () => generation === sessionGeneration.current && history === historyGeneration.current && currentThread.current === threadId && !controller.signal.aborted;
       const previous = retry ? retryTurn.current : null;
       const userId = previous?.userId ?? crypto.randomUUID();
       const botId = previous?.botId ?? crypto.randomUUID();
@@ -845,6 +937,19 @@ export function AppProvider({
       try {
         await requireLegalConsent("chat", lang, controller.signal);
         if (!isCurrent()) return null;
+        // Un chat abierto durante el cambio de mes también debe observar el
+        // corte antes del siguiente turno, aunque nunca haya salido de pantalla.
+        const state = await fetchThreadState(threadId, chatUserId(), { limit: 1, signal: controller.signal });
+        if (!isCurrent()) return null;
+        if (state) {
+          const observation = observeChatHistory(state);
+          if (observation === "stale") { showToast(t(CHAT_UNAVAILABLE_MESSAGE), "err"); return null; }
+          if (observation === "reset") {
+            if (voiceOpen || retry) return null; // Ni la llamada ni un reintento antiguo continúan.
+            controller = new AbortController(); chatController.current = controller;
+            history = historyGeneration.current; setChatGenerating(true);
+          }
+        }
         retryTurn.current = { text, image, userId, botId };
         const userMessage: ChatMessage = { id: userId, role: "user", text, time: nowLabel(lang), threadId, image: image ? { dataUrl: image.dataUrl } : undefined };
         const live: ChatMessage = { id: botId, role: "bot", text: "", time: nowLabel(lang), threadId, delivery: "streaming" };
@@ -864,7 +969,7 @@ export function AppProvider({
         retryTurn.current = null;
         return final;
       } catch (error) {
-        if (generation !== sessionGeneration.current || currentThread.current !== threadId) return null;
+        if (generation !== sessionGeneration.current || history !== historyGeneration.current || currentThread.current !== threadId) return null;
         if (controller.signal.aborted) {
           setChat(prev => prev.map(m => m.id === botId ? { ...m, text: painted || t("Respuesta detenida"), delivery: "interrupted" } : m));
           return null;
@@ -879,11 +984,11 @@ export function AppProvider({
       } finally {
         if (chatController.current === controller) { chatController.current = null; setChatGenerating(false); }
       }
-    }, [threadId, t, lang, showToast],
+    }, [threadId, t, lang, showToast, chatUserId, observeChatHistory, voiceOpen],
   );
 
   useEffect(() => {
-    return () => { chatController.current?.abort(); retryTurn.current = null; };
+    return () => { chatController.current?.abort(); clearController.current?.abort(); retryTurn.current = null; };
   }, [threadId]);
 
   /**
@@ -900,8 +1005,10 @@ export function AppProvider({
     // Solo se necesita el conteo para el dot: se pide una página de 1 para
     // no descargar el historial completo al entrar a la app.
     const generation = sessionGeneration.current;
+    const current = captureChatGuard();
     const state = await fetchThreadState(threadId, uid, { limit: 1 });
-    if (generation !== sessionGeneration.current) return;
+    if (generation !== sessionGeneration.current || !current()) return;
+    if (state && observeChatHistory(state) !== "current") return;
     if (!state) {
       // Fetch fallido o thread inexistente → no marcar nada.
       setChatUnread(false);
@@ -918,7 +1025,7 @@ export function AppProvider({
       return;
     }
     setChatUnread(state.messageCount > Number(seenRaw));
-  }, [chatUserId, realMode, threadId]);
+  }, [chatUserId, realMode, threadId, captureChatGuard, observeChatHistory]);
 
   /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
   const markChatRead = useCallback(() => {
@@ -933,8 +1040,9 @@ export function AppProvider({
     // Sin conteo previo (p. ej. se entró al chat antes del primer check):
     // se toma el conteo remoto para no volver a marcar como no leído.
     if (threadId) {
+      const current = captureChatGuard();
       void fetchThreadState(threadId, uid, { limit: 1 }).then((state) => {
-        if (state) {
+        if (state && current() && observeChatHistory(state) === "current") {
           localStorage.setItem(
             `${CHAT_LAST_SEEN_PREFIX}${uid}`,
             String(state.messageCount),
@@ -942,7 +1050,7 @@ export function AppProvider({
         }
       });
     }
-  }, [chatUserId, threadId]);
+  }, [chatUserId, threadId, captureChatGuard, observeChatHistory]);
 
   // Check al entrar a la app (sesión activa) y al volver a primer plano.
   useEffect(() => {
@@ -1000,8 +1108,13 @@ export function AppProvider({
       cancelChat: () => chatController.current?.abort(),
       retryChat: () => { const turn = retryTurn.current; if (turn) void runChatTurn(turn.text, turn.image, true); },
       minimizeVoice: () => { setVoiceMinimized(true); setScreen("chat"); },
-      upsertVoiceMessage: message => setChat(prev => mergeVoiceMessage(prev, { ...message, time: nowLabel(lang) })),
+      upsertVoiceMessage: ((history: number) => (message: ChatMessage) => {
+        if (history !== historyGeneration.current || clearingHistory.current || message.threadId !== currentThread.current) return;
+        setChat(prev => mergeVoiceMessage(prev, { ...message, time: nowLabel(lang) }));
+      })(historyGeneration.current),
       chatHistoryRevision,
+      chatHistoryEpoch: historyGeneration.current,
+      chatClearing, clearChat, captureChatGuard, observeChatHistory, registerVoiceStop,
       refreshChatHistory: sourceThreadId => { if (sourceThreadId === currentThread.current) setChatHistoryRevision(revision => revision + 1); },
       registerVoiceSession: (sessionId, sourceThreadId) => { voiceSessions.current.set(sessionId, { threadId: sourceThreadId, closed: false }); },
       markVoiceSessionClosed: (sessionId, sourceThreadId) => {
@@ -1110,7 +1223,7 @@ export function AppProvider({
         setSosActive(false);
       },
       activateSos: () => setSosActive(true),
-      openVoice: () => { setVoiceMinimized(false); setVoiceOpen(true); },
+      openVoice: () => { if (!clearingHistory.current) { setVoiceMinimized(false); setVoiceOpen(true); } },
       closeVoice: () => { setVoiceOpen(false); setVoiceMinimized(false); },
       sendChat: (text, image) => {
         void runChatTurn(text, image);
@@ -1120,6 +1233,7 @@ export function AppProvider({
         if (messages.length) setChat(prev => mergeChatHistory(prev, messages, threadId, new Map([...voiceSessions.current].filter(([, session]) => session.threadId === threadId).map(([id, session]) => [id, session.closed]))));
       },
       captureHistoryHydrator: () => {
+        const validHistory = captureChatGuard();
         const owner = sessionGeneration.current;
         const turn = chatTurnGeneration.current;
         const sourceThread = threadId;
@@ -1127,7 +1241,7 @@ export function AppProvider({
         const retry = retryTurn.current;
         const textIds = new Set(chat.filter(message => message.threadId === sourceThread && isConfirmedText(message)
           && message.id !== retry?.userId && message.id !== retry?.botId).map(message => message.id));
-        const current = () => startedIdle && owner === sessionGeneration.current && turn === chatTurnGeneration.current
+        const current = () => validHistory() && startedIdle && owner === sessionGeneration.current && turn === chatTurnGeneration.current
           && sourceThread === currentThread.current && !chatController.current;
         return (messages, authoritativeText = true) => {
           if (!messages.length || !current()) return false;
@@ -1238,6 +1352,7 @@ export function AppProvider({
       voiceMinimized,
       chatGenerating,
       chatHistoryRevision,
+      chatClearing, clearChat, captureChatGuard, observeChatHistory, registerVoiceStop,
       sosActive,
       user,
       testsDone,

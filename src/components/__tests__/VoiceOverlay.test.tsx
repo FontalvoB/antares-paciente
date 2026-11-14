@@ -4,6 +4,8 @@ import { VoiceOverlay } from "../VoiceOverlay";
 import { consentFailure, requireLegalConsent, verifyLegalConsent, withdrawLegalConsent } from "../../utils/legalConsents";
 
 const mocks = vi.hoisted(() => ({
+  stop: null as (() => Promise<void>) | null,
+  sdkCallbacks: {} as { onDisconnect?: () => void },
   app: { voiceOpen: true, voiceMinimized: false, threadId: "thread-a", minimizeVoice: vi.fn(), openVoice: vi.fn(), closeVoice: vi.fn(), showToast: vi.fn(), sendVoiceMessage: vi.fn(), upsertVoiceMessage: vi.fn(), appendChatMessages: vi.fn(), registerVoiceSession: vi.fn(), markVoiceSessionClosed: vi.fn(), refreshChatHistory: vi.fn() },
   callbacks: {} as Record<string, (...args: any[]) => void>,
   modalDismiss: undefined as undefined | (() => void),
@@ -22,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined), verifyLegalConsent: vi.fn().mockResolvedValue({ accepted: true }) }));
 vi.mock("../../utils/apiClient", async original => ({ ...await original<object>(), apiFetch: vi.fn().mockResolvedValue(undefined) }));
 
-vi.mock("../../context/AppContext", () => ({ useApp: () => mocks.app }));
+vi.mock("../../context/AppContext", () => ({ useApp: () => ({ ...mocks.app, registerVoiceStop: (stop: () => Promise<void>) => { mocks.stop = stop; return () => { mocks.stop = null; }; } }) }));
 vi.mock("../../i18n/I18nContext", () => ({ useT: () => (s: string) => s, useI18n: () => ({ t: (s: string) => s, lang: "es" }) }));
 vi.mock("../../hooks/useSpeechAssistant", () => ({ useSpeechAssistant: () => mocks.speech }));
 vi.mock("../../utils/voiceApi", async original => ({
@@ -33,7 +35,7 @@ vi.mock("../../utils/voiceApi", async original => ({
 }));
 vi.mock("@elevenlabs/react", () => ({
   ConversationProvider: ({ children, clientTools, ...callbacks }: { children: React.ReactNode; clientTools: typeof mocks.clientTools; [key: string]: any }) => { mocks.clientTools = clientTools; mocks.callbacks = callbacks; return children; },
-  useConversation: () => mocks.eleven,
+  useConversation: (callbacks: typeof mocks.sdkCallbacks) => { mocks.sdkCallbacks = callbacks; return mocks.eleven; },
 }));
 vi.mock("../VoiceOrb", () => ({ VoiceOrb: () => null }));
 vi.mock("@ionic/react", async () => {
@@ -58,6 +60,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     mocks.eleven.isMuted = false;
     mocks.eleven.isSpeaking = false;
     mocks.eleven.status = "connected";
+    mocks.eleven.endSession.mockImplementation(() => { mocks.sdkCallbacks.onDisconnect?.(); });
     mocks.speech.supported = true;
     mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid" });
     mocks.revoke.mockReset().mockResolvedValue(true);
@@ -69,6 +72,64 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
   afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+  it("la limpieza espera el SDK y la revocación, y descarta eventos anteriores", async () => {
+    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "server-session", threadId: "thread-a", conversationId: "linked-legacy" });
+    let finishRevoke!: (value: boolean) => void;
+    mocks.revoke.mockReturnValueOnce(new Promise(resolve => { finishRevoke = resolve; }));
+    render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalled());
+    const oldMessage = mocks.callbacks.onMessage;
+    let stopped = false;
+    let pending!: Promise<void>;
+    act(() => { pending = mocks.stop!().then(() => { stopped = true; }); });
+    await waitFor(() => expect(mocks.eleven.endSession).toHaveBeenCalled());
+    expect(stopped).toBe(false);
+    act(() => oldMessage({ role: "agent", source: "ai", message: "Late event", event_id: 10 }));
+    expect(mocks.app.upsertVoiceMessage).not.toHaveBeenCalled();
+    await act(async () => { finishRevoke(true); await pending; });
+    expect(stopped).toBe(true); expect(mocks.speech.teardown).toHaveBeenCalled();
+    expect(mocks.app.closeVoice).toHaveBeenCalled();
+  });
+
+  it("una revocación no confirmada rechaza la limpieza y puede reintentarse", async () => {
+    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "server-session", threadId: "thread-a", conversationId: "linked-legacy" });
+    mocks.revoke.mockResolvedValue(false);
+    render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalled());
+    await act(async () => { await expect(mocks.stop!()).rejects.toThrow("Voice revocation was not confirmed"); });
+    mocks.revoke.mockResolvedValue(true);
+    await act(async () => { await expect(mocks.stop!()).resolves.toBeUndefined(); });
+  });
+
+  it("sin evento de desconexión rechaza el cierre tras cinco segundos", async () => {
+    render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalled());
+    mocks.eleven.endSession.mockImplementation(() => {});
+    vi.useFakeTimers();
+    try {
+      let pending!: Promise<void>;
+      act(() => { pending = mocks.stop!(); });
+      const rejected = expect(pending).rejects.toThrow("Voice disconnect was not confirmed");
+      await act(async () => { await vi.advanceTimersByTimeAsync(5000); await rejected; });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("drena una sesión emitida tarde antes de confirmar el cierre", async () => {
+    let finish!: (value: unknown) => void;
+    mocks.session.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.session).toHaveBeenCalled());
+    let pending!: Promise<void>;
+    act(() => { pending = mocks.stop!(); });
+    expect(mocks.eleven.startSession).not.toHaveBeenCalled();
+    await act(async () => {
+      finish({ signedUrl: "wss://example.invalid", sessionId: "late-server", threadId: "thread-a", runtimeMode: "legacy" });
+      await pending;
+    });
+    expect(mocks.revoke).toHaveBeenCalledWith("late-server", expect.any(String));
+    expect(mocks.eleven.startSession).not.toHaveBeenCalled();
+  });
 
   it("conserva el shell CSS si WebGL falla y mantiene mute y colgar", async () => {
     const { container, rerender } = render(<VoiceOverlay />);

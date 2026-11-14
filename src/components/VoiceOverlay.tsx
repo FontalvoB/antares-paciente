@@ -2,7 +2,7 @@ import { voiceMessage } from "../utils/voiceMessages";
 import type { VoiceMessagePayload, VoiceCorrection } from "../utils/voiceMessages";
 import type { ChatMessage } from "../types";
 import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { IonButton, IonIcon, IonInput, IonModal, IonSpinner } from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
@@ -183,6 +183,7 @@ export function VoiceOverlay() {
     markVoiceSessionClosed,
     registerVoiceSession,
     refreshChatHistory,
+    registerVoiceStop,
     threadId,
   } = useApp();
   const { t, lang } = useI18n();
@@ -196,6 +197,9 @@ export function VoiceOverlay() {
   const openRef = useRef(voiceOpen); openRef.current = voiceOpen;
   const voiceGeneration = useRef(0);
   const activeSession = useRef<ActiveVoiceSession | null>(null);
+  const sdkStop = useRef<(() => Promise<void>) | null>(null);
+  const voiceClosing = useRef<Promise<boolean>>(Promise.resolve(true));
+  const failedRevocation = useRef<ActiveVoiceSession | null>(null);
   const consentRequest = useRef<AbortController | null>(null);
   const closeSessionRef = useRef({ markVoiceSessionClosed, refreshChatHistory }); closeSessionRef.current = { markVoiceSessionClosed, refreshChatHistory };
   const invalidateSession = useCallback(() => {
@@ -205,12 +209,16 @@ export function VoiceOverlay() {
     if (session?.serverSession?.sessionId && !session.revoked) {
       session.revoked = true;
       if (session.boundSessionId) closeSessionRef.current.markVoiceSessionClosed?.(session.boundSessionId, session.threadId);
-      void revokeVoiceSession(session.serverSession.sessionId, session.accessToken).then(closed => {
+      const previousClose = voiceClosing.current;
+      voiceClosing.current = revokeVoiceSession(session.serverSession.sessionId, session.accessToken).then(async closed => {
+        await previousClose;
+        failedRevocation.current = closed ? null : session;
         // El servidor puede importar el transcript ligado al cerrar legacy. Leer
         // despues del DELETE, sin texto bot del cliente ni credenciales nuevas.
         if (closed && session.boundSessionId && session.owner === sessionUserId(getAccessToken())) {
           closeSessionRef.current.refreshChatHistory?.(session.threadId);
         }
+        return closed;
       });
     }
     activeSession.current = null;
@@ -486,6 +494,24 @@ export function VoiceOverlay() {
     closeVoice();
     showToast(t("Llamada de voz finalizada"), "ok");
   };
+  const stopForHistory = useRef<() => Promise<void>>(async () => {});
+  stopForHistory.current = async () => {
+    // Cortar callbacks antes de esperar SDK/red; no importar texto durante DELETE.
+    invalidateSession();
+    speechActive.current = false; openRef.current = false;
+    assistant.cancelSpeech(); assistant.teardown(); micLevel.release();
+    await sdkStop.current?.();
+    let closed = await voiceClosing.current;
+    const failed = failedRevocation.current;
+    if (!closed && failed?.serverSession?.sessionId) {
+      closed = await revokeVoiceSession(failed.serverSession.sessionId, failed.accessToken);
+      voiceClosing.current = Promise.resolve(closed);
+      if (closed) failedRevocation.current = null;
+    }
+    setMode("idle"); closeVoice();
+    if (!closed) throw new Error("Voice revocation was not confirmed");
+  };
+  useLayoutEffect(() => registerVoiceStop?.(() => stopForHistory.current()), [registerVoiceStop]);
   if (assistant.supported === false && mode === "webspeech") {
     // Fallback D4: WebView sin Web Speech API y ElevenLabs no disponible.
     return (
@@ -546,6 +572,7 @@ export function VoiceOverlay() {
             onError={onError}
           >
             <ElevenVoiceBody
+              onStopReady={stop => { sdkStop.current = stop; }}
               micLevel={micLevel}
               active={voiceOpen}
               threadId={sdkSession?.threadId ?? threadId}
@@ -560,7 +587,12 @@ export function VoiceOverlay() {
                     if (sdkSession.boundSessionId) registerVoiceSession?.(sdkSession.boundSessionId, sdkSession.threadId);
                   } catch { /* Se rechaza antes de conectar. */ }
                 }
-                if (activeSession.current !== sdkSession && session.sessionId) void revokeVoiceSession(session.sessionId, sdkSession.accessToken);
+                if (activeSession.current !== sdkSession && session.sessionId) {
+                  voiceClosing.current = revokeVoiceSession(session.sessionId, sdkSession.accessToken).then(closed => {
+                    failedRevocation.current = closed ? null : sdkSession;
+                    return closed;
+                  });
+                }
               }}
               onInvalidSession={() => { showToast(t("La sesión de voz recibida no es válida. Inténtalo de nuevo."), "err"); hangUp(); }}
               onHangUp={hangUp}
@@ -620,6 +652,7 @@ export function VoiceOverlay() {
 // ── Cuerpo de la sesión ElevenLabs (consume useConversation del provider) ──
 
 interface ElevenVoiceBodyProps {
+  onStopReady: (stop: (() => Promise<void>) | null) => void;
   threadId: string;
   signal?: AbortSignal;
   onServerSession: (session: VoiceSession) => void;
@@ -636,6 +669,7 @@ interface ElevenVoiceBodyProps {
 }
 
 function ElevenVoiceBody({
+  onStopReady,
   threadId, signal, onServerSession, onInvalidSession,
   micLevel,
   active,
@@ -647,7 +681,30 @@ function ElevenVoiceBody({
   onConsentBlocked,
   assertActive,
 }: ElevenVoiceBodyProps) {
-  const eleven = useConversation();
+  const sdkStarted = useRef(false);
+  const disconnectAck = useRef<(() => void) | null>(null);
+  const eleven = useConversation({ onDisconnect: () => {
+    sdkStarted.current = false; disconnectAck.current?.();
+  } });
+  const connectionAttempt = useRef<Promise<void>>(Promise.resolve());
+  const stopReadyRef = useRef(onStopReady); stopReadyRef.current = onStopReady;
+  useLayoutEffect(() => {
+    stopReadyRef.current(async () => {
+      // Una conexión que empezó antes del borrado también debe terminar.
+      await connectionAttempt.current;
+      if (!sdkStarted.current) return;
+      // El hook devuelve void. Solo onDisconnect confirma el cierre del SDK.
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          disconnectAck.current = null;
+          reject(new Error("Voice disconnect was not confirmed"));
+        }, 5000);
+        disconnectAck.current = () => { clearTimeout(timer); disconnectAck.current = null; resolve(); };
+        elevenRef.current.endSession();
+      });
+    });
+    return () => { stopReadyRef.current(null); };
+  }, []);
   const { t, lang } = useI18n();
   // Idioma leído por ref: la sesión de voz se abre con el idioma vigente al
   // arrancar (un cambio a mitad de llamada toma efecto en la siguiente
@@ -673,10 +730,11 @@ function ElevenVoiceBody({
         onFallback();
         return;
       }
+      sdkStarted.current = true;
       await eleven.startSession(voiceSessionStartOptions(session, threadId));
-      if (isCancelled()) void eleven.endSession();
+      if (isCancelled() || signal?.aborted) await eleven.endSession();
     } catch (error) {
-      if (!isCancelled()) {
+      if (!isCancelled() && !signal?.aborted) {
         if (error instanceof VoiceSessionContractError) onInvalidSession();
         else if (isLegalConsentError(error)) onConsentBlocked(error);
         else onFallback();
@@ -688,7 +746,7 @@ function ElevenVoiceBody({
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
-    void start(() => cancelled);
+    connectionAttempt.current = start(() => cancelled);
     return () => {
       cancelled = true;
       void elevenRef.current.endSession();

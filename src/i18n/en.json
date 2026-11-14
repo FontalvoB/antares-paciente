@@ -3842,5 +3842,11 @@
   "Actividad registrada.": "Activity recorded.",
   "Actividad registrada. No pudimos actualizar el programa; vuelve a abrirlo.": "Activity recorded. We could not refresh the program; please open it again.",
   "La sesión de voz recibida no es válida. Inténtalo de nuevo.": "The voice session is invalid. Please try again.",
-  "Confirmar": "Confirm"
+  "Confirmar": "Confirm",
+  "Limpiar conversación": "Clear conversation",
+  "¿Limpiar conversación?": "Clear conversation?",
+  "Se finalizará cualquier llamada y se eliminarán el historial y el contexto de Vita. Tus planes, resultados, documentos e historia clínica se conservan. Esta acción no se puede deshacer.": "Any call will end and Vita's conversation history and context will be deleted. Your plans, results, documents and medical records will be kept. This cannot be undone.",
+  "No se pudo confirmar la limpieza": "Could not confirm deletion",
+  "No pudimos confirmar el cierre de la llamada o el borrado en el servidor. Reintenta para comprobar y completar la limpieza.": "We could not confirm that the call ended or the server deleted the conversation. Try again to check and complete deletion.",
+  "Conversación limpiada": "Conversation cleared"
 }

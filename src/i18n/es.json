@@ -3842,5 +3842,11 @@
   "Actividad registrada.": "Actividad registrada.",
   "Actividad registrada. No pudimos actualizar el programa; vuelve a abrirlo.": "Actividad registrada. No pudimos actualizar el programa; vuelve a abrirlo.",
   "La sesión de voz recibida no es válida. Inténtalo de nuevo.": "La sesión de voz recibida no es válida. Inténtalo de nuevo.",
-  "Confirmar": "Confirmar"
+  "Confirmar": "Confirmar",
+  "Limpiar conversación": "Limpiar conversación",
+  "¿Limpiar conversación?": "¿Limpiar conversación?",
+  "Se finalizará cualquier llamada y se eliminarán el historial y el contexto de Vita. Tus planes, resultados, documentos e historia clínica se conservan. Esta acción no se puede deshacer.": "Se finalizará cualquier llamada y se eliminarán el historial y el contexto de Vita. Tus planes, resultados, documentos e historia clínica se conservan. Esta acción no se puede deshacer.",
+  "No se pudo confirmar la limpieza": "No se pudo confirmar la limpieza",
+  "No pudimos confirmar el cierre de la llamada o el borrado en el servidor. Reintenta para comprobar y completar la limpieza.": "No pudimos confirmar el cierre de la llamada o el borrado en el servidor. Reintenta para comprobar y completar la limpieza.",
+  "Conversación limpiada": "Conversación limpiada"
 }

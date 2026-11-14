@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { AppProvider, useApp } from "../AppContext";
 import { I18nProvider } from "../../i18n/I18nContext";
-import { fetchThreadState, sendChatMessage, streamChatMessage } from "../../utils/threadApi";
+import { clearThreadMessages, fetchThreadState, sendChatMessage, streamChatMessage, uploadLabExam } from "../../utils/threadApi";
 import { ChatPage } from "../../pages/ChatPage";
 import { sendChatFeedback } from "../../services/chat/chat-service";
 import { consentFailure, requireLegalConsent } from "../../utils/legalConsents";
@@ -26,6 +26,8 @@ import { voiceMessage } from "../../utils/voiceMessages";
 
 vi.mock("../../utils/threadApi", () => ({
   fetchThreadState: vi.fn().mockResolvedValue(null),
+  clearThreadMessages: vi.fn(),
+  uploadLabExam: vi.fn(),
   sendChatMessage: vi.fn(),
   streamChatMessage: vi.fn(),
 }));
@@ -38,6 +40,8 @@ vi.mock("@ionic/react", async original => ({
   ...await original<object>(),
   IonButton: ({ children, onClick, disabled, "aria-label": label }: React.PropsWithChildren<{ onClick?: () => void; disabled?: boolean; "aria-label"?: string }>) => <button onClick={onClick} disabled={disabled} aria-label={label}>{children}</button>,
   IonAvatar: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
+  IonAlert: ({ isOpen, header, message, buttons, onDidDismiss }: any) => isOpen ? <div role="alertdialog" aria-label={header}><p>{message}</p>{buttons.map((button: any) => <button key={button.text} onClick={() => { button.handler?.(); onDidDismiss({ detail: { role: button.role } }); }}>{button.text}</button>)}</div> : null,
+  IonToast: ({ isOpen, message }: any) => isOpen ? <div role="status">{message}</div> : null,
   IonBadge: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
   IonIcon: () => null, IonSpinner: () => null, IonTextarea: () => null, IonActionSheet: () => null,
 }));
@@ -137,11 +141,183 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     vi.mocked(streamChatMessage).mockReset();
     vi.mocked(sendChatMessage).mockReset();
     vi.mocked(fetchThreadState).mockReset().mockResolvedValue(null);
+    vi.mocked(clearThreadMessages).mockReset().mockImplementation(async threadId => ({ threadId, historyRevision: 1, clearedAt: "2026-11-14T20:00:00Z", resetReason: "manual" }));
     localStorage.clear();
     localStorage.setItem("copp_access_token", "demo-access-token");
     mirror.chat = [];
     mirror.voiceResult = null;
     vi.mocked(requireLegalConsent).mockReset().mockResolvedValue(undefined);
+  });
+
+  it("limpia solo tras confirmar DELETE; espera voz y bloquea doble envío/turnos", async () => {
+    await renderApp();
+    await act(async () => mirror.app!.appendChatMessages([{ role: "bot", text: "Anterior" }]));
+    const thread = mirror.app!.threadId;
+    let finishStop!: () => void;
+    const stop = vi.fn(() => new Promise<void>(resolve => { finishStop = resolve; }));
+    mirror.app!.registerVoiceStop(stop);
+    let pending!: Promise<void>;
+    act(() => { pending = mirror.app!.clearChat(); });
+    expect(mirror.app!.chatClearing).toBe(true);
+    expect(mirror.chat.some(m => m.text === "Anterior")).toBe(true);
+    expect(clearThreadMessages).not.toHaveBeenCalled();
+    await act(async () => { await mirror.app!.clearChat(); mirror.app!.sendChat("No enviar"); });
+    expect(stop).toHaveBeenCalledTimes(1); expect(streamChatMessage).not.toHaveBeenCalled();
+    await act(async () => { finishStop(); await pending; });
+    expect(clearThreadMessages).toHaveBeenCalledWith(thread, expect.any(AbortSignal));
+    expect(mirror.chat).toEqual([]); expect(mirror.app!.threadId).toBe(thread);
+    expect(mirror.app!.chatClearing).toBe(false);
+    expect(localStorage.getItem("antares:chat-last-seen:10247381")).toBe("0");
+  });
+
+  it("DELETE fallido conserva mensajes, muestra error reintentable y no anuncia éxito", async () => {
+    vi.mocked(clearThreadMessages).mockRejectedValueOnce(new Error("503"));
+    await renderApp(undefined, true);
+    await act(async () => mirror.app!.appendChatMessages([{ role: "bot", text: "Conservar" }]));
+    fireEvent.click(screen.getByLabelText("Limpiar conversación"));
+    expect(clearThreadMessages).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog.textContent).toContain("historia clínica se conservan");
+    fireEvent.click(dialog.querySelectorAll("button")[1]);
+    await waitFor(() => expect(screen.getByRole("alertdialog", { name: "No se pudo confirmar la limpieza" })).toBeTruthy());
+    expect(mirror.chat.some(m => m.text === "Conservar")).toBe(true);
+    expect(screen.queryByText("Conversación limpiada")).toBeNull();
+    fireEvent.click(screen.getByText("Reintentar"));
+    await screen.findByText("Conversación limpiada");
+    expect(mirror.chat).toEqual([]);
+  });
+
+  it("cancelar la confirmación no cierra voz ni borra", async () => {
+    await renderApp(undefined, true);
+    const stop = vi.fn().mockResolvedValue(undefined); mirror.app!.registerVoiceStop(stop);
+    fireEvent.click(screen.getByLabelText("Limpiar conversación"));
+    fireEvent.click(screen.getByRole("alertdialog").querySelectorAll("button")[0]);
+    expect(stop).not.toHaveBeenCalled(); expect(clearThreadMessages).not.toHaveBeenCalled();
+  });
+
+  it("una confirmación abierta para un hilo no borra otro hilo recibido por push", async () => {
+    await renderApp(undefined, true);
+    fireEvent.click(screen.getByLabelText("Limpiar conversación"));
+    await act(async () => mirror.app!.setActiveThreadId("another-thread"));
+    fireEvent.click(screen.getByRole("alertdialog").querySelectorAll("button")[1]);
+    expect(clearThreadMessages).not.toHaveBeenCalled();
+  });
+
+  it("confirmación y error se presentan en inglés", async () => {
+    localStorage.setItem("antares_lang", "en");
+    vi.mocked(clearThreadMessages).mockRejectedValueOnce(new Error("Synthetic server failure"));
+    await renderApp(undefined, true);
+    fireEvent.click(screen.getByLabelText("Clear conversation"));
+    const dialog = screen.getByRole("alertdialog", { name: "Clear conversation?" });
+    expect(dialog.textContent).toContain("medical records will be kept");
+    fireEvent.click(dialog.querySelectorAll("button")[1]);
+    await screen.findByRole("alertdialog", { name: "Could not confirm deletion" });
+    expect(screen.getByText("Retry")).toBeTruthy();
+  });
+
+  it("una página antigua en vuelo no repuebla el chat tras limpiar", async () => {
+    await renderApp(undefined, true);
+    const threadId = mirror.app!.threadId;
+    vi.mocked(fetchThreadState).mockResolvedValueOnce({ threadId, historyRevision: 0, messageCount: 20, lastMessage: "Reciente", messages: [{ role: "bot", text: "Reciente" }], hasMore: true, nextCursor: 10 });
+    await act(async () => mirror.app!.refreshChatHistory(threadId));
+    await screen.findAllByText("Reciente");
+    let finish!: (value: any) => void;
+    vi.mocked(fetchThreadState).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    fireEvent.scroll(document.querySelector(".chat-list")!);
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    const oldSignal = vi.mocked(fetchThreadState).mock.calls.at(-1)![2]!.signal!;
+    await act(async () => { await mirror.app!.clearChat(); });
+    await act(async () => finish({ threadId, messageCount: 20, messages: [{ role: "bot", text: "Página vieja" }], lastMessage: null, historyRevision: 0 }));
+    expect(oldSignal.aborted).toBe(true); expect(mirror.chat).toEqual([]);
+    expect(screen.queryByText("Página vieja")).toBeNull();
+  });
+
+  it("el resultado tardío de un documento no vuelve a insertar mensajes", async () => {
+    await renderApp(undefined, true);
+    let finish!: (value: any) => void;
+    vi.mocked(uploadLabExam).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(["synthetic"], "fixture.pdf", { type: "application/pdf" })] } });
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    await act(async () => { await mirror.app!.clearChat(); });
+    await act(async () => finish({ verificationStatus: "pending_review" }));
+    expect(mirror.chat).toEqual([]); expect(screen.queryByText("📄 fixture.pdf")).toBeNull();
+  });
+
+  it("no envía DELETE cuando no se confirma el cierre de voz", async () => {
+    await renderApp();
+    mirror.app!.registerVoiceStop(vi.fn().mockRejectedValue(new Error("voice unavailable")));
+    await act(async () => { await expect(mirror.app!.clearChat()).rejects.toThrow("voice unavailable"); });
+    expect(clearThreadMessages).not.toHaveBeenCalled(); expect(mirror.app!.chatClearing).toBe(false);
+  });
+
+  it("invalida tokens, done, snapshots, voz y reintento anteriores al borrado", async () => {
+    let finish!: (value: any) => void;
+    let token!: (piece: string) => void;
+    let signal!: AbortSignal;
+    vi.mocked(streamChatMessage).mockImplementationOnce((_text, _thread, callbacks, _image, _lang, requestSignal) => {
+      token = callbacks!.onToken!; signal = requestSignal!;
+      return new Promise(resolve => { finish = resolve; });
+    });
+    await renderApp();
+    const snapshot = mirror.app!.captureHistoryHydrator();
+    const event = mirror.app!.upsertVoiceMessage;
+    const guard = mirror.app!.captureChatGuard();
+    fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(streamChatMessage).toHaveBeenCalledTimes(1));
+    await act(async () => { await mirror.app!.clearChat(); });
+    expect(signal.aborted).toBe(true); expect(guard()).toBe(false);
+    await act(async () => {
+      token("Tardío"); finish({ reply: "Done viejo", threadId: mirror.app!.threadId });
+      expect(snapshot([{ role: "bot", text: "GET viejo" }])).toBe(false);
+      event(voiceMessage("old", mirror.app!.threadId, { role: "agent", source: "ai", message: "Voz vieja", event_id: 1 })!);
+      mirror.app!.retryChat();
+    });
+    expect(mirror.chat).toEqual([]); expect(streamChatMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("GET mensual vacío con revisión mayor vacía caché y rechaza revisiones viejas/legacy", async () => {
+    await renderApp();
+    await act(async () => mirror.app!.appendChatMessages([{ role: "bot", text: "Mes anterior" }]));
+    const guard = mirror.app!.captureChatGuard();
+    const state = { threadId: mirror.app!.threadId, messageCount: 0, lastMessage: null, messages: [], historyRevision: 2, resetReason: "monthly" as const };
+    await act(async () => { expect(mirror.app!.observeChatHistory(state)).toBe("reset"); });
+    expect(mirror.chat).toEqual([]); expect(guard()).toBe(false);
+    const revision = mirror.app!.chatHistoryRevision;
+    await act(async () => {
+      expect(mirror.app!.observeChatHistory(state)).toBe("current");
+      expect(mirror.app!.observeChatHistory({ ...state, historyRevision: 1 })).toBe("stale");
+      expect(mirror.app!.observeChatHistory({ ...state, historyRevision: undefined })).toBe("stale");
+    });
+    expect(mirror.app!.chatHistoryRevision).toBe(revision);
+  });
+
+  it("un reintento anterior al corte mensual no vuelve a enviar el mensaje borrado", async () => {
+    vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Synthetic unavailable"));
+    await renderApp();
+    fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(mirror.chat.some(message => message.delivery === "failed")).toBe(true));
+    vi.mocked(fetchThreadState).mockResolvedValueOnce({ threadId: mirror.app!.threadId, historyRevision: 1, resetReason: "monthly", messageCount: 0, messages: [], lastMessage: null });
+    fireEvent.click(screen.getByText("retry"));
+    await waitFor(() => expect(mirror.chat).toEqual([]));
+    expect(streamChatMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("logout durante DELETE descarta el resultado y cancela su señal", async () => {
+    let finish!: (value: any) => void;
+    vi.mocked(clearThreadMessages).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    await renderApp();
+    const threadId = mirror.app!.threadId;
+    let pending!: Promise<void>;
+    act(() => { pending = mirror.app!.clearChat(); });
+    await waitFor(() => expect(clearThreadMessages).toHaveBeenCalled());
+    const requestSignal = vi.mocked(clearThreadMessages).mock.calls[0][1]!;
+    await act(async () => { mirror.app!.backToLogin(); });
+    await act(async () => {
+      finish({ threadId, historyRevision: 1, clearedAt: "2026-11-14T20:00:00Z", resetReason: "manual" });
+      await expect(pending).rejects.toThrow("History owner changed");
+    });
+    expect(requestSignal.aborted).toBe(true); expect(mirror.app!.chatClearing).toBe(false);
+    expect(mirror.chat[0].id).toBe("welcome");
   });
 
   it("sobreescribe el mensaje con la respuesta canónica del done (sin pasadas concatenadas)", async () => {

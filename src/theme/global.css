@@ -33448,3 +33448,13 @@ ion-button.sos-location-sources {
 }
 .sos-reference .sos-help-switch ion-label { margin: 8px 0; }
 .sos-reference .sos-help-panel[hidden] { display: none; }
+/* Acción secundaria del historial: conserva la cabecera y la identidad de Vita. */
+.chat-reference ion-button.vita-header-clear {
+  --color: var(--mu);
+  --padding-start: 8px;
+  --padding-end: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+}
+.chat-reference .vita-header-clear ion-spinner { width: 18px; height: 18px; }

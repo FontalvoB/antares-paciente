@@ -1,4 +1,8 @@
 import { createSseParser } from "./sse";
+import { apiFetch } from "./apiClient";
+import { sessionUserId } from "./sessionIdentity";
+import { normalizeThreadHistory } from "./threadHistoryMetadata";
+import type { ClearedThread, ThreadHistoryMetadata } from "./threadHistoryMetadata";
 import { normalizeVitaActions } from "./vitaActions";
 import type { VitaAction } from "./vitaActions";
 import type { HistoryMessage } from "./chatHistory";
@@ -18,7 +22,7 @@ export interface ThreadMessage extends HistoryMessage {
 }
 
 /** Resumen del historial de un thread devuelto por el backend .NET (proxy → AI Service). */
-export interface ThreadState {
+export interface ThreadState extends ThreadHistoryMetadata {
   threadId: string;
   messageCount: number;
   lastMessage: string | null;
@@ -73,7 +77,7 @@ export async function fetchThreadState(
     if (!res.ok) return null;
     const data = (await res.json()) as ThreadState;
     if (controller.signal.aborted || accessToken !== getAccessToken()) return null;
-    return data;
+    return normalizeThreadHistory(data);
   } catch (error) {
     if (!controller.signal.aborted) console.warn("[thread] No se pudo cargar el historial del thread:", error);
     return null;
@@ -81,6 +85,20 @@ export async function fetchThreadState(
     clearTimeout(timeout);
     options.signal?.removeEventListener("abort", abort);
   }
+}
+
+/** Borrado del propietario JWT; sin cuerpo, userId ni consentimiento de lectura. */
+export async function clearThreadMessages(threadId: string, signal?: AbortSignal): Promise<ClearedThread> {
+  const result = await apiFetch<ClearedThread>(`/api/v1/threads/${encodeURIComponent(threadId)}/messages`, {
+    method: "DELETE", signal, expectedUserId: sessionUserId(getAccessToken()),
+  });
+  if (!result) throw new Error("History deletion was not confirmed");
+  const state = normalizeThreadHistory(result);
+  if (state.threadId !== threadId || state.historyRevision == null || !state.clearedAt || !Number.isFinite(Date.parse(state.clearedAt))
+    || !["manual", "monthly"].includes(state.resetReason ?? "")) {
+    throw new Error("History deletion was not confirmed");
+  }
+  return state;
 }
 
 export interface ChatResult {
