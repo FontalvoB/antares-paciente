@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { revokeVoiceSession, voiceSessionStartOptions } from "../voiceApi";
+import { linkedVoiceSessionId, requestVoiceSession, revokeVoiceSession, voiceSessionStartOptions } from "../voiceApi";
+vi.mock("../legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
 
 describe("contrato de sesión Vita", () => {
   afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); });
@@ -15,6 +16,27 @@ describe("contrato de sesión Vita", () => {
   it("rechaza expiración y cambio del hilo firmado", () => {
     expect(() => voiceSessionStartOptions({ ...session, expiresAt: new Date(0).toISOString() }, "thread")).toThrow();
     expect(() => voiceSessionStartOptions(session, "another-thread")).toThrow();
+  });
+  it("anuncia supportsVitaVoice sin enviar identidad ni transcript", async () => {
+    localStorage.setItem("copp_access_token", `header.${btoa(JSON.stringify({ sub: "owner-a" }))}.signature`);
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(session), { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    expect(await requestVoiceSession("es", "thread")).toMatchObject({ runtimeMode: "vita" });
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ supportsVitaVoice: true, language: "es", threadId: "thread" });
+  });
+  it.each([undefined, "legacy"] as const)("admite legacy vinculado con modo %s sin transmitir token al SDK", runtimeMode => {
+    const linked = { signedUrl: session.signedUrl, agentId: "legacy", runtimeMode, sessionId: "linked-id", threadId: "thread" };
+    expect(linkedVoiceSessionId(linked, "thread")).toBe("linked-id");
+    expect(voiceSessionStartOptions(linked, "thread")).toEqual({ signedUrl: session.signedUrl });
+  });
+  it("legacy sin metadatos o con solo hilo informativo continúa RAM", () => {
+    const old = { signedUrl: session.signedUrl, agentId: "legacy" };
+    expect(linkedVoiceSessionId(old, "thread")).toBeUndefined();
+    expect(linkedVoiceSessionId({ ...old, threadId: "thread" }, "thread")).toBeUndefined();
+    expect(voiceSessionStartOptions(old, "thread")).toEqual({ signedUrl: session.signedUrl });
+  });
+  it.each([{ sessionId: "id" }, { sessionId: "id", threadId: "another" }, { sessionId: "", threadId: "thread" }])("rechaza vínculo legacy incompleto o contradictorio: %j", binding => {
+    expect(() => voiceSessionStartOptions({ signedUrl: session.signedUrl, agentId: "legacy", runtimeMode: "legacy", ...binding }, "thread")).toThrow();
   });
   it("DELETE conserva JWT original tras cambiar cuenta y no refresca con la cuenta nueva", async () => {
     localStorage.setItem("copp_access_token", "new-account-token");

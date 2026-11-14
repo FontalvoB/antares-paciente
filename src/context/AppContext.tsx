@@ -93,6 +93,8 @@ interface AppState {
   upsertVoiceMessage: (message: ChatMessage) => void;
   markVoiceSessionClosed: (sessionId: string, threadId: string) => void;
   registerVoiceSession: (sessionId: string, threadId: string) => void;
+  chatHistoryRevision: number;
+  refreshChatHistory: (threadId: string) => void;
   chatGenerating: boolean;
   cancelChat: () => void;
   retryChat: () => void;
@@ -314,6 +316,7 @@ export function AppProvider({
   const [chatGenerating, setChatGenerating] = useState(false);
   const chatController = useRef<AbortController | null>(null);
   const retryTurn = useRef<{ text: string; image?: ChatImageAttachment; userId: string; botId: string } | null>(null);
+  const [chatHistoryRevision, setChatHistoryRevision] = useState(0);
   const voiceSessions = useRef(new Map<string, { threadId: string; closed: boolean }>());
   const [sosActive, setSosActive] = useState(false);
   const [user, setUser] = useState<UserProfile>(defaultUser);
@@ -393,6 +396,7 @@ export function AppProvider({
     chatController.current?.abort(); chatController.current = null;
     retryTurn.current = null; setChatGenerating(false); setVoiceMinimized(false);
     voiceSessions.current.clear();
+    setChatHistoryRevision(0);
     resetLegalConsentSession();
     resetSessionQueryCache();
     setUser(defaultUser);
@@ -993,6 +997,8 @@ export function AppProvider({
       retryChat: () => { const turn = retryTurn.current; if (turn) void runChatTurn(turn.text, turn.image, true); },
       minimizeVoice: () => { setVoiceMinimized(true); setScreen("chat"); },
       upsertVoiceMessage: message => setChat(prev => mergeVoiceMessage(prev, { ...message, time: nowLabel(lang) })),
+      chatHistoryRevision,
+      refreshChatHistory: sourceThreadId => { if (sourceThreadId === currentThread.current) setChatHistoryRevision(revision => revision + 1); },
       registerVoiceSession: (sessionId, sourceThreadId) => { voiceSessions.current.set(sessionId, { threadId: sourceThreadId, closed: false }); },
       markVoiceSessionClosed: (sessionId, sourceThreadId) => {
         voiceSessions.current.set(sessionId, { threadId: sourceThreadId, closed: true });
@@ -1204,6 +1210,7 @@ export function AppProvider({
       voiceOpen,
       voiceMinimized,
       chatGenerating,
+      chatHistoryRevision,
       sosActive,
       user,
       testsDone,

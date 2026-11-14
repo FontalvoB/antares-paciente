@@ -61,6 +61,7 @@ vi.mock("@ionic/react", async (importOriginal) => {
 // Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   lang: "en" as "es" | "en",
+  historyRevision: 0,
   chat: [] as Array<{
     id: string;
     role: "bot" | "user" | "alert";
@@ -87,6 +88,7 @@ const navigateMock = vi.fn();
 vi.mock("../../context/AppContext", () => ({
   useApp: () => ({
     chat: mockState.chat,
+    chatHistoryRevision: mockState.historyRevision,
     sendChat: sendChatMock,
     openPanic: openPanicMock,
     openVoice: openVoiceMock,
@@ -113,6 +115,25 @@ const welcomeMessage = {
   text: "Hola María 👋 Soy tu agente de salud Copp Adresd.",
   time: "10:00 AM",
 };
+
+describe("ChatPage — recarga tras cierre de sesión vinculada", () => {
+  it("un refresco posterior al DELETE vuelve a leer incluso después de un snapshot vacío", async () => {
+    vi.clearAllMocks(); mockState.chat = []; mockState.historyRevision = 0; mockState.lang = "es";
+    const canonical = [
+      { messageId: "voice:linked-legacy:provider:user:2", role: "user", text: "Sí", channel: "voice" as const, status: "final" as const, revision: 1 },
+      { messageId: "voice:linked-legacy:provider:bot:2", role: "bot", text: "Sí", channel: "voice" as const, status: "final" as const, revision: 1 },
+    ];
+    vi.mocked(fetchThreadState).mockReset().mockResolvedValue(null)
+      .mockResolvedValueOnce({ threadId: "test-thread-123", messageCount: 0, lastMessage: null, messages: [] })
+      .mockResolvedValueOnce({ threadId: "test-thread-123", messageCount: 2, lastMessage: "Sí", messages: canonical });
+    const { rerender } = render(<ChatPage />);
+    await waitFor(() => expect(fetchThreadState).toHaveBeenCalledTimes(1));
+    mockState.historyRevision = 1; rerender(<ChatPage />);
+    await waitFor(() => expect(hydrateChatMock).toHaveBeenCalledWith(canonical));
+    expect(fetchThreadState).toHaveBeenCalledTimes(2);
+    mockState.historyRevision = 0;
+  });
+});
 
 describe("ChatPage — Lab Exam Upload Integration", () => {
   beforeEach(() => {

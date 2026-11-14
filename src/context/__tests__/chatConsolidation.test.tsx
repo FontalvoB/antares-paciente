@@ -11,6 +11,7 @@ import { I18nProvider } from "../../i18n/I18nContext";
 import { sendChatMessage, streamChatMessage } from "../../utils/threadApi";
 import { consentFailure, requireLegalConsent } from "../../utils/legalConsents";
 import type { ChatMessage } from "../../types";
+import { voiceMessage } from "../../utils/voiceMessages";
 
 /**
  * REQ-AG-01 (change agente-asistente-citas): el streaming emite pasadas
@@ -61,10 +62,12 @@ vi.mock("../../utils/patientProfileApi", () => ({ fetchMyPatientProfile: vi.fn()
 const mirror = vi.hoisted(() => ({
   chat: [] as ChatMessage[],
   voiceResult: null as ChatMessage | null,
+  app: null as ReturnType<typeof useApp> | null,
 }));
 
 function Harness({ message = "hola" }: { message?: string }) {
-  const { chat, sendChat, sendVoiceMessage, backToLogin, cancelChat, retryChat, authLoading } = useApp();
+  const app = useApp(); mirror.app = app;
+  const { chat, sendChat, sendVoiceMessage, backToLogin, cancelChat, retryChat, authLoading } = app;
   mirror.chat = chat;
   return (
     <div>
@@ -290,5 +293,28 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     await waitFor(() => expect(mirror.chat.find(m => m.role === "bot")?.delivery).toBe("interrupted"));
     expect(sendChatMessage).not.toHaveBeenCalled();
     expect(mirror.chat.filter(m => m.role === "user")).toHaveLength(1);
+  });
+  it.each(["legacy", "vita"] as const)("hidratar tras voz %s vinculada sustituye el grupo sin pares duplicados", async voiceRuntime => {
+    await renderApp();
+    const thread = mirror.app!.threadId;
+    const locals = ["user", "agent"].map(role => ({ ...voiceMessage("provider-local", thread, { role: role as "user" | "agent", source: role === "user" ? "user" : "ai", message: "Sí", event_id: 2, response_id: role === "agent" ? "different-uuid" : undefined })!, voiceRuntime, voiceSessionId: "linked-session" }));
+    await act(async () => {
+      mirror.app!.registerVoiceSession("linked-session", thread);
+      locals.forEach(message => mirror.app!.upsertVoiceMessage(message));
+    });
+    const history = ["user", "bot"].map(role => ({ role, text: "Sí", messageId: `voice:linked-session:provider:${role}:2`, channel: "voice" as const, status: "final" as const, revision: 1 }));
+    await act(async () => mirror.app!.hydrateChat(history));
+    expect(mirror.chat).toHaveLength(2);
+    expect(mirror.chat.map(message => message.id)).toEqual(locals.map(message => message.id));
+    await act(async () => {
+      mirror.app!.markVoiceSessionClosed("linked-session", thread);
+      mirror.app!.hydrateChat(history);
+    });
+    expect(mirror.chat.map(message => message.id)).toEqual(history.map(message => message.messageId));
+    await act(async () => mirror.app!.hydrateChat(history));
+    expect(mirror.chat).toHaveLength(2);
+    expect(mirror.chat.map(message => message.role)).toEqual(["user", "bot"]);
+    expect(sendChatMessage).not.toHaveBeenCalled();
+    expect(streamChatMessage).not.toHaveBeenCalled();
   });
 });

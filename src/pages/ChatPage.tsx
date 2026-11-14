@@ -64,7 +64,7 @@ const SCROLL_TOP_THRESHOLD = 48;
 export function ChatPage() {
   const {
     chat,
-    chatGenerating, cancelChat, retryChat, voiceOpen, voiceMinimized,
+    chatGenerating, cancelChat, retryChat, voiceOpen, voiceMinimized, chatHistoryRevision,
     sendChat,
     openPanic,
     openVoice,
@@ -119,8 +119,10 @@ export function ChatPage() {
   // el backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
   const historyLoaded = useRef<string | null>(null);
   const previousVoiceOpen = useRef(voiceOpen);
+  const historyRevisionSeen = useRef(chatHistoryRevision);
   useEffect(() => {
-    if (previousVoiceOpen.current && !voiceOpen) historyLoaded.current = null;
+    if ((previousVoiceOpen.current && !voiceOpen) || historyRevisionSeen.current !== chatHistoryRevision) historyLoaded.current = null;
+    historyRevisionSeen.current = chatHistoryRevision;
     previousVoiceOpen.current = voiceOpen;
     if (historyLoaded.current === threadId) return;
     if (!userId) return;
@@ -155,7 +157,7 @@ export function ChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [threadId, userId, hydrateChat, voiceOpen]);
+  }, [threadId, userId, hydrateChat, voiceOpen, chatHistoryRevision]);
 
   useEffect(() => {
     if (prependingRef.current) {

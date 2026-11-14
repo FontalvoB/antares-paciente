@@ -87,7 +87,7 @@ export interface ChatMessage {
   revision?: number;
   voiceSessionId?: string;
   voiceSessionClosed?: boolean;
-  voiceRuntime?: "vita";
+  voiceRuntime?: "vita" | "legacy";
   actions?: import("./utils/vitaActions").VitaAction[];
   /** Thread estable al que pertenece el mensaje (proactive-<id>). */
   threadId?: string;

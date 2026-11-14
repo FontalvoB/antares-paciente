@@ -4,7 +4,7 @@ import { VoiceOverlay } from "../VoiceOverlay";
 import { consentFailure, requireLegalConsent, verifyLegalConsent, withdrawLegalConsent } from "../../utils/legalConsents";
 
 const mocks = vi.hoisted(() => ({
-  app: { voiceOpen: true, voiceMinimized: false, threadId: "thread-a", minimizeVoice: vi.fn(), openVoice: vi.fn(), closeVoice: vi.fn(), showToast: vi.fn(), sendVoiceMessage: vi.fn(), upsertVoiceMessage: vi.fn(), appendChatMessages: vi.fn() },
+  app: { voiceOpen: true, voiceMinimized: false, threadId: "thread-a", minimizeVoice: vi.fn(), openVoice: vi.fn(), closeVoice: vi.fn(), showToast: vi.fn(), sendVoiceMessage: vi.fn(), upsertVoiceMessage: vi.fn(), appendChatMessages: vi.fn(), registerVoiceSession: vi.fn(), markVoiceSessionClosed: vi.fn(), refreshChatHistory: vi.fn() },
   callbacks: {} as Record<string, (...args: any[]) => void>,
   modalDismiss: undefined as undefined | (() => void),
   eleven: {
@@ -60,6 +60,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     mocks.eleven.status = "connected";
     mocks.speech.supported = true;
     mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid" });
+    mocks.revoke.mockReset().mockResolvedValue(true);
     vi.mocked(requireLegalConsent).mockResolvedValue(undefined);
     vi.mocked(verifyLegalConsent).mockResolvedValue({ accepted: true } as Awaited<ReturnType<typeof verifyLegalConsent>>);
     mocks.tool.mockResolvedValue("synthetic tool result");
@@ -267,15 +268,53 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     expect(mocks.app.upsertVoiceMessage).not.toHaveBeenCalled();
   });
 
-  it("abre modo Vita con contexto secreto y revoca con el JWT original al desmontar tras cambio de cuenta", async () => {
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "vita", conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() });
+  it.each(["vita", "legacy"] as const)("abre %s vinculado y revoca con JWT original sin refrescar la cuenta nueva", async runtimeMode => {
+    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode, conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", ...(runtimeMode === "vita" ? { sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() } : {}) });
     const originalToken = localStorage.getItem("copp_access_token");
     const { unmount } = render(<VoiceOverlay />);
-    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({ signedUrl: "wss://example.invalid", dynamicVariables: { secret__vita_session_token: "synthetic-context" } }));
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({ signedUrl: "wss://example.invalid", ...(runtimeMode === "vita" ? { dynamicVariables: { secret__vita_session_token: "synthetic-context" } } : {}) }));
+    expect(mocks.app.registerVoiceSession).toHaveBeenCalledWith("server-session", "thread-a");
+    act(() => mocks.callbacks.onMessage({ message: "Mensaje sintético", role: "user", source: "user", event_id: 2 }));
+    expect(mocks.app.upsertVoiceMessage.mock.calls.at(-1)![0]).toMatchObject({ voiceSessionId: "server-session", voiceRuntime: runtimeMode });
     localStorage.setItem("copp_access_token", "other-account");
     unmount();
+    await act(async () => { await Promise.resolve(); });
     expect(mocks.revoke).toHaveBeenCalledWith("server-session", originalToken);
     expect(mocks.eleven.endSession).toHaveBeenCalled();
+    expect(mocks.app.refreshChatHistory).not.toHaveBeenCalled();
+  });
+
+  it("legacy vinculado recarga el historial solo después del DELETE, sin reinvocar al agente", async () => {
+    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "linked-legacy", threadId: "thread-a" });
+    let finish!: (value: boolean) => void;
+    mocks.revoke.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const { rerender } = render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalled());
+    fireEvent.click(screen.getByLabelText("Colgar"));
+    mocks.app.voiceOpen = false; rerender(<VoiceOverlay />);
+    expect(mocks.app.markVoiceSessionClosed).toHaveBeenCalledWith("linked-legacy", "thread-a");
+    expect(mocks.app.refreshChatHistory).not.toHaveBeenCalled();
+    await act(async () => finish(true));
+    expect(mocks.app.refreshChatHistory).toHaveBeenCalledWith("thread-a");
+    expect(mocks.app.sendVoiceMessage).not.toHaveBeenCalled();
+    expect(mocks.eleven.sendUserMessage).not.toHaveBeenCalled();
+  });
+
+  it("legacy antiguo sin vínculo no registra sesión ni intenta importar al cerrar", async () => {
+    render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalled());
+    fireEvent.click(screen.getByLabelText("Colgar"));
+    expect(mocks.app.registerVoiceSession).not.toHaveBeenCalled();
+    expect(mocks.revoke).not.toHaveBeenCalled();
+    expect(mocks.app.refreshChatHistory).not.toHaveBeenCalled();
+  });
+
+  it("legacy con sessionId sin hilo falla cerrado antes de conectar", async () => {
+    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "incomplete" });
+    render(<VoiceOverlay />);
+    await waitFor(() => expect(mocks.app.closeVoice).toHaveBeenCalled());
+    expect(mocks.eleven.startSession).not.toHaveBeenCalled();
+    expect(mocks.app.registerVoiceSession).not.toHaveBeenCalled();
   });
 
   it("modo Vita incompleto no abre SDK ni fallback y revoca la sesión recibida", async () => {

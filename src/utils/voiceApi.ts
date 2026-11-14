@@ -48,11 +48,20 @@ export interface VoiceSession {
 
 export class VoiceSessionContractError extends Error {}
 
+/** Solo el vínculo de sesión/hilo emitido por el servidor autoriza agrupar. */
+export function linkedVoiceSessionId(session: VoiceSession, threadId: string): string | undefined {
+  if (session.threadId != null && session.threadId !== threadId) throw new VoiceSessionContractError();
+  if (session.sessionId == null) return undefined; // Legacy anterior, incluso con threadId informativo.
+  if (typeof session.sessionId !== "string" || !session.sessionId.trim() || !session.threadId) throw new VoiceSessionContractError();
+  return session.sessionId;
+}
+
 /** Legacy conserva su conexión; Vita exige contexto íntegro antes de abrir el SDK. */
 export function voiceSessionStartOptions(session: VoiceSession, threadId: string) {
   if (!session.signedUrl || (session.runtimeMode && !["legacy", "vita"].includes(session.runtimeMode))) throw new VoiceSessionContractError();
+  const linked = linkedVoiceSessionId(session, threadId);
   if (session.runtimeMode !== "vita") return { signedUrl: session.signedUrl };
-  if (!session.sessionId || !session.sessionToken || !session.conversationId || session.threadId !== threadId
+  if (!linked || !session.sessionToken || !session.conversationId
     || !session.expiresAt || !Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()) throw new VoiceSessionContractError();
   return { signedUrl: session.signedUrl, dynamicVariables: { secret__vita_session_token: session.sessionToken } };
 }
@@ -93,7 +102,7 @@ export async function requestVoiceSession(
       },
       // Selección de una versión verificada para el idioma de la app. No
       // autoriza overrides del cliente ni mutaciones del agente compartido.
-      body: JSON.stringify({ ...(language ? { language } : {}), ...(threadId ? { threadId } : {}) }),
+      body: JSON.stringify({ supportsVitaVoice: true, ...(language ? { language } : {}), ...(threadId ? { threadId } : {}) }),
       signal,
     });
     if (!res.ok) {

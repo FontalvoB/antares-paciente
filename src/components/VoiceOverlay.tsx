@@ -18,7 +18,7 @@ import { getAccessToken } from "../utils/authApi";
 import { sessionUserId } from "../utils/sessionIdentity";
 import {
   requestVoiceSession,
-  revokeVoiceSession, voiceSessionStartOptions, VoiceSessionContractError,
+  revokeVoiceSession, voiceSessionStartOptions, linkedVoiceSessionId, VoiceSessionContractError,
   type VoiceSession,
   toolCancelAppointment,
   toolGetAvailabilitySlots,
@@ -49,7 +49,7 @@ import {
  */
 
 type VoiceMode = "idle" | "eleven" | "fallback-choice" | "webspeech";
-interface ActiveVoiceSession { generation: number; id: string; threadId: string; owner: string | null; accessToken: string | null; serverSession?: VoiceSession; revoked?: boolean; controller: AbortController; messages: Map<string, ChatMessage> }
+interface ActiveVoiceSession { generation: number; id: string; threadId: string; owner: string | null; accessToken: string | null; serverSession?: VoiceSession; boundSessionId?: string; revoked?: boolean; controller: AbortController; messages: Map<string, ChatMessage> }
 
 /** Props de la cápsula visual compartida por ambos motores. */
 interface VoiceShellProps {
@@ -182,6 +182,7 @@ export function VoiceOverlay() {
     upsertVoiceMessage,
     markVoiceSessionClosed,
     registerVoiceSession,
+    refreshChatHistory,
     threadId,
   } = useApp();
   const { t, lang } = useI18n();
@@ -196,15 +197,21 @@ export function VoiceOverlay() {
   const voiceGeneration = useRef(0);
   const activeSession = useRef<ActiveVoiceSession | null>(null);
   const consentRequest = useRef<AbortController | null>(null);
-  const closeSessionRef = useRef(markVoiceSessionClosed); closeSessionRef.current = markVoiceSessionClosed;
+  const closeSessionRef = useRef({ markVoiceSessionClosed, refreshChatHistory }); closeSessionRef.current = { markVoiceSessionClosed, refreshChatHistory };
   const invalidateSession = useCallback(() => {
     voiceGeneration.current += 1;
     const session = activeSession.current;
     session?.controller.abort();
     if (session?.serverSession?.sessionId && !session.revoked) {
       session.revoked = true;
-      closeSessionRef.current?.(session.serverSession.sessionId, session.threadId);
-      void revokeVoiceSession(session.serverSession.sessionId, session.accessToken);
+      if (session.boundSessionId) closeSessionRef.current.markVoiceSessionClosed?.(session.boundSessionId, session.threadId);
+      void revokeVoiceSession(session.serverSession.sessionId, session.accessToken).then(closed => {
+        // El servidor puede importar el transcript ligado al cerrar legacy. Leer
+        // despues del DELETE, sin texto bot del cliente ni credenciales nuevas.
+        if (closed && session.boundSessionId && session.owner === sessionUserId(getAccessToken())) {
+          closeSessionRef.current.refreshChatHistory?.(session.threadId);
+        }
+      });
     }
     activeSession.current = null;
     consentRequest.current?.abort();
@@ -352,8 +359,8 @@ export function VoiceOverlay() {
     try { assertSession(sdkSession, true); } catch { return; }
     const message = voiceMessage(sdkSession!.id, sdkSession!.threadId, payload);
     if (!message) return;
-    if (sdkSession?.serverSession?.runtimeMode === "vita" && sdkSession.serverSession.sessionId) {
-      message.voiceSessionId = sdkSession.serverSession.sessionId; message.voiceRuntime = "vita";
+    if (sdkSession?.boundSessionId) {
+      message.voiceSessionId = sdkSession.boundSessionId; message.voiceRuntime = sdkSession.serverSession?.runtimeMode ?? "legacy";
     }
     const previous = sdkSession!.messages.get(message.id);
     if (previous && (previous.revision ?? 0) > 0 && (previous.providerEventId ?? -1) >= payload.event_id) return;
@@ -369,8 +376,8 @@ export function VoiceOverlay() {
       response_id: correction.response_id, role: "agent", source: "ai",
     });
     if (!message) return;
-    if (sdkSession?.serverSession?.runtimeMode === "vita" && sdkSession.serverSession.sessionId) {
-      message.voiceSessionId = sdkSession.serverSession.sessionId; message.voiceRuntime = "vita";
+    if (sdkSession?.boundSessionId) {
+      message.voiceSessionId = sdkSession.boundSessionId; message.voiceRuntime = sdkSession.serverSession?.runtimeMode ?? "legacy";
     }
     const corrected = { ...message, delivery: "interrupted" as const, revision: (sdkSession!.messages.get(message.id)?.revision ?? 0) + 1 };
     sdkSession!.messages.set(message.id, corrected); upsertVoiceMessage(corrected); setBotLine(corrected.text);
@@ -546,8 +553,12 @@ export function VoiceOverlay() {
               onServerSession={session => {
                 if (!sdkSession) return;
                 sdkSession.serverSession = session;
-                if (activeSession.current === sdkSession && session.runtimeMode === "vita") {
-                  try { voiceSessionStartOptions(session, sdkSession.threadId); registerVoiceSession?.(session.sessionId!, sdkSession.threadId); } catch { /* Se rechaza antes de conectar. */ }
+                if (activeSession.current === sdkSession) {
+                  try {
+                    voiceSessionStartOptions(session, sdkSession.threadId);
+                    sdkSession.boundSessionId = linkedVoiceSessionId(session, sdkSession.threadId);
+                    if (sdkSession.boundSessionId) registerVoiceSession?.(sdkSession.boundSessionId, sdkSession.threadId);
+                  } catch { /* Se rechaza antes de conectar. */ }
                 }
                 if (activeSession.current !== sdkSession && session.sessionId) void revokeVoiceSession(session.sessionId, sdkSession.accessToken);
               }}
