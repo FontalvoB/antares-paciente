@@ -100,7 +100,10 @@ export function ChatRichText({ text }: { text: string }) {
     } else {
       flushList();
       if (!line) continue;
-      if (h) {
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+        // Separador horizontal: antes se mostraba el literal «---».
+        blocks.push(<hr key={`b-${k++}`} className="md-hr" />);
+      } else if (h) {
         blocks.push(
           <div key={`b-${k++}`} className="md-h">
             {inline(h[2], `h${k}`)}
