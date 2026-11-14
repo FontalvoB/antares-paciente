@@ -103,9 +103,12 @@ export function compositeLayers(layersTopFirst: Rgba[]): Rgba {
   return out;
 }
 
-/** Fondo claro → iconos oscuros. El umbral 0.4 favorece iconos oscuros en azules medios. */
+/** Elige iconos negros o blancos según cuál tenga mayor contraste WCAG. */
 export function toneForColor(color: Rgba): StatusBarTone {
-  return relativeLuminance(color) > 0.4 ? "light" : "dark";
+  const luminance = relativeLuminance(color);
+  const darkIconsContrast = (luminance + 0.05) / 0.05;
+  const lightIconsContrast = 1.05 / (luminance + 0.05);
+  return darkIconsContrast >= lightIconsContrast ? "light" : "dark";
 }
 
 export function toHex({ r, g, b }: Rgba): string {

@@ -31,6 +31,15 @@ describe("statusBarContrast", () => {
     expect(toneForColor({ r: 6, g: 9, b: 26, a: 1 })).toBe("dark");
   });
 
+  it.each([
+    { r: 128, g: 128, b: 128, a: 1 },
+    { r: 45, g: 134, b: 143, a: 1 },
+  ])("mantiene legible la hora en fondos medios como la cabecera de Perfil: %j", (color) => {
+    // En estos fondos el texto blanco queda por debajo de 4.5:1; el negro sí cumple.
+    expect(toneForColor(color)).toBe("light");
+    expect((relativeLuminance(color) + 0.05) / 0.05).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("la luminancia respeta los extremos WCAG", () => {
     expect(relativeLuminance({ r: 0, g: 0, b: 0, a: 1 })).toBe(0);
     expect(relativeLuminance({ r: 255, g: 255, b: 255, a: 1 })).toBeCloseTo(1);
