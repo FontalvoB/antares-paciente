@@ -45,14 +45,17 @@ vi.mock("../../utils/authApi", () => ({
 
 vi.mock("../../utils/appointmentsApi", () => ({
   hasRealSession: () => true,
-  fetchMyAppointments: vi.fn().mockResolvedValue([]),
+  fetchMyAppointments: vi.fn().mockResolvedValue({ items: [] }),
   fetchMyRequests: vi.fn().mockResolvedValue([]),
-  fetchMyContext: vi.fn().mockResolvedValue(null),
+  fetchMyContext: vi.fn().mockResolvedValue({ patient: null }),
   fetchOrganizationsTree: vi.fn().mockResolvedValue([]),
   fetchProfessionalsCatalog: vi.fn().mockResolvedValue([]),
+  fetchSpecialties: vi.fn().mockResolvedValue([]),
   cancelAppointment: vi.fn(),
   createRequest: vi.fn(),
 }));
+
+vi.mock("../../utils/patientProfileApi", () => ({ fetchMyPatientProfile: vi.fn().mockRejectedValue(new Error("fixture without profile")), toUserProfile: vi.fn() }));
 
 // Espejo del estado del chat para aserciones sin acoplarse al DOM interno.
 const mirror = vi.hoisted(() => ({
@@ -61,14 +64,17 @@ const mirror = vi.hoisted(() => ({
 }));
 
 function Harness({ message = "hola" }: { message?: string }) {
-  const { chat, sendChat, sendVoiceMessage, backToLogin } = useApp();
+  const { chat, sendChat, sendVoiceMessage, backToLogin, cancelChat, retryChat, authLoading } = useApp();
   mirror.chat = chat;
   return (
     <div>
+      <span data-testid="auth-loading">{String(authLoading)}</span>
       <button type="button" onClick={() => sendChat(message)}>
         send
       </button>
       <button type="button" onClick={backToLogin}>logout</button>
+      <button type="button" onClick={cancelChat}>cancel</button>
+      <button type="button" onClick={retryChat}>retry</button>
       <button
         type="button"
         onClick={() => {
@@ -89,14 +95,16 @@ function Harness({ message = "hola" }: { message?: string }) {
   );
 }
 
-function renderApp(message?: string) {
-  return render(
+async function renderApp(message?: string) {
+  const view = render(
     <I18nProvider>
       <AppProvider>
         <Harness message={message} />
       </AppProvider>
     </I18nProvider>,
   );
+  await waitFor(() => expect(screen.getByTestId("auth-loading").textContent).toBe("false"));
+  return view;
 }
 
 describe("AppContext — consolidación del streaming del asistente", () => {
@@ -121,7 +129,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
       suggestions: null,
     });
 
-    renderApp();
+    await renderApp();
     act(() => {
       fireEvent.click(screen.getByText("send"));
     });
@@ -140,7 +148,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
       suggestions: null,
     });
 
-    renderApp();
+    await renderApp();
     act(() => {
       fireEvent.click(screen.getByText("send"));
     });
@@ -157,7 +165,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
       suggestions: [{ type: "appointment", ctaText: "Agenda tu cita aquí" }],
     });
 
-    renderApp();
+    await renderApp();
     act(() => {
       fireEvent.click(screen.getByText("send"));
     });
@@ -175,7 +183,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
       suggestions: null,
     });
 
-    renderApp();
+    await renderApp();
     act(() => {
       fireEvent.click(screen.getByText("voice"));
     });
@@ -187,15 +195,15 @@ describe("AppContext — consolidación del streaming del asistente", () => {
 
   it("no hace streaming ni POST si el paciente cancela la autorización", async () => {
     vi.mocked(requireLegalConsent).mockRejectedValueOnce(consentFailure("CONSENT_CANCELLED"));
-    renderApp(); fireEvent.click(screen.getByText("send"));
-    await waitFor(() => expect(requireLegalConsent).toHaveBeenCalledWith("chat", "es"));
+    await renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(requireLegalConsent).toHaveBeenCalledWith("chat", "es", expect.any(AbortSignal)));
     expect(streamChatMessage).not.toHaveBeenCalled();
     expect(sendChatMessage).not.toHaveBeenCalled();
   });
 
   it.each(["CONSENT_REQUIRED", "CONSENT_DOCUMENT_UNAVAILABLE"])("no reintenta chat bloqueante tras %s del stream", async code => {
     vi.mocked(streamChatMessage).mockRejectedValueOnce(consentFailure(code, code === "CONSENT_REQUIRED" ? 403 : 503));
-    renderApp(); fireEvent.click(screen.getByText("send"));
+    await renderApp(); fireEvent.click(screen.getByText("send"));
     await waitFor(() => expect(streamChatMessage).toHaveBeenCalledTimes(1));
     await act(async () => { await Promise.resolve(); });
     expect(sendChatMessage).not.toHaveBeenCalled();
@@ -207,7 +215,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     vi.mocked(streamChatMessage).mockRejectedValue(new Error("Network unavailable"));
     vi.mocked(sendChatMessage).mockRejectedValue(new Error("Network unavailable"));
     const message = "Me duele el pecho; quiero ver mi progreso y agendar una cita";
-    renderApp(message);
+    await renderApp(message);
     fireEvent.click(screen.getByText("send"));
     const expected = language === "en"
       ? "The assistant is unavailable right now. Please try again in a few minutes."
@@ -222,17 +230,16 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     expect(replies[0].text).not.toMatch(/HbA1c|Carlos|65 kg|alarma/);
   });
 
-  it("usa una respuesta real bloqueante cuando el stream falla antes de emitir tokens", async () => {
-    vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Stream unavailable"));
-    vi.mocked(sendChatMessage).mockResolvedValueOnce({
-      reply: "Consulta las instrucciones de tu plan aprobado.",
-      threadId: "proactive-10247381",
-      executionId: "real-execution",
-    });
-    renderApp(); fireEvent.click(screen.getByText("send"));
-    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("Consulta las instrucciones de tu plan aprobado."));
-    expect(mirror.chat.find(m => m.role === "bot")?.executionId).toBe("real-execution");
-    expect(mirror.chat.some(m => m.kind === "service-error")).toBe(false);
+  it("un fallo antes de tokens exige reintento explicito sin duplicar el usuario", async () => {
+    vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Network unavailable"));
+    vi.mocked(streamChatMessage).mockResolvedValueOnce({ reply: "Respuesta real", threadId: "proactive-10247381", executionId: "execution" });
+    await renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(mirror.chat.some(m => m.kind === "service-error")).toBe(true));
+    expect(sendChatMessage).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("retry"));
+    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("Respuesta real"));
+    expect(mirror.chat.filter(m => m.role === "user")).toHaveLength(1);
+    expect(streamChatMessage).toHaveBeenCalledTimes(2);
   });
 
   it("retira una respuesta parcial interrumpida sin repetir herramientas automáticamente", async () => {
@@ -240,7 +247,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
       callbacks?.onToken?.("Tu presión significa que debes");
       throw new Error("Stream interrupted");
     });
-    renderApp(); fireEvent.click(screen.getByText("send"));
+    await renderApp(); fireEvent.click(screen.getByText("send"));
     await waitFor(() => expect(mirror.chat.some(m => m.kind === "service-error")).toBe(true));
     expect(mirror.chat.some(m => m.text.includes("Tu presión significa"))).toBe(false);
     expect(sendChatMessage).not.toHaveBeenCalled();
@@ -249,7 +256,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
   it("una respuesta vacía termina como indisponibilidad, no como burbuja vacía", async () => {
     vi.mocked(streamChatMessage).mockResolvedValueOnce({ reply: " ", threadId: "thread" });
     vi.mocked(sendChatMessage).mockResolvedValueOnce({ reply: "", threadId: "thread" });
-    renderApp(); fireEvent.click(screen.getByText("send"));
+    await renderApp(); fireEvent.click(screen.getByText("send"));
     await waitFor(() => expect(mirror.chat.some(m => m.kind === "service-error")).toBe(true));
     expect(mirror.chat.filter(m => m.role === "bot").every(m => m.text.trim().length > 0)).toBe(true);
   });
@@ -257,19 +264,31 @@ describe("AppContext — consolidación del streaming del asistente", () => {
   it("la vía de voz devuelve el mismo aviso honesto si ambos transportes fallan", async () => {
     vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Offline"));
     vi.mocked(sendChatMessage).mockRejectedValueOnce(new Error("Offline"));
-    renderApp(); fireEvent.click(screen.getByText("voice"));
+    await renderApp(); fireEvent.click(screen.getByText("voice"));
     await waitFor(() => expect(mirror.voiceResult?.kind).toBe("service-error"));
     expect(mirror.voiceResult?.text).toBe("El asistente no está disponible en este momento. Inténtalo de nuevo en unos minutos.");
   });
 
-  it("un fallo tardío no inserta avisos en otra sesión", async () => {
-    let rejectBlocking!: (error: Error) => void;
-    vi.mocked(streamChatMessage).mockRejectedValueOnce(new Error("Offline"));
-    vi.mocked(sendChatMessage).mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectBlocking = reject; }));
-    renderApp(); fireEvent.click(screen.getByText("send"));
-    await waitFor(() => expect(sendChatMessage).toHaveBeenCalledTimes(1));
+  it("un fallo tardio no inserta avisos en otra sesion", async () => {
+    let rejectStream!: (error: Error) => void;
+    vi.mocked(streamChatMessage).mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectStream = reject; }));
+    await renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(streamChatMessage).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByText("logout"));
-    await act(async () => { rejectBlocking(new Error("Offline")); });
+    await act(async () => { rejectStream(new Error("Offline")); });
     expect(mirror.chat.some(m => m.kind === "service-error")).toBe(false);
+  });
+  it("cancelar conserva un solo turno interrumpido y permite reintentar", async () => {
+    vi.mocked(streamChatMessage).mockImplementationOnce(async (_text, _thread, callbacks, _image, _lang, signal) => {
+      callbacks?.onToken?.("Texto parcial");
+      await new Promise((_resolve, reject) => signal!.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))));
+      throw new Error("unreachable");
+    });
+    await renderApp(); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("Texto parcial"));
+    fireEvent.click(screen.getByText("cancel"));
+    await waitFor(() => expect(mirror.chat.find(m => m.role === "bot")?.delivery).toBe("interrupted"));
+    expect(sendChatMessage).not.toHaveBeenCalled();
+    expect(mirror.chat.filter(m => m.role === "user")).toHaveLength(1);
   });
 });

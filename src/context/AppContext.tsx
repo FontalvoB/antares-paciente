@@ -1,5 +1,8 @@
 import {APPOINTMENTS_ENABLED,visibleScreen} from "../utils/appointmentsVisibility";
 import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
+import { mergeChatHistory } from "../utils/chatHistory";
+import type { HistoryMessage } from "../utils/chatHistory";
+import { upsertVoiceMessage as mergeVoiceMessage } from "../utils/voiceMessages";
 import { App } from "@capacitor/app";
 import { resetSessionQueryCache } from "../utils/queryClient";
 import { sessionUserId } from "../utils/sessionIdentity";
@@ -33,7 +36,6 @@ import { isLegalConsentError, legalConsentMessage, requireLegalConsent, resetLeg
 import { unregisterPushDevice } from "../utils/pushNotifications";
 import {
   fetchThreadState,
-  sendChatMessage,
   streamChatMessage,
 } from "../utils/threadApi";
 import {
@@ -86,6 +88,14 @@ interface AppState {
   toast: ToastState | null;
   panicOpen: boolean;
   voiceOpen: boolean;
+  voiceMinimized: boolean;
+  minimizeVoice: () => void;
+  upsertVoiceMessage: (message: ChatMessage) => void;
+  markVoiceSessionClosed: (sessionId: string, threadId: string) => void;
+  registerVoiceSession: (sessionId: string, threadId: string) => void;
+  chatGenerating: boolean;
+  cancelChat: () => void;
+  retryChat: () => void;
   sosActive: boolean;
   user: UserProfile;
   testsDone: number[];
@@ -140,14 +150,14 @@ interface AppState {
   chatUnread: boolean;
   /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
   markChatRead: () => void;
-  hydrateChat: (messages: { text: string; role?: "bot" | "user" }[]) => void;
+  hydrateChat: (messages: HistoryMessage[]) => void;
   /**
    * Antepone una página de historial ANTERIOR sin deduplicar por texto: un
    * mensaje repetido entre tramos es legítimo (p. ej. dos quick-replies
    * iguales) y no debe perderse.
    */
   prependChatMessages: (
-    messages: { text: string; role?: "bot" | "user" }[],
+    messages: HistoryMessage[],
   ) => void;
   appendChatMessages: (
     messages: Array<{
@@ -300,6 +310,11 @@ export function AppProvider({
   }, []);
   const [panicOpen, setPanicOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceMinimized, setVoiceMinimized] = useState(false);
+  const [chatGenerating, setChatGenerating] = useState(false);
+  const chatController = useRef<AbortController | null>(null);
+  const retryTurn = useRef<{ text: string; image?: ChatImageAttachment; userId: string; botId: string } | null>(null);
+  const voiceSessions = useRef(new Map<string, { threadId: string; closed: boolean }>());
   const [sosActive, setSosActive] = useState(false);
   const [user, setUser] = useState<UserProfile>(defaultUser);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -375,6 +390,9 @@ export function AppProvider({
   const sessionGeneration = useRef(0);
   const resetPatientSession = useCallback(() => {
     sessionGeneration.current += 1;
+    chatController.current?.abort(); chatController.current = null;
+    retryTurn.current = null; setChatGenerating(false); setVoiceMinimized(false);
+    voiceSessions.current.clear();
     resetLegalConsentSession();
     resetSessionQueryCache();
     setUser(defaultUser);
@@ -785,6 +803,7 @@ export function AppProvider({
     [user.id, user.cedula, user.email],
   );
   const threadId = activeThreadId || computedThreadId;
+  const currentThread = useRef(threadId); currentThread.current = threadId;
 
   /** Identificador estable del paciente para la clave de persistencia. */
   const chatUserId = useCallback(
@@ -798,161 +817,66 @@ export function AppProvider({
    * streaming del bot token a token y, al finalizar, SOBREESCRIBE el texto
    * del turno con la respuesta canónica (`answer`) para que las pasadas
    * duplicadas alrededor de tool-calls jamás queden en la burbuja. Ante
-   * fallo sin tokens pintados cae a la vía bloqueante. Si ninguna termina,
+   * cancelación o fallo conserva el turno para reintento explícito. Nunca reenvía
+   * automáticamente una petición que pudo ejecutar herramientas. Si falla,
    * muestra indisponibilidad, nunca respuestas clínicas locales. Usado por `sendChat` y por el agente de voz
    * (`sendVoiceMessage`), que necesita el mensaje final para vocalizarlo.
    */
   const runChatTurn = useCallback(
-    async (
-      text: string,
-      image?: ChatImageAttachment,
-    ): Promise<ChatMessage | null> => {
+    async (text: string, image?: ChatImageAttachment, retry = false): Promise<ChatMessage | null> => {
+      if (chatController.current || !text.trim()) return null;
+      const controller = new AbortController();
+      chatController.current = controller;
       const generation = sessionGeneration.current;
-      try {
-        await requireLegalConsent("chat", lang);
-        if (generation !== sessionGeneration.current) return null;
-      } catch (error) {
-        if (generation === sessionGeneration.current) showToast(t(legalConsentMessage(error)), "warn");
-        return null;
-      }
-      const userMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "user",
-        text,
-        time: nowLabel(lang),
-        threadId,
-        image: image ? { dataUrl: image.dataUrl } : undefined,
-      };
-
-      // Si solo estaba el saludo inicial, se remueve para dar paso a la conversación
-      setChat((prev) => {
-        const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
-        return isOnlyWelcome ? [userMsg] : [...prev, userMsg];
-      });
-
-      // Vía bloqueante como respaldo del streaming (misma respuesta final).
-      const tryBlockingChat = async (): Promise<ChatMessage | null> => {
-        try {
-          const result = await sendChatMessage(text, threadId, image, lang);
-          const answer = result.answer ?? result.reply;
-          if (!answer?.trim()) return null;
-          const suggestion = result.suggestions?.find(
-            (s) => s.type === "appointment",
-          );
-          return {
-            id: crypto.randomUUID(),
-            role: "bot",
-            text: answer,
-            time: nowLabel(lang),
-            threadId: result.threadId || threadId,
-            cta: suggestion,
-            executionId: result.executionId,
-          };
-        } catch (error) {
-          if (isLegalConsentError(error)) throw error;
-          return null;
-        }
-      };
-
-      // Mensaje de voz/fallback compartido: devuelve el mensaje del bot
-      // creado por este turno (o null) para que la voz lo vocalice.
-      let turnBotMessage: ChatMessage | null = null;
-
-      const emitBotMessage = (msg: ChatMessage) => {
-        if (generation !== sessionGeneration.current) return;
-        turnBotMessage = msg;
-        setChat((prev) => {
-          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
-          return isOnlyWelcome ? [msg] : [...prev, msg];
-        });
-      };
-
-      const emitUnavailable = () => emitBotMessage({
-        id: crypto.randomUUID(),
-        role: "bot",
-        kind: "service-error",
-        text: t(CHAT_UNAVAILABLE_MESSAGE),
-        time: nowLabel(lang),
-        threadId,
-      });
-
-      // Streaming: el mensaje del bot se crea vacío y se rellena token
-      // a token. Si el stream falla sin haber pintado nada, se intenta
-      // la vía bloqueante. Una respuesta interrumpida nunca queda como definitiva.
-      const liveId = crypto.randomUUID();
+      const isCurrent = () => generation === sessionGeneration.current && currentThread.current === threadId && !controller.signal.aborted;
+      const previous = retry ? retryTurn.current : null;
+      const userId = previous?.userId ?? crypto.randomUUID();
+      const botId = previous?.botId ?? crypto.randomUUID();
       let painted = "";
-      setChat((prev) => [
-        ...prev,
-        { id: liveId, role: "bot", text: "", time: nowLabel(lang), threadId },
-      ]);
-      const appendToken = (piece: string) => {
-        if (generation !== sessionGeneration.current) return;
-        painted += piece;
-        const snapshot = painted;
-        setChat((prev) =>
-          prev.map((m) => (m.id === liveId ? { ...m, text: snapshot } : m)),
-        );
-      };
+      setChatGenerating(true);
       try {
-        const result = await streamChatMessage(
-          text,
-          threadId,
-          { onToken: appendToken },
-          image,
-          lang,
-        );
-        const suggestion = result.suggestions?.find(
-          (s) => s.type === "appointment",
-        );
-        // Consolidación canónica (agente-asistente-citas D1.2): el texto
-        // final del turno SIEMPRE se sustituye por `answer` (respuesta del
-        // modelo); así las pasadas duplicadas del stream jamás quedan en la
-        // burbuja, ni siquiera con desincronización de red.
-        if (generation !== sessionGeneration.current) return null;
+        await requireLegalConsent("chat", lang, controller.signal);
+        if (!isCurrent()) return null;
+        retryTurn.current = { text, image, userId, botId };
+        const userMessage: ChatMessage = { id: userId, role: "user", text, time: nowLabel(lang), threadId, image: image ? { dataUrl: image.dataUrl } : undefined };
+        const live: ChatMessage = { id: botId, role: "bot", text: "", time: nowLabel(lang), threadId, delivery: "streaming" };
+        setChat(prev => [...prev.filter(m => m.id !== "welcome" && m.id !== botId), ...(!previous ? [userMessage] : []), live]);
+        const result = await streamChatMessage(text, threadId, { onToken: piece => {
+          if (!isCurrent()) return;
+          painted += piece;
+          const snapshot = painted;
+          setChat(prev => prev.map(m => m.id === botId ? { ...m, text: snapshot } : m));
+        } }, image, lang, controller.signal);
+        if (!isCurrent()) return null;
         const canonical = result.answer ?? result.reply;
         if (!canonical?.trim()) throw new Error("Empty chat response");
-        const finalBot: ChatMessage = {
-          id: liveId,
-          role: "bot",
-          text: canonical,
-          time: nowLabel(lang),
-          threadId: result.threadId || threadId,
-          cta: suggestion,
-          executionId: result.executionId,
-        };
-        setChat((prev) => prev.map((m) => (m.id === liveId ? finalBot : m)));
-        turnBotMessage = finalBot;
-      } catch (err) {
-        if (generation !== sessionGeneration.current) return null;
-        if (isLegalConsentError(err)) {
-          setChat(prev => prev.filter(message => message.id !== liveId));
-          showToast(t(legalConsentMessage(err)), "warn");
+        const final: ChatMessage = { ...live, text: canonical, delivery: "received", threadId: result.threadId || threadId,
+          cta: result.suggestions?.find(suggestion => suggestion.type === "appointment"), executionId: result.executionId, actions: result.actions };
+        setChat(prev => prev.map(m => m.id === botId ? final : m));
+        retryTurn.current = null;
+        return final;
+      } catch (error) {
+        if (generation !== sessionGeneration.current || currentThread.current !== threadId) return null;
+        if (controller.signal.aborted) {
+          setChat(prev => prev.map(m => m.id === botId ? { ...m, text: painted || t("Respuesta detenida"), delivery: "interrupted" } : m));
           return null;
         }
-        // Ni un stream incompleto ni un fallo pueden convertirse en consejo o
-        // datos inventados. Se conserva el mensaje del paciente para reintentar.
-        setChat((prev) => prev.filter((m) => m.id !== liveId));
-        if (!painted) {
-          let reply: ChatMessage | null;
-          try { reply = await tryBlockingChat(); }
-          catch (error) {
-            if (generation === sessionGeneration.current) showToast(t(legalConsentMessage(error)), "warn");
-            return null;
-          }
-          if (reply) {
-            emitBotMessage(reply);
-          } else {
-            emitUnavailable();
-          }
-        } else {
-          // No repetir automáticamente un turno que pudo ejecutar herramientas.
-          emitUnavailable();
+        if (isLegalConsentError(error)) {
+          setChat(prev => prev.filter(m => m.id !== botId));
+          showToast(t(legalConsentMessage(error)), "warn"); return null;
         }
+        const failed: ChatMessage = { id: botId, role: "bot", text: t(CHAT_UNAVAILABLE_MESSAGE), time: nowLabel(lang), threadId, kind: "service-error", delivery: "failed" };
+        setChat(prev => prev.map(m => m.id === botId ? failed : m));
+        return failed;
+      } finally {
+        if (chatController.current === controller) { chatController.current = null; setChatGenerating(false); }
       }
-      return turnBotMessage;
-    },
-    [threadId, t, lang, showToast],
+    }, [threadId, t, lang, showToast],
   );
+
+  useEffect(() => {
+    return () => { chatController.current?.abort(); retryTurn.current = null; };
+  }, [threadId]);
 
   /**
    * Chequea si hay mensajes del bot sin ver (dot en la tab Chat).
@@ -1063,6 +987,17 @@ export function AppProvider({
       showToast,
       panicOpen,
       voiceOpen,
+      voiceMinimized,
+      chatGenerating,
+      cancelChat: () => chatController.current?.abort(),
+      retryChat: () => { const turn = retryTurn.current; if (turn) void runChatTurn(turn.text, turn.image, true); },
+      minimizeVoice: () => { setVoiceMinimized(true); setScreen("chat"); },
+      upsertVoiceMessage: message => setChat(prev => mergeVoiceMessage(prev, { ...message, time: nowLabel(lang) })),
+      registerVoiceSession: (sessionId, sourceThreadId) => { voiceSessions.current.set(sessionId, { threadId: sourceThreadId, closed: false }); },
+      markVoiceSessionClosed: (sessionId, sourceThreadId) => {
+        voiceSessions.current.set(sessionId, { threadId: sourceThreadId, closed: true });
+        setChat(prev => prev.map(message => message.voiceSessionId === sessionId && message.threadId === sourceThreadId ? { ...message, voiceSessionClosed: true } : message));
+      },
       sosActive,
       user,
       testsDone,
@@ -1165,53 +1100,17 @@ export function AppProvider({
         setSosActive(false);
       },
       activateSos: () => setSosActive(true),
-      openVoice: () => setVoiceOpen(true),
-      closeVoice: () => setVoiceOpen(false),
+      openVoice: () => { setVoiceMinimized(false); setVoiceOpen(true); },
+      closeVoice: () => { setVoiceOpen(false); setVoiceMinimized(false); },
       sendChat: (text, image) => {
         void runChatTurn(text, image);
       },
       sendVoiceMessage: (text, image) => runChatTurn(text, image),
-      hydrateChat: (messages) => {
-        // Historial del thread (conversación completa o, con backends viejos,
-        // el último mensaje inyectado). Si el chat solo tiene el mensaje de
-        // bienvenida por defecto, lo reemplazamos con el historial real.
-        if (!messages.length) return;
-        setChat((prev) => {
-          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
-          const stamped = messages.map((m) => ({
-            id: crypto.randomUUID(),
-            role: (m.role ?? "bot") as "bot" | "user",
-            text: m.text,
-            time: nowLabel(lang),
-            threadId,
-          }));
-
-          if (isOnlyWelcome) {
-            return stamped;
-          }
-
-          const existing = new Set(prev.map((m) => m.text));
-          const fresh = stamped.filter((m) => !existing.has(m.text));
-          if (!fresh.length) return prev;
-          return [...fresh, ...prev];
-        });
+      hydrateChat: messages => {
+        if (messages.length) setChat(prev => mergeChatHistory(prev, messages, threadId, new Map([...voiceSessions.current].filter(([, session]) => session.threadId === threadId).map(([id, session]) => [id, session.closed]))));
       },
-      prependChatMessages: (messages) => {
-        // Página anterior del historial: se antepone SIN dedup por texto
-        // (a diferencia de hydrateChat) para no perder mensajes repetidos
-        // entre tramos. Mismo patrón que appendChatMessages.
-        if (!messages.length) return;
-        const stamped: ChatMessage[] = messages.map((m) => ({
-          id: crypto.randomUUID(),
-          role: (m.role ?? "bot") as "bot" | "user",
-          text: m.text,
-          time: nowLabel(lang),
-          threadId,
-        }));
-        setChat((prev) => {
-          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
-          return isOnlyWelcome ? stamped : [...stamped, ...prev];
-        });
+      prependChatMessages: messages => {
+        if (messages.length) setChat(prev => mergeChatHistory(prev, messages, threadId, new Map([...voiceSessions.current].filter(([, session]) => session.threadId === threadId).map(([id, session]) => [id, session.closed]))));
       },
       appendChatMessages: (msgs) => {
         if (!msgs.length) return;
@@ -1303,6 +1202,8 @@ export function AppProvider({
       showToast,
       panicOpen,
       voiceOpen,
+      voiceMinimized,
+      chatGenerating,
       sosActive,
       user,
       testsDone,

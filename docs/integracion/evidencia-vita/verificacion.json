@@ -1,0 +1,72 @@
+{
+  "base": "2f857901eca9229a31c58d217142ba7316c8f7ea",
+  "branch": "feature/vita-chat-ux",
+  "checks": {
+    "lint": {
+      "exitCode": 0,
+      "warnings": "preexistentes"
+    },
+    "build": {
+      "exitCode": 0,
+      "warnings": "chunks mayores de 1300 kB"
+    },
+    "i18n": {
+      "exitCode": 0,
+      "missingKeys": 0,
+      "newKeys": 26,
+      "existingKeysAndValuesPreserved": true
+    },
+    "vitestFull": {
+      "files": 208,
+      "passed": 1676,
+      "exitCode": 0
+    },
+    "vitestLatestFocused": {
+      "files": 5,
+      "passed": 60,
+      "exitCode": 0
+    },
+    "browserFixtures": {
+      "scenarios": 8,
+      "passed": 8,
+      "realVoiceProvider": false,
+      "productionMutations": 0
+    }
+  },
+  "flags": {
+    "VITE_CHAT_NUTRITION_ENABLED": "probar true/false; publicar capacidad con true; env productivo intacto",
+    "Vita:TaskCompletionEnabled": "servidor; default off/404 tolerado",
+    "voiceRuntime": "decidido por servidor; modo Vita remoto no activado"
+  },
+  "voicePersistenceProviderVerified": false,
+  "stoppedServers": [
+    {
+      "pid": 40948,
+      "port": 5191
+    },
+    {
+      "pid": 42844,
+      "port": 5193
+    }
+  ],
+  "capturesSha256": {
+    "antes-hilo-390-es.png": "9c72e42a1f7b067f01be15315696c7423bbcb16707823cd8be7d7111e3450b6b",
+    "antes-inicio-390-es.png": "ee49000225275c4918c9ac0ad53cafe94f2725be3d413867411f52f38c588d48",
+    "antes-llamada-390-es.png": "6f1df30e323ad041701735bffef6ce28f610677baa18c22599bbc207f1cc6591",
+    "antes-vacio-390-es.png": "96f7b50b2fcd351b99170f8e1a227ca7aa92ea01c4e48aeec8ecd8ec267a8d92",
+    "confirmacion-390-es.png": "6490ac0cab4cd42b7255a0ad14dfe88a09798f005f818e6c29fea398a7c81a9e",
+    "hilo-320-en.png": "a5ca886471c6c05741ae09674364beaa1c1e1cb3d67a59790697a4c679386585",
+    "hilo-320-es.png": "56ceb2b474f8367a087b98d3a073a28f3b452c09567b69a3219e56f434b318e2",
+    "hilo-390-en.png": "b35147eab91419f45739c57e91d837d1f3d33637c3115aac5d19cd7a563d3e36",
+    "hilo-390-es.png": "3c413e8a1f98c6f4b0ab6963a63be97329c693edfbde096ff6ca3429ff305d3c",
+    "hilo-430-en.png": "7536380551b706fdc352ced6f0d0e14c75696298487db9ee72ef0e8a6f3786d7",
+    "hilo-430-es.png": "93762dcc8a424bb5c5621a794721a6c7d150a3e911ef804198b5147f087aebdd",
+    "hilo-768-en.png": "c0c6810ebf8b012d279ca2ff3aba59bb778b8a3521ef24941da76d0985410d15",
+    "hilo-768-es.png": "e73780d31a45e81f9d0593844e4a34e95e485e03af05d6d05ca7fa9a66628d73",
+    "inicio-390-es.png": "60698a628119d9742eb55c41a5aa4b2e9ce8cd5f54853b1edbcc3aac16375c3c",
+    "llamada-390-es.png": "7ff35ce3762be93b62b5ff52b227b1e2cd8e8dd323f0734142b86a31f820458f",
+    "minimizada-390-es.png": "fb16d8af2856a4096103fa35929ff21ef0d49ef5446bf31b1def90833d4e7c4e",
+    "vacio-390-en.png": "d12d8cd38af2d0ab28a96e1b72581fe3aedd46029f829a3f8bdd4f2b8827ae87",
+    "vacio-390-es.png": "44a48a0c3080fd91dbb5634a98628f68dfa1538a55f8583419b2a7576713b8a5"
+  }
+}

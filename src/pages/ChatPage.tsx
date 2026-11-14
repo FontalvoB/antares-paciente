@@ -1,10 +1,12 @@
+import { VitaActions } from "../components/chat/VitaActions";
 import {APPOINTMENTS_ENABLED, appointmentLinksForDisplay, isAppointmentAction} from "../utils/appointmentsVisibility";
 import {
   IonActionSheet,
   IonBadge,
   IonButton,
   IonIcon,
-  IonInput,
+  IonTextarea,
+  IonAvatar,
   IonSpinner,
 } from "@ionic/react";
 import { CameraSource } from "@capacitor/camera";
@@ -22,6 +24,7 @@ import {
   calendarOutline,
   pulseOutline,
   trendingUpOutline,
+  stop as stopIcon,
   send as sendIcon,
 } from "ionicons/icons";
 import { motion } from "framer-motion";
@@ -30,7 +33,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import { Screen } from "../components/Screen";
 import vitaPortrait from "../assets/vita-coach.png";
@@ -41,7 +43,6 @@ import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
 import { captureChatImage } from "../services/media/camera-service";
 import { localizedError } from "../utils/localizedError";
-import logoIcon from "../assets/LogoIndividual.png";
 import {
   canShowChatAction,
   chatTextForDisplay,
@@ -63,6 +64,7 @@ const SCROLL_TOP_THRESHOLD = 48;
 export function ChatPage() {
   const {
     chat,
+    chatGenerating, cancelChat, retryChat, voiceOpen, voiceMinimized,
     sendChat,
     openPanic,
     openVoice,
@@ -95,6 +97,8 @@ export function ChatPage() {
   // (éxito o error) para compensar el scroll y apagar `loadingMore`.
   const [pagesLoaded, setPagesLoaded] = useState(0);
   const end = useRef<HTMLDivElement>(null);
+  const nearEnd = useRef(true);
+  const [newMessages, setNewMessages] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Posición del scroll previa a insertar mensajes por encima: permite
@@ -114,19 +118,26 @@ export function ChatPage() {
   // Al abrir el chat se intenta cargar la última página del thread estable: si
   // el backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
   const historyLoaded = useRef<string | null>(null);
+  const previousVoiceOpen = useRef(voiceOpen);
   useEffect(() => {
+    if (previousVoiceOpen.current && !voiceOpen) historyLoaded.current = null;
+    previousVoiceOpen.current = voiceOpen;
     if (historyLoaded.current === threadId) return;
     if (!userId) return;
     let cancelled = false;
     void fetchThreadState(threadId, userId, { limit: PAGE_SIZE }).then(
       (state) => {
         if (cancelled) return;
+        // Marcar al terminar el intento vigente, nunca antes de la respuesta:
+        // StrictMode puede cancelar el primero. Incluso un historial vacío
+        // evita volver a consultar por cada token o callback de voz.
+        historyLoaded.current = threadId;
         // Página más reciente cuando el backend la expone (roles user/bot
         // mapeados); fallback al último mensaje con backends anteriores.
         const history = (state?.messages ?? [])
           .filter((m) => Boolean(m.text && m.text.trim().length > 0))
           .map((m) => ({
-            text: m.text,
+            ...m,
             role: m.role === "user" ? ("user" as const) : ("bot" as const),
           }));
         let more = Boolean(state?.hasMore);
@@ -136,11 +147,6 @@ export function ChatPage() {
           // El fallback de un único mensaje no deja tramos anteriores.
           more = false;
         }
-        // El ref se marca SOLO cuando la hidratación se aplica: en StrictMode
-        // (dev) el efecto corre dos veces y el primer fetch queda cancelado; con
-        // el ref marcado de antemano el segundo intento se saltaba y el mensaje
-        // proactivo nunca aparecía.
-        historyLoaded.current = threadId;
         setHasMore(more);
         setNextCursor(state?.nextCursor ?? null);
         hydrateChat(history);
@@ -149,7 +155,7 @@ export function ChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [threadId, userId, hydrateChat]);
+  }, [threadId, userId, hydrateChat, voiceOpen]);
 
   useEffect(() => {
     if (prependingRef.current) {
@@ -158,8 +164,9 @@ export function ChatPage() {
       prependingRef.current = false;
       return;
     }
-    end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chat.length, uploading]);
+    if (nearEnd.current) end.current?.scrollIntoView({ behavior: "instant", block: "end" });
+    else setNewMessages(true);
+  }, [chat, uploading]);
 
   // Un hilo nuevo arranca siempre con la última página y sin paginación previa.
   useEffect(() => {
@@ -175,7 +182,10 @@ export function ChatPage() {
 
   const handleScroll = () => {
     const el = listRef.current;
-    if (!el || loadingMore || !hasMore || !userId) return;
+    if (!el) return;
+    nearEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96;
+    if (nearEnd.current) setNewMessages(false);
+    if (loadingMore || !hasMore || !userId) return;
     if (el.scrollTop > SCROLL_TOP_THRESHOLD) return;
     if (nextCursor == null) {
       // hasMore sin cursor (backend viejo o inconsistente): se apaga la
@@ -209,7 +219,7 @@ export function ChatPage() {
         const older = (state.messages ?? [])
           .filter((m) => Boolean(m.text && m.text.trim().length > 0))
           .map((m) => ({
-            text: m.text,
+            ...m,
             role: m.role === "user" ? ("user" as const) : ("bot" as const),
           }));
         // Sin dedup por texto: un mensaje repetido entre páginas es legítimo.
@@ -264,9 +274,10 @@ export function ChatPage() {
   })).filter((message) => !message.text || message.displayText.trim() || message.image || message.visibleCta);
 
   const send = (msg = text) => {
-    if (uploading) return;
+    if (uploading || chatGenerating) return;
     const v = msg.trim();
     if (!v) return;
+    nearEnd.current = true; setNewMessages(false);
     sendChat(v, pendingImage ?? undefined);
     setPendingImage(null);
     setText("");
@@ -343,65 +354,35 @@ export function ChatPage() {
     }
   };
 
+  const isEmpty = !chat.length || chat.every(message => message.id === "welcome");
+  const quickActions = <div className={`chat-quick-actions${isEmpty ? " is-empty" : ""}`} aria-label={t("Acciones rápidas del chat")}>
+    {quick.filter(([label]) => canShowChatAction("", label)).map(([label, question, icon]) => <IonButton key={label} fill="clear" className="chat-quick-action" disabled={chatGenerating || uploading} onClick={() => send(t(question))}>
+      <IonIcon icon={icon} aria-hidden="true" /><span>{t(label)}</span>
+    </IonButton>)}
+  </div>;
+
   return (
     <Screen className="chat-kb chat-reference">
-      <header className="chat-premium-header">
-        <div className="chat-brand-lockup">
-          <img src={logoIcon} alt="" className="chat-brand-logo" />
-          <div>
-            <span className="chat-brand-name">COPP-ADRESD<sup>®</sup></span>
-            <span className="chat-brand-kicker">COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</span>
-          </div>
-        </div>
-        <div className="chat-hero-copy">
-          <div>
-            <h1 className="display">
-              {t("Hola, {nombre} 👋", { nombre: user.nombre.split(" ")[0] || t("Paciente") })}
-            </h1>
-            <p className="chat-welcome-sub">{t("Soy Vita, tu coach asignada")}</p>
-            <p>{t("Tu asistente de IA en salud y bienestar")}</p>
-          </div>
-          <IonButton
-            className="bt bt-round chat-panic"
-            style={
-              {
-                "--background": "var(--red-l)",
-                "--color": "var(--panic)",
-              } as CSSProperties
-            }
-            aria-label={t("Botón de pánico")}
-            onClick={openPanic}
-          >
-            <IonIcon icon={medkit} />
-          </IonButton>
-        </div>
-        <img src={vitaPortrait} alt={t("Vita, tu coach de bienestar")} className="chat-header-mascot vita-chat-portrait" />
+      <header className="vita-chat-header">
+        <IonAvatar className="vita-header-avatar"><img src={vitaPortrait} alt="" /></IonAvatar>
+        <div className="vita-header-copy"><h1>Vita</h1><p role="status">{chatGenerating ? t("Preparando tu respuesta…") : t("Tu coach de salud y bienestar")}</p></div>
+        <IonButton fill="clear" className="vita-header-call" aria-label={t("Agente de voz")} onClick={openVoice}><IonIcon icon={mic} /></IonButton>
+        <IonButton fill="clear" className="vita-header-sos" aria-label={t("Botón de pánico")} onClick={openPanic}><IonIcon icon={medkit} /></IonButton>
       </header>
-      <div
-        className="chip-scroll chat-quick-actions"
-        aria-label={t("Acciones rápidas del chat")}
-      >
-        {quick.map(([l, q, icon]) => (
-          <IonButton
-            key={l}
-            fill="clear"
-            className="qrchip chat-quick-action"
-            onClick={() => send(t(q))}
-          >
-            <span className="chat-quick-content">
-              <span className="chat-quick-icon" aria-hidden="true">
-                <IonIcon icon={icon} />
-              </span>
-              <span>{t(l)}</span>
-            </span>
-          </IonButton>
-        ))}
-      </div>
+      {voiceOpen && voiceMinimized && <div className="vita-call-space" />}
+      {!isEmpty && quickActions}
       <div
         ref={listRef}
         className="screen-scroll chat-list"
         onScroll={handleScroll}
       >
+        {isEmpty && <div className="vita-chat-welcome">
+          <img src={vitaPortrait} alt={t("Vita, tu coach de bienestar")} />
+          <h2>{t("Hola, {nombre}", { nombre: user.nombre.split(" ")[0] || t("Paciente") })}</h2>
+          <p>{t("Soy Vita. Pregúntame sobre tu programa y tus hábitos.")}</p>
+          {quickActions}
+          <IonButton className="bt bt-primary" expand="block" onClick={openVoice}><IonIcon icon={mic} slot="start" />{t("Hablar con Vita")}</IonButton>
+        </div>}
         {/* Alcance de Vita: educación y apoyo al plan publicado, sin sustituir al equipo. */}
         <div className="chat-disclaimer" role="note">
           <IonIcon
@@ -433,7 +414,7 @@ export function ChatPage() {
             <span>{t("Inicio de la conversación")}</span>
           </div>
         ) : null}
-        {visibleChat.map((m, index) => {
+        {visibleChat.filter(message => message.id !== "welcome").map((m, index) => {
           const isLastInGroup =
             index === visibleChat.length - 1 || visibleChat[index + 1].role !== m.role;
           const isUser = m.role === "user";
@@ -480,6 +461,9 @@ export function ChatPage() {
                   />
                 )}
                 {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Paciente") }) : m.displayText} />}
+                {!m.text && m.delivery === "streaming" && <IonSpinner name="dots" aria-label={t("Preparando tu respuesta…")} />}
+                {m.delivery === "interrupted" && <p className="vita-delivery">{t("Respuesta interrumpida")}</p>}
+                {(m.delivery === "failed" || m.delivery === "interrupted") && m.channel !== "voice" && m.id === [...chat].reverse().find(message => message.role === "bot" && message.channel !== "voice")?.id && <IonButton fill="clear" disabled={chatGenerating} onClick={retryChat}>{t("Reintentar respuesta")}</IonButton>}
                 {m.role === "alert" && (
                   <IonButton
                     expand="block"
@@ -523,6 +507,7 @@ export function ChatPage() {
                     </IonButton>
                   </div>
                 )}
+                {m.actions?.length ? <VitaActions actions={m.actions} /> : null}
                 {/* Feedback clínico (Fase 9): solo en respuestas reales del
                     backend con executionId; fallbacks locales no se califican. */}
                 {m.role === "bot" && m.executionId && (
@@ -557,6 +542,7 @@ export function ChatPage() {
         )}
         <div ref={end} />
       </div>
+      {newMessages && <IonButton className="vita-new-messages" fill="solid" onClick={() => { nearEnd.current = true; setNewMessages(false); end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }}>{t("Ver mensajes nuevos")}</IonButton>}
       {pendingImage && (
         // Miniatura removible del adjunto pendiente (D3): preview + descarte,
         // sobre el composer (patrón ChatGPT) para que el adjunto se vea
@@ -606,13 +592,16 @@ export function ChatPage() {
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
         </IonButton>
-        <IonInput
+        <IonTextarea
+          rows={1}
+          autoGrow
+          enterkeyhint="send"
           className="chat-inp"
           aria-label={t("Escribe un mensaje…")}
           value={text}
           disabled={uploading}
           onIonInput={(e) => setText(e.detail.value ?? "")}
-          onKeyDown={(e) => e.key === "Enter" && send()}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
           placeholder={t("Escribe un mensaje…")}
         />
         <motion.span
@@ -622,11 +611,11 @@ export function ChatPage() {
         >
           <IonButton
             className="bt bt-round chat-send"
-            aria-label={t("Enviar")}
-            disabled={uploading}
-            onClick={() => send()}
+            aria-label={chatGenerating ? t("Detener respuesta") : t("Enviar")}
+            disabled={uploading || (!chatGenerating && !text.trim())}
+            onClick={() => chatGenerating ? cancelChat() : send()}
           >
-            <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
+            <IonIcon icon={chatGenerating ? stopIcon : sendIcon} style={{ fontSize: 20 }} />
           </IonButton>
         </motion.span>
       </div>

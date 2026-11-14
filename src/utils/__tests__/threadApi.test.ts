@@ -391,7 +391,7 @@ describe("streamChatMessage — consolidación del turno (done + answer + sugere
         ]),
       );
 
-    await expect(streamChatMessage("hola", "t-1")).rejects.toThrow("boom");
+    await expect(streamChatMessage("hola", "t-1")).rejects.toThrow("El asistente no pudo completar la respuesta.");
   });
 
   it("falla con mensaje claro cuando el stream no trae respuesta", async () => {
@@ -402,7 +402,47 @@ describe("streamChatMessage — consolidación del turno (done + answer + sugere
       );
 
     await expect(streamChatMessage("hola", "t-1")).rejects.toThrow(
-      "El agente no respondió.",
+      "La respuesta se interrumpió.",
     );
+  });
+});
+
+describe("SSE Vita: límites de transporte", () => {
+  afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); });
+  const response = (text: string) => new Response(new ReadableStream({ start(controller) {
+    // Un byte por chunk incluye acentos y emoji partidos en UTF-8.
+    for (const byte of new TextEncoder().encode(text)) controller.enqueue(new Uint8Array([byte]));
+    controller.close();
+  } }), { headers: { "Content-Type": "text/event-stream" } });
+
+  it("acepta CRLF, data multilínea y done sin type con metadatos canónicos", async () => {
+    const onToken = vi.fn();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(': ping\r\nevent: message\r\ndata:{"type":"token",\r\ndata: "content":"Sí 🩺"}\r\n\r\nevent: done\r\ndata: {"answer":"Respuesta final", "thread_id":"thread", "execution_id":"exec"}\r\n\r\n')));
+    const result = await streamChatMessage("hola", "thread", { onToken });
+    expect(onToken).toHaveBeenCalledWith("Sí 🩺");
+    expect(result).toMatchObject({ reply: "Respuesta final", threadId: "thread", executionId: "exec" });
+  });
+
+  it("un error nombrado sin type rechaza incluso si después llega done", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response('event:error\ndata:{"error":"internal detail"}\n\nevent:done\ndata:{"answer":"no"}\n\n')));
+    await expect(streamChatMessage("hola", "thread")).rejects.toThrow("El asistente no pudo completar");
+  });
+
+  it("no acepta tokens truncados como respuesta definitiva", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response('event:message\ndata:{"type":"token","content":"parcial"}\n\n')));
+    await expect(streamChatMessage("hola", "thread")).rejects.toThrow("La respuesta se interrumpió");
+  });
+
+  it("cancelar libera el reader y no reenvía la solicitud", async () => {
+    const cancel = vi.fn();
+    const controller = new AbortController();
+    const fetchMock = vi.fn().mockResolvedValue(new Response(new ReadableStream({ cancel })));
+    vi.stubGlobal("fetch", fetchMock);
+    const pending = streamChatMessage("hola", "thread", {}, undefined, "es", controller.signal);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 });

@@ -39,6 +39,34 @@ export interface VoiceSession {
   signedUrl: string;
   agentId: string;
   conversationId?: string | null;
+  threadId?: string | null;
+  sessionId?: string | null;
+  sessionToken?: string | null;
+  expiresAt?: string | null;
+  runtimeMode?: "legacy" | "vita";
+}
+
+export class VoiceSessionContractError extends Error {}
+
+/** Legacy conserva su conexión; Vita exige contexto íntegro antes de abrir el SDK. */
+export function voiceSessionStartOptions(session: VoiceSession, threadId: string) {
+  if (!session.signedUrl || (session.runtimeMode && !["legacy", "vita"].includes(session.runtimeMode))) throw new VoiceSessionContractError();
+  if (session.runtimeMode !== "vita") return { signedUrl: session.signedUrl };
+  if (!session.sessionId || !session.sessionToken || !session.conversationId || session.threadId !== threadId
+    || !session.expiresAt || !Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()) throw new VoiceSessionContractError();
+  return { signedUrl: session.signedUrl, dynamicVariables: { secret__vita_session_token: session.sessionToken } };
+}
+
+/** Revoca con la credencial capturada al abrir, sin refresh ni credenciales nuevas. */
+export async function revokeVoiceSession(sessionId: string, ownerToken: string | null): Promise<boolean> {
+  if (!ownerToken || !sessionId) return false;
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/chat/voice/session/${encodeURIComponent(sessionId)}`, {
+      method: "DELETE", headers: { Authorization: `Bearer ${ownerToken}` },
+      signal: AbortSignal.timeout(5000), keepalive: true,
+    });
+    return response.ok || response.status === 404;
+  } catch { return false; } // El servidor conserva la expiración acotada si no hay red.
 }
 
 /**
@@ -48,10 +76,12 @@ export interface VoiceSession {
  */
 export async function requestVoiceSession(
   language?: "es" | "en",
+  threadId?: string,
+  signal?: AbortSignal,
 ): Promise<VoiceSession | null> {
   const owner = legalConsentOwner();
   try {
-    await requireLegalConsent("voice", language);
+    await requireLegalConsent("voice", language, signal);
     assertLegalConsentOwner(owner);
     const accessToken = getAccessToken();
     if (!accessToken) return null;
@@ -63,17 +93,19 @@ export async function requestVoiceSession(
       },
       // Selección de una versión verificada para el idioma de la app. No
       // autoriza overrides del cliente ni mutaciones del agente compartido.
-      body: JSON.stringify({ ...(language ? { language } : {}) }),
+      body: JSON.stringify({ ...(language ? { language } : {}), ...(threadId ? { threadId } : {}) }),
+      signal,
     });
-    assertLegalConsentOwner(owner);
     if (!res.ok) {
+      assertLegalConsentOwner(owner);
       const consentError = await legalConsentResponseError(res);
       if (consentError) throw consentError;
       return null;
     }
     const data = (await res.json()) as VoiceSession;
+    if (owner !== legalConsentOwner() && data.sessionId) void revokeVoiceSession(data.sessionId, accessToken);
     assertLegalConsentOwner(owner);
-    return data.signedUrl ? data : null;
+    return data.signedUrl || data.runtimeMode ? data : null;
   } catch (error) {
     if (isLegalConsentError(error)) throw error;
     console.warn("[voice] No se pudo iniciar la sesión de voz:", error);

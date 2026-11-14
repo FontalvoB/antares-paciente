@@ -77,6 +77,18 @@ export interface ChatMessage {
   role: "bot" | "user" | "alert";
   text: string;
   time: string;
+  channel?: "voice" | "text";
+  delivery?: "received" | "streaming" | "interrupted" | "failed";
+  providerEventId?: number;
+  providerResponseId?: string;
+  providerLocalId?: string;
+  messageId?: string;
+  status?: "final" | "partial" | "interrupted" | "failed";
+  revision?: number;
+  voiceSessionId?: string;
+  voiceSessionClosed?: boolean;
+  voiceRuntime?: "vita";
+  actions?: import("./utils/vitaActions").VitaAction[];
   /** Thread estable al que pertenece el mensaje (proactive-<id>). */
   threadId?: string;
   /**

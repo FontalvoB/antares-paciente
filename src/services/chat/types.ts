@@ -9,10 +9,11 @@
  * verbatimModuleSyntax: importar estos tipos con `import type`.
  */
 
+import type { HistoryMessage } from "../../utils/chatHistory";
 import type { ChatSuggestion as SharedChatSuggestion } from "../../types";
 
 /** Mensaje individual del historial del thread (rol user | bot). */
-export interface ChatMessage {
+export interface ChatMessage extends HistoryMessage {
   role: string;
   text: string;
 }
