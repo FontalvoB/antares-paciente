@@ -29135,6 +29135,9 @@ ion-button.vc-btn:active {
   --vita-header-h: calc(60px + env(safe-area-inset-top, 0px));
   /* Márgenes laterales y separación vertical fluidos: 320 → 14 px, 390 → 17.5 px, 430 → 19 px, tablet → 24 px. */
   --vita-gutter: clamp(14px, 4.5vw, 24px);
+  /* Laterales que respetan el notch/isla en landscape (env() vale 0 en vertical). */
+  --vita-pad-l: max(var(--vita-gutter), env(safe-area-inset-left, 0px));
+  --vita-pad-r: max(var(--vita-gutter), env(safe-area-inset-right, 0px));
   --vita-gap: clamp(10px, 2.8vw, 14px);
   /* Hueco entre el compositor y la barra de navegación flotante. */
   --vita-composer-gap: 18px;
@@ -29151,7 +29154,7 @@ ion-button.vc-btn:active {
   flex-shrink: 0;
   box-sizing: border-box;
   min-height: var(--vita-header-h);
-  padding: calc(8px + env(safe-area-inset-top, 0px)) var(--vita-gutter) 8px;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) var(--vita-pad-r) 8px var(--vita-pad-l);
   background: var(--wh);
   border-bottom: 1px solid var(--bd);
 }
@@ -29216,7 +29219,7 @@ ion-button.vc-btn:active {
   gap: 8px;
   flex-shrink: 0;
   min-height: 0;
-  padding: 0 var(--vita-gutter) 8px;
+  padding: 0 var(--vita-pad-r) 8px var(--vita-pad-l);
   margin: 0;
   background: var(--wh);
   border: 0;
@@ -29225,6 +29228,7 @@ ion-button.vc-btn:active {
   box-shadow: none;
   overflow-x: auto;
   scrollbar-width: none;
+  overscroll-behavior-x: contain;
   mask-image: none;
   -webkit-mask-image: none;
 }
@@ -29275,9 +29279,10 @@ ion-button.vc-btn:active {
   overflow-x: hidden;
   background: var(--ice-l);
   background-image: none;
-  padding: 10px var(--vita-gutter) 16px;
+  padding: 10px var(--vita-pad-r) 16px var(--vita-pad-l);
   scroll-behavior: auto;
   scroll-padding-block-end: 16px;
+  overscroll-behavior: contain;
   overflow-anchor: none;
 }
 .chat-reference .chat-disclaimer {
@@ -29507,7 +29512,7 @@ ion-button.vc-btn:active {
   flex-shrink: 0;
   align-items: flex-end;
   gap: 0;
-  margin: 0 var(--vita-gutter) calc(var(--nav-h) + var(--vita-composer-gap));
+  margin: 0 var(--vita-pad-r) calc(var(--nav-h) + var(--vita-composer-gap)) var(--vita-pad-l);
   padding: 2px;
   border: 1px solid var(--bd);
   border-radius: 26px;
@@ -29646,18 +29651,21 @@ ion-button.vc-btn:active {
   bottom: 70px;
 }
 @media (min-width: 768px) {
-  .vita-chat-header { padding-inline: max(var(--vita-gutter), calc((100% - 720px) / 2)); }
+  .vita-chat-header { padding-left: max(var(--vita-pad-l), calc((100% - 720px) / 2)); padding-right: max(var(--vita-pad-r), calc((100% - 720px) / 2)); }
   .chat-reference .chat-list {
-    padding-inline: max(var(--vita-gutter), calc((100% - 720px) / 2));
+    padding-left: max(var(--vita-pad-l), calc((100% - 720px) / 2));
+    padding-right: max(var(--vita-pad-r), calc((100% - 720px) / 2));
   }
   .chat-reference .chat-msg .bub {
     max-width: 62ch;
   }
   .chat-reference .chat-composer {
-    margin-inline: max(var(--vita-gutter), calc((100% - 720px) / 2));
+    margin-left: max(var(--vita-pad-l), calc((100% - 720px) / 2));
+    margin-right: max(var(--vita-pad-r), calc((100% - 720px) / 2));
   }
   .chat-reference .chat-quick-actions:not(.is-empty) {
-    padding-inline: max(var(--vita-gutter), calc((100% - 720px) / 2));
+    padding-left: max(var(--vita-pad-l), calc((100% - 720px) / 2));
+    padding-right: max(var(--vita-pad-r), calc((100% - 720px) / 2));
   }
 }
 @media (max-width: 359px) {
@@ -29665,6 +29673,11 @@ ion-button.vc-btn:active {
   .chat-reference .chat-composer ion-button.chat-plus, .chat-reference .chat-composer ion-button.chat-voice { width: 40px; min-width: 40px; }
   .chat-reference ion-textarea.chat-inp textarea::placeholder { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .vita-header-copy p { font-size: 11px; }
+}
+/* Accesibilidad de movimiento: sin entrada animada de mensajes ni transiciones del compositor. */
+@media (prefers-reduced-motion: reduce) {
+  .chat-reference .chat-row { animation: none; }
+  .chat-reference .chat-composer { transition: none; }
 }
 
 /* SOS: composición de la referencia; conserva confirmación y estado real. */
