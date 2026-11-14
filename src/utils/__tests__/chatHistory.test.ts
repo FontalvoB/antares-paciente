@@ -37,4 +37,17 @@ describe("historial canónico y voz", () => {
     const local = voiceMessage("local", "thread", { role: "agent", source: "ai", message: "Sí", event_id: 1, response_id: "uuid" })!;
     expect(mergeChatHistory([local], [{ role: "bot", text: "Sí", messageId: "uuid", channel: "voice" }], "thread")).toHaveLength(2);
   });
+  it("metadatos explícitos de sesión cerrada sustituyen SDK por IDs opacos y preservan fuente/revisión", () => {
+    const local = [2, 14].map(event_id => ({ ...voiceMessage("local", "thread", { role: "agent", source: "ai", message: "Sí", event_id })!,
+      voiceSessionId: "bound", voiceRuntime: "legacy" as const, voiceSessionClosed: true }));
+    const history = [2, 14].map(sourceEventId => ({ role: "bot", text: "Sí", messageId: `opaque:${sourceEventId}`,
+      channel: "voice" as const, status: "provider_final" as const, revision: 2, source: "elevenlabs_transcript",
+      voiceSessionId: "bound", providerMessageId: null, sourceEventId }));
+    const merged = mergeChatHistory(local, history, "thread");
+    expect(merged).toHaveLength(2);
+    history.forEach((message, index) => expect(merged[index]).toMatchObject(message));
+    expect(mergeChatHistory(merged, history, "thread")).toHaveLength(2);
+    expect(mergeChatHistory(local, history, "thread", new Map([["bound", false]]))).toEqual(local);
+    expect(mergeChatHistory(local, history.map(item => ({ ...item, messageId: null })), "thread")).toEqual(local);
+  });
 });

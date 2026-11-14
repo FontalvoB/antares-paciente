@@ -83,9 +83,12 @@ export interface ChatMessage {
   providerResponseId?: string;
   providerLocalId?: string;
   messageId?: string;
-  status?: "final" | "partial" | "interrupted" | "failed";
+  status?: "final" | "provider_final" | "partial" | "interrupted" | "failed";
   revision?: number;
-  voiceSessionId?: string;
+  source?: string | null;
+  providerMessageId?: string | null;
+  sourceEventId?: number | null;
+  voiceSessionId?: string | null;
   voiceSessionClosed?: boolean;
   voiceRuntime?: "vita" | "legacy";
   actions?: import("./utils/vitaActions").VitaAction[];

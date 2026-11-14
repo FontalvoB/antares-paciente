@@ -60,6 +60,8 @@ const quick = [
 const PAGE_SIZE = 10;
 /** Distancia al tope (px) que dispara la carga del tramo anterior. */
 const SCROLL_TOP_THRESHOLD = 48;
+/** Un intento inicial y tres relecturas; nunca polling permanente. */
+const VOICE_SYNC_RETRY_MS = [1000, 2000, 4000];
 
 export function ChatPage() {
   const {
@@ -114,6 +116,16 @@ export function ChatPage() {
   const threadIdRef = useRef(threadId);
 
   const userId = (user.id || user.cedula || user.email || "").trim();
+  const historyScope = `${userId}\0${threadId}`;
+  const historyScopeRef = useRef(historyScope);
+  historyScopeRef.current = historyScope;
+  const paginationController = useRef<AbortController | null>(null);
+  const hydrateRef = useRef(hydrateChat);
+  hydrateRef.current = hydrateChat;
+  const chatRef = useRef(chat);
+  chatRef.current = chat;
+  const historyScrollRef = useRef<number | null>(null);
+  const historyHydratingRef = useRef(false);
 
   // Al abrir el chat se intenta cargar la última página del thread estable: si
   // el backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
@@ -124,42 +136,69 @@ export function ChatPage() {
     if ((previousVoiceOpen.current && !voiceOpen) || historyRevisionSeen.current !== chatHistoryRevision) historyLoaded.current = null;
     historyRevisionSeen.current = chatHistoryRevision;
     previousVoiceOpen.current = voiceOpen;
-    if (historyLoaded.current === threadId) return;
+    if (historyLoaded.current === historyScope) return;
     if (!userId) return;
+    const controller = new AbortController();
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     let cancelled = false;
-    void fetchThreadState(threadId, userId, { limit: PAGE_SIZE }).then(
-      (state) => {
-        if (cancelled) return;
-        // Marcar al terminar el intento vigente, nunca antes de la respuesta:
-        // StrictMode puede cancelar el primero. Incluso un historial vacío
-        // evita volver a consultar por cada token o callback de voz.
-        historyLoaded.current = threadId;
-        // Página más reciente cuando el backend la expone (roles user/bot
-        // mapeados); fallback al último mensaje con backends anteriores.
-        const history = (state?.messages ?? [])
-          .filter((m) => Boolean(m.text && m.text.trim().length > 0))
-          .map((m) => ({
-            ...m,
-            role: m.role === "user" ? ("user" as const) : ("bot" as const),
-          }));
-        let more = Boolean(state?.hasMore);
-        if (!history.length) {
-          if (!state?.lastMessage) return;
-          history.push({ text: state.lastMessage, role: "bot" as const });
-          // El fallback de un único mensaje no deja tramos anteriores.
-          more = false;
-        }
-        setHasMore(more);
-        setNextCursor(state?.nextCursor ?? null);
-        hydrateChat(history);
-      },
-    );
+    paginationController.current?.abort();
+    paginationController.current = null;
+    setLoadingMore(false);
+    anchorRef.current = null;
+    prependingRef.current = false;
+    const read = async (attempt: number) => {
+      const state = await fetchThreadState(threadId, userId, { limit: PAGE_SIZE, syncVoice: true, signal: controller.signal });
+      if (cancelled || controller.signal.aborted || historyScopeRef.current !== historyScope) return;
+      // Marcar al terminar el intento vigente, nunca antes de la respuesta:
+      // StrictMode puede cancelar el primero. Incluso un historial vacío
+      // evita volver a consultar por cada token o callback de voz.
+      historyLoaded.current = historyScope;
+      if (!voiceOpen && (state?.voiceSyncStatus === "processing" || state?.voiceSyncStatus === "busy") && attempt < VOICE_SYNC_RETRY_MS.length) {
+        retryTimer = setTimeout(() => { void read(attempt + 1); }, VOICE_SYNC_RETRY_MS[attempt]);
+      }
+      // Página más reciente cuando el backend la expone (roles user/bot
+      // mapeados); fallback al último mensaje con backends anteriores.
+      const history = (state?.messages ?? [])
+        .filter((m) => Boolean(m.text && m.text.trim().length > 0))
+        .map((m) => ({
+          ...m,
+          role: m.role === "user" ? ("user" as const) : ("bot" as const),
+        }));
+      let more = Boolean(state?.hasMore);
+      if (!history.length) {
+        if (!state?.lastMessage) return;
+        history.push({ text: state.lastMessage, role: "bot" as const });
+        // El fallback de un único mensaje no deja tramos anteriores.
+        more = false;
+      }
+      setHasMore(more);
+      setNextCursor(state?.nextCursor ?? null);
+      // La consolidación de voz es una sustitución de fuente, no un mensaje
+      // entrante: no robar scroll ni mostrar el aviso de mensajes nuevos.
+      if (listRef.current && chatRef.current.some(message => message.id !== "welcome")) {
+        historyScrollRef.current = listRef.current.scrollTop;
+        historyHydratingRef.current = true;
+      }
+      hydrateRef.current(history);
+    };
+    void read(0);
     return () => {
       cancelled = true;
+      clearTimeout(retryTimer);
+      controller.abort();
     };
-  }, [threadId, userId, hydrateChat, voiceOpen, chatHistoryRevision]);
+  }, [threadId, userId, historyScope, voiceOpen, chatHistoryRevision]);
+
+  useLayoutEffect(() => {
+    if (historyScrollRef.current != null && listRef.current) listRef.current.scrollTop = historyScrollRef.current;
+    historyScrollRef.current = null;
+  }, [chat]);
 
   useEffect(() => {
+    if (historyHydratingRef.current) {
+      historyHydratingRef.current = false;
+      return;
+    }
     if (prependingRef.current) {
       // El cambio de chat.length viene de anteponer mensajes: el anclaje ya
       // compensó la posición, no hay que saltar al final.
@@ -180,7 +219,8 @@ export function ChatPage() {
     // Un prepend en vuelo del hilo anterior quedará descartado: se libera la
     // marca para que el próximo mensaje del hilo nuevo vuelva a scrollear.
     prependingRef.current = false;
-  }, [threadId]);
+    return () => { paginationController.current?.abort(); };
+  }, [threadId, userId]);
 
   const handleScroll = () => {
     const el = listRef.current;
@@ -202,13 +242,17 @@ export function ChatPage() {
     prependingRef.current = true;
     setLoadingMore(true);
     const requestThreadId = threadId;
+    const requestScope = historyScope;
+    const controller = new AbortController();
+    paginationController.current = controller;
     void fetchThreadState(threadId, userId, {
       limit: PAGE_SIZE,
       before: nextCursor,
+      signal: controller.signal,
     }).then((state) => {
       // El hilo cambió mientras el fetch estaba en vuelo (push): la página
       // pertenece al hilo anterior y se descarta por completo.
-      if (requestThreadId !== threadIdRef.current) return;
+      if (controller.signal.aborted || requestThreadId !== threadIdRef.current || requestScope !== historyScopeRef.current) return;
       // Respuesta degradada (messageCount 0): el backend devolvió 200 con el
       // historial vacío tras un fallo del AI service. No significa "no hay
       // más páginas": se conservan hasMore/nextCursor para reintentar.

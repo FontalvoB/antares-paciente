@@ -4,8 +4,55 @@ import {
   uploadLabExam,
   sendChatMessage,
   streamChatMessage,
+  fetchThreadState,
   type LabExamUploadResult,
 } from "../threadApi";
+
+describe("fetchThreadState — contrato de sync de voz", () => {
+  const originalFetch = globalThis.fetch;
+  beforeEach(() => { localStorage.clear(); vi.useFakeTimers(); });
+  afterEach(() => { globalThis.fetch = originalFetch; vi.useRealTimers(); });
+  const canonical = { threadId: "t-1", messageCount: 1, lastMessage: "Sí", voiceSyncStatus: "synchronized",
+    messages: [{ messageId: "opaque", role: "bot", text: "Sí", channel: "voice", status: "provider_final", revision: 2,
+      source: "elevenlabs_transcript", voiceSessionId: "session", providerMessageId: null, sourceEventId: 14 }] };
+
+  it.each([undefined, false, true])("syncVoice=%s es aditivo; sin opción conserva la petición antigua", async syncVoice => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => canonical });
+    expect(await fetchThreadState("t-1", "user", { syncVoice })).toEqual(canonical);
+    const [url] = vi.mocked(fetch).mock.calls[0];
+    expect(new URL(String(url), "http://localhost").searchParams.get("syncVoice")).toBe(syncVoice == null ? null : String(syncVoice));
+  });
+
+  it("un servidor antiguo sin estado de sync mantiene el historial de texto", async () => {
+    const legacy = { threadId: "t-1", messageCount: 1, lastMessage: "Texto", messages: [{ role: "bot", text: "Texto" }] };
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => legacy });
+    expect(await fetchThreadState("t-1", "user", { syncVoice: true })).toEqual(legacy);
+  });
+
+  it("descarta una respuesta del propietario anterior sin usar el JWT nuevo", async () => {
+    localStorage.setItem("copp_access_token", "owner-A");
+    let finish!: (response: unknown) => void;
+    globalThis.fetch = vi.fn().mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const pending = fetchThreadState("t-1", "user", { syncVoice: true });
+    localStorage.setItem("copp_access_token", "owner-B");
+    finish({ ok: true, json: async () => canonical });
+    expect(await pending).toBeNull(); expect(fetch).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(fetch).mock.calls[0][1]!.headers).toEqual({ Authorization: "Bearer owner-A" });
+  });
+
+  it.each(["timeout", "cancelar"])("%s aborta el fetch y devuelve null sin afirmar sincronización", async reason => {
+    let requestSignal!: AbortSignal;
+    globalThis.fetch = vi.fn().mockImplementation((_url, options) => new Promise((_resolve, reject) => {
+      requestSignal = options.signal;
+      requestSignal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
+    }));
+    const controller = new AbortController();
+    const pending = fetchThreadState("t-1", "user", { syncVoice: true, signal: controller.signal });
+    if (reason === "cancelar") controller.abort(); else await vi.advanceTimersByTimeAsync(10_000);
+    expect(await pending).toBeNull(); expect(requestSignal.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
 
 describe("uploadLabExam", () => {
   const originalFetch = globalThis.fetch;
@@ -206,6 +253,24 @@ function sseResponse(frames: string[]): Response {
     headers: new Headers(),
   } as unknown as Response;
 }
+
+describe("opt-in aditivo de texto Vita", () => {
+  const originalFetch = globalThis.fetch;
+  beforeEach(() => { localStorage.clear(); });
+  afterEach(() => { globalThis.fetch = originalFetch; });
+  it.each(["sync", "stream"])("%s conserva el payload previo y añade supportsVita true", async mode => {
+    globalThis.fetch = vi.fn().mockImplementation(async () => mode === "stream"
+      ? sseResponse(['event: done\ndata: {"thread_id":"t-1","answer":"ok"}\n\n'])
+      : { ok: true, json: async () => ({ reply: "ok", threadId: "t-1" }) });
+    if (mode === "stream") await streamChatMessage("hola", "t-1", {}, undefined, "es");
+    else await sendChatMessage("hola", "t-1", undefined, "es");
+    const payload = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]!.body));
+    const oldPayload = { message: "hola", threadId: "t-1", language: "es" };
+    expect(payload).toEqual({ ...oldPayload, supportsVita: true });
+    delete payload.supportsVita;
+    expect(payload).toEqual(oldPayload); // Default false para clientes sin campo es contrato BACK/AI.
+  });
+});
 
 describe("sendChatMessage — adjunto de imagen y sugerencias", () => {
   const originalFetch = globalThis.fetch;

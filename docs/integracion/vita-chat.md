@@ -248,6 +248,47 @@ No se añadieron claves i18n, capturas, cambios de diseño ni configuración rem
 en este seguimiento. Las pruebas locales usan fixtures; el POC proveedor pertenece
 al coordinador y no convierte estos tests en prueba de audio o de backend desplegado.
 
+## Seguimiento: sincronización perezosa y opt-in de texto
+
+El contrato final AI y la ampliación pública solicitada a BACK añaden
+`GET /api/v1/threads/{threadId}/messages?...&syncVoice=true`. El helper mantiene
+la opción ausente por defecto (servidor default false); ChatPage compatible la
+activa al abrir/reabrir o refrescar la página reciente. Las páginas antiguas no
+solicitan sincronización, conservando la paginación de ese snapshot. Solo BACK
+autoriza sync_voice interno con propiedad y consentimientos actuales chat+voz;
+sin consentimiento de voz debe seguir leyendo el texto existente.
+
+Se preservan voiceSyncStatus y los metadatos source/voiceSessionId/
+providerMessageId/sourceEventId, incluidos null y status provider_final. La sesión
+explícita validada permite reconciliar IDs opacos; el namespace anterior sigue
+compatible. Sin ID canónico no se duplica ni sustituye el SDK vinculado.
+
+Un ciclo tiene una lectura inicial y como máximo tres relecturas a 1/2/4 segundos,
+solo ante processing/busy y con voz cerrada. Cada HTTP tiene timeout de 10 segundos;
+unavailable, null, ausencia de estado, error o timeout paran el ciclo. La reapertura
+puede pedir otro sync: no se afirma persistencia por agotar reintentos. Cambiar de
+cuenta/hilo, iniciar otro ciclo o desmontar cancela timer/HTTP y descarta respuestas
+tardías. El cliente también descarta la respuesta si cambió el JWT capturado.
+La consolidación mantiene el scroll actual y no dispara el aviso de mensajes nuevos.
+
+`chatBody`, compartido por sync y SSE, añade `supportsVita:true` a ambos transportes.
+BACK debe convertirlo a supports_vita, false por defecto en clientes sin campo.
+VITA_RUNTIME_ENABLED solo selecciona el motor para opt-in true; ERP playground y
+apps anteriores conservan la ruta previa. No se duplica el parser ni la ruta SSE.
+
+Pruebas de este lote: processing→busy→synchronized con frases iguales e IDs 2/14,
+reemplazo por grupo y scroll estable; agotamiento de reintentos; unavailable/legacy
+sin metadatos; cancelación/cambio de cuenta/hilo; reopen; timeout; metadatos en ambos
+mapas y payload sync/stream aditivo. Regresión enfocada: 4 archivos / 79 tests,
+exit 0. Suite completa: 209 archivos / 1720 tests, exit nativo 0, 83,12 s;
+log local ignorado `.vita-sync-all-final.log`. Build/lint/i18n exit 0, avisos heredados
+y 0 claves faltantes. Estas son pruebas
+locales sintéticas; el forwarding/consentimiento BACK y el importador desplegado
+siguen sujetos a la validación del árbol integrado por root.
+
+No hay cambios de UI, i18n, env, flags remotos, dependencias ni fuentes nativas.
+La regresión adicional de caché de texto tras reapertura se entrega en otro commit.
+
 ## Claves nuevas ES/EN
 
 - `Detener respuesta`

@@ -22,6 +22,7 @@ export interface ThreadState {
   threadId: string;
   messageCount: number;
   lastMessage: string | null;
+  voiceSyncStatus?: "synchronized" | "processing" | "unavailable" | "busy" | null;
   /** ¿Quedan páginas más antiguas por cargar? (paginación server-driven). */
   hasMore?: boolean;
   /** Cursor de la próxima página (offset desde el más nuevo); null = no hay más. */
@@ -46,26 +47,39 @@ export interface ThreadState {
 export async function fetchThreadState(
   threadId: string,
   userId: string,
-  options: { limit?: number; before?: number | null } = {},
+  options: { limit?: number; before?: number | null; syncVoice?: boolean; signal?: AbortSignal } = {},
 ): Promise<ThreadState | null> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  options.signal?.addEventListener("abort", abort, { once: true });
+  const timeout = setTimeout(abort, 10_000);
   try {
+    if (options.signal?.aborted) return null;
     const accessToken = getAccessToken();
     const params = new URLSearchParams();
     params.set("userId", userId);
     if (options.limit != null) params.set("limit", String(options.limit));
     if (options.before != null) params.set("before", String(options.before));
+    // Opt-in de capacidad. BACK decide si el consentimiento actual autoriza sync;
+    // nunca impedir la lectura de texto por falta de consentimiento de voz.
+    if (options.syncVoice != null) params.set("syncVoice", String(options.syncVoice));
     const url = `${getApiBaseUrl()}/api/v1/threads/${encodeURIComponent(threadId)}/messages?${params.toString()}`;
     const res = await fetch(url, {
+      signal: controller.signal,
       headers: accessToken
         ? { Authorization: `Bearer ${accessToken}` }
         : undefined,
     });
     if (!res.ok) return null;
     const data = (await res.json()) as ThreadState;
+    if (controller.signal.aborted || accessToken !== getAccessToken()) return null;
     return data;
   } catch (error) {
-    console.warn("[thread] No se pudo cargar el historial del thread:", error);
+    if (!controller.signal.aborted) console.warn("[thread] No se pudo cargar el historial del thread:", error);
     return null;
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abort);
   }
 }
 
@@ -118,6 +132,7 @@ function chatBody(
   return JSON.stringify({
     message,
     threadId,
+    supportsVita: true,
     ...(image
       ? { imageData: image.base64, imageMimeType: image.mimeType }
       : {}),

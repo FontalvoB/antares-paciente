@@ -68,7 +68,8 @@ const PAGE_SIZE = 10;
 const fullHistory = Array.from({ length: 25 }, (_, i) => ({
   role: (i % 2 === 0 ? "bot" : "user") as "bot" | "user",
   text: `Mensaje ${String(i + 1).padStart(2, "0")}`,
-  messageId: `history-${i + 1}`, channel: "voice" as const, status: "final" as const, revision: 2,
+  messageId: `history-${i + 1}`, channel: "voice" as const, status: "provider_final" as const, revision: 2,
+  source: "elevenlabs_transcript", voiceSessionId: "bound", providerMessageId: null, sourceEventId: i + 1,
 }));
 
 /**
@@ -120,7 +121,7 @@ describe("ChatPage — paginación server-driven del historial", () => {
     expect(vi.mocked(fetchThreadState)).toHaveBeenCalledWith(
       "thread-1",
       "user-1",
-      { limit: PAGE_SIZE },
+      expect.objectContaining({ limit: PAGE_SIZE, syncVoice: true, signal: expect.any(AbortSignal) }),
     );
     expect(screen.getByText("Mensaje 16")).toBeTruthy();
     expect(screen.queryByText("Mensaje 15")).toBeNull();
@@ -131,10 +132,10 @@ describe("ChatPage — paginación server-driven del historial", () => {
   it("preserva IDs/canal/estado/revision en ambos mapas del historial", async () => {
     const { container } = render(<ChatPage />);
     await waitFor(() => expect(screen.getByText("Mensaje 25")).toBeTruthy());
-    expect(mockState.historyPayloads[0][0]).toMatchObject({ messageId: "history-16", channel: "voice", status: "final", revision: 2 });
+    expect(mockState.historyPayloads[0][0]).toMatchObject(fullHistory[15]);
     const list = getList(container); list.scrollTop = 0; fireEvent.scroll(list);
     await waitFor(() => expect(screen.getByText("Mensaje 06")).toBeTruthy());
-    expect(mockState.historyPayloads.at(-1)![0]).toMatchObject({ messageId: "history-6", channel: "voice", status: "final", revision: 2 });
+    expect(mockState.historyPayloads.at(-1)![0]).toMatchObject(fullHistory[5]);
   });
 
   it("al llegar al tope pide la página anterior con el nextCursor y la antepone", async () => {
@@ -150,7 +151,7 @@ describe("ChatPage — paginación server-driven del historial", () => {
     expect(vi.mocked(fetchThreadState)).toHaveBeenLastCalledWith(
       "thread-1",
       "user-1",
-      { limit: PAGE_SIZE, before: 10 },
+      expect.objectContaining({ limit: PAGE_SIZE, before: 10, signal: expect.any(AbortSignal) }),
     );
     expect(screen.getByText("Mensaje 15")).toBeTruthy();
     expect(screen.queryByText("Mensaje 05")).toBeNull();
@@ -301,7 +302,7 @@ describe("ChatPage — paginación server-driven del historial", () => {
     expect(vi.mocked(fetchThreadState)).toHaveBeenLastCalledWith(
       "thread-1",
       "user-1",
-      { limit: PAGE_SIZE, before: 10 },
+      expect.objectContaining({ limit: PAGE_SIZE, before: 10, signal: expect.any(AbortSignal) }),
     );
   });
 
