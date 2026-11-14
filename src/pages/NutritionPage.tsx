@@ -562,7 +562,7 @@ export function NutritionPage({ recommendations, recommendationsUnavailable = fa
   if(!snapshot && nutritionPlan){
     return <Screen><PageHeader title={t("Nutrición")} sub={t("Tu plan de alimentación")}/><Scroll className="ntr-scroll">
       {reviewBanner}
-      <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus} compact cycleNumber={recommendations?.current?.cycleNumber}/>
+      <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus} compact/>
       {recommendationBlock}
       <NutritionDisclaimer/>
     </Scroll></Screen>;
@@ -973,7 +973,6 @@ export function NutritionPage({ recommendations, recommendationsUnavailable = fa
             onOpenAssessments={() => openTests()}
             onOpenProgram={() => navigate('prog')}
             compact
-            cycleNumber={recommendations?.current?.cycleNumber}
           />
           {recommendationBlock}
           {nutritionPlan && <NutritionDisclaimer/>}

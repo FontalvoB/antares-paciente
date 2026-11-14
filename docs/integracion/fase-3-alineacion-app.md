@@ -25,9 +25,10 @@ Historial de registros siguen accesibles desde «Más secciones de nutrición».
 La navegación global existente y el aviso nutricional se conservan; el aviso queda
 después del contenido principal de Plan, sin cambiar su texto.
 
-Los números del mockup son ilustrativos: Ciclo N procede de `current.cycleNumber`,
-y el día del contrato existente del plan. El DTO de plan no trae número de ciclo;
-con `current:null` se muestra solo el día conocido, sin inventar «Ciclo 1».
+Los números del mockup son ilustrativos. `current.cycleNumber` identifica el ciclo
+revisado y se muestra como «Cierre del ciclo n» en la recomendación. El resumen del
+plan muestra solo el día conocido de su contrato: no tiene número de ciclo y no
+puede tomarlo de la recomendación ni deducirlo sumando uno.
 Se mantiene la regla del repo de fechas `dd/mm/aaaa`.
 
 `onRetryRecommendations` es un callback de presentación, usado para reintentar la
@@ -65,6 +66,16 @@ sustituidas por fixtures, sin API de negocio. Capturas finales de los siete artb
 (el 6 tiene dos capturas) y ejemplos EN en OpenSpec `revision-app-f3-alineacion/`.
 
 ## Pendiente de consumo real
+
+Matiz final de D0014: el mensaje pertenece al ciclo revisado. `current` es la
+publicación más reciente por `published_at`, aunque el período de ese ciclo ya haya
+terminado; `previous` contiene las anteriores por `published_at` descendente. El
+cliente respeta esa selección y orden, sin filtrar por vigencia ni ordenar por
+número de ciclo. La regresión usa una publicación tardía del ciclo 1 como actual
+y los ciclos 2 y 3 como anteriores en orden de publicación, distinto del numérico.
+Validación del ajuste: 40/40 pruebas focalizadas de pantalla y recomendaciones,
+suite completa 1661/1661 en 204 archivos, lint sin errores, build correcto e i18n
+sin claves faltantes. No se cambia el resto de la UI ni se conecta el consumo real.
 
 Cuando codex-back cierre 3.10: confirmar prefijo/ruta y binding real de D0014,
 conectar la carga/refetch y `onRetryRecommendations`, verificar URLs firmadas y

@@ -20,7 +20,7 @@ export const nutritionRecommendationFixture: NutritionCycleRecommendationDto = {
   }],
 };
 
-/** Mismo DTO público; ciclos publicados de prueba, en orden local de presentación. */
+/** Mismo DTO público; publicación anterior sobre su propio ciclo revisado. */
 export const previousNutritionRecommendationFixture: NutritionCycleRecommendationDto = {
   ...nutritionRecommendationFixture,
   cycleNumber: 1,
@@ -39,8 +39,17 @@ export const nutritionRecommendationHistoryFixture: readonly NutritionCycleRecom
   previousNutritionRecommendationFixture,
 ];
 
-/** Envoltorio D0014: el cliente no calcula actual/anteriores por fechas. */
+/** D0014 final: cierre del ciclo 2 publicado al comenzar el siguiente; no es el plan vigente. */
 export const nutritionRecommendationsResponseFixture: NutritionRecommendationsResponseDto = {
-  current: { ...nutritionRecommendationFixture, cycleNumber: 3, startDate: '2026-12-07', endDate: '2027-01-05' },
-  previous: [...nutritionRecommendationHistoryFixture],
+  current: nutritionRecommendationFixture,
+  previous: [previousNutritionRecommendationFixture],
+};
+
+/** Publicaciones tardías: el ciclo 1 es la publicación más reciente; previous no ordena por número. */
+export const nutritionRecommendationsPublicationOrderFixture: NutritionRecommendationsResponseDto = {
+  current: { ...previousNutritionRecommendationFixture, publishedAt: '2027-01-08T14:30:00Z' },
+  previous: [
+    { ...nutritionRecommendationFixture, publishedAt: '2027-01-07T14:30:00Z' },
+    { ...nutritionRecommendationFixture, cycleNumber: 3, startDate: '2026-12-07', endDate: '2027-01-05', publishedAt: '2027-01-06T14:30:00Z' },
+  ],
 };
