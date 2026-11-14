@@ -22,11 +22,11 @@ export function NutritionRecommendationHistory({ history, unavailable = false, l
   const firstKey = history?.[0] ? `${history[0].cycleNumber}:${history[0].startDate}` : undefined;
   const expanded = selection === undefined ? firstKey : selection;
 
-  return <section className="nutrition-recommendation-history" aria-labelledby={labelledBy ?? titleId}>
+  return <section data-testid="nutrition-history" data-state={loading ? 'loading' : unavailable ? 'error' : history!.length === 0 ? 'empty' : 'ready'} className="nutrition-recommendation-history" aria-labelledby={labelledBy ?? titleId}>
     {!labelledBy && <h2 id={titleId}>{t('Ciclos anteriores')}</h2>}
     {loading ? <IonSkeletonText animated className="ntr-skeleton" role="status" aria-label={t('Cargando recomendaciones')}/> : unavailable ? <div className="nutrition-history-state">
       <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{errorMessage ?? t('No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.')}</p>
-      <IonButton fill="outline" expand="block" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
+      <IonButton data-testid="nutrition-history-retry" fill="outline" expand="block" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
     </div> : history!.length === 0
       ? <div className="nutrition-history-state nutrition-recommendations-empty">
         <span className="nutrition-empty-icon"><IonIcon icon={nutritionOutline} aria-hidden="true" /></span>
@@ -39,8 +39,8 @@ export function NutritionRecommendationHistory({ history, unavailable = false, l
           if (event.target !== event.currentTarget) return;
           setSelection(typeof event.detail.value === 'string' ? event.detail.value : null);
         }}>
-        {history!.map(cycle => <IonAccordion key={`${cycle.cycleNumber}:${cycle.startDate}`} value={`${cycle.cycleNumber}:${cycle.startDate}`}>
-          <IonItem slot="header" lines="none">
+        {history!.map(cycle => <IonAccordion data-testid="nutrition-history-cycle" data-cycle-number={cycle.cycleNumber} data-published-at={cycle.publishedAt} key={`${cycle.cycleNumber}:${cycle.startDate}`} value={`${cycle.cycleNumber}:${cycle.startDate}`}>
+          <IonItem data-testid="nutrition-history-cycle-toggle" slot="header" lines="none">
             <IonLabel className="ion-text-wrap">
               <h3>{t('Ciclo {number}', { number: String(cycle.cycleNumber) })}</h3>
               <p>{t('Del {start} al {end}', { start: formatDateForDisplay(cycle.startDate), end: formatDateForDisplay(cycle.endDate) })}</p>
@@ -49,7 +49,7 @@ export function NutritionRecommendationHistory({ history, unavailable = false, l
             <IonBadge slot="end">{t('Anterior')}</IonBadge>
           </IonItem>
           <div slot="content"><NutritionRecommendations recommendation={cycle} presentation="history" onRetry={onRetry}/>
-            <IonButton className="nutrition-history-hide" fill="clear" expand="block" onClick={event => {
+            <IonButton data-testid="nutrition-history-cycle-hide" className="nutrition-history-hide" fill="clear" expand="block" onClick={event => {
               const header = event.currentTarget.closest('ion-accordion')?.querySelector<HTMLElement>('ion-item');
               setSelection(null);
               (header?.shadowRoot?.querySelector<HTMLElement>('button') ?? header)?.focus();

@@ -8,12 +8,12 @@ import type { NutritionCycleRecommendationDto } from '../../services/nutrition/n
 function RecommendationImage({ url, caption, onRefresh }: NutritionCycleRecommendationDto['attachments'][number] & { onRefresh?: () => void }) {
   const t = useT();
   const [failed, setFailed] = useState(false);
-  return <figure>
+  return <figure data-testid="nutrition-recommendation-attachment">
     {failed
-      ? <div className="nutrition-recommendations-image-error" role="status"><IonIcon icon={lockClosedOutline} aria-hidden="true" />{t('Imagen caducada')}</div>
-      : <IonImg src={url} alt={caption || t('Imagen adjunta de tu nutricionista')} onIonError={() => setFailed(true)} />}
-    {caption && <figcaption>{caption}</figcaption>}
-    {failed && <IonButton expand="block" fill="outline" className="nutrition-image-refresh" disabled={!onRefresh} onClick={onRefresh}><IonIcon icon={refreshOutline} slot="start" />{t('Actualizar')}</IonButton>}
+      ? <div data-testid="nutrition-recommendation-image-error" className="nutrition-recommendations-image-error" role="status"><IonIcon icon={lockClosedOutline} aria-hidden="true" />{t('Imagen caducada')}</div>
+      : <IonImg data-testid="nutrition-recommendation-image" src={url} alt={caption || t('Imagen adjunta de tu nutricionista')} onIonError={() => setFailed(true)} />}
+    {caption && <figcaption data-testid="nutrition-recommendation-caption">{caption}</figcaption>}
+    {failed && <IonButton data-testid="nutrition-recommendation-image-refresh" expand="block" fill="outline" className="nutrition-image-refresh" disabled={!onRefresh} onClick={onRefresh}><IonIcon icon={refreshOutline} slot="start" />{t('Actualizar')}</IonButton>}
   </figure>;
 }
 
@@ -32,25 +32,25 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
   const titleId = useId();
   const messageId = useId();
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
-  if (loading) return <IonCard className="nutrition-recommendations" role="region" aria-labelledby={titleId} aria-busy="true">
+  if (loading) return <IonCard data-testid="nutrition-recommendations" data-state="loading" className="nutrition-recommendations" role="region" aria-labelledby={titleId} aria-busy="true">
     <IonCardHeader><IonCardTitle id={titleId} role="heading" aria-level={2}>{t('Recomendaciones de tu nutricionista')}</IonCardTitle></IonCardHeader>
     <IonCardContent><IonSkeletonText animated className="ntr-skeleton" role="status" aria-label={t('Cargando recomendaciones')}/></IonCardContent>
   </IonCard>;
   if (recommendation === undefined && !unavailable) return null;
 
-  if (unavailable || !recommendation) return <IonCard className="nutrition-recommendations" role="region" aria-labelledby={titleId}>
+  if (unavailable || !recommendation) return <IonCard data-testid="nutrition-recommendations" data-state={unavailable ? 'error' : 'empty'} className="nutrition-recommendations" role="region" aria-labelledby={titleId}>
     <IonCardHeader><IonCardTitle id={titleId} role="heading" aria-level={2}>{t('Recomendaciones de tu nutricionista')}</IonCardTitle></IonCardHeader>
     <IonCardContent>
       {unavailable ? <>
         <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{errorMessage ?? t('No pudimos cargar tus recomendaciones. Tu plan y tus registros siguen disponibles.')}</p>
         <div className="nutrition-recommendations-error-lines" aria-hidden="true"><span/><span/></div>
-        <IonButton expand="block" fill="outline" className="nutrition-recommendations-retry" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
+        <IonButton data-testid="nutrition-recommendations-retry" expand="block" fill="outline" className="nutrition-recommendations-retry" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
       </> : <div className="nutrition-recommendations-empty">
         <span className="nutrition-empty-icon"><IonIcon icon={nutritionOutline} aria-hidden="true" /></span>
         <h3>{t('Aún no tienes recomendaciones')}</h3>
         <p>{t('Tu nutricionista las publicará aquí cuando cierre tu primer ciclo. Mientras tanto, sigue tu plan y registra tus comidas.')}</p>
       </div>}
-      {!unavailable && onOpenHistory && <IonButton className="nutrition-recommendations-history-link" fill="clear" expand="block" onClick={onOpenHistory}><span>{t('Ver ciclos anteriores')}<IonIcon icon={chevronForwardOutline} aria-hidden="true" /></span></IonButton>}
+      {!unavailable && onOpenHistory && <IonButton data-testid="nutrition-history-open" className="nutrition-recommendations-history-link" fill="clear" expand="block" onClick={onOpenHistory}><span>{t('Ver ciclos anteriores')}<IonIcon icon={chevronForwardOutline} aria-hidden="true" /></span></IonButton>}
     </IonCardContent>
   </IonCard>;
 
@@ -60,7 +60,7 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
   const longMessage = Array.from(patientMessage).length > 480;
   const expanded = expandedMessage === patientMessage;
   const message = longMessage && !expanded ? `${Array.from(patientMessage).slice(0, 480).join('').trimEnd()}…` : patientMessage;
-  return <IonCard className="nutrition-recommendations" data-presentation={presentation} role="region"
+  return <IonCard data-testid="nutrition-recommendations" data-state="ready" data-cycle-number={cycleNumber} data-published-at={publishedAt} className="nutrition-recommendations" data-presentation={presentation} role="region"
     aria-labelledby={presentation === 'current' ? titleId : undefined}
     aria-label={presentation === 'history' ? t('Recomendaciones del ciclo {cycle}', { cycle: String(cycleNumber) }) : undefined}>
     <IonCardHeader>
@@ -68,19 +68,19 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
         {t('Recomendaciones de tu nutricionista')}
       </IonCardTitle>}
       <div className="nutrition-recommendations-byline"><span className="nutrition-professional-avatar" aria-hidden="true">{initials}</span><div>
-        <p className="nutrition-recommendations-professional">{professionalName}</p>
-        <p className="nutrition-recommendations-published">{presentation === 'history'
+        <p data-testid="nutrition-recommendation-professional" className="nutrition-recommendations-professional">{professionalName}</p>
+        <p data-testid="nutrition-recommendation-publication" className="nutrition-recommendations-published">{presentation === 'history'
           ? t('Publicado el {date}', { date: formatDateForDisplay(publishedAt.slice(0, 10)) })
           : t('Cierre del ciclo {cycle} · publicado el {date}', { cycle: String(cycleNumber), date: formatDateForDisplay(publishedAt.slice(0, 10)) })}</p>
       </div></div>
     </IonCardHeader>
     <IonCardContent>
-      <p id={messageId} className="nutrition-recommendations-message">{message}</p>
+      <p data-testid="nutrition-recommendation-message" id={messageId} className="nutrition-recommendations-message">{message}</p>
       {longMessage && <IonButton fill="clear" className="nutrition-message-expand" aria-controls={messageId} onClick={() => setExpandedMessage(expanded ? null : patientMessage)}>{t(expanded ? 'Leer menos' : 'Leer más')}</IonButton>}
       {attachments.length > 0 && <section className="nutrition-recommendations-images" aria-label={t('Adjuntos')} data-layout={attachments.length === 3 ? 'three' : 'two'}>
         {attachments.map(attachment => <RecommendationImage key={attachment.url} url={attachment.url} caption={attachment.caption} onRefresh={onRetry} />)}
       </section>}
-      {onOpenHistory && <IonButton className="nutrition-recommendations-history-link" fill="clear" expand="block" onClick={onOpenHistory}><span>{t('Ver ciclos anteriores')}<IonIcon icon={chevronForwardOutline} aria-hidden="true" /></span></IonButton>}
+      {onOpenHistory && <IonButton data-testid="nutrition-history-open" className="nutrition-recommendations-history-link" fill="clear" expand="block" onClick={onOpenHistory}><span>{t('Ver ciclos anteriores')}<IonIcon icon={chevronForwardOutline} aria-hidden="true" /></span></IonButton>}
     </IonCardContent>
   </IonCard>;
 }

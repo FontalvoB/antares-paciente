@@ -555,7 +555,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
     onOpenHistory={recommendations && (recommendations.current || recommendations.previous.length > 0) ? () => { setRecommendationHistoryOpen(true); scrollRef.current?.scrollTo({ top: 0 }); } : undefined}
   />;
   if (recommendationHistoryOpen) return <Screen className="ntr-screen ntr-cycle-history-screen">
-    <header className="nutrition-history-heading"><IonButton className="nutrition-history-back" fill="clear" aria-label={t('Volver a Plan')} onClick={() => setRecommendationHistoryOpen(false)}><IonIcon icon={arrowBackOutline} slot="icon-only"/></IonButton><h1 id={historyTitleId}>{t('Ciclos anteriores')}</h1></header>
+    <header className="nutrition-history-heading"><IonButton data-testid="nutrition-history-back" className="nutrition-history-back" fill="clear" aria-label={t('Volver a Plan')} onClick={() => setRecommendationHistoryOpen(false)}><IonIcon icon={arrowBackOutline} slot="icon-only"/></IonButton><h1 id={historyTitleId}>{t('Ciclos anteriores')}</h1></header>
     <Scroll className="ntr-scroll"><NutritionRecommendationHistory history={recommendations?.previous} unavailable={recommendationsUnavailable} loading={recommendationsLoading} errorMessage={recommendationsErrorMessage} onRetry={onRetryRecommendations} labelledBy={historyTitleId}/></Scroll>
   </Screen>;
 
@@ -662,7 +662,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
         onIonChange={(e) => changeTab((e.detail.value as typeof tab) ?? "hoy")}
       >
         <IonSegmentButton value="hoy">{t("Hoy")}</IonSegmentButton>
-        <IonSegmentButton value="indicaciones">{t("Plan")}</IonSegmentButton>
+        <IonSegmentButton data-testid="nutrition-tab-plan" value="indicaciones">{t("Plan")}</IonSegmentButton>
       </IonSegment><IonButton fill="clear" aria-label={t('Más secciones de nutrición')} onClick={() => setMoreSectionsOpen(true)}><IonIcon slot="icon-only" icon={ellipsisHorizontal}/></IonButton></div>
       <IonActionSheet isOpen={moreSectionsOpen} onDidDismiss={() => setMoreSectionsOpen(false)} header={t('Más secciones de nutrición')} buttons={[
         { text: t('Semana'), handler: () => changeTab('semana') },
