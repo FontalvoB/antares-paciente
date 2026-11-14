@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon, IonImg } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon, IonImg, IonSkeletonText } from '@ionic/react';
 import { chevronForwardOutline, lockClosedOutline, nutritionOutline, refreshOutline, warningOutline } from 'ionicons/icons';
 import { useT } from '../../i18n/I18nContext';
 import { formatDateForDisplay } from '../../utils/dates';
@@ -18,9 +18,11 @@ function RecommendationImage({ url, caption, onRefresh }: NutritionCycleRecommen
 }
 
 /** Bloque publicado para el paciente. No consulta APIs ni representa borradores de IA. */
-export function NutritionRecommendations({ recommendation, unavailable = false, onRetry, onOpenHistory, presentation = 'current' }: {
+export function NutritionRecommendations({ recommendation, unavailable = false, loading = false, errorMessage, onRetry, onOpenHistory, presentation = 'current' }: {
   recommendation?: NutritionCycleRecommendationDto | null;
   unavailable?: boolean;
+  loading?: boolean;
+  errorMessage?: string;
   /** Solicita renovar el envoltorio completo; nunca altera la URL firmada. */
   onRetry?: () => void;
   onOpenHistory?: () => void;
@@ -30,13 +32,17 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
   const titleId = useId();
   const messageId = useId();
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
+  if (loading) return <IonCard className="nutrition-recommendations" role="region" aria-labelledby={titleId} aria-busy="true">
+    <IonCardHeader><IonCardTitle id={titleId} role="heading" aria-level={2}>{t('Recomendaciones de tu nutricionista')}</IonCardTitle></IonCardHeader>
+    <IonCardContent><IonSkeletonText animated className="ntr-skeleton" role="status" aria-label={t('Cargando recomendaciones')}/></IonCardContent>
+  </IonCard>;
   if (recommendation === undefined && !unavailable) return null;
 
   if (unavailable || !recommendation) return <IonCard className="nutrition-recommendations" role="region" aria-labelledby={titleId}>
     <IonCardHeader><IonCardTitle id={titleId} role="heading" aria-level={2}>{t('Recomendaciones de tu nutricionista')}</IonCardTitle></IonCardHeader>
     <IonCardContent>
       {unavailable ? <>
-        <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{t('No pudimos cargar tus recomendaciones. Tu plan y tus registros siguen disponibles.')}</p>
+        <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{errorMessage ?? t('No pudimos cargar tus recomendaciones. Tu plan y tus registros siguen disponibles.')}</p>
         <div className="nutrition-recommendations-error-lines" aria-hidden="true"><span/><span/></div>
         <IonButton expand="block" fill="outline" className="nutrition-recommendations-retry" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
       </> : <div className="nutrition-recommendations-empty">

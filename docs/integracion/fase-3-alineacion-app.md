@@ -1,5 +1,9 @@
 # Alineación app con Claude Design — 3.18 y 3.19
 
+Actualización: el consumo 3.10 ya está conectado en el cliente. Este documento
+conserva la evidencia de alineación previa; contrato, estados y QA HTTP actuales
+en [Integración de recomendaciones](fase-3-recomendaciones-integracion.md).
+
 Referencia oficial: `mockups/referencia-claude-f3-nutricion-app/` del change.
 Se leyeron README, siete PNG y HTML fuente. D0014 resuelve la pregunta dejada
 por los prep: el cliente recibe `{ current, previous }`, con DTO público por ciclo.
@@ -86,8 +90,8 @@ no al ciclo vigente, con dos regresiones ES/EN. Suite final 1663/1663; lint/buil
 verdes. Chrome-devtools MCP no pudo adquirir el perfil ocupado; el diagnóstico de
 consola/red se hizo con Playwright, sin afirmar una medición de performance.
 
-Cuando codex-back cierre 3.10: confirmar prefijo/ruta y binding real de D0014,
-conectar la carga/refetch y `onRetryRecommendations`, verificar URLs firmadas y
-autorización en el backend y ejecutar QA integral. La lista `previous` llega ya
-seleccionada y ordenada por el backend. No se implementa «Programa anterior».
+La carga/refetch y `onRetryRecommendations` están conectados al contrato 3.10
+`5cc5369`; la lista `previous` se presenta en el orden recibido. Queda el e2e
+completo 3.20 contra backend/firmas/autorización reales, según el documento de
+integración. No se implementa «Programa anterior».
 No se modifica `tasks.md`, no se publica la app y no se hace push.

@@ -6,7 +6,7 @@ import { I18nProvider } from '../../i18n/I18nContext'
 import { ApiError } from '../../utils/apiClient'
 import type { ProgramSnapshotDto } from '../../services/program/types'
 import { programKeys } from '../../hooks/queryKeys'
-import { NutritionPage } from '../NutritionPage'
+import { NutritionPageContent as NutritionPage } from '../NutritionPage'
 
 const api = vi.hoisted(() => ({ analyze: vi.fn(), fetch: vi.fn(), toast: vi.fn() }))
 vi.mock('../../utils/apiClient', async original => ({

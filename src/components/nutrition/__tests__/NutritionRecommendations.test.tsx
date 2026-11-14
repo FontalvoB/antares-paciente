@@ -8,12 +8,30 @@ import { nutritionRecommendationFixture as fixture } from './fixtures/nutrition-
 vi.mock('@ionic/react', () => {
   const Wrap = ({ children, ...props }: HTMLAttributes<HTMLElement> & { children?: ReactNode }) => <div {...props}>{children}</div>;
   return { IonCard: Wrap, IonCardHeader: Wrap, IonCardTitle: Wrap, IonCardContent: Wrap, IonIcon: () => null,
+    IonSkeletonText: ({ 'aria-label': label }: { 'aria-label'?: string }) => <div role="status" aria-label={label}/>,
     IonButton: ({ children, onClick, disabled, 'aria-expanded': expanded, 'aria-controls': controls }: { children: ReactNode; onClick?: () => void; disabled?: boolean; 'aria-expanded'?: boolean; 'aria-controls'?: string }) => <button onClick={onClick} disabled={disabled} aria-expanded={expanded} aria-controls={controls}>{children}</button>,
     IonImg: ({ src, alt, onIonError }: { src: string; alt: string; onIonError: () => void }) => <img src={src} alt={alt} onError={onIonError} /> };
 });
 afterEach(() => { cleanup(); localStorage.clear(); });
 
 describe('3.18 · recomendaciones públicas del nutricionista', () => {
+  it('cargando no adelanta un vacío ni muestra recomendaciones cacheadas', () => {
+    render(<I18nProvider><NutritionRecommendations recommendation={fixture} loading/></I18nProvider>);
+    expect(screen.getByRole('status', { name: 'Cargando recomendaciones' })).toBeTruthy();
+    expect(screen.queryByText('Aún no tienes recomendaciones')).toBeNull();
+    expect(screen.queryByText(fixture.professionalName)).toBeNull();
+  });
+
+  it.each([
+    'Tu sesión ha caducado. Inicia sesión de nuevo para ver tus recomendaciones.',
+    'No tienes acceso a estas recomendaciones.',
+  ])('el error de acceso es explícito, sin contenido previo ni reintento habilitado: %s', message => {
+    render(<I18nProvider><NutritionRecommendations recommendation={fixture} unavailable errorMessage={message}/></I18nProvider>);
+    expect(screen.getByRole('alert').textContent).toContain(message);
+    expect(screen.queryByText(fixture.professionalName)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reintentar' }).hasAttribute('disabled')).toBe(true);
+  });
+
   it('muestra texto clínico, profesional, ciclo y fechas sin alterar la URL firmada', () => {
     render(<I18nProvider><NutritionRecommendations recommendation={fixture} /></I18nProvider>);
     expect(screen.getByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeTruthy();

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as renderView, screen, fireEvent, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
-import { NutritionPage } from "../NutritionPage";
+import { NutritionPageContent as NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { MetricsHistoryDto, ProgramSnapshotDto } from "../../services/program/types";
 import { ApiError } from "../../utils/apiClient";

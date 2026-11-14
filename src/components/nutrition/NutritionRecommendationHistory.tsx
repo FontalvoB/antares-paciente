@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { IonAccordion, IonAccordionGroup, IonBadge, IonButton, IonIcon, IonItem, IonLabel } from '@ionic/react';
+import { IonAccordion, IonAccordionGroup, IonBadge, IonButton, IonIcon, IonItem, IonLabel, IonSkeletonText } from '@ionic/react';
 import { chevronUpOutline, nutritionOutline, refreshOutline, warningOutline } from 'ionicons/icons';
 import { useT } from '../../i18n/I18nContext';
 import { formatDateForDisplay } from '../../utils/dates';
@@ -7,23 +7,25 @@ import type { NutritionCycleRecommendationDto } from '../../services/nutrition/n
 import { NutritionRecommendations } from './NutritionRecommendations';
 
 /** D0014: previous llega seleccionado y ordenado por el backend, sin contexto de programa. */
-export function NutritionRecommendationHistory({ history, unavailable = false, onRetry, labelledBy }: {
+export function NutritionRecommendationHistory({ history, unavailable = false, loading = false, errorMessage, onRetry, labelledBy }: {
   history?: readonly NutritionCycleRecommendationDto[] | null;
   unavailable?: boolean;
+  loading?: boolean;
+  errorMessage?: string;
   onRetry?: () => void;
   labelledBy?: string;
 }) {
   const t = useT();
   const titleId = useId();
   const [selection, setSelection] = useState<string | null | undefined>();
-  if (!unavailable && history == null) return null;
+  if (!loading && !unavailable && history == null) return null;
   const firstKey = history?.[0] ? `${history[0].cycleNumber}:${history[0].startDate}` : undefined;
   const expanded = selection === undefined ? firstKey : selection;
 
   return <section className="nutrition-recommendation-history" aria-labelledby={labelledBy ?? titleId}>
     {!labelledBy && <h2 id={titleId}>{t('Ciclos anteriores')}</h2>}
-    {unavailable ? <div className="nutrition-history-state">
-      <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{t('No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.')}</p>
+    {loading ? <IonSkeletonText animated className="ntr-skeleton" role="status" aria-label={t('Cargando recomendaciones')}/> : unavailable ? <div className="nutrition-history-state">
+      <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{errorMessage ?? t('No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.')}</p>
       <IonButton fill="outline" expand="block" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
     </div> : history!.length === 0
       ? <div className="nutrition-history-state nutrition-recommendations-empty">

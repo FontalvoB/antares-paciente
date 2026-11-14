@@ -3854,5 +3854,8 @@
   "Aquí quedan las recomendaciones de ciclos que ya cerraron. La recomendación más reciente está en Plan.": "Recommendations from completed cycles are saved here. The most recent recommendation is in Plan.",
   "No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.": "We could not load your previous cycles. You can return to Plan and continue your activities.",
   "Sin imágenes": "No images",
-  "Ocultar": "Hide"
+  "Ocultar": "Hide",
+  "Cargando recomendaciones": "Loading recommendations",
+  "Tu sesión ha caducado. Inicia sesión de nuevo para ver tus recomendaciones.": "Your session has expired. Sign in again to view your recommendations.",
+  "No tienes acceso a estas recomendaciones.": "You do not have access to these recommendations."
 }

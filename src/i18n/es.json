@@ -3854,5 +3854,8 @@
   "Aquí quedan las recomendaciones de ciclos que ya cerraron. La recomendación más reciente está en Plan.": "Aquí quedan las recomendaciones de ciclos que ya cerraron. La recomendación más reciente está en Plan.",
   "No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.": "No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.",
   "Sin imágenes": "Sin imágenes",
-  "Ocultar": "Ocultar"
+  "Ocultar": "Ocultar",
+  "Cargando recomendaciones": "Cargando recomendaciones",
+  "Tu sesión ha caducado. Inicia sesión de nuevo para ver tus recomendaciones.": "Tu sesión ha caducado. Inicia sesión de nuevo para ver tus recomendaciones.",
+  "No tienes acceso a estas recomendaciones.": "No tienes acceso a estas recomendaciones."
 }

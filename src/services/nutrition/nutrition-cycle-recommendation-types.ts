@@ -1,4 +1,4 @@
-/** DTO por ciclo congelado en ARQUITECTURA.md §7.2; integración 3.10 pendiente. */
+/** DTO público 3.10 / D0014, verificado contra backend 5cc5369. */
 export interface NutritionCycleRecommendationDto {
   /** Ciclo revisado: se presenta como «Cierre del ciclo n», nunca como ciclo activo del plan. */
   cycleNumber: number;

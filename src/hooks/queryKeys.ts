@@ -12,6 +12,8 @@ export const measurementsKeys = {
 } as const;
 
 export const nutritionKeys = {
+  /** GET /api/v1/me/nutrition/cycles/recommendations; se añaden cuenta e idioma. */
+  recommendations: ['me', 'nutrition', 'recommendations'] as const,
   /** GET /api/v1/me/nutrition-plan (plan alimentario asignado, Fase 8) */
   myNutritionPlan: ["me", "nutrition-plan"] as const,
 } as const;

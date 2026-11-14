@@ -36,6 +36,7 @@ import {
 } from "../services/offline/offline-queue-service";
 import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
 import { useNutritionPlanStatus } from "../hooks/useNutritionPlanStatus";
+import { useNutritionRecommendations } from "../hooks/useNutritionRecommendations";
 import { NutritionMetrics, NutritionWeek, NutritionWeightChart } from "../components/nutrition/NutritionInsights";
 import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
 import { NutritionRecommendations } from "../components/nutrition/NutritionRecommendations";
@@ -86,10 +87,25 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
   agua: "💧",
 };
 
-export function NutritionPage({ recommendations, recommendationsUnavailable = false, onRetryRecommendations }: {
-  /** Envoltorio D0014 inyectado; consumo real pendiente de backend 3.10. */
+/** Pantalla conectada al autoservicio del paciente; la vista no conoce transporte ni fixtures. */
+export function NutritionPage() {
+  const { recommendations, isLoading, isFetching, error, refetch } = useNutritionRecommendations();
+  const { t } = useI18n();
+  const status = error instanceof ApiError ? error.status : undefined;
+  const authError = status === 401 || status === 403;
+  const errorMessage = status === 401 ? t('Tu sesión ha caducado. Inicia sesión de nuevo para ver tus recomendaciones.')
+    : status === 403 ? t('No tienes acceso a estas recomendaciones.') : undefined;
+  return <NutritionPageContent recommendations={recommendations} recommendationsLoading={isLoading}
+    recommendationsUnavailable={Boolean(error)} recommendationsErrorMessage={errorMessage}
+    onRetryRecommendations={authError || isFetching ? undefined : () => { void refetch(); }}/>
+}
+
+export function NutritionPageContent({ recommendations, recommendationsUnavailable = false, recommendationsLoading = false, recommendationsErrorMessage, onRetryRecommendations }: {
+  /** Envoltorio público; esta separación permite probar la presentación sin sustituir el servicio. */
   recommendations?: NutritionRecommendationsResponseDto | null;
   recommendationsUnavailable?: boolean;
+  recommendationsLoading?: boolean;
+  recommendationsErrorMessage?: string;
   onRetryRecommendations?: () => void;
 } = {}) {
   const { showToast, navigate, openTests, completeStep } = useApp();
@@ -533,12 +549,14 @@ export function NutritionPage({ recommendations, recommendationsUnavailable = fa
   const recommendationBlock = <NutritionRecommendations
     recommendation={recommendations?.current}
     unavailable={recommendationsUnavailable}
+    loading={recommendationsLoading}
+    errorMessage={recommendationsErrorMessage}
     onRetry={onRetryRecommendations}
     onOpenHistory={recommendations && (recommendations.current || recommendations.previous.length > 0) ? () => { setRecommendationHistoryOpen(true); scrollRef.current?.scrollTo({ top: 0 }); } : undefined}
   />;
   if (recommendationHistoryOpen) return <Screen className="ntr-screen ntr-cycle-history-screen">
     <header className="nutrition-history-heading"><IonButton className="nutrition-history-back" fill="clear" aria-label={t('Volver a Plan')} onClick={() => setRecommendationHistoryOpen(false)}><IonIcon icon={arrowBackOutline} slot="icon-only"/></IonButton><h1 id={historyTitleId}>{t('Ciclos anteriores')}</h1></header>
-    <Scroll className="ntr-scroll"><NutritionRecommendationHistory history={recommendations?.previous} unavailable={recommendationsUnavailable} onRetry={onRetryRecommendations} labelledBy={historyTitleId}/></Scroll>
+    <Scroll className="ntr-scroll"><NutritionRecommendationHistory history={recommendations?.previous} unavailable={recommendationsUnavailable} loading={recommendationsLoading} errorMessage={recommendationsErrorMessage} onRetry={onRetryRecommendations} labelledBy={historyTitleId}/></Scroll>
   </Screen>;
 
   // Carga inicial: placeholder de IonSpinner centrado, sin contenido.
