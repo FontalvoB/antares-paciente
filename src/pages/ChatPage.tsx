@@ -73,6 +73,7 @@ export function ChatPage() {
     threadId,
     user,
     hydrateChat,
+    captureHistoryHydrator,
     prependChatMessages,
     openBookingWizard,
     appendChatMessages,
@@ -122,6 +123,8 @@ export function ChatPage() {
   const paginationController = useRef<AbortController | null>(null);
   const hydrateRef = useRef(hydrateChat);
   hydrateRef.current = hydrateChat;
+  const captureHistoryRef = useRef(captureHistoryHydrator);
+  captureHistoryRef.current = captureHistoryHydrator;
   const chatRef = useRef(chat);
   chatRef.current = chat;
   const historyScrollRef = useRef<number | null>(null);
@@ -147,6 +150,8 @@ export function ChatPage() {
     anchorRef.current = null;
     prependingRef.current = false;
     const read = async (attempt: number) => {
+      const applySnapshot = captureHistoryRef.current?.();
+      const applyLegacy = hydrateRef.current;
       const state = await fetchThreadState(threadId, userId, { limit: PAGE_SIZE, syncVoice: true, signal: controller.signal });
       if (cancelled || controller.signal.aborted || historyScopeRef.current !== historyScope) return;
       // Marcar al terminar el intento vigente, nunca antes de la respuesta:
@@ -165,21 +170,28 @@ export function ChatPage() {
           role: m.role === "user" ? ("user" as const) : ("bot" as const),
         }));
       let more = Boolean(state?.hasMore);
+      let authoritativeText = true;
       if (!history.length) {
         if (!state?.lastMessage) return;
         history.push({ text: state.lastMessage, role: "bot" as const });
+        authoritativeText = false; // lastMessage solo no es una página autoritativa.
         // El fallback de un único mensaje no deja tramos anteriores.
         more = false;
       }
-      setHasMore(more);
-      setNextCursor(state?.nextCursor ?? null);
       // La consolidación de voz es una sustitución de fuente, no un mensaje
       // entrante: no robar scroll ni mostrar el aviso de mensajes nuevos.
       if (listRef.current && chatRef.current.some(message => message.id !== "welcome")) {
         historyScrollRef.current = listRef.current.scrollTop;
         historyHydratingRef.current = true;
       }
-      hydrateRef.current(history);
+      const applied = applySnapshot ? applySnapshot(history, authoritativeText) : applyLegacy(history);
+      if (applied === false) {
+        historyScrollRef.current = null;
+        historyHydratingRef.current = false;
+        return;
+      }
+      setHasMore(more);
+      setNextCursor(state?.nextCursor ?? null);
     };
     void read(0);
     return () => {

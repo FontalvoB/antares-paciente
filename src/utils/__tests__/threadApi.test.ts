@@ -14,7 +14,7 @@ describe("fetchThreadState — contrato de sync de voz", () => {
   afterEach(() => { globalThis.fetch = originalFetch; vi.useRealTimers(); });
   const canonical = { threadId: "t-1", messageCount: 1, lastMessage: "Sí", voiceSyncStatus: "synchronized",
     messages: [{ messageId: "opaque", role: "bot", text: "Sí", channel: "voice", status: "provider_final", revision: 2,
-      source: "elevenlabs_transcript", voiceSessionId: "session", providerMessageId: null, sourceEventId: 14 }] };
+      source: "elevenlabs_transcript", voiceSessionId: "session", providerMessageId: null, sourceEventId: 14, executionId: "tracker" }] };
 
   it.each([undefined, false, true])("syncVoice=%s es aditivo; sin opción conserva la petición antigua", async syncVoice => {
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => canonical });

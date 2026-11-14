@@ -70,6 +70,7 @@ const fullHistory = Array.from({ length: 25 }, (_, i) => ({
   text: `Mensaje ${String(i + 1).padStart(2, "0")}`,
   messageId: `history-${i + 1}`, channel: "voice" as const, status: "provider_final" as const, revision: 2,
   source: "elevenlabs_transcript", voiceSessionId: "bound", providerMessageId: null, sourceEventId: i + 1,
+  executionId: i % 2 === 0 ? `tracker-${i}` : null,
 }));
 
 /**

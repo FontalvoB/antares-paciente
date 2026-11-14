@@ -1,6 +1,6 @@
 import {APPOINTMENTS_ENABLED,visibleScreen} from "../utils/appointmentsVisibility";
 import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
-import { mergeChatHistory } from "../utils/chatHistory";
+import { isConfirmedText, mergeChatHistory } from "../utils/chatHistory";
 import type { HistoryMessage } from "../utils/chatHistory";
 import { upsertVoiceMessage as mergeVoiceMessage } from "../utils/voiceMessages";
 import { App } from "@capacitor/app";
@@ -153,6 +153,8 @@ interface AppState {
   /** Marca el chat como leído: persiste el conteo remoto actual y apaga el dot. */
   markChatRead: () => void;
   hydrateChat: (messages: HistoryMessage[]) => void;
+  /** Captura IDs/propietario/hilo/generación ANTES del GET; devuelve false si ya quedó obsoleto. */
+  captureHistoryHydrator: () => (messages: HistoryMessage[], authoritativeText?: boolean) => boolean;
   /**
    * Antepone una página de historial ANTERIOR sin deduplicar por texto: un
    * mensaje repetido entre tramos es legítimo (p. ej. dos quick-replies
@@ -315,6 +317,7 @@ export function AppProvider({
   const [voiceMinimized, setVoiceMinimized] = useState(false);
   const [chatGenerating, setChatGenerating] = useState(false);
   const chatController = useRef<AbortController | null>(null);
+  const chatTurnGeneration = useRef(0);
   const retryTurn = useRef<{ text: string; image?: ChatImageAttachment; userId: string; botId: string } | null>(null);
   const [chatHistoryRevision, setChatHistoryRevision] = useState(0);
   const voiceSessions = useRef(new Map<string, { threadId: string; closed: boolean }>());
@@ -829,6 +832,7 @@ export function AppProvider({
   const runChatTurn = useCallback(
     async (text: string, image?: ChatImageAttachment, retry = false): Promise<ChatMessage | null> => {
       if (chatController.current || !text.trim()) return null;
+        chatTurnGeneration.current += 1;
       const controller = new AbortController();
       chatController.current = controller;
       const generation = sessionGeneration.current;
@@ -1114,6 +1118,29 @@ export function AppProvider({
       sendVoiceMessage: (text, image) => runChatTurn(text, image),
       hydrateChat: messages => {
         if (messages.length) setChat(prev => mergeChatHistory(prev, messages, threadId, new Map([...voiceSessions.current].filter(([, session]) => session.threadId === threadId).map(([id, session]) => [id, session.closed]))));
+      },
+      captureHistoryHydrator: () => {
+        const owner = sessionGeneration.current;
+        const turn = chatTurnGeneration.current;
+        const sourceThread = threadId;
+        const startedIdle = !chatController.current;
+        const retry = retryTurn.current;
+        const textIds = new Set(chat.filter(message => message.threadId === sourceThread && isConfirmedText(message)
+          && message.id !== retry?.userId && message.id !== retry?.botId).map(message => message.id));
+        const current = () => startedIdle && owner === sessionGeneration.current && turn === chatTurnGeneration.current
+          && sourceThread === currentThread.current && !chatController.current;
+        return (messages, authoritativeText = true) => {
+          if (!messages.length || !current()) return false;
+          setChat(prev => {
+            if (!current()) return prev;
+            // Snapshot autoritativo de la página reciente: retirar solo el texto
+            // confirmado capturado al iniciar. Las páginas viejas se recargan.
+            const remaining = authoritativeText ? prev.filter(message => !textIds.has(message.id) || !isConfirmedText(message)) : prev;
+            return mergeChatHistory(remaining, messages, sourceThread, new Map([...voiceSessions.current]
+              .filter(([, session]) => session.threadId === sourceThread).map(([id, session]) => [id, session.closed])));
+          });
+          return true;
+        };
       },
       prependChatMessages: messages => {
         if (messages.length) setChat(prev => mergeChatHistory(prev, messages, threadId, new Map([...voiceSessions.current].filter(([, session]) => session.threadId === threadId).map(([id, session]) => [id, session.closed]))));

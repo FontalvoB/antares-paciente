@@ -289,6 +289,44 @@ siguen sujetos a la validación del árbol integrado por root.
 No hay cambios de UI, i18n, env, flags remotos, dependencias ni fuentes nativas.
 La regresión adicional de caché de texto tras reapertura se entrega en otro commit.
 
+## Seguimiento: snapshot autoritativo de texto y feedback
+
+Antes de cada GET, ChatPage captura un hydrator del contexto con propietario,
+hilo, generación de turno y los IDs exactos del texto confirmado existente.
+Una página reciente válida sustituye únicamente esos IDs de caché: los UUID de
+sendChat no necesitan coincidir con los IDs persistidos por AI. La paginación
+vuelve a traer los mensajes anteriores y conserva su unión por ID/revisión.
+No hay deduplicación por texto, posición, pareja ni response_id.
+
+El hydrator verifica la generación antes de programar el cambio y dentro del
+updater de React. Si empezó otro turno, cambió la cuenta/hilo o el GET comenzó
+con un turno en vuelo, no aplica ese snapshot. Se conservan los IDs añadidos
+después de la captura, errores/reintentos pendientes, voz legacy RAM y grupos SDK
+vinculados aún sin fuente canónica. lastMessage sin página no autoriza retirar
+la caché confirmada. Un GET fallido/vacío tampoco la vacía.
+
+`executionId` opcional string|null se preserva en HistoryMessage/ThreadMessage,
+ambos mapas y la hidratación. La burbuja canónica usa ese tracker para feedback;
+null o ausencia no se rellenan a partir de texto, orden ni de una copia local.
+El contrato BACK publicado incluye la proyección del ExecutionTracker de AI.
+
+Regresión integrada con contexto, ChatPage y ChatFeedbackAction reales: envío
+exitoso → desmontar/montar → IDs canónicos distintos deja solo user+bot. Dos
+turnos con textos iguales dejan cuatro mensajes. Se verifica el payload de
+feedback del tracker canónico y ausencia de acción con null. Otras pruebas
+cubren GET atrasado durante/después de otra generación, cambio de cuenta/hilo,
+voz provisional y IDs añadidos tras el GET. Los controles Ionic son headless
+en esa prueba de datos para evitar el CSS de Stencil en happy-dom; no es QA nativo.
+El harness espera la identidad y el hilo restaurados, además de authLoading=false,
+antes de enviar y resetea la cola del mock de consentimiento entre casos.
+
+Regresión enfocada: 5 archivos / 104 tests, exit 0. Suite completa final: 209
+archivos / 1728 tests, exit nativo 0, 70,92 s. Build/lint/i18n correctos, 0 claves
+faltantes; native:ble:check correcto, cero pendientes. Logs locales ignorados
+`.vita-text-snapshot-{focused-final,all-final,i18n}.log`. Resumen versionado en
+[verificacion-snapshot.json](evidencia-vita/verificacion-snapshot.json) y SHA final
+en el handoff. Sin cambios de UI ni protocolo backend.
+
 ## Claves nuevas ES/EN
 
 - `Detener respuesta`

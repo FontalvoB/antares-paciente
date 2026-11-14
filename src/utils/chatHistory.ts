@@ -11,6 +11,15 @@ export interface HistoryMessage {
   voiceSessionId?: string | null;
   providerMessageId?: string | null;
   sourceEventId?: number | null;
+  executionId?: string | null;
+}
+
+/** Texto confirmado que un snapshot reciente puede sustituir; voz y errores quedan aparte. */
+export function isConfirmedText(message: ChatMessage): boolean {
+  return (message.role === "user" || message.role === "bot") && message.channel !== "voice"
+    && !message.voiceSessionId && !message.providerLocalId && !message.kind
+    && (message.delivery == null || message.delivery === "received")
+    && (message.status == null || message.status === "final" || message.status === "provider_final");
 }
 
 /** Solo IDs canónicos explícitos reconcilian; ni texto ni response_id son identidad runtime. */

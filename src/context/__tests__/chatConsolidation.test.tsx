@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useState } from "react";
 import {
   render,
   screen,
@@ -8,7 +9,9 @@ import {
 } from "@testing-library/react";
 import { AppProvider, useApp } from "../AppContext";
 import { I18nProvider } from "../../i18n/I18nContext";
-import { sendChatMessage, streamChatMessage } from "../../utils/threadApi";
+import { fetchThreadState, sendChatMessage, streamChatMessage } from "../../utils/threadApi";
+import { ChatPage } from "../../pages/ChatPage";
+import { sendChatFeedback } from "../../services/chat/chat-service";
 import { consentFailure, requireLegalConsent } from "../../utils/legalConsents";
 import type { ChatMessage } from "../../types";
 import { voiceMessage } from "../../utils/voiceMessages";
@@ -27,6 +30,17 @@ vi.mock("../../utils/threadApi", () => ({
   streamChatMessage: vi.fn(),
 }));
 vi.mock("../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("../../services/chat/chat-service", async original => ({ ...await original<object>(), sendChatFeedback: vi.fn().mockResolvedValue({ ok: true }) }));
+vi.mock("../../components/Screen", () => ({ Screen: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
+// La prueba integra contexto/página/feedback reales; los controles headless evitan
+// errores de CSS de Stencil en happy-dom, sin sustituir sus handlers de negocio.
+vi.mock("@ionic/react", async original => ({
+  ...await original<object>(),
+  IonButton: ({ children, onClick, disabled, "aria-label": label }: React.PropsWithChildren<{ onClick?: () => void; disabled?: boolean; "aria-label"?: string }>) => <button onClick={onClick} disabled={disabled} aria-label={label}>{children}</button>,
+  IonAvatar: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
+  IonBadge: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
+  IonIcon: () => null, IonSpinner: () => null, IonTextarea: () => null, IonActionSheet: () => null,
+}));
 
 vi.mock("../../utils/authApi", () => ({
   restoreSession: vi
@@ -65,7 +79,8 @@ const mirror = vi.hoisted(() => ({
   app: null as ReturnType<typeof useApp> | null,
 }));
 
-function Harness({ message = "hola" }: { message?: string }) {
+function Harness({ message = "hola", withChat = false }: { message?: string; withChat?: boolean }) {
+  const [chatOpen, setChatOpen] = useState(withChat);
   const app = useApp(); mirror.app = app;
   const { chat, sendChat, sendVoiceMessage, backToLogin, cancelChat, retryChat, authLoading } = app;
   mirror.chat = chat;
@@ -75,6 +90,8 @@ function Harness({ message = "hola" }: { message?: string }) {
       <button type="button" onClick={() => sendChat(message)}>
         send
       </button>
+      <button type="button" onClick={() => setChatOpen(open => !open)}>toggle chat</button>
+      {chatOpen && <ChatPage />}
       <button type="button" onClick={backToLogin}>logout</button>
       <button type="button" onClick={cancelChat}>cancel</button>
       <button type="button" onClick={retryChat}>retry</button>
@@ -98,15 +115,19 @@ function Harness({ message = "hola" }: { message?: string }) {
   );
 }
 
-async function renderApp(message?: string) {
+async function renderApp(message?: string, withChat = false) {
   const view = render(
     <I18nProvider>
       <AppProvider>
-        <Harness message={message} />
+        <Harness message={message} withChat={withChat} />
       </AppProvider>
     </I18nProvider>,
   );
-  await waitFor(() => expect(screen.getByTestId("auth-loading").textContent).toBe("false"));
+  await waitFor(() => {
+    expect(screen.getByTestId("auth-loading").textContent).toBe("false");
+    expect(mirror.app?.user.id).toBe("10247381");
+    expect(mirror.app?.threadId).toBe("proactive-10247381");
+  });
   return view;
 }
 
@@ -115,11 +136,12 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     vi.clearAllMocks();
     vi.mocked(streamChatMessage).mockReset();
     vi.mocked(sendChatMessage).mockReset();
+    vi.mocked(fetchThreadState).mockReset().mockResolvedValue(null);
     localStorage.clear();
     localStorage.setItem("copp_access_token", "demo-access-token");
     mirror.chat = [];
     mirror.voiceResult = null;
-    vi.mocked(requireLegalConsent).mockResolvedValue(undefined);
+    vi.mocked(requireLegalConsent).mockReset().mockResolvedValue(undefined);
   });
 
   it("sobreescribe el mensaje con la respuesta canónica del done (sin pasadas concatenadas)", async () => {
@@ -293,6 +315,100 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     await waitFor(() => expect(mirror.chat.find(m => m.role === "bot")?.delivery).toBe("interrupted"));
     expect(sendChatMessage).not.toHaveBeenCalled();
     expect(mirror.chat.filter(m => m.role === "user")).toHaveLength(1);
+  });
+  it.each([{ turns: 1, tracked: true }, { turns: 2, tracked: true }, { turns: 1, tracked: false }])(
+    "envío exitoso→desmontar/montar: $turns turnos, tracker $tracked, solo snapshot y feedback canónico",
+    async ({ turns, tracked }) => {
+      vi.mocked(streamChatMessage).mockImplementation(async (_text, thread) => ({ reply: "Sí", threadId: thread, executionId: "tracker-live" }));
+      await renderApp("Sí", true);
+      for (let index = 0; index < turns; index += 1) {
+        fireEvent.click(screen.getByText("send"));
+        await waitFor(() => expect(mirror.chat.filter(message => message.role === "bot" && message.delivery === "received")).toHaveLength(index + 1));
+      }
+      const localIds = mirror.chat.map(message => message.id);
+      fireEvent.click(screen.getByText("toggle chat"));
+      const thread = mirror.app!.threadId;
+      const messages = Array.from({ length: turns * 2 }, (_, index) => ({
+        messageId: `server:${index}`, role: index % 2 ? "bot" : "user", text: "Sí", channel: "text" as const,
+        status: "final" as const, revision: 1, executionId: tracked && index % 2 ? `tracker:${index}` : null,
+      }));
+      vi.mocked(fetchThreadState).mockResolvedValue({ threadId: thread, messageCount: messages.length, lastMessage: "Sí", messages });
+      fireEvent.click(screen.getByText("toggle chat"));
+      await waitFor(() => expect(mirror.chat.map(message => message.id)).toEqual(messages.map(message => message.messageId)));
+      expect(mirror.chat).toHaveLength(turns * 2);
+      expect(mirror.chat.every(message => !localIds.includes(message.id))).toBe(true);
+      messages.forEach((message, index) => expect(mirror.chat[index]).toMatchObject(message));
+      const feedback = screen.queryAllByLabelText("Calificar respuesta como útil");
+      expect(feedback).toHaveLength(tracked ? turns : 0);
+      if (tracked) {
+        fireEvent.click(feedback.at(-1)!);
+        await waitFor(() => expect(sendChatFeedback).toHaveBeenLastCalledWith({ executionId: `tracker:${turns * 2 - 1}`, threadId: thread, rating: 5 }));
+      }
+      fireEvent.click(screen.getByText("toggle chat"));
+      fireEvent.click(screen.getByText("toggle chat"));
+      await waitFor(() => expect(mirror.chat).toHaveLength(turns * 2));
+      expect(streamChatMessage).toHaveBeenCalledTimes(turns);
+    },
+  );
+  it.each([false, true])("GET atrasado no sustituye texto si empezó otra generación (terminada=%s)", async finished => {
+    let finishTurn!: (value: { reply: string; threadId: string }) => void;
+    vi.mocked(streamChatMessage).mockResolvedValueOnce({ reply: "Anterior", threadId: "proactive-10247381" })
+      .mockImplementationOnce((_text, _thread, callbacks) => {
+        callbacks?.onToken?.("En vuelo");
+        return new Promise(resolve => { finishTurn = resolve; });
+      });
+    await renderApp("Sí"); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("Anterior"));
+    const oldIds = mirror.chat.map(message => message.id);
+    const thread = mirror.app!.threadId;
+    let finishGet!: (value: Awaited<ReturnType<typeof fetchThreadState>>) => void;
+    vi.mocked(fetchThreadState).mockImplementationOnce(() => new Promise(resolve => { finishGet = resolve; }));
+    fireEvent.click(screen.getByText("toggle chat"));
+    await waitFor(() => expect(finishGet).toBeTypeOf("function"));
+    fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("En vuelo"));
+    if (finished) await act(async () => { finishTurn({ reply: "Final nuevo", threadId: thread }); });
+    await act(async () => { finishGet({ threadId: thread, messageCount: 2, lastMessage: "Anterior", messages: [
+      { messageId: "server-user", role: "user", text: "Sí" }, { messageId: "server-bot", role: "bot", text: "Anterior", executionId: "tracker" },
+    ] }); });
+    expect(mirror.chat).toHaveLength(4);
+    expect(mirror.chat.slice(0, 2).map(message => message.id)).toEqual(oldIds);
+    expect(mirror.chat.some(message => message.id === "server-user")).toBe(false);
+    expect(screen.getByTestId("last-bot").textContent).toBe(finished ? "Final nuevo" : "En vuelo");
+    if (!finished) await act(async () => { finishTurn({ reply: "Final nuevo", threadId: thread }); });
+  });
+  it.each(["cuenta", "hilo"])("el hydrator capturado no cruza %s", async change => {
+    await renderApp();
+    const apply = mirror.app!.captureHistoryHydrator();
+    await act(async () => {
+      if (change === "cuenta") mirror.app!.backToLogin(); else mirror.app!.setActiveThreadId("otro-hilo");
+    });
+    let applied = true;
+    await act(async () => { applied = apply([{ role: "bot", text: "Privado", messageId: "private" }]); });
+    expect(applied).toBe(false); expect(mirror.chat.some(message => message.id === "private")).toBe(false);
+  });
+  it("snapshot de texto conserva voz provisional, errores y IDs añadidos después del GET", async () => {
+    vi.mocked(streamChatMessage).mockImplementationOnce(async (_text, threadId) => ({ reply: "Respuesta", threadId }));
+    await renderApp("Pregunta"); fireEvent.click(screen.getByText("send"));
+    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("Respuesta"));
+    const thread = mirror.app!.threadId;
+    const legacy = voiceMessage("legacy-RAM", thread, { role: "agent", source: "ai", message: "Sí", event_id: 2 })!;
+    const linked = { ...voiceMessage("provider", thread, { role: "agent", source: "ai", message: "Sí", event_id: 14 })!, voiceSessionId: "bound", voiceRuntime: "vita" as const };
+    await act(async () => {
+      mirror.app!.registerVoiceSession("bound", thread);
+      mirror.app!.upsertVoiceMessage(legacy); mirror.app!.upsertVoiceMessage(linked);
+      mirror.app!.appendChatMessages([{ role: "bot", text: "Error local", kind: "service-error" }]);
+    });
+    const apply = mirror.app!.captureHistoryHydrator();
+    await act(async () => mirror.app!.appendChatMessages([{ role: "bot", text: "Añadido después del GET" }]));
+    await act(async () => { expect(apply([
+      { role: "user", text: "Pregunta", messageId: "server-user" },
+      { role: "bot", text: "Respuesta", messageId: "server-bot", executionId: null },
+    ])).toBe(true); });
+    expect(mirror.chat).toHaveLength(6);
+    expect(mirror.chat.map(message => message.id)).toEqual(expect.arrayContaining(["server-user", "server-bot", legacy.id, linked.id]));
+    expect(mirror.chat.map(message => message.text)).toEqual(expect.arrayContaining(["Error local", "Añadido después del GET"]));
+    expect(mirror.chat.filter(message => message.text === "Sí")).toHaveLength(2);
   });
   it.each(["legacy", "vita"] as const)("hidratar tras voz %s vinculada sustituye el grupo sin pares duplicados", async voiceRuntime => {
     await renderApp();

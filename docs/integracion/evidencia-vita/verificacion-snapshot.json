@@ -1,0 +1,44 @@
+{
+  "baseCommit": "f9be6a4",
+  "change": "Snapshot autoritativo de texto confirmado con executionId canónico y guardas de propietario/hilo/generación",
+  "checks": {
+    "vitestFull": { "files": 209, "passed": 1728, "exitCode": 0, "durationSeconds": 70.92 },
+    "vitestFocused": { "files": 5, "passed": 104, "exitCode": 0 },
+    "build": { "exitCode": 0, "warnings": "chunks grandes heredados" },
+    "lint": { "exitCode": 0, "warnings": "heredadas" },
+    "i18n": { "exitCode": 0, "missingKeys": 0, "newKeys": 0 },
+    "nativeBleCheck": { "exitCode": 0, "pendingFiles": 0 }
+  },
+  "regressions": [
+    "Envío exitoso, desmontar/montar, IDs canónicos distintos: solo user y bot del snapshot",
+    "Dos turnos de texto idéntico mantienen cuatro mensajes distintos",
+    "Feedback con executionId del snapshot; null no conserva una copia local ni infiere tracker",
+    "GET iniciado antes de otra generación se descarta durante y después del turno nuevo",
+    "Cuenta e hilo invalidan el hydrator capturado",
+    "Se conserva voz provisional, errores e IDs añadidos después de iniciar el GET",
+    "Metadatos source/voiceSessionId/providerMessageId/sourceEventId/executionId en ambos mapas"
+  ],
+  "compatibilityCommit": {
+    "commit": "f9be6a4",
+    "vitestFiles": 209,
+    "vitestPassed": 1720,
+    "exitCode": 0,
+    "supportsVita": "true en sync/stream; ausente default false en BACK/AI",
+    "supportsVitaVoice": true,
+    "syncVoice": "true en página reciente; opción ausente por defecto en helper",
+    "retryDelaysMs": [1000, 2000, 4000],
+    "retryStatuses": ["processing", "busy"],
+    "httpTimeoutMs": 10000
+  },
+  "localIgnoredLogs": [
+    ".vita-sync-all-final.log",
+    ".vita-text-snapshot-focused-final.log",
+    ".vita-text-snapshot-all-final.log",
+    ".vita-text-snapshot-i18n.log"
+  ],
+  "evidence": "Pruebas locales sintéticas con contexto/página/feedback reales y controles Ionic headless; sin nueva pasada visual",
+  "deployedRoundtripVerified": false,
+  "phoneAudioVerified": false,
+  "remoteConfigurationChanged": false,
+  "individualPush": false
+}

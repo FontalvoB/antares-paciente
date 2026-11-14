@@ -99,7 +99,7 @@ export interface ChatMessage {
    * Enlaza el feedback del paciente (Fase 9: `ChatFeedbackAction`).
    * Solo presente en respuestas reales del backend, nunca en fallbacks.
    */
-  executionId?: string;
+  executionId?: string | null;
   /** CTA adjunto al mensaje del bot (ej. sugerencia de agendar cita). */
   cta?: ChatSuggestion | null;
   /** Imagen adjunta del remitente (solo burbujas user; vista local). */
