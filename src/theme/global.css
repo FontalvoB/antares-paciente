@@ -33233,3 +33233,21 @@ ion-button.sos-location-sources {
 .exercise-rest ion-icon { color: var(--ion-color-secondary); font-size: 26px; }
 .exercise-rest h2 { margin: 8px 0; font-size: 19px; font-weight: 800; }
 .exercise-rest p { margin: 0; color: var(--mu); font-size: 14px; line-height: 1.5; }
+
+/* Mensaje publicado del nutricionista: lectura, sin acciones de edición. */
+ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd); border-radius: var(--radius-md); box-shadow: none; --background: var(--wh); --color: var(--tx); }
+.nutrition-recommendations ion-card-header { display: block; padding: 20px 18px 0; }
+.nutrition-recommendations ion-card-title { display: flex; align-items: flex-start; gap: 10px; color: var(--brand-green); font-size: 19px; font-weight: 800; line-height: 1.3; }
+.nutrition-recommendations ion-card-title ion-icon { flex-shrink: 0; font-size: 23px; }
+.nutrition-recommendations-professional { margin: 16px 0 5px; color: var(--tx); font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.nutrition-recommendations-cycle, .nutrition-recommendations-dates, .nutrition-recommendations-published { margin: 4px 0; color: var(--mu); font-size: 13px; line-height: 1.5; }
+.nutrition-recommendations ion-card-content { padding: 18px; color: var(--tx); }
+.nutrition-recommendations .nutrition-recommendations-message { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.7; }
+.nutrition-recommendations-images { margin-top: 20px; }
+.nutrition-recommendations-images h3 { margin: 0 0 12px; color: var(--tx); font-size: 15px; font-weight: 700; }
+.nutrition-recommendations-images figure { margin: 0 0 18px; }
+.nutrition-recommendations-images figure:last-child { margin-bottom: 0; }
+.nutrition-recommendations-images ion-img { width: 100%; overflow: hidden; border-radius: var(--radius-sm); background: var(--g0); }
+.nutrition-recommendations-images ion-img::part(image) { width: 100%; height: auto; object-fit: contain; }
+.nutrition-recommendations-images figcaption { margin-top: 8px; color: var(--mu); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.nutrition-recommendations-image-error { display: flex; align-items: center; gap: 8px; padding: 20px; border: 1px solid var(--bd); border-radius: var(--radius-sm); color: var(--mu); background: var(--g0); }

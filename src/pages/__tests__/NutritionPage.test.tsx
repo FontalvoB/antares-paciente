@@ -6,6 +6,7 @@ import { NutritionPage } from "../NutritionPage";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { MetricsHistoryDto, ProgramSnapshotDto } from "../../services/program/types";
 import { ApiError } from "../../utils/apiClient";
+import { nutritionRecommendationFixture } from "../../components/nutrition/__tests__/fixtures/nutrition-recommendation";
 
 function render(children: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -31,6 +32,12 @@ vi.mock("@ionic/react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@ionic/react")>();
   return {
     ...actual,
+    IonSegmentButton: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+    IonCard: ({ children, ...props }: { children: ReactNode; role?: string; 'aria-labelledby'?: string }) => <section {...props}>{children}</section>,
+    IonCardHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
+    IonCardTitle: ({ children, ...props }: { children: ReactNode; id?: string; role?: string; 'aria-level'?: number }) => <div {...props}>{children}</div>,
+    IonCardContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    IonImg: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />,
     IonModal: ({
       children,
       isOpen,
@@ -172,6 +179,20 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     mockState.queueHydration.mockReset();
     mockState.showToast.mockReset();
     mockState.metricsHistory = null;
+  });
+
+  it.each(['publicadas', 'sin recomendaciones', 'IA caída'])('3.18-prep: Plan funciona con %s sin consultar recomendaciones', scenario => {
+    const { container } = render(<NutritionPage
+      recommendation={scenario === 'sin recomendaciones' ? null : nutritionRecommendationFixture}
+      recommendationsUnavailable={scenario === 'IA caída'} />);
+    expect(screen.queryByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeNull();
+    fireEvent(container.querySelector('ion-segment')!, new CustomEvent('ionChange', { detail: { value: 'indicaciones' }, bubbles: true }));
+    expect(screen.getAllByText('Plan Mediterráneo 1800').length).toBeGreaterThan(0);
+    if (scenario === 'publicadas') {
+      expect(screen.getByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeTruthy();
+      expect(screen.getByText(nutritionRecommendationFixture.professionalName)).toBeTruthy();
+    } else expect(screen.queryByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeNull();
+    expect(mockState.mutate).not.toHaveBeenCalled();
   });
 
   it("0.13 — muestra kg/m² y % en indicadores e historial sin modificar las unidades del contrato", () => {

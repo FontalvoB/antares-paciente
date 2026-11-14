@@ -38,6 +38,8 @@ import { useMyNutritionPlan } from "../hooks/useMyNutritionPlan";
 import { useNutritionPlanStatus } from "../hooks/useNutritionPlanStatus";
 import { NutritionMetrics, NutritionWeek, NutritionWeightChart } from "../components/nutrition/NutritionInsights";
 import { NutritionPlanTab } from "../components/nutrition/NutritionPlanTab";
+import { NutritionRecommendations } from "../components/nutrition/NutritionRecommendations";
+import type { NutritionCycleRecommendationDto } from "../services/nutrition/nutrition-cycle-recommendation-types";
 import { useProgram } from "../hooks/useProgram";
 import { useProgramScores } from "../hooks/useProgramScores";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
@@ -83,7 +85,11 @@ const MEAL_CODE_EMOJI: Record<MealCode, string> = {
   agua: "💧",
 };
 
-export function NutritionPage() {
+export function NutritionPage({ recommendation, recommendationsUnavailable = false }: {
+  /** Preparación 3.18: inyección del DTO público; sin fuente de datos hasta integrar 3.10. */
+  recommendation?: NutritionCycleRecommendationDto | null;
+  recommendationsUnavailable?: boolean;
+} = {}) {
   const { showToast, navigate, openTests, completeStep } = useApp();
   // Sin snapshot → sin contenido fabricado: la pantalla entera deriva de la
   // verdad del servidor. isLoading distingue carga inicial de estados
@@ -538,6 +544,7 @@ export function NutritionPage() {
     return <Screen><PageHeader title={t("Nutrición")} sub={t("Tu plan de alimentación")}/><Scroll className="ntr-scroll">
       <NutritionDisclaimer/>
       <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus}/>
+      <NutritionRecommendations recommendation={recommendation} unavailable={recommendationsUnavailable}/>
     </Scroll></Screen>;
   }
   if (!snapshot) {
@@ -930,6 +937,7 @@ export function NutritionPage() {
         {tab === "semana" && <NutritionWeek current={weekNutrition} previous={weekPrevious} loading={scoresLoading} failed={scoresFailed} onRetry={() => void refetchScores()} locale={locale} />}
 
         {tab === "indicaciones" && (
+          <>
           <NutritionPlanTab
             plan={nutritionPlan}
             status={planStatus}
@@ -941,6 +949,8 @@ export function NutritionPage() {
             onOpenAssessments={() => openTests()}
             onOpenProgram={() => navigate('prog')}
           />
+          <NutritionRecommendations recommendation={recommendation} unavailable={recommendationsUnavailable}/>
+          </>
         )}
 
         {tab === "historial" && (
