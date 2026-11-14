@@ -288,7 +288,9 @@ export function MealFoodFlow({
     mode === "detail" && log ? startAt : "capture",
   );
   const [photo, setPhoto] = useState<string | null>(null);
-  const [result, setResult] = useState<FoodAnalysisResult | null>(null);
+  // La identidad pertenece al borrador analizado: editar valores o reintentar
+  // el guardado conserva tanto el análisis como su client_request_id.
+  const [result, setResult] = useState<(FoodAnalysisResult & { clientRequestId: string }) | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [captureKey, setCaptureKey] = useState(0);
   const [editingValues, setEditingValues] = useState(false);
@@ -377,7 +379,7 @@ export function MealFoodFlow({
     setStep("analyzing");
     try {
       const data = await analyzeFoodImage(blob, fileName, lang);
-      setResult(data);
+      setResult({ ...data, clientRequestId: crypto.randomUUID() });
       if (data.foods.length > 0) {
         setStep("review");
       } else {
@@ -458,7 +460,7 @@ export function MealFoodFlow({
   }
 
   function saveReview(form: IntakeFormState) {
-    if (!result) return;
+    if (!result || createMutation.isPending) return;
     const summary = result.summary;
     const fallback = result.intake;
     const base =
@@ -474,6 +476,7 @@ export function MealFoodFlow({
     createMutation.mutate(
       {
         mealCode: meal,
+        clientRequestId: result.clientRequestId,
         intake: formToPayload(base, "ai_photo", result.analysisId),
       },
       {

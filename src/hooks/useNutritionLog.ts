@@ -8,7 +8,7 @@
  *     (R2.6 / R5.6 — business conflict, no retry).
  *   - Transport failure (timeout / network / 5xx) → enqueue for ordered offline
  *     replay with the SAME mealCode+localDate (R5.4 / R5.5). The server dedups
- *     naturally by meal+day, so no clientRequestId is sent on the wire.
+ *     naturally by meal+day; Foto IA además conserva clientRequestId (3.5/3.6).
  *   - onSettled → invalidate snapshot + scores ONLY when XP could change
  *     (success path); on 409/transport we skip invalidation so the optimistic
  *     marker (or queued state) survives until reconnect/replay reconciles.
@@ -47,6 +47,8 @@ export interface LogMealVariables {
   localDate?: string;
   /** Intake enriquecido opcional (SPEC nutrition-intake-adherence). */
   intake?: NutritionIntakePayload;
+  /** UUID del borrador Foto IA, estable entre envío y reintento. */
+  clientRequestId?: string;
 }
 
 /**
@@ -102,8 +104,8 @@ export function useNutritionLog() {
     // still surface via onError and are enqueued (R5.4).
     networkMode: "online",
 
-    mutationFn: ({ mealCode, localDate, intake }) =>
-      logMeal(mealCode, localDate, intake),
+    mutationFn: ({ mealCode, localDate, intake, clientRequestId }) =>
+      logMeal(mealCode, localDate, intake, clientRequestId),
 
     onMutate: async (vars) => {
       // Cancel in-flight snapshot/scores queries so the optimistic patch wins.
@@ -130,8 +132,8 @@ export function useNutritionLog() {
 
       // Transport failure → enqueue for ordered replay with the SAME
       // mealCode+localDate+intake (verbatim). The server's per-meal/per-day
-      // dedup makes the replay idempotent without a clientRequestId on the
-      // wire (R3.2 / R5.5); el payload viaja con el MISMO shape anidado que
+      // dedup protege clientes anteriores; Foto IA conserva también el UUID
+      // de la petición original (3.5/3.6). El payload mantiene el shape anidado de
       // logMeal (`{ mealCode, localDate?, intake }`, B2) para que el replay
       // persista los mismos macros/fuente/análisis.
       if (isTransportError(error)) {
@@ -139,10 +141,11 @@ export function useNutritionLog() {
           actionType: "nutritionLog",
           payload: {
             mealCode: vars.mealCode,
+            ...(vars.clientRequestId !== undefined && { clientRequestId: vars.clientRequestId }),
             ...(vars.localDate !== undefined && { localDate: vars.localDate }),
             ...(vars.intake !== undefined && { intake: vars.intake }),
           },
-          clientRequestId: crypto.randomUUID(),
+          clientRequestId: vars.clientRequestId ?? crypto.randomUUID(),
           createdAt: new Date().toISOString(),
         });
         return;

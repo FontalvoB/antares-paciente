@@ -44,13 +44,15 @@ export interface NutritionIntakePayload {
  * WIRE SHAPE (B2, locked by contract test): el backend enlaza el intake como
  * bloque ANIDADO `intake` (`LogNutritionRequest.Intake`, `NutritionIntakePayload?`)
  * — un shape aplanado en top-level se descartaría en silencio. El cliente
- * envía SIEMPRE `{ mealCode, localDate?, intake? }`; clientes viejos sin
+ * envía `{ mealCode, localDate?, intake?, clientRequestId? }`; clientes viejos sin
  * intake siguen funcionando (el campo se omite).
  *
  * @param mealCode - The meal/hydration code (des, alm, mer, cen, agua).
  * @param localDate - Optional local date (YYYY-MM-DD). Defaults to server-side today.
  * @param intake - Optional enriched intake (calories/macros/water/source/
  *   foodAnalysisId). Hydration logs pass mealCode 'agua' + waterMl.
+ * @param clientRequestId - Identidad del registro Foto IA; corresponde a
+ *   client_request_id en persistencia y se conserva al reintentar.
  * @returns The server response with xpAwarded (0 if already logged via 409 handling upstream).
  * @throws ApiError with code 'HABIT_ALREADY_LOGGED' on duplicate (409).
  */
@@ -58,6 +60,7 @@ export async function logMeal(
   mealCode: MealCode,
   localDate?: string,
   intake?: NutritionIntakePayload,
+  clientRequestId?: string,
 ): Promise<NutritionLogResultDto> {
   // Edge validation — fail fast before hitting the network
   if (!VALID_MEAL_CODES.has(mealCode)) {
@@ -70,6 +73,7 @@ export async function logMeal(
     method: "POST",
     body: {
       mealCode,
+      ...(clientRequestId !== undefined && { clientRequestId }),
       ...(localDate !== undefined && { localDate }),
       // Intake ANIDADO (shape del backend); los campos del payload viajan
       // verbatim dentro del bloque. Sin intake → shape anterior intacto.
