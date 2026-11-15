@@ -21,7 +21,8 @@ vi.mock('../../hooks/useProgramScores', () => ({ useProgramScores: () => ({ scor
 vi.mock('../../hooks/useProgramCalendar', () => ({ useProgramCalendar: () => ({ data: { days: [] } }) }))
 vi.mock('../../hooks/useStreakChests', () => ({ useStreakChests: () => ({ chests: [] }) }))
 vi.mock('../../components/Screen', () => ({ Screen: ({ children }: { children: ReactNode }) => <div>{children}</div>, Scroll: ({ children }: { children: ReactNode }) => <div>{children}</div> }))
-vi.mock('framer-motion', () => ({ AnimatePresence: ({ children }: { children: ReactNode }) => children, motion: {
+vi.mock('framer-motion', () => ({ useReducedMotion:()=>true, AnimatePresence: ({ children }: { children: ReactNode }) => children, motion: {
+  section: ({children,className}:{children:ReactNode;className?:string}) => <section className={className}>{children}</section>,
   div: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div>,
   button: ({ children, className, 'aria-label': label }: { children: ReactNode; className?: string; 'aria-label'?: string }) => <button className={className} aria-label={label}>{children}</button>,
 } }))
@@ -33,7 +34,7 @@ vi.mock('@ionic/react', () => {
     IonTextarea: ({ label, value, className, onIonInput }: { label: string; value: string; className?: string; onIonInput: (event: { detail: { value: string } }) => void }) => <label>{label}<textarea className={className} value={value} onChange={event => onIonInput({ detail: { value: event.target.value } })} /></label>,
     IonRange: ({ value, 'aria-label': label }: { value: number; 'aria-label'?: string }) => <input aria-label={label} type="range" value={value} readOnly />,
     IonIcon: () => null, IonSpinner: () => <span role="status" />,
-    IonModal: () => null, IonProgressBar: () => null,
+    IonModal: () => null, IonProgressBar: () => null, IonContent: Wrap,
     IonChip: Wrap, IonSegment: Wrap, IonSegmentButton: Wrap, IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap, IonCard: Wrap, IonCardContent: Wrap, IonSkeletonText: Wrap,
   }
 })
@@ -158,18 +159,18 @@ describe('actual ProgramPage during language refresh', () => {
     vi.useFakeTimers()
     fireEvent.click(screen.getByText('Iniciar circuito'))
     act(() => vi.advanceTimersByTime(2000))
-    expect(view.container.querySelector('.ex-clock')?.textContent).toBe('00:03')
+    expect(view.container.querySelector('[role=timer]')?.textContent).toBe('00:03')
     fireEvent.click(screen.getByText('Switch English'))
     await act(async () => { await vi.advanceTimersByTimeAsync(0) })
     expect(state.load).toHaveBeenCalledTimes(2)
     act(() => vi.advanceTimersByTime(3000))
     act(() => vi.advanceTimersByTime(1000))
-    expect(view.container.querySelector('.ex-ring-center .kicker')?.textContent).toBe('2 / 2')
-    expect(view.container.querySelector('.ex-clock')?.textContent).toBe('00:09')
+    expect(view.container.querySelector('.p2-active-heading strong')?.textContent).toBe('STATION 2 OF 2')
+    expect(view.container.querySelector('[role=timer]')?.textContent).toBe('00:09')
     expect(state.complete).not.toHaveBeenCalled()
     await act(async () => { view.english.resolve(snapshot(true)); await vi.advanceTimersByTimeAsync(1) })
-    expect(view.container.querySelector('.ex-clock')?.textContent).toBe('00:09')
-    expect(view.container.querySelector('.ex-step-name')?.textContent).toBe('Second station')
+    expect(view.container.querySelector('[role=timer]')?.textContent).toBe('00:09')
+    expect(view.container.querySelector('.p2-active-station h2')?.textContent).toBe('Second station')
   })
   it('preserves the same audio instance, playback and elapsed progress when the URL is unchanged', async () => {
     const audios: Array<{ src: string; currentTime: number; duration: number; pause: ReturnType<typeof vi.fn>; ontimeupdate?: () => void; onplay?: () => void }> = []

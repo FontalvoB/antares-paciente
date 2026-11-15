@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveLastNightSleep } from '../emotionalSleep'
 import { programDayNumber } from '../programDayNumber'
-import { queueCommunityShareDraft, takeCommunityShareDraft } from '../communityShareDraft'
+import { queueCommunityShareDraft, takeCommunityShareDraft, takeCommunityShareDraftContent } from '../communityShareDraft'
 import { markProtocolReminderSeen, reminderKey, wasProtocolReminderSeen } from '../dailyProtocolReminder'
 import type { HealthSample } from '../../devices/types'
 
@@ -39,6 +39,18 @@ describe('sueño de anoche y contexto del protocolo', () => {
 })
 
 describe('borrador voluntario de comunidad', () => {
+  it('transporta la foto en memoria sin subirla y la descarta al cambiar de cuenta o caducar', () => {
+    const file=new File(['photo'],'habit.jpg',{type:'image/jpeg'})
+    queueCommunityShareDraft('patient-A','Mi hábito',file)
+    const draft=takeCommunityShareDraftContent('patient-A')
+    expect(draft?.file).toBe(file)
+    expect(draft?.text).toBe('Mi hábito')
+    expect(takeCommunityShareDraftContent('patient-A')).toBeNull()
+    queueCommunityShareDraft('patient-A','Mi hábito',file)
+    expect(takeCommunityShareDraftContent('patient-B')).toBeNull()
+    queueCommunityShareDraft('patient-A','Mi hábito',file)
+    expect(takeCommunityShareDraftContent('patient-A',Date.now()+6*60000)).toBeNull()
+  })
   beforeEach(() => { takeCommunityShareDraft(''); vi.useRealTimers() })
   it('solo lo consume la misma cuenta, una vez, sin publicar', () => {
     queueCommunityShareDraft('patient-A', 'Día 19 para estar más sano')

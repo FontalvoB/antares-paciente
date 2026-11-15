@@ -59,6 +59,7 @@ import { resolveStationSec } from "../utils/exerciseSteps";
 import { programDayNumber } from "../utils/programDayNumber";
 import { queueCommunityShareDraft } from "../utils/communityShareDraft";
 import { scheduledDayTasks } from "../utils/programRest";
+import { localizedError } from '../utils/localizedError';
 import type {
   CompleteTaskInput,
   ProgramSnapshotDto,
@@ -113,6 +114,10 @@ export function ProgramPage() {
   const [exRunning, setExRunning] = useState(false);
   const [exStep, setExStep] = useState(0);
   const [exLeft, setExLeft] = useState(45);
+  const [exActiveSeconds, setExActiveSeconds] = useState(0);
+  const [missionError, setMissionError] = useState<string | null>(null);
+  const [missionReceipt, setMissionReceipt] = useState<{id:ProgramTaskId;points:number;seconds:number}|null>(null);
+  const missionWriteInFlight = useRef(false);
   const [takenAt, setTakenAt] = useState("");
   const [openedChest, setOpenedChest] = useState<{
     days: number;
@@ -312,6 +317,7 @@ export function ProgramPage() {
   const clinicalChests = useClinicalChests(scores, activeProgramWeek);
 
   const burst = (pts: number, withConfetti = false) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     setXpPop(pts);
     window.setTimeout(() => setXpPop(null), 900);
     if (!withConfetti) return;
@@ -358,7 +364,8 @@ export function ProgramPage() {
         emotional?: EmotionalAssessmentPayload | null;
       },
     ) => {
-      if (program[id] || (id === "ejercicio" && snapshot?.rest === true)) return;
+      if (program[id] || completeTaskMutation.isPending || ((id === 'ejercicio'||id === 'nutraceutico')&&missionWriteInFlight.current) || (id === "ejercicio" && snapshot?.rest === true)) return;
+      setMissionError(null);
 
       // Fase 12 (offline-first): sin red se encola persistente el check-in
       // con el payload derivado del snapshot (enrollmentId/localDate nunca
@@ -387,7 +394,7 @@ export function ProgramPage() {
               ? applyOptimistic(old, id as TaskCode, extra?.vitals ?? null)
               : old,
         );
-        setActive(null);
+        if(id !== 'ejercicio' && id !== 'nutraceutico') setActive(null);
         return;
       }
 
@@ -402,6 +409,8 @@ export function ProgramPage() {
       // cualquier rechazo) no debe dejar la tarea "completada" en la UI —
       // el rollback del snapshot + el toast de error del hook ya muestran
       // la verdad.
+      // Bloqueo sincrónico del doble toque; la identidad/idempotencia sigue en el hook existente.
+      if(id === 'ejercicio'||id === 'nutraceutico') missionWriteInFlight.current=true;
       completeTaskMutation.completeTask(
         {
           taskCode: id as TaskCode,
@@ -411,24 +420,34 @@ export function ProgramPage() {
           emotional: extra?.emotional,
         },
         {
-          onSuccess: () => {
+          onSuccess: (data) => {
+            missionWriteInFlight.current=false;
+            const premiumMission=id === 'ejercicio'||id === 'nutraceutico';
+            const awarded=premiumMission ? data.pointsAwarded : pts;
+            const feedback=premiumMission ? t('Registro confirmado · +{pts} pts',{pts:String(awarded)}) : msg;
+            const awardedBonus=premiumMission ? data.dailyBonusAwarded : willComplete ? bonusPts : 0;
+            if(id === 'ejercicio'||id === 'nutraceutico') {
+              setMissionReceipt({id,points:data.pointsAwarded,seconds:exActiveSeconds});
+              if(id==='ejercicio')setExRunning(false);
+            }
             // AppContext para fallback continuity — solo tras confirmación.
-            completeStep(id, pts);
+            completeStep(id, awarded);
             showToast(
-              willComplete
-                ? `${msg} · ${t("Bonus +{pts}", { pts: String(bonusPts) })}`
-                : msg,
+              awardedBonus>0
+                ? `${feedback} · ${t("Bonus +{pts}", { pts: String(awardedBonus) })}`
+                : feedback,
               "ok",
             );
-            burst(willComplete ? pts + bonusPts : pts, true);
+            burst(awarded+awardedBonus, true);
             if (id === "nutraceutico") {
               setTakenAt(new Date().toISOString());
             }
           },
+          onError: error => {missionWriteInFlight.current=false;if(id === 'ejercicio'||id === 'nutraceutico')setMissionError(localizedError(error,{t,lang},'No se pudo guardar el registro. Puedes volver a intentarlo.'));},
         },
       );
 
-      setActive(null);
+      if(id !== 'ejercicio' && id !== 'nutraceutico') setActive(null);
     },
     [
       program,
@@ -440,6 +459,8 @@ export function ProgramPage() {
       snapshot,
       showToast,
       t,
+      lang,
+      exActiveSeconds,
     ],
   );
 
@@ -476,6 +497,7 @@ export function ProgramPage() {
   // (misma identidad de rutina) y NO debe reiniciar un circuito a mitad de
   // camino — eso lo silenciaba sin que el usuario lo pidiera.
   const prevActive = useRef<ProgramTaskId | null>(null);
+  useEffect(() => {setMissionError(null);setMissionReceipt(null)}, [active]);
   useEffect(() => {
     const enteringExercise =
       active === "ejercicio" && prevActive.current !== "ejercicio";
@@ -485,6 +507,7 @@ export function ProgramPage() {
       setExStep(0);
       setExLeft(activeExerciseSteps[0]?.sec ?? 45);
       setExRunning(false);
+      setExActiveSeconds(0);
     }
   }, [active, activeExerciseSteps]);
 
@@ -494,8 +517,8 @@ export function ProgramPage() {
       setExRunning(false);
       finish(
         "ejercicio",
-        taskPts || 150,
-        t("Circuito completado · +{pts} pts", { pts: String(taskPts || 150) }),
+        taskPts,
+        t("Circuito completado · +{pts} pts", { pts: String(taskPts) }),
       );
       return;
     }
@@ -509,10 +532,11 @@ export function ProgramPage() {
     // baseline (no celebra ni al entrar con tareas pendientes ni al entrar
     // con el día ya hecho). La condición anterior invertida abría el cofre
     // al ENTRAR con el día sin terminar ("¡0 DÍAS!" en el Protocolo).
-    if (prevAll.current !== null && allDone && !prevAll.current)
+    const confirmedAll = allDone && !todayTasks?.some(task => task.clientPending);
+    if (prevAll.current !== null && confirmedAll && !prevAll.current)
       setCelebrate(true);
-    prevAll.current = allDone;
-  }, [allDone]);
+    prevAll.current = confirmedAll;
+  }, [allDone,todayTasks]);
 
   useEffect(() => {
     if (active !== "ejercicio") setExRunning(false);
@@ -647,7 +671,7 @@ export function ProgramPage() {
 
   useEffect(() => {
     if (!exRunning || resting) return;
-    const id = window.setInterval(() => setExLeft((s) => s - 1), 1000);
+    const id = window.setInterval(() => {setExLeft((s) => s - 1);setExActiveSeconds(s=>s+1)}, 1000);
     return () => window.clearInterval(id);
   }, [exRunning, resting]);
 
@@ -663,8 +687,8 @@ export function ProgramPage() {
     if (!program.ejercicio) {
       finish(
         "ejercicio",
-        taskPts || 150,
-        t("Circuito completado · +{pts} pts", { pts: String(taskPts || 150) }),
+        taskPts,
+        t("Circuito completado · +{pts} pts", { pts: String(taskPts) }),
       );
     }
   }, [
@@ -707,7 +731,7 @@ export function ProgramPage() {
   }
 
   return (
-    <Screen hideNav={!!active} className={`pg-reference${active ? ` lesson-page lesson-${active}${active === "vitals" ? " wearable-reference" : ""}` : ""}`}>
+    <Screen hideNav={!!active} className={`pg-reference${active ? ` lesson-page lesson-${active}${active === 'ejercicio'||active === 'nutraceutico' ? ' p2-mission' : ''}${active === "vitals" ? " wearable-reference" : ""}` : ""}`}>
       {!active && <Scroll className="pg-scroll">
         {productMessage && (
           <div
@@ -817,7 +841,7 @@ export function ProgramPage() {
               <div className={`lesson-sheet-head${active === "emocional" ? " lesson-sheet-head--emotional" : ""}`}>
                 <div>
                   {!(task.id === "ejercicio" && resting) && <div className="kicker" style={{ color: "var(--mu)" }}>
-                    {task.emoji}{" "}
+                    {task.id !== 'ejercicio' && task.id !== 'nutraceutico' ? `${task.emoji} ` : ''}
                     {t("Misión · +{pts} pts", { pts: String(taskPts) })}
                   </div>}
                   <h2>{task.id === "ejercicio" && resting ? t("Descanso de ejercicio") : t(taskTitle)}</h2>
@@ -831,7 +855,7 @@ export function ProgramPage() {
                   <IonIcon slot="icon-only" icon={arrowBack} />
                 </IonButton>
               </div>
-              {program[task.id] && task.id !== "nutraceutico" && !(task.id === "ejercicio" && resting) && (
+              {program[task.id] && task.id !== "nutraceutico" && task.id !== 'ejercicio' && (
                 <div className="lesson-done-banner">
                   {t("Completada hoy · +{pts} pts", { pts: String(taskPts) })}
                 </div>
@@ -906,6 +930,15 @@ export function ProgramPage() {
                   step={exStep}
                   left={Math.max(0, exLeft)}
                   running={exRunning}
+                  pending={serverActiveTask?.clientPending === true}
+                  saving={completeTaskMutation.isPending}
+                  errorMessage={missionError}
+                  programWeek={activeProgramWeek}
+                  awardedPoints={missionReceipt?.id === 'ejercicio' ? missionReceipt.points : null}
+                  activeSeconds={missionReceipt?.id === 'ejercicio' ? missionReceipt.seconds : null}
+                  onPrevious={()=>{if(exStep>0){const previous=exStep-1;setExStep(previous);setExLeft(activeExerciseSteps[previous]?.sec??45)}}}
+                  onExit={()=>setActive(null)}
+                  onShare={serverActiveTask?.status === 'Completed'&&!serverActiveTask.clientPending ? ()=>{queueCommunityShareDraft(user.id||user.cedula,t('Hoy completé mi circuito de ejercicio. ¡Un paso más!'));navigate('com')} : undefined}
                   onToggle={() => setExRunning((r) => !r)}
                   onSkip={skipStation}
                   onComplete={() =>
@@ -926,12 +959,17 @@ export function ProgramPage() {
                   pts={taskPts}
                   takenAt={takenAt}
                   pending={serverActiveTask?.clientPending === true}
+                  saving={completeTaskMutation.isPending}
+                  errorMessage={missionError}
+                  awardedPoints={missionReceipt?.id === 'nutraceutico' ? missionReceipt.points : null}
+                  localDate={snapshot?.todayLocalDate}
+                  onExit={()=>setActive(null)}
                   recordedAt={serverActiveTask?.clientPending ? null : serverActiveTask?.completedAt}
                   nbWeekDays={snapshot?.streak?.nbWeekDays}
                   dayNumber={activeProgramDay}
-                  onShare={serverActiveTask?.status === "Completed" && !serverActiveTask.clientPending ? () => {
+                  onShare={serverActiveTask?.status === "Completed" && !serverActiveTask.clientPending ? (draft) => {
                     const day = activeProgramDay;
-                    queueCommunityShareDraft(user.id || user.cedula, day ? t("Día {day} para estar más sano. Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!", { day: String(day) }) : t("Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!"));
+                    queueCommunityShareDraft(user.id || user.cedula, draft?.text ?? (day ? t("Día {day} para estar más sano. Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!", { day: String(day) }) : t("Hoy cumplí mi hábito de bienestar. ¡Un paso a la vez!")),draft?.file);
                     setActive(null);
                     navigate("com");
                   } : undefined}

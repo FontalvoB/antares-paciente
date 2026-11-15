@@ -1,25 +1,14 @@
 import { useId, useState } from 'react';
-import { createAnimation, IonButton, IonContent, IonIcon, IonModal } from '@ionic/react';
+import { IonButton, IonContent, IonIcon, IonModal } from '@ionic/react';
 import { closeOutline, informationCircleOutline, shieldCheckmarkOutline } from 'ionicons/icons';
 import { useT } from '../../i18n/I18nContext';
 import { sessionUserId } from '../../utils/sessionIdentity';
 import { getAccessToken } from '../../utils/authApi';
+import { wellnessSheetAnimation } from '../../utils/wellnessSheetAnimation';
 
 /** Solo guarda la lectura del aviso, por cuenta y versión; nunca datos clínicos. */
 function wasRead(key: string | null) {
   try { return key ? localStorage.getItem(key) === '1' : true; } catch { return true; }
-}
-
-/** Animación Ionic: conserva los identificadores que utiliza el gesto nativo de la hoja. */
-function legalSheetAnimation(base: HTMLElement, entering: boolean, breakpoint = 1) {
-  const root = base.shadowRoot ?? base;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const resting = `translateY(${100 - breakpoint * 100}%)`;
-  const wrapper = createAnimation('wrapperAnimation').addElement(root.querySelectorAll('.modal-wrapper, .modal-shadow'))
-    .beforeStyles({opacity:'1'}).fromTo('transform', entering ? 'translateY(100%)' : resting, entering ? resting : 'translateY(100%)');
-  const backdrop = createAnimation('backdropAnimation').addElement(root.querySelector('ion-backdrop')!)
-    .fromTo('opacity', entering ? 0 : 'var(--backdrop-opacity)', entering ? 'var(--backdrop-opacity)' : 0);
-  return createAnimation().addElement(base).duration(reduced ? 0 : 280).easing('ease-out').addAnimation([wrapper,backdrop]);
 }
 
 export function NutritionDisclaimer() {
@@ -42,8 +31,8 @@ function AccountDisclaimer({ account }: { account: string | null }) {
       <p>{t('Plan automático, solo informativo')}<span> · </span><IonButton fill="clear" onClick={() => setOpen(true)}>{t('Leer aviso')}</IonButton></p>
     </aside>
     <IonModal className="nutrition-legal-sheet" isOpen={open} initialBreakpoint={1} breakpoints={[0, 1]} handle aria-labelledby={titleId} onDidDismiss={dismiss}
-      enterAnimation={(base,options) => legalSheetAnimation(base,true,options?.currentBreakpoint)}
-      leaveAnimation={(base,options) => legalSheetAnimation(base,false,options?.currentBreakpoint)}>
+      enterAnimation={(base,options) => wellnessSheetAnimation(base,true,options?.currentBreakpoint)}
+      leaveAnimation={(base,options) => wellnessSheetAnimation(base,false,options?.currentBreakpoint)}>
       <IonContent>
         <div className="nutrition-legal-body">
           <div className="nutrition-legal-top"><span className="nutrition-legal-mark"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" /></span><IonButton fill="clear" aria-label={t('Cerrar')} onClick={dismiss}><IonIcon slot="icon-only" icon={closeOutline} /></IonButton></div>

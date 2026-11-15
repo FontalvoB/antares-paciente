@@ -1,0 +1,44 @@
+/** Programa, mutación y cliente HTTP reales; backend determinista aislado para QA visual. */
+export async function setup(page, origin) {
+  page.qaErrors=[];page.qaRequests=[];page.qaHttp=[];page.qaConsole=[];
+  page.on('pageerror',error=>page.qaErrors.push(error.message));
+  page.on('console',message=>{if(['error','warning'].includes(message.type()))page.qaConsole.push({type:message.type(),text:message.text().replace(/([?&]token=)[^'\s]+/g,'$1[redacted]')})});
+  page.on('request',request=>{const path=new URL(request.url()).pathname;if(path.startsWith('/api/'))page.qaHttp.push({method:request.method(),path,language:request.headers()['x-app-language']})});
+  const source=await (await page.request.get(origin+'/src/pages/ProgramPage.tsx')).text();
+  const main=await (await page.request.get(origin+'/src/main.tsx')).text();
+  const react=source.match(/from "([^"\n]*\/react\.js\?[^"\n]*)"/)[1];
+  const query=source.match(/from "([^"\n]*\/@tanstack_react-query\.js\?[^"\n]*)"/)[1];
+  const ionic=source.match(/from "([^"\n]*\/@ionic_react\.js\?[^"\n]*)"/)[1];
+  const dom=main.match(/from "([^"\n]*\/react-dom_client\.js\?[^"\n]*)"/)[1];
+  const mocks={
+    '/src/context/AppContext.tsx':`export const useApp=()=>({screen:window.__p2.screen,user:{id:'qa-p2',cedula:'qa-p2',nombre:'Paciente QA'},authLoading:false,program:{},pointsToday:0,streak:0,programWeek:8,weekCheckins:[],wearableConnected:false,navigate:id=>window.qaNavigate(id),completeStep:()=>{},openTests:()=>{},showToast:()=>{},openVoice:()=>{},openPanic:()=>{}});`,
+    '/src/hooks/useProgram.ts':`import {useQuery} from '${query}';export const useProgram=()=>{const q=useQuery({queryKey:['program','snapshot'],queryFn:async()=>await(await fetch('/api/v1/program/me/snapshot')).json(),initialData:window.__p2.snapshot,staleTime:Infinity});return {snapshot:q.data,isLoading:false,isRefreshing:false,programState:'active',refetch:q.refetch}};`,
+    '/src/hooks/useProgramScores.ts':`export const useProgramScores=()=>({scores:null,stale:false,isLoading:false,isError:false,refetch:()=>{}});`,
+    '/src/hooks/useProgramCalendar.ts':`export const useProgramCalendar=()=>({data:{days:[]}});`,
+    '/src/hooks/useStreakChests.ts':`export const useStreakChests=()=>({chests:[]});`,
+    '/src/context/WearableContext.tsx':`export const useWearable=()=>({today:{},samples:{}});`,
+  };
+  await page.route('**/src/**',route=>{const body=mocks[new URL(route.request().url()).pathname];return body?route.fulfill({contentType:'application/javascript',body}):route.continue()});
+  await page.route('**/api/v1/program/me/snapshot',async route=>route.fulfill({json:await page.evaluate(()=>structuredClone(window.__p2.snapshot))}));
+  await page.route('**/api/v1/program/tasks/complete',async route=>{
+    const body=route.request().postDataJSON();page.qaRequests.push(body);
+    const config=await page.evaluate(()=>({status:window.__p2.status,delay:window.__p2.delay}));
+    await new Promise(resolve=>setTimeout(resolve,config.delay));
+    if(config.status!==200) return route.fulfill({status:config.status,json:{title:'QA rejection',detail:route.request().headers()['x-app-language']==='en'?'The test entry could not be saved.':'No se pudo guardar el registro de prueba.'}});
+    const snapshot=await page.evaluate(code=>{const s=window.__p2.snapshot,t=s.todayTasks.find(t=>t.taskCode===code);t.status='Completed';t.completedAt=new Date().toISOString();s.todayPoints+=t.points;s.xp.balance+=t.points;return structuredClone(s)},body.taskCode);
+    const points=snapshot.todayTasks.find(t=>t.taskCode===body.taskCode).points;
+    await route.fulfill({json:{taskCompletionId:body.clientRequestId,pointsAwarded:points,xpBalanceAfter:snapshot.xp.balance,isPerfectDay:false,dailyBonusAwarded:0,streakCurrent:3,freezesRemaining:0,dayPoints:snapshot.todayPoints,dayPointsMax:350}});
+  });
+  const html=`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>P2 · QA aislada</title>${['core','normalize','structure','typography','padding','flex-utils','display'].map(f=>'<link rel="stylesheet" href="/node_modules/@ionic/react/css/'+f+'.css">').join('')}<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/src/theme/variables.css"><link rel="stylesheet" href="/src/theme/global.css"><div id="root"></div><script type="module">
+  import React from '${react}';import ReactDOM from '${dom}';import {IonApp,setupIonicReact} from '${ionic}';import {QueryClient,QueryClientProvider} from '${query}';import {I18nProvider,useI18n} from '/src/i18n/I18nContext.tsx';import {ProgramPage} from '/src/pages/ProgramPage.tsx';import {applyTabletLayoutClass} from '/src/utils/viewport.ts';
+  setupIonicReact({mode:'ios'});applyTabletLayoutClass();
+  const names=['Sentadilla','Press banca','Remo','Plancha','Burpees','Zancadas'];const durations=[360,360,240,45,180,180];
+  window.__p2={screen:'program-ejercicio',status:200,delay:800,snapshot:{enrollmentId:'11111111-1111-4111-8111-111111111111',todayLocalDate:'2026-11-15',template:{currentWeekNumber:8,totalWeeks:12,currentWeekStartDateLocal:'2026-11-09',currentWeekEndDateLocal:'2026-11-15'},todayTasks:[{taskCode:'ejercicio',title:'Hacer ejercicio del día',short:'',points:150,status:'Pending',content:{exerciseRoutineName:'Full Body',exercises:names.map((name,i)=>({name,description:'Sigue las indicaciones de tu equipo para este ejercicio.',durationSecs:durations[i],sets:3,repetitions:12,restSeconds:90,targetMuscle:'Piernas',equipment:'Mancuernas',tips:'Mantén la espalda recta.',sortOrder:i,referenceVideo:null,mediaType:'Image',mediaUrl:location.origin+'/src/assets/missions/ejercicio.jpg'}))}},{taskCode:'nutraceutico',title:'Tomar nutracéutico',short:'',points:80,status:'Pending',content:{}},{taskCode:'emocional',points:120,status:'Pending',content:{}}],xp:{balance:0},todayPoints:0,todayPointsMax:350,streak:{current:3,nbWeekDays:[true,true,true,true,true,true,false]},calendar:[]}};
+  const initial=structuredClone(window.__p2.snapshot);localStorage.setItem('antares_lang','es');const token=btoa('{}')+'.'+btoa(JSON.stringify({sub:'qa-p2',aud:'app',exp:4102444800}))+'.fixture';sessionStorage.setItem('copp_access_token',token);const qc=new QueryClient({defaultOptions:{queries:{retry:false}}});
+  function Harness(){const[rev,render]=React.useState(0);const{setLang}=useI18n();window.qaNavigate=screen=>{window.__p2.screen=screen;render(v=>v+1)};window.qaLang=setLang;window.qaPatch=patch=>{window.__p2.snapshot={...window.__p2.snapshot,...patch};qc.setQueryData(['program','snapshot'],window.__p2.snapshot)};window.qaReset=(screen='program-ejercicio',done=false)=>{window.__p2.snapshot=structuredClone(initial);if(done){window.__p2.snapshot.todayTasks.find(t=>t.taskCode===screen.replace('program-','')).status='Completed'}qc.setQueryData(['program','snapshot'],window.__p2.snapshot);window.qaNavigate(screen)};return React.createElement('div',{className:'app-stage'},React.createElement('div',{className:'app-shell'},React.createElement(ProgramPage)))}
+  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(IonApp,null,React.createElement(QueryClientProvider,{client:qc},React.createElement(I18nProvider,null,React.createElement(Harness)))));
+  </script></html>`;
+  await page.route('**/qa-p2',route=>route.fulfill({contentType:'text/html',body:html}));
+  await page.goto(origin+'/qa-p2');
+  await page.locator('.exercise-session').waitFor({state:'visible'});
+}

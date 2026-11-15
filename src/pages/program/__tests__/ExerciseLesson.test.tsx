@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { ExerciseLesson } from "../ExerciseLesson";
 import { exerciseMediaUrl } from "../../../utils/exerciseMedia";
 import type { ExerciseItemDto } from "../../../services/program/types";
 
 vi.mock("@ionic/react", () => ({
-  IonButton: ({ children, onClick }: { children: ReactNode; onClick: () => void }) => <button onClick={onClick}>{children}</button>,
+  IonButton: ({ children, onClick,disabled,'aria-label':label }: { children: ReactNode; onClick: () => void;disabled?:boolean;'aria-label'?:string }) => <button disabled={disabled} aria-label={label} onClick={onClick}>{children}</button>,
+  IonContent: ({children}:{children:ReactNode}) => <div>{children}</div>,
+  IonModal: ({children,isOpen}:{children:ReactNode;isOpen:boolean}) => isOpen ? <div role="dialog">{children}</div> : null,
   IonItem: ({ children, onClick }: { children: ReactNode; onClick: () => void }) => <button onClick={onClick}>{children}</button>,
   IonIcon: () => null,
   IonSpinner: () => null,
@@ -47,45 +49,46 @@ describe("exercise routine and dedicated technique view", () => {
   });
 
   it("opens the selected exercise with its configured video and actual prescription", () => {
-    const { container, props } = setup();
-    fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones" }));
-    expect(screen.getByRole("heading", { name: "Movimiento prescrito" })).toBeTruthy();
-    const video = container.querySelector("video")!;
+    const { props } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones de Movimiento prescrito" }));
+    const detail=within(screen.getByRole('dialog'));
+    expect(detail.getByRole("heading", { name: "Movimiento prescrito" })).toBeTruthy();
+    const video = screen.getByRole('dialog').querySelector("video")!;
     expect(video.getAttribute("src")).toBe(exercise.mediaUrl);
     expect(video.controls).toBe(true);
     expect(video.autoplay).toBe(false);
-    expect(screen.getByText(exercise.tips!)).toBeTruthy();
-    expect(screen.getByText("2-1-2")).toBeTruthy();
+    expect(detail.getByText(exercise.tips!)).toBeTruthy();
+    expect(detail.getByText("2-1-2")).toBeTruthy();
     expect(props.onComplete).not.toHaveBeenCalled();
   });
   it("pauses the running circuit before inspecting a demonstration and returns without completing", () => {
     const { props } = setup({ running: true });
-    fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver demostración de Movimiento prescrito" }));
     expect(props.onToggle).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "Volver a mi rutina" }));
-    expect(screen.getByRole("heading", { name: "Rutina asignada" })).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole("button", { name: "Volver a mi rutina" }));
+    expect(screen.getByTestId("exercise-active")).toBeTruthy();
     expect(props.onComplete).not.toHaveBeenCalled();
   });
   it("shows the selected exercise image rather than another station's demonstration", () => {
     const image = { ...exercise, name: "Segundo movimiento", sortOrder: 1, mediaType: "Image" as const, mediaUrl: "https://media.example/second.png" };
-    const { container } = setup({ exercises: [exercise, image] });
-    fireEvent.click(screen.getByRole("button", { name: "Ver técnica y demostración" }));
-    expect(container.querySelector("video")).toBeNull();
-    expect(screen.getByRole("img").getAttribute("src")).toBe(image.mediaUrl);
+    setup({ exercises: [exercise, image] });
+    fireEvent.click(screen.getByRole("button", { name: "Ver técnica y demostración de Segundo movimiento" }));
+    expect(screen.getByRole("dialog").querySelector("video")).toBeNull();
+    expect(within(screen.getByRole("dialog")).getByRole("img").getAttribute("src")).toBe(image.mediaUrl);
   });
   it("never invents media when the team has not assigned one", () => {
-    const { container } = setup({ exercises: [{ ...exercise, mediaUrl: null }] });
-    fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones" }));
-    expect(screen.getByText("Demostración no disponible")).toBeTruthy();
-    expect(container.querySelector("video, img")).toBeNull();
+    setup({ exercises: [{ ...exercise, mediaUrl: null }] });
+    fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones de Movimiento prescrito" }));
+    expect(within(screen.getByRole('dialog')).getByText("Demostración no disponible")).toBeTruthy();
+    expect(screen.getByRole('dialog').querySelector("video, img")).toBeNull();
   });
   it("has a retry state when the configured video fails", () => {
-    const { container } = setup();
-    fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones" }));
-    fireEvent.error(container.querySelector("video")!);
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Ver mis indicaciones de Movimiento prescrito" }));
+    fireEvent.error(screen.getByRole("dialog").querySelector("video")!);
     expect(screen.getByRole("alert")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(container.querySelector("video")).not.toBeNull();
+    expect(screen.getByRole("dialog").querySelector("video")).not.toBeNull();
   });
   it("requires the deliberate completion callback and hides completion action once done", () => {
     const { props } = setup();

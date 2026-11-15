@@ -14,6 +14,9 @@ vi.mock('../../../i18n/I18nContext', () => {
 vi.mock('@ionic/react', () => ({
   IonButton: ({ children, disabled, onClick, ...props }: { children: ReactNode; disabled?: boolean; onClick?: () => void; 'aria-pressed'?: boolean; 'aria-label'?: string }) => <button disabled={disabled} onClick={onClick} aria-pressed={props['aria-pressed']} aria-label={props['aria-label']}>{children}</button>,
   IonIcon: () => null,
+  IonContent: ({children}:{children:ReactNode}) => <div>{children}</div>,
+  IonModal: ({children,isOpen}:{children:ReactNode;isOpen:boolean}) => isOpen ? <div role="dialog">{children}</div> : null,
+  IonToggle: ({children,checked,onIonChange}:{children:ReactNode;checked:boolean;onIonChange:(event:{detail:{checked:boolean}})=>void}) => <label>{children}<input type="checkbox" checked={checked} onChange={event=>onIonChange({detail:{checked:event.target.checked}})}/></label>,
   IonInput: ({ label, value, onIonInput }: { label: string; value: string; onIonInput: (event: { detail: { value: string } }) => void }) => <label>{label}<input value={value} onChange={e => onIonInput({ detail: { value: e.target.value } })} /></label>,
   IonTextarea: ({ label, value, onIonInput }: { label: string; value: string; onIonInput: (event: { detail: { value: string } }) => void }) => <label>{label}<textarea value={value} onChange={e => onIonInput({ detail: { value: e.target.value } })} /></label>,
   IonRange: ({ value, onIonInput, ...props }: { value: number; onIonInput: (event: { detail: { value: number } }) => void; 'aria-label': string }) => <input aria-label={props['aria-label']} type="range" min="1" max="10" value={value} onChange={e => onIonInput({ detail: { value: Number(e.target.value) } })} />,
@@ -119,22 +122,40 @@ describe('evaluación emocional con datos reales', () => {
 })
 
 describe('nutracéutico y comunidad', () => {
+  it('abrir o cancelar no registra; confirmar tampoco presenta éxito antes de la respuesta', () => {
+    const complete=vi.fn()
+    const props={done:false,pts:80,takenAt:'',onComplete:complete}
+    const view=render(<NutraceuticLesson {...props}/>)
+    fireEvent.click(screen.getByRole('button',{name:/Sí, ya lo tomé/}))
+    expect(complete).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button',{name:'Cancelar'}))
+    expect(complete).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button',{name:/Sí, ya lo tomé/}))
+    fireEvent.click(screen.getByRole('button',{name:'Confirmar toma'}))
+    expect(complete).toHaveBeenCalledOnce()
+    expect(screen.queryByText('¡Toma registrada!')).toBeNull()
+    view.rerender(<NutraceuticLesson {...props} done pending/>)
+    expect(screen.queryByText('¡Toma registrada!')).toBeNull()
+    view.rerender(<NutraceuticLesson {...props} done awardedPoints={0}/>)
+    expect(screen.getByText('¡Toma registrada!')).toBeTruthy()
+    expect(screen.getByText('+0 pts')).toBeTruthy()
+  })
   it('solo ofrece compartir una toma confirmada con borrador revisable', () => {
     const share = vi.fn()
     const props = { pts: 80, takenAt: '', slot: 'manana', onSlot: vi.fn(), onComplete: vi.fn(), onShare: share, dayNumber: 19 }
     const { rerender } = render(<NutraceuticLesson {...props} done={false} />)
-    expect(screen.queryByRole('button', { name: 'Preparar publicación' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Compartir en la comunidad' })).toBeNull()
     expect(screen.getByLabelText('Día 19 para estar más sano')).toBeTruthy()
     expect(screen.queryByText(/1 cápsula/)).toBeNull()
     rerender(<NutraceuticLesson {...props} done />)
-    fireEvent.click(screen.getByRole('button', { name: 'Preparar publicación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir en la comunidad' }))
     expect(share).toHaveBeenCalledOnce()
     expect(props.onComplete).not.toHaveBeenCalled()
   })
   it('una marca optimista o en cola no confirma la dosis ni permite compartir', () => {
     render(<NutraceuticLesson done pending pts={80} takenAt="" onComplete={vi.fn()} onShare={vi.fn()} />)
     expect(screen.getByText('Pendiente de sincronización')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Preparar publicación' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Compartir en la comunidad' })).toBeNull()
     expect(screen.queryByText('Dosis de hoy confirmada')).toBeNull()
     expect(screen.queryByText('Mañana')).toBeNull()
   })

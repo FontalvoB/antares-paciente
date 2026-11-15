@@ -1,0 +1,1748 @@
+{
+  "baseline": "00c855d",
+  "generatedAt": "2026-11-15T22:45:09.620Z",
+  "tests": {
+    "files": 210,
+    "passed": 1707,
+    "failed": 0
+  },
+  "gates": [
+    {
+      "name": "test",
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "i18n",
+      "exitCode": 0
+    }
+  ],
+  "lint": {
+    "errors": 0,
+    "warnings": 27
+  },
+  "controlled": [
+    {
+      "lang": "es",
+      "width": 320,
+      "viewport": {
+        "width": 320,
+        "height": 900
+      },
+      "pageErrors": [],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        }
+      ],
+      "checks": [
+        "pausa-sin-saltos",
+        "siguiente-anterior",
+        "demostracion-pausa-sin-puntos",
+        "exito-solo-tras-HTTP-200-y-puntos-reales",
+        "cancelar-sin-POST",
+        "hoja-foco-Escape-conserva-borrador",
+        "objetivos-tactiles-44px",
+        "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+        "registro-unico-y-preview-sin-publicacion",
+        "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+        "reduced-motion",
+        "borrador-con-foto-misma-cuenta-sin-upload",
+        "sin-publicacion-y-sin-duplicados",
+        "descanso-y-vacio-sin-completar",
+        "pendiente-sin-celebracion-ni-compartir"
+      ],
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "ejercicio",
+          "clientRequestId": "d1c3058b-7a45-467e-a2e6-0a8b4870dbba"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "b1c403a9-c614-4ef0-ac89-74ff82d80843"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "2f6498ad-1b52-495f-b6a9-e46eeedf2574"
+        }
+      ],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        }
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "pageErrors": [],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        }
+      ],
+      "checks": [
+        "pausa-sin-saltos",
+        "siguiente-anterior",
+        "demostracion-pausa-sin-puntos",
+        "exito-solo-tras-HTTP-200-y-puntos-reales",
+        "cancelar-sin-POST",
+        "hoja-foco-Escape-conserva-borrador",
+        "objetivos-tactiles-44px",
+        "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+        "registro-unico-y-preview-sin-publicacion",
+        "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+        "reduced-motion",
+        "borrador-con-foto-misma-cuenta-sin-upload",
+        "sin-publicacion-y-sin-duplicados",
+        "descanso-y-vacio-sin-completar",
+        "pendiente-sin-celebracion-ni-compartir"
+      ],
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "ejercicio",
+          "clientRequestId": "1826f781-c973-41df-8b4f-591a50409708"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "21cab307-2063-4383-9da7-8868573b96c0"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "af3ac6de-ad2f-4c19-9139-c120faa45fd0"
+        }
+      ],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        }
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "pageErrors": [],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        }
+      ],
+      "checks": [
+        "pausa-sin-saltos",
+        "siguiente-anterior",
+        "demostracion-pausa-sin-puntos",
+        "exito-solo-tras-HTTP-200-y-puntos-reales",
+        "cancelar-sin-POST",
+        "hoja-foco-Escape-conserva-borrador",
+        "objetivos-tactiles-44px",
+        "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+        "registro-unico-y-preview-sin-publicacion",
+        "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+        "reduced-motion",
+        "borrador-con-foto-misma-cuenta-sin-upload",
+        "sin-publicacion-y-sin-duplicados",
+        "descanso-y-vacio-sin-completar",
+        "pendiente-sin-celebracion-ni-compartir"
+      ],
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "ejercicio",
+          "clientRequestId": "f89c3aa2-9d0b-4717-8fee-d0e274f352b1"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "cf86ac0b-8f07-4cd5-a89b-203a578449fa"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "ab69cfc7-1e31-4484-b53b-303b5267a226"
+        }
+      ],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "viewport": {
+        "width": 320,
+        "height": 900
+      },
+      "pageErrors": [],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        }
+      ],
+      "checks": [
+        "pausa-sin-saltos",
+        "siguiente-anterior",
+        "demostracion-pausa-sin-puntos",
+        "exito-solo-tras-HTTP-200-y-puntos-reales",
+        "cancelar-sin-POST",
+        "hoja-foco-Escape-conserva-borrador",
+        "objetivos-tactiles-44px",
+        "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+        "registro-unico-y-preview-sin-publicacion",
+        "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+        "reduced-motion",
+        "borrador-con-foto-misma-cuenta-sin-upload",
+        "sin-publicacion-y-sin-duplicados",
+        "descanso-y-vacio-sin-completar",
+        "pendiente-sin-celebracion-ni-compartir"
+      ],
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "ejercicio",
+          "clientRequestId": "40bc0d1b-6a1f-4337-b29e-4b96fc53f61c"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "007d1304-62bf-4606-aeb2-34d05ed6c8b1"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "18b16e7c-c958-4302-8faf-9e1a77f2a050"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Full Body"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Sentadilla"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Mancuernas"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Mantén la espalda recta."
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Press banca"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Remo"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Burpees"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Zancadas"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": En pausa"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Añadir foto"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": The test entry could not be saved."
+        },
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "pageErrors": [],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        }
+      ],
+      "checks": [
+        "pausa-sin-saltos",
+        "siguiente-anterior",
+        "demostracion-pausa-sin-puntos",
+        "exito-solo-tras-HTTP-200-y-puntos-reales",
+        "cancelar-sin-POST",
+        "hoja-foco-Escape-conserva-borrador",
+        "objetivos-tactiles-44px",
+        "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+        "registro-unico-y-preview-sin-publicacion",
+        "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+        "reduced-motion",
+        "borrador-con-foto-misma-cuenta-sin-upload",
+        "sin-publicacion-y-sin-duplicados",
+        "descanso-y-vacio-sin-completar",
+        "pendiente-sin-celebracion-ni-compartir"
+      ],
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "ejercicio",
+          "clientRequestId": "5c94b110-6a15-4bfe-bca8-b23ea6d58550"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "14abe920-5749-4210-aa6d-e7009f5627a6"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "03d457ca-4973-4788-aa27-c1e21590054a"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Full Body"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Sentadilla"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Mancuernas"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Mantén la espalda recta."
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Press banca"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Remo"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Burpees"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Zancadas"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": En pausa"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Añadir foto"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": The test entry could not be saved."
+        },
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "pageErrors": [],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        }
+      ],
+      "checks": [
+        "pausa-sin-saltos",
+        "siguiente-anterior",
+        "demostracion-pausa-sin-puntos",
+        "exito-solo-tras-HTTP-200-y-puntos-reales",
+        "cancelar-sin-POST",
+        "hoja-foco-Escape-conserva-borrador",
+        "objetivos-tactiles-44px",
+        "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+        "registro-unico-y-preview-sin-publicacion",
+        "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+        "reduced-motion",
+        "borrador-con-foto-misma-cuenta-sin-upload",
+        "sin-publicacion-y-sin-duplicados",
+        "descanso-y-vacio-sin-completar",
+        "pendiente-sin-celebracion-ni-compartir"
+      ],
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "ejercicio",
+          "clientRequestId": "96cf6f18-2118-462d-8207-04df7f441c6d"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "4b2add8d-b664-499f-ad94-07dda4a6843c"
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "nutraceutico",
+          "clientRequestId": "6966dc78-bb7c-4dc1-846b-a039ee8089b3"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Full Body"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Sentadilla"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Mancuernas"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Mantén la espalda recta."
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Press banca"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Remo"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Burpees"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Zancadas"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": En pausa"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": Añadir foto"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "warning",
+          "text": "[i18n] Missing key for \"en\": The test entry could not be saved."
+        },
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        }
+      ]
+    }
+  ],
+  "navBefore": [
+    {
+      "lang": "es",
+      "width": 320,
+      "readingBottom": 900,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 747.90625,
+      "navDoesNotCoverReading": false,
+      "lastCardClear": true
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "readingBottom": 900,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 748.03125,
+      "navDoesNotCoverReading": false,
+      "lastCardClear": true
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "readingBottom": 900,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 748.453125,
+      "navDoesNotCoverReading": false,
+      "lastCardClear": true
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "readingBottom": 900,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 748.3125,
+      "navDoesNotCoverReading": false,
+      "lastCardClear": true
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "readingBottom": 900,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 748.03125,
+      "navDoesNotCoverReading": false,
+      "lastCardClear": true
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "readingBottom": 900,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 748.0625,
+      "navDoesNotCoverReading": false,
+      "lastCardClear": true
+    }
+  ],
+  "navAfter": [
+    {
+      "lang": "es",
+      "width": 320,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.5,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.5
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.625
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 740.046875,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 718.046875
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.90625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.90625
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.625
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.65625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.65625
+      }
+    }
+  ],
+  "runtime": {
+    "stubs": false,
+    "cases": [
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "ejercicio",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "ejercicio",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "ejercicio",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "nutraceutico",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "nutraceutico",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "nutraceutico",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "ejercicio",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "ejercicio",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "ejercicio",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "nutraceutico",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "nutraceutico",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "nutraceutico",
+        "overflow": false
+      }
+    ],
+    "clinicalWrites": [],
+    "pageErrors": [],
+    "protectedBefore": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    },
+    "protectedAfter": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    }
+  },
+  "images": [
+    {
+      "file": "before/en-1440-ejercicio-activo.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "29a4fabdc65e50187ccce54749d87196f5c1531a20d621b5cd0febf602a3c7d0"
+    },
+    {
+      "file": "before/en-1440-ejercicio-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "eced1c4428eb316bd57a1dad4b2f7fbdcf3511ea270df6471e9d8e241d570336"
+    },
+    {
+      "file": "before/en-1440-ejercicio-lista.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "36dabc0e54c059f8c9ae8b7139da1b0fe875090e3fc2ebf83f2b11809a4a9fff"
+    },
+    {
+      "file": "before/en-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5871c2514b6c7ed3b64dae2f419bce3cf8465e7de8b7cf6ddf22b7f21d5c6e8f"
+    },
+    {
+      "file": "before/en-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4a24b8acf2d675b0861ef189f6795ec18041155572389643e8fb88ae07fbfef0"
+    },
+    {
+      "file": "before/en-1440-nutraceutico-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "780dad7d0b5e77f9085f72bf5dbada9dcbb93f15ad9b9c438013c0e69135a83e"
+    },
+    {
+      "file": "before/en-1440-nutraceutico-exito.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "410c1d43f02dd69aa05cf5f3d035151112f00696713efbe34ab57fe31933dd4f"
+    },
+    {
+      "file": "before/en-320-ejercicio-activo.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "f6e6089223d96823a8596133df7670bcee1537288da307a4d8f00097da84865d"
+    },
+    {
+      "file": "before/en-320-ejercicio-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "1b59490a8f90fab7f3413126011a1719b00d478e2fa1e3b51896c58633ebae93"
+    },
+    {
+      "file": "before/en-320-ejercicio-lista.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "74e971251b8f3f99cda7f18c1c58ae4a34edf51cfb4c4b9b2363dd2c36410e63"
+    },
+    {
+      "file": "before/en-320-hoy-dock.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "2f13b9a088b1740e568e3c4af124e282a53511db2eef5875cd5882495f9a7a9c"
+    },
+    {
+      "file": "before/en-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "655d0a12cc5a9cb9463fec3f37ebe0cdb7b52b0b34258c2a4cff489303434b42"
+    },
+    {
+      "file": "before/en-320-nutraceutico-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "ba69aaae2a10cb7fca68cb43a549f9baad008a7f1727eabc834022fd524f83d8"
+    },
+    {
+      "file": "before/en-320-nutraceutico-exito.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "ba69aaae2a10cb7fca68cb43a549f9baad008a7f1727eabc834022fd524f83d8"
+    },
+    {
+      "file": "before/en-390-ejercicio-activo.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "3b1baf1eed264bab2c0efa58cd8fadf3bbc043a4eb710cde26bee0b006b6abfc"
+    },
+    {
+      "file": "before/en-390-ejercicio-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "99548af0d5c0b75112c9510910b0c347f82051f29377d6e0de4dc4ecc95a399c"
+    },
+    {
+      "file": "before/en-390-ejercicio-lista.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "0ce3dd0ca660e2b302719209831673b4c07302b421d5be9b8b891a9d539b197c"
+    },
+    {
+      "file": "before/en-390-hoy-dock.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "2a8344e6abcf2146f448d6fedccf01341883225a334147bab24179d3c3f03911"
+    },
+    {
+      "file": "before/en-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "114883e82fb39091a788a6a5f878096a7047f4e25e32bd5618e00b4f8caac8c0"
+    },
+    {
+      "file": "before/en-390-nutraceutico-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "27e091f46e439daf0945c9aa76bbde8278acaccd5c4ef899fb6a34460169d18b"
+    },
+    {
+      "file": "before/en-390-nutraceutico-exito.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "27e091f46e439daf0945c9aa76bbde8278acaccd5c4ef899fb6a34460169d18b"
+    },
+    {
+      "file": "before/es-1440-ejercicio-activo.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c9d2392d11d9d73b84a88fe2f6c94cba2a7e1ffbc70e84497af1e2daaa303622"
+    },
+    {
+      "file": "before/es-1440-ejercicio-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "000d78cd809b462ea8c1783b064d6f24be8007df4635b982aea985e1ac9b1425"
+    },
+    {
+      "file": "before/es-1440-ejercicio-lista.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9cb2f533fbeb6713a005ea530e8774139c83cd1bef92140cf211a0b9f3812900"
+    },
+    {
+      "file": "before/es-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6f9720b39596759fc2e8a145d43e5740e202f1d7c65e26573f217bf00bd43e32"
+    },
+    {
+      "file": "before/es-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e257e7dc10bd13f0afa7079e3dc80d883870ee1d81e26c09d522708cf9cba122"
+    },
+    {
+      "file": "before/es-1440-nutraceutico-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "062a418b9b31bd7b5dbfd7648ec13f14e351bf2120f72e882a155e9349cc7aa3"
+    },
+    {
+      "file": "before/es-1440-nutraceutico-exito.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "18b5461299854e0fc00ea7dadc20fba38559401f34d22e6f4a3c8cea5b4b8811"
+    },
+    {
+      "file": "before/es-320-ejercicio-activo.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "0c77188c1adbd5e152caea1561fccb5d8faf1f316bc63fa4f8aa56b136afc476"
+    },
+    {
+      "file": "before/es-320-ejercicio-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "42e283800605e7d264494f3a77ddaf7d03ef2907b90c406eacecc25680d91490"
+    },
+    {
+      "file": "before/es-320-ejercicio-lista.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "2edec9a27d07f20e68b34299cba103d4329307822053a989dac0629f1288151f"
+    },
+    {
+      "file": "before/es-320-hoy-dock.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "13b3f8daf13378406acdb41d0f1ea8d061925479c41e3c15e9c5ee9e224e0c73"
+    },
+    {
+      "file": "before/es-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "77a38b9e0eab73de8361d30887b0eac772bf331f01550ed970905583b0f8033f"
+    },
+    {
+      "file": "before/es-320-nutraceutico-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "5d5be4eabcd1afc9eefe416e8dce1d8ef5e52495ffb9a796d3a0656d2874f645"
+    },
+    {
+      "file": "before/es-320-nutraceutico-exito.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "5d5be4eabcd1afc9eefe416e8dce1d8ef5e52495ffb9a796d3a0656d2874f645"
+    },
+    {
+      "file": "before/es-390-ejercicio-activo.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c3c9750fc6ca4eac6f9d7de450a851e9e1a1c4185883fba4807c113cbc094f32"
+    },
+    {
+      "file": "before/es-390-ejercicio-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "40166a65808ce50ddcda8bc1296f93a358ad4b9806c255dfae810edaf6c81dbf"
+    },
+    {
+      "file": "before/es-390-ejercicio-lista.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "cd4bf1d1a1d76954e131281f26ff55e9921c2f9d4be7a3a6557199b43871094b"
+    },
+    {
+      "file": "before/es-390-hoy-dock.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "670c08215d082e602dc0b31921cc3a0dd8387472531ef3c030919090e1fa0101"
+    },
+    {
+      "file": "before/es-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "f1680b34291e31785464e2800be3ace228b03b56e6e4c8012c7ace2be9aa76bf"
+    },
+    {
+      "file": "before/es-390-nutraceutico-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c1a5540926b6a282f83b1f905bc8a209f9eff8da3003d11e288457f3bd609b98"
+    },
+    {
+      "file": "before/es-390-nutraceutico-exito.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c1a5540926b6a282f83b1f905bc8a209f9eff8da3003d11e288457f3bd609b98"
+    },
+    {
+      "file": "after/en-1440-ejercicio-activo.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05529ce0d1effa177e16ca6af08977f7bca641f22d68237e162f8bbf925d2922"
+    },
+    {
+      "file": "after/en-1440-ejercicio-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2484fea965959b43dbdb07b59edb8e93855f67aa8c468becfdc73252f4756ea1"
+    },
+    {
+      "file": "after/en-1440-ejercicio-descanso.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05fddd3dfb6b8a22ffa50c56e059e684a8b5584226945a8df4e12ee407e6f355"
+    },
+    {
+      "file": "after/en-1440-ejercicio-lista.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c3abc23a319af7b1b6315bcb848424918461586c4db56985ed9b4d60b4a36753"
+    },
+    {
+      "file": "after/en-1440-ejercicio-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4fc0b1a3c5281a6c8066c58d0f3618aa5922b7f106fa88b304377b7b1af830ff"
+    },
+    {
+      "file": "after/en-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "85325d5125f407eddd0193eb128b2da87b962f7daa262a68bbc46bda9f388f26"
+    },
+    {
+      "file": "after/en-1440-hoy-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "25d621bd051cb17c0afb3832e585f3ff5eb6332eb682ebf42120f31002e31388"
+    },
+    {
+      "file": "after/en-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "13b2b8f7c4b0e1d39546f034bc0ce6acc376488fb6266eb1f4991484d5596916"
+    },
+    {
+      "file": "after/en-1440-nutraceutico-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6431f3dcb0e30ba5aa24e09316927d197a834de0b8f044cf08afb2cd040defab"
+    },
+    {
+      "file": "after/en-1440-nutraceutico-exito.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "803d829e17b3f4fc54c4063a9609b86ad914b6c5643460490fd3fa4c3ae2d66b"
+    },
+    {
+      "file": "after/en-1440-nutraceutico-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "bc4708828f4d6aa99aa33ff1a93a37f6206358180df4b68b48ee6ab2bbfcf558"
+    },
+    {
+      "file": "after/en-1440-nutraceutico-registro.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f5993ed674edd1f407bfeff8ff01df6dfb36a7e5817f1e21ec0804ab05cad99c"
+    },
+    {
+      "file": "after/en-320-ejercicio-activo.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "8fb553751f4a7557c7bbd582a789e70ec421f900ef33c29a405c5df4395a2101"
+    },
+    {
+      "file": "after/en-320-ejercicio-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "dadcc8e5e12032a29fc8581c4adc4d863c794874e04e11c12520df6768eb087b"
+    },
+    {
+      "file": "after/en-320-ejercicio-descanso.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c372f5797aeb55cf45ee096048302e7512e1c4fe014689cd9f6a6abd912532ac"
+    },
+    {
+      "file": "after/en-320-ejercicio-lista.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "ebaf6f3314408229969d65c3e59805531e7fb29d6adc37f34e06554eef51c872"
+    },
+    {
+      "file": "after/en-320-ejercicio-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d875305339d100ae5730187423c46f253def99f63ec46903ca2c5113d0360467"
+    },
+    {
+      "file": "after/en-320-hoy-dock.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9d6afa9e75c273b9314b203112e1966c746d59ec550a500d72ea4db53779face"
+    },
+    {
+      "file": "after/en-320-hoy-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "424ec21904cf0b652120d8599bdfdb185a78ee0f2b14ab4e931862b6edb0477e"
+    },
+    {
+      "file": "after/en-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "65162215f675cf7873164b8e9b30e2636e44a9e77aae162cd4624561462f56c7"
+    },
+    {
+      "file": "after/en-320-nutraceutico-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "1e13cafc88dfeb42e73038b44d5dd853d7eee85d870c8f8ee510ce835216fe33"
+    },
+    {
+      "file": "after/en-320-nutraceutico-exito.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9b045714cefc35a8470dc5ca0c0b1accb2d80f2d0b3d46aa7260ca60fbcd4b62"
+    },
+    {
+      "file": "after/en-320-nutraceutico-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "6d08be428cd158877c87df781d1cb68e39435b1cfc1b99db2b4732298f602385"
+    },
+    {
+      "file": "after/en-320-nutraceutico-registro.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "69899c8c12c037b63e9465e2f436d5791125f69cf32d1c0ff5ae386501a04fb6"
+    },
+    {
+      "file": "after/en-390-ejercicio-activo.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "8dcb0ac7c9f75a5c361502faa65c5575a4449a97117ace9afd412d020a52d69e"
+    },
+    {
+      "file": "after/en-390-ejercicio-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "35e650953258497697ebab3e621a768a477a2d3877905d32e84b03b629c1af62"
+    },
+    {
+      "file": "after/en-390-ejercicio-descanso.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "2529ef04c2893264a2d72a9c2a3753b7d42a73403117ca6a9c598afb831d0ccc"
+    },
+    {
+      "file": "after/en-390-ejercicio-lista.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "04576de53caf3684e9950fa579b741638768e474b1cf4638030926d056b7acf5"
+    },
+    {
+      "file": "after/en-390-ejercicio-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "fbd42b1ebaed19760fc11e3e6a1038ae08d7d6e9e1820399acc279a969d0b213"
+    },
+    {
+      "file": "after/en-390-hoy-dock.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c8745205fe935c58ceaa7773edb1c38d58e0eebbd91d28da181c591a65543cd7"
+    },
+    {
+      "file": "after/en-390-hoy-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "eab19a3a7aa51841a8b8fbd4d41cf40ca51afc5a085103d9b452a135eb746f39"
+    },
+    {
+      "file": "after/en-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "22a93fb81cd6f99cc77602156a3256bb7b53ce932c9f7325fb28dbb6080400a5"
+    },
+    {
+      "file": "after/en-390-nutraceutico-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "0fb6777434412a09938db325b323858eb5ff75a6f33f9bf7598ee65a1f96c9f6"
+    },
+    {
+      "file": "after/en-390-nutraceutico-exito.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "29ba8055d262f7796a364b778e567f4a66114966d0ca28d7468fd34612cbe84c"
+    },
+    {
+      "file": "after/en-390-nutraceutico-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d052c364479a9cba837e662e5832c7012f9e2a21beb93023f363c18a8d94afd0"
+    },
+    {
+      "file": "after/en-390-nutraceutico-registro.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "36fefbe7fb1de3498f510a5e872eb64509a1a50e968a580910093f7f62c2995f"
+    },
+    {
+      "file": "after/es-1440-ejercicio-activo.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9cba95d002c9632e7e610ce50aaf3c3dce19f9291de642a51f669f516dc0c91b"
+    },
+    {
+      "file": "after/es-1440-ejercicio-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "692a389d6df844589f569721c2a73a2e318821fecee1685923b22e026b52f59a"
+    },
+    {
+      "file": "after/es-1440-ejercicio-descanso.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f11ee0e73fd3240b09a2eb91c6a09552ea0ef98f46eba4d30dac3b186c0d43a8"
+    },
+    {
+      "file": "after/es-1440-ejercicio-lista.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f7996ae48bdd8880413e1518016e90a29d2558e98bdcf95e7b680b925081632d"
+    },
+    {
+      "file": "after/es-1440-ejercicio-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "34112c8004072bce141b2ac3e5bd3cd09dbe2631e888e49e114b5bb5c58e223c"
+    },
+    {
+      "file": "after/es-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6f534f99531e5eb37ea05960fa9abfe79d6ec8225b7350ad9035b4b2607103b5"
+    },
+    {
+      "file": "after/es-1440-hoy-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "32025000afafab4551827b58c8193f81004c14394ab214ee175d19a371ac1a61"
+    },
+    {
+      "file": "after/es-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "73ef189e5e786a7e97ae2a651ba369366673155b56559720d3e17ba8fb10584f"
+    },
+    {
+      "file": "after/es-1440-nutraceutico-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "67bfb4ba06e3e42ace27955ebf4576c97a20abbf44d9235cc30b76635f0844ce"
+    },
+    {
+      "file": "after/es-1440-nutraceutico-exito.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "53ff3e60cae8becd00fb158ddaa1192578c16a305f05f61e8554dccebde7f61f"
+    },
+    {
+      "file": "after/es-1440-nutraceutico-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "fc6865ffca11d0587b4d8b2b049f541a8a454865279e1f4513462080ed350a6b"
+    },
+    {
+      "file": "after/es-1440-nutraceutico-registro.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2bfd49768f53fb85bb97499d2d597f5d4059cc78b1399d378e683c2f0f525252"
+    },
+    {
+      "file": "after/es-320-ejercicio-activo.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "732c1437d37c91283324986edb6f982d3037d606b7edccde62355f1d770a3a4c"
+    },
+    {
+      "file": "after/es-320-ejercicio-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "86b1046f55a4c82d6f050a0530b379b1f401c4fc4bbef50351ce6d059d663a2f"
+    },
+    {
+      "file": "after/es-320-ejercicio-descanso.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "731710568877cbdd0380e1a41fa568106016290c420ec965e573ab44f8fcd7e3"
+    },
+    {
+      "file": "after/es-320-ejercicio-lista.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "4eab97eed754d76881bb153fb103d0dd890a48dfc3677ba1a91616cce5fbd115"
+    },
+    {
+      "file": "after/es-320-ejercicio-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "f3f66847fb8e6ab23f094b8405b5a152d970813f54b9ea1067ff5e50aec80c32"
+    },
+    {
+      "file": "after/es-320-hoy-dock.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "10fd14228f3515d44dc3be38457990e1a9199a2cad11179052b51874cfc925e7"
+    },
+    {
+      "file": "after/es-320-hoy-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "2ba5556fab17b05757b35d5c6515465ff6264ed808899308c31d042709947b2d"
+    },
+    {
+      "file": "after/es-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d0af6d1f4551fc12ad54949b2fbf5ec7d116ea4b4598e011f7223a5918198b20"
+    },
+    {
+      "file": "after/es-320-nutraceutico-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "675b72449202e7379cca7eb4444505b45bad395b78d87c0c3d78e1a9728c234c"
+    },
+    {
+      "file": "after/es-320-nutraceutico-exito.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "69d6cb067b882935a439d7519919796535491f5a7642567b75c28d825b80ae4d"
+    },
+    {
+      "file": "after/es-320-nutraceutico-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "61cf53f4447491054bc50bae79d708de27b6322e916355caca5bfd239bb99306"
+    },
+    {
+      "file": "after/es-320-nutraceutico-registro.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d6ddb04549b9f41432234935ec53ba4b356e8d6a276f4bbc9551b5ed5885ae33"
+    },
+    {
+      "file": "after/es-390-ejercicio-activo.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "cf7ddd4cd7d477bc6e6affdfdf56c745148158f1265dec240a838804fbec914f"
+    },
+    {
+      "file": "after/es-390-ejercicio-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ff1b7af434bd9d076a0688971408209b7c13c50e25b27f127b1060dba38642c1"
+    },
+    {
+      "file": "after/es-390-ejercicio-descanso.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "6f2a2114fb6bcd15433380f5eb1dbf51c3322899ca3bf6efbf33ad8d7a44b45e"
+    },
+    {
+      "file": "after/es-390-ejercicio-lista.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ca0d3676e5615ac1997a022813043dba42411d38d0c07eb45d96a7fe4d818638"
+    },
+    {
+      "file": "after/es-390-ejercicio-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "57bf9f8cb4cf4d24cd58ac776610487905e868b82254d33bca162464bf72a788"
+    },
+    {
+      "file": "after/es-390-hoy-dock.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ed856325dd09ee16635bc69b40b2883091ba6e9337d8c7a244f8676f1cfa4321"
+    },
+    {
+      "file": "after/es-390-hoy-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "9fd297db0255d96136704b4a5580b9898aae7e629c0fdb2f492afe17fd33e42d"
+    },
+    {
+      "file": "after/es-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "6321d24510907d9f3432a30a692598fd0a7ce3b45fc2c35b70999ade3d7f230b"
+    },
+    {
+      "file": "after/es-390-nutraceutico-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "67b41d9161a4e10aa66e55b4eb0a7dd2334eaa98663ea93299de0660acab8177"
+    },
+    {
+      "file": "after/es-390-nutraceutico-exito.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "9ae65f8cb75718a17bbb93217bf27b3d531683d8b7e1f8f7e67f67d202e42e61"
+    },
+    {
+      "file": "after/es-390-nutraceutico-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "54e3648d7ba0d9bbc6a74c7753b9f5139abc25f7f97abb9755377bd08caf93ba"
+    },
+    {
+      "file": "after/es-390-nutraceutico-registro.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "f541c21ecbfdcdf6f5184494a36298ef10d904cf35d85eede5aab511e4812b7f"
+    },
+    {
+      "file": "runtime/en-1440-ejercicio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "cc1a5375ac824dc8ed43821bcd133e53e82a1ecb99fbc36883588081fb97c27e"
+    },
+    {
+      "file": "runtime/en-1440-nutraceutico.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "78e5c5c52eef1ed226ecd513142ebe46c256c03324779cd3e90d8a943b6c2294"
+    },
+    {
+      "file": "runtime/en-1440-registro-sin-enviar.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "51987cd3fb2749daecc9f00541bdcaff8b1aa46a784b7e8c3b16a919aaaefbf0"
+    },
+    {
+      "file": "runtime/en-320-ejercicio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "85140d9a7d312ab493c392ea29c1707722d802f871a27090728733cf43b05700"
+    },
+    {
+      "file": "runtime/en-320-nutraceutico.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3c86778bbd89a5bcab904aaaee3c8582550fbde390bb95170511a2e175c8c162"
+    },
+    {
+      "file": "runtime/en-320-registro-sin-enviar.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "63a9f3b37a29a6111f74bf936496140ad176b5fbee843c169735e72d96e2b348"
+    },
+    {
+      "file": "runtime/en-390-ejercicio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "dec820abd516cfaad49dbdb09ad69a91cdd7b1f5d5dda1ecb736e1121f788407"
+    },
+    {
+      "file": "runtime/en-390-nutraceutico.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "3e64caae386a50308d1ca366b8c744803adfa44e948b4045fe5ba1edc6e5840d"
+    },
+    {
+      "file": "runtime/en-390-registro-sin-enviar.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e1fb3b583b9ebebc54ec4fac072249d09e29ca1f0fad0640756a3f287e63fff2"
+    },
+    {
+      "file": "runtime/es-1440-ejercicio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "892171d586836622f2c9c35664bb51e662a1037ece6919a4bbc6b08f147d5cf9"
+    },
+    {
+      "file": "runtime/es-1440-nutraceutico.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5b2d344c0f3a0ece3175e5f2b38a13a0441d5c0a21c6ee389d31f4bc2fb97abe"
+    },
+    {
+      "file": "runtime/es-1440-registro-sin-enviar.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "7d270c0accbb5492131784c5df9e5d0f7618806927c500ba86176bbf131888a6"
+    },
+    {
+      "file": "runtime/es-320-ejercicio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3c1c9b9b6787fc8007827439bb98490b8d390e45b4c9a2b8bdc4d940b72f959a"
+    },
+    {
+      "file": "runtime/es-320-nutraceutico.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9ee26d89893c1939397fa8698fdda0c9079b8cef63a45d1faea5a27620f1c66f"
+    },
+    {
+      "file": "runtime/es-320-registro-sin-enviar.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "105204a35108338562a0ff5f153067e9319cf5b49efe2780a2fe79b100799ef8"
+    },
+    {
+      "file": "runtime/es-390-ejercicio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "990640de246c169b329a4c0681eba2e3d2737facfb3c972fb0764ad0e4c4b15a"
+    },
+    {
+      "file": "runtime/es-390-nutraceutico.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "63629ef8615aa11823825161000358eedc17b30d03fee07c84c8fb79758dcdbc"
+    },
+    {
+      "file": "runtime/es-390-registro-sin-enviar.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "3ad1a74e83ff4786a24ca28816c7b1e24f5a8c11b03787ac960dd039f667055d"
+    }
+  ]
+}

@@ -83,6 +83,7 @@ export function ComposePostModal({
   onToast,
   dark = false,
   initialDraft = "",
+  initialMedia,
 }: {
   onQueue?: (draft:{body:string;file?:File|null;options?:string[]}) => void;
   open: boolean;
@@ -96,6 +97,7 @@ export function ComposePostModal({
   onToast: (msg: string, kind?: "ok" | "err" | "info" | "warn") => void;
   dark?: boolean;
   initialDraft?: string;
+  initialMedia?: File | null;
 }) {
   const [type, setType] = useState<PostType>("text");
   const [draft, setDraft] = useState("");
@@ -173,6 +175,9 @@ export function ComposePostModal({
       return;
     }
     if (initialDraft) setDraft(initialDraft);
+    if (initialMedia && IMAGE_TYPES.includes(initialMedia.type) && initialMedia.size <= MAX_IMAGE_MB*1024*1024) {
+      setType('image'); setMedia(initialMedia); setPreview(URL.createObjectURL(initialMedia));
+    }
     const t = window.setTimeout(() => {
       if (type === "text") taRef.current?.focus();
     }, 300);

@@ -32,7 +32,7 @@ import {
 } from "ionicons/icons";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
-import { takeCommunityShareDraft } from "../utils/communityShareDraft";
+import { takeCommunityShareDraftContent, type CommunityShareDraft } from "../utils/communityShareDraft";
 import { useI18n } from "../i18n/I18nContext";
 import {
   useCommunity,
@@ -389,9 +389,9 @@ export function CommunityPage() {
     "followers" | "following" | null
   >(null);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [shareDraft, setShareDraft] = useState<string | null>(null);
+  const [shareDraft, setShareDraft] = useState<CommunityShareDraft | null>(null);
   useEffect(() => {
-    const draft = takeCommunityShareDraft(user.id || user.cedula);
+    const draft = takeCommunityShareDraftContent(user.id || user.cedula);
     if (draft) { setShareDraft(draft); setComposeOpen(true); }
   }, [user.id, user.cedula]);
   const [chatQ, setChatQ] = useState("");
@@ -1940,7 +1940,8 @@ export function CommunityPage() {
           <ComposePostModal
             onQueue={draft => {queuePost(draft); showPublishedPost()}}
             open={composeOpen}
-            initialDraft={shareDraft ?? ""}
+            initialDraft={shareDraft?.text ?? ""}
+            initialMedia={shareDraft?.file}
             onClose={() => { setComposeOpen(false); setShareDraft(null); }}
             me={me}
             onPublish={async (text, mediaKey) => {

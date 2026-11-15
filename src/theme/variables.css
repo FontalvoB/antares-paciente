@@ -18,6 +18,8 @@
   --wellness-radius: 22px;
   --wellness-space: 16px;
   --wellness-transition: 200ms ease-out;
+  --wellness-muted: #52677e;
+  --wellness-session-end: #0e4b62;
   --macro-carbs: #b7791f;
   --macro-protein: #1d4e79;
   --macro-fat: #2c7da0;
