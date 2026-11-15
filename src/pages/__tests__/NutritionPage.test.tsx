@@ -225,7 +225,7 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     render(<NutritionPage recommendations={nutritionRecommendationsResponseFixture} />);
     fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
     expect(screen.getByText('Día 4')).toBeTruthy();
-    expect(screen.getByText('Cierre del ciclo 2 · publicado el 07/12/2026')).toBeTruthy();
+    expect(screen.getByText('Cierre del ciclo 2 · publicado el 7 dic 2026')).toBeTruthy();
     expect(screen.queryByText(/Ciclo \d+ · día 4/)).toBeNull();
     expect(screen.getByText('Tu nutricionista revisó tu mes')).toBeTruthy();
     fireEvent.click(screen.getByText('Ver plan completo'));
@@ -237,18 +237,29 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     expect(screen.getByText('Tu plan de este ciclo')).toBeTruthy();
   });
 
+  it('R7-16: el badge usa el ciclo vigente proporcionado por el plan, nunca el de la recomendación', () => {
+    mockState.plan = { ...planFixture, cycleNumber: 3, currentDay: 4 };
+    render(<NutritionPage recommendations={nutritionRecommendationsPublicationOrderFixture}/>);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
+    expect(screen.getByText('Ciclo 3 · día 4')).toBeTruthy();
+    expect(screen.getByText('Cierre del ciclo 1 · publicado el 8 ene 2027')).toBeTruthy();
+    expect(screen.queryByText('Ciclo 1 · día 4')).toBeNull();
+    expect(screen.getByText('Ver plan completo')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Más secciones de nutrición' })).toBeTruthy();
+  });
+
   it('D0014 final: muestra la última publicación de un ciclo ya cerrado y conserva previous por publishedAt', () => {
     mockState.plan = { ...planFixture, currentDay: 4, durationDays: 30, startDate: '2027-01-06', endDate: '2027-02-04' };
     mockState.snapshot = { ...snapshotFixture, todayLocalDate: '2027-01-09' };
     render(<NutritionPage recommendations={nutritionRecommendationsPublicationOrderFixture}/>);
     fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'indicaciones' } });
-    expect(screen.getByText('Cierre del ciclo 1 · publicado el 08/01/2027')).toBeTruthy();
+    expect(screen.getByText('Cierre del ciclo 1 · publicado el 8 ene 2027')).toBeTruthy();
     expect(screen.getByText('Día 4')).toBeTruthy();
     expect(screen.queryByText('Ciclo 1 · día 4')).toBeNull();
     fireEvent.click(screen.getByText('Ver ciclos anteriores'));
     expect(screen.getAllByText(/^Ciclo \d$/).map(item => item.textContent)).toEqual(['Ciclo 2', 'Ciclo 3']);
-    expect(screen.getByText('Publicado el 07/01/2027')).toBeTruthy();
-    expect(screen.getByText('Publicado el 06/01/2027')).toBeTruthy();
+    expect(screen.getByText('Publicado el 7 ene 2027')).toBeTruthy();
+    expect(screen.getByText('Publicado el 6 ene 2027')).toBeTruthy();
     expect(screen.queryByText('Ciclo 1')).toBeNull();
   });
 

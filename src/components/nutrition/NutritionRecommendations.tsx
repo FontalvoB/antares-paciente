@@ -1,8 +1,8 @@
 import { useId, useState } from 'react';
 import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon, IonImg, IonSkeletonText } from '@ionic/react';
 import { chevronForwardOutline, lockClosedOutline, nutritionOutline, refreshOutline, warningOutline } from 'ionicons/icons';
-import { useT } from '../../i18n/I18nContext';
-import { formatDateForDisplay } from '../../utils/dates';
+import { useI18n, useT } from '../../i18n/I18nContext';
+import { formatLocalizedDate } from '../../utils/dates';
 import type { NutritionCycleRecommendationDto } from '../../services/nutrition/nutrition-cycle-recommendation-types';
 
 function RecommendationImage({ url, caption, onRefresh }: NutritionCycleRecommendationDto['attachments'][number] & { onRefresh?: () => void }) {
@@ -28,7 +28,8 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
   onOpenHistory?: () => void;
   presentation?: 'current' | 'history';
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
+  const locale = lang === 'en' ? 'en-US' : 'es-ES';
   const titleId = useId();
   const messageId = useId();
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
       {unavailable ? <>
         <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{errorMessage ?? t('No pudimos cargar tus recomendaciones. Tu plan y tus registros siguen disponibles.')}</p>
         <div className="nutrition-recommendations-error-lines" aria-hidden="true"><span/><span/></div>
-        <IonButton data-testid="nutrition-recommendations-retry" expand="block" fill="outline" className="nutrition-recommendations-retry" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
+        {onRetry && <IonButton data-testid="nutrition-recommendations-retry" expand="block" fill="outline" className="nutrition-recommendations-retry" onClick={onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>}
       </> : <div className="nutrition-recommendations-empty">
         <span className="nutrition-empty-icon"><IonIcon icon={nutritionOutline} aria-hidden="true" /></span>
         <h3>{t('Aún no tienes recomendaciones')}</h3>
@@ -68,10 +69,10 @@ export function NutritionRecommendations({ recommendation, unavailable = false, 
         {t('Recomendaciones de tu nutricionista')}
       </IonCardTitle>}
       <div className="nutrition-recommendations-byline"><span className="nutrition-professional-avatar" aria-hidden="true">{initials}</span><div>
-        <p data-testid="nutrition-recommendation-professional" className="nutrition-recommendations-professional">{professionalName}</p>
+        <p data-testid="nutrition-recommendation-professional" className="nutrition-recommendations-professional"><span>{professionalName}</span><span aria-hidden="true"> · </span><span>{t('Nutricionista')}</span></p>
         <p data-testid="nutrition-recommendation-publication" className="nutrition-recommendations-published">{presentation === 'history'
-          ? t('Publicado el {date}', { date: formatDateForDisplay(publishedAt.slice(0, 10)) })
-          : t('Cierre del ciclo {cycle} · publicado el {date}', { cycle: String(cycleNumber), date: formatDateForDisplay(publishedAt.slice(0, 10)) })}</p>
+          ? t('Publicado el {date}', { date: formatLocalizedDate(publishedAt, locale) })
+          : t('Cierre del ciclo {cycle} · publicado el {date}', { cycle: String(cycleNumber), date: formatLocalizedDate(publishedAt, locale) })}</p>
       </div></div>
     </IonCardHeader>
     <IonCardContent>

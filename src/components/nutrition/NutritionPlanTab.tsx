@@ -8,7 +8,7 @@ import { mealTypeToCode } from "../../utils/mealTypeToCode";
 import type { MealCode } from "../../services/program/nutrition-service";
 import type { MyNutritionPlanDto } from "../../services/nutrition/my-nutrition-plan-service";
 import type { NutritionPlanStatusDto } from "../../services/nutrition/my-nutrition-plan-service";
-import { formatDateForDisplay } from "../../utils/dates";
+import { formatLocalizedDateRange } from "../../utils/dates";
 import type { ApiError } from "../../utils/apiClient";
 
 /** Fila de meta con el formato de «Indicaciones» (emoji + label + valor). */
@@ -271,7 +271,7 @@ export function NutritionPlanTab({
           {currentDay != null && duration != null && <div className="nutrition-plan-cycle">
             <div><span>{t('Tu ciclo nutricional')}</span><strong>{t('Día {day} de {total}', { day: String(currentDay), total: String(duration) })}</strong></div>
             <IonProgressBar value={Math.min(1, Math.max(0, currentDay / duration))} aria-label={t('Día {day} de {total}', { day: String(currentDay), total: String(duration) })} />
-            {startDate && endDate && <p><IonIcon icon={calendarOutline} aria-hidden="true" />{t('Del {start} al {end}', { start: formatDateForDisplay(startDate), end: formatDateForDisplay(endDate) })}</p>}
+            {startDate && endDate && <p><IonIcon icon={calendarOutline} aria-hidden="true" />{formatLocalizedDateRange(startDate, endDate, locale)}</p>}
           </div>}
         </header>
         {error && <div className="nutrition-plan-refresh-error" role="alert"><p>{t('No pudimos actualizar tu plan. Estas son las últimas indicaciones disponibles.')}</p><IonButton fill="clear" onClick={onRetry}>{t('Reintentar')}</IonButton></div>}

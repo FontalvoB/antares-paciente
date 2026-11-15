@@ -15,6 +15,15 @@ afterEach(() => { cleanup(); localStorage.clear(); });
 
 describe('3.19 · historial público alineado con D0014 y los artboards', () => {
   it.each([
+    'Tu sesión ha caducado. Inicia sesión de nuevo para ver tus recomendaciones.',
+    'No tienes acceso a estas recomendaciones.',
+  ])('R7-12: sin acción de acceso no deja un botón inerte en el historial: %s', message => {
+    render(<I18nProvider><NutritionRecommendationHistory unavailable errorMessage={message}/></I18nProvider>);
+    expect(screen.getByRole('alert').textContent).toContain(message);
+    expect(screen.queryByText('Reintentar')).toBeNull();
+  });
+
+  it.each([
     ['es', 'Aquí quedan las recomendaciones de ciclos que ya cerraron. La recomendación más reciente está en Plan.'],
     ['en', 'Recommendations from completed cycles are saved here. The most recent recommendation is in Plan.'],
   ])('remite a la publicación más reciente sin confundirla con el ciclo vigente en %s', (lang, copy) => {
@@ -30,8 +39,8 @@ describe('3.19 · historial público alineado con D0014 y los artboards', () => 
     expect(screen.getByRole('region', { name: 'Ciclos anteriores' })).toBeTruthy();
     expect(screen.getAllByText(/^Ciclo \d$/).map(item => item.textContent)).toEqual(['Ciclo 2', 'Ciclo 1']);
     expect(screen.getAllByRole('region', { name: /^Recomendaciones del ciclo/ })).toHaveLength(2);
-    expect(screen.getByText('Publicado el 07/12/2026')).toBeTruthy();
-    expect(screen.getByText('Publicado el 07/11/2026')).toBeTruthy();
+    expect(screen.getByText('Publicado el 7 dic 2026')).toBeTruthy();
+    expect(screen.getByText('Publicado el 7 nov 2026')).toBeTruthy();
     expect(screen.getAllByText('Anterior')).toHaveLength(2);
     for (const cycle of history) {
       expect(container.textContent).toContain(cycle.patientMessage);

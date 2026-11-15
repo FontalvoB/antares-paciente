@@ -55,6 +55,8 @@ export interface MyNutritionPlanDayDto {
 
 /** Plan de alimentación activo del paciente (wire de `NutritionPlan`). */
 export interface MyNutritionPlanDto {
+  /** Número del ciclo vigente, si el servidor lo proporciona; nunca el del cierre recomendado. */
+  cycleNumber?: number | null;
   disclaimer?: string;
   id?: string;
   revision?: number | null;

@@ -10,6 +10,27 @@ export function toISODate(display: string): string {
   return `${y}-${m}-${d}`
 }
 
+/** Conserva el día ISO del contrato, sin desplazarlo por la zona horaria del dispositivo. */
+function calendarDate(iso: string): Date | null {
+  const prefix = iso.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+  if (!prefix) return null
+  const date = new Date(`${prefix}T00:00:00Z`)
+  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== prefix ? null : date
+}
+
+/** Fecha de lectura con mes abreviado; el almacenamiento y los atributos siguen en ISO. */
+export function formatLocalizedDate(iso: string, locale: string): string {
+  const date = calendarDate(iso)
+  return date ? new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date) : iso
+}
+
+/** Rango localizado: comparte mes/año cuando procede y conserva ambos años si cambia. */
+export function formatLocalizedDateRange(start: string, end: string, locale: string): string {
+  const first = calendarDate(start), last = calendarDate(end)
+  if (!first || !last || first > last) return `${formatLocalizedDate(start, locale)} – ${formatLocalizedDate(end, locale)}`
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).formatRange(first, last)
+}
+
 export function toLocalISODate(d = new Date()): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')

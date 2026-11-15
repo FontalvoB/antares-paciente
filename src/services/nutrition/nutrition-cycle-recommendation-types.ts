@@ -7,6 +7,7 @@ export interface NutritionCycleRecommendationDto {
   endDate: string;
   /** Fecha de publicación que usa el backend para seleccionar y ordenar las recomendaciones. */
   publishedAt: string;
+  /** Solo nombre del profesional; el rol visible se traduce en la app (R7-14). */
   professionalName: string;
   patientMessage: string;
   attachments: { url: string; caption: string }[];

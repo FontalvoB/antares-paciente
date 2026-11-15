@@ -29,7 +29,7 @@ describe('3.18 · recomendaciones públicas del nutricionista', () => {
     render(<I18nProvider><NutritionRecommendations recommendation={fixture} unavailable errorMessage={message}/></I18nProvider>);
     expect(screen.getByRole('alert').textContent).toContain(message);
     expect(screen.queryByText(fixture.professionalName)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Reintentar' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
   });
 
   it('muestra texto clínico, profesional, ciclo y fechas sin alterar la URL firmada', () => {
@@ -37,7 +37,7 @@ describe('3.18 · recomendaciones públicas del nutricionista', () => {
     expect(screen.getByRole('region', { name: 'Recomendaciones de tu nutricionista' })).toBeTruthy();
     expect(screen.getByText(fixture.professionalName)).toBeTruthy();
     expect(screen.getByText(/Ana, mantén una fuente de proteína/).textContent).toBe(fixture.patientMessage);
-    expect(screen.getByText('Cierre del ciclo 2 · publicado el 07/12/2026')).toBeTruthy();
+    expect(screen.getByText('Cierre del ciclo 2 · publicado el 7 dic 2026')).toBeTruthy();
     expect(screen.getAllByRole('img')).toHaveLength(3);
     expect(screen.getByAltText(fixture.attachments[0].caption).getAttribute('src')).toBe(fixture.attachments[0].url);
   });
@@ -93,7 +93,9 @@ describe('3.18 · recomendaciones públicas del nutricionista', () => {
     localStorage.setItem('antares_lang', 'en');
     render(<I18nProvider><NutritionRecommendations recommendation={{ ...fixture, attachments: [] }} /></I18nProvider>);
     expect(screen.getByRole('region', { name: 'Recommendations from your nutritionist' })).toBeTruthy();
-    expect(screen.getByText('Cycle 2 review · published on 07/12/2026')).toBeTruthy();
+    expect(screen.getByText('Cycle 2 review · published on Dec 7, 2026')).toBeTruthy();
+    expect(screen.getByText('Dietitian')).toBeTruthy();
+    expect(screen.getByText(fixture.professionalName)).toBeTruthy();
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.queryByText('Adjuntos')).toBeNull();
     expect(screen.getByText(/Ana, mantén/).textContent).toBe(fixture.patientMessage);

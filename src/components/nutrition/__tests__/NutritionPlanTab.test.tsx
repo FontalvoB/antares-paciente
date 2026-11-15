@@ -47,6 +47,14 @@ const baseProps = {
 };
 
 describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
+  it.each([
+    ['es-ES', '21 sept – 20 oct 2026'],
+    ['en-US', 'Sep 21 – Oct 20, 2026'],
+  ])('R7-13: el detalle conserva el período del plan con meses en %s', (locale, expected) => {
+    render(<NutritionPlanTab {...baseProps} locale={locale} plan={{ ...planFixture, currentDay: 4, durationDays: 30, startDate: '2026-09-21', endDate: '2026-10-20' }}/>);
+    expect(screen.getByText(locale === 'es-ES' ? /21 sept/ : /Sep 21/).textContent?.replace(/\s+/g, ' ')).toBe(expected);
+  });
+
   it('un error del plan sigue visible aunque el snapshot tenga metas de referencia', () => {
     const onRetry = vi.fn();
     render(<NutritionPlanTab {...baseProps} error={new ApiError({ message: 'No se pudo consultar el plan', status: 503 })} fallbackRows={[{ emoji: '🔥', label: 'Calorías diarias', value: '1800 kcal' }]} onRetry={onRetry} />);

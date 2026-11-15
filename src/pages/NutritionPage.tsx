@@ -580,7 +580,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
   if(!snapshot && nutritionPlan){
     return <Screen><PageHeader title={t("Nutrición")} sub={t("Tu plan de alimentación")}/><Scroll className="ntr-scroll">
       {reviewBanner}
-      <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus} compact/>
+      <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus} compact cycleNumber={nutritionPlan.cycleNumber}/>
       {recommendationBlock}
       <NutritionDisclaimer/>
     </Scroll></Screen>;
@@ -991,6 +991,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
             onOpenAssessments={() => openTests()}
             onOpenProgram={() => navigate('prog')}
             compact
+            cycleNumber={nutritionPlan?.cycleNumber}
           />
           {recommendationBlock}
           {nutritionPlan && <NutritionDisclaimer/>}

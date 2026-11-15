@@ -1,8 +1,8 @@
 import { useId, useState } from 'react';
 import { IonAccordion, IonAccordionGroup, IonBadge, IonButton, IonIcon, IonItem, IonLabel, IonSkeletonText } from '@ionic/react';
 import { chevronUpOutline, nutritionOutline, refreshOutline, warningOutline } from 'ionicons/icons';
-import { useT } from '../../i18n/I18nContext';
-import { formatDateForDisplay } from '../../utils/dates';
+import { useI18n } from '../../i18n/I18nContext';
+import { formatLocalizedDate, formatLocalizedDateRange } from '../../utils/dates';
 import type { NutritionCycleRecommendationDto } from '../../services/nutrition/nutrition-cycle-recommendation-types';
 import { NutritionRecommendations } from './NutritionRecommendations';
 
@@ -15,7 +15,8 @@ export function NutritionRecommendationHistory({ history, unavailable = false, l
   onRetry?: () => void;
   labelledBy?: string;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
+  const locale = lang === 'en' ? 'en-US' : 'es-ES';
   const titleId = useId();
   const [selection, setSelection] = useState<string | null | undefined>();
   if (!loading && !unavailable && history == null) return null;
@@ -26,7 +27,7 @@ export function NutritionRecommendationHistory({ history, unavailable = false, l
     {!labelledBy && <h2 id={titleId}>{t('Ciclos anteriores')}</h2>}
     {loading ? <IonSkeletonText animated className="ntr-skeleton" role="status" aria-label={t('Cargando recomendaciones')}/> : unavailable ? <div className="nutrition-history-state">
       <p className="nutrition-recommendations-warning" role="alert"><IonIcon icon={warningOutline} aria-hidden="true" />{errorMessage ?? t('No pudimos cargar tus ciclos anteriores. Puedes volver a Plan y seguir con tus actividades.')}</p>
-      <IonButton data-testid="nutrition-history-retry" fill="outline" expand="block" onClick={onRetry} disabled={!onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>
+      {onRetry && <IonButton data-testid="nutrition-history-retry" fill="outline" expand="block" onClick={onRetry}><IonIcon icon={refreshOutline} slot="start" />{t('Reintentar')}</IonButton>}
     </div> : history!.length === 0
       ? <div className="nutrition-history-state nutrition-recommendations-empty">
         <span className="nutrition-empty-icon"><IonIcon icon={nutritionOutline} aria-hidden="true" /></span>
@@ -43,8 +44,8 @@ export function NutritionRecommendationHistory({ history, unavailable = false, l
           <IonItem data-testid="nutrition-history-cycle-toggle" slot="header" lines="none">
             <IonLabel className="ion-text-wrap">
               <h3>{t('Ciclo {number}', { number: String(cycle.cycleNumber) })}</h3>
-              <p>{t('Del {start} al {end}', { start: formatDateForDisplay(cycle.startDate), end: formatDateForDisplay(cycle.endDate) })}</p>
-              {expanded !== `${cycle.cycleNumber}:${cycle.startDate}` && <p>{cycle.professionalName} · {t('Publicado el {date}', { date: formatDateForDisplay(cycle.publishedAt.slice(0, 10)) })}{cycle.attachments.length === 0 ? ` · ${t('Sin imágenes')}` : ''}</p>}
+              <p>{formatLocalizedDateRange(cycle.startDate, cycle.endDate, locale)}</p>
+              {expanded !== `${cycle.cycleNumber}:${cycle.startDate}` && <p>{cycle.professionalName} · {t('Nutricionista')} · {t('Publicado el {date}', { date: formatLocalizedDate(cycle.publishedAt, locale) })}{cycle.attachments.length === 0 ? ` · ${t('Sin imágenes')}` : ''}</p>}
             </IonLabel>
             <IonBadge slot="end">{t('Anterior')}</IonBadge>
           </IonItem>
