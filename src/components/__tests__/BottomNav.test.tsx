@@ -1,19 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import type { ButtonHTMLAttributes } from 'react';
 import { BottomNav } from "../BottomNav";
 
 // Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
 const mockCtx = vi.hoisted(() => ({
   chatUnread: false as boolean,
+  openVoice: vi.fn(),
+  openPanic: vi.fn(),
 }));
 
 vi.mock("../../context/AppContext", () => ({
   useApp: () => ({
     screen: "home",
     navigate: vi.fn(),
-    openPanic: vi.fn(),
+    openPanic: mockCtx.openPanic,
+    openVoice: mockCtx.openVoice,
     chatUnread: mockCtx.chatUnread,
   }),
+}));
+
+// El botón Stencil se verifica en Playwright; aquí se comprueban los callbacks del shell.
+vi.mock('@ionic/react', async importOriginal => ({
+  ...await importOriginal<typeof import('@ionic/react')>(),
+  IonButton: ({children,onClick,'aria-label':label}:ButtonHTMLAttributes<HTMLButtonElement>) => <button onClick={onClick} aria-label={label}>{children}</button>,
 }));
 
 vi.mock("../../i18n/I18nContext", () => ({
@@ -21,6 +31,14 @@ vi.mock("../../i18n/I18nContext", () => ({
 }));
 
 describe("BottomNav — unread chat indicator", () => {
+  it('Vita abre la voz y conserva el acceso a SOS', () => {
+    render(<BottomNav />);
+    fireEvent.click(screen.getByRole('button',{name:'Hablar con Vita'}));
+    expect(mockCtx.openVoice).toHaveBeenCalledOnce();
+    expect(mockCtx.openPanic).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'Botón de pánico'}));
+    expect(mockCtx.openPanic).toHaveBeenCalledOnce();
+  });
   beforeEach(() => {
     mockCtx.chatUnread = false;
   });

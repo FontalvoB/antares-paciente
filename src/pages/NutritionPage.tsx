@@ -1,6 +1,6 @@
 import {NutritionDisclaimer} from "../components/nutrition/NutritionDisclaimer";
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { motion, MotionConfig } from "framer-motion";
+import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
   IonActionSheet,
   IonList, IonItem, IonLabel, IonSkeletonText,
@@ -13,7 +13,7 @@ import {
   IonSegmentButton,
   IonSpinner,
 } from "@ionic/react";
-import { closeOutline, cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline, arrowBackOutline, ellipsisHorizontal, notificationsOutline } from "ionicons/icons";
+import { closeOutline, cameraOutline, imageOutline, restaurantOutline, chevronForwardOutline, waterOutline, addOutline, checkmarkOutline, leafOutline, arrowBackOutline, notificationsOutline, todayOutline, calendarOutline, documentTextOutline, timeOutline } from "ionicons/icons";
 import dailyMediterranean from "../assets/nutrition/daily-mediterranean.jpg";
 import dailyBreakfast from "../assets/nutrition/daily-breakfast.jpg";
 import { PageHeader } from "../components/PageHeader";
@@ -145,7 +145,8 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
   >("hoy");
   const [recommendationHistoryOpen, setRecommendationHistoryOpen] = useState(false);
   const historyTitleId = useId();
-  const [moreSectionsOpen, setMoreSectionsOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const [allMeasurements, setAllMeasurements] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const changeTab = (value: typeof tab) => {
     setTab(value);
@@ -204,10 +205,6 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
       onError: error => { if (error.errorType === 'business' && !error.errors?.missingMealCodes?.length) showToast(localizedError(error, { t, lang }, "No se pudo completar la actividad"), 'err'); },
     });
   }
-  // Nombre real del plan o estado vacío honesto (sin 'Ana Torres' inventado).
-  const planTitle =
-    nutContent?.nutritionPlanName || t("Sin plan nutricional asignado");
-
   // El fallback R5.2 (transport error sin cache) NO es verdad de servidor: la
   // UI puede derivar estados vacíos del snapshot mock, pero las MUTACIONES
   // (registro manual, foto, hidratación) no deben encolar writes reales sobre
@@ -259,9 +256,10 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
   const weekNutrition = hs?.dimensions?.nutrition ?? null;
   const weekPrevious = hs?.dimensions_previous?.nutrition ?? null;
   // Historial (server): serie de peso real + subtítulos bmi/hba1c por fecha.
-  const weightSeries = metricSeries.find(
-    (m) => m.code.toLowerCase() === "weight",
-  );
+  const weightSeries = useMemo(() => {
+    const series = metricSeries.find(m => m.code.toLowerCase() === 'weight');
+    return series ? {...series, points:[...series.points].sort((a,b)=>a.date.localeCompare(b.date))} : undefined;
+  }, [metricSeries]);
   const bmiSeries = metricSeries.find(
     (m) => m.code.toLowerCase() === "bmi",
   );
@@ -400,26 +398,26 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
     {
       key: "Carbohidratos",
       value: intakeTotals.carbsG,
-      target: serverTargets.carbsG,
-      color: "#1B6CA8",
+      target: nutritionPlan?.dailyCarbsTarget ?? serverTargets.carbsG,
+      color: "var(--macro-carbs)",
     },
     {
       key: "Proteínas",
       value: intakeTotals.proteinG,
-      target: serverTargets.proteinG,
-      color: "#1D9E75",
+      target: nutritionPlan?.dailyProteinTarget ?? serverTargets.proteinG,
+      color: "var(--macro-protein)",
     },
     {
       key: "Grasas",
       value: intakeTotals.fatG,
-      target: serverTargets.fatG,
-      color: "#E87B2B",
+      target: nutritionPlan?.dailyFatTarget ?? serverTargets.fatG,
+      color: "var(--macro-fat)",
     },
     {
       key: "Fibra",
       value: intakeTotals.fiberG,
-      target: serverTargets.fiberG,
-      color: "#7C3AED",
+      target: nutritionPlan?.dailyFiberTarget ?? serverTargets.fiberG,
+      color: "var(--macro-fiber)",
     },
   ].filter((b) => b.target != null && b.target > 0);
 
@@ -562,8 +560,8 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
   // Carga inicial: placeholder de IonSpinner centrado, sin contenido.
   if (!snapshot && isLoading) {
     return (
-      <Screen>
-        <PageHeader title={t("Nutrición")} />
+      <Screen className="ntr-screen">
+        <PageHeader title={t("Nutrición")} onBack={() => navigate('home')} />
         <div
           style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}
         >
@@ -578,18 +576,19 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
   // estado; el fallback mock del hook es NO-null con todayTasks vacío y cae
   // en el render normal con estados vacíos derivados (nunca fabricación).
   if(!snapshot && nutritionPlan){
-    return <Screen><PageHeader title={t("Nutrición")} sub={t("Tu plan de alimentación")}/><Scroll className="ntr-scroll">
+    return <Screen className="ntr-screen"><PageHeader title={t("Nutrición")} onBack={() => navigate('home')} sub={t("Tu plan de alimentación")}/><Scroll className="ntr-scroll">
+      <NutritionDisclaimer/>
       {reviewBanner}
       <NutritionPlanTab plan={nutritionPlan} isLoading={planLoading} error={planError} fallbackRows={[]} locale={locale} onRetry={()=>void refetchPlan()} status={planStatus} compact cycleNumber={nutritionPlan.cycleNumber}/>
       {recommendationBlock}
-      <NutritionDisclaimer/>
     </Scroll></Screen>;
   }
   if (!snapshot) {
     return (
-      <Screen>
+      <Screen className="ntr-screen">
         <PageHeader
           title={t("Nutrición")}
+          onBack={() => navigate('home')}
           sub={t("Sin plan nutricional asignado")}
         />
         <div className="card" style={{ margin: "10px 14px 0" }}>
@@ -654,32 +653,30 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
 
   return (
     <MotionConfig reducedMotion="user"><Screen className="ntr-screen">
-      <PageHeader title={t("Nutrición")} sub={tab === 'hoy' ? nutritionPlan?.name || planTitle : undefined} />
+      <PageHeader title={t("Nutrición")} onBack={() => navigate('home')} />
 
       <div className="nutrition-primary-tabs"><IonSegment
         className="plan-seg ntr-tabs"
+        aria-label={t('Secciones de nutrición')}
         value={tab}
         onIonChange={(e) => changeTab((e.detail.value as typeof tab) ?? "hoy")}
       >
-        <IonSegmentButton value="hoy">{t("Hoy")}</IonSegmentButton>
-        <IonSegmentButton data-testid="nutrition-tab-plan" value="indicaciones">{t("Plan")}</IonSegmentButton>
-      </IonSegment><IonButton fill="clear" aria-label={t('Más secciones de nutrición')} onClick={() => setMoreSectionsOpen(true)}><IonIcon slot="icon-only" icon={ellipsisHorizontal}/></IonButton></div>
-      <IonActionSheet isOpen={moreSectionsOpen} onDidDismiss={() => setMoreSectionsOpen(false)} header={t('Más secciones de nutrición')} buttons={[
-        { text: t('Semana'), handler: () => changeTab('semana') },
-        { text: t('Historial'), handler: () => changeTab('historial') },
-        { text: t('Cancelar'), role: 'cancel' },
-      ]}/>
+        <IonSegmentButton value="hoy"><IonIcon icon={todayOutline} aria-hidden="true" />{t("Hoy")}</IonSegmentButton>
+        <IonSegmentButton value="semana"><IonIcon icon={calendarOutline} aria-hidden="true" />{t("Semana")}</IonSegmentButton>
+        <IonSegmentButton data-testid="nutrition-tab-plan" value="indicaciones"><IonIcon icon={documentTextOutline} aria-hidden="true" />{t("Plan")}</IonSegmentButton>
+        <IonSegmentButton value="historial"><IonIcon icon={timeOutline} aria-hidden="true" />{t("Historial")}</IonSegmentButton>
+      </IonSegment></div>
 
       {/* Todo lo demás hace scroll: analizador + resumen + contenido del tab. */}
       <Scroll ref={scrollRef} className={`ntr-scroll${tab === 'hoy' ? ' ntd-today' : ''}`}>
-        {nutritionPlan && tab !== 'indicaciones' && <NutritionDisclaimer/>}
+        {nutritionPlan && <NutritionDisclaimer/>}
+        <motion.div key={tab} className="premium-tab-content" initial={reducedMotion ? false : {opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:reducedMotion ? 0 : .2,ease:'easeOut'}}>
         {tab === 'hoy' && <section className="ntd-hero">
           <img src={dailyMediterranean} alt="" fetchPriority="high" />
           <div className="ntd-hero-copy"><span className="ntd-eyebrow"><IonIcon icon={leafOutline} />{t('Tu alimentación de hoy')}</span><h2>{t('Tu día, bien nutrido.')}</h2><p>{t('Un momento para ti. Una comida a la vez.')}</p><span className="ntd-date">{formatDateForDisplay(snapshot.todayLocalDate)}</span></div>
           <span className="ntd-photo-note">{t('Imagen ilustrativa')}</span>
         </section>}
         {tab === "historial" && <NutritionMetrics metrics={metricSeries} loading={metricsLoading} locale={locale} />}
-        {tab === "historial" && captureCard}
         {tab === "hoy" && <div className="nut-goals-card ntd-progress">
           <div className="nut-goals-head">
             <div><div className="ntd-eyebrow">{t('BALANCE DIARIO')}</div><h2 className="ntd-heading">{t("Tu progreso de hoy")}</h2></div>
@@ -721,9 +718,9 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
                   strokeWidth="10"
                   strokeDasharray="239"
                   strokeLinecap="round"
-                  initial={{ strokeDashoffset: 239 }}
+                  initial={reducedMotion ? false : { strokeDashoffset: 239 }}
                   animate={{ strokeDashoffset: ringOffset }}
-                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: reducedMotion ? 0 : 0.6, ease: 'easeOut' }}
                 />
               </svg>
               <div className="nut-ring-center">
@@ -756,6 +753,8 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
                     </div>
                     <IonProgressBar
                       className="pb nut-macro-bar"
+                      aria-label={t(b.key)}
+                      aria-valuetext={`${formatMetricValue(b.value,0,locale)} / ${formatMetricValue(b.target as number,0,locale)} g`}
                       style={
                         {
                           "--background": "var(--g1)",
@@ -867,12 +866,12 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
               <motion.article
                 key={m.id}
                 className={`meal-card ntd-meal${loggedSet.has(m.id) ? ' is-logged' : ''}`}
-                initial={{ opacity: 0, y: 18 }}
+                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-32px" }}
                 transition={{
-                  duration: 0.38,
-                  delay: Math.min(idx * 0.06, 0.18),
+                  duration: reducedMotion ? 0 : 0.2,
+                  delay: 0,
                   ease: [0.22, 1, 0.36, 1],
                 }}
               >
@@ -979,7 +978,6 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
 
         {tab === "indicaciones" && (
           <>
-          {reviewBanner}
           <NutritionPlanTab
             plan={nutritionPlan}
             status={planStatus}
@@ -992,9 +990,12 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
             onOpenProgram={() => navigate('prog')}
             compact
             cycleNumber={nutritionPlan?.cycleNumber}
+            canRegister={canMutate}
+            onRegisterMeal={meal => { if (loggedSet.has(meal)) setFlow({meal,mode:'detail',startAt:'detail'}); else openRegister(meal); }}
+            onPhotoMeal={meal => setFlow({meal,mode:loggedSet.has(meal) ? 'detail' : 'register',autoSource:loggedSet.has(meal) ? undefined : 'camera'})}
           />
+          {reviewBanner}
           {recommendationBlock}
-          {nutritionPlan && <NutritionDisclaimer/>}
           </>
         )}
 
@@ -1006,27 +1007,20 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
               <IonList lines="none">
                 {(nutContent?.nutritionIntakeLogs ?? []).filter(log => log.mealCode !== 'agua').map(log => <IonItem key={log.mealCode} button detail={false} onClick={() => setFlow({ meal: log.mealCode as Exclude<MealCode, "agua">, mode: "detail", startAt: "detail" })}>
                   <span className="ntr-log-icon" slot="start"><IonIcon icon={restaurantOutline} /></span>
-                  <IonLabel><h3>{t(MEAL_LABELS[log.mealCode])}</h3><p>{formatDateForDisplay(log.localDate)}</p><p>{[log.calories != null ? formatMetricValue(log.calories, 0, locale) + ' kcal' : '', log.proteinG != null ? formatMetricValue(log.proteinG, 0, locale) + 'g ' + t('Proteínas') : '', log.carbsG != null ? formatMetricValue(log.carbsG, 0, locale) + 'g ' + t('Carbohidratos') : '', log.fatG != null ? formatMetricValue(log.fatG, 0, locale) + 'g ' + t('Grasas') : ''].filter(Boolean).join(' · ')}</p></IonLabel>
+                  <IonLabel><h3>{t(MEAL_LABELS[log.mealCode])}</h3><p>{formatDateForDisplay(log.localDate)}{log.calories != null && <> · <strong>{formatMetricValue(log.calories, 0, locale)} kcal</strong></>}</p><div className="premium-log-macros">{[{value:log.proteinG,label:'Proteínas'},{value:log.carbsG,label:'Carbohidratos'},{value:log.fatG,label:'Grasas'},{value:log.fiberG,label:'Fibra'}].filter(m=>m.value!=null).map(m=><span key={m.label}>{t(m.label)} {formatMetricValue(m.value!,0,locale)} g</span>)}</div></IonLabel>
                   <IonIcon icon={chevronForwardOutline} slot="end" />
                 </IonItem>)}
               </IonList>
               {!(nutContent?.nutritionIntakeLogs ?? []).some(log => log.mealCode !== 'agua') && <div className="ntr-empty">{t("Aún no has registrado comidas hoy.")}<IonButton fill="clear" onClick={() => changeTab('hoy')}>{t("Registrar comida")}</IonButton></div>}
             </section>
             <div className="ntr-card ntr-weight-history">
-            {weightSeries && weightSeries.points.length > 0 && <NutritionWeightChart series={weightSeries} locale={locale} />}
-            <div
-              style={{
-                background: "var(--navy)",
-                color: "#fff",
-                padding: 12,
-                fontWeight: 700,
-              }}
-            >
-              {t("Mediciones")}
+            {weightSeries && weightSeries.points.length > 0 && <NutritionWeightChart series={weightSeries} locale={locale} today={snapshot.todayLocalDate} />}
+            <div className="premium-measurements-heading">
+              {t("Mediciones recientes")}
             </div>
             {weightSeries && weightSeries.points.length > 0 ? (
               <>
-                {[...weightSeries.points].reverse().map((row, i) => {
+                {[...weightSeries.points].reverse().slice(0,allMeasurements ? undefined : 3).map((row, i) => {
                   const prev =
                     weightSeries.points[weightSeries.points.length - 2 - i];
                   const delta = prev ? row.value - prev.value : 0;
@@ -1034,7 +1028,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
                   const hba1cVal = hba1cByDate.get(row.date);
                   const subtitle = [
                     bmiVal != null
-                      ? `IMC ${formatMetricValue(bmiVal, 1, locale)}`
+                      ? `${t('IMC')} ${formatMetricValue(bmiVal, 1, locale)}`
                       : "",
                     hba1cVal != null
                       ? `HbA1c ${formatMetricValue(hba1cVal, 1, locale)} ${hba1cUnit}`
@@ -1043,7 +1037,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
                     .filter(Boolean)
                     .join(" · ");
                   return (
-                    <div
+                    <div className="premium-measurement"
                       key={`${row.date}-${i}`}
                       style={{
                         display: "flex",
@@ -1094,6 +1088,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
                     </div>
                   );
                 })}
+                {weightSeries.points.length > 3 && <IonButton fill="clear" expand="block" aria-expanded={allMeasurements} onClick={() => setAllMeasurements(value => !value)}>{t(allMeasurements ? 'Ver menos mediciones' : 'Ver todas las mediciones')}</IonButton>}
                 {weightTarget && (
                   <div style={{ padding: 12, background: "var(--teal-l)" }}>
                     <div style={{ fontSize: 11, color: "var(--mu)" }}>
@@ -1119,6 +1114,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
           </div>
           </div>
         )}
+        </motion.div>
       </Scroll>
 
       {/* Registro manual: los objetivos son referencia, no consumo registrado. */}

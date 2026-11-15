@@ -1,5 +1,5 @@
 import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
-import { IonBadge, IonIcon } from "@ionic/react";
+import { IonBadge, IonButton, IonIcon } from "@ionic/react";
 import {
   calendar,
   calendarOutline,
@@ -10,6 +10,7 @@ import {
   home,
   homeOutline,
   medkit,
+  micOutline,
   person,
   personOutline,
 } from "ionicons/icons";
@@ -18,7 +19,7 @@ import { useT } from "../i18n/I18nContext";
 import type { Screen } from "../types";
 
 export function BottomNav({ dark = false }: { dark?: boolean }) {
-  const { screen, navigate, openPanic, chatUnread } = useApp();
+  const { screen, navigate, openPanic, openVoice, chatUnread } = useApp();
   const t = useT();
 
   const items: {
@@ -26,14 +27,14 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
     label: string;
     icon: string;
     iconOn: string;
-    sos?: boolean;
+    vita?: boolean;
   }[] = [
     { id: "home", label: t("Inicio"), icon: homeOutline, iconOn: home },
     APPOINTMENTS_ENABLED
       ? { id: "book", label: t("Citas"), icon: calendarOutline, iconOn: calendar }
       : { id: "nut", label: t("Nutrición"), icon: nutritionOutline, iconOn: nutrition },
     //{ id: 'nut', label: t('Nutrición'), icon: leafOutline, iconOn: leaf },
-    { id: "home", label: t("SOS"), icon: medkit, iconOn: medkit, sos: true },
+    { id: "chat", label: "Vita", icon: micOutline, iconOn: micOutline, vita: true },
     {
       id: "chat",
       label: t("Chat"),
@@ -44,35 +45,37 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
   ];
 
   return (
-    <nav className={`bnav ${dark ? "bnav-dark" : ""}`}>
+    <nav className={`bnav premium-nav ${dark ? "bnav-dark" : ""}`} aria-label={t('Navegación principal')}>
       {items.map((it, i) => {
-        if (it.sos) {
+        if (it.vita) {
           return (
-            <button
-              key="sos"
+            <IonButton
+              key="vita"
               type="button"
-              className="ni ni-sos"
-              onClick={openPanic}
-              aria-label={t("Botón de pánico")}
+              className="ni ni-vita"
+              fill="clear"
+              onClick={openVoice}
+              aria-label={t("Hablar con Vita")}
             >
-              <span className="ni-ico">
-                <IonIcon icon={medkit} />
+              <span className="premium-nav-content"><span className="ni-ico">
+                <IonIcon icon={micOutline} aria-hidden="true" />
               </span>
-              <span>SOS</span>
-            </button>
+              <span>Vita</span></span>
+            </IonButton>
           );
         }
         const on = screen === it.id;
         return (
-          <button
+          <IonButton
             key={`${it.id}-${i}`}
             type="button"
+            fill="clear"
             className={`ni ${on ? "on" : ""}`}
             onClick={() => navigate(it.id)}
             aria-current={on ? "page" : undefined}
           >
-            <span className="ni-ico">
-              <IonIcon icon={on ? it.iconOn : it.icon} />
+            <span className="premium-nav-content"><span className="ni-ico">
+              <IonIcon icon={on ? it.iconOn : it.icon} aria-hidden="true" />
               {it.id === "chat" && Boolean(chatUnread) && (
                 <IonBadge
                   className="ni-dot"
@@ -80,10 +83,11 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
                 />
               )}
             </span>
-            <span>{it.label}</span>
-          </button>
+            <span>{it.label}</span></span>
+          </IonButton>
         );
       })}
+      <IonButton className="premium-sos" fill="clear" onClick={openPanic} aria-label={t('Botón de pánico')}><IonIcon icon={medkit} slot="start" aria-hidden="true" />SOS</IonButton>
     </nav>
   );
 }

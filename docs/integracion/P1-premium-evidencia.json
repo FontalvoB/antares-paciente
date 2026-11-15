@@ -1,0 +1,793 @@
+{
+  "baseline": "20057df",
+  "generatedAt": "2026-11-15T21:44:02.302Z",
+  "evidenceRoot": "C:\\Users\\Luis\\Documents\\CoppAddresd\\Repos\\openspec\\changes\\organizar-experiencia-bienestar\\revision-app-premium",
+  "tests": {
+    "files": 209,
+    "passed": 1704,
+    "failed": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 26
+  },
+  "build": "pass; warning de chunk mayor de 1300 kB preexistente",
+  "i18nMissing": 0,
+  "controlled": [
+    {
+      "lang": "es",
+      "width": 320,
+      "checks": [
+        "historial-con-mediciones-reales-del-DTO",
+        "acordeon-y-dia-actual-sin-escrituras",
+        "aviso-Escape-foco-y-relectura",
+        "Vita-y-SOS-conservados",
+        "reduced-motion-sin-transicion",
+        "a11y-idioma-y-objetivos-tactiles"
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "viewport": {
+        "width": 320,
+        "height": 900
+      },
+      "screens": [
+        "hoy",
+        "plan",
+        "historial"
+      ],
+      "pageErrors": [],
+      "fixture": true
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "checks": [
+        "historial-con-mediciones-reales-del-DTO",
+        "acordeon-y-dia-actual-sin-escrituras",
+        "aviso-Escape-foco-y-relectura",
+        "Vita-y-SOS-conservados",
+        "reduced-motion-sin-transicion",
+        "a11y-idioma-y-objetivos-tactiles"
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "screens": [
+        "hoy",
+        "plan",
+        "historial"
+      ],
+      "pageErrors": [],
+      "fixture": true
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "checks": [
+        "historial-con-mediciones-reales-del-DTO",
+        "acordeon-y-dia-actual-sin-escrituras",
+        "aviso-Escape-foco-y-relectura",
+        "Vita-y-SOS-conservados",
+        "reduced-motion-sin-transicion",
+        "a11y-idioma-y-objetivos-tactiles"
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screens": [
+        "hoy",
+        "plan",
+        "historial"
+      ],
+      "pageErrors": [],
+      "fixture": true
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "checks": [
+        "historial-con-mediciones-reales-del-DTO",
+        "acordeon-y-dia-actual-sin-escrituras",
+        "aviso-Escape-foco-y-relectura",
+        "Vita-y-SOS-conservados",
+        "reduced-motion-sin-transicion",
+        "a11y-idioma-y-objetivos-tactiles"
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "viewport": {
+        "width": 320,
+        "height": 900
+      },
+      "screens": [
+        "hoy",
+        "plan",
+        "historial"
+      ],
+      "pageErrors": [],
+      "fixture": true
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "checks": [
+        "historial-con-mediciones-reales-del-DTO",
+        "acordeon-y-dia-actual-sin-escrituras",
+        "aviso-Escape-foco-y-relectura",
+        "Vita-y-SOS-conservados",
+        "reduced-motion-sin-transicion",
+        "a11y-idioma-y-objetivos-tactiles"
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "screens": [
+        "hoy",
+        "plan",
+        "historial"
+      ],
+      "pageErrors": [],
+      "fixture": true
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "checks": [
+        "historial-con-mediciones-reales-del-DTO",
+        "acordeon-y-dia-actual-sin-escrituras",
+        "aviso-Escape-foco-y-relectura",
+        "Vita-y-SOS-conservados",
+        "reduced-motion-sin-transicion",
+        "a11y-idioma-y-objetivos-tactiles"
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screens": [
+        "hoy",
+        "plan",
+        "historial"
+      ],
+      "pageErrors": [],
+      "fixture": true
+    }
+  ],
+  "real": {
+    "cases": [
+      {
+        "lang": "es",
+        "width": 320,
+        "tab": "hoy",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 320,
+        "tab": "indicaciones",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 320,
+        "tab": "historial",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "tab": "hoy",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "tab": "indicaciones",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "tab": "historial",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "tab": "hoy",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "tab": "indicaciones",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "tab": "historial",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "tab": "hoy",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "tab": "indicaciones",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "tab": "historial",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "tab": "hoy",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "tab": "indicaciones",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "tab": "historial",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "tab": "hoy",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "tab": "indicaciones",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "tab": "historial",
+        "overflow": false
+      }
+    ],
+    "stubs": false,
+    "pageErrors": [],
+    "clinicalWrites": [],
+    "protectedBefore": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    },
+    "protectedAfter": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    }
+  },
+  "images": [
+    {
+      "file": "before/en-1440-historial.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d9332a81740aaa13993cfb0f9ee4ba10e323b22a0dfbcbf173078fa36c364175"
+    },
+    {
+      "file": "before/en-1440-hoy.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "334d4b3fcc87a0b783232326a0ad5c79731737d63f5d3af4e2d9c7991f6bcd24"
+    },
+    {
+      "file": "before/en-1440-plan.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "da3866d01a02c8896f939bb6b57433d06b9321c570d3b08b186b3d7f52870392"
+    },
+    {
+      "file": "before/en-320-historial.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "e9fa42b6a4d80b48e40f5c6aff2ca0c2609f0a9b4843b83ef118390975bd8500"
+    },
+    {
+      "file": "before/en-320-hoy.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "f9d22d50781460cf037f26f4aa3259e8b5afb71b02c58b683b0a1061676b99a8"
+    },
+    {
+      "file": "before/en-320-plan.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9bf70b5584a5dd7ed8d5948bfd3bdb401a50eb4efb2bf5bd1a096e80e5cf0723"
+    },
+    {
+      "file": "before/en-390-historial.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "de393c2caa55a57a18a70c8f1d19918790036a81bee3f2d6bd00717e9ccdc91a"
+    },
+    {
+      "file": "before/en-390-hoy.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "557d09bb53567ae41aecb52e682b5ae55858fd73995fd8d7b988de29cae2c430"
+    },
+    {
+      "file": "before/en-390-plan.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "8cc2724f80f3aa2896aebecda58b461765b5c65f69e9874752e31fc8ac8a5e91"
+    },
+    {
+      "file": "before/es-1440-historial.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ede0b6c9d8cd5a113c75492c1c35473e14155bae8d83f7507dcf390dfa6d1eab"
+    },
+    {
+      "file": "before/es-1440-hoy.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b7eeccd76124dc548b2f7d67b05d1beaa3c26fa6c640342d70565bada892f3ef"
+    },
+    {
+      "file": "before/es-1440-plan.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6e4a1d1845c0cb91014437da20a21e327dc07eb50012f7a629d4145222882739"
+    },
+    {
+      "file": "before/es-320-historial.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c4ceee956e4b7fb372a39087ce919aa08e27eb52a8d2118b3ddc276908118b6b"
+    },
+    {
+      "file": "before/es-320-hoy.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "a9fe30bde0cbf5a62468dfda8aad35be818a7ce16caa14ce3c149ff8fe4e1cd0"
+    },
+    {
+      "file": "before/es-320-plan.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "5c16458b437ab22ec74eabfa7e0bd7875f9e7ea8109d85041f9bf940c3b8649e"
+    },
+    {
+      "file": "before/es-390-historial.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "5fdd0b349ed28e957e9f08c23db5b928f176394b2894d7c0d85e723c6d63fc6e"
+    },
+    {
+      "file": "before/es-390-hoy.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "b6acbcace55f38a4a54d5ba594061d4483810f25026103586ad0f87f9ecbe655"
+    },
+    {
+      "file": "before/es-390-plan.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c5cf9f3660815353b0925b1f73eea1540f77c1a5d9e4f7ee5c0524eb75dd3bee"
+    },
+    {
+      "file": "after/en-1440-historial-datos.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b752f76862ea56c60629214de8e77f19318d300f1946d571f5f230c89bc11f26"
+    },
+    {
+      "file": "after/en-1440-historial.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "705b5416f0d4c7e57e9ae03de9f1810a3a1608b2afa85e9e2386558b181b813d"
+    },
+    {
+      "file": "after/en-1440-hoy-datos-reduced.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "cf88c67ae0ccc311edc0c42420773ef04a96a33844e666896e683003fabc7899"
+    },
+    {
+      "file": "after/en-1440-hoy.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "15f2316a3ca388484eca23ee8f8285407693c8f2e0e661b527826ffb7ea7623b"
+    },
+    {
+      "file": "after/en-1440-legal.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6c82959bb6d6f15a2084b6d2b49c4a47d0629eb26f935632fbb1f4149cbeeb13"
+    },
+    {
+      "file": "after/en-1440-peso.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "bf894abd464664ae132c63c55db57e52be0d32e783a895fc0d290cdb1015fb4d"
+    },
+    {
+      "file": "after/en-1440-plan.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c345979b8900c5d262fba961f322de8926254289b2d73b9d21f8d390fa8fc48a"
+    },
+    {
+      "file": "after/en-320-historial-datos.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "173e95a14e040ba65e9da5bc103a92401222046b9f1e44e1683c440caf2a1878"
+    },
+    {
+      "file": "after/en-320-historial.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "0e9c6a67b05fd1e9b402c6b2eb9fb9351ce24a61baec2ea3e2525c00f257f754"
+    },
+    {
+      "file": "after/en-320-hoy-datos-reduced.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "88bb310889c3d2bdcd76428e8311a6113920dce732408df88f446acbf85c84af"
+    },
+    {
+      "file": "after/en-320-hoy.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "52c3e4d5b70fd682b273e024afdd21f34d8ea0ac54af87a7858a8388548ed7d4"
+    },
+    {
+      "file": "after/en-320-legal.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "f387e72659b9d8dc5b339a1115de0fade368eaaa822a137fac4823dd919744bf"
+    },
+    {
+      "file": "after/en-320-peso.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c10c2b42cb2de858519370f53676cdd70ba8ae441a506e86aca0d65d0a60dc80"
+    },
+    {
+      "file": "after/en-320-plan.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "aa9195ca46ee53cd5f33f4b36c868fef5964361a9d2b7ecc22efc3fcb862d527"
+    },
+    {
+      "file": "after/en-390-historial-datos.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "649bc8c357b845f0ed2dfa9e7f9126b9f300c10f5abf70f15774e9a21bbd830a"
+    },
+    {
+      "file": "after/en-390-historial.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ed5aec48564ba406877e0774e4f68b7e0074eca36af914eec60de8c09c89a439"
+    },
+    {
+      "file": "after/en-390-hoy-datos-reduced.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "09a7099eca25019b505fc39e96c96deaaa342af5035a64bad898815e6bd19abb"
+    },
+    {
+      "file": "after/en-390-hoy.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "f76a8f34d1a8ad4509dc996d66f9a4e8e41a99c37e40464e7a88185b9455bf0f"
+    },
+    {
+      "file": "after/en-390-legal.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "14a274ba7f1d8b3f920b2cf55cd4e13a92324877828d5ac5f5109affaac9eade"
+    },
+    {
+      "file": "after/en-390-peso.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ac53e49b76f632165abc61c62cb6991ddfdec3cd0cf33dd0dd6c62c314e06a1b"
+    },
+    {
+      "file": "after/en-390-plan.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "0b32263dda1a08806eb18ddbe90a8079e08f07f877a1ecbe47a4f71b02c97df9"
+    },
+    {
+      "file": "after/es-1440-historial-datos.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ffaf37d1481c640759b22eca16c662b215c6d26fc78c41d69ba4e902dc71b86b"
+    },
+    {
+      "file": "after/es-1440-historial.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "bffd8c65fbc0de148b9a2f533daeb0deb3c3b086d6be9c6a18196f70faffea78"
+    },
+    {
+      "file": "after/es-1440-hoy-datos-reduced.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "48249ae83825048d46e1035bb5694eeeed00b4feb5faf8474c385966b61ca61c"
+    },
+    {
+      "file": "after/es-1440-hoy.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "59a9b0c39aeebc0a3eb90574f6abc0c61415244390da56ebbcbbf7485ca8c935"
+    },
+    {
+      "file": "after/es-1440-legal.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "32a5d01fdd0bc6b6df827587af05cc3db974331e8ecb15ec1eedae1e1a38d409"
+    },
+    {
+      "file": "after/es-1440-peso.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1a92057b9b4f2c6205c3a3e7fd99a37b32972329275f632065acbc555abb4ccd"
+    },
+    {
+      "file": "after/es-1440-plan.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f24110f230912505e3bc3553e552da4946268d899f2338239285d30f0df59778"
+    },
+    {
+      "file": "after/es-320-historial-datos.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "8e27d07a84871df06a9d9ca2ac255c2697c6b043b59df2bee0bc07da2a0680db"
+    },
+    {
+      "file": "after/es-320-historial.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "a3f1510b1429d1f4cb0ae5ed0d1909d47860f2a2c0aa2268f1e4fb6356fcf6c5"
+    },
+    {
+      "file": "after/es-320-hoy-datos-reduced.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "ed26ce32b0ea696ea0345489f8bd1d943036f636458c8b02a6d01892eebda11a"
+    },
+    {
+      "file": "after/es-320-hoy.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "1b0c58bdb9c365b329fffaf195d51d5ff93b941aceb156ea768e302fc4c395a6"
+    },
+    {
+      "file": "after/es-320-legal.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "aeb91b33a059b9c61808d3c8a10fdd2d82c9ed1683a90981aadeb669bbb8c33d"
+    },
+    {
+      "file": "after/es-320-peso.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "b40f839279c000acc7f5af6d6786dfc06358e11868e483a4bed9cb77ddd49645"
+    },
+    {
+      "file": "after/es-320-plan.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3a36ce1c3821e8071eba47fc97adcc751883fb53c8b23537f5b9a962592cecd9"
+    },
+    {
+      "file": "after/es-390-historial-datos.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "01b747b3758668783c43a13871b1b5a0e4755ba1b167c7354d4924b3f222952f"
+    },
+    {
+      "file": "after/es-390-historial.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "fff336cbdf078609271d1795c4cad2efb8b167d61d87f27a7eae77b3925f79de"
+    },
+    {
+      "file": "after/es-390-hoy-datos-reduced.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "68f3114f3fb2fda966474ca578464f1c195b8752f5b0c095afd96df905baccbb"
+    },
+    {
+      "file": "after/es-390-hoy.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "8ef6bf33dc856790f49e1ccdc32d38bccd47d3c9752194eda751f76edd8a0796"
+    },
+    {
+      "file": "after/es-390-legal.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "899ce8a2807ff6bea19625915b875ea67a7fb38e8e1d0ef693c7ec2ecf8fbf7a"
+    },
+    {
+      "file": "after/es-390-peso.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "85e5795fd80a5eaa032cc52991b127022dc402fd84799b7e1cd1f0248fe1bc4e"
+    },
+    {
+      "file": "after/es-390-plan.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "315092e75f711ebbeb05de2070c006c91b193dca0f21bb7d3c4eec43f5384877"
+    },
+    {
+      "file": "runtime/en-1440-historial.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "705b5416f0d4c7e57e9ae03de9f1810a3a1608b2afa85e9e2386558b181b813d"
+    },
+    {
+      "file": "runtime/en-1440-hoy.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c41c143f159c4536126c0db9fc8bb20d2d4c8f43db90f27ba7525ecd1b37f71a"
+    },
+    {
+      "file": "runtime/en-1440-indicaciones.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "04b989416305e6a4fbbd61ad8c56a8d48c8cc9cea178d5ac6911fb240d0fd67e"
+    },
+    {
+      "file": "runtime/en-320-historial.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "0e9c6a67b05fd1e9b402c6b2eb9fb9351ce24a61baec2ea3e2525c00f257f754"
+    },
+    {
+      "file": "runtime/en-320-hoy.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "8c7d7d8f0b66af324a4fb9cd8e82a72d169291f19375bc187d70f0b6aa602fe8"
+    },
+    {
+      "file": "runtime/en-320-indicaciones.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c1388add802cf65aac24dbe6dcdf3ea872f02f679cedb21a30b6c51e360aeec0"
+    },
+    {
+      "file": "runtime/en-390-historial.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ed5aec48564ba406877e0774e4f68b7e0074eca36af914eec60de8c09c89a439"
+    },
+    {
+      "file": "runtime/en-390-hoy.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "660873b57eb6676dcee4f9184859fecc3e479d6f32a901e4ec37f69c53ad66eb"
+    },
+    {
+      "file": "runtime/en-390-indicaciones.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "99b2df33d5a25df52774c88413c89e573eb19f2002820375ed2c6a5589237a7d"
+    },
+    {
+      "file": "runtime/es-1440-historial.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "bffd8c65fbc0de148b9a2f533daeb0deb3c3b086d6be9c6a18196f70faffea78"
+    },
+    {
+      "file": "runtime/es-1440-hoy.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "fb750fdd50aab386e3d2c99bd3ded36893c6c2e008b5bf9f9de3ea3d3b2615aa"
+    },
+    {
+      "file": "runtime/es-1440-indicaciones.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1c21ec46c69cd0a014b4bcbe6b428b9692076350a62feac9fcade45c9ae53798"
+    },
+    {
+      "file": "runtime/es-320-historial.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "a3f1510b1429d1f4cb0ae5ed0d1909d47860f2a2c0aa2268f1e4fb6356fcf6c5"
+    },
+    {
+      "file": "runtime/es-320-hoy.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "b79be5c658486b423adee93b4f13364df02fc7d8f83fa9216322e677406c3118"
+    },
+    {
+      "file": "runtime/es-320-indicaciones.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d231a6de8df029ec472ed4ac2aeca97c16d4e64d41d70d52424a62b08e560a25"
+    },
+    {
+      "file": "runtime/es-390-historial.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "fff336cbdf078609271d1795c4cad2efb8b167d61d87f27a7eae77b3925f79de"
+    },
+    {
+      "file": "runtime/es-390-hoy.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "afe5a4a2a3c0ac3872b88b48a9f8549edd05ec4a1fcdffb890093e16b5017177"
+    },
+    {
+      "file": "runtime/es-390-indicaciones.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "019675c9cf2e74b9c49e5a67087dbc1b472aba13e0cddd513f764b9fb7e79206"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import type { ReactNode, Ref } from 'react'
 import { BottomNav } from './BottomNav'
+import '../theme/wellness-premium.css'
 
 export function Screen({
   children,
@@ -13,12 +14,13 @@ export function Screen({
   hideNav?: boolean
   className?: string
 }) {
+  const reducedMotion = useReducedMotion()
   return (
     <motion.div
       className={`screen${className ? ` ${className}` : ''}`}
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
     >
       {children}
       {!hideNav && <BottomNav dark={darkNav} />}

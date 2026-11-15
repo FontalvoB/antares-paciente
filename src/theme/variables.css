@@ -1,4 +1,27 @@
 :root {
+  /* Bienestar premium P1: superficies, semántica y movimiento compartidos. */
+  --wellness-bg-start: #f2f7fd;
+  --wellness-bg-end: #e4eef9;
+  --wellness-surface: #ffffff;
+  --wellness-border: #e3ecf6;
+  --wellness-navy: #0b2a4a;
+  --wellness-primary: #1d4e79;
+  --wellness-action: #2c7da0;
+  --wellness-accent: #dcebfa;
+  --wellness-success: #2e7d6b;
+  --wellness-success-bg: #e6f4ef;
+  --wellness-warning: #b7791f;
+  --wellness-warning-bg: #fdf3e1;
+  --wellness-error: #b42318;
+  --wellness-error-bg: #fdecea;
+  --wellness-shadow: 0 8px 24px rgba(11, 42, 74, .08);
+  --wellness-radius: 22px;
+  --wellness-space: 16px;
+  --wellness-transition: 200ms ease-out;
+  --macro-carbs: #b7791f;
+  --macro-protein: #1d4e79;
+  --macro-fat: #2c7da0;
+  --macro-fiber: #a5c6e4;
   /* Paleta del orbe de voz (voz-orb-fluido). */
   --voice-orb-blue: #5a7bff;
   --voice-orb-sky: #8fb8ff;

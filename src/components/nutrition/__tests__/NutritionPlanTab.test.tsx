@@ -134,7 +134,8 @@ describe("NutritionPlanTab — pestaña Indicaciones (Fase 8)", () => {
       meals: [{ mealType: 'Snack', foods: 'Yogur natural: 150 g', notes: 'Sin azúcar añadida', waterMl: 250 }],
     }} />);
     expect(screen.getByText('Evitar maní')).toBeTruthy();
-    expect(screen.getByText('Yogur natural: 150 g')).toBeTruthy();
+    expect(screen.getByText('Yogur natural')).toBeTruthy();
+    expect(screen.getByText('150 g')).toBeTruthy();
     expect(screen.getByText('Agua con esta comida: 250 ml')).toBeTruthy();
     expect(screen.getByText('Sin azúcar añadida')).toBeTruthy();
   });

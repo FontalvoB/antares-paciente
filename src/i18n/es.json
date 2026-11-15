@@ -3889,5 +3889,22 @@
   "Sí, iniciar programa nuevo": "Sí, iniciar programa nuevo",
   "Todavía no": "Todavía no",
   "Volver al resumen": "Volver al resumen",
-  "{n} días": "{n} días"
+  "{n} días": "{n} días",
+  "AVISO IMPORTANTE": "AVISO IMPORTANTE",
+  "Aviso nutricional": "Aviso nutricional",
+  "Este plan alimentario lo genera automáticamente el programa a partir de la información que diste en los cuestionarios de evaluación nutricional. Es solo informativo y de bienestar general: no es consejo médico, diagnóstico ni tratamiento, y no reemplaza la evaluación individual de un profesional de la nutrición habilitado.": "Este plan alimentario lo genera automáticamente el programa a partir de la información que diste en los cuestionarios de evaluación nutricional. Es solo informativo y de bienestar general: no es consejo médico, diagnóstico ni tratamiento, y no reemplaza la evaluación individual de un profesional de la nutrición habilitado.",
+  "Hablar con Vita": "Hablar con Vita",
+  "Leer aviso": "Leer aviso",
+  "Mediciones recientes": "Mediciones recientes",
+  "Navegación principal": "Navegación principal",
+  "Plan automático, solo informativo": "Plan automático, solo informativo",
+  "Recomendaciones nutricionales": "Recomendaciones nutricionales",
+  "Se muestra una vez. Siempre puedes releerlo desde «Leer aviso».": "Se muestra una vez. Siempre puedes releerlo desde «Leer aviso».",
+  "Secciones de nutrición": "Secciones de nutrición",
+  "Te recomendamos que un profesional de la nutrición revise este plan antes de aplicarlo. El programa no garantiza resultados de salud específicos, y sigues siendo responsable de consultar a tu profesional de salud sobre tus necesidades.": "Te recomendamos que un profesional de la nutrición revise este plan antes de aplicarlo. El programa no garantiza resultados de salud específicos, y sigues siendo responsable de consultar a tu profesional de salud sobre tus necesidades.",
+  "Última medición hace {days} días": "Última medición hace {days} días",
+  "Medición seleccionada": "Medición seleccionada",
+  "Ver todas las mediciones": "Ver todas las mediciones",
+  "Ver menos mediciones": "Ver menos mediciones",
+  "Solo puedes registrar comidas para hoy.": "Solo puedes registrar comidas para hoy."
 }

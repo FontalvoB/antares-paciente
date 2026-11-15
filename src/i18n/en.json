@@ -3889,5 +3889,22 @@
   "Sí, iniciar programa nuevo": "Yes, start a new program",
   "Todavía no": "Not yet",
   "Volver al resumen": "Back to summary",
-  "{n} días": "{n} days"
+  "{n} días": "{n} days",
+  "AVISO IMPORTANTE": "IMPORTANT NOTICE",
+  "Aviso nutricional": "Nutrition notice",
+  "Este plan alimentario lo genera automáticamente el programa a partir de la información que diste en los cuestionarios de evaluación nutricional. Es solo informativo y de bienestar general: no es consejo médico, diagnóstico ni tratamiento, y no reemplaza la evaluación individual de un profesional de la nutrición habilitado.": "This dietary plan is generated automatically by the program using the information you provided in the nutritional assessment questionnaires. It is for general information and wellness only: it is not medical advice, diagnosis or treatment, and does not replace an individual assessment by a licensed nutrition professional.",
+  "Hablar con Vita": "Talk to Vita",
+  "Leer aviso": "Read notice",
+  "Mediciones recientes": "Recent measurements",
+  "Navegación principal": "Main navigation",
+  "Plan automático, solo informativo": "Automatic plan, for information only",
+  "Recomendaciones nutricionales": "Nutritional recommendations",
+  "Se muestra una vez. Siempre puedes releerlo desde «Leer aviso».": "Shown once. You can always read it again from “Read notice”.",
+  "Secciones de nutrición": "Nutrition sections",
+  "Te recomendamos que un profesional de la nutrición revise este plan antes de aplicarlo. El programa no garantiza resultados de salud específicos, y sigues siendo responsable de consultar a tu profesional de salud sobre tus necesidades.": "We recommend having a nutrition professional review this plan before you follow it. The program does not guarantee specific health outcomes, and you remain responsible for consulting your healthcare professional about your needs.",
+  "Última medición hace {days} días": "Last measurement {days} days ago",
+  "Medición seleccionada": "Selected measurement",
+  "Ver todas las mediciones": "View all measurements",
+  "Ver menos mediciones": "View fewer measurements",
+  "Solo puedes registrar comidas para hoy.": "You can only log meals for today."
 }

@@ -30,7 +30,8 @@ describe('English care flows', () => {
     const { container } = render(<I18nProvider><NutritionPlanTab plan={plan} isLoading={false} error={null}
       fallbackRows={[]} locale="en-US" onRetry={() => {}} /></I18nProvider>)
     expect(screen.getByText('1,800 kcal')).toBeTruthy()
-    const breakfast = container.querySelector('article#nutrition-meal-des-0')!
+    expect(document.documentElement.lang).toBe('en')
+    const breakfast = container.querySelector('#nutrition-meal-des-0')!
     expect(within(breakfast as HTMLElement).getByRole('heading', { name: 'Breakfast' })).toBeTruthy()
     expect(within(breakfast as HTMLElement).getByText('Protein')).toBeTruthy()
     expect(within(breakfast as HTMLElement).getByText('20 g')).toBeTruthy()
@@ -54,6 +55,7 @@ describe('English care flows', () => {
     expect(screen.queryByText('Revisar porciones')).toBeNull()
     expect(screen.getByText('Indicación específica del almuerzo')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
+    expect(document.documentElement.lang).toBe('es')
     expect(screen.getByText('Revisar porciones')).toBeTruthy()
     expect(screen.queryByText('Review portions')).toBeNull()
     expect(plan.days[0].meals[0].notes).toBe('Revisar porciones')

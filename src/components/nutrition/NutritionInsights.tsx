@@ -21,10 +21,9 @@ export function NutritionMetrics({ metrics, loading, locale }: { metrics: Metric
       const latest = points.at(-1)
       const first = points[0]
       return <article className="ntr-metric" key={code}>
-        <IonIcon icon={icon} aria-hidden="true" />
+        <span className="premium-metric-label"><IonIcon icon={icon} aria-hidden="true" />{t(label)}</span>
         {loading && !latest ? <IonSkeletonText animated /> : <strong>{latest ? formatMetricValue(latest.value, 1, locale) : '—'}<small>{series?.unit}</small></strong>}
-        <span>{t(label)}</span>
-        <footer>{first && points.length > 1 ? t('Desde {value}', { value: formatMetricValue(first.value, 1, locale) }) : latest ? formatDateForDisplay(latest.date) : t('Sin medición')}</footer>
+        <footer>{latest && first && points.length > 1 ? <><b className="premium-metric-delta">{latest.value < first.value ? '↓' : latest.value > first.value ? '↑' : '—'} {formatMetricValue(Math.abs(latest.value-first.value),1,locale)}</b>{t('Desde {value}', { value: formatMetricValue(first.value, 1, locale) })}</> : latest ? formatDateForDisplay(latest.date) : t('Sin medición')}</footer>
       </article>
     })}
   </div>
@@ -62,19 +61,22 @@ export function NutritionWeek({ current, previous, loading, failed, onRetry, loc
 }
 
 /** Gráfica SVG de dominio; Ionic no tiene gráfico temporal. Fechas espaciadas por tiempo real. */
-export function NutritionWeightChart({ series, locale }: { series: MetricSeriesDto; locale: string }) {
+export function NutritionWeightChart({ series, locale, today }: { series: MetricSeriesDto; locale: string; today?: string }) {
   const t = useT()
   const [selection, setSelection] = useState<string | null>(null)
   const points = [...series.points].filter(p => Number.isFinite(p.value) && Number.isFinite(Date.parse(p.date))).sort((a, b) => a.date.localeCompare(b.date))
   if (!points.length) return null
   const chosen = points.find(p => p.date === selection) ?? points[points.length - 1]
+  const latest = points[points.length - 1]
+  const age = today ? Math.floor((Date.parse(today.slice(0,10)) - Date.parse(latest.date.slice(0,10))) / 86400000) : null
   const values = points.map(p => p.value)
   const min = Math.min(...values), max = Math.max(...values)
   const start = Date.parse(points[0].date), end = Date.parse(points[points.length - 1].date)
   const coordinates = points.map(p => ({ ...p, x: end === start ? 160 : 12 + ((Date.parse(p.date) - start) / (end - start)) * 296, y: 88 - ((p.value - min) / (max - min || 1)) * 58 }))
   const path = coordinates.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ')
   return <section className="ntr-weight-chart">
-    <div className="ntr-row" aria-live="polite"><div><span className="ntr-eyebrow">{t('Evolución de peso')}</span><p>{formatDateForDisplay(chosen.date)}</p></div><strong>{formatMetricValue(chosen.value, 1, locale)} <small>{series.unit ?? 'kg'}</small></strong></div>
+    <header className="premium-weight-heading"><h2>{t('Evolución de peso')}</h2>{age != null && age >= 0 && <span>{t('Última medición hace {days} días',{days:String(age)})}</span>}</header>
+    <div className="ntr-row" aria-live="polite"><div><span className="ntr-eyebrow">{t(selection ? 'Medición seleccionada' : 'Última medición')}</span><p>{formatDateForDisplay(chosen.date)}</p></div><strong>{formatMetricValue(chosen.value, 1, locale)} <small>{series.unit ?? 'kg'}</small></strong></div>
     <svg viewBox="0 0 320 110" role="img" aria-label={t('Evolución de peso')}>
       {[24, 56, 88].map(y => <line key={y} x1="12" x2="308" y1={y} y2={y} stroke="var(--bd)" strokeDasharray="3 5" />)}
       {coordinates.length > 1 && <path d={`${path} L 308 106 L 12 106 Z`} fill="var(--teal-l)" opacity=".6" />}
@@ -83,7 +85,7 @@ export function NutritionWeightChart({ series, locale }: { series: MetricSeriesD
     </svg>
     <div className="ntr-chart-dates"><span>{formatDateForDisplay(points[0].date)}</span><span>{formatDateForDisplay(points[points.length - 1].date)}</span></div>
     <div className="ntr-chart-select" aria-label={t('Mediciones')}>
-      {points.slice(-7).map(p => <IonButton key={p.date} fill="clear" aria-pressed={p.date === chosen.date ? 'true' : 'false'} onClick={() => setSelection(p.date)}><span>{formatDateForDisplay(p.date)}<b>{formatMetricValue(p.value, 1, locale)} {series.unit ?? 'kg'}</b></span></IonButton>)}
+      {points.slice(-7).map(p => <IonButton key={p.date} className={p.date === chosen.date ? 'is-selected' : undefined} fill="clear" aria-pressed={p.date === chosen.date ? 'true' : 'false'} onClick={() => setSelection(p.date)}><span>{formatDateForDisplay(p.date)}<b>{formatMetricValue(p.value, 1, locale)} {series.unit ?? 'kg'}</b></span></IonButton>)}
     </div>
   </section>
 }

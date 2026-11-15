@@ -245,7 +245,7 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     expect(screen.getByText('Cierre del ciclo 1 · publicado el 8 ene 2027')).toBeTruthy();
     expect(screen.queryByText('Ciclo 1 · día 4')).toBeNull();
     expect(screen.getByText('Ver plan completo')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Más secciones de nutrición' })).toBeTruthy();
+    expect(screen.getAllByRole('option').map(option => option.getAttribute('value'))).toEqual(['hoy', 'semana', 'indicaciones', 'historial']);
   });
 
   it('D0014 final: muestra la última publicación de un ciclo ya cerrado y conserva previous por publishedAt', () => {
@@ -286,8 +286,7 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
       series('hba1c', 'pct', 5.6), series('body_fat', 'pct', 24),
     ] };
     const { container } = render(<NutritionPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Más secciones de nutrición' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Historial' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pestaña de nutrición' }), { target: { value: 'historial' } });
 
     const metrics = container.querySelector('.ntr-metrics')!;
     expect(metrics.textContent).toContain('24,4kg/m²');

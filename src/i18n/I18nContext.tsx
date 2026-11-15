@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
 import es from "./es.json";
@@ -27,6 +28,7 @@ const isDev = import.meta.env.DEV || __DEV_TOOLS__;
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Language>(requestLanguage);
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
   const t = useCallback(
     (source: string, params?: Record<string, string>): string => {
