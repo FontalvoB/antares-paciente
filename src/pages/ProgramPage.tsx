@@ -36,6 +36,7 @@ import {
   type ProgramTab,
 } from "./program/Lessons";
 import { ProgramPendingState } from "../components/program/ProgramPendingState";
+import { ProgramCompletionView } from "./program/ProgramCompletionView";
 import { ProgramHeader } from "./program/ProgramHeader";
 import { RankingView } from "./program/RankingView";
 import { StreakView } from "./program/StreakView";
@@ -61,6 +62,7 @@ import { scheduledDayTasks } from "../utils/programRest";
 import type {
   CompleteTaskInput,
   ProgramSnapshotDto,
+  ProgramEnrollmentDto,
   TaskCode,
   VitalsPayload,
   EmotionalAssessmentPayload,
@@ -97,6 +99,8 @@ export function ProgramPage() {
   const active = PROGRAM_TASKS.find(item => screen === `program-${item.id}`)?.id ?? null;
   const setActive = useCallback((id: ProgramTaskId | null) => navigate(id ? `program-${id}` : "prog"), [navigate]);
   const [celebrate, setCelebrate] = useState(false);
+  const [newProgram, setNewProgram] = useState<ProgramEnrollmentDto | null>(null);
+  const [completionEvolution, setCompletionEvolution] = useState(false);
   const [xpPop, setXpPop] = useState<number | null>(null);
   const [confetti, setConfetti] = useState<
     { id: number; left: number; delay: number; dur: number; color: string }[]
@@ -123,6 +127,7 @@ export function ProgramPage() {
   // --- Program Hooks ---
   const {
     snapshot,
+    completion,
     isLoading: programLoading,
     isRefreshing: programRefreshing,
     programState,
@@ -673,6 +678,15 @@ export function ProgramPage() {
     activeExerciseSteps,
     taskPts,
   ]);
+
+  if (newProgram || (programState === "completed" && completion && !programLoading)) {
+    return <Screen hideNav className="pg-reference"><Scroll noNav className="program-completion-scroll">
+      {completionEvolution && !newProgram ? <>
+        <IonButton fill="clear" onClick={() => setCompletionEvolution(false)}><IonIcon slot="start" icon={arrowBack} />{t("Volver al resumen")}</IonButton>
+        <EvolutionView scores={scores} stale={scoresStale} scoresLoading={scoresLoading} scoresError={scoresError} onRetryScores={() => void refetchScores()} onGoBook={() => navigate("book")} />
+      </> : <ProgramCompletionView completion={completion ?? null} started={newProgram} onStarted={setNewProgram} onHome={() => navigate("home")} onEvolution={() => setCompletionEvolution(true)} />}
+    </Scroll></Screen>;
+  }
 
   if (programLoading || !snapshot || (programState !== "active" && programState !== "recoverable")) {
     return (

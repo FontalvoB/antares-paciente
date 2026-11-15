@@ -4,13 +4,15 @@ import { useQuery } from '@tanstack/react-query'
 
 import { ApiError } from '../utils/apiClient'
 import { CONTENT_TRANSLATION_RETRY_SOURCE } from '../utils/localizedError'
-import { getSnapshot } from '../services/program/program-service'
+import { getSnapshot, getProgramCompletion } from '../services/program/program-service'
 import { programKeys } from './queryKeys'
 import { fetchMyBatteries, fetchMyAssignments } from '../utils/healthTestsApi'
 import { initialBatteryCompletedCount } from '../utils/programAssignment'
 import { toLocalISODate } from '../utils/dates'
+import { getAccessToken } from '../utils/authApi'
+import { sessionUserId } from '../utils/sessionIdentity'
 
-import type { ProgramSnapshotDto } from '../services/program/types'
+import type { ProgramSnapshotDto, ProgramCompletionDto } from '../services/program/types'
 
 // --- Derived product states (SPEC R4.5, R6 — "inscripción" is never shown to the patient) ---
 
@@ -22,8 +24,10 @@ export type ProgramState =
   | 'withdrawn'
   | 'no-template'
   | 'recoverable'
+  | 'completed'
 
 export interface UseProgramResult {
+  completion?: ProgramCompletionDto | null
   /** Snapshot real del servidor; null mientras carga o no hay semana activa. */
   snapshot: ProgramSnapshotDto | null
   /** Derived enrollment/product state. */
@@ -83,18 +87,31 @@ export function useProgram(): UseProgramResult {
   const { data, isLoading, isError, error, refetch } = query
 
   const noActiveEnrollment = error?.status === 404 && error.code === 'NO_ACTIVE_ENROLLMENT'
+  const userId = sessionUserId(getAccessToken())
+  // Se consulta antes de la batería: un programa terminado no es un alta pendiente.
+  const completion = useQuery({
+    queryKey: [...programKeys.completion, userId],
+    queryFn: ({ signal }) => getProgramCompletion(signal, userId),
+    enabled: noActiveEnrollment,
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+  })
+  const completedProgram = noActiveEnrollment && !completion.error ? completion.data?.completion : null
+  const needsBattery = noActiveEnrollment && completion.isSuccess && !completedProgram
   const battery = useQuery({
     queryKey: ['health-tests', 'initial-battery-progress'],
     queryFn: async () => {
       const [batteries, assignments] = await Promise.all([fetchMyBatteries(), fetchMyAssignments()])
       return initialBatteryCompletedCount(batteries, assignments)
     },
-    enabled: !data && noActiveEnrollment,
+    enabled: needsBattery,
     staleTime: 0,
     refetchOnMount: 'always',
-    refetchInterval: noActiveEnrollment ? 30_000 : false,
+    refetchInterval: needsBattery ? 30_000 : false,
   })
-  const retryProgram = () => { void refetch(); void battery.refetch() }
+  const retryProgram = () => { void refetch(); if (noActiveEnrollment) void completion.refetch(); if (needsBattery) void battery.refetch() }
 
   // Midnight rollover (R7.1): when the app comes back to the foreground and the
   // device's local date no longer matches the snapshot's server `today`,
@@ -127,12 +144,14 @@ export function useProgram(): UseProgramResult {
   }, [data?.todayLocalDate, refetch])
 
   const { snapshot, programState, productMessage } = useMemo(() => {
-    if (data) {
+    if (data && !noActiveEnrollment) {
       return { snapshot: data, programState: 'active' as ProgramState, productMessage: error?.code === 'CONTENT_TRANSLATION_UNAVAILABLE' ? CONTENT_TRANSLATION_RETRY_SOURCE : null }
     }
 
     if (error) {
       if (noActiveEnrollment) {
+        if (completedProgram) return { snapshot: null, programState: 'completed' as ProgramState, productMessage: null }
+        if (completion.isError) return { snapshot: null, programState: 'recoverable' as ProgramState, productMessage: 'No pudimos consultar el cierre de tu programa. Vuelve a intentarlo.' }
         return {
           snapshot: null,
           programState: (battery.isError ? 'recoverable' : battery.data === undefined ? 'active' : battery.data >= 9 ? 'pending-assignment' : 'pending-tests') as ProgramState,
@@ -178,7 +197,7 @@ export function useProgram(): UseProgramResult {
 
     // Loading (no data, no error yet).
     return { snapshot: null, programState: 'active' as ProgramState, productMessage: null }
-  }, [data, error, noActiveEnrollment, battery.data, battery.isError])
+  }, [data, error, noActiveEnrollment, battery.data, battery.isError, completedProgram, completion.isError])
 
   // Chest auto-open celebration (chests module, spec R3.2 / S2): when a
   // snapshot refetch reveals a newly granted streak chest, fire a one-shot
@@ -209,12 +228,13 @@ export function useProgram(): UseProgramResult {
   }, [data])
 
   return {
+    completion: completedProgram ?? null,
     snapshot,
     programState,
     isEnrolling: false,
-    isLoading: isLoading || (!data && noActiveEnrollment && battery.isPending),
+    isLoading: isLoading || (noActiveEnrollment && (completion.isPending || (needsBattery && battery.isPending))),
     isRefreshing: query.isFetching && Boolean(data),
-    isError: (isError && !noActiveEnrollment) || battery.isError,
+    isError: (isError && !noActiveEnrollment) || (noActiveEnrollment && completion.isError) || (needsBattery && battery.isError),
     isMockFallback: false,
     error,
     productMessage,

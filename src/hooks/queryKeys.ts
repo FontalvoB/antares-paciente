@@ -28,6 +28,8 @@ export const notificationsKeys = {
 } as const;
 
 export const programKeys = {
+  /** GET /api/v1/program/me/completion; se añade la cuenta a la clave. */
+  completion: ["program", "completion"] as const,
   /** GET /api/v1/program/me/snapshot */
   snapshot: ["program", "snapshot"] as const,
 

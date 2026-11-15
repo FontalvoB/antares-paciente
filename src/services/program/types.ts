@@ -12,7 +12,7 @@ export type TaskStatus = 'Pending' | 'Completed'
 
 export type WeekStatus = 'Locked' | 'Active' | 'Completed'
 
-export type EnrollmentStatus = 'Active' | 'Paused' | 'Withdrawn'
+export type EnrollmentStatus = 'Active' | 'Paused' | 'Withdrawn' | 'Completed' | 'PendingAssignment'
 
 // --- Nested DTOs ---
 
@@ -262,6 +262,28 @@ export interface ProgramEnrollmentDto {
   freezesRemaining: number
   // Additive fields (R7.1) — optional
   startedAt?: string | null
+}
+
+/** Resumen persistido de la última inscripción completada (contrato BACK 4.2). */
+export interface ProgramCompletionDto {
+  enrollmentId: string
+  templateName: string
+  timezone: string
+  startLocalDate: string
+  endLocalDate: string
+  completedAt: string
+  totalDays: number
+  completedWeeks: number
+  daysWithActivity: number
+  perfectDays: number
+  tasksCompleted: number
+  xpEarned: number
+  longestStreak: number
+  canStartNewProgram: boolean
+}
+
+export interface ProgramCompletionResponse {
+  completion: ProgramCompletionDto | null
 }
 
 export interface EmotionalAssessmentPayload {

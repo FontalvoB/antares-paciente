@@ -10,7 +10,7 @@ vi.mock('../../../utils/apiClient', () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
 }))
 
-import { getSnapshot, normalizeTaskCode, normalizeSnapshotTasks } from '../program-service'
+import { getSnapshot, getProgramCompletion, enrollMe, normalizeTaskCode, normalizeSnapshotTasks } from '../program-service'
 import type { ProgramSnapshotDto, TodayTaskDto } from '../types'
 
 function makeTask(overrides: Partial<TodayTaskDto> = {}): TodayTaskDto {
@@ -104,5 +104,20 @@ describe('getSnapshot — normaliza en la frontera del servicio', () => {
     expect(snap.todayTasks[0].taskCode).toBe('nutraceutico')
     expect(snap.todayTasks[1].taskCode).toBe('ejercicio')
     expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/program/me/snapshot', { method: 'GET' })
+  })
+})
+
+describe('contrato 4.2 consumido por APP 4.10', () => {
+  beforeEach(() => apiFetchMock.mockReset())
+  it('consulta el resumen sin IDs, parámetros ni body y conserva completion null', async () => {
+    apiFetchMock.mockResolvedValue({ completion: null })
+    const controller = new AbortController()
+    expect(await getProgramCompletion(controller.signal, 'self')).toEqual({ completion: null })
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/program/me/completion', { method: 'GET', signal: controller.signal, expectedUserId: 'self' })
+  })
+  it('envía inicio explícito sin seleccionar paciente ni plantilla ajenos', async () => {
+    apiFetchMock.mockResolvedValue({ id: 'new', status: 'Active' })
+    await enrollMe('America/Bogota', '2026-11-15', 'self')
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/program/enrollments/me', { method: 'POST', body: { patientId: null, templateId: null, timezone: 'America/Bogota', startLocalDate: '2026-11-15' }, expectedUserId: 'self' })
   })
 })

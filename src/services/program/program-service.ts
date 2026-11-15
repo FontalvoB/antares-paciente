@@ -20,6 +20,7 @@ import type {
   ProgramCalendarDto,
   ProgramEnrollmentDto,
   EnrollRequest,
+  ProgramCompletionResponse,
   TaskCode,
 } from './types'
 
@@ -137,15 +138,22 @@ export async function getCalendar(from: string, to: string): Promise<ProgramCale
  * and selects the active template. 409 = already active (ignore body, R4.2);
  * 422 = no published template (R4.3). Both propagate as ApiError.
  */
-export async function enrollMe(timezone: string): Promise<ProgramEnrollmentDto> {
+export async function enrollMe(timezone: string, startLocalDate?: string, expectedUserId?: string | null): Promise<ProgramEnrollmentDto> {
   const body: EnrollRequest = {
     patientId: null,
     templateId: null,
     timezone,
+    ...(startLocalDate ? { startLocalDate } : {}),
   }
 
   return apiFetch<ProgramEnrollmentDto>('/api/v1/program/enrollments/me', {
     method: 'POST',
     body,
+    ...(expectedUserId !== undefined ? { expectedUserId } : {}),
   })
+}
+
+/** Sin IDs de paciente; el servidor decide qué cierre pertenece al JWT. */
+export function getProgramCompletion(signal?: AbortSignal, expectedUserId?: string | null): Promise<ProgramCompletionResponse> {
+  return apiFetch('/api/v1/program/me/completion', { method: 'GET', signal, expectedUserId })
 }
