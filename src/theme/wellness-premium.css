@@ -86,7 +86,8 @@
 .ntr-screen .meal-actions ion-button,.premium-meal-actions ion-button { --background:var(--wellness-navy); --color:white; min-height:48px; font-size:13px; }
 .ntr-screen .meal-actions ion-button[fill=outline],.premium-meal-actions ion-button[fill=outline] { --background:transparent; --color:var(--wellness-primary); --border-color:#c5d7e8; --border-width:1px; }
 .ntr-screen .ntr-card { background:white; border:1px solid var(--wellness-border); border-radius:22px; box-shadow:var(--wellness-shadow); margin:0; }
-.premium-plan.ntr-plan-view { display:flex; flex-direction:column; gap:14px; padding:0; }
+.ntr-screen .premium-plan.ntr-plan-view { display:flex; flex-direction:column; gap:14px; padding:0; margin:0; min-width:0; width:100%; max-width:none; }
+.premium-plan.ntr-plan-view > * { min-width:0; max-width:100%; }
 .premium-plan .nutrition-cycle-summary { padding:0; background:none; border:0; box-shadow:none; margin:0; display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; align-items:center; }
 .premium-plan .nutrition-cycle-summary h2 { font-size:15px; margin:0; }
 .premium-plan .nutrition-cycle-summary p { margin:0; width:100%; font-size:12px; color:#52677e; }
@@ -420,6 +421,8 @@
 .kb-open .app-shell .premium-nav.bnav { display:none; }
 .kb-open .chat-reference.screen .composer.chat-composer { margin-bottom:max(12px,env(safe-area-inset-bottom)); }
 .chat-reference.screen .chat-list.screen-scroll { min-height:0; }
+/* El adorno rotado de Perfil queda dentro del gutter al volver desde el protocolo. */
+.app-shell .pf-reference .pf-heading::before { right:0; }
 .ntr-screen .ntr-scroll { padding-left:max(20px,env(safe-area-inset-left)); padding-right:max(20px,env(safe-area-inset-right)); }
 .p2-mission .lesson-sheet,.p3-mission .lesson-sheet { padding-left:max(20px,env(safe-area-inset-left)); padding-right:max(20px,env(safe-area-inset-right)); }
 .ntr-screen .ntr-tabs ion-segment-button { --indicator-transition:transform 180ms ease-out; }

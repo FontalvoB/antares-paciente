@@ -1,0 +1,2973 @@
+{
+  "appBaseline": "6fab11c",
+  "frontTestCommit": "243f6f4",
+  "erpRuntime": "a9cde7f",
+  "backend": "e0a9c29",
+  "generatedAt": "2026-11-16T03:36:00.310Z",
+  "tests": {
+    "expected": 6,
+    "unexpected": 0,
+    "skipped": 0,
+    "durationMs": 51723.584
+  },
+  "originalUiSubmit": {
+    "beforeTests": 8,
+    "afterTests": 9,
+    "patientId": "e4a4d5f8-5f6d-408c-993d-b3a42cbd941c",
+    "assignmentId": "287a346f-1f49-4c3d-93fe-46569e8a01d8",
+    "http": 200,
+    "evaluationId": "c319d22c-e8ae-4e56-959e-aa1dd102a95d",
+    "source": "clic UI único",
+    "at": "2026-11-16T03:13:37.939Z"
+  },
+  "ui": {
+    "assignment": {
+      "passed": true,
+      "stubs": false,
+      "cases": [
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "pendiente-clinico",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 320,
+          "name": "pendiente-clinico",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "pendiente-clinico",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 1440,
+          "name": "pendiente-clinico",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 320,
+          "name": "plan-publicado",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "plan-publicado",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 1440,
+          "name": "plan-publicado",
+          "overflow": false
+        },
+        {
+          "lang": "en",
+          "width": 320,
+          "name": "pendiente-clinico",
+          "overflow": false
+        },
+        {
+          "lang": "en",
+          "width": 390,
+          "name": "pendiente-clinico",
+          "overflow": false
+        },
+        {
+          "lang": "en",
+          "width": 1440,
+          "name": "pendiente-clinico",
+          "overflow": false
+        },
+        {
+          "lang": "en",
+          "width": 320,
+          "name": "plan-publicado",
+          "overflow": false
+        },
+        {
+          "lang": "en",
+          "width": 390,
+          "name": "plan-publicado",
+          "overflow": false
+        },
+        {
+          "lang": "en",
+          "width": 1440,
+          "name": "plan-publicado",
+          "overflow": false
+        }
+      ],
+      "transition": "relectura del submit UI previamente registrado",
+      "podcastCells": 90,
+      "mediaSummary": {
+        "distinct": 13,
+        "demo": 0,
+        "blobsVerified": false
+      },
+      "pageErrors": [],
+      "requests": [
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 401
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/professionals-catalog",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/notifications",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/scores-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/patient-profile",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 401
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/professionals-catalog",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/notifications",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/scores-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/patient-profile",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e253-3f96-7512-a2e7-a643d34ca4f0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e253-3f96-7512-a2e7-a643d34ca4f0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e253-3f96-7512-a2e7-a643d34ca4f0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition-plan/status",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition/cycles/recommendations",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition-plan",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 401
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e253-3f96-7512-a2e7-a643d34ca4f0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/scores-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/notifications",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/patient-profile",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e253-3f96-7512-a2e7-a643d34ca4f0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e253-3f96-7512-a2e7-a643d34ca4f0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/professionals-catalog",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/scores-history",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition-plan/status",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition/cycles/recommendations",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/batteries",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition-plan",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/completion",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 404
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 404
+        }
+      ],
+      "protectedBefore": {
+        "closed320AndR7": {
+          "foodIntakes": {
+            "count": 1,
+            "sha256": "b647edf7b889f306096e82b2b48d8faf4b6673b9d5f2b87e4a37f73f94884c37"
+          },
+          "foodAnalyses": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "cycles": {
+            "count": 3,
+            "sha256": "8b5d439d2cc3feb3c6ba5c08d07fd3c50c295a89988028c1a47dd1e2e60e2d13"
+          },
+          "cycleReviews": {
+            "count": 2,
+            "sha256": "cfb8d21574f1a95351a3c7ca1f60eda8eb5830a80c6803168d942c87a541885b"
+          },
+          "cycleAttachments": {
+            "count": 3,
+            "sha256": "86815dfcd04158c31d4c74bf0cfd9576d346270f981fb77055281f742cb1936a"
+          },
+          "cycleHighlights": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "dayReviews": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "prescriptions": {
+            "count": 3,
+            "sha256": "67edbdf3490c46f74f8ab253ac52d67fb468f509cc5ce36257fdf5fbf2ad92dc"
+          },
+          "enrollment": {
+            "count": 1,
+            "sha256": "7018d2386b72d8c5e98df6c070f8a47e6e808b88ea9cc1ac661d251355cad040"
+          },
+          "programWeeks": {
+            "count": 12,
+            "sha256": "b69067da6b15fe7334a076b977035e4e2b066935ed7acdca313e493bbc3f7553"
+          },
+          "taskCompletions": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "r7Intakes": {
+            "count": 33,
+            "sha256": "420e1c9e2db2cdaa6c170ab2f4f6fd3d9e3ae5af0909a9969d2acfec81046362"
+          },
+          "closed320": {
+            "revision": 7,
+            "publishedAt": "2026-11-15T18:37:50.801194+00:00",
+            "nextPrescriptionId": "91a41a69-02ba-49d6-8145-49d68ab3ca96"
+          }
+        },
+        "parkedAppFixtureFileSha256": "1dcaec0ac08e1540d6b254aeb3332b097af178253279ef001b237db0857b1046",
+        "publishedPlans": {
+          "count": 7,
+          "sha256": "38f4b9042436af34ff8f23f63c7781b3ca051cb9579dae2a3a083981c3c9499f"
+        },
+        "publishedReviews": {
+          "count": 4,
+          "sha256": "d7ad6246126ce730db2cbab50d8e5eaed9f695b3d98b56eea201e508188e564a"
+        },
+        "parkedEnrollments": {
+          "count": 1,
+          "sha256": "08830ae6b444aa6281416ae5d3eab0ec6c6b41439b7d95034b2e64cc949354ca"
+        },
+        "parkedEvaluations": {
+          "count": 8,
+          "sha256": "1fa67bfa0331f960c284675425fd956acc4e7bc13a4d059fb5953828daea8788"
+        }
+      },
+      "protectedAfter": {
+        "closed320AndR7": {
+          "foodIntakes": {
+            "count": 1,
+            "sha256": "b647edf7b889f306096e82b2b48d8faf4b6673b9d5f2b87e4a37f73f94884c37"
+          },
+          "foodAnalyses": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "cycles": {
+            "count": 3,
+            "sha256": "8b5d439d2cc3feb3c6ba5c08d07fd3c50c295a89988028c1a47dd1e2e60e2d13"
+          },
+          "cycleReviews": {
+            "count": 2,
+            "sha256": "cfb8d21574f1a95351a3c7ca1f60eda8eb5830a80c6803168d942c87a541885b"
+          },
+          "cycleAttachments": {
+            "count": 3,
+            "sha256": "86815dfcd04158c31d4c74bf0cfd9576d346270f981fb77055281f742cb1936a"
+          },
+          "cycleHighlights": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "dayReviews": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "prescriptions": {
+            "count": 3,
+            "sha256": "67edbdf3490c46f74f8ab253ac52d67fb468f509cc5ce36257fdf5fbf2ad92dc"
+          },
+          "enrollment": {
+            "count": 1,
+            "sha256": "7018d2386b72d8c5e98df6c070f8a47e6e808b88ea9cc1ac661d251355cad040"
+          },
+          "programWeeks": {
+            "count": 12,
+            "sha256": "b69067da6b15fe7334a076b977035e4e2b066935ed7acdca313e493bbc3f7553"
+          },
+          "taskCompletions": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "r7Intakes": {
+            "count": 33,
+            "sha256": "420e1c9e2db2cdaa6c170ab2f4f6fd3d9e3ae5af0909a9969d2acfec81046362"
+          },
+          "closed320": {
+            "revision": 7,
+            "publishedAt": "2026-11-15T18:37:50.801194+00:00",
+            "nextPrescriptionId": "91a41a69-02ba-49d6-8145-49d68ab3ca96"
+          }
+        },
+        "parkedAppFixtureFileSha256": "1dcaec0ac08e1540d6b254aeb3332b097af178253279ef001b237db0857b1046",
+        "publishedPlans": {
+          "count": 7,
+          "sha256": "38f4b9042436af34ff8f23f63c7781b3ca051cb9579dae2a3a083981c3c9499f"
+        },
+        "publishedReviews": {
+          "count": 4,
+          "sha256": "d7ad6246126ce730db2cbab50d8e5eaed9f695b3d98b56eea201e508188e564a"
+        },
+        "parkedEnrollments": {
+          "count": 1,
+          "sha256": "08830ae6b444aa6281416ae5d3eab0ec6c6b41439b7d95034b2e64cc949354ca"
+        },
+        "parkedEvaluations": {
+          "count": 8,
+          "sha256": "1fa67bfa0331f960c284675425fd956acc4e7bc13a4d059fb5953828daea8788"
+        }
+      }
+    },
+    "unapplied": {
+      "passed": true,
+      "stubs": "solo GET IA: borrador sintetico vigente para comprobar cancelacion; lectura real stale conservada",
+      "cases": [
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "sugerencias-reales",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "confirmacion-cancelable",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "sugerencias-relectura-real",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "app-contenido-sin-cambios",
+          "overflow": false
+        }
+      ],
+      "liveDraftStale": true,
+      "controlledCancellation": true,
+      "appProjectionUnchanged": true,
+      "pageErrors": [],
+      "requests": [
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 401
+        },
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1/overview",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/content",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/weeks/2/ai-suggestions",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1/overview",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/content",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/weeks/2/ai-suggestions",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1/overview",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/content",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/weeks/2/ai-suggestions",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 401
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/professionals-catalog",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/scores-history",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/notifications",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/patient-profile",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 200
+        }
+      ],
+      "protectedBefore": {
+        "closed320AndR7": {
+          "foodIntakes": {
+            "count": 1,
+            "sha256": "b647edf7b889f306096e82b2b48d8faf4b6673b9d5f2b87e4a37f73f94884c37"
+          },
+          "foodAnalyses": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "cycles": {
+            "count": 3,
+            "sha256": "8b5d439d2cc3feb3c6ba5c08d07fd3c50c295a89988028c1a47dd1e2e60e2d13"
+          },
+          "cycleReviews": {
+            "count": 2,
+            "sha256": "cfb8d21574f1a95351a3c7ca1f60eda8eb5830a80c6803168d942c87a541885b"
+          },
+          "cycleAttachments": {
+            "count": 3,
+            "sha256": "86815dfcd04158c31d4c74bf0cfd9576d346270f981fb77055281f742cb1936a"
+          },
+          "cycleHighlights": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "dayReviews": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "prescriptions": {
+            "count": 3,
+            "sha256": "67edbdf3490c46f74f8ab253ac52d67fb468f509cc5ce36257fdf5fbf2ad92dc"
+          },
+          "enrollment": {
+            "count": 1,
+            "sha256": "7018d2386b72d8c5e98df6c070f8a47e6e808b88ea9cc1ac661d251355cad040"
+          },
+          "programWeeks": {
+            "count": 12,
+            "sha256": "b69067da6b15fe7334a076b977035e4e2b066935ed7acdca313e493bbc3f7553"
+          },
+          "taskCompletions": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "r7Intakes": {
+            "count": 33,
+            "sha256": "420e1c9e2db2cdaa6c170ab2f4f6fd3d9e3ae5af0909a9969d2acfec81046362"
+          },
+          "closed320": {
+            "revision": 7,
+            "publishedAt": "2026-11-15T18:37:50.801194+00:00",
+            "nextPrescriptionId": "91a41a69-02ba-49d6-8145-49d68ab3ca96"
+          }
+        },
+        "parkedAppFixtureFileSha256": "1dcaec0ac08e1540d6b254aeb3332b097af178253279ef001b237db0857b1046",
+        "publishedPlans": {
+          "count": 7,
+          "sha256": "38f4b9042436af34ff8f23f63c7781b3ca051cb9579dae2a3a083981c3c9499f"
+        },
+        "publishedReviews": {
+          "count": 4,
+          "sha256": "d7ad6246126ce730db2cbab50d8e5eaed9f695b3d98b56eea201e508188e564a"
+        },
+        "parkedEnrollments": {
+          "count": 1,
+          "sha256": "08830ae6b444aa6281416ae5d3eab0ec6c6b41439b7d95034b2e64cc949354ca"
+        },
+        "parkedEvaluations": {
+          "count": 8,
+          "sha256": "1fa67bfa0331f960c284675425fd956acc4e7bc13a4d059fb5953828daea8788"
+        }
+      },
+      "protectedAfter": {
+        "closed320AndR7": {
+          "foodIntakes": {
+            "count": 1,
+            "sha256": "b647edf7b889f306096e82b2b48d8faf4b6673b9d5f2b87e4a37f73f94884c37"
+          },
+          "foodAnalyses": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "cycles": {
+            "count": 3,
+            "sha256": "8b5d439d2cc3feb3c6ba5c08d07fd3c50c295a89988028c1a47dd1e2e60e2d13"
+          },
+          "cycleReviews": {
+            "count": 2,
+            "sha256": "cfb8d21574f1a95351a3c7ca1f60eda8eb5830a80c6803168d942c87a541885b"
+          },
+          "cycleAttachments": {
+            "count": 3,
+            "sha256": "86815dfcd04158c31d4c74bf0cfd9576d346270f981fb77055281f742cb1936a"
+          },
+          "cycleHighlights": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "dayReviews": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "prescriptions": {
+            "count": 3,
+            "sha256": "67edbdf3490c46f74f8ab253ac52d67fb468f509cc5ce36257fdf5fbf2ad92dc"
+          },
+          "enrollment": {
+            "count": 1,
+            "sha256": "7018d2386b72d8c5e98df6c070f8a47e6e808b88ea9cc1ac661d251355cad040"
+          },
+          "programWeeks": {
+            "count": 12,
+            "sha256": "b69067da6b15fe7334a076b977035e4e2b066935ed7acdca313e493bbc3f7553"
+          },
+          "taskCompletions": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "r7Intakes": {
+            "count": 33,
+            "sha256": "420e1c9e2db2cdaa6c170ab2f4f6fd3d9e3ae5af0909a9969d2acfec81046362"
+          },
+          "closed320": {
+            "revision": 7,
+            "publishedAt": "2026-11-15T18:37:50.801194+00:00",
+            "nextPrescriptionId": "91a41a69-02ba-49d6-8145-49d68ab3ca96"
+          }
+        },
+        "parkedAppFixtureFileSha256": "1dcaec0ac08e1540d6b254aeb3332b097af178253279ef001b237db0857b1046",
+        "publishedPlans": {
+          "count": 7,
+          "sha256": "38f4b9042436af34ff8f23f63c7781b3ca051cb9579dae2a3a083981c3c9499f"
+        },
+        "publishedReviews": {
+          "count": 4,
+          "sha256": "d7ad6246126ce730db2cbab50d8e5eaed9f695b3d98b56eea201e508188e564a"
+        },
+        "parkedEnrollments": {
+          "count": 1,
+          "sha256": "08830ae6b444aa6281416ae5d3eab0ec6c6b41439b7d95034b2e64cc949354ca"
+        },
+        "parkedEvaluations": {
+          "count": 8,
+          "sha256": "1fa67bfa0331f960c284675425fd956acc4e7bc13a4d059fb5953828daea8788"
+        }
+      }
+    },
+    "outage": {
+      "passed": true,
+      "stubs": "solo envelopes ERP IA",
+      "cases": [
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "IA-unavailable-editor-manual",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "app-programa-sano",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "app-nutricion-sana",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "app-perfil-sano",
+          "overflow": false
+        },
+        {
+          "lang": "es",
+          "width": 390,
+          "name": "app-evaluaciones-sanas",
+          "overflow": false
+        }
+      ],
+      "injectedEnvelopes": 2,
+      "pageErrors": [],
+      "requests": [
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 401
+        },
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1/overview",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/content",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/weeks/2/ai-suggestions",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/auth/me/preferences",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/biometria/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/me/context",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/patients/5e3a337e-b29a-4c10-a8a8-904e55bd09e1/overview",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/exercise-routines",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/wellness/nutrition-plans",
+          "http": 403
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/content",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/1",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/4",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/5",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/3",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/6",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/7",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/8",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/9",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/templates/75cef1a7-dd75-40cb-8d34-470b8eed4ddf",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/10",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/week/2",
+          "http": 200
+        },
+        {
+          "actor": "erp",
+          "method": "GET",
+          "path": "/api/v1/program/erp/enrollments/aa946028-0b77-4c73-a412-5c00e5936737/weeks/2/ai-suggestions",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "http": 401
+        },
+        {
+          "actor": "app",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/auth/me",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e138-c14f-74dd-b127-57243f85dfa0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/professionals-catalog",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/scores-history",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/metrics-history",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/notifications",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/patient-profile",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e138-c14f-74dd-b127-57243f85dfa0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/threads/proactive-01a1e138-c14f-74dd-b127-57243f85dfa0/messages",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/scores",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/calendar",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition/cycles/recommendations",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition-plan",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/me/nutrition-plan/status",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/league",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/results",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/results",
+          "http": 200
+        },
+        {
+          "actor": "app",
+          "method": "GET",
+          "path": "/api/v1/health-tests/me/assignments",
+          "http": 200
+        }
+      ],
+      "protectedBefore": {
+        "closed320AndR7": {
+          "foodIntakes": {
+            "count": 1,
+            "sha256": "b647edf7b889f306096e82b2b48d8faf4b6673b9d5f2b87e4a37f73f94884c37"
+          },
+          "foodAnalyses": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "cycles": {
+            "count": 3,
+            "sha256": "8b5d439d2cc3feb3c6ba5c08d07fd3c50c295a89988028c1a47dd1e2e60e2d13"
+          },
+          "cycleReviews": {
+            "count": 2,
+            "sha256": "cfb8d21574f1a95351a3c7ca1f60eda8eb5830a80c6803168d942c87a541885b"
+          },
+          "cycleAttachments": {
+            "count": 3,
+            "sha256": "86815dfcd04158c31d4c74bf0cfd9576d346270f981fb77055281f742cb1936a"
+          },
+          "cycleHighlights": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "dayReviews": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "prescriptions": {
+            "count": 3,
+            "sha256": "67edbdf3490c46f74f8ab253ac52d67fb468f509cc5ce36257fdf5fbf2ad92dc"
+          },
+          "enrollment": {
+            "count": 1,
+            "sha256": "7018d2386b72d8c5e98df6c070f8a47e6e808b88ea9cc1ac661d251355cad040"
+          },
+          "programWeeks": {
+            "count": 12,
+            "sha256": "b69067da6b15fe7334a076b977035e4e2b066935ed7acdca313e493bbc3f7553"
+          },
+          "taskCompletions": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "r7Intakes": {
+            "count": 33,
+            "sha256": "420e1c9e2db2cdaa6c170ab2f4f6fd3d9e3ae5af0909a9969d2acfec81046362"
+          },
+          "closed320": {
+            "revision": 7,
+            "publishedAt": "2026-11-15T18:37:50.801194+00:00",
+            "nextPrescriptionId": "91a41a69-02ba-49d6-8145-49d68ab3ca96"
+          }
+        },
+        "parkedAppFixtureFileSha256": "1dcaec0ac08e1540d6b254aeb3332b097af178253279ef001b237db0857b1046",
+        "publishedPlans": {
+          "count": 7,
+          "sha256": "38f4b9042436af34ff8f23f63c7781b3ca051cb9579dae2a3a083981c3c9499f"
+        },
+        "publishedReviews": {
+          "count": 4,
+          "sha256": "d7ad6246126ce730db2cbab50d8e5eaed9f695b3d98b56eea201e508188e564a"
+        },
+        "parkedEnrollments": {
+          "count": 1,
+          "sha256": "08830ae6b444aa6281416ae5d3eab0ec6c6b41439b7d95034b2e64cc949354ca"
+        },
+        "parkedEvaluations": {
+          "count": 8,
+          "sha256": "1fa67bfa0331f960c284675425fd956acc4e7bc13a4d059fb5953828daea8788"
+        }
+      },
+      "protectedAfter": {
+        "closed320AndR7": {
+          "foodIntakes": {
+            "count": 1,
+            "sha256": "b647edf7b889f306096e82b2b48d8faf4b6673b9d5f2b87e4a37f73f94884c37"
+          },
+          "foodAnalyses": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "cycles": {
+            "count": 3,
+            "sha256": "8b5d439d2cc3feb3c6ba5c08d07fd3c50c295a89988028c1a47dd1e2e60e2d13"
+          },
+          "cycleReviews": {
+            "count": 2,
+            "sha256": "cfb8d21574f1a95351a3c7ca1f60eda8eb5830a80c6803168d942c87a541885b"
+          },
+          "cycleAttachments": {
+            "count": 3,
+            "sha256": "86815dfcd04158c31d4c74bf0cfd9576d346270f981fb77055281f742cb1936a"
+          },
+          "cycleHighlights": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "dayReviews": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "prescriptions": {
+            "count": 3,
+            "sha256": "67edbdf3490c46f74f8ab253ac52d67fb468f509cc5ce36257fdf5fbf2ad92dc"
+          },
+          "enrollment": {
+            "count": 1,
+            "sha256": "7018d2386b72d8c5e98df6c070f8a47e6e808b88ea9cc1ac661d251355cad040"
+          },
+          "programWeeks": {
+            "count": 12,
+            "sha256": "b69067da6b15fe7334a076b977035e4e2b066935ed7acdca313e493bbc3f7553"
+          },
+          "taskCompletions": {
+            "count": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "r7Intakes": {
+            "count": 33,
+            "sha256": "420e1c9e2db2cdaa6c170ab2f4f6fd3d9e3ae5af0909a9969d2acfec81046362"
+          },
+          "closed320": {
+            "revision": 7,
+            "publishedAt": "2026-11-15T18:37:50.801194+00:00",
+            "nextPrescriptionId": "91a41a69-02ba-49d6-8145-49d68ab3ca96"
+          }
+        },
+        "parkedAppFixtureFileSha256": "1dcaec0ac08e1540d6b254aeb3332b097af178253279ef001b237db0857b1046",
+        "publishedPlans": {
+          "count": 7,
+          "sha256": "38f4b9042436af34ff8f23f63c7781b3ca051cb9579dae2a3a083981c3c9499f"
+        },
+        "publishedReviews": {
+          "count": 4,
+          "sha256": "d7ad6246126ce730db2cbab50d8e5eaed9f695b3d98b56eea201e508188e564a"
+        },
+        "parkedEnrollments": {
+          "count": 1,
+          "sha256": "08830ae6b444aa6281416ae5d3eab0ec6c6b41439b7d95034b2e64cc949354ca"
+        },
+        "parkedEvaluations": {
+          "count": 8,
+          "sha256": "1fa67bfa0331f960c284675425fd956acc4e7bc13a4d059fb5953828daea8788"
+        }
+      }
+    }
+  },
+  "gates": {
+    "appBuild": 0,
+    "appLint": 0,
+    "appI18n": 0,
+    "appP4Tests": 1714,
+    "frontTargetedEslint": 0,
+    "frontTypeScript": 0,
+    "pythonCompile": 0,
+    "powerShellParse": 0
+  },
+  "testedSourceHashes": [
+    {
+      "file": "src/theme/wellness-premium.css",
+      "sha256": "cba2d88a60366d7fc796700871e1169c509971a9b8712fc80e0326cd28f22e78"
+    },
+    {
+      "file": "scripts/qa/program-assignment/ui.mjs",
+      "sha256": "2f3e2075666fe22304bdf45d141d8a501d95948ca049a8e9a51a5a97408075a9"
+    },
+    {
+      "file": "scripts/qa/program-assignment/read-ui.py",
+      "sha256": "0bf68729e6fd3fea245e235edf89213ca15d7f6f218bf8f6b881bda089ca9c92"
+    },
+    {
+      "file": "scripts/qa/program-assignment/prepare-fixture.py",
+      "sha256": "32822bc41e6bd8872bdb381dd7f8f0029aca15ceb5752d2fe27b9942882bb42f"
+    },
+    {
+      "file": "../front-f3/e2e/program-phase4-api-db.spec.ts",
+      "sha256": "4ed9447b59271caca9acaabc88bc30b7f566521275e7a647ce04f7048568542d"
+    },
+    {
+      "file": "../front-f3/scripts/qa/program-phase4-real.ps1",
+      "sha256": "0a12dda1ebe3a5ca914333ec813e9010381b38f5f79654dcba98b9e6e053c99c"
+    },
+    {
+      "file": "../front-f3/playwright.program-phase4-real.config.ts",
+      "sha256": "10dada16c699aa1166242f664407ee345561198bd661a78ea42df0c86dffb73c"
+    }
+  ],
+  "images": [
+    {
+      "file": "original-submit/assignment-es-390-bateria-completada.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e5b2c7955b7980806d6a101fd6686746c7ea4161965aeb00628b460fda573d75"
+    },
+    {
+      "file": "original-submit/assignment-es-390-resultados.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "769bd791f3c0b607cb59300d30d04b9b06c49cdf38e110f6a7fa5ed563e78d97"
+    },
+    {
+      "file": "ui/assignment-en-1440-pendiente-clinico.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "369812c4dc1dae05b0ade5d4cc7c109a072f8779db894b378a3ef16854582a40"
+    },
+    {
+      "file": "ui/assignment-en-1440-plan-publicado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "3f580d992226046c2876ae07471df6ee139cf96579d34207a2da49aef9c43f5d"
+    },
+    {
+      "file": "ui/assignment-en-320-pendiente-clinico.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3c84933a19d78507353c65c338d3e7ff26c1ce9b57d3771361b59308d4250f11"
+    },
+    {
+      "file": "ui/assignment-en-320-plan-publicado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "1f286d9f36d9bb40c24ccb7c809097efca6f8bc7328e6ddcaad9ee62f3bdf7fa"
+    },
+    {
+      "file": "ui/assignment-en-390-pendiente-clinico.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "f36400fec010a7669793dd7199d79910a77e76e7cef41b7edb87eb22ec262e21"
+    },
+    {
+      "file": "ui/assignment-en-390-plan-publicado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "9d047e814d36c0cf0759a227eda68379c74b275a57977612073a3c9bb490d7ab"
+    },
+    {
+      "file": "ui/assignment-es-1440-pendiente-clinico.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0d467ede9cb45a6391e7df4b6c0df124456c9ecef734f67656fd9218b12794a2"
+    },
+    {
+      "file": "ui/assignment-es-1440-plan-publicado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "75137c8f173d444b94f1301cc202a4f9e2fe0cc8bfb4e6a58163192414fbd1ce"
+    },
+    {
+      "file": "ui/assignment-es-320-pendiente-clinico.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9e93438e85dad6439df10c993a80d18b68c50b7e35420821679b3650a8014243"
+    },
+    {
+      "file": "ui/assignment-es-320-plan-publicado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "df0b7ffd0e6fd8bc239df480e96967dae7ec67b753cd79a9a9aa946f31d5ce50"
+    },
+    {
+      "file": "ui/assignment-es-390-pendiente-clinico.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "a932ec636c9ab92e22b374de0fd7f859c40aa9ed157fbd4044d510b068850a3b"
+    },
+    {
+      "file": "ui/assignment-es-390-plan-publicado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "da853b842e5d970cac9b6194f4e60de7822e67fa6b0e7d6662f73f21cbf3046d"
+    },
+    {
+      "file": "ui/outage-es-390-app-evaluaciones-sanas.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "6a9e965fc770ad2f72c82398a0e96f57bde6a92ae03abd2a46af705c702e4390"
+    },
+    {
+      "file": "ui/outage-es-390-app-nutricion-sana.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "90d43c7888f1dae5e6f2ae6af985ad1da465d8a11619bc285bf4f4cc9862cbb5"
+    },
+    {
+      "file": "ui/outage-es-390-app-perfil-sano.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "451c183321dfe119330da3a511e9f9cd65d71b1b2a78fa9f4e35c6ba26cc613a"
+    },
+    {
+      "file": "ui/outage-es-390-app-programa-sano.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "0c76200278a21d1983dcb060edf326063054b2f634e0376c89bd22a902d34707"
+    },
+    {
+      "file": "ui/outage-es-390-IA-unavailable-editor-manual.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "fd14d5e604bf26e0a9301582a38360137a7901e5f188c33460220350809c765e"
+    },
+    {
+      "file": "ui/unapplied-es-390-app-contenido-sin-cambios.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "0c76200278a21d1983dcb060edf326063054b2f634e0376c89bd22a902d34707"
+    },
+    {
+      "file": "ui/unapplied-es-390-confirmacion-cancelable.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "62a65d1416896037ba1ec264badebc519b75f6d138918ce17fa3e5753c4d4314"
+    },
+    {
+      "file": "ui/unapplied-es-390-sugerencias-reales.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d1f9c63ac74e72737a0e0f7972286159675071df4f65da2771c3fc10cab64d94"
+    },
+    {
+      "file": "ui/unapplied-es-390-sugerencias-relectura-real.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d1f9c63ac74e72737a0e0f7972286159675071df4f65da2771c3fc10cab64d94"
+    }
+  ]
+}
