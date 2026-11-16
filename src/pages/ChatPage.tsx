@@ -70,7 +70,7 @@ export function ChatPage() {
   const reducedMotion=useReducedMotion();
   const {
     chat,
-    chatGenerating, cancelChat, retryChat, voiceOpen, voiceMinimized, chatHistoryRevision,
+    chatGenerating, cancelChat, retryChat, voiceOpen, chatHistoryRevision,
     chatClearing, clearChat, captureChatGuard, observeChatHistory, chatHistoryEpoch,
     sendChat,
     openPanic,
