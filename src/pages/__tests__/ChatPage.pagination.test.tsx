@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useState } from "react";
-import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { mergeChatHistory } from "../../utils/chatHistory";
+import type { HistoryMessage } from "../../utils/chatHistory";
+import type { ChatMessage } from "../../types";
 import { ChatPage } from "../ChatPage";
 import { fetchThreadState, type ThreadState } from "../../utils/threadApi";
 
@@ -14,26 +17,18 @@ vi.mock("../../components/Screen", () => ({
   Scroll: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-interface MockChatMessage {
-  id: string;
-  role: "bot" | "user" | "alert";
-  text: string;
-  time: string;
-}
+type MockChatMessage = ChatMessage;
 
 // Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   lang: "es" as "es" | "en",
   threadId: "thread-1",
   chat: [] as MockChatMessage[],
-  seq: 0,
+  historyPayloads: [] as HistoryMessage[][],
 }));
 
 vi.mock("../../context/AppContext", () => ({
-  // Mock stateful mínimo: hydrateChat antepone mensajes deduplicando por texto
-  // (igual que el AppContext real) y prependChatMessages antepone SIN dedup
-  // (igual que el AppContext real), para que cada página servida por el
-  // backend se refleje en el DOM durante el test.
+  // Reutiliza el reconciliador real; el mock solo ofrece el estado React.
   useApp: () => {
     const [chat, setChat] = useState<MockChatMessage[]>(mockState.chat);
     return {
@@ -43,35 +38,13 @@ vi.mock("../../context/AppContext", () => ({
       openVoice: vi.fn(),
       threadId: mockState.threadId,
       user: { id: "user-1", nombre: "María" },
-      hydrateChat: (messages: Array<{ text: string; role?: "bot" | "user" }>) => {
-        setChat((prev) => {
-          const existing = new Set(prev.map((m) => m.text));
-          const fresh = messages
-            .filter((m) => !existing.has(m.text))
-            .map((m) => ({
-              id: `hydrated-${m.text}`,
-              role: (m.role ?? "bot") as "bot" | "user",
-              text: m.text,
-              time: "10:00 AM",
-            }));
-          if (!fresh.length) return prev;
-          return [...fresh, ...prev];
-        });
+      hydrateChat: (messages: HistoryMessage[]) => {
+        mockState.historyPayloads.push(messages);
+        setChat(prev => mergeChatHistory(prev, messages, mockState.threadId));
       },
-      prependChatMessages: (
-        messages: Array<{ text: string; role?: "bot" | "user" }>,
-      ) => {
-        if (!messages.length) return;
-        setChat((prev) => {
-          const stamped = messages.map((m) => ({
-            id: `prepended-${mockState.seq++}-${m.text}`,
-            role: (m.role ?? "bot") as "bot" | "user",
-            text: m.text,
-            time: "10:00 AM",
-          }));
-          const isOnlyWelcome = prev.length === 1 && prev[0].id === "welcome";
-          return isOnlyWelcome ? stamped : [...stamped, ...prev];
-        });
+      prependChatMessages: (messages: HistoryMessage[]) => {
+        mockState.historyPayloads.push(messages);
+        setChat(prev => mergeChatHistory(prev, messages, mockState.threadId));
       },
       openBookingWizard: vi.fn(),
       appendChatMessages: vi.fn(),
@@ -95,6 +68,9 @@ const PAGE_SIZE = 10;
 const fullHistory = Array.from({ length: 25 }, (_, i) => ({
   role: (i % 2 === 0 ? "bot" : "user") as "bot" | "user",
   text: `Mensaje ${String(i + 1).padStart(2, "0")}`,
+  messageId: `history-${i + 1}`, channel: "voice" as const, status: "provider_final" as const, revision: 2,
+  source: "elevenlabs_transcript", voiceSessionId: "bound", providerMessageId: null, sourceEventId: i + 1,
+  executionId: i % 2 === 0 ? `tracker-${i}` : null,
 }));
 
 /**
@@ -130,6 +106,7 @@ describe("ChatPage — paginación server-driven del historial", () => {
     mockState.lang = "es";
     mockState.threadId = "thread-1";
     mockState.chat = [];
+    mockState.historyPayloads = [];
     vi.mocked(fetchThreadState).mockImplementation(
       async (_threadId, _userId, options) => pageFor(options?.before ?? null),
     );
@@ -144,7 +121,7 @@ describe("ChatPage — paginación server-driven del historial", () => {
     await act(async () => resolveHistory(null));
     expect(screen.getByRole('alert').textContent).toContain('No pudimos cargar el historial');
     vi.mocked(fetchThreadState).mockResolvedValueOnce({ threadId: 'thread-1', messageCount: 0, lastMessage: null, messages: [] });
-    fireEvent.click(screen.getByText('Reintentar'));
+    fireEvent.click(within(screen.getByRole('alert')).getByText('Reintentar'));
     await waitFor(() => expect(screen.getByText('Tu conversación empieza aquí')).toBeTruthy());
     expect(screen.queryByRole('alert')).toBeNull();
     expect(vi.mocked(fetchThreadState)).toHaveBeenCalledTimes(2);
@@ -157,10 +134,10 @@ describe("ChatPage — paginación server-driven del historial", () => {
     fireEvent.scroll(getList(container));
     await waitFor(() => expect(screen.getByText('No pudimos cargar los mensajes anteriores.')).toBeTruthy());
     getList(container).scrollTop = 200;
-    fireEvent.click(screen.getByText('Reintentar'));
+    fireEvent.click(within(screen.getByRole('alert')).getByText('Reintentar'));
     await waitFor(() => expect(screen.getByText('Mensaje 06')).toBeTruthy());
     expect(screen.getByText('Mensaje 25')).toBeTruthy();
-    expect(vi.mocked(fetchThreadState)).toHaveBeenLastCalledWith('thread-1', 'user-1', { limit: 10, before: 10 });
+    expect(vi.mocked(fetchThreadState)).toHaveBeenLastCalledWith('thread-1', 'user-1', expect.objectContaining({ limit: 10, before: 10, signal: expect.any(AbortSignal) }));
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -174,12 +151,21 @@ describe("ChatPage — paginación server-driven del historial", () => {
     expect(vi.mocked(fetchThreadState)).toHaveBeenCalledWith(
       "thread-1",
       "user-1",
-      { limit: PAGE_SIZE },
+      expect.objectContaining({ limit: PAGE_SIZE, syncVoice: true, signal: expect.any(AbortSignal) }),
     );
     expect(screen.getByText("Mensaje 16")).toBeTruthy();
     expect(screen.queryByText("Mensaje 15")).toBeNull();
     expect(screen.queryByText("Mensaje 01")).toBeNull();
     expect(screen.getByText(HISTORY_HINT)).toBeTruthy();
+  });
+
+  it("preserva IDs/canal/estado/revision en ambos mapas del historial", async () => {
+    const { container } = render(<ChatPage />);
+    await waitFor(() => expect(screen.getByText("Mensaje 25")).toBeTruthy());
+    expect(mockState.historyPayloads[0][0]).toMatchObject(fullHistory[15]);
+    const list = getList(container); list.scrollTop = 0; fireEvent.scroll(list);
+    await waitFor(() => expect(screen.getByText("Mensaje 06")).toBeTruthy());
+    expect(mockState.historyPayloads.at(-1)![0]).toMatchObject(fullHistory[5]);
   });
 
   it("al llegar al tope pide la página anterior con el nextCursor y la antepone", async () => {
@@ -195,7 +181,7 @@ describe("ChatPage — paginación server-driven del historial", () => {
     expect(vi.mocked(fetchThreadState)).toHaveBeenLastCalledWith(
       "thread-1",
       "user-1",
-      { limit: PAGE_SIZE, before: 10 },
+      expect.objectContaining({ limit: PAGE_SIZE, before: 10, signal: expect.any(AbortSignal) }),
     );
     expect(screen.getByText("Mensaje 15")).toBeTruthy();
     expect(screen.queryByText("Mensaje 05")).toBeNull();
@@ -346,7 +332,7 @@ describe("ChatPage — paginación server-driven del historial", () => {
     expect(vi.mocked(fetchThreadState)).toHaveBeenLastCalledWith(
       "thread-1",
       "user-1",
-      { limit: PAGE_SIZE, before: 10 },
+      expect.objectContaining({ limit: PAGE_SIZE, before: 10, signal: expect.any(AbortSignal) }),
     );
   });
 

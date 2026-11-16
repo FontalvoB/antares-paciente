@@ -19,6 +19,7 @@
  */
 
 import { apiFetch, ApiError } from "../../utils/apiClient";
+import { normalizeThreadHistory } from "../../utils/threadHistoryMetadata";
 import { isLegalConsentError, requireLegalConsent } from "../../utils/legalConsents";
 import type { ChatLanguage } from "../../utils/threadApi";
 import type {
@@ -152,7 +153,7 @@ export async function fetchThreadHistory(
     `/api/v1/threads/${encodeURIComponent(threadId)}/messages` +
     (query ? `?${query}` : "");
   try {
-    return await apiFetch<ThreadState>(path, { method: "GET" });
+    return normalizeThreadHistory(await apiFetch<ThreadState>(path, { method: "GET" }));
   } catch (error) {
     throw toFriendlyChatError(error);
   }

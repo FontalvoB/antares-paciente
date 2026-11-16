@@ -1,0 +1,448 @@
+[
+  {
+    "lang": "es",
+    "width": 320,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 76,
+        "width": 320,
+        "height": 76
+      },
+      "list": {
+        "top": 137,
+        "bottom": 739,
+        "width": 320,
+        "height": 602
+      },
+      "composer": {
+        "top": 739,
+        "bottom": 822,
+        "width": 320,
+        "height": 83
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 296,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream"
+    ],
+    "status": "passed"
+  },
+  {
+    "lang": "es",
+    "width": 390,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 76,
+        "width": 390,
+        "height": 76
+      },
+      "list": {
+        "top": 137,
+        "bottom": 757,
+        "width": 390,
+        "height": 620
+      },
+      "composer": {
+        "top": 757,
+        "bottom": 822,
+        "width": 390,
+        "height": 65
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 366,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream",
+      "/api/v1/chat/voice/session",
+      "/api/v1/chat/voice/session",
+      "/api/v1/chat/stream",
+      "/api/v1/vita/me/task-completion-proposals",
+      "/api/v1/vita/me/task-completion-proposals",
+      "/api/v1/vita/me/task-completion-confirmations"
+    ],
+    "status": "passed"
+  },
+  {
+    "lang": "es",
+    "width": 430,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 76,
+        "width": 430,
+        "height": 76
+      },
+      "list": {
+        "top": 137,
+        "bottom": 739,
+        "width": 430,
+        "height": 602
+      },
+      "composer": {
+        "top": 739,
+        "bottom": 822,
+        "width": 430,
+        "height": 83
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 406,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream"
+    ],
+    "status": "passed"
+  },
+  {
+    "lang": "es",
+    "width": 768,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 76,
+        "width": 768,
+        "height": 76
+      },
+      "list": {
+        "top": 137,
+        "bottom": 757,
+        "width": 768,
+        "height": 620
+      },
+      "composer": {
+        "top": 757,
+        "bottom": 822,
+        "width": 768,
+        "height": 65
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 744,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream"
+    ],
+    "status": "passed"
+  },
+  {
+    "lang": "en",
+    "width": 320,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 81.171875,
+        "width": 320,
+        "height": 81.171875
+      },
+      "list": {
+        "top": 142.171875,
+        "bottom": 757,
+        "width": 320,
+        "height": 614.828125
+      },
+      "composer": {
+        "top": 757,
+        "bottom": 822,
+        "width": 320,
+        "height": 65
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 296,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream"
+    ],
+    "status": "passed"
+  },
+  {
+    "lang": "en",
+    "width": 390,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 76,
+        "width": 390,
+        "height": 76
+      },
+      "list": {
+        "top": 137,
+        "bottom": 757,
+        "width": 390,
+        "height": 620
+      },
+      "composer": {
+        "top": 757,
+        "bottom": 822,
+        "width": 390,
+        "height": 65
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 366,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream"
+    ],
+    "status": "passed"
+  },
+  {
+    "lang": "en",
+    "width": 430,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 76,
+        "width": 430,
+        "height": 76
+      },
+      "list": {
+        "top": 137,
+        "bottom": 757,
+        "width": 430,
+        "height": 620
+      },
+      "composer": {
+        "top": 757,
+        "bottom": 822,
+        "width": 430,
+        "height": 65
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 406,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream"
+    ],
+    "status": "passed"
+  },
+  {
+    "lang": "en",
+    "width": 768,
+    "layout": {
+      "header": {
+        "top": 0,
+        "bottom": 76,
+        "width": 768,
+        "height": 76
+      },
+      "list": {
+        "top": 137,
+        "bottom": 757,
+        "width": 768,
+        "height": 620
+      },
+      "composer": {
+        "top": 757,
+        "bottom": 822,
+        "width": 768,
+        "height": 65
+      },
+      "nav": {
+        "top": 824,
+        "bottom": 890,
+        "width": 744,
+        "height": 66
+      },
+      "overflow": false,
+      "font": "16px",
+      "family": "Inter, system-ui, sans-serif",
+      "listBackground": "none",
+      "screenBackground": "none",
+      "icons": [
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        },
+        {
+          "width": 22,
+          "height": 22
+        }
+      ]
+    },
+    "errors": [],
+    "writes": [
+      "/api/auth/refresh",
+      "/api/v1/chat/stream"
+    ],
+    "status": "passed"
+  }
+]

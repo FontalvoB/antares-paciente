@@ -35,7 +35,7 @@ import {
   water,
 } from "ionicons/icons";
 import { ProtocolWheel } from "../components/ProtocolWheel";
-import { Mascot } from "../components/Mascot";
+import vitaPortrait from "../assets/vita-coach.png";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { PROGRAM_TASKS } from "../data/program";
@@ -298,7 +298,7 @@ export function HomePage() {
             <i className="hm-leaf hm-leaf-one" />
             <i className="hm-leaf hm-leaf-two" />
             <i className="hm-leaf hm-leaf-three" />
-            <Mascot pose="success" className="mascot-home" float={false} />
+            <img src={vitaPortrait} alt="" className="mascot-home vita-home-portrait" />
           </div>
           <div className="hm-head-top">
             <div className="hm-wordmark" aria-label="COPP-ADRESD">

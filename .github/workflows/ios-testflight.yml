@@ -95,6 +95,8 @@ jobs:
 
       - name: Build web de producción (vite)
         run: npm run build
+        env:
+          VITE_CHAT_NUTRITION_ENABLED: "true"
 
       - name: Publicar `dist/` para el job de firma
         uses: actions/upload-artifact@v7

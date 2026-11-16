@@ -26,6 +26,7 @@ import { LegalConsentProvider } from "./context/LegalConsentContext";
 import { WearableProvider } from "./context/WearableContext";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
+import { useStatusBarContrast } from "./hooks/useStatusBarContrast";
 import { useTabletLayout } from "./hooks/useTabletLayout";
 import { PanicOverlay } from "./components/PanicOverlay";
 import { VoiceOverlay } from "./components/VoiceOverlay";
@@ -167,6 +168,8 @@ function Shell() {
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();
+  // Hora/batería legibles: iconos de la barra de estado según el fondo real.
+  useStatusBarContrast();
   useTabletLayout();
 
   // Abre la sala pedida por una notificación push. Resuelve la cita por id

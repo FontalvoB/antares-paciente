@@ -40,6 +40,20 @@ describe("ChatRichText", () => {
     expect(container.querySelector(".typing")).toBeTruthy();
   });
 
+  it("separador --- se pinta como hr y no como texto literal", () => {
+    const { container } = render(
+      <ChatRichText text={"Resumen\n\n---\n\nSiguiente paso"} />,
+    );
+    expect(container.querySelectorAll("hr.md-hr")).toHaveLength(1);
+    expect(container.textContent).not.toContain("---");
+    expect(container.querySelectorAll("p")).toHaveLength(2);
+  });
+
+  it("guiones dentro de una frase no se convierten en separador", () => {
+    const { container } = render(<ChatRichText text="Ayuno --- 12 horas" />);
+    expect(container.querySelector("hr")).toBeNull();
+  });
+
   it("no inyecta HTML crudo (XSS)", () => {
     const { container } = render(
       <ChatRichText text={"<img src=x onerror=alert(1)> **ok**"} />,

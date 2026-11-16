@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import type { ChatMessage } from "../../types";
+import { mergeChatHistory } from "../../utils/chatHistory";
 import { ChatPage } from "../ChatPage";
 import { fetchThreadState, uploadLabExam } from "../../utils/threadApi";
 import { captureChatImage } from "../../services/media/camera-service";
@@ -61,17 +63,11 @@ vi.mock("@ionic/react", async (importOriginal) => {
 // Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   lang: "en" as "es" | "en",
-  chat: [] as Array<{
-    id: string;
-    role: "bot" | "user" | "alert";
-    text: string;
-    time: string;
-    threadId?: string;
-    kind?: "lab-exam" | "lab-exam-pending" | "service-error";
-    executionId?: string;
-    cta?: { type: string; ctaText: string } | null;
-    image?: { dataUrl: string } | null;
-  }>,
+  historyRevision: 0,
+  userId: "user-1",
+  threadId: "test-thread-123",
+  voiceOpen: false,
+  chat: [] as ChatMessage[],
 }));
 
 const sendChatMock = vi.fn();
@@ -87,11 +83,13 @@ const navigateMock = vi.fn();
 vi.mock("../../context/AppContext", () => ({
   useApp: () => ({
     chat: mockState.chat,
+    chatHistoryRevision: mockState.historyRevision,
     sendChat: sendChatMock,
     openPanic: openPanicMock,
     openVoice: openVoiceMock,
-    threadId: "test-thread-123",
-    user: { id: "user-1", nombre: "María" },
+    threadId: mockState.threadId,
+    user: { id: mockState.userId, nombre: "María" },
+    voiceOpen: mockState.voiceOpen,
     hydrateChat: hydrateChatMock,
     prependChatMessages: prependChatMessagesMock,
     openBookingWizard: openBookingWizardMock,
@@ -113,6 +111,103 @@ const welcomeMessage = {
   text: "Hola María 👋 Soy tu agente de salud Copp Adresd.",
   time: "10:00 AM",
 };
+
+beforeEach(() => {
+  mockState.userId = "user-1"; mockState.threadId = "test-thread-123";
+  mockState.voiceOpen = false; mockState.historyRevision = 0;
+  vi.mocked(fetchThreadState).mockReset().mockResolvedValue(null);
+  hydrateChatMock.mockReset();
+});
+
+describe("ChatPage — sincronización acotada del proveedor", () => {
+  const empty = { threadId: "test-thread-123", messageCount: 0, lastMessage: null, messages: [] };
+  beforeEach(() => { vi.useFakeTimers(); mockState.lang = "es"; mockState.chat = []; });
+  afterEach(() => { vi.useRealTimers(); });
+  const advance = async (ms = 0) => { await act(async () => { await vi.advanceTimersByTimeAsync(ms); }); };
+
+  it("processing→busy→synchronized conserva el SDK hasta snapshot, IDs/metadatos y scroll", async () => {
+    mockState.chat = [2, 14].map(id => ({ id: `sdk:${id}`, role: "bot", text: "Sí", time: "", threadId: "test-thread-123",
+      channel: "voice", voiceSessionId: "linked", voiceRuntime: "legacy", voiceSessionClosed: true }));
+    const canonical = [2, 14].map(id => ({ messageId: `voice:linked:provider:${id}`, role: "bot", text: "Sí", channel: "voice" as const,
+      status: "provider_final" as const, revision: 1, source: "elevenlabs_transcript", voiceSessionId: "linked", providerMessageId: null, sourceEventId: id }));
+    hydrateChatMock.mockImplementation(history => { mockState.chat = mergeChatHistory(mockState.chat, history, mockState.threadId); });
+    vi.mocked(fetchThreadState).mockResolvedValueOnce({ ...empty, voiceSyncStatus: "processing" })
+      .mockResolvedValueOnce({ ...empty, voiceSyncStatus: "busy" })
+      .mockResolvedValueOnce({ ...empty, messageCount: 2, messages: canonical, voiceSyncStatus: "synchronized" });
+    const { container, rerender } = render(<ChatPage />);
+    const list = container.querySelector(".chat-list") as HTMLDivElement;
+    Object.defineProperties(list, { scrollHeight: { configurable: true, value: 1200 }, clientHeight: { configurable: true, value: 400 } });
+    list.scrollTop = 180; fireEvent.scroll(list);
+    const scrollToEnd = vi.spyOn(Element.prototype, "scrollIntoView"); scrollToEnd.mockClear();
+    await advance(); expect(mockState.chat.map(m => m.id)).toEqual(["sdk:2", "sdk:14"]);
+    await advance(1000); expect(mockState.chat).toHaveLength(2);
+    await advance(2000); rerender(<ChatPage />);
+    expect(mockState.chat).toEqual(expect.arrayContaining(canonical.map(message => expect.objectContaining(message))));
+    expect(mockState.chat).toHaveLength(2); expect(list.scrollTop).toBe(180);
+    expect(scrollToEnd).not.toHaveBeenCalled();
+    await advance(15_000); expect(fetchThreadState).toHaveBeenCalledTimes(3);
+    expect(fetchThreadState).toHaveBeenCalledWith("test-thread-123", "user-1", expect.objectContaining({ syncVoice: true, signal: expect.any(AbortSignal) }));
+    scrollToEnd.mockRestore();
+  });
+
+  it.each(["processing", "busy"] as const)("%s permanente agota solo 1/2/4 segundos y no afirma persistencia", async voiceSyncStatus => {
+    mockState.chat = [{ id: "sdk", role: "bot", text: "Provisional", time: "" }];
+    vi.mocked(fetchThreadState).mockResolvedValue({ ...empty, voiceSyncStatus });
+    render(<ChatPage />); await advance(20_000);
+    expect(fetchThreadState).toHaveBeenCalledTimes(4); expect(hydrateChatMock).not.toHaveBeenCalled();
+    expect(mockState.chat[0].id).toBe("sdk");
+  });
+
+  it.each(["unavailable", null, undefined] as const)("estado %s o legacy sin metadatos no inicia polling", async voiceSyncStatus => {
+    mockState.chat = [{ id: "sdk-legacy", role: "bot", text: "Solo RAM", time: "" }];
+    vi.mocked(fetchThreadState).mockResolvedValue({ ...empty, voiceSyncStatus });
+    render(<ChatPage />); await advance(20_000);
+    expect(fetchThreadState).toHaveBeenCalledTimes(1); expect(hydrateChatMock).not.toHaveBeenCalled();
+    expect(mockState.chat[0].id).toBe("sdk-legacy");
+  });
+
+  it.each(["cuenta", "hilo"])("cambio de %s cancela timer y respuesta vieja sin hidratar otra sesión", async change => {
+    let resolve!: (state: typeof empty) => void;
+    vi.mocked(fetchThreadState).mockResolvedValueOnce({ ...empty, voiceSyncStatus: "processing" })
+      .mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+    const { rerender, unmount } = render(<ChatPage />); await advance(1000);
+    const oldSignal = vi.mocked(fetchThreadState).mock.calls[1][2]!.signal!;
+    if (change === "cuenta") mockState.userId = "user-2"; else mockState.threadId = "other-thread";
+    rerender(<ChatPage />); await advance(); expect(oldSignal.aborted).toBe(true);
+    await act(async () => { resolve({ ...empty, messages: [{ role: "bot", text: "Privado" }] } as typeof empty); });
+    expect(hydrateChatMock).not.toHaveBeenCalled();
+    await advance(20_000); expect(fetchThreadState).toHaveBeenCalledTimes(3);
+    unmount();
+  });
+
+  it("desmontar cancela el timer; volver a abrir pide sync aunque no haya metadatos locales", async () => {
+    vi.mocked(fetchThreadState).mockResolvedValue({ ...empty, voiceSyncStatus: "processing" });
+    const first = render(<ChatPage />); await advance();
+    const signal = vi.mocked(fetchThreadState).mock.calls[0][2]!.signal!;
+    first.unmount(); await advance(15_000);
+    expect(signal.aborted).toBe(true); expect(fetchThreadState).toHaveBeenCalledTimes(1);
+    render(<ChatPage />); await advance(); expect(fetchThreadState).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("ChatPage — recarga tras cierre de sesión vinculada", () => {
+  it("un refresco posterior al DELETE vuelve a leer incluso después de un snapshot vacío", async () => {
+    vi.clearAllMocks(); mockState.chat = []; mockState.historyRevision = 0; mockState.lang = "es";
+    const canonical = [
+      { messageId: "voice:linked-legacy:provider:user:2", role: "user", text: "Sí", channel: "voice" as const, status: "final" as const, revision: 1 },
+      { messageId: "voice:linked-legacy:provider:bot:2", role: "bot", text: "Sí", channel: "voice" as const, status: "final" as const, revision: 1 },
+    ];
+    vi.mocked(fetchThreadState).mockReset().mockResolvedValue(null)
+      .mockResolvedValueOnce({ threadId: "test-thread-123", messageCount: 0, lastMessage: null, messages: [] })
+      .mockResolvedValueOnce({ threadId: "test-thread-123", messageCount: 2, lastMessage: "Sí", messages: canonical });
+    const { rerender } = render(<ChatPage />);
+    await waitFor(() => expect(fetchThreadState).toHaveBeenCalledTimes(1));
+    mockState.historyRevision = 1; rerender(<ChatPage />);
+    await waitFor(() => expect(hydrateChatMock).toHaveBeenCalledWith(canonical));
+    expect(fetchThreadState).toHaveBeenCalledTimes(2);
+    mockState.historyRevision = 0;
+  });
+});
 
 describe("ChatPage — Lab Exam Upload Integration", () => {
   beforeEach(() => {

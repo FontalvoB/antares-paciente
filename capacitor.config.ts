@@ -67,8 +67,10 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     StatusBar: {
-      style: "DARK",
-      backgroundColor: "#06091A",
+      // Valor inicial antes de que cargue JS: la mayoría de pantallas tienen cabecera
+      // clara (iconos oscuros = LIGHT). useStatusBarContrast lo ajusta por pantalla.
+      style: "LIGHT",
+      backgroundColor: "#FFFFFF",
     },
     // PushNotifications (@capacitor/push-notifications): no requiere
     // configuración JS. Para recibir notificaciones FCM reales hace falta el

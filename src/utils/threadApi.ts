@@ -1,3 +1,11 @@
+import { createSseParser } from "./sse";
+import { apiFetch } from "./apiClient";
+import { sessionUserId } from "./sessionIdentity";
+import { normalizeThreadHistory } from "./threadHistoryMetadata";
+import type { ClearedThread, ThreadHistoryMetadata } from "./threadHistoryMetadata";
+import { normalizeVitaActions } from "./vitaActions";
+import type { VitaAction } from "./vitaActions";
+import type { HistoryMessage } from "./chatHistory";
 import { Capacitor } from "@capacitor/core";
 import { getAccessToken } from "./authApi";
 import { getApiBaseUrl } from "./apiBaseUrl";
@@ -8,16 +16,17 @@ import { assertLegalConsentOwner, legalConsentOwner, legalConsentResponseError, 
 export type ChatLanguage = "es" | "en";
 
 /** Mensaje individual del historial del thread (rol user | bot). */
-export interface ThreadMessage {
+export interface ThreadMessage extends HistoryMessage {
   role: string;
   text: string;
 }
 
 /** Resumen del historial de un thread devuelto por el backend .NET (proxy → AI Service). */
-export interface ThreadState {
+export interface ThreadState extends ThreadHistoryMetadata {
   threadId: string;
   messageCount: number;
   lastMessage: string | null;
+  voiceSyncStatus?: "synchronized" | "processing" | "unavailable" | "busy" | null;
   /** ¿Quedan páginas más antiguas por cargar? (paginación server-driven). */
   hasMore?: boolean;
   /** Cursor de la próxima página (offset desde el más nuevo); null = no hay más. */
@@ -42,27 +51,54 @@ export interface ThreadState {
 export async function fetchThreadState(
   threadId: string,
   userId: string,
-  options: { limit?: number; before?: number | null } = {},
+  options: { limit?: number; before?: number | null; syncVoice?: boolean; signal?: AbortSignal } = {},
 ): Promise<ThreadState | null> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  options.signal?.addEventListener("abort", abort, { once: true });
+  const timeout = setTimeout(abort, 10_000);
   try {
+    if (options.signal?.aborted) return null;
     const accessToken = getAccessToken();
     const params = new URLSearchParams();
     params.set("userId", userId);
     if (options.limit != null) params.set("limit", String(options.limit));
     if (options.before != null) params.set("before", String(options.before));
+    // Opt-in de capacidad. BACK decide si el consentimiento actual autoriza sync;
+    // nunca impedir la lectura de texto por falta de consentimiento de voz.
+    if (options.syncVoice != null) params.set("syncVoice", String(options.syncVoice));
     const url = `${getApiBaseUrl()}/api/v1/threads/${encodeURIComponent(threadId)}/messages?${params.toString()}`;
     const res = await fetch(url, {
+      signal: controller.signal,
       headers: accessToken
         ? { Authorization: `Bearer ${accessToken}` }
         : undefined,
     });
     if (!res.ok) return null;
     const data = (await res.json()) as ThreadState;
-    return data;
+    if (controller.signal.aborted || accessToken !== getAccessToken()) return null;
+    return normalizeThreadHistory(data);
   } catch (error) {
-    console.warn("[thread] No se pudo cargar el historial del thread:", error);
+    if (!controller.signal.aborted) console.warn("[thread] No se pudo cargar el historial del thread:", error);
     return null;
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abort);
   }
+}
+
+/** Borrado del propietario JWT; sin cuerpo, userId ni consentimiento de lectura. */
+export async function clearThreadMessages(threadId: string, signal?: AbortSignal): Promise<ClearedThread> {
+  const result = await apiFetch<ClearedThread>(`/api/v1/threads/${encodeURIComponent(threadId)}/messages`, {
+    method: "DELETE", signal, expectedUserId: sessionUserId(getAccessToken()),
+  });
+  if (!result) throw new Error("History deletion was not confirmed");
+  const state = normalizeThreadHistory(result);
+  if (state.threadId !== threadId || state.historyRevision == null || !state.clearedAt || !Number.isFinite(Date.parse(state.clearedAt))
+    || !["manual", "monthly"].includes(state.resetReason ?? "")) {
+    throw new Error("History deletion was not confirmed");
+  }
+  return state;
 }
 
 export interface ChatResult {
@@ -70,6 +106,7 @@ export interface ChatResult {
   threadId: string;
   executionId?: string;
   agent?: string;
+  actions?: VitaAction[];
   /**
    * Respuesta canónica consolidada del AI Service (evento `done`, change
    * agente-asistente-citas D1). Ausente con backends previos: el consumidor
@@ -113,6 +150,7 @@ function chatBody(
   return JSON.stringify({
     message,
     threadId,
+    supportsVita: true,
     ...(image
       ? { imageData: image.base64, imageMimeType: image.mimeType }
       : {}),
@@ -135,9 +173,10 @@ export async function sendChatMessage(
   threadId: string,
   image?: ChatImageAttachment,
   language?: ChatLanguage,
+  signal?: AbortSignal,
 ): Promise<ChatResult> {
   const owner = legalConsentOwner();
-  await requireLegalConsent("chat", language);
+  await requireLegalConsent("chat", language, signal);
   assertLegalConsentOwner(owner);
   const token = getAccessToken();
   const res = await fetch(`${getApiBaseUrl()}/api/v1/chat`, {
@@ -147,6 +186,7 @@ export async function sendChatMessage(
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: chatBody(message, threadId, image, language),
+    signal,
   });
   assertLegalConsentOwner(owner);
 
@@ -167,7 +207,7 @@ export async function sendChatMessage(
   assertLegalConsentOwner(owner);
   // El .NET devuelve camelCase; la normalización es defensiva para aceptar
   // también passthrough directo del AI Service (snake_case).
-  return { ...result, suggestions: normalizeSuggestions(result.suggestions) };
+  return { ...result, suggestions: normalizeSuggestions(result.suggestions), actions: normalizeVitaActions(result.actions) };
 }
 
 export interface LabExamUploadResult {
@@ -282,22 +322,24 @@ export async function streamChatMessage(
   callbacks: StreamCallbacks = {},
   image?: ChatImageAttachment,
   language?: ChatLanguage,
+  signal?: AbortSignal,
 ): Promise<ChatResult> {
   const owner = legalConsentOwner();
   // Nativo + CapacitorHttp: el fetch del WebView está parcheado (HTTP nativo,
   // sin streaming de body) — SSE se degradaría a buffering completo. Fallback
   // C1 (design): chat síncrono en nativo, el texto llega en un solo bloque.
-  if (Capacitor.isNativePlatform()) {
-    const result = await sendChatMessage(message, threadId, image, language);
+  const nativeFetch = (window as Window & { CapacitorWebFetch?: typeof fetch }).CapacitorWebFetch;
+  if (Capacitor.isNativePlatform() && !nativeFetch) {
+    const result = await sendChatMessage(message, threadId, image, language, signal);
     assertLegalConsentOwner(owner);
     if (result.reply) callbacks.onToken?.(result.reply);
     return result;
   }
 
-  await requireLegalConsent("chat", language);
+  await requireLegalConsent("chat", language, signal);
   assertLegalConsentOwner(owner);
   const token = getAccessToken();
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/chat/stream`, {
+  const res = await (nativeFetch ?? fetch)(`${getApiBaseUrl()}/api/v1/chat/stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -305,6 +347,7 @@ export async function streamChatMessage(
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: chatBody(message, threadId, image, language),
+    signal,
   });
   assertLegalConsentOwner(owner);
 
@@ -320,71 +363,47 @@ export async function streamChatMessage(
   let outThreadId = threadId;
   let executionId: string | undefined;
   let streamError: string | null = null;
-  let pending = "";
+  let completed = false;
+  let actions: VitaAction[] = [];
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
-
-  const handleLine = (line: string) => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
-    if (trimmed.startsWith("event: ")) return;
-    if (!trimmed.startsWith("data: ")) return;
-    const data = trimmed.slice("data: ".length);
-    if (!data || data === "{}") return;
-    try {
-      const parsed = JSON.parse(data) as {
-        type?: string;
-        token?: string;
-        content?: string;
-        error?: string;
-        thread_id?: string;
-        execution_id?: string;
-        answer?: string;
-        suggestions?: unknown;
-      };
-      // El AI Service emite {"type":"token","content":"..."}.
-      const piece = parsed.content ?? parsed.token;
-      if (parsed.type === "token" && piece) {
-        reply += piece;
-        callbacks.onToken?.(piece);
-      } else if (parsed.type === "error" && parsed.error) {
-        streamError = parsed.error;
-      } else if (
-        parsed.type === "done" ||
-        parsed.answer != null ||
-        parsed.suggestions != null
-      ) {
-        // Evento de finalización del turno (también viaja thread/execution):
-        // captura la respuesta canónica y las sugerencias estructuradas.
-        if (typeof parsed.answer === "string") answer = parsed.answer;
-        suggestions = normalizeSuggestions(parsed.suggestions) ?? suggestions;
-        if (parsed.thread_id) outThreadId = parsed.thread_id;
-        if (parsed.execution_id) executionId = parsed.execution_id;
-      } else if (parsed.thread_id || parsed.execution_id) {
-        if (parsed.thread_id) outThreadId = parsed.thread_id;
-        if (parsed.execution_id) executionId = parsed.execution_id;
-      }
-    } catch {
-      /* data no-JSON: se ignora */
+  const parser = createSseParser((event, data) => {
+    let parsed: Record<string, unknown>;
+    try { parsed = JSON.parse(data); } catch { return; }
+    if (!parsed || typeof parsed !== "object") return;
+    const type = parsed.type ?? event;
+    if (type === "error") { streamError = "El asistente no pudo completar la respuesta. Inténtalo de nuevo."; return; }
+    const piece = parsed.content ?? parsed.token;
+    if (type === "token" && typeof piece === "string") {
+      reply += piece; callbacks.onToken?.(piece);
     }
-  };
-
+    if (type === "done") {
+      completed = true;
+      if (typeof parsed.answer === "string") answer = parsed.answer;
+      suggestions = normalizeSuggestions(parsed.suggestions);
+      actions = normalizeVitaActions(parsed.actions);
+    }
+    if (typeof parsed.thread_id === "string") outThreadId = parsed.thread_id;
+    if (typeof parsed.execution_id === "string") executionId = parsed.execution_id;
+  });
+  const abort = () => { void reader.cancel().catch(() => {}); };
+  signal?.addEventListener("abort", abort, { once: true });
   try {
     for (;;) {
+      signal?.throwIfAborted();
       const { done, value } = await reader.read();
+      signal?.throwIfAborted();
       assertLegalConsentOwner(owner);
       if (done) break;
-      pending += decoder.decode(value, { stream: true });
-      const lines = pending.split("\n");
-      pending = lines.pop() ?? "";
-      for (const line of lines) handleLine(line);
+      parser.push(decoder.decode(value, { stream: true }));
     }
-    if (pending.trim()) handleLine(pending);
+    parser.push(decoder.decode(), true);
   } finally {
-    if (owner !== legalConsentOwner()) await reader.cancel().catch(() => {});
+    signal?.removeEventListener("abort", abort);
+    await reader.cancel().catch(() => {});
     reader.releaseLock();
   }
-
+  if (!completed && !streamError) throw new Error("La respuesta se interrumpió. Inténtalo de nuevo.");
   if (streamError) throw new Error(streamError);
   if (!reply && !answer) throw new Error("El agente no respondió.");
   return {
@@ -393,5 +412,6 @@ export async function streamChatMessage(
     threadId: outThreadId,
     executionId,
     suggestions,
+    actions,
   };
 }

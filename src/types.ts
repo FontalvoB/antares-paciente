@@ -77,6 +77,21 @@ export interface ChatMessage {
   role: "bot" | "user" | "alert";
   text: string;
   time: string;
+  channel?: "voice" | "text";
+  delivery?: "received" | "streaming" | "interrupted" | "failed";
+  providerEventId?: number;
+  providerResponseId?: string;
+  providerLocalId?: string;
+  messageId?: string;
+  status?: "final" | "provider_final" | "partial" | "interrupted" | "failed";
+  revision?: number;
+  source?: string | null;
+  providerMessageId?: string | null;
+  sourceEventId?: number | null;
+  voiceSessionId?: string | null;
+  voiceSessionClosed?: boolean;
+  voiceRuntime?: "vita" | "legacy";
+  actions?: import("./utils/vitaActions").VitaAction[];
   /** Thread estable al que pertenece el mensaje (proactive-<id>). */
   threadId?: string;
   /**
@@ -84,7 +99,7 @@ export interface ChatMessage {
    * Enlaza el feedback del paciente (Fase 9: `ChatFeedbackAction`).
    * Solo presente en respuestas reales del backend, nunca en fallbacks.
    */
-  executionId?: string;
+  executionId?: string | null;
   /** CTA adjunto al mensaje del bot (ej. sugerencia de agendar cita). */
   cta?: ChatSuggestion | null;
   /** Imagen adjunta del remitente (solo burbujas user; vista local). */

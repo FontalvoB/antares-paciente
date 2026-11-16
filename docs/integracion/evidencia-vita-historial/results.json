@@ -1,0 +1,80 @@
+[
+  {
+    "lang": "es",
+    "width": 320,
+    "clearTouch": {
+      "x": 159.609375,
+      "y": 12.140625,
+      "width": 44,
+      "height": 44
+    },
+    "deletes": 2,
+    "pageErrors": [],
+    "passed": true
+  },
+  {
+    "lang": "es",
+    "width": 390,
+    "clearTouch": {
+      "x": 220.203125,
+      "y": 13.484375,
+      "width": 44,
+      "height": 44
+    },
+    "deletes": 3,
+    "pageErrors": [],
+    "passed": true
+  },
+  {
+    "lang": "es",
+    "width": 1440,
+    "clearTouch": {
+      "x": 924,
+      "y": 8,
+      "width": 44,
+      "height": 44
+    },
+    "deletes": 2,
+    "pageErrors": [],
+    "passed": true
+  },
+  {
+    "lang": "en",
+    "width": 320,
+    "clearTouch": {
+      "x": 159.609375,
+      "y": 12.140625,
+      "width": 44,
+      "height": 44
+    },
+    "deletes": 2,
+    "pageErrors": [],
+    "passed": true
+  },
+  {
+    "lang": "en",
+    "width": 390,
+    "clearTouch": {
+      "x": 220.203125,
+      "y": 13.484375,
+      "width": 44,
+      "height": 44
+    },
+    "deletes": 2,
+    "pageErrors": [],
+    "passed": true
+  },
+  {
+    "lang": "en",
+    "width": 1440,
+    "clearTouch": {
+      "x": 923.9814453125,
+      "y": 8.289382934570312,
+      "width": 43.9959716796875,
+      "height": 43.99599838256836
+    },
+    "deletes": 2,
+    "pageErrors": [],
+    "passed": true
+  }
+]

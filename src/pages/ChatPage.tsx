@@ -1,16 +1,20 @@
+import { VitaActions } from "../components/chat/VitaActions";
 import {APPOINTMENTS_ENABLED, appointmentLinksForDisplay, isAppointmentAction} from "../utils/appointmentsVisibility";
 import {
   IonActionSheet,
+  IonAlert,
+  IonToast,
   IonBadge,
   IonButton,
   IonIcon,
-  IonInput,
+  IonTextarea,
   IonSpinner,
   IonSkeletonText,
 } from "@ionic/react";
 import { CameraSource } from "@capacitor/camera";
 import {
   attachOutline,
+  trashOutline,
   barbellOutline,
   cameraOutline,
   closeCircle,
@@ -23,6 +27,7 @@ import {
   calendarOutline,
   pulseOutline,
   trendingUpOutline,
+  stop as stopIcon,
   send as sendIcon,
 } from "ionicons/icons";
 import { motion, useReducedMotion } from "framer-motion";
@@ -58,17 +63,22 @@ const quick = [
 const PAGE_SIZE = 10;
 /** Distancia al tope (px) que dispara la carga del tramo anterior. */
 const SCROLL_TOP_THRESHOLD = 48;
+/** Un intento inicial y tres relecturas; nunca polling permanente. */
+const VOICE_SYNC_RETRY_MS = [1000, 2000, 4000];
 
 export function ChatPage() {
   const reducedMotion=useReducedMotion();
   const {
     chat,
+    chatGenerating, cancelChat, retryChat, voiceOpen, voiceMinimized, chatHistoryRevision,
+    chatClearing, clearChat, captureChatGuard, observeChatHistory, chatHistoryEpoch,
     sendChat,
     openPanic,
     openVoice,
     threadId,
     user,
     hydrateChat,
+    captureHistoryHydrator,
     prependChatMessages,
     openBookingWizard,
     appendChatMessages,
@@ -76,6 +86,22 @@ export function ChatPage() {
     navigate,
   } = useApp();
   const [text, setText] = useState("");
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const [clearError, setClearError] = useState(false);
+  const [clearSuccess, setClearSuccess] = useState(false);
+  const clearingRef = useRef(false);
+  const clearTarget = useRef<string | null>(null);
+  const clearConversation = async () => {
+    if (clearingRef.current || clearTarget.current !== historyScopeRef.current) return;
+    clearingRef.current = true;
+    const sourceScope = historyScopeRef.current;
+    try {
+      await clearChat();
+      if (sourceScope === historyScopeRef.current) setClearSuccess(true);
+    } catch {
+      if (sourceScope === historyScopeRef.current) setClearError(true);
+    } finally { clearingRef.current = false; }
+  };
   const [uploading, setUploading] = useState(false);
   // Progressive disclosure del compositor (+): hoja de acciones de adjuntos.
   const [attachSheetOpen, setAttachSheetOpen] = useState(false);
@@ -92,12 +118,14 @@ export function ChatPage() {
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [historyAttempt, setHistoryAttempt] = useState(0);
-  const [historyState, setHistoryState] = useState<{thread: string; status: 'loading' | 'ready' | 'error'}>({thread: threadId, status: 'loading'});
+  const [historyState, setHistoryState] = useState<{scope: string | null; status: 'loading' | 'ready' | 'error'}>({scope: null, status: 'loading'});
   const [olderHistoryError, setOlderHistoryError] = useState(false);
   // Contador que solo dispara el efecto de anclaje tras cada fetch de página
   // (éxito o error) para compensar el scroll y apagar `loadingMore`.
   const [pagesLoaded, setPagesLoaded] = useState(0);
   const end = useRef<HTMLDivElement>(null);
+  const nearEnd = useRef(true);
+  const [newMessages, setNewMessages] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Posición del scroll previa a insertar mensajes por encima: permite
@@ -113,61 +141,118 @@ export function ChatPage() {
   const threadIdRef = useRef(threadId);
 
   const userId = (user.id || user.cedula || user.email || "").trim();
+  const historyScope = `${userId}\0${threadId}`;
+  const historyScopeRef = useRef(historyScope);
+  historyScopeRef.current = historyScope;
+  const paginationController = useRef<AbortController | null>(null);
+  const hydrateRef = useRef(hydrateChat);
+  hydrateRef.current = hydrateChat;
+  const captureHistoryRef = useRef(captureHistoryHydrator);
+  captureHistoryRef.current = captureHistoryHydrator;
+  const chatRef = useRef(chat);
+  chatRef.current = chat;
+  const historyScrollRef = useRef<number | null>(null);
+  const historyHydratingRef = useRef(false);
+  const historyApiRef = useRef({ captureChatGuard, observeChatHistory });
+  historyApiRef.current = { captureChatGuard, observeChatHistory };
 
   // Al abrir el chat se intenta cargar la última página del thread estable: si
   // el backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
   const historyLoaded = useRef<string | null>(null);
-  const hydrateChatRef = useRef(hydrateChat);
-  useEffect(() => { hydrateChatRef.current = hydrateChat; }, [hydrateChat]);
+  const previousVoiceOpen = useRef(voiceOpen);
+  const historyRevisionSeen = useRef(chatHistoryRevision);
   useEffect(() => {
-    if (historyLoaded.current === threadId) return;
-    if (!userId) return;
+    if ((previousVoiceOpen.current && !voiceOpen) || historyRevisionSeen.current !== chatHistoryRevision) historyLoaded.current = null;
+    historyRevisionSeen.current = chatHistoryRevision;
+    previousVoiceOpen.current = voiceOpen;
+    if (historyLoaded.current === historyScope) return;
+    if (!userId || chatClearing) return;
+    const controller = new AbortController();
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     let cancelled = false;
-    setHistoryState({thread: threadId, status: 'loading'});
-    void fetchThreadState(threadId, userId, { limit: PAGE_SIZE }).then(
-      (state) => {
-        if (cancelled) return;
-        setHistoryState({thread: threadId, status: state ? 'ready' : 'error'});
-        if (!state) return;
-        // Página más reciente cuando el backend la expone (roles user/bot
-        // mapeados); fallback al último mensaje con backends anteriores.
-        const history = (state?.messages ?? [])
-          .filter((m) => Boolean(m.text && m.text.trim().length > 0))
-          .map((m) => ({
-            text: m.text,
-            role: m.role === "user" ? ("user" as const) : ("bot" as const),
-          }));
-        let more = Boolean(state?.hasMore);
-        if (!history.length) {
-          if (!state?.lastMessage) { historyLoaded.current = threadId; return; }
-          history.push({ text: state.lastMessage, role: "bot" as const });
-          // El fallback de un único mensaje no deja tramos anteriores.
-          more = false;
-        }
-        // El ref se marca SOLO cuando la hidratación se aplica: en StrictMode
-        // (dev) el efecto corre dos veces y el primer fetch queda cancelado; con
-        // el ref marcado de antemano el segundo intento se saltaba y el mensaje
-        // proactivo nunca aparecía.
-        historyLoaded.current = threadId;
-        setHasMore(more);
-        setNextCursor(state?.nextCursor ?? null);
-        hydrateChatRef.current(history);
-      },
-    );
+    setHistoryState({scope: historyScope, status: 'loading'});
+    paginationController.current?.abort();
+    paginationController.current = null;
+    setLoadingMore(false);
+    anchorRef.current = null;
+    prependingRef.current = false;
+    const read = async (attempt: number) => {
+      const current = historyApiRef.current.captureChatGuard?.();
+      const applySnapshot = captureHistoryRef.current?.();
+      const applyLegacy = hydrateRef.current;
+      const state = await fetchThreadState(threadId, userId, { limit: PAGE_SIZE, syncVoice: true, signal: controller.signal });
+      if (cancelled || controller.signal.aborted || historyScopeRef.current !== historyScope) return;
+      if (current && !current()) return;
+      const observation = state && historyApiRef.current.observeChatHistory?.(state);
+      if (observation && observation !== "current") return;
+      // Marcar al terminar el intento vigente, nunca antes de la respuesta:
+      // StrictMode puede cancelar el primero. Incluso un historial vacío
+      // evita volver a consultar por cada token o callback de voz.
+      historyLoaded.current = historyScope;
+      setHistoryState({scope: historyScope, status: state ? 'ready' : 'error'});
+      if (!state) return;
+      if (!voiceOpen && (state?.voiceSyncStatus === "processing" || state?.voiceSyncStatus === "busy") && attempt < VOICE_SYNC_RETRY_MS.length) {
+        retryTimer = setTimeout(() => { void read(attempt + 1); }, VOICE_SYNC_RETRY_MS[attempt]);
+      }
+      // Página más reciente cuando el backend la expone (roles user/bot
+      // mapeados); fallback al último mensaje con backends anteriores.
+      const history = (state?.messages ?? [])
+        .filter((m) => Boolean(m.text && m.text.trim().length > 0))
+        .map((m) => ({
+          ...m,
+          role: m.role === "user" ? ("user" as const) : ("bot" as const),
+        }));
+      let more = Boolean(state?.hasMore);
+      let authoritativeText = true;
+      if (!history.length) {
+        if (!state?.lastMessage) return;
+        history.push({ text: state.lastMessage, role: "bot" as const });
+        authoritativeText = false; // lastMessage solo no es una página autoritativa.
+        // El fallback de un único mensaje no deja tramos anteriores.
+        more = false;
+      }
+      // La consolidación de voz es una sustitución de fuente, no un mensaje
+      // entrante: no robar scroll ni mostrar el aviso de mensajes nuevos.
+      if (listRef.current && chatRef.current.some(message => message.id !== "welcome")) {
+        historyScrollRef.current = listRef.current.scrollTop;
+        historyHydratingRef.current = true;
+      }
+      const applied = applySnapshot ? applySnapshot(history, authoritativeText) : applyLegacy(history);
+      if (applied === false) {
+        historyScrollRef.current = null;
+        historyHydratingRef.current = false;
+        return;
+      }
+      setHasMore(more);
+      setNextCursor(state?.nextCursor ?? null);
+    };
+    void read(0);
     return () => {
       cancelled = true;
+      clearTimeout(retryTimer);
+      controller.abort();
     };
-  }, [threadId, userId, historyAttempt]);
+  }, [threadId, userId, historyScope, voiceOpen, chatHistoryRevision, chatClearing, historyAttempt]);
+
+  useLayoutEffect(() => {
+    if (historyScrollRef.current != null && listRef.current) listRef.current.scrollTop = historyScrollRef.current;
+    historyScrollRef.current = null;
+  }, [chat]);
 
   useEffect(() => {
+    if (historyHydratingRef.current) {
+      historyHydratingRef.current = false;
+      return;
+    }
     if (prependingRef.current) {
       // El cambio de chat.length viene de anteponer mensajes: el anclaje ya
       // compensó la posición, no hay que saltar al final.
       prependingRef.current = false;
       return;
     }
-    end.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
-  }, [chat.length, uploading, reducedMotion]);
+    if (nearEnd.current) end.current?.scrollIntoView({ behavior: "instant", block: "end" });
+    else setNewMessages(true);
+  }, [chat, uploading]);
 
   // Un hilo nuevo arranca siempre con la última página y sin paginación previa.
   useEffect(() => {
@@ -176,15 +261,21 @@ export function ChatPage() {
     setNextCursor(null);
     setLoadingMore(false);
     setOlderHistoryError(false);
+    setNewMessages(false); nearEnd.current = true;
+    setText(""); setPendingImage(null); setUploading(false); setAttachSheetOpen(false);
     anchorRef.current = null;
     // Un prepend en vuelo del hilo anterior quedará descartado: se libera la
     // marca para que el próximo mensaje del hilo nuevo vuelva a scrollear.
     prependingRef.current = false;
-  }, [threadId]);
+    return () => { paginationController.current?.abort(); };
+  }, [threadId, userId, chatHistoryEpoch]);
 
   const handleScroll = (retry = false) => {
     const el = listRef.current;
-    if (!el || loadingMore || !hasMore || !userId) return;
+    if (!el) return;
+    nearEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96;
+    if (nearEnd.current) setNewMessages(false);
+    if (chatClearing || loadingMore || !hasMore || !userId) return;
     if (!retry && el.scrollTop > SCROLL_TOP_THRESHOLD) return;
     if (nextCursor == null) {
       // hasMore sin cursor (backend viejo o inconsistente): se apaga la
@@ -200,13 +291,21 @@ export function ChatPage() {
     setLoadingMore(true);
     setOlderHistoryError(false);
     const requestThreadId = threadId;
+    const requestScope = historyScope;
+    const current = captureChatGuard?.();
+    const controller = new AbortController();
+    paginationController.current = controller;
     void fetchThreadState(threadId, userId, {
       limit: PAGE_SIZE,
       before: nextCursor,
+      signal: controller.signal,
     }).then((state) => {
       // El hilo cambió mientras el fetch estaba en vuelo (push): la página
       // pertenece al hilo anterior y se descarta por completo.
-      if (requestThreadId !== threadIdRef.current) return;
+      if (controller.signal.aborted || requestThreadId !== threadIdRef.current || requestScope !== historyScopeRef.current) return;
+      if (current && !current()) return;
+      if (state && observeChatHistory?.(state) === "stale") return;
+      if (current && !current()) return;
       // Respuesta degradada (messageCount 0): el backend devolvió 200 con el
       // historial vacío tras un fallo del AI service. No significa "no hay
       // más páginas": se conservan hasMore/nextCursor para reintentar.
@@ -220,7 +319,7 @@ export function ChatPage() {
         const older = (state.messages ?? [])
           .filter((m) => Boolean(m.text && m.text.trim().length > 0))
           .map((m) => ({
-            text: m.text,
+            ...m,
             role: m.role === "user" ? ("user" as const) : ("bot" as const),
           }));
         // Sin dedup por texto: un mensaje repetido entre páginas es legítimo.
@@ -276,9 +375,10 @@ export function ChatPage() {
   })).filter((message) => !message.text || message.displayText.trim() || message.image || message.visibleCta);
 
   const send = (msg = text) => {
-    if (uploading) return;
+    if (uploading || chatGenerating || chatClearing) return;
     const v = msg.trim();
     if (!v) return;
+    nearEnd.current = true; setNewMessages(false);
     sendChat(v, pendingImage ?? undefined);
     setPendingImage(null);
     setText("");
@@ -293,10 +393,11 @@ export function ChatPage() {
    * denegado → silencioso (nunca rompe el compositor).
    */
   const attachFromSource = async (source: CameraSource) => {
-    if (uploading) return;
+    if (uploading || chatClearing) return;
+    const current = captureChatGuard?.();
     try {
       const photo = await captureChatImage(source, lang);
-      if (photo) setPendingImage(photo);
+      if (photo && (!current || current())) setPendingImage(photo);
     } catch {
       // El usuario canceló: no mostrar ruido.
     }
@@ -308,6 +409,8 @@ export function ChatPage() {
       fileInputRef.current.value = "";
     }
     if (!file) return;
+    if (chatClearing) return;
+    const current = captureChatGuard?.();
 
     if (file.size > 20 * 1024 * 1024) {
       showToast(t("El archivo excede el límite de 20 MB."), "err");
@@ -333,6 +436,7 @@ export function ChatPage() {
     setUploading(true);
     try {
       const result = await uploadLabExam(file, threadId, lang);
+      if (current && !current()) return;
       appendChatMessages([
         {
           role: "user",
@@ -349,44 +453,40 @@ export function ChatPage() {
         },
       ]);
     } catch (err: unknown) {
-      showToast(localizedError(err, { t, lang }, "Error al procesar el examen."), "err");
+      if (!current || current()) showToast(localizedError(err, { t, lang }, "Error al procesar el examen."), "err");
     } finally {
-      setUploading(false);
+      if (!current || current()) setUploading(false);
     }
   };
+
+  const isEmpty = !chat.length || chat.every(message => message.id === "welcome");
+  const quickActions = <div className={`chat-quick-actions${isEmpty ? " is-empty" : ""}`} aria-label={t("Acciones rápidas del chat")}>
+    {quick.filter(([label]) => canShowChatAction("", label)).map(([label, question, icon]) => <IonButton key={label} fill="clear" className="chat-quick-action" disabled={chatClearing || chatGenerating || uploading} onClick={() => send(t(question))}>
+      <span className="chat-quick-content"><span className="chat-quick-icon" aria-hidden="true"><IonIcon icon={icon} /></span><span>{t(label)}</span></span>
+    </IonButton>)}
+  </div>;
 
   return (
     <Screen className="chat-kb chat-reference">
       <header className="chat-premium-header p3-vita-header">
         <IonButton fill="clear" className="p3-chat-back" aria-label={t('Volver al inicio')} onClick={()=>navigate('home')}><IonIcon icon={arrowBackOutline} slot="icon-only"/></IonButton>
-        <div className="p3-vita-identity"><img src={vitaPortrait} alt="" className="p3-vita-avatar"/><div><h1>Vita</h1><p>{t('Tu coach de salud y bienestar')}</p></div></div>
-        <div className="p3-vita-actions"><IonButton fill="clear" className="p3-vita-voice" aria-label={t('Agente de voz')} onClick={openVoice}><IonIcon icon={mic} slot="icon-only"/></IonButton><IonButton fill="clear" className="chat-panic" aria-label={t('SOS · Botón de pánico')} onClick={openPanic}>SOS</IonButton></div>
+        <div className="p3-vita-identity"><img src={vitaPortrait} alt="" className="p3-vita-avatar"/><div><h1>Vita</h1><p role="status">{chatGenerating ? t("Preparando tu respuesta…") : t("Tu coach de salud y bienestar")}</p></div></div>
+        <div className="p3-vita-actions"><IonButton fill="clear" className="vita-header-clear" disabled={chatClearing || clearConfirm || clearError} aria-label={t("Limpiar conversación")} title={t("Limpiar conversación")} onClick={() => { clearTarget.current = historyScope; setClearConfirm(true); }}>{chatClearing ? <IonSpinner name="crescent" /> : <IonIcon icon={trashOutline} aria-hidden="true" />}</IonButton><IonButton fill="clear" className="p3-vita-voice" disabled={chatClearing} aria-label={t('Agente de voz')} onClick={openVoice}><IonIcon icon={mic} slot="icon-only"/></IonButton><IonButton fill="clear" className="chat-panic" aria-label={t('SOS · Botón de pánico')} onClick={openPanic}>SOS</IonButton></div>
       </header>
-      <div
-        className="chip-scroll chat-quick-actions"
-        aria-label={t("Acciones rápidas del chat")}
-      >
-        {quick.map(([l, q, icon]) => (
-          <IonButton
-            key={l}
-            fill="clear"
-            className="qrchip chat-quick-action"
-            onClick={() => send(t(q))}
-          >
-            <span className="chat-quick-content">
-              <span className="chat-quick-icon" aria-hidden="true">
-                <IonIcon icon={icon} />
-              </span>
-              <span>{t(l)}</span>
-            </span>
-          </IonButton>
-        ))}
-      </div>
+      {voiceOpen && voiceMinimized && <div className="vita-call-space" />}
+      {!isEmpty && quickActions}
       <div
         ref={listRef}
         className="screen-scroll chat-list"
         onScroll={() => handleScroll()}
       >
+        {isEmpty && <div className="vita-chat-welcome">
+          <img src={vitaPortrait} alt={t("Vita, tu coach de bienestar")} />
+          <h2>{t("Hola, {nombre}", { nombre: user.nombre.split(" ")[0] || t("Paciente") })}</h2>
+          <p>{t("Soy Vita. Pregúntame sobre tu programa y tus hábitos.")}</p>
+          {quickActions}
+          <IonButton className="bt bt-primary" expand="block" onClick={openVoice}><IonIcon icon={mic} slot="start" />{t("Hablar con Vita")}</IonButton>
+        </div>}
         {/* Alcance de Vita: educación y apoyo al plan publicado, sin sustituir al equipo. */}
         <div className="chat-disclaimer" role="note">
           <IonIcon
@@ -400,9 +500,9 @@ export function ChatPage() {
             )}
           </span>
         </div>
-        {(historyState.thread !== threadId || historyState.status === 'loading') && !visibleChat.length && <section className="wellness-chat-loading" role="status" aria-busy="true" aria-label={t('Cargando conversación…')}><p>{t('Cargando conversación…')}</p><div aria-hidden="true">{[0,1,2].map(index => <IonSkeletonText key={index} animated={!reducedMotion} className="wellness-skeleton-card" />)}</div></section>}
-        {historyState.thread === threadId && historyState.status === 'error' && <section className="wellness-chat-state" role="alert"><p>{t('No pudimos cargar el historial. Puedes reintentar o seguir conversando.')}</p><IonButton fill="clear" onClick={() => setHistoryAttempt(value => value + 1)}>{t('Reintentar')}</IonButton></section>}
-        {historyState.thread === threadId && historyState.status === 'ready' && !visibleChat.length && <section className="wellness-chat-state" role="status"><h2>{t('Tu conversación empieza aquí')}</h2><p>{t('Elige un tema o escribe a Vita cuando quieras.')}</p></section>}
+        {(historyState.scope !== historyScope || historyState.status === 'loading') && !visibleChat.length && <section className="wellness-chat-loading" role="status" aria-busy="true" aria-label={t('Cargando conversación…')}><p>{t('Cargando conversación…')}</p><div aria-hidden="true">{[0,1,2].map(index => <IonSkeletonText key={index} animated={!reducedMotion} className="wellness-skeleton-card" />)}</div></section>}
+        {historyState.scope === historyScope && historyState.status === 'error' && <section className="wellness-chat-state" role="alert"><p>{t('No pudimos cargar el historial. Puedes reintentar o seguir conversando.')}</p><IonButton fill="clear" onClick={() => { historyLoaded.current = null; setHistoryAttempt(value => value + 1); }}>{t('Reintentar')}</IonButton></section>}
+        {historyState.scope === historyScope && historyState.status === 'ready' && !visibleChat.length && <section className="wellness-chat-state" role="status"><h2>{t('Tu conversación empieza aquí')}</h2><p>{t('Elige un tema o escribe a Vita cuando quieras.')}</p></section>}
         {olderHistoryError && <div className="wellness-chat-state" role="alert"><p>{t('No pudimos cargar los mensajes anteriores.')}</p><IonButton fill="clear" disabled={loadingMore} onClick={() => handleScroll(true)}>{t('Reintentar')}</IonButton></div>}
         {hasMore ? (
           <div className="chat-history-hint" role="status">
@@ -422,7 +522,7 @@ export function ChatPage() {
             <span>{t("Inicio de la conversación")}</span>
           </div>
         ) : null}
-        {visibleChat.map((m, index) => {
+        {visibleChat.filter(message => message.id !== "welcome").map((m, index) => {
           const isLastInGroup =
             index === visibleChat.length - 1 || visibleChat[index + 1].role !== m.role;
           const isUser = m.role === "user";
@@ -469,6 +569,9 @@ export function ChatPage() {
                   />
                 )}
                 {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Paciente") }) : m.displayText} />}
+                {!m.text && m.delivery === "streaming" && <IonSpinner name="dots" aria-label={t("Preparando tu respuesta…")} />}
+                {m.delivery === "interrupted" && <p className="vita-delivery">{t("Respuesta interrumpida")}</p>}
+                {(m.delivery === "failed" || m.delivery === "interrupted") && m.channel !== "voice" && m.id === [...chat].reverse().find(message => message.role === "bot" && message.channel !== "voice")?.id && <IonButton fill="clear" disabled={chatGenerating} onClick={retryChat}>{t("Reintentar respuesta")}</IonButton>}
                 {m.role === "alert" && (
                   <IonButton
                     expand="block"
@@ -512,6 +615,7 @@ export function ChatPage() {
                     </IonButton>
                   </div>
                 )}
+                {m.actions?.length ? <VitaActions actions={m.actions} /> : null}
                 {/* Feedback clínico (Fase 9): solo en respuestas reales del
                     backend con executionId; fallbacks locales no se califican. */}
                 {m.role === "bot" && m.executionId && (
@@ -546,6 +650,7 @@ export function ChatPage() {
         )}
         <div ref={end} />
       </div>
+      {newMessages && <IonButton className="vita-new-messages" fill="solid" onClick={() => { nearEnd.current = true; setNewMessages(false); end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }}>{t("Ver mensajes nuevos")}</IonButton>}
       {pendingImage && (
         // Miniatura removible del adjunto pendiente (D3): preview + descarte,
         // sobre el composer (patrón ChatGPT) para que el adjunto se vea
@@ -582,7 +687,7 @@ export function ChatPage() {
         <IonButton
           className="bt bt-round chat-plus"
           aria-label={t("Adjuntar al chat")}
-          disabled={uploading}
+          disabled={uploading || chatClearing}
           onClick={() => setAttachSheetOpen(true)}
         >
           <IonIcon icon={attachOutline} style={{ fontSize: 22 }} />
@@ -590,18 +695,21 @@ export function ChatPage() {
         <IonButton
           className="bt bt-round chat-voice"
           aria-label={t("Agente de voz")}
-          disabled={uploading}
+          disabled={uploading || chatClearing}
           onClick={openVoice}
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
         </IonButton>
-        <IonInput
+        <IonTextarea
+          rows={1}
+          autoGrow
+          enterkeyhint="send"
           className="chat-inp"
           aria-label={t("Escribe un mensaje…")}
           value={text}
-          disabled={uploading}
+          disabled={uploading || chatClearing}
           onIonInput={(e) => setText(e.detail.value ?? "")}
-          onKeyDown={(e) => e.key === "Enter" && send()}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
           placeholder={t("Escribe un mensaje…")}
         />
         <motion.span
@@ -611,14 +719,23 @@ export function ChatPage() {
         >
           <IonButton
             className="bt bt-round chat-send"
-            aria-label={t("Enviar")}
-            disabled={uploading || (!text.trim()&&!pendingImage)}
-            onClick={() => send()}
+            aria-label={chatGenerating ? t("Detener respuesta") : t("Enviar")}
+            disabled={chatClearing || uploading || (!chatGenerating && !text.trim() && !pendingImage)}
+            onClick={() => chatGenerating ? cancelChat() : send()}
           >
-            <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />
+            <IonIcon icon={chatGenerating ? stopIcon : sendIcon} style={{ fontSize: 20 }} />
           </IonButton>
         </motion.span>
       </div>
+      <IonAlert isOpen={clearConfirm} onDidDismiss={event => { setClearConfirm(false); if (event.detail.role === "destructive") void clearConversation(); }}
+        header={t("¿Limpiar conversación?")}
+        message={t("Se finalizará cualquier llamada y se eliminarán el historial y el contexto de Vita. Tus planes, resultados, documentos e historia clínica se conservan. Esta acción no se puede deshacer.")}
+        buttons={[{ text: t("Cancelar"), role: "cancel" }, { text: t("Limpiar conversación"), role: "destructive" }]} />
+      <IonAlert isOpen={clearError} onDidDismiss={event => { setClearError(false); if (event.detail.role === "retry") void clearConversation(); }}
+        header={t("No se pudo confirmar la limpieza")}
+        message={t("No pudimos confirmar el cierre de la llamada o el borrado en el servidor. Reintenta para comprobar y completar la limpieza.")}
+        buttons={[{ text: t("Cancelar"), role: "cancel" }, { text: t("Reintentar"), role: "retry" }]} />
+      <IonToast isOpen={clearSuccess} message={t("Conversación limpiada")} duration={2600} onDidDismiss={() => setClearSuccess(false)} />
       <IonActionSheet
         isOpen={attachSheetOpen}
         onDidDismiss={() => setAttachSheetOpen(false)}
