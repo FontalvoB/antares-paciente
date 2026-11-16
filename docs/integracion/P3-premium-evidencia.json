@@ -1,0 +1,2007 @@
+{
+  "baseline": "9c55475",
+  "generatedAt": "2026-11-16T00:30:51.777Z",
+  "tests": {
+    "files": 210,
+    "passed": 1710,
+    "failed": 0
+  },
+  "gates": [
+    {
+      "name": "test",
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "i18n",
+      "exitCode": 0
+    }
+  ],
+  "lint": {
+    "errors": 0,
+    "warnings": 27
+  },
+  "checks": 102,
+  "controlled": [
+    {
+      "lang": "es",
+      "width": 320,
+      "checks": [
+        "animo-solo-permite-guardar-sin-inventar-sueno",
+        "sueno-manual-validado-y-nota-opcional",
+        "rechazo-conserva-formulario-y-doble-toque-un-POST",
+        "contrato-emocional-fecha-origen-puntos-confirmados",
+        "audio-nativo-play-pausa-sin-saltos",
+        "velocidad-cambia-audio-real",
+        "temporizador-seleccionable",
+        "bajo-70-sin-premio",
+        "70-confirmado-no-corta-audio-un-POST",
+        "completado-conserva-controles-y-seek",
+        "pendiente-no-celebra",
+        "voz-cabecera-compositor-SOS-conservan-handlers",
+        "adjuntos-hoja-Ionic-Escape",
+        "feedback-HTTP-503-rollback-reintento-confirmado",
+        "IA-503-no-rompe-pantalla-ni-compositor",
+        "reduced-motion",
+        "chat-safe-area-compositor-y-SOS-separados"
+      ],
+      "pageErrors": [],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ],
+      "safeArea": {
+        "listBottom": 666,
+        "composerTop": 670,
+        "composerBottom": 730,
+        "sosTop": 744,
+        "navMargin": "34px"
+      },
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "4f1a3d38-7a31-48b5-92c8-391fcc44d54a",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "Dormí mejor."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "084f0049-518f-4e0e-92d6-cf44700ad845",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "Dormí mejor."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "podcast",
+          "clientRequestId": "63888694-6c83-49be-bb73-eb56d85717c5"
+        }
+      ],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "checks": [
+        "animo-solo-permite-guardar-sin-inventar-sueno",
+        "sueno-manual-validado-y-nota-opcional",
+        "rechazo-conserva-formulario-y-doble-toque-un-POST",
+        "contrato-emocional-fecha-origen-puntos-confirmados",
+        "audio-nativo-play-pausa-sin-saltos",
+        "velocidad-cambia-audio-real",
+        "temporizador-seleccionable",
+        "bajo-70-sin-premio",
+        "70-confirmado-no-corta-audio-un-POST",
+        "completado-conserva-controles-y-seek",
+        "pendiente-no-celebra",
+        "voz-cabecera-compositor-SOS-conservan-handlers",
+        "adjuntos-hoja-Ionic-Escape",
+        "feedback-HTTP-503-rollback-reintento-confirmado",
+        "IA-503-no-rompe-pantalla-ni-compositor",
+        "reduced-motion",
+        "chat-safe-area-compositor-y-SOS-separados"
+      ],
+      "pageErrors": [],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ],
+      "safeArea": {
+        "listBottom": 666,
+        "composerTop": 670,
+        "composerBottom": 730,
+        "sosTop": 744,
+        "navMargin": "34px"
+      },
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "1d649b2f-0524-4bcd-8ff9-dc922cf265f1",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "Dormí mejor."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "7661eaba-fabb-4f19-8fec-c04fde6b9d50",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "Dormí mejor."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "podcast",
+          "clientRequestId": "0f6a490a-60a3-4d20-9733-e7fb9282ca79"
+        }
+      ],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "checks": [
+        "animo-solo-permite-guardar-sin-inventar-sueno",
+        "sueno-manual-validado-y-nota-opcional",
+        "rechazo-conserva-formulario-y-doble-toque-un-POST",
+        "contrato-emocional-fecha-origen-puntos-confirmados",
+        "audio-nativo-play-pausa-sin-saltos",
+        "velocidad-cambia-audio-real",
+        "temporizador-seleccionable",
+        "bajo-70-sin-premio",
+        "70-confirmado-no-corta-audio-un-POST",
+        "completado-conserva-controles-y-seek",
+        "pendiente-no-celebra",
+        "voz-cabecera-compositor-SOS-conservan-handlers",
+        "adjuntos-hoja-Ionic-Escape",
+        "feedback-HTTP-503-rollback-reintento-confirmado",
+        "IA-503-no-rompe-pantalla-ni-compositor",
+        "reduced-motion",
+        "chat-safe-area-compositor-y-SOS-separados"
+      ],
+      "pageErrors": [],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ],
+      "safeArea": {
+        "listBottom": 666,
+        "composerTop": 670,
+        "composerBottom": 730,
+        "sosTop": 744,
+        "navMargin": "34px"
+      },
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "8a483cf2-d18a-4923-96e6-13be6064e92b",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "Dormí mejor."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "6575e5f6-64fe-4f27-aec1-c01470a35f8d",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "Dormí mejor."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "podcast",
+          "clientRequestId": "97287f19-7480-4004-b117-ebb0540108e7"
+        }
+      ],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat",
+          "language": "es"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "checks": [
+        "animo-solo-permite-guardar-sin-inventar-sueno",
+        "sueno-manual-validado-y-nota-opcional",
+        "rechazo-conserva-formulario-y-doble-toque-un-POST",
+        "contrato-emocional-fecha-origen-puntos-confirmados",
+        "audio-nativo-play-pausa-sin-saltos",
+        "velocidad-cambia-audio-real",
+        "temporizador-seleccionable",
+        "bajo-70-sin-premio",
+        "70-confirmado-no-corta-audio-un-POST",
+        "completado-conserva-controles-y-seek",
+        "pendiente-no-celebra",
+        "voz-cabecera-compositor-SOS-conservan-handlers",
+        "adjuntos-hoja-Ionic-Escape",
+        "feedback-HTTP-503-rollback-reintento-confirmado",
+        "IA-503-no-rompe-pantalla-ni-compositor",
+        "reduced-motion",
+        "chat-safe-area-compositor-y-SOS-separados"
+      ],
+      "pageErrors": [],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ],
+      "safeArea": {
+        "listBottom": 666,
+        "composerTop": 670,
+        "composerBottom": 730,
+        "sosTop": 744,
+        "navMargin": "34px"
+      },
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "97968d58-1e0b-4020-b5f5-c9f5571d4643",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "I slept better."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "fbf37b69-397c-4837-b309-1ab1ffac014c",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "I slept better."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "podcast",
+          "clientRequestId": "20c56936-6534-4862-b148-68dd8695abcc"
+        }
+      ],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "checks": [
+        "animo-solo-permite-guardar-sin-inventar-sueno",
+        "sueno-manual-validado-y-nota-opcional",
+        "rechazo-conserva-formulario-y-doble-toque-un-POST",
+        "contrato-emocional-fecha-origen-puntos-confirmados",
+        "audio-nativo-play-pausa-sin-saltos",
+        "velocidad-cambia-audio-real",
+        "temporizador-seleccionable",
+        "bajo-70-sin-premio",
+        "70-confirmado-no-corta-audio-un-POST",
+        "completado-conserva-controles-y-seek",
+        "pendiente-no-celebra",
+        "voz-cabecera-compositor-SOS-conservan-handlers",
+        "adjuntos-hoja-Ionic-Escape",
+        "feedback-HTTP-503-rollback-reintento-confirmado",
+        "IA-503-no-rompe-pantalla-ni-compositor",
+        "reduced-motion",
+        "chat-safe-area-compositor-y-SOS-separados"
+      ],
+      "pageErrors": [],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ],
+      "safeArea": {
+        "listBottom": 666,
+        "composerTop": 670,
+        "composerBottom": 730,
+        "sosTop": 744,
+        "navMargin": "34px"
+      },
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "86d590d0-9b62-4eb4-afcb-44cb13c2081f",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "I slept better."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "c9edd6a9-6cfa-4f56-972a-4931fcfcc223",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "I slept better."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "podcast",
+          "clientRequestId": "ad73c5cf-6dae-4b46-a0e0-4607c25701d6"
+        }
+      ],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "checks": [
+        "animo-solo-permite-guardar-sin-inventar-sueno",
+        "sueno-manual-validado-y-nota-opcional",
+        "rechazo-conserva-formulario-y-doble-toque-un-POST",
+        "contrato-emocional-fecha-origen-puntos-confirmados",
+        "audio-nativo-play-pausa-sin-saltos",
+        "velocidad-cambia-audio-real",
+        "temporizador-seleccionable",
+        "bajo-70-sin-premio",
+        "70-confirmado-no-corta-audio-un-POST",
+        "completado-conserva-controles-y-seek",
+        "pendiente-no-celebra",
+        "voz-cabecera-compositor-SOS-conservan-handlers",
+        "adjuntos-hoja-Ionic-Escape",
+        "feedback-HTTP-503-rollback-reintento-confirmado",
+        "IA-503-no-rompe-pantalla-ni-compositor",
+        "reduced-motion",
+        "chat-safe-area-compositor-y-SOS-separados"
+      ],
+      "pageErrors": [],
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ],
+      "safeArea": {
+        "listBottom": 666,
+        "composerTop": 670,
+        "composerBottom": 730,
+        "sosTop": 744,
+        "navMargin": "34px"
+      },
+      "requests": [
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "151abc62-d725-4d97-a9bf-3f0f4a0f3a63",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "I slept better."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "emocional",
+          "clientRequestId": "fbb84c7c-97a4-4097-b2ec-f67254cf0369",
+          "moodScore": 4,
+          "barriers": "",
+          "emotional": {
+            "sleepMinutes": 450,
+            "sleepNightDate": "2026-11-15",
+            "sleepSource": "manual",
+            "notes": "I slept better."
+          }
+        },
+        {
+          "enrollmentId": "11111111-1111-4111-8111-111111111111",
+          "localDate": "2026-11-15",
+          "taskCode": "podcast",
+          "clientRequestId": "b8c92e2c-ea70-411f-9e1c-2cd7d6e1e07f"
+        }
+      ],
+      "http": [
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/program/tasks/complete",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/program/me/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat/feedback",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chat",
+          "language": "en"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ]
+    }
+  ],
+  "nav": [
+    {
+      "lang": "es",
+      "width": 320,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.5,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.5
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.625
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 740.046875,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 718.046875
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.90625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.90625
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.625
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "readingBottom": 764,
+      "navTop": 816,
+      "sosTop": 766,
+      "lastCardBottom": 739.65625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 742,
+        "sosTop": 744,
+        "lastCardBottom": 717.65625
+      }
+    }
+  ],
+  "runtime": {
+    "stubs": false,
+    "cases": [
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "chat"
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "chat"
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "chat"
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "chat"
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "chat"
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "chat"
+      }
+    ],
+    "clinicalWrites": [],
+    "pageErrors": [],
+    "protectedBefore": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    },
+    "protectedAfter": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    }
+  },
+  "images": [
+    {
+      "file": "before/en-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f5c198ca93676b4f8899a2303c28db065e5efccd3cbc38b0acadefbc6fddc8ac"
+    },
+    {
+      "file": "before/en-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "71de26a04cfecea55a76776ddc827cc5bd9f6645863dde471eaf691375ca3f49"
+    },
+    {
+      "file": "before/en-1440-podcast-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d8495cef3066e0da08df8e2205ecd6374c0cf6b26064d5390079618d2eb8dfce"
+    },
+    {
+      "file": "before/en-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "07ec96301dd098975b98ad42efaf9c3cb959d57c21f3e65213d545424400c0ec"
+    },
+    {
+      "file": "before/en-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "68f6e940d31247e8c2615b3e6729ae38926169a6cdb5d0061a13f3f861df9102"
+    },
+    {
+      "file": "before/en-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "91bdfafb600ea6cb1ec67fe50670aa10f1fe2a8e6eb6d2234cbca128778e1971"
+    },
+    {
+      "file": "before/en-320-podcast-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "bdf05866effcfc067b34c9a3081d97ea91bad81d350de9aa7319d8bd2052c6e4"
+    },
+    {
+      "file": "before/en-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "8f4c45fc19fd574f09de4b78dd1faf777c9a7b47a48a836dccfb9bbbbe707fc6"
+    },
+    {
+      "file": "before/en-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e8a0315696c54c16d6427f52f851a2a5403fe9f9b7d2d5a450a20356e1c36c62"
+    },
+    {
+      "file": "before/en-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "3f5a0f7eb112068d1120f9e26eff4963c8af7b310d0f5215cd6642be1e230dfa"
+    },
+    {
+      "file": "before/en-390-podcast-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "fa64f9e09c62eb89061563e3d968eb12a5f9d7af2b61b749a887248d6246ea83"
+    },
+    {
+      "file": "before/en-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "a155bfef0c30d12cf363365e0e7f33a3f156baf97b4d36a18e23a936c72dfd6c"
+    },
+    {
+      "file": "before/es-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "fe326495469fd88bfd7d35f7a029e9ef204ddd229d9bbefb47f49fe66e409e88"
+    },
+    {
+      "file": "before/es-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "60c87bab94de2db2044e1405dcbf844c820f765ae6e8ed35f4ab5670261e6702"
+    },
+    {
+      "file": "before/es-1440-podcast-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4ec882aed36ec5da8bd427d936003a8bce6e7bb25c836a2ab6e017f1a902c4ad"
+    },
+    {
+      "file": "before/es-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9bd442a59da8b13b90211d7f6a6ba2f1aabbe552b87aa0248f87ec037e47eba8"
+    },
+    {
+      "file": "before/es-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "84a0f4d683800938a5ebb27f0c5bc02d2cf6d879904d3e86586cd83420502c11"
+    },
+    {
+      "file": "before/es-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "2e0a9d146a272f931eb383731a4869fbc6bc4923c6685f38b7b4d1abc3aac7e3"
+    },
+    {
+      "file": "before/es-320-podcast-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "44fa5d62bd9c312ac6b5f4a4ccf47d59f298293e25692e902220157f4f7e38e4"
+    },
+    {
+      "file": "before/es-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "6382fcea2297af8ea5028127091e59b6148dbb59f77feebce817be1b2b953a51"
+    },
+    {
+      "file": "before/es-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "507ac5560e32b553266f8ef5dbc23b02e0c5714f172b2e67c20dc4f8ffb92c17"
+    },
+    {
+      "file": "before/es-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "8c09a709234de02c2fb9b6c7aaabcb19fc9bef37299e930ecec6b3a0e67a6a02"
+    },
+    {
+      "file": "before/es-390-podcast-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e714b12583ea549fd7e4d82e910d95186da3eb10cd7f5f4ee76dd9d413450085"
+    },
+    {
+      "file": "before/es-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "2260dcf901e0118dbf55148d525a97b167125f9b791aa9301be9fc2ddfd0765a"
+    },
+    {
+      "file": "after/en-1440-chat-ia-caida.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e7d7c27fb39664821100e6d15c0a647e772941e855e8f6405f564f5ca15e7519"
+    },
+    {
+      "file": "after/en-1440-chat-reduced-motion.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "776a089cfd2a1a69efa5dc0979a41da0c5507905c434532b5350f8c98cc2b8c1"
+    },
+    {
+      "file": "after/en-1440-chat-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e60998f346a3871fa688ba50c7e1088cc84626f531a2c87031e55312349abbe1"
+    },
+    {
+      "file": "after/en-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "13715d204e5175fd28c136d840940ccd6f6b6a5c1f22447ef92d8f107cb9cebc"
+    },
+    {
+      "file": "after/en-1440-emocional-detalle-inicio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "39087d8bd00b84bb331783fbf0021a091877152197c4fc1cbdb0b4e765c9e790"
+    },
+    {
+      "file": "after/en-1440-emocional-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a583b8133576b11e371cc48ac9ee9c06dd009d83b92f88a80babf77e487475dd"
+    },
+    {
+      "file": "after/en-1440-emocional-guardada.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5b900434d1f3371791ef1c9b0bd7bcdc01f0ad851d31972183fa040d3be282ba"
+    },
+    {
+      "file": "after/en-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5a0972ab7ff5d16c1b205c72e9a854336b665c01cc72a56a51dcf391106d5f01"
+    },
+    {
+      "file": "after/en-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "85325d5125f407eddd0193eb128b2da87b962f7daa262a68bbc46bda9f388f26"
+    },
+    {
+      "file": "after/en-1440-hoy-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "25d621bd051cb17c0afb3832e585f3ff5eb6332eb682ebf42120f31002e31388"
+    },
+    {
+      "file": "after/en-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "13b2b8f7c4b0e1d39546f034bc0ce6acc376488fb6266eb1f4991484d5596916"
+    },
+    {
+      "file": "after/en-1440-podcast-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "37dc7463e58a6583af51454693d0db400b39985c82edbe881a72409cea8f910d"
+    },
+    {
+      "file": "after/en-1440-podcast-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "fb0d867d9732ecbd743aef3b9106df83aed11e435dade41dfa82a7db7e6afbe3"
+    },
+    {
+      "file": "after/en-1440-podcast-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2b743f3b2b6fc9aec0b31eff43103ab18027d4baed78c8ec2c56e2e100390132"
+    },
+    {
+      "file": "after/en-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0d04ea354db928ca2ed3e28df4b0cbfc310f92aa64dcf524474311907f211f26"
+    },
+    {
+      "file": "after/en-320-chat-ia-caida.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c3caef76fd0e24276e084e8d97422101c0091b0b7be4310c17b19da7256b40f9"
+    },
+    {
+      "file": "after/en-320-chat-reduced-motion.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "36a8b75950096c6dcd7e571da5c06e8caaace88907c7fba10576e20694e2883c"
+    },
+    {
+      "file": "after/en-320-chat-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "a55162a9226b34e0703f76711209fde71a4636b2ae280e25c6fa98c887da0004"
+    },
+    {
+      "file": "after/en-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "280f8fe0b7015cd4b3f072c82a0d06875c01f434bbc8496278126e26d3a47614"
+    },
+    {
+      "file": "after/en-320-emocional-detalle-inicio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "faf65c8df648064ec51bcf832ebdd958e3856094840b7423be270c6b766f7352"
+    },
+    {
+      "file": "after/en-320-emocional-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "95cc9c60542ef3dd2365389c462b249b034957718319c725feb57de71feee328"
+    },
+    {
+      "file": "after/en-320-emocional-guardada.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "4aed06046510507d95ab4769f94472b172ffaf8225ee37bfdbecef1c9c560fcc"
+    },
+    {
+      "file": "after/en-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "36e3e45e510c62aac4c7c9571389707ad17f66cd50c80fba9068ae139d242c0d"
+    },
+    {
+      "file": "after/en-320-hoy-dock.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9d6afa9e75c273b9314b203112e1966c746d59ec550a500d72ea4db53779face"
+    },
+    {
+      "file": "after/en-320-hoy-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "424ec21904cf0b652120d8599bdfdb185a78ee0f2b14ab4e931862b6edb0477e"
+    },
+    {
+      "file": "after/en-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "65162215f675cf7873164b8e9b30e2636e44a9e77aae162cd4624561462f56c7"
+    },
+    {
+      "file": "after/en-320-podcast-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "ce85ee6df176b937f72dd4eb300f343d07d90af58d2029460dbd271e1d934a2a"
+    },
+    {
+      "file": "after/en-320-podcast-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c9857c0ee7fbf36d91a806a411cb740be721c036399d643c88139f79a3d06c84"
+    },
+    {
+      "file": "after/en-320-podcast-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "7d1154cebac9e1221c4368200a2dbe6aa8ab63189ef0ea1ac7c199be5a45c19f"
+    },
+    {
+      "file": "after/en-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "fa490536e3754af067896863ece30149483f360cd36ada0edba95afcb4b04e55"
+    },
+    {
+      "file": "after/en-390-chat-ia-caida.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "66dfbea47d37eebec906713a7c28b372912a9b8303d907469f9a911007981dbf"
+    },
+    {
+      "file": "after/en-390-chat-reduced-motion.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d43be58fbbc6f7a66377e34f86f7cae2760fb25553b871bbac562d61e6b8a858"
+    },
+    {
+      "file": "after/en-390-chat-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c54d274fc623d23e1c7911d16b45d2295d6f2b07a9172c116e66b3b6b983e48c"
+    },
+    {
+      "file": "after/en-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "db09d23662a402e758356969d350eb388a324a7b15c64330fe6e29d8ae3fe70d"
+    },
+    {
+      "file": "after/en-390-emocional-detalle-inicio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "8d00991b6f9d907185b444687a6d68268ae37142ec69b3049964e1f8f20609ec"
+    },
+    {
+      "file": "after/en-390-emocional-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "b1e9a256f7970e3d7d795284350d656f4b51c9a35cbf4a8e84a2cf0a1289e3e7"
+    },
+    {
+      "file": "after/en-390-emocional-guardada.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d67703791fa97e2674608de32e71e603cc04818e66c338f75bd92fd6fd4ef505"
+    },
+    {
+      "file": "after/en-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "33e46cc627464dd77e1a7e87193c5221fd8e125521f6f2d814109a994bd0f47d"
+    },
+    {
+      "file": "after/en-390-hoy-dock.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c8745205fe935c58ceaa7773edb1c38d58e0eebbd91d28da181c591a65543cd7"
+    },
+    {
+      "file": "after/en-390-hoy-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "eab19a3a7aa51841a8b8fbd4d41cf40ca51afc5a085103d9b452a135eb746f39"
+    },
+    {
+      "file": "after/en-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "22a93fb81cd6f99cc77602156a3256bb7b53ce932c9f7325fb28dbb6080400a5"
+    },
+    {
+      "file": "after/en-390-podcast-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "f1d105cc6ea24a4f05688ffcffba37d6900021dba72a43a7929545e3b0fab075"
+    },
+    {
+      "file": "after/en-390-podcast-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "2ac338a2129b2f60a3c12320fa6e8bbc61e4fb59f37013f23c441d5f18d7e9f1"
+    },
+    {
+      "file": "after/en-390-podcast-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "1dc2ba59ecdc86c2340b7da4cdb1502e534e5d609801c3f07ce272bf1dbb3639"
+    },
+    {
+      "file": "after/en-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d8e020919566ae6524337858dcff6390fa031a79950663a8e692dc78d0536610"
+    },
+    {
+      "file": "after/es-1440-chat-ia-caida.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c98926ed96626e34c1e0bfb588ddba9d34740081e4931b6f535efa92f870553c"
+    },
+    {
+      "file": "after/es-1440-chat-reduced-motion.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "76e8d441c236a84fdf03519be921579e802f3d8d5ddccf053b07c56ea538ea70"
+    },
+    {
+      "file": "after/es-1440-chat-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2e8a94bf4f178a3926e3c30c00f2592dfe2b190ddeba52ea67c5914f94c40413"
+    },
+    {
+      "file": "after/es-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05a3537d3d87226e671e8e4cb2b810f78ab58e59d174680240bcbd5edf96586c"
+    },
+    {
+      "file": "after/es-1440-emocional-detalle-inicio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "234e694c7721f0abb71ccef9eea5dec82d80d1dd42cc9a62ca5cdfb2623b0f46"
+    },
+    {
+      "file": "after/es-1440-emocional-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a4b95379f384f4792db8f652775d930b736c227723106624a3e70d28e14c9811"
+    },
+    {
+      "file": "after/es-1440-emocional-guardada.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "dad1b4d72e3f15b97cbe51845a95586a72ecc27e00f795ce3219384256a95f3f"
+    },
+    {
+      "file": "after/es-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5999d204e6ac6374e490c347a52b5858bcc8115b95d5889323a782ddb8f760b8"
+    },
+    {
+      "file": "after/es-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6f534f99531e5eb37ea05960fa9abfe79d6ec8225b7350ad9035b4b2607103b5"
+    },
+    {
+      "file": "after/es-1440-hoy-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "32025000afafab4551827b58c8193f81004c14394ab214ee175d19a371ac1a61"
+    },
+    {
+      "file": "after/es-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "73ef189e5e786a7e97ae2a651ba369366673155b56559720d3e17ba8fb10584f"
+    },
+    {
+      "file": "after/es-1440-podcast-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f295979e177f9b74b3dbeb4926239bd6f30483a46e1b33519d9b0eca88fbbbf6"
+    },
+    {
+      "file": "after/es-1440-podcast-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "8ee2055cc1dea696faf2f0d0f6ceb6d09d1888cb7530b5b0e99a265c99cbb6a1"
+    },
+    {
+      "file": "after/es-1440-podcast-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f15fbc07afb8b392fade339c263d868f9dc88603a1e1d397a1a21e2ae286ecd7"
+    },
+    {
+      "file": "after/es-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1583fcb5add879362275c79131374af575cff56c004b3cda3ad23fbbae2338a6"
+    },
+    {
+      "file": "after/es-320-chat-ia-caida.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "fff3323b25d4d7abab76e188d69a85b28aaebaca8bcaad15adbcde68fa4586e4"
+    },
+    {
+      "file": "after/es-320-chat-reduced-motion.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9f8b20b5ca0f197321f952a6a35e3f90b2812a29b64267b2238ac5ff05f293d9"
+    },
+    {
+      "file": "after/es-320-chat-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "5c15ecd23493286c4a7c0cc1a6f3e421338de687cbc456af78db8f9a49ffaabb"
+    },
+    {
+      "file": "after/es-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "6d939fffeefd84ea8231dc5a2b2a69a35fe01b450414b47e388dbb9667896082"
+    },
+    {
+      "file": "after/es-320-emocional-detalle-inicio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "646aeba1a828572ee1e6c6954a6da4e67060d5219de609cb6b12afd73a237ea2"
+    },
+    {
+      "file": "after/es-320-emocional-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9579af2d7e232c8aa33909d92cd54403ebbb9d71b6d56780c791133718ecd706"
+    },
+    {
+      "file": "after/es-320-emocional-guardada.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "7460d21d156796d20f1405789fd4f1f596668fac20b221857ac8c6cd63fa5752"
+    },
+    {
+      "file": "after/es-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d20cb6c1cf465efc12d6b114ea8f6273de31eb4676733accd538ee0da7a5ea91"
+    },
+    {
+      "file": "after/es-320-hoy-dock.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "10fd14228f3515d44dc3be38457990e1a9199a2cad11179052b51874cfc925e7"
+    },
+    {
+      "file": "after/es-320-hoy-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "2ba5556fab17b05757b35d5c6515465ff6264ed808899308c31d042709947b2d"
+    },
+    {
+      "file": "after/es-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d0af6d1f4551fc12ad54949b2fbf5ec7d116ea4b4598e011f7223a5918198b20"
+    },
+    {
+      "file": "after/es-320-podcast-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "a15867eb0da84ec9b807acd178a8aad2a9ec077cf44852369e878ca3fe6af553"
+    },
+    {
+      "file": "after/es-320-podcast-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "53f12fcd12b04bcb0f4a9cc5f7900cd19da4c439f664905479897241a197921d"
+    },
+    {
+      "file": "after/es-320-podcast-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "abae494c51443feeb1ef06bc06d5a41b4acd018a475ec8f82f0b70d948e525f2"
+    },
+    {
+      "file": "after/es-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "304cca97b533bc24a67446c73a9851891e65d99e7577c0adb6fe57a061b05f27"
+    },
+    {
+      "file": "after/es-390-chat-ia-caida.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "384830793978114dd6e407eca5573e07d211757aa50994b97e2fd112ebee06d3"
+    },
+    {
+      "file": "after/es-390-chat-reduced-motion.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e5db7bc36c641b9b399d42956924e005be2b41889545a61a2c3816c4a1c3a431"
+    },
+    {
+      "file": "after/es-390-chat-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "a8aaf15a5328a6ba9fb733a3aab03f8bf8dadc60d76af02efba9423c5db55492"
+    },
+    {
+      "file": "after/es-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "5244b285a6302de510d3e08254a168373e557d4857138ec79496de8865657655"
+    },
+    {
+      "file": "after/es-390-emocional-detalle-inicio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "bd877095f06bacd0bff54af0673d9bdea710d34b59d62446fecbcaa8a203fef0"
+    },
+    {
+      "file": "after/es-390-emocional-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "92a86b2596e86c10b0d00924c365d316db6111f0f039499e418f70a4c001c8f4"
+    },
+    {
+      "file": "after/es-390-emocional-guardada.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "422084c364554bce85ac5ca11932d4f638cffb87e14a732229043264b2a0fb34"
+    },
+    {
+      "file": "after/es-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "55ac65718a6872897229f66022dd12a968ee512920d6fed29eecc14903f9e481"
+    },
+    {
+      "file": "after/es-390-hoy-dock.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ed856325dd09ee16635bc69b40b2883091ba6e9337d8c7a244f8676f1cfa4321"
+    },
+    {
+      "file": "after/es-390-hoy-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "9fd297db0255d96136704b4a5580b9898aae7e629c0fdb2f492afe17fd33e42d"
+    },
+    {
+      "file": "after/es-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "6321d24510907d9f3432a30a692598fd0a7ce3b45fc2c35b70999ade3d7f230b"
+    },
+    {
+      "file": "after/es-390-podcast-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "b29b392f2a99aab4dfd733a5fdd31e7315c708c2d91255b340dc4a5ccc0aed46"
+    },
+    {
+      "file": "after/es-390-podcast-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "4b4887025c81392d4b728cdd897f8f2e1a85358498d9a2007970a988c5c13cf8"
+    },
+    {
+      "file": "after/es-390-podcast-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "9349bfd829e1892950c9c06bc8e6870d1bc5821913ea15be2cc66ddf42c9c2f6"
+    },
+    {
+      "file": "after/es-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "5f826fd1182dc561e97c58022edc0b9e8706cc1eb1f5ed9da9afa9d171c07d40"
+    },
+    {
+      "file": "runtime/en-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d249a66da13f0514b6aaa9f12024a6471d79188c1f432db463cc107188237a5f"
+    },
+    {
+      "file": "runtime/en-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "31765998a27c354e136376f7670ae4c54eeba9e873ee52c4c0315a5b1e2e6c85"
+    },
+    {
+      "file": "runtime/en-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ada693fee4192666561edf3ad04314f8cc13ed9d53083c295417fbdfe3cd4113"
+    },
+    {
+      "file": "runtime/en-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "f0245bf224205285e3644e85cd93319bd5625a3efc97ccd9ad6a76134187d82f"
+    },
+    {
+      "file": "runtime/en-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "fa9291433f9783e32e01855a1bd5a276f282cb60e5b6fa99944b58a3544deb7d"
+    },
+    {
+      "file": "runtime/en-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "278edafbd7f4adc9934460d0f90b91c059197b8c7f8518837158a2b4a62fce64"
+    },
+    {
+      "file": "runtime/en-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "62189d34b8152cf24a96bcf875a505b31524e83b560d21e95074a98f3b5b2b0c"
+    },
+    {
+      "file": "runtime/en-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ff3d097bb00dbc9793632d8b7eb4fa7774b9bd85dc5f45d7255fa4dda695be46"
+    },
+    {
+      "file": "runtime/en-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ced62ba5d72dbd554dbc56d4d3a2407d91a5561ae6d17f5786d22378fb7c3fe8"
+    },
+    {
+      "file": "runtime/es-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "eca21fe5123606ede149cae3076ed6de0dd6426acbe810be9a06bb0dbc04d0d1"
+    },
+    {
+      "file": "runtime/es-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5bfca17886139f213d52e8800f7dea48fbc5c2e6074f6e3c84806d73609cad84"
+    },
+    {
+      "file": "runtime/es-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "7b16825c2749a4a34a06fbbe74e17eb5d155c204441887f52a37fd12d7c9d5a1"
+    },
+    {
+      "file": "runtime/es-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d4913264488fa3cd2a1ea0b367c40145af38bcc30622ab7ec8e0cce4ea5bdc33"
+    },
+    {
+      "file": "runtime/es-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "4c1ca2af4de32d29bdafb770bf3d69ead043bb3ab2fd886419dea46697150397"
+    },
+    {
+      "file": "runtime/es-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9a3b17d270684c90e18b5ed8d5a0341f3f36ab21e0645ed868501a87e5c991c2"
+    },
+    {
+      "file": "runtime/es-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e4ab9ca82ca9fcfba3b59b8b01aa3e1ad93894461bf11e11e819bb7856b27f58"
+    },
+    {
+      "file": "runtime/es-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "eac18212334277b70b78499b1bbe8248921fb7e8f603b42a01be84a387926f14"
+    },
+    {
+      "file": "runtime/es-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "544234d5fdea578d4a4b711d6656856861547b6e299250503cf0f0a0c9355dd1"
+    }
+  ],
+  "textContrast": [
+    {
+      "name": "navy/surface",
+      "foreground": "0b2a4a",
+      "background": "ffffff",
+      "ratio": 14.54
+    },
+    {
+      "name": "muted/background",
+      "foreground": "52677e",
+      "background": "f2f7fd",
+      "ratio": 5.42
+    },
+    {
+      "name": "white/action",
+      "foreground": "ffffff",
+      "background": "2c7da0",
+      "ratio": 4.62
+    },
+    {
+      "name": "on-dark/primary",
+      "foreground": "d4e4f6",
+      "background": "1d4e79",
+      "ratio": 6.71
+    },
+    {
+      "name": "success/surface",
+      "foreground": "2e7d6b",
+      "background": "ffffff",
+      "ratio": 4.93
+    },
+    {
+      "name": "error/surface",
+      "foreground": "b42318",
+      "background": "ffffff",
+      "ratio": 6.57
+    }
+  ]
+}

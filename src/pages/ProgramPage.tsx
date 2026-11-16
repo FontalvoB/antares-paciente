@@ -109,6 +109,9 @@ export function ProgramPage() {
   const [podPlaying, setPodPlaying] = useState(false);
   const [podProgress, setPodProgress] = useState(0);
   const [podDuration, setPodDuration] = useState<number | null>(null);
+  const [podRate,setPodRate]=useState(1);
+  const [podSleepMinutes,setPodSleepMinutes]=useState<number|null>(null);
+  const podCompletionForUrl=useRef<string|null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [exRunning, setExRunning] = useState(false);
@@ -364,7 +367,7 @@ export function ProgramPage() {
         emotional?: EmotionalAssessmentPayload | null;
       },
     ) => {
-      if (program[id] || completeTaskMutation.isPending || ((id === 'ejercicio'||id === 'nutraceutico')&&missionWriteInFlight.current) || (id === "ejercicio" && snapshot?.rest === true)) return;
+      if (program[id] || completeTaskMutation.isPending || ((['ejercicio','nutraceutico','podcast','emocional'].includes(id))&&missionWriteInFlight.current) || (id === "ejercicio" && snapshot?.rest === true)) return;
       setMissionError(null);
 
       // Fase 12 (offline-first): sin red se encola persistente el check-in
@@ -394,7 +397,7 @@ export function ProgramPage() {
               ? applyOptimistic(old, id as TaskCode, extra?.vitals ?? null)
               : old,
         );
-        if(id !== 'ejercicio' && id !== 'nutraceutico') setActive(null);
+        if(!['ejercicio','nutraceutico','podcast','emocional'].includes(id)) setActive(null);
         return;
       }
 
@@ -410,7 +413,7 @@ export function ProgramPage() {
       // el rollback del snapshot + el toast de error del hook ya muestran
       // la verdad.
       // Bloqueo sincrónico del doble toque; la identidad/idempotencia sigue en el hook existente.
-      if(id === 'ejercicio'||id === 'nutraceutico') missionWriteInFlight.current=true;
+      if(['ejercicio','nutraceutico','podcast','emocional'].includes(id)) missionWriteInFlight.current=true;
       completeTaskMutation.completeTask(
         {
           taskCode: id as TaskCode,
@@ -422,11 +425,11 @@ export function ProgramPage() {
         {
           onSuccess: (data) => {
             missionWriteInFlight.current=false;
-            const premiumMission=id === 'ejercicio'||id === 'nutraceutico';
+            const premiumMission=['ejercicio','nutraceutico','podcast','emocional'].includes(id);
             const awarded=premiumMission ? data.pointsAwarded : pts;
             const feedback=premiumMission ? t('Registro confirmado · +{pts} pts',{pts:String(awarded)}) : msg;
             const awardedBonus=premiumMission ? data.dailyBonusAwarded : willComplete ? bonusPts : 0;
-            if(id === 'ejercicio'||id === 'nutraceutico') {
+            if(['ejercicio','nutraceutico','podcast','emocional'].includes(id)) {
               setMissionReceipt({id,points:data.pointsAwarded,seconds:exActiveSeconds});
               if(id==='ejercicio')setExRunning(false);
             }
@@ -443,11 +446,11 @@ export function ProgramPage() {
               setTakenAt(new Date().toISOString());
             }
           },
-          onError: error => {missionWriteInFlight.current=false;if(id === 'ejercicio'||id === 'nutraceutico')setMissionError(localizedError(error,{t,lang},'No se pudo guardar el registro. Puedes volver a intentarlo.'));},
+          onError: error => {missionWriteInFlight.current=false;if(['ejercicio','nutraceutico','podcast','emocional'].includes(id))setMissionError(localizedError(error,{t,lang},'No se pudo guardar el registro. Puedes volver a intentarlo.'));},
         },
       );
 
-      if(id !== 'ejercicio' && id !== 'nutraceutico') setActive(null);
+      if(!['ejercicio','nutraceutico','podcast','emocional'].includes(id)) setActive(null);
     },
     [
       program,
@@ -544,9 +547,10 @@ export function ProgramPage() {
 
   // Stop audio and reset playing state when closing the task sheet or switching away from podcast
   useEffect(() => {
-    if (active !== "podcast" && audioRef.current) {
-      audioRef.current.pause();
+    if (active !== "podcast") {
+      audioRef.current?.pause();
       setPodPlaying(false);
+      setPodSleepMinutes(null);
     }
   }, [active]);
 
@@ -561,6 +565,9 @@ export function ProgramPage() {
     if (url && podProgressForUrl.current !== url) {
       setPodProgress(0);
       setPodDuration(null);
+      setPodRate(1);
+      setPodSleepMinutes(null);
+      podCompletionForUrl.current=null;
       setPodPlaying(false);
       if (audioRef.current) {
         audioRef.current.pause();
@@ -570,6 +577,17 @@ export function ProgramPage() {
     }
     podProgressForUrl.current = url;
   }, [serverActiveTask?.content?.mediaUrl]);
+
+  const handlePodcastRate=()=>{const rates=[1,1.25,1.5,2];const next=rates[(rates.indexOf(podRate)+1)%rates.length];setPodRate(next);if(audioRef.current)audioRef.current.playbackRate=next};
+  useEffect(()=>{if(podSleepMinutes==null)return;const timer=window.setTimeout(()=>{audioRef.current?.pause();setPodSleepMinutes(null)},podSleepMinutes*60000);return()=>window.clearTimeout(timer)},[podSleepMinutes]);
+  // Mismo umbral real del reproductor, una petición por episodio. La respuesta
+  // confirma la misión sin cerrar la pantalla ni pausar el audio.
+  useEffect(()=>{
+    const url=serverActiveTask?.content?.mediaUrl;
+    if(active!=='podcast'||!url||!podPlaying||podProgress<.7||program.podcast||completeTaskMutation.isPending||podCompletionForUrl.current===url)return;
+    podCompletionForUrl.current=url;
+    finish('podcast',taskPts,t('Podcast escuchado · +{pts} pts',{pts:String(taskPts)}));
+  },[active,serverActiveTask?.content?.mediaUrl,podPlaying,podProgress,program.podcast,completeTaskMutation.isPending,finish,taskPts,t]);
 
   // Cleanup audio element on unmount
   useEffect(() => {
@@ -596,6 +614,7 @@ export function ProgramPage() {
         audioRef.current.pause();
       }
       const audio = new Audio(mediaUrl);
+      audio.playbackRate=podRate;
       // El archivo es la fuente del reloj, no la duración registrada en el catálogo.
       const updateDuration = () => {
         if (audioRef.current === audio && Number.isFinite(audio.duration) && audio.duration > 0) {
@@ -616,12 +635,14 @@ export function ProgramPage() {
         }
       };
       audio.onended = () => {
+        if(audioRef.current!==audio)return;
         setPodPlaying(false);
         setPodProgress(1);
       };
-      audio.onpause = () => setPodPlaying(false);
-      audio.onplay = () => setPodPlaying(true);
+      audio.onpause = () => {if(audioRef.current===audio)setPodPlaying(false)};
+      audio.onplay = () => {if(audioRef.current===audio)setPodPlaying(true)};
       audio.onerror = (e) => {
+        if(audioRef.current!==audio)return;
         console.error("Audio playback error", e);
         setPodPlaying(false);
         setAudioError("No se pudo reproducir el archivo de audio.");
@@ -635,13 +656,15 @@ export function ProgramPage() {
       if (podProgress >= 1 && audioRef.current) {
         audioRef.current.currentTime = 0;
       }
-      audioRef.current.play().catch((err) => {
+      const playingAudio=audioRef.current;
+      playingAudio.play().catch((err) => {
+        if(audioRef.current!==playingAudio)return;
         console.error("Failed to play podcast audio", err);
         setPodPlaying(false);
         setAudioError("Error al iniciar la reproducción de audio.");
       });
     }
-  }, [serverActiveTask?.content?.mediaUrl, podPlaying, podProgress]);
+  }, [serverActiveTask?.content?.mediaUrl, podPlaying, podProgress, podRate]);
 
   const handleSkipPodcast = useCallback(
     (delta: number) => {
@@ -731,7 +754,7 @@ export function ProgramPage() {
   }
 
   return (
-    <Screen hideNav={!!active} className={`pg-reference${active ? ` lesson-page lesson-${active}${active === 'ejercicio'||active === 'nutraceutico' ? ' p2-mission' : ''}${active === "vitals" ? " wearable-reference" : ""}` : ""}`}>
+    <Screen hideNav={!!active} className={`pg-reference${active ? ` lesson-page lesson-${active}${active === 'ejercicio'||active === 'nutraceutico' ? ' p2-mission' : ''}${active === 'podcast'||active === 'emocional' ? ' p3-mission' : ''}${active === "vitals" ? " wearable-reference" : ""}` : ""}`}>
       {!active && <Scroll className="pg-scroll">
         {productMessage && (
           <div
@@ -841,7 +864,7 @@ export function ProgramPage() {
               <div className={`lesson-sheet-head${active === "emocional" ? " lesson-sheet-head--emotional" : ""}`}>
                 <div>
                   {!(task.id === "ejercicio" && resting) && <div className="kicker" style={{ color: "var(--mu)" }}>
-                    {task.id !== 'ejercicio' && task.id !== 'nutraceutico' ? `${task.emoji} ` : ''}
+                    {!['ejercicio','nutraceutico','podcast','emocional'].includes(task.id) ? `${task.emoji} ` : ''}
                     {t("Misión · +{pts} pts", { pts: String(taskPts) })}
                   </div>}
                   <h2>{task.id === "ejercicio" && resting ? t("Descanso de ejercicio") : t(taskTitle)}</h2>
@@ -855,7 +878,7 @@ export function ProgramPage() {
                   <IonIcon slot="icon-only" icon={arrowBack} />
                 </IonButton>
               </div>
-              {program[task.id] && task.id !== "nutraceutico" && task.id !== 'ejercicio' && (
+              {program[task.id] && task.id !== "nutraceutico" && task.id !== 'ejercicio' && task.id !== 'podcast' && task.id !== 'emocional' && (
                 <div className="lesson-done-banner">
                   {t("Completada hoy · +{pts} pts", { pts: String(taskPts) })}
                 </div>
@@ -867,6 +890,15 @@ export function ProgramPage() {
               {task.id === "podcast" && (
                 <PodcastLesson
                   done={program.podcast}
+                  pending={serverActiveTask?.clientPending === true}
+                  saving={completeTaskMutation.isPending}
+                  awardedPoints={missionReceipt?.id === 'podcast' ? missionReceipt.points : null}
+                  errorMessage={missionError}
+                  playbackRate={podRate}
+                  onRate={handlePodcastRate}
+                  sleepMinutes={podSleepMinutes}
+                  onSleep={setPodSleepMinutes}
+                  onShare={()=>{queueCommunityShareDraft(user.id||user.cedula,t('Hoy escucho un momento de bienestar: {title}',{title:serverActiveTask?.content?.title??t('Podcast del día')}));navigate('com')}}
                   pts={taskPts}
                   title={serverActiveTask?.content?.title}
                   author={serverActiveTask?.content?.author}
@@ -992,6 +1024,8 @@ export function ProgramPage() {
                   localDate={snapshot?.todayLocalDate}
                   programWeek={activeProgramWeek}
                   saved={serverActiveTask?.emotionalAssessment}
+                  errorMessage={missionError}
+                  awardedPoints={missionReceipt?.id === 'emocional' ? missionReceipt.points : null}
                   pts={taskPts}
                   onComplete={({ mood, barrier, emotional }) => {
                     finish(

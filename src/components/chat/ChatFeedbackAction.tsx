@@ -15,7 +15,7 @@
 
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import { checkmarkCircle, thumbsDown, thumbsUp } from "ionicons/icons";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useT } from "../../i18n/I18nContext";
 import { sendChatFeedback } from "../../services/chat/chat-service";
 
@@ -41,11 +41,16 @@ export function ChatFeedbackAction({
   const t = useT();
   const [status, setStatus] = useState<Status>("idle");
   const [sentRating, setSentRating] = useState<number | null>(null);
+  const [failed,setFailed]=useState(false);
+  const inFlight=useRef(false);
 
   const sending = status === "sending";
 
   const rate = async (rating: number) => {
-    if (!executionId || !threadId || sending) return;
+    if (!executionId || !threadId || inFlight.current) return;
+    inFlight.current=true;
+    setFailed(false);
+    setSentRating(rating);
     setStatus("sending");
     try {
       await sendChatFeedback({ executionId, threadId, rating });
@@ -56,6 +61,10 @@ export function ChatFeedbackAction({
       // Fallo de red/backend: se vuelve a idle para permitir reintento
       // sin romper la conversación.
       setStatus("idle");
+      setSentRating(null);
+      setFailed(true);
+    } finally {
+      inFlight.current=false;
     }
   };
 
@@ -77,7 +86,8 @@ export function ChatFeedbackAction({
   return (
     <div className="chat-fb" style={sending ? { opacity: 0.7 } : undefined}>
       <span className="chat-fb-q">{t("¿Te resultó útil esta respuesta?")}</span>
-      {sending && sentRating == null ? (
+      {failed&&<span role="status" className="chat-fb-error">{t('No se pudo enviar la calificación. Puedes volver a intentarlo.')}</span>}
+      {sending ? (
         <IonSpinner
           name="crescent"
           aria-label={t("Enviando calificación")}
@@ -89,6 +99,7 @@ export function ChatFeedbackAction({
         size="small"
         className="chat-fb-btn"
         aria-label={t("Calificar respuesta como útil")}
+        aria-pressed={sentRating===RATING_UP?'true':'false'}
         disabled={sending}
         onClick={() => void rate(RATING_UP)}
       >
@@ -99,6 +110,7 @@ export function ChatFeedbackAction({
         size="small"
         className="chat-fb-btn"
         aria-label={t("Calificar respuesta como no útil")}
+        aria-pressed={sentRating===RATING_DOWN?'true':'false'}
         disabled={sending}
         onClick={() => void rate(RATING_DOWN)}
       >

@@ -3941,5 +3941,22 @@
   "Registro confirmado · +{pts} pts": "Registro confirmado · +{pts} pts",
   "Ver mis indicaciones de {exercise}": "Ver mis indicaciones de {exercise}",
   "Ver técnica y demostración de {exercise}": "Ver técnica y demostración de {exercise}",
-  "Ver demostración de {exercise}": "Ver demostración de {exercise}"
+  "Ver demostración de {exercise}": "Ver demostración de {exercise}",
+  "Elige tu ánimo y guarda. Lo demás es opcional.": "Elige tu ánimo y guarda. Lo demás es opcional.",
+  "Añadir detalle": "Añadir detalle",
+  "Opcional · sueño, estrés, motivación y notas": "Opcional · sueño, estrés, motivación y notas",
+  "Compartir podcast en la comunidad": "Compartir podcast en la comunidad",
+  "Velocidad de reproducción: {rate}×": "Velocidad de reproducción: {rate}×",
+  "Pausar en {minutes} minutos": "Pausar en {minutes} minutos",
+  "Temporizador de sueño": "Temporizador de sueño",
+  "Desactivar temporizador": "Desactivar temporizador",
+  "¡Misión completada!": "¡Misión completada!",
+  "Puedes seguir escuchando, sin límite.": "Puedes seguir escuchando, sin límite.",
+  "Escucha al menos el 70 %": "Escucha al menos el 70 %",
+  "{elapsed} s de {required} s necesarios": "{elapsed} s de {required} s necesarios",
+  "Hoy escucho un momento de bienestar: {title}": "Hoy escucho un momento de bienestar: {title}",
+  "Tu coach de salud y bienestar": "Tu coach de salud y bienestar",
+  "SOS · Botón de pánico": "SOS · Botón de pánico",
+  "No se pudo enviar la calificación. Puedes volver a intentarlo.": "No se pudo enviar la calificación. Puedes volver a intentarlo.",
+  "Volver al inicio": "Volver al inicio"
 }

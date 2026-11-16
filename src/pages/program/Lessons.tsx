@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
-  PodcastChapterDto,
   RecentVitalsDto,
   VitalsPayload,
 } from "../../services/program/types";
@@ -8,8 +7,6 @@ import {
   IonButton,
   IonIcon,
   IonInput,
-  IonChip,
-  IonRange,
   IonSpinner,
 } from "@ionic/react";
 import {
@@ -18,10 +15,6 @@ import {
   heart,
   footstepsOutline,
   moonOutline,
-  pause,
-  play,
-  playBack,
-  playForward,
   pulseOutline,
   scaleOutline,
   thermometerOutline,
@@ -30,7 +23,6 @@ import {
 import {
   VITAL_FIELDS,
 } from "../../data/program";
-import { MISSION_PHOTOS } from "../../data/missionPhotos";
 import { WatchIcon3D } from "../../components/icons3d";
 import { PageHeader } from "../../components/PageHeader";
 import logoIcon from "../../assets/LogoIndividual.png";
@@ -47,209 +39,10 @@ import {
   formatDateForDisplay,
   toLocalISODate,
 } from "../../utils/dates";
-import { useI18n, useT } from "../../i18n/I18nContext";
+import { useI18n } from "../../i18n/I18nContext";
 
-function mmss(sec: number) {
-  const s = Math.max(0, Math.floor(sec));
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-}
 
-/**
- * Estado honesto para lecciones SIN contenido del servidor (content == null,
- * contentUnavailable o arrays vacíos): nunca fabricar episodios, circuitos o
- * planes. Misma lección para podcast / nutrición / ejercicio.
- */
-function LessonUnavailable() {
-  const t = useT();
-  return (
-    <div className="lsn-stack">
-      <div className="lsn-unavailable">
-        <p>{t("Contenido no disponible aún · tu equipo lo está preparando")}</p>
-      </div>
-    </div>
-  );
-}
-
-export function PodcastLesson({
-  done,
-  pts,
-  title,
-  author,
-  description,
-  durationSecs,
-  mediaUrl,
-  coverUrl,
-  audioError,
-  chapters,
-  takeaways,
-  playing,
-  progress,
-  onToggle,
-  onSkip,
-  onComplete,
-  unavailable,
-  audioReady,
-}: {
-  done: boolean;
-  pts: number;
-  title?: string | null;
-  author?: string | null;
-  description?: string | null;
-  durationSecs?: number | null;
-  mediaUrl?: string | null;
-  coverUrl?: string | null;
-  audioError?: string | null;
-  chapters?: PodcastChapterDto[] | null;
-  takeaways?: string[] | null;
-  playing: boolean;
-  progress: number;
-  onToggle: () => void;
-  onSkip: (delta: number) => void;
-  onComplete: () => void;
-  unavailable?: boolean;
-  /** W1: el Audio del servidor ya existe (primer play hecho) → seek real. */
-  audioReady?: boolean;
-}) {
-  const t = useT();
-  // Player real SOLO con audio del servidor: sin content (o contentUnavailable)
-  // o sin mediaUrl no hay nada que reproducir — estado honesto, no fabricación.
-  if (unavailable || !mediaUrl) return <LessonUnavailable />;
-
-  // W1: antes del primer play no hay Audio que buscar — skip y capítulos se
-  // deshabilitan (sin no-op silencioso); el play es la puerta de entrada.
-  const seekDisabled = done || !audioReady;
-
-  // Portada: la del servidor si existe; si falla o no hay, la foto de la
-  // misión empaquetada — la lección nunca queda sin imagen.
-  const coverSrc = coverUrl || MISSION_PHOTOS.podcast;
-
-  const duration = durationSecs || 0;
-  const podTitle = title || "";
-  const podHost = author || "";
-  const podBlurb = description || "";
-  const podChapters =
-    chapters && chapters.length > 0
-      ? chapters
-          .filter((c) => Number.isFinite(c.atSeconds) && c.atSeconds >= 0 && typeof c.label === "string" && c.label.trim().length > 0)
-          .map((c) => ({ at: c.atSeconds, label: c.label }))
-          .sort((a, b) => a.at - b.at)
-      : [];
-  const podTakeaways = takeaways && takeaways.length > 0 ? takeaways : [];
-
-  const elapsed = progress * duration;
-  const chapter =
-    podChapters.length > 0
-      ? ([...podChapters].reverse().find((c) => elapsed >= c.at) ??
-        podChapters[0])
-      : null;
-
-  return (
-    <div className="lsn-stack podcast-player">
-      <div className="pod-editorial"><span>{t("UN MOMENTO PARA TI")}</span><IonChip>{t("Podcast del día")}</IonChip></div>
-      <div className="pod-cover">
-        <img
-          src={coverSrc}
-          alt=""
-          loading="lazy"
-          onError={(e) => {
-            const img = e.currentTarget;
-            if (img.dataset.fallback) return;
-            img.dataset.fallback = "1";
-            img.src = MISSION_PHOTOS.podcast;
-          }}
-        />
-      </div>
-      <div className="pod-stage">
-        <div className="pod-now">{chapter ? t(chapter.label) : ""}</div>
-        <div className="pod-times">
-          <span>{mmss(elapsed)}</span>
-          <span>{mmss(duration)}</span>
-        </div>
-        <IonRange min={0} max={1000} value={Math.round(progress * 1000)} disabled={seekDisabled}
-          aria-label={t("Posición del audio")} onIonChange={e => onSkip((Number(e.detail.value) / 1000 - progress) * duration)} />
-      </div>
-
-      <div className="pod-copy">
-        <strong>{t(podTitle)}</strong>
-        <span>{podHost}</span>
-        {duration > 0 && <small>{mmss(duration)} · {t("Escucha a tu ritmo")}</small>}
-        {mediaUrl && (
-          <span className="pod-stream-badge text-[10px] opacity-75">
-            ● {t("Audio en streaming")}
-          </span>
-        )}
-      </div>
-
-      {audioError && (
-        <div className="pod-error text-xs text-red-500 text-center py-1">
-          {t(audioError)}
-        </div>
-      )}
-
-      <div className="pod-transport">
-        <IonButton
-          fill="clear"
-          aria-label={t("Retroceder 15 segundos")}
-          onClick={() => onSkip(-15)}
-          disabled={seekDisabled}
-        >
-          <IonIcon slot="icon-only" icon={playBack} />
-        </IonButton>
-        <IonButton
-          className="bt bt-pur pod-play"
-          onClick={onToggle}
-          disabled={done}
-        >
-          <IonIcon icon={playing ? pause : play} slot="start" />
-          {playing
-            ? t("Pausar")
-            : progress >= 1
-              ? t("Repetir")
-              : t("Reproducir")}
-        </IonButton>
-        <IonButton
-          fill="clear"
-          aria-label={t("Adelantar 15 segundos")}
-          onClick={() => onSkip(15)}
-          disabled={seekDisabled}
-        >
-          <IonIcon slot="icon-only" icon={playForward} />
-        </IonButton>
-      </div>
-
-      {podBlurb && <section className="pod-about"><h3>{t("Sobre este episodio")}</h3><p>{t(podBlurb)}</p></section>}
-      {podChapters.length > 0 && (
-        <section className="pod-chapters"><h3>{t("Capítulos")}</h3>
-          {podChapters.map((c, i) => (
-            <IonButton key={`${c.at}-${i}`} fill="clear" className={`pod-chapter ${chapter === c ? "on" : ""}`}
-              onClick={() => onSkip(c.at - elapsed)} disabled={seekDisabled}>
-              <span className="pod-chapter-number">{String(i + 1).padStart(2, '0')}</span>
-              <span>{t(c.label)}</span><time>{mmss(c.at)}</time>
-            </IonButton>
-          ))}
-        </section>
-      )}
-      {podTakeaways.length > 0 && <section className="pod-about"><h3>{t("Ideas para llevar contigo")}</h3>
-        <ul>{podTakeaways.map(tip => <li key={tip}>{t(tip)}</li>)}</ul>
-      </section>}
-
-      {!done && (
-        <IonButton
-          expand="block"
-          className="bt bt-primary"
-          disabled={progress < 0.7}
-          onClick={onComplete}
-        >
-          {progress < 0.7
-            ? t("Escucha el 70% · vas {pct}%", {
-                pct: String(Math.round(progress * 100)),
-              })
-            : t("Marcar escuchado · +{pts} pts", { pts: String(pts) })}
-        </IonButton>
-      )}
-    </div>
-  );
-}
+export { PodcastLesson } from './PodcastLesson';
 
 export function VitalsLesson({
   done,

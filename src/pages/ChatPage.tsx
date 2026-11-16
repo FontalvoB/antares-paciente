@@ -16,7 +16,7 @@ import {
   documentOutline,
   imagesOutline,
   informationCircle,
-  medkit,
+  arrowBackOutline,
   mic,
   nutritionOutline,
   calendarOutline,
@@ -24,13 +24,12 @@ import {
   trendingUpOutline,
   send as sendIcon,
 } from "ionicons/icons";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import { Screen } from "../components/Screen";
 import vitaPortrait from "../assets/vita-coach.png";
@@ -41,7 +40,6 @@ import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
 import { captureChatImage } from "../services/media/camera-service";
 import { localizedError } from "../utils/localizedError";
-import logoIcon from "../assets/LogoIndividual.png";
 import {
   canShowChatAction,
   chatTextForDisplay,
@@ -61,6 +59,7 @@ const PAGE_SIZE = 10;
 const SCROLL_TOP_THRESHOLD = 48;
 
 export function ChatPage() {
+  const reducedMotion=useReducedMotion();
   const {
     chat,
     sendChat,
@@ -158,8 +157,8 @@ export function ChatPage() {
       prependingRef.current = false;
       return;
     }
-    end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chat.length, uploading]);
+    end.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+  }, [chat.length, uploading, reducedMotion]);
 
   // Un hilo nuevo arranca siempre con la última página y sin paginación previa.
   useEffect(() => {
@@ -345,37 +344,10 @@ export function ChatPage() {
 
   return (
     <Screen className="chat-kb chat-reference">
-      <header className="chat-premium-header">
-        <div className="chat-brand-lockup">
-          <img src={logoIcon} alt="" className="chat-brand-logo" />
-          <div>
-            <span className="chat-brand-name">COPP-ADRESD<sup>®</sup></span>
-            <span className="chat-brand-kicker">COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</span>
-          </div>
-        </div>
-        <div className="chat-hero-copy">
-          <div>
-            <h1 className="display">
-              {t("Hola, {nombre} 👋", { nombre: user.nombre.split(" ")[0] || t("Paciente") })}
-            </h1>
-            <p className="chat-welcome-sub">{t("Soy Vita, tu coach asignada")}</p>
-            <p>{t("Tu asistente de IA en salud y bienestar")}</p>
-          </div>
-          <IonButton
-            className="bt bt-round chat-panic"
-            style={
-              {
-                "--background": "var(--red-l)",
-                "--color": "var(--panic)",
-              } as CSSProperties
-            }
-            aria-label={t("Botón de pánico")}
-            onClick={openPanic}
-          >
-            <IonIcon icon={medkit} />
-          </IonButton>
-        </div>
-        <img src={vitaPortrait} alt={t("Vita, tu coach de bienestar")} className="chat-header-mascot vita-chat-portrait" />
+      <header className="chat-premium-header p3-vita-header">
+        <IonButton fill="clear" className="p3-chat-back" aria-label={t('Volver al inicio')} onClick={()=>navigate('home')}><IonIcon icon={arrowBackOutline} slot="icon-only"/></IonButton>
+        <div className="p3-vita-identity"><img src={vitaPortrait} alt="" className="p3-vita-avatar"/><div><h1>Vita</h1><p>{t('Tu coach de salud y bienestar')}</p></div></div>
+        <div className="p3-vita-actions"><IonButton fill="clear" className="p3-vita-voice" aria-label={t('Agente de voz')} onClick={openVoice}><IonIcon icon={mic} slot="icon-only"/></IonButton><IonButton fill="clear" className="chat-panic" aria-label={t('SOS · Botón de pánico')} onClick={openPanic}>SOS</IonButton></div>
       </header>
       <div
         className="chip-scroll chat-quick-actions"
@@ -617,13 +589,13 @@ export function ChatPage() {
         />
         <motion.span
           className="chat-send-wrap"
-          whileTap={{ scale: 0.95 }}
+          whileTap={reducedMotion ? undefined : { scale: 0.95 }}
           transition={{ duration: 0.15 }}
         >
           <IonButton
             className="bt bt-round chat-send"
             aria-label={t("Enviar")}
-            disabled={uploading}
+            disabled={uploading || (!text.trim()&&!pendingImage)}
             onClick={() => send()}
           >
             <IonIcon icon={sendIcon} style={{ fontSize: 20 }} />

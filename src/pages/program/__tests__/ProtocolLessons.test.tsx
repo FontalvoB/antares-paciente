@@ -14,6 +14,10 @@ vi.mock('../../../i18n/I18nContext', () => {
 vi.mock('@ionic/react', () => ({
   IonButton: ({ children, disabled, onClick, ...props }: { children: ReactNode; disabled?: boolean; onClick?: () => void; 'aria-pressed'?: boolean; 'aria-label'?: string }) => <button disabled={disabled} onClick={onClick} aria-pressed={props['aria-pressed']} aria-label={props['aria-label']}>{children}</button>,
   IonIcon: () => null,
+  IonAccordionGroup: ({children}:{children:ReactNode})=><div>{children}</div>,
+  IonAccordion: ({children}:{children:ReactNode})=><div>{children}</div>,
+  IonItem: ({children}:{children:ReactNode})=><div>{children}</div>,
+  IonLabel: ({children}:{children:ReactNode})=><div>{children}</div>,
   IonContent: ({children}:{children:ReactNode}) => <div>{children}</div>,
   IonModal: ({children,isOpen}:{children:ReactNode;isOpen:boolean}) => isOpen ? <div role="dialog">{children}</div> : null,
   IonToggle: ({children,checked,onIonChange}:{children:ReactNode;checked:boolean;onIonChange:(event:{detail:{checked:boolean}})=>void}) => <label>{children}<input type="checkbox" checked={checked} onChange={event=>onIonChange({detail:{checked:event.target.checked}})}/></label>,
@@ -97,7 +101,9 @@ describe('evaluación emocional con datos reales', () => {
     render(<EmotionalLesson done={false} pts={50} onComplete={save} />)
     expect(screen.queryByText('7 h 07 min')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Bien' }))
-    expect((screen.getByRole('button', { name: /Guardar evaluación/ }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: /Guardar evaluación/ }) as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: /Guardar evaluación/ }))
+    expect(save.mock.calls[0][0].emotional).toEqual({sleepSource:'unknown'})
   })
   it('muestra las respuestas que devolvió el servidor sin fabricar un resumen pendiente', () => {
     const saved = { moodScore: 4, answers: { sleepMinutes: 427, sleepSource: 'wearable' as const, stressScore: 3, sleepQuality: 'fair' as const } }

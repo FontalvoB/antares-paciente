@@ -34,7 +34,9 @@ vi.mock('@ionic/react', () => {
     IonTextarea: ({ label, value, className, onIonInput }: { label: string; value: string; className?: string; onIonInput: (event: { detail: { value: string } }) => void }) => <label>{label}<textarea className={className} value={value} onChange={event => onIonInput({ detail: { value: event.target.value } })} /></label>,
     IonRange: ({ value, 'aria-label': label }: { value: number; 'aria-label'?: string }) => <input aria-label={label} type="range" value={value} readOnly />,
     IonIcon: () => null, IonSpinner: () => <span role="status" />,
-    IonModal: () => null, IonProgressBar: () => null, IonContent: Wrap,
+    IonModal: () => null,
+    IonActionSheet: ({isOpen,buttons}:{isOpen:boolean;buttons:{text:string;handler?:()=>void}[]})=>isOpen?<div>{buttons.map(button=><button key={button.text} onClick={button.handler}>{button.text}</button>)}</div>:null,
+    IonProgressBar: () => null, IonContent: Wrap,
     IonChip: Wrap, IonSegment: Wrap, IonSegmentButton: Wrap, IonAccordionGroup: Wrap, IonAccordion: Wrap, IonItem: Wrap, IonLabel: Wrap, IonCard: Wrap, IonCardContent: Wrap, IonSkeletonText: Wrap,
   }
 })
@@ -172,6 +174,29 @@ describe('actual ProgramPage during language refresh', () => {
     expect(view.container.querySelector('[role=timer]')?.textContent).toBe('00:09')
     expect(view.container.querySelector('.p2-active-station h2')?.textContent).toBe('Second station')
   })
+  it('requests completion once at 70 percent and leaves the audio playing',()=>{
+    const audios:{currentTime:number;ontimeupdate?:()=>void;pause:ReturnType<typeof vi.fn>}[]=[];
+    vi.stubGlobal('Audio',class {
+      src:string;currentTime=0;duration=100;playbackRate=1;ontimeupdate?:()=>void;onplay?:()=>void;
+      pause=vi.fn();play=vi.fn(async()=>this.onplay?.());
+      constructor(url:string){this.src=url;audios.push(this)}
+    });
+    const view=setup('podcast');fireEvent.click(view.container.querySelector('.pod-play')!);const audio=audios[0];
+    act(()=>{audio.currentTime=69;audio.ontimeupdate?.()});expect(state.complete).not.toHaveBeenCalled();
+    act(()=>{audio.currentTime=70;audio.ontimeupdate?.()});expect(state.complete).toHaveBeenCalledTimes(1);
+    act(()=>{audio.currentTime=90;audio.ontimeupdate?.()});expect(state.complete).toHaveBeenCalledTimes(1);expect(audio.pause).not.toHaveBeenCalled();
+  });
+  it('applies speed selected before play and pauses when the sleep timer expires',()=>{
+    vi.useFakeTimers();const audios:{playbackRate:number;pause:ReturnType<typeof vi.fn>}[]=[];
+    vi.stubGlobal('Audio',class {
+      src:string;currentTime=0;duration=100;playbackRate=1;onplay?:()=>void;onpause?:()=>void;
+      pause=vi.fn(()=>this.onpause?.());play=vi.fn(async()=>this.onplay?.());
+      constructor(url:string){this.src=url;audios.push(this)}
+    });
+    const view=setup('podcast');fireEvent.click(screen.getByRole('button',{name:'Velocidad de reproducción: 1×'}));fireEvent.click(view.container.querySelector('.pod-play')!);
+    expect(audios[0].playbackRate).toBe(1.25);fireEvent.click(screen.getByRole('button',{name:'Temporizador de sueño'}));fireEvent.click(screen.getByRole('button',{name:'Pausar en 15 minutos'}));
+    act(()=>vi.advanceTimersByTime(15*60000-1));expect(audios[0].pause).not.toHaveBeenCalled();act(()=>vi.advanceTimersByTime(1));expect(audios[0].pause).toHaveBeenCalledTimes(1);
+  });
   it('preserves the same audio instance, playback and elapsed progress when the URL is unchanged', async () => {
     const audios: Array<{ src: string; currentTime: number; duration: number; pause: ReturnType<typeof vi.fn>; ontimeupdate?: () => void; onplay?: () => void }> = []
     vi.stubGlobal('Audio', class {
@@ -192,6 +217,6 @@ describe('actual ProgramPage during language refresh', () => {
     expect(audios).toHaveLength(1)
     expect(audio.pause).not.toHaveBeenCalled()
     expect(view.container.querySelector('.pod-times')?.textContent).toContain('00:40')
-    expect(view.container.querySelector('.pod-play')?.textContent).toContain('Pause')
+    expect(view.container.querySelector('.pod-play')?.getAttribute('aria-label')).toBe('Pause')
   })
 })

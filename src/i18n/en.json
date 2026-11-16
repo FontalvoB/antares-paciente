@@ -3941,5 +3941,22 @@
   "Registro confirmado · +{pts} pts": "Entry confirmed · +{pts} pts",
   "Ver mis indicaciones de {exercise}": "View my instructions for {exercise}",
   "Ver técnica y demostración de {exercise}": "View technique and demonstration for {exercise}",
-  "Ver demostración de {exercise}": "View demonstration of {exercise}"
+  "Ver demostración de {exercise}": "View demonstration of {exercise}",
+  "Elige tu ánimo y guarda. Lo demás es opcional.": "Choose your mood and save. Everything else is optional.",
+  "Añadir detalle": "Add detail",
+  "Opcional · sueño, estrés, motivación y notas": "Optional · sleep, stress, motivation and notes",
+  "Compartir podcast en la comunidad": "Share podcast with the community",
+  "Velocidad de reproducción: {rate}×": "Playback speed: {rate}×",
+  "Pausar en {minutes} minutos": "Pause in {minutes} minutes",
+  "Temporizador de sueño": "Sleep timer",
+  "Desactivar temporizador": "Turn off sleep timer",
+  "¡Misión completada!": "Mission completed!",
+  "Puedes seguir escuchando, sin límite.": "You can keep listening, without limits.",
+  "Escucha al menos el 70 %": "Listen to at least 70%",
+  "{elapsed} s de {required} s necesarios": "{elapsed} s of {required} s required",
+  "Hoy escucho un momento de bienestar: {title}": "Today I am listening to a moment of wellbeing: {title}",
+  "Tu coach de salud y bienestar": "Your health and wellbeing coach",
+  "SOS · Botón de pánico": "SOS · Panic button",
+  "No se pudo enviar la calificación. Puedes volver a intentarlo.": "Could not send your feedback. You can try again.",
+  "Volver al inicio": "Back to home"
 }

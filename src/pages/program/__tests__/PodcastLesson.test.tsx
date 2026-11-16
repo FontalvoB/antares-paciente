@@ -13,6 +13,7 @@ vi.mock('@ionic/react', () => ({
   IonSegment: () => <div />,
   IonSegmentButton: () => <button />,
   IonSpinner: () => <span />,
+  IonActionSheet: () => null,
   IonTextarea: () => <textarea />,
 }));
 afterEach(cleanup);
@@ -36,6 +37,14 @@ describe('PodcastLesson real media timing', () => {
   });
   it('enforces listening threshold before completion', () => {
     render(<PodcastLesson {...props} progress={0.69} />);
-    expect(screen.getByRole('button', { name: /Escucha el 70%/ }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: /Marcar escuchado/ })).toBeNull();
+    expect(screen.queryByText('¡Misión completada!')).toBeNull();
+  });
+  it('mantiene reproducción y búsqueda después del éxito confirmado',()=>{
+    render(<PodcastLesson {...props} done awardedPoints={0}/>);
+    expect(screen.getByRole('button',{name:'Reproducir'}).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button',{name:'Adelantar 15 segundos'}).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByText('¡Misión completada!')).toBeTruthy();
+    expect(screen.getByText(/\+0/)).toBeTruthy();
   });
 });
