@@ -13,6 +13,18 @@ export function useKeyboardInset(): void {
     let frame = 0;
     let settle = 0;
     const handles: Array<{ remove: () => void | Promise<void> }> = [];
+    const iosNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
+    // iOS (resize:none): WKWebView desplaza el contenido nativo, arriba y a la izquierda, para
+    // dejar visible el campo enfocado. La cabecera quedaba bajo la barra de estado y la app
+    // desalineada. El shell ya se ajusta con --app-viewport-*, así que ese desplazamiento sobra.
+    const resetNativeScroll = () => {
+      if (!iosNative) return;
+      const root = document.scrollingElement;
+      if (root && (root.scrollTop || root.scrollLeft)) root.scrollTo(0, 0);
+      for (const el of document.querySelectorAll<HTMLElement>(".app-stage, .app-shell")) {
+        if (el.scrollTop || el.scrollLeft) { el.scrollTop = 0; el.scrollLeft = 0; }
+      }
+    };
     const parentOf = (el: HTMLElement): HTMLElement | null => {
       if (el.parentElement) return el.parentElement;
       const tree = el.getRootNode();
@@ -43,6 +55,7 @@ export function useKeyboardInset(): void {
     };
     const update = () => {
       if (disposed) return;
+      resetNativeScroll();
       const layoutHeight = window.innerHeight;
       const atNormalScale = !viewport || Math.abs(viewport.scale - 1) < 0.01;
       const visualBottom = atNormalScale && viewport ? Math.min(layoutHeight, viewport.height + viewport.offsetTop) : layoutHeight;
@@ -67,6 +80,7 @@ export function useKeyboardInset(): void {
     const focusChanged = () => { queueMicrotask(update); };
     const orientationChanged = () => { fullHeight = window.innerHeight; nativeHeight = 0; update(); };
     window.addEventListener("resize", update);
+    window.addEventListener("scroll", resetNativeScroll, { passive: true });
     window.addEventListener("orientationchange", orientationChanged);
     viewport?.addEventListener("resize", update);
     viewport?.addEventListener("scroll", update);
@@ -80,6 +94,8 @@ export function useKeyboardInset(): void {
           else handles.push(handle);
         } catch { /* El viewport web sigue funcionando si el plugin no está disponible. */ }
       };
+      // Cinturón y tirantes: bloquea el scroll nativo (plugin: scrollEnabled=NO y contentOffset=0).
+      if (iosNative) void Keyboard.setScroll({ isDisabled: true }).catch(() => undefined);
       const show = (info: { keyboardHeight: number }) => { nativeHeight = Math.max(0, info.keyboardHeight); update(); };
       const hide = () => { nativeHeight = 0; update(); };
       void retain(Keyboard.addListener("keyboardWillShow", show));
@@ -91,6 +107,7 @@ export function useKeyboardInset(): void {
     return () => {
       disposed = true;
       window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", resetNativeScroll);
       window.removeEventListener("orientationchange", orientationChanged);
       viewport?.removeEventListener("resize", update);
       viewport?.removeEventListener("scroll", update);

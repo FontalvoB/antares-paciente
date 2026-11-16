@@ -969,3 +969,63 @@ html.vita-call-active .app-shell { padding-top:48px; box-sizing:border-box; }
 .chat-reference.screen .chat-list .chat-disclaimer {
   margin-top: 16px;
 }
+/* -- Dock flotante (HIG Tab bars: la barra flota sobre el contenido, con material y borde propios). --
+   Sigue ocupando su sitio en el flujo (nada se tapa), pero el contenido se desvanece hacia el fondo
+   en vez de cortarse en seco, de modo que no se ve el "contenedor exterior". */
+.app-shell .premium-nav.bnav {
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(11, 42, 74, 0.16);
+  border-radius: 28px;
+  box-shadow:
+    0 14px 30px rgba(11, 42, 74, 0.16),
+    0 2px 6px rgba(11, 42, 74, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.premium-nav.bnav .ni.on .ni-ico {
+  background: rgba(12, 107, 82, 0.13);
+  box-shadow: none;
+}
+.premium-nav.bnav .ni-dot {
+  box-shadow: 0 0 0 2px #fff;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-shell .premium-nav.bnav {
+    background: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.app-shell .screen-scroll:not(.no-nav) {
+  padding-bottom: 32px;
+  scroll-padding-bottom: 32px;
+}
+.app-shell .screen-scroll:not(.no-nav):not(.chat-list) + .premium-nav.bnav::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -50vw;
+  right: -50vw;
+  bottom: 100%;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    rgba(228, 238, 249, 0),
+    var(--wellness-bg-end)
+  );
+  pointer-events: none;
+}
+.app-shell .screen-scroll + .premium-nav.bnav.bnav-dark::before {
+  display: none;
+}
+
+/* Foco: el aro solo aparece con teclado/lector (ion-focused), nunca tras un toque. */
+.premium-nav ion-button:focus-within {
+  outline: 0;
+}
+.premium-nav ion-button.ion-focused {
+  outline: 3px solid var(--wellness-action);
+  outline-offset: 1px;
+  border-radius: 20px;
+}
