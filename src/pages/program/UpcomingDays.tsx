@@ -22,13 +22,20 @@ export function UpcomingDays({ days }: { days?: readonly ProgramUpcomingDayDto[]
           {day.rest === true && <IonBadge slot="end">{t('Descanso de ejercicio')}</IonBadge>}
         </IonItem>
         <IonList slot="content" lines="none">
-          {day.missions.map(mission => <IonItem key={mission.type}>
-            <IonLabel className="ion-text-wrap">
-              <p>{t(PROGRAM_TASKS.find(task => task.id === mission.type)?.title ?? mission.type)}</p>
-              <h3>{mission.title}</h3>
-              {mission.contentUnavailable && <p role="status">{t('Tu equipo está preparando este contenido.')}</p>}
-            </IonLabel>
-          </IonItem>)}
+          {day.missions.map(mission => {
+            const task = PROGRAM_TASKS.find(item => item.id === mission.type)
+            const label = t(task?.title ?? mission.type)
+            // Si el título clínico repite la etiqueta de la misión, se muestra una sola línea.
+            const repeated = label.trim().toLowerCase() === mission.title.trim().toLowerCase()
+            return <IonItem key={mission.type} className={`pg-up-mission tone-${task?.tone ?? 'blue'}`}>
+              <span className="pg-up-dot" slot="start" aria-hidden="true" />
+              <IonLabel className="ion-text-wrap">
+                {!repeated && <p>{label}</p>}
+                <h3>{mission.title}</h3>
+                {mission.contentUnavailable && <p role="status">{t('Tu equipo está preparando este contenido.')}</p>}
+              </IonLabel>
+            </IonItem>
+          })}
         </IonList>
       </IonAccordion>)}
     </IonAccordionGroup>

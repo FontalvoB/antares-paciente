@@ -457,3 +457,515 @@ html.vita-call-active .app-shell { padding-top:48px; box-sizing:border-box; }
 @keyframes vcp-ring { 0% { transform:scale(.9); opacity:.9; } 100% { transform:scale(1.35); opacity:0; } }
 @keyframes vcp-in { from { transform:translateY(-100%); } to { transform:none; } }
 @media (prefers-reduced-motion:reduce) { .vita-call-pill, .vita-call-pill * { animation:none !important; } }
+/* ==========================================================================
+   Pulido móvil: dock sin desbordes, "Lo que viene" y cabecera/atajos de Vita.
+   Capa final y consolidada: sustituye las capas previas del dock (.ni-center
+   ya no sobresale de la barra) y de la cabecera del chat.
+   ========================================================================== */
+
+/* -- Dock: cinco ranuras iguales; SOS es un chip relleno contenido en la barra. -- */
+.app-shell .premium-nav.bnav {
+  height: var(--wellness-dock-height);
+  padding: 6px 6px;
+  align-items: center;
+  border-radius: 28px;
+  background: var(--wellness-accent);
+  box-shadow: 0 8px 22px rgba(11, 42, 74, 0.12);
+}
+.premium-nav.bnav ion-button.ni {
+  height: 60px;
+  --border-radius: 20px;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --ripple-color: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.premium-nav.bnav ion-button.ni::part(native) {
+  justify-content: center;
+  gap: 3px;
+  min-height: 0;
+}
+.premium-nav.bnav .premium-nav-content {
+  gap: 3px;
+}
+.premium-nav.bnav .ni-ico {
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 30px;
+  border-radius: 15px;
+  font-size: 22px;
+  transition:
+    background-color 180ms ease-out,
+    transform 160ms ease-out;
+}
+.premium-nav.bnav .ni.on .ni-ico {
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 1px 3px rgba(11, 42, 74, 0.08);
+}
+.premium-nav.bnav .ni.on .ni-ico::after {
+  display: none;
+}
+.premium-nav.bnav ion-button.ni:active .ni-ico {
+  transform: scale(0.94);
+}
+.premium-nav.bnav .ni-dot {
+  top: 1px;
+  right: 9px;
+}
+
+.premium-nav.bnav ion-button.ni-center {
+  height: 60px;
+  transform: none;
+  border: 0;
+  box-shadow: none;
+  --background: transparent;
+  --box-shadow: none;
+  --color: var(--wellness-navy);
+  border-radius: 20px;
+}
+.premium-nav.bnav .ni-center .premium-nav-content {
+  color: var(--wellness-navy);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.premium-nav.bnav .ni-center .ni-ico {
+  width: 58px;
+  height: 30px;
+  border-radius: 15px;
+  font-size: 21px;
+  color: #fff;
+  background: linear-gradient(
+    145deg,
+    var(--wellness-primary),
+    var(--wellness-navy)
+  );
+  box-shadow: 0 4px 10px rgba(11, 42, 74, 0.26);
+}
+.premium-nav.bnav ion-button.ni-center:active .ni-ico {
+  transform: scale(0.94);
+  box-shadow: 0 2px 6px rgba(11, 42, 74, 0.22);
+}
+@media (max-width: 359px) {
+  .premium-nav.bnav ion-button.ni {
+    font-size: 9.5px;
+    height: 60px;
+  }
+  .premium-nav.bnav ion-button.ni-center {
+    height: 60px;
+    border-width: 0;
+    transform: none;
+  }
+  .premium-nav.bnav .ni-ico {
+    width: 44px;
+  }
+  .premium-nav.bnav .ni-center .ni-ico {
+    width: 50px;
+  }
+}
+.premium-nav.bnav ion-button.ni:focus-visible .ni-ico,
+.premium-nav.bnav ion-button.ni:focus-within .ni-ico {
+  outline: 0;
+}
+
+/* -- Lo que viene: tarjetas por día alineadas con el resto del programa. -- */
+.pg-upcoming {
+  margin: 28px 16px 16px;
+  color: var(--wellness-navy);
+}
+.pg-upcoming > h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--wellness-navy);
+}
+.pg-upcoming > p {
+  margin: 4px 0 14px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--wellness-muted);
+}
+.pg-upcoming ion-accordion-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.pg-upcoming ion-accordion {
+  background: var(--wellness-surface);
+  border: 1px solid var(--wellness-border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(11, 42, 74, 0.05);
+}
+.pg-upcoming ion-accordion ion-item[slot="header"] {
+  --background: var(--wellness-surface);
+  --color: var(--wellness-navy);
+  --min-height: 60px;
+  --padding-start: 16px;
+  --inner-padding-end: 12px;
+  --border-width: 0;
+  --inner-border-width: 0;
+  --ripple-color: transparent;
+}
+.pg-upcoming ion-accordion.accordion-expanded ion-item[slot="header"],
+.pg-upcoming ion-accordion.accordion-expanding ion-item[slot="header"] {
+  --border-width: 0 0 1px 0;
+  --border-color: var(--wellness-border);
+}
+.pg-upcoming ion-accordion ion-item[slot="header"] ion-icon[slot="end"] {
+  color: var(--wellness-primary);
+  font-size: 20px;
+  margin-inline-start: 8px;
+}
+.pg-upcoming ion-label h3 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--wellness-navy);
+  white-space: normal;
+}
+.pg-upcoming ion-label p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--wellness-muted);
+}
+.pg-upcoming ion-list {
+  padding: 6px 0 10px;
+  background: var(--wellness-surface);
+}
+.pg-upcoming ion-item.pg-up-mission {
+  --background: transparent;
+  --color: var(--wellness-navy);
+  --min-height: 40px;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --inner-padding-top: 0;
+  --inner-padding-bottom: 0;
+  --inner-border-width: 0;
+  --border-width: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+.pg-upcoming ion-item.pg-up-mission ion-label {
+  margin: 7px 0;
+}
+.pg-upcoming ion-item.pg-up-mission ion-label h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+.pg-upcoming ion-item.pg-up-mission ion-label p {
+  font-size: 12px;
+}
+.pg-upcoming ion-item.pg-up-mission ion-label p + h3 {
+  margin-top: 1px;
+}
+.pg-upcoming .pg-up-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 12px 0 0;
+  border-radius: 50%;
+  background: var(--wellness-action);
+  align-self: center;
+}
+.pg-upcoming .tone-pur .pg-up-dot {
+  background: #7c5cc4;
+}
+.pg-upcoming .tone-red .pg-up-dot {
+  background: #d6455d;
+}
+.pg-upcoming .tone-teal .pg-up-dot {
+  background: #1d9e75;
+}
+.pg-upcoming .tone-blue .pg-up-dot {
+  background: var(--wellness-action);
+}
+.pg-upcoming .tone-org .pg-up-dot {
+  background: #c27a1a;
+}
+.pg-upcoming .tone-indigo .pg-up-dot {
+  background: #3b4cca;
+}
+.pg-upcoming ion-badge {
+  max-width: 120px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  --background: var(--wellness-accent);
+  --color: var(--wellness-navy);
+}
+
+/* -- Cabecera de Vita: identidad compacta y acciones circulares de 44px. -- */
+.chat-reference.screen .chat-premium-header.p3-vita-header {
+  gap: 8px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 10px;
+  align-items: center;
+}
+.p3-vita-header .p3-vita-identity {
+  gap: 12px;
+}
+.p3-vita-header .p3-vita-identity > div {
+  min-width: 0;
+}
+.p3-vita-header .p3-vita-avatar {
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--wellness-surface);
+  box-shadow: 0 0 0 2px var(--wellness-primary);
+}
+.p3-vita-header .p3-vita-identity h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.p3-vita-header .p3-vita-identity p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--wellness-muted);
+  overflow: hidden;
+}
+.p3-vita-header .p3-vita-identity p::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  border-radius: 50%;
+  background: var(--wellness-success, #1d9e75);
+}
+.p3-vita-header .p3-vita-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 6px;
+}
+.chat-reference.screen .p3-vita-header .p3-vita-actions ion-button {
+  flex: none;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 50%;
+  --box-shadow: none;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --ripple-color: transparent;
+}
+.chat-reference.screen
+  .p3-vita-header
+  .p3-vita-actions
+  ion-button::part(native) {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  justify-content: center;
+}
+.chat-reference.screen
+  .p3-vita-header
+  .p3-vita-actions
+  ion-button.vita-header-clear {
+  --color: var(--wellness-muted);
+  --background: transparent;
+}
+.chat-reference.screen
+  .p3-vita-header
+  .p3-vita-actions
+  ion-button.vita-header-clear
+  ion-icon {
+  font-size: 21px;
+}
+.chat-reference.screen
+  .p3-vita-header
+  .p3-vita-actions
+  ion-button.p3-vita-voice {
+  --color: #fff;
+  --background: linear-gradient(
+    145deg,
+    var(--wellness-primary),
+    var(--wellness-navy)
+  );
+}
+.chat-reference.screen
+  .p3-vita-header
+  .p3-vita-actions
+  ion-button.p3-vita-voice
+  ion-icon {
+  font-size: 20px;
+}
+.chat-reference.screen .p3-vita-header .p3-vita-actions ion-button.chat-panic {
+  position: static;
+  --color: var(--wellness-error);
+  --background: var(--wellness-error-bg);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+@media (max-width: 359px) {
+  .p3-vita-header .p3-vita-identity h1 {
+    font-size: 18px;
+  }
+  .p3-vita-header .p3-vita-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  .p3-vita-header .p3-vita-actions {
+    gap: 2px;
+  }
+}
+
+/* -- Atajos: chips en una sola fila bajo la cabecera, sin globos de color por icono. -- */
+.chat-reference.screen .chat-quick-actions:not(.is-empty) {
+  gap: 8px;
+  padding: 0 16px 12px;
+  min-height: 0;
+  box-shadow: 0 8px 16px -12px rgba(11, 42, 74, 0.28);
+  position: relative;
+  z-index: 1;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.chat-reference.screen .chat-quick-actions::-webkit-scrollbar {
+  display: none;
+}
+.chat-reference.screen .chat-quick-actions ion-button.chat-quick-action {
+  --background: var(--wellness-accent);
+  --color: var(--wellness-navy);
+  --border-radius: 999px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --box-shadow: none;
+  flex: none;
+  height: 40px;
+  min-height: 40px;
+  font-weight: 700;
+}
+.chat-reference.screen
+  .chat-quick-actions
+  ion-button.chat-quick-action::part(native) {
+  height: 40px;
+  min-height: 0;
+  flex-direction: row;
+  align-items: center;
+}
+.chat-reference.screen
+  .chat-quick-actions
+  ion-button.chat-quick-action
+  .chat-quick-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.chat-reference.screen
+  .chat-quick-actions
+  ion-button.chat-quick-action
+  .chat-quick-icon,
+.chat-reference.screen
+  .chat-quick-actions
+  ion-button.chat-quick-action:nth-child(n)
+  .chat-quick-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--wellness-action);
+  font-size: 17px;
+}
+.chat-reference.screen
+  .chat-quick-actions
+  ion-button.chat-quick-action:nth-child(n)
+  .chat-quick-icon::before,
+.chat-reference.screen
+  .chat-quick-actions
+  ion-button.chat-quick-action
+  .chat-quick-icon::after {
+  display: none;
+}
+
+/* Bienvenida (chat vacío): atajos centrados en pastillas y llamada a Vita, todo visible sin desplazar. */
+.chat-reference.screen .chat-quick-actions.is-empty {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+.chat-reference.screen
+  .chat-quick-actions.is-empty
+  ion-button.chat-quick-action {
+  width: auto;
+  min-width: 0;
+  height: 44px;
+  min-height: 44px;
+  --background: var(--wellness-surface);
+  --border-radius: 999px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  box-shadow: 0 4px 12px rgba(11, 42, 74, 0.06);
+  border: 1px solid var(--wellness-border);
+  border-radius: 999px;
+}
+.chat-reference.screen
+  .chat-quick-actions.is-empty
+  ion-button.chat-quick-action::part(native) {
+  height: 100%;
+  border-radius: 999px;
+  justify-content: center;
+}
+.chat-reference.screen
+  .chat-quick-actions.is-empty
+  ion-button.chat-quick-action
+  .chat-quick-content {
+  width: auto;
+  justify-content: center;
+}
+.chat-reference.screen .vita-chat-welcome {
+  padding: 4px 0 8px;
+}
+.chat-reference.screen .vita-chat-welcome > ion-button.bt {
+  margin: 0;
+  --border-radius: 18px;
+  min-height: 52px;
+}
+.chat-reference.screen .chat-list .chat-disclaimer {
+  margin-top: 16px;
+}
