@@ -1,9 +1,25 @@
 import { voiceMessage } from "../utils/voiceMessages";
-import type { VoiceMessagePayload, VoiceCorrection } from "../utils/voiceMessages";
+import type {
+  VoiceMessagePayload,
+  VoiceCorrection,
+} from "../utils/voiceMessages";
 import type { ChatMessage } from "../types";
-import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { IonButton, IonIcon, IonInput, IonModal, IonSpinner } from "@ionic/react";
+import { APPOINTMENTS_ENABLED } from "../utils/appointmentsVisibility";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  IonButton,
+  IonIcon,
+  IonInput,
+  IonModal,
+  IonSpinner,
+} from "@ionic/react";
 import { call, chevronBack, mic, micOff } from "ionicons/icons";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { createVoiceMicLevel } from "../utils/voiceMicLevel";
@@ -13,12 +29,22 @@ import type { VoicePhase } from "./VoiceOrb";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { useSpeechAssistant } from "../hooks/useSpeechAssistant";
-import { consentFailure, isLegalConsentError, legalConsentMessage, onLegalConsentChange, requireLegalConsent, verifyLegalConsent } from "../utils/legalConsents";
+import {
+  consentFailure,
+  isLegalConsentError,
+  legalConsentMessage,
+  onLegalConsentChange,
+  requireLegalConsent,
+  verifyLegalConsent,
+} from "../utils/legalConsents";
 import { getAccessToken } from "../utils/authApi";
 import { sessionUserId } from "../utils/sessionIdentity";
 import {
   requestVoiceSession,
-  revokeVoiceSession, voiceSessionStartOptions, linkedVoiceSessionId, VoiceSessionContractError,
+  revokeVoiceSession,
+  voiceSessionStartOptions,
+  linkedVoiceSessionId,
+  VoiceSessionContractError,
   type VoiceSession,
   toolCancelAppointment,
   toolGetAvailabilitySlots,
@@ -49,7 +75,18 @@ import {
  */
 
 type VoiceMode = "idle" | "eleven" | "fallback-choice" | "webspeech";
-interface ActiveVoiceSession { generation: number; id: string; threadId: string; owner: string | null; accessToken: string | null; serverSession?: VoiceSession; boundSessionId?: string; revoked?: boolean; controller: AbortController; messages: Map<string, ChatMessage> }
+interface ActiveVoiceSession {
+  generation: number;
+  id: string;
+  threadId: string;
+  owner: string | null;
+  accessToken: string | null;
+  serverSession?: VoiceSession;
+  boundSessionId?: string;
+  revoked?: boolean;
+  controller: AbortController;
+  messages: Map<string, ChatMessage>;
+}
 
 /** Props de la cápsula visual compartida por ambos motores. */
 interface VoiceShellProps {
@@ -84,13 +121,41 @@ function VoiceShell({
   onSendText,
 }: VoiceShellProps) {
   const t = useT();
-  const { voiceOpen, voiceMinimized, minimizeVoice, openVoice, closeVoice } = useApp();
+  const { voiceOpen, voiceMinimized, minimizeVoice, openVoice, closeVoice } =
+    useApp();
   const dismissingToChat = useRef(false);
   const [modalClosing, setModalClosing] = useState(false);
   const [text, setText] = useState("");
   useEffect(() => {
     micLevel.setMuted(muted);
   }, [micLevel, muted]);
+  const inBackground = voiceOpen && voiceMinimized;
+  // La llamada en segundo plano empuja la app hacia abajo (como WhatsApp) en
+  // vez de flotar encima del contenido: se marca en <html> mientras dura.
+  useEffect(() => {
+    if (!inBackground) return;
+    const root = document.documentElement;
+    root.classList.add("vita-call-active");
+    return () => root.classList.remove("vita-call-active");
+  }, [inBackground]);
+  // Cronómetro de la llamada: arranca al abrir la voz y sobrevive a minimizar.
+  const callStart = useRef<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!voiceOpen) {
+      callStart.current = null;
+      setElapsed(0);
+      return;
+    }
+    if (callStart.current === null) callStart.current = Date.now();
+    const id = window.setInterval(() => {
+      setElapsed(
+        Math.floor((Date.now() - (callStart.current ?? Date.now())) / 1000),
+      );
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [voiceOpen]);
+  const callClock = `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
   const orbClass = `voice-orb vc-orb is-${phase}`;
   const submitText = (event: React.FormEvent) => {
     event.preventDefault();
@@ -101,74 +166,146 @@ function VoiceShell({
   };
   return (
     <>
-    <IonModal isOpen={voiceOpen && !voiceMinimized} className="voice-modal" onDidDismiss={() => {
-      setModalClosing(false);
-      if (dismissingToChat.current) { dismissingToChat.current = false; return; }
-      closeVoice();
-    }}>
-    <div className="overlay overlay-voice"><div className="vc-shell">
-      <div className="vc-header">
-        <IonButton
-          fill="clear"
-          className="vc-back"
-          aria-label={t("Volver al chat")}
-          onClick={() => { dismissingToChat.current = true; setModalClosing(true); minimizeVoice(); }}
-        >
-          <IonIcon icon={chevronBack} />
-        </IonButton>
-        <span className="vc-brand">
-          COPP-ADRESD<span>{t("Asistente de voz")}</span>
-        </span>
-      </div>
-      <div className="vc-center">
-        <div className={orbClass} aria-hidden="true">
-          <VoiceOrb
-            phase={phase}
-            active={active}
-            getInputVolume={getInputVolume ?? micLevel.getVolume}
-            getOutputVolume={getOutputVolume}
-          />
+      <IonModal
+        isOpen={voiceOpen && !voiceMinimized}
+        className="voice-modal"
+        onDidDismiss={() => {
+          setModalClosing(false);
+          if (dismissingToChat.current) {
+            dismissingToChat.current = false;
+            return;
+          }
+          closeVoice();
+        }}
+      >
+        <div className="overlay overlay-voice">
+          <div className="vc-shell">
+            <div className="vc-header">
+              <IonButton
+                fill="clear"
+                className="vc-back"
+                aria-label={t("Volver al chat")}
+                onClick={() => {
+                  dismissingToChat.current = true;
+                  setModalClosing(true);
+                  minimizeVoice();
+                }}
+              >
+                <IonIcon icon={chevronBack} />
+              </IonButton>
+              <span className="vc-brand">
+                COPP-ADRESD<span>{t("Asistente de voz")}</span>
+              </span>
+            </div>
+            <div className="vc-center">
+              <div className={orbClass} aria-hidden="true">
+                <VoiceOrb
+                  phase={phase}
+                  active={active}
+                  getInputVolume={getInputVolume ?? micLevel.getVolume}
+                  getOutputVolume={getOutputVolume}
+                />
+              </div>
+              <div className={`vc-status is-${phase}`} aria-live="polite">
+                {statusLabel}
+              </div>
+              <div className="vc-transcript" aria-live="polite">
+                {transcriptLine || t("Estoy aquí para acompañarte.")}
+              </div>
+            </div>
+            <form className="vc-controls" onSubmit={submitText}>
+              <IonInput
+                className="vc-input"
+                value={text}
+                disabled={!onSendText}
+                onIonInput={(event) => setText(event.detail.value ?? "")}
+                placeholder={t("Escribe un mensaje…")}
+                aria-label={t("Escribe un mensaje…")}
+                enterkeyhint="send"
+              />
+              <IonButton
+                className="bt vc-btn vc-mute"
+                aria-pressed={muted}
+                aria-label={
+                  muted ? t("Activar micrófono") : t("Silenciar micrófono")
+                }
+                onClick={onToggleMute}
+              >
+                <IonIcon icon={muted ? micOff : mic} />
+              </IonButton>
+              <IonButton
+                className="bt vc-btn vc-hang"
+                aria-label={t("Colgar")}
+                onClick={onHangUp}
+              >
+                <IonIcon icon={call} />
+              </IonButton>
+            </form>
+            <div className="vc-foot">
+              {t("La transcripción se muestra en este chat durante la sesión.")}
+            </div>
+          </div>
         </div>
-        <div className={`vc-status is-${phase}`} aria-live="polite">
-          {statusLabel}
-        </div>
-        <div className="vc-transcript" aria-live="polite">
-          {transcriptLine || t("Estoy aquí para acompañarte.")}
-        </div>
-      </div>
-      <form className="vc-controls" onSubmit={submitText}>
-        <IonInput
-          className="vc-input"
-          value={text}
-          disabled={!onSendText}
-          onIonInput={(event) => setText(event.detail.value ?? "")}
-          placeholder={t("Escribe un mensaje…")}
-          aria-label={t("Escribe un mensaje…")}
-          enterkeyhint="send"
-        />
-        <IonButton
-          className="bt vc-btn vc-mute"
-          aria-pressed={muted}
-          aria-label={muted ? t("Activar micrófono") : t("Silenciar micrófono")}
-          onClick={onToggleMute}
+      </IonModal>
+      {inBackground && (
+        <div
+          className={`vita-call-pill is-${phase}${muted ? " is-muted" : ""}`}
+          role="region"
+          aria-label={t("Llamada con Vita")}
         >
-          <IonIcon icon={muted ? micOff : mic} />
-        </IonButton>
-        <IonButton
-          className="bt vc-btn vc-hang"
-          aria-label={t("Colgar")}
-          onClick={onHangUp}
-        >
-          <IonIcon icon={call} />
-        </IonButton>
-      </form>
-      <div className="vc-foot">{t("La transcripción se muestra en este chat durante la sesión.")}</div>
-    </div></div></IonModal>
-    {voiceOpen && voiceMinimized && <div className="vita-call-bar" aria-label={t("Llamada con Vita")}>
-      <IonButton fill="clear" disabled={modalClosing} onClick={openVoice} aria-label={t("Restaurar llamada")}><IonIcon icon={call} /> <span>{statusLabel}</span></IonButton>
-      <IonButton fill="clear" onClick={onToggleMute} aria-label={muted ? t("Activar micrófono") : t("Silenciar micrófono")} aria-pressed={muted}><IonIcon icon={muted ? micOff : mic} /></IonButton>
-      <IonButton fill="clear" color="danger" onClick={onHangUp} aria-label={t("Colgar")}><IonIcon icon={call} /></IonButton>
-    </div>}
+          <button
+            type="button"
+            className="vcp-main"
+            disabled={modalClosing}
+            onClick={openVoice}
+            aria-label={t("Restaurar llamada")}
+          >
+            <span className="vcp-avatar" aria-hidden="true">
+              <IonIcon icon={muted ? micOff : mic} />
+            </span>
+            <span className="vcp-text">
+              <span className="vcp-title">{t("Llamada con Vita")}</span>
+              <span className="vcp-sub">
+                <span className="vcp-status">
+                  {muted ? t("Micrófono silenciado") : statusLabel}
+                </span>
+                <span
+                  className="vcp-time"
+                  role="timer"
+                  aria-label={t("Duración de la llamada")}
+                >
+                  {callClock}
+                </span>
+              </span>
+            </span>
+            <span className="vcp-wave" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+          </button>
+          <button
+            type="button"
+            className="vcp-btn vcp-mute"
+            onClick={onToggleMute}
+            aria-label={
+              muted ? t("Activar micrófono") : t("Silenciar micrófono")
+            }
+            aria-pressed={muted}
+          >
+            <IonIcon icon={muted ? micOff : mic} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="vcp-btn vcp-hang"
+            onClick={onHangUp}
+            aria-label={t("Colgar")}
+          >
+            <IonIcon icon={call} aria-hidden="true" />
+          </button>
+        </div>
+      )}
     </>
   );
 }
@@ -193,29 +330,46 @@ export function VoiceOverlay() {
     return () => micLevel.release();
   }, [voiceOpen, micLevel]);
   const [mode, setMode] = useState<VoiceMode>("idle");
-  const modeRef = useRef(mode); modeRef.current = mode;
-  const openRef = useRef(voiceOpen); openRef.current = voiceOpen;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const openRef = useRef(voiceOpen);
+  openRef.current = voiceOpen;
   const voiceGeneration = useRef(0);
   const activeSession = useRef<ActiveVoiceSession | null>(null);
   const sdkStop = useRef<(() => Promise<void>) | null>(null);
   const voiceClosing = useRef<Promise<boolean>>(Promise.resolve(true));
   const failedRevocation = useRef<ActiveVoiceSession | null>(null);
   const consentRequest = useRef<AbortController | null>(null);
-  const closeSessionRef = useRef({ markVoiceSessionClosed, refreshChatHistory }); closeSessionRef.current = { markVoiceSessionClosed, refreshChatHistory };
+  const closeSessionRef = useRef({
+    markVoiceSessionClosed,
+    refreshChatHistory,
+  });
+  closeSessionRef.current = { markVoiceSessionClosed, refreshChatHistory };
   const invalidateSession = useCallback(() => {
     voiceGeneration.current += 1;
     const session = activeSession.current;
     session?.controller.abort();
     if (session?.serverSession?.sessionId && !session.revoked) {
       session.revoked = true;
-      if (session.boundSessionId) closeSessionRef.current.markVoiceSessionClosed?.(session.boundSessionId, session.threadId);
+      if (session.boundSessionId)
+        closeSessionRef.current.markVoiceSessionClosed?.(
+          session.boundSessionId,
+          session.threadId,
+        );
       const previousClose = voiceClosing.current;
-      voiceClosing.current = revokeVoiceSession(session.serverSession.sessionId, session.accessToken).then(async closed => {
+      voiceClosing.current = revokeVoiceSession(
+        session.serverSession.sessionId,
+        session.accessToken,
+      ).then(async (closed) => {
         await previousClose;
         failedRevocation.current = closed ? null : session;
         // El servidor puede importar el transcript ligado al cerrar legacy. Leer
         // despues del DELETE, sin texto bot del cliente ni credenciales nuevas.
-        if (closed && session.boundSessionId && session.owner === sessionUserId(getAccessToken())) {
+        if (
+          closed &&
+          session.boundSessionId &&
+          session.owner === sessionUserId(getAccessToken())
+        ) {
           closeSessionRef.current.refreshChatHistory?.(session.threadId);
         }
         return closed;
@@ -225,13 +379,22 @@ export function VoiceOverlay() {
     consentRequest.current?.abort();
   }, []);
   useEffect(() => () => invalidateSession(), [invalidateSession]);
-  const assertSession = useCallback((session: ActiveVoiceSession | null, requireSdk = false) => {
-    if (!session || !openRef.current || activeSession.current !== session
-      || voiceGeneration.current !== session.generation || session.controller.signal.aborted
-      || session.owner !== sessionUserId(getAccessToken()) || (requireSdk && modeRef.current !== "eleven")) {
-      throw consentFailure("CONSENT_CANCELLED");
-    }
-  }, []);
+  const assertSession = useCallback(
+    (session: ActiveVoiceSession | null, requireSdk = false) => {
+      if (
+        !session ||
+        !openRef.current ||
+        activeSession.current !== session ||
+        voiceGeneration.current !== session.generation ||
+        session.controller.signal.aborted ||
+        session.owner !== sessionUserId(getAccessToken()) ||
+        (requireSdk && modeRef.current !== "eleven")
+      ) {
+        throw consentFailure("CONSENT_CANCELLED");
+      }
+    },
+    [],
+  );
   const speechActive = useRef(false);
   speechActive.current = voiceOpen && mode === "webspeech";
   // Estado del turno en curso en modo ElevenLabs.
@@ -257,7 +420,9 @@ export function VoiceOverlay() {
           if (!speechActive.current) return;
           if (!botMessage) {
             speechActive.current = false;
-            assistant.teardown(); micLevel.release(); closeVoice();
+            assistant.teardown();
+            micLevel.release();
+            closeVoice();
             return;
           }
           await verifyLegalConsent("voice", lang);
@@ -274,8 +439,17 @@ export function VoiceOverlay() {
           }
         } catch (error) {
           speechActive.current = false;
-          assistant.teardown(); micLevel.release(); closeVoice();
-          showToast(t(isLegalConsentError(error) ? legalConsentMessage(error) : "Hubo un problema con el asistente. Inténtalo de nuevo."), "err");
+          assistant.teardown();
+          micLevel.release();
+          closeVoice();
+          showToast(
+            t(
+              isLegalConsentError(error)
+                ? legalConsentMessage(error)
+                : "Hubo un problema con el asistente. Inténtalo de nuevo.",
+            ),
+            "err",
+          );
         } finally {
           assistantBusyRef.current = false;
           // Fin del turno: vuelve a escuchar (modo voz conversacional).
@@ -293,11 +467,19 @@ export function VoiceOverlay() {
     const session = mode === "eleven" ? activeSession.current : null;
     // Marca "pensando" mientras el dispositivo ejecuta la tool real.
     const withThinking =
-      (fn: (params: Record<string, unknown>, assertActive: () => void) => Promise<string>) =>
+      (
+        fn: (
+          params: Record<string, unknown>,
+          assertActive: () => void,
+        ) => Promise<string>,
+      ) =>
       async (params: Record<string, unknown>) => {
         const assertActive = () => assertSession(session, true);
         assertActive();
-        if(!APPOINTMENTS_ENABLED)return JSON.stringify({error:"La función de citas no está disponible."});
+        if (!APPOINTMENTS_ENABLED)
+          return JSON.stringify({
+            error: "La función de citas no está disponible.",
+          });
         setThinking(true);
         try {
           assertActive();
@@ -310,7 +492,9 @@ export function VoiceOverlay() {
           return result;
         } catch (error) {
           if (isLegalConsentError(error) && activeSession.current === session) {
-            invalidateSession(); micLevel.release(); closeVoice();
+            invalidateSession();
+            micLevel.release();
+            closeVoice();
           }
           throw error;
         } finally {
@@ -330,7 +514,8 @@ export function VoiceOverlay() {
             date: string;
             specialty_id?: string;
             professional_id?: string;
-          }, assertActive,
+          },
+          assertActive,
         ),
       ),
       request_appointment: withThinking((params, assertActive) =>
@@ -340,7 +525,8 @@ export function VoiceOverlay() {
             reason: string;
             professional_id?: string;
             preferred_start?: string;
-          }, assertActive,
+          },
+          assertActive,
         ),
       ),
       reschedule_appointment: withThinking((params) =>
@@ -364,40 +550,79 @@ export function VoiceOverlay() {
   // pueden tomar prestada la cuenta o la conexion siguiente.
   const sdkSession = mode === "eleven" ? activeSession.current : null;
   const handleVoiceMessage = (payload: VoiceMessagePayload) => {
-    try { assertSession(sdkSession, true); } catch { return; }
+    try {
+      assertSession(sdkSession, true);
+    } catch {
+      return;
+    }
     const message = voiceMessage(sdkSession!.id, sdkSession!.threadId, payload);
     if (!message) return;
     if (sdkSession?.boundSessionId) {
-      message.voiceSessionId = sdkSession.boundSessionId; message.voiceRuntime = sdkSession.serverSession?.runtimeMode ?? "legacy";
+      message.voiceSessionId = sdkSession.boundSessionId;
+      message.voiceRuntime = sdkSession.serverSession?.runtimeMode ?? "legacy";
     }
     const previous = sdkSession!.messages.get(message.id);
-    if (previous && (previous.revision ?? 0) > 0 && (previous.providerEventId ?? -1) >= payload.event_id) return;
+    if (
+      previous &&
+      (previous.revision ?? 0) > 0 &&
+      (previous.providerEventId ?? -1) >= payload.event_id
+    )
+      return;
     if (previous?.delivery === "interrupted") message.delivery = "interrupted";
     sdkSession!.messages.set(message.id, message);
     upsertVoiceMessage(message);
-    if (message.role === "user") setUserLine(message.text); else setBotLine(message.text);
+    if (message.role === "user") setUserLine(message.text);
+    else setBotLine(message.text);
   };
   const correctVoiceMessage = (correction: VoiceCorrection) => {
-    try { assertSession(sdkSession, true); } catch { return; }
+    try {
+      assertSession(sdkSession, true);
+    } catch {
+      return;
+    }
     const message = voiceMessage(sdkSession!.id, sdkSession!.threadId, {
-      message: correction.corrected_agent_response, event_id: correction.event_id,
-      response_id: correction.response_id, role: "agent", source: "ai",
+      message: correction.corrected_agent_response,
+      event_id: correction.event_id,
+      response_id: correction.response_id,
+      role: "agent",
+      source: "ai",
     });
     if (!message) return;
     if (sdkSession?.boundSessionId) {
-      message.voiceSessionId = sdkSession.boundSessionId; message.voiceRuntime = sdkSession.serverSession?.runtimeMode ?? "legacy";
+      message.voiceSessionId = sdkSession.boundSessionId;
+      message.voiceRuntime = sdkSession.serverSession?.runtimeMode ?? "legacy";
     }
-    const corrected = { ...message, delivery: "interrupted" as const, revision: (sdkSession!.messages.get(message.id)?.revision ?? 0) + 1 };
-    sdkSession!.messages.set(message.id, corrected); upsertVoiceMessage(corrected); setBotLine(corrected.text);
+    const corrected = {
+      ...message,
+      delivery: "interrupted" as const,
+      revision: (sdkSession!.messages.get(message.id)?.revision ?? 0) + 1,
+    };
+    sdkSession!.messages.set(message.id, corrected);
+    upsertVoiceMessage(corrected);
+    setBotLine(corrected.text);
   };
   const interruptVoiceMessage = () => {
-    try { assertSession(sdkSession, true); } catch { return; }
-    const last = [...sdkSession!.messages.values()].reverse().find(message => message.role === "bot");
-    if (last) { const interrupted = { ...last, delivery: "interrupted" as const }; sdkSession!.messages.set(last.id, interrupted); upsertVoiceMessage(interrupted); }
+    try {
+      assertSession(sdkSession, true);
+    } catch {
+      return;
+    }
+    const last = [...sdkSession!.messages.values()]
+      .reverse()
+      .find((message) => message.role === "bot");
+    if (last) {
+      const interrupted = { ...last, delivery: "interrupted" as const };
+      sdkSession!.messages.set(last.id, interrupted);
+      upsertVoiceMessage(interrupted);
+    }
   };
 
   const onDisconnect = useCallback(() => {
-    try { assertSession(sdkSession, true); } catch { return; }
+    try {
+      assertSession(sdkSession, true);
+    } catch {
+      return;
+    }
     if (!wasConnectedRef.current) return;
     wasConnectedRef.current = false;
     // Corte inesperado del agente: cierre amigable (el paciente puede reabrir).
@@ -406,7 +631,11 @@ export function VoiceOverlay() {
   }, [closeVoice, showToast, t, sdkSession, assertSession]);
 
   const onError = useCallback(() => {
-    try { assertSession(sdkSession, true); } catch { return; }
+    try {
+      assertSession(sdkSession, true);
+    } catch {
+      return;
+    }
     showToast(
       t("No pudimos conectar con el asistente. Intenta nuevamente."),
       "err",
@@ -417,7 +646,8 @@ export function VoiceOverlay() {
   useEffect(() => {
     if (!voiceOpen) {
       invalidateSession();
-      assistant.cancelSpeech(); assistant.teardown();
+      assistant.cancelSpeech();
+      assistant.teardown();
       wasConnectedRef.current = false;
       setMode("idle");
       setThinking(false);
@@ -429,13 +659,29 @@ export function VoiceOverlay() {
       let cancelled = false;
       const controller = new AbortController();
       consentRequest.current = controller;
-      const session: ActiveVoiceSession = { id: crypto.randomUUID(), threadId, messages: new Map(), generation: ++voiceGeneration.current, accessToken: getAccessToken(), owner: sessionUserId(getAccessToken()), controller };
+      const session: ActiveVoiceSession = {
+        id: crypto.randomUUID(),
+        threadId,
+        messages: new Map(),
+        generation: ++voiceGeneration.current,
+        accessToken: getAccessToken(),
+        owner: sessionUserId(getAccessToken()),
+        controller,
+      };
       activeSession.current = session;
-      void requireLegalConsent("voice", lang, controller.signal).then(() => {
-        if (!cancelled) { assertSession(session); setMode("eleven"); }
-      }).catch(error => {
-        if (!cancelled) { showToast(t(legalConsentMessage(error)), "warn"); closeVoice(); }
-      });
+      void requireLegalConsent("voice", lang, controller.signal)
+        .then(() => {
+          if (!cancelled) {
+            assertSession(session);
+            setMode("eleven");
+          }
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            showToast(t(legalConsentMessage(error)), "warn");
+            closeVoice();
+          }
+        });
       return () => {
         cancelled = true;
         if (activeSession.current === session) invalidateSession();
@@ -450,21 +696,40 @@ export function VoiceOverlay() {
     const stop = () => {
       invalidateSession();
       speechActive.current = false;
-      assistant.cancelSpeech(); assistant.teardown(); micLevel.release();
-      setMode("idle"); closeVoice();
+      assistant.cancelSpeech();
+      assistant.teardown();
+      micLevel.release();
+      setMode("idle");
+      closeVoice();
     };
-    const unsubscribe = onLegalConsentChange(scope => {
+    const unsubscribe = onLegalConsentChange((scope) => {
       if (scope === null || scope === "voice" || scope === "chat") stop();
     });
     const check = () => {
       if (mode !== "eleven" && mode !== "webspeech") return;
-      void Promise.all([verifyLegalConsent("voice", lang), ...(mode === "webspeech" ? [verifyLegalConsent("chat", lang)] : [])])
-        .catch(() => { stop(); showToast(t("La autorización cambió o no pudo comprobarse. La sesión de voz se cerró."), "warn"); });
+      void Promise.all([
+        verifyLegalConsent("voice", lang),
+        ...(mode === "webspeech" ? [verifyLegalConsent("chat", lang)] : []),
+      ]).catch(() => {
+        stop();
+        showToast(
+          t(
+            "La autorización cambió o no pudo comprobarse. La sesión de voz se cerró.",
+          ),
+          "warn",
+        );
+      });
     };
     const timer = window.setInterval(check, 30_000);
-    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { unsubscribe(); window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
+    return () => {
+      unsubscribe();
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
     // La sesión se cierra al retirar una autorización, incluso desde otra entrada.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceOpen, mode, lang]);
@@ -479,7 +744,11 @@ export function VoiceOverlay() {
 
   useEffect(() => {
     const session = activeSession.current;
-    if (session && session.threadId !== threadId) { invalidateSession(); setMode("idle"); closeVoice(); }
+    if (session && session.threadId !== threadId) {
+      invalidateSession();
+      setMode("idle");
+      closeVoice();
+    }
   }, [threadId, invalidateSession, closeVoice]);
 
   const hangUp = () => {
@@ -498,20 +767,30 @@ export function VoiceOverlay() {
   stopForHistory.current = async () => {
     // Cortar callbacks antes de esperar SDK/red; no importar texto durante DELETE.
     invalidateSession();
-    speechActive.current = false; openRef.current = false;
-    assistant.cancelSpeech(); assistant.teardown(); micLevel.release();
+    speechActive.current = false;
+    openRef.current = false;
+    assistant.cancelSpeech();
+    assistant.teardown();
+    micLevel.release();
     await sdkStop.current?.();
     let closed = await voiceClosing.current;
     const failed = failedRevocation.current;
     if (!closed && failed?.serverSession?.sessionId) {
-      closed = await revokeVoiceSession(failed.serverSession.sessionId, failed.accessToken);
+      closed = await revokeVoiceSession(
+        failed.serverSession.sessionId,
+        failed.accessToken,
+      );
       voiceClosing.current = Promise.resolve(closed);
       if (closed) failedRevocation.current = null;
     }
-    setMode("idle"); closeVoice();
+    setMode("idle");
+    closeVoice();
     if (!closed) throw new Error("Voice revocation was not confirmed");
   };
-  useLayoutEffect(() => registerVoiceStop?.(() => stopForHistory.current()), [registerVoiceStop]);
+  useLayoutEffect(
+    () => registerVoiceStop?.(() => stopForHistory.current()),
+    [registerVoiceStop],
+  );
   if (assistant.supported === false && mode === "webspeech") {
     // Fallback D4: WebView sin Web Speech API y ElevenLabs no disponible.
     return (
@@ -546,105 +825,168 @@ export function VoiceOverlay() {
 
   return (
     <>
-        {mode === "idle" ? <IonModal isOpen={voiceOpen} className="voice-modal"><div className="overlay overlay-voice" role="status"><IonSpinner name="crescent" />{t("Comprobando autorización…")}</div></IonModal>
-        : mode === "fallback-choice" ? <IonModal isOpen={voiceOpen} onDidDismiss={closeVoice} className="voice-modal"><div className="overlay overlay-voice">
-          <p>{t("La conexión de voz no está disponible. Puedes revisar la autorización para usar voz del dispositivo y chat.")}</p>
-          {assistant.supported && <IonButton expand="block" className="bt bt-primary" onClick={() => {
-            void (async () => {
-              const signal = consentRequest.current?.signal;
-              try {
-                await requireLegalConsent("voice", lang, signal);
-                await requireLegalConsent("chat", lang, signal);
-                if (signal?.aborted) return;
-                setMode("webspeech");
-              } catch (error) { if (!signal?.aborted) { showToast(t(legalConsentMessage(error)), "warn"); hangUp(); } }
-            })();
-          }}>{t("Revisar y usar voz del dispositivo")}</IonButton>}
-          <IonButton expand="block" className="bt bt-ghost" onClick={hangUp}>{t("Usar chat de texto")}</IonButton>
-        </div></IonModal> : mode === "eleven" ? (
-          <ConversationProvider
-            clientTools={clientTools}
-            onMessage={handleVoiceMessage}
-            onAgentResponseCorrection={correctVoiceMessage}
-            onInterruption={interruptVoiceMessage}
-            onConnect={() => { try { assertSession(sdkSession, true); wasConnectedRef.current = true; } catch { /* sesion anterior */ } }}
-            onDisconnect={onDisconnect}
-            onError={onError}
-          >
-            <ElevenVoiceBody
-              onStopReady={stop => { sdkStop.current = stop; }}
-              micLevel={micLevel}
-              active={voiceOpen}
-              threadId={sdkSession?.threadId ?? threadId}
-              signal={sdkSession?.controller.signal}
-              onServerSession={session => {
-                if (!sdkSession) return;
-                sdkSession.serverSession = session;
-                if (activeSession.current === sdkSession) {
-                  try {
-                    voiceSessionStartOptions(session, sdkSession.threadId, lang);
-                    sdkSession.boundSessionId = linkedVoiceSessionId(session, sdkSession.threadId);
-                    if (sdkSession.boundSessionId) registerVoiceSession?.(sdkSession.boundSessionId, sdkSession.threadId);
-                  } catch { /* Se rechaza antes de conectar. */ }
-                }
-                if (activeSession.current !== sdkSession && session.sessionId) {
-                  voiceClosing.current = revokeVoiceSession(session.sessionId, sdkSession.accessToken).then(closed => {
-                    failedRevocation.current = closed ? null : sdkSession;
-                    return closed;
-                  });
-                }
-              }}
-              onInvalidSession={() => { showToast(t("La sesión de voz recibida no es válida. Inténtalo de nuevo."), "err"); hangUp(); }}
-              onHangUp={hangUp}
-              thinking={thinking}
-              userLine={userLine}
-              botLine={botLine}
-              assertActive={() => assertSession(sdkSession, true)}
-              onFallback={() => {
-                wasConnectedRef.current = false;
-                micLevel.release();
-                setMode("fallback-choice");
-              }}
-              onConsentBlocked={error => {
-                if (activeSession.current !== sdkSession) return;
-                showToast(t(legalConsentMessage(error)), "warn"); hangUp();
-              }}
-            />
-          </ConversationProvider>
-        ) : (
-          <VoiceShell
+      {mode === "idle" ? (
+        <IonModal isOpen={voiceOpen} className="voice-modal">
+          <div className="overlay overlay-voice" role="status">
+            <IonSpinner name="crescent" />
+            {t("Comprobando autorización…")}
+          </div>
+        </IonModal>
+      ) : mode === "fallback-choice" ? (
+        <IonModal
+          isOpen={voiceOpen}
+          onDidDismiss={closeVoice}
+          className="voice-modal"
+        >
+          <div className="overlay overlay-voice">
+            <p>
+              {t(
+                "La conexión de voz no está disponible. Puedes revisar la autorización para usar voz del dispositivo y chat.",
+              )}
+            </p>
+            {assistant.supported && (
+              <IonButton
+                expand="block"
+                className="bt bt-primary"
+                onClick={() => {
+                  void (async () => {
+                    const signal = consentRequest.current?.signal;
+                    try {
+                      await requireLegalConsent("voice", lang, signal);
+                      await requireLegalConsent("chat", lang, signal);
+                      if (signal?.aborted) return;
+                      setMode("webspeech");
+                    } catch (error) {
+                      if (!signal?.aborted) {
+                        showToast(t(legalConsentMessage(error)), "warn");
+                        hangUp();
+                      }
+                    }
+                  })();
+                }}
+              >
+                {t("Revisar y usar voz del dispositivo")}
+              </IonButton>
+            )}
+            <IonButton expand="block" className="bt bt-ghost" onClick={hangUp}>
+              {t("Usar chat de texto")}
+            </IonButton>
+          </div>
+        </IonModal>
+      ) : mode === "eleven" ? (
+        <ConversationProvider
+          clientTools={clientTools}
+          onMessage={handleVoiceMessage}
+          onAgentResponseCorrection={correctVoiceMessage}
+          onInterruption={interruptVoiceMessage}
+          onConnect={() => {
+            try {
+              assertSession(sdkSession, true);
+              wasConnectedRef.current = true;
+            } catch {
+              /* sesion anterior */
+            }
+          }}
+          onDisconnect={onDisconnect}
+          onError={onError}
+        >
+          <ElevenVoiceBody
+            onStopReady={(stop) => {
+              sdkStop.current = stop;
+            }}
             micLevel={micLevel}
             active={voiceOpen}
-            phase={
-              assistant.state === "processing"
-                ? "thinking"
-                : assistant.state === "speaking"
-                  ? "speaking"
-                  : assistant.muted
-                    ? "muted"
-                    : "listening"
-            }
-            statusLabel={
-              assistant.state === "processing"
-                ? t("Procesando…")
-                : assistant.state === "speaking"
-                  ? t("Respondiendo…")
-                  : assistant.muted
-                    ? t("Micrófono silenciado")
-                    : t("Escuchando…")
-            }
-            transcriptLine={
-              (assistant.state === "listening" ||
-                assistant.state === "processing") &&
-              assistant.transcript
-                ? assistant.transcript
-                : botLine
-            }
-            muted={assistant.muted}
-            onToggleMute={assistant.toggleMute}
+            threadId={sdkSession?.threadId ?? threadId}
+            signal={sdkSession?.controller.signal}
+            onServerSession={(session) => {
+              if (!sdkSession) return;
+              sdkSession.serverSession = session;
+              if (activeSession.current === sdkSession) {
+                try {
+                  voiceSessionStartOptions(session, sdkSession.threadId, lang);
+                  sdkSession.boundSessionId = linkedVoiceSessionId(
+                    session,
+                    sdkSession.threadId,
+                  );
+                  if (sdkSession.boundSessionId)
+                    registerVoiceSession?.(
+                      sdkSession.boundSessionId,
+                      sdkSession.threadId,
+                    );
+                } catch {
+                  /* Se rechaza antes de conectar. */
+                }
+              }
+              if (activeSession.current !== sdkSession && session.sessionId) {
+                voiceClosing.current = revokeVoiceSession(
+                  session.sessionId,
+                  sdkSession.accessToken,
+                ).then((closed) => {
+                  failedRevocation.current = closed ? null : sdkSession;
+                  return closed;
+                });
+              }
+            }}
+            onInvalidSession={() => {
+              showToast(
+                t(
+                  "La sesión de voz recibida no es válida. Inténtalo de nuevo.",
+                ),
+                "err",
+              );
+              hangUp();
+            }}
             onHangUp={hangUp}
+            thinking={thinking}
+            userLine={userLine}
+            botLine={botLine}
+            assertActive={() => assertSession(sdkSession, true)}
+            onFallback={() => {
+              wasConnectedRef.current = false;
+              micLevel.release();
+              setMode("fallback-choice");
+            }}
+            onConsentBlocked={(error) => {
+              if (activeSession.current !== sdkSession) return;
+              showToast(t(legalConsentMessage(error)), "warn");
+              hangUp();
+            }}
           />
-        )}
+        </ConversationProvider>
+      ) : (
+        <VoiceShell
+          micLevel={micLevel}
+          active={voiceOpen}
+          phase={
+            assistant.state === "processing"
+              ? "thinking"
+              : assistant.state === "speaking"
+                ? "speaking"
+                : assistant.muted
+                  ? "muted"
+                  : "listening"
+          }
+          statusLabel={
+            assistant.state === "processing"
+              ? t("Procesando…")
+              : assistant.state === "speaking"
+                ? t("Respondiendo…")
+                : assistant.muted
+                  ? t("Micrófono silenciado")
+                  : t("Escuchando…")
+          }
+          transcriptLine={
+            (assistant.state === "listening" ||
+              assistant.state === "processing") &&
+            assistant.transcript
+              ? assistant.transcript
+              : botLine
+          }
+          muted={assistant.muted}
+          onToggleMute={assistant.toggleMute}
+          onHangUp={hangUp}
+        />
+      )}
     </>
   );
 }
@@ -670,7 +1012,10 @@ interface ElevenVoiceBodyProps {
 
 function ElevenVoiceBody({
   onStopReady,
-  threadId, signal, onServerSession, onInvalidSession,
+  threadId,
+  signal,
+  onServerSession,
+  onInvalidSession,
   micLevel,
   active,
   thinking,
@@ -683,11 +1028,15 @@ function ElevenVoiceBody({
 }: ElevenVoiceBodyProps) {
   const sdkStarted = useRef(false);
   const disconnectAck = useRef<(() => void) | null>(null);
-  const eleven = useConversation({ onDisconnect: () => {
-    sdkStarted.current = false; disconnectAck.current?.();
-  } });
+  const eleven = useConversation({
+    onDisconnect: () => {
+      sdkStarted.current = false;
+      disconnectAck.current?.();
+    },
+  });
   const connectionAttempt = useRef<Promise<void>>(Promise.resolve());
-  const stopReadyRef = useRef(onStopReady); stopReadyRef.current = onStopReady;
+  const stopReadyRef = useRef(onStopReady);
+  stopReadyRef.current = onStopReady;
   useLayoutEffect(() => {
     stopReadyRef.current(async () => {
       // Una conexión que empezó antes del borrado también debe terminar.
@@ -699,11 +1048,17 @@ function ElevenVoiceBody({
           disconnectAck.current = null;
           reject(new Error("Voice disconnect was not confirmed"));
         }, 5000);
-        disconnectAck.current = () => { clearTimeout(timer); disconnectAck.current = null; resolve(); };
+        disconnectAck.current = () => {
+          clearTimeout(timer);
+          disconnectAck.current = null;
+          resolve();
+        };
         elevenRef.current.endSession();
       });
     });
-    return () => { stopReadyRef.current(null); };
+    return () => {
+      stopReadyRef.current(null);
+    };
   }, []);
   const { t, lang } = useI18n();
   // Idioma leído por ref: la sesión de voz se abre con el idioma vigente al
@@ -732,7 +1087,9 @@ function ElevenVoiceBody({
         return;
       }
       sdkStarted.current = true;
-      await eleven.startSession(voiceSessionStartOptions(session, threadId, language));
+      await eleven.startSession(
+        voiceSessionStartOptions(session, threadId, language),
+      );
       if (isCancelled() || signal?.aborted) await eleven.endSession();
     } catch (error) {
       if (!isCancelled() && !signal?.aborted) {
@@ -804,12 +1161,19 @@ function ElevenVoiceBody({
       muted={eleven.isMuted}
       onToggleMute={() => eleven.setMuted(!eleven.isMuted)}
       onHangUp={onHangUp}
-      onSendText={text => {
-        try { assertActive(); } catch (error) { onConsentBlocked(error); return; }
-        void verifyLegalConsent("voice", langRef.current).then(() => {
+      onSendText={(text) => {
+        try {
           assertActive();
-          eleven.sendUserMessage(text);
-        }).catch(onConsentBlocked);
+        } catch (error) {
+          onConsentBlocked(error);
+          return;
+        }
+        void verifyLegalConsent("voice", langRef.current)
+          .then(() => {
+            assertActive();
+            eleven.sendUserMessage(text);
+          })
+          .catch(onConsentBlocked);
       }}
     />
   );

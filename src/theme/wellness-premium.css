@@ -2,19 +2,6 @@
 .app-shell .screen { background: linear-gradient(180deg,var(--wellness-bg-start),var(--wellness-bg-end)); }
 .app-shell .screen > .screen-scroll { background: transparent; background-image: none; }
 .screen .premium-back { --background: var(--wellness-surface); --color: var(--wellness-navy); --border-radius: 50%; --padding-start: 0; --padding-end: 0; width:44px; height:44px; min-width:44px; margin:0; box-shadow:var(--wellness-shadow); border-radius:50%; }
-.app-shell .premium-nav.bnav { position:absolute; inset:auto 16px max(12px,env(safe-area-inset-bottom)) 16px; width:auto; height:72px; padding:8px 4px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); border:1px solid var(--wellness-border); border-radius:26px; background:var(--wellness-accent); box-shadow:var(--wellness-shadow); overflow:visible; }
-.premium-nav.bnav ion-button.ni { --background:transparent; --background-hover:rgba(255,255,255,.5); --color:var(--wellness-primary); --padding-start:0; --padding-end:0; --border-radius:18px; display:block; width:100%; height:56px; margin:0; min-width:0; font-size:11px; font-weight:600; text-transform:none; letter-spacing:0; }
-.premium-nav.bnav ion-button.ni::part(native) { display:flex; flex-direction:column; gap:4px; padding:0; }
-.premium-nav.bnav .ni-ico { display:flex; height:24px; font-size:23px; position:relative; }
-.premium-nav .premium-nav-content { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:100%; }
-.premium-nav.bnav .ni-vita .ni-ico,.premium-nav.bnav .ni-vita .premium-nav-content { color:white; }
-.premium-nav.bnav .ni.on { --color:var(--wellness-navy); font-weight:800; }
-.premium-nav.bnav .ni.on .ni-ico::after { content:''; position:absolute; height:3px; width:14px; border-radius:4px; background:currentColor; bottom:-4px; left:5px; }
-.premium-nav.bnav ion-button.ni-vita { height:72px; transform:translateY(-23px); border-radius:50%; --background:linear-gradient(140deg,var(--wellness-primary),var(--wellness-navy)); --color:white; box-shadow:0 6px 18px rgba(11,42,74,.24); border:5px solid var(--wellness-bg-end); }
-.premium-nav.bnav .ni-vita .ni-ico { font-size:25px; }
-.premium-nav.bnav ion-button.premium-sos { position:absolute; right:2px; top:-51px; height:44px; min-width:64px; margin:0; --background:white; --color:var(--wellness-error); --border-radius:16px; font-size:12px; font-weight:800; box-shadow:var(--wellness-shadow); }
-.premium-nav.bnav .premium-sos ion-icon { font-size:18px; }
-.app-shell .screen-scroll:not(.no-nav) { padding-bottom:calc(152px + env(safe-area-inset-bottom)); }
 .ntr-screen.screen { color:var(--wellness-navy); --navy:var(--wellness-navy); --tx:var(--wellness-navy); --blue:var(--wellness-primary); --blue-l:var(--wellness-accent); --bd:var(--wellness-border); --teal:var(--wellness-success); --teal-l:var(--wellness-success-bg); --org:#80511a; --org-l:var(--wellness-warning-bg); --red:var(--wellness-error); --red-l:var(--wellness-error-bg); --g0:var(--wellness-bg-start); --mu:#52677e; --ion-color-primary:var(--wellness-navy); }
 .ntr-screen.screen .page-head { padding:calc(16px + env(safe-area-inset-top)) 20px 14px; background:transparent; border:0; }
 .ntr-screen.screen .page-head-row { display:flex; align-items:center; justify-content:flex-start; gap:12px; }
@@ -225,9 +212,6 @@
   .premium-days ion-button.is-selected { transform:none; }
 }
 
-/* P2: el dock ocupa espacio real; ni SOS ni Vita pisan el área de lectura. */
-.app-shell .premium-nav.bnav { position:relative; inset:auto; flex:0 0 var(--wellness-dock-height); margin:var(--wellness-dock-clearance) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); width:calc(100% - max(16px,env(safe-area-inset-left)) - max(16px,env(safe-area-inset-right))); align-self:stretch; transform:none; z-index:30; }
-.app-shell .screen-scroll:not(.no-nav) { padding-bottom:24px; scroll-padding-bottom:24px; }
 .app-shell .screen.p2-mission { --navy:var(--wellness-navy); --tx:var(--wellness-navy); --blue:var(--wellness-primary); --mu:var(--wellness-muted); color:var(--wellness-navy); }
 .p2-mission.lesson-page .lesson-page-scroll { background:transparent; padding:0; }
 .p2-mission.lesson-page .lesson-sheet { max-width:960px; padding:calc(20px + env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom)); }
@@ -377,7 +361,6 @@
 .chat-reference.screen .chat-list .bub-usr { background:linear-gradient(130deg,var(--wellness-navy),var(--wellness-action)); color:white; }
 .chat-reference.screen .chat-composer ion-input.chat-inp,.chat-reference.screen .chat-composer ion-textarea.chat-inp { border:0; border-radius:0; font-size:15px; --padding-start:6px; --color:var(--wellness-navy); }
 .chat-reference.screen .chat-composer ion-button.chat-send { --background:linear-gradient(140deg,var(--wellness-navy),var(--wellness-action)); --color:white; }
-.chat-reference.screen .premium-nav { margin-top:var(--wellness-dock-clearance); }
 .p3-pod-controls ion-button.pod-play { --background-hover:white; --background-focused:white; --background-activated:var(--wellness-accent); --color:var(--wellness-navy); }
 .p3-emotion ion-button.emotion-mood.selected { --background-activated:var(--wellness-primary); --background-hover:var(--wellness-navy); --background-focused:var(--wellness-navy); }
 .p3-pod-controls ion-button.is-selected { --background:var(--wellness-dark-glass); }
@@ -431,3 +414,31 @@
   .app-shell ion-segment-button { --indicator-transition:none!important; }
   .app-shell ion-button::part(native),.app-shell ion-progress-bar::part(progress),.app-shell ion-accordion::part(content),.app-shell ion-segment-button::part(indicator-background) { animation:none!important; transition:none!important; }
 }
+
+/* Llamada con Vita en segundo plano: barra fija arriba (estilo llamada de
+   WhatsApp). Cubre la zona de la barra de estado, empuja el contenido y deja
+   los controles a la altura del pulgar. Sin posición flotante sobre pantallas. */
+html.vita-call-active .app-shell { padding-top:48px; box-sizing:border-box; }
+.vita-call-pill { position:absolute; top:0; left:0; right:0; z-index:60; display:flex; align-items:center; gap:8px; height:calc(48px + env(safe-area-inset-top,0px)); padding:env(safe-area-inset-top,0px) 10px 0 12px; box-sizing:border-box; background:linear-gradient(100deg,#142855 0%,#023467 52%,#1b6f95 100%); color:#fff; box-shadow:0 6px 18px rgba(11,42,74,.28); animation:vcp-in 220ms ease-out; }
+.vita-call-pill .vcp-main { flex:1; min-width:0; display:flex; align-items:center; gap:10px; height:44px; padding:0; border:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.vita-call-pill .vcp-avatar { position:relative; flex:0 0 34px; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.16); font-size:18px; }
+.vita-call-pill .vcp-avatar::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(143,214,255,.55); animation:vcp-ring 1.8s ease-out infinite; }
+.vita-call-pill .vcp-text { min-width:0; display:flex; flex-direction:column; line-height:1.2; }
+.vita-call-pill .vcp-title { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vita-call-pill .vcp-sub { display:flex; gap:8px; font-size:12px; color:rgba(255,255,255,.82); white-space:nowrap; }
+.vita-call-pill .vcp-status { overflow:hidden; text-overflow:ellipsis; }
+.vita-call-pill .vcp-time { font-variant-numeric:tabular-nums; }
+.vita-call-pill .vcp-wave { display:flex; align-items:center; gap:3px; height:20px; margin-left:auto; padding-right:4px; }
+.vita-call-pill .vcp-wave i { width:3px; height:6px; border-radius:2px; background:rgba(255,255,255,.85); animation:vcp-wave 1s ease-in-out infinite; }
+.vita-call-pill .vcp-wave i:nth-child(2) { animation-delay:.15s; } .vita-call-pill .vcp-wave i:nth-child(3) { animation-delay:.3s; } .vita-call-pill .vcp-wave i:nth-child(4) { animation-delay:.45s; }
+.vita-call-pill .vcp-btn { flex:0 0 44px; width:44px; height:44px; border:0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; color:#fff; cursor:pointer; }
+.vita-call-pill .vcp-mute { background:rgba(255,255,255,.18); }
+.vita-call-pill .vcp-mute[aria-pressed="true"] { background:#fff; color:#023467; }
+.vita-call-pill .vcp-hang { background:#d92d20; }
+.vita-call-pill .vcp-hang ion-icon { transform:rotate(135deg); }
+.vita-call-pill.is-muted .vcp-wave i { animation:none; opacity:.4; }
+.vita-call-pill button:focus-visible { outline:3px solid #fff; outline-offset:2px; }
+@keyframes vcp-wave { 0%,100% { height:5px; } 50% { height:18px; } }
+@keyframes vcp-ring { 0% { transform:scale(.9); opacity:.9; } 100% { transform:scale(1.35); opacity:0; } }
+@keyframes vcp-in { from { transform:translateY(-100%); } to { transform:none; } }
+@media (prefers-reduced-motion:reduce) { .vita-call-pill, .vita-call-pill * { animation:none !important; } }
