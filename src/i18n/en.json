@@ -3958,5 +3958,14 @@
   "Tu coach de salud y bienestar": "Your health and wellbeing coach",
   "SOS · Botón de pánico": "SOS · Panic button",
   "No se pudo enviar la calificación. Puedes volver a intentarlo.": "Could not send your feedback. You can try again.",
-  "Volver al inicio": "Back to home"
+  "Volver al inicio": "Back to home",
+  "Cargando tu alimentación…": "Loading your nutrition…",
+  "No pudimos cargar tu alimentación": "We couldn’t load your nutrition",
+  "No pudimos cargar tus mediciones.": "We couldn’t load your measurements.",
+  "No pudimos cargar tu adherencia semanal.": "We couldn’t load your weekly adherence.",
+  "Cargando conversación…": "Loading conversation…",
+  "No pudimos cargar el historial. Puedes reintentar o seguir conversando.": "We couldn’t load your history. You can retry or keep chatting.",
+  "Tu conversación empieza aquí": "Your conversation starts here",
+  "Elige un tema o escribe a Vita cuando quieras.": "Choose a topic or write to Vita whenever you like.",
+  "No pudimos cargar los mensajes anteriores.": "We couldn’t load earlier messages."
 }

@@ -2,7 +2,7 @@ import {APPOINTMENTS_ENABLED} from "./utils/appointmentsVisibility";
 import { LanguageQuerySync } from "./components/LanguageQuerySync";
 import { AchievementCenter } from "./components/achievements/AchievementCenter";
 import { setupIonicReact, IonApp, IonSpinner } from "@ionic/react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
   useCallback,
   useEffect,
@@ -60,6 +60,7 @@ const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
 function Router() {
   const { flow, screen, authLoading } = useApp();
+  const reducedMotion = useReducedMotion();
 
   if (authLoading) {
     return (
@@ -140,10 +141,10 @@ function Router() {
       <motion.div
         key={flow === "app" ? `app-${screen.startsWith("program-") ? "prog" : screen}` : flow}
         className="router-page"
-        initial={{ opacity: 0, y: 24, scale: 0.985 }}
+        initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -14, scale: 0.985 }}
-        transition={TRANSITION}
+        exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -14, scale: 0.985 }}
+        transition={reducedMotion ? { duration: 0 } : TRANSITION}
       >
         {content}
       </motion.div>
@@ -276,7 +277,7 @@ export default function App() {
             <LegalConsentProvider>
               <AppProvider onResetCommunityClient={resetCommunityClient}>
                 <WearableProvider>
-                  <Shell />
+                  <MotionConfig reducedMotion="user"><Shell /></MotionConfig>
                 </WearableProvider>
               </AppProvider>
             </LegalConsentProvider>

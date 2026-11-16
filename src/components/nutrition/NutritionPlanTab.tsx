@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useReducedMotion } from "framer-motion";
 import { IonAccordion, IonAccordionGroup, IonButton, IonSkeletonText, IonIcon, IonItem, IonProgressBar } from "@ionic/react";
 import { leafOutline, waterOutline, restaurantOutline, timeOutline, checkmarkCircleOutline, analyticsOutline, shieldCheckmarkOutline, calendarOutline, refreshOutline, cafeOutline, sunnyOutline, moonOutline, informationCircleOutline, chevronForwardOutline, cameraOutline } from "ionicons/icons";
 import { useI18n } from "../../i18n/I18nContext";
@@ -86,6 +87,7 @@ export function NutritionPlanTab({
   canRegister = false,
 }: NutritionPlanTabProps) {
   const { t, lang } = useI18n();
+  const reducedMotion = useReducedMotion();
   const [selection, setSelection] = useState<{ plan: string; day: number } | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const planKey = `${plan?.id ?? ""}:${plan?.revision ?? ""}`;
@@ -252,16 +254,16 @@ export function NutritionPlanTab({
         aria-busy="true"
         role="status"
       >
-        <IonSkeletonText animated style={{ width: "60%" }} />
-        <IonSkeletonText animated style={{ width: "100%" }} />
-        <IonSkeletonText animated style={{ width: "100%" }} />
-        <IonSkeletonText animated style={{ width: "80%" }} />
+        <IonSkeletonText animated={!reducedMotion} style={{ width: "60%" }} />
+        <IonSkeletonText animated={!reducedMotion} style={{ width: "100%" }} />
+        <IonSkeletonText animated={!reducedMotion} style={{ width: "100%" }} />
+        <IonSkeletonText animated={!reducedMotion} style={{ width: "80%" }} />
       </div>
     );
   }
 
   if (status?.status === 'active' && plan && ((status.planId && plan.id && status.planId !== plan.id) || (status.revision != null && plan.revision != null && status.revision !== plan.revision))) {
-    return <section className="ntr-card" role="status" aria-busy={!error}><h2>{t('Actualizando tu plan')}</h2><p>{t('Cargando las indicaciones de tu plan.')}</p>{error ? <IonButton onClick={onRetry}>{t('Reintentar')}</IonButton> : <IonSkeletonText animated style={{ height: 90 }} />}</section>;
+    return <section className="ntr-card" role="status" aria-busy={!error}><h2>{t('Actualizando tu plan')}</h2><p>{t('Cargando las indicaciones de tu plan.')}</p>{error ? <IonButton onClick={onRetry}>{t('Reintentar')}</IonButton> : <IonSkeletonText animated={!reducedMotion} style={{ height: 90 }} />}</section>;
   }
 
   if (plan) {

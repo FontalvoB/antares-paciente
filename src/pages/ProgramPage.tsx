@@ -7,7 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { IonButton, IonIcon, IonModal, IonSpinner } from "@ionic/react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { arrowBack, flame, gift, refresh } from "ionicons/icons";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
@@ -79,6 +79,7 @@ const CONF_COLORS = [
 ];
 
 export function ProgramPage() {
+  const reducedMotion = useReducedMotion();
   const {
     screen,
     program: appProgram,
@@ -802,7 +803,7 @@ export function ProgramPage() {
         />
 
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={tab} {...paneMotion}>
+          <motion.div key={tab} {...(reducedMotion ? { initial: false, animate: { opacity: 1, y: 0, filter: 'none' }, transition: { duration: 0 } } : paneMotion)}>
             {tab === "hoy" && (
               <TodayView
                 program={program}

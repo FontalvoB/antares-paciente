@@ -184,7 +184,7 @@
 @media (min-width:768px) {
   .app-shell .premium-nav.bnav { max-width:560px; left:50%; right:auto; width:calc(100% - 32px); transform:translateX(-50%); }
   .ntr-screen.screen .page-head,.ntr-screen.screen .nutrition-primary-tabs,.ntr-screen.screen .ntr-scroll { width:min(100%,1000px); margin-left:auto; margin-right:auto; }
-  .ntr-screen.screen .page-head { padding-top:28px; }
+  .ntr-screen.screen .page-head { padding-top:calc(28px + env(safe-area-inset-top)); }
   .ntr-screen.screen .nutrition-primary-tabs { padding-left:20px; padding-right:20px; }
   .ntr-screen .ntd-hero { height:210px; }
   .ntr-screen .ntd-hero-copy { padding:32px; }
@@ -225,7 +225,7 @@
 }
 
 /* P2: el dock ocupa espacio real; ni SOS ni Vita pisan el área de lectura. */
-.app-shell .premium-nav.bnav { position:relative; inset:auto; flex:0 0 72px; margin:52px 16px max(12px,env(safe-area-inset-bottom)); width:calc(100% - 32px); transform:none; z-index:30; }
+.app-shell .premium-nav.bnav { position:relative; inset:auto; flex:0 0 var(--wellness-dock-height); margin:var(--wellness-dock-clearance) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); width:calc(100% - max(16px,env(safe-area-inset-left)) - max(16px,env(safe-area-inset-right))); align-self:stretch; transform:none; z-index:30; }
 .app-shell .screen-scroll:not(.no-nav) { padding-bottom:24px; scroll-padding-bottom:24px; }
 .app-shell .screen.p2-mission { --navy:var(--wellness-navy); --tx:var(--wellness-navy); --blue:var(--wellness-primary); --mu:var(--wellness-muted); color:var(--wellness-navy); }
 .p2-mission.lesson-page .lesson-page-scroll { background:transparent; padding:0; }
@@ -376,7 +376,7 @@
 .chat-reference.screen .chat-list .bub-usr { background:linear-gradient(130deg,var(--wellness-navy),var(--wellness-action)); color:white; }
 .chat-reference.screen .chat-composer ion-input.chat-inp { border:0; border-radius:0; font-size:15px; --padding-start:6px; }
 .chat-reference.screen .chat-composer ion-button.chat-send { --background:linear-gradient(140deg,var(--wellness-navy),var(--wellness-action)); --color:white; }
-.chat-reference.screen .premium-nav { margin-top:64px; }
+.chat-reference.screen .premium-nav { margin-top:var(--wellness-dock-clearance); }
 .p3-pod-controls ion-button.pod-play { --background-hover:white; --background-focused:white; --background-activated:var(--wellness-accent); --color:var(--wellness-navy); }
 .p3-emotion ion-button.emotion-mood.selected { --background-activated:var(--wellness-primary); --background-hover:var(--wellness-navy); --background-focused:var(--wellness-navy); }
 .p3-pod-controls ion-button.is-selected { --background:var(--wellness-dark-glass); }
@@ -403,4 +403,28 @@
 @media(prefers-reduced-motion:reduce) {
   .p2-mission *,.p2-mission *::before,.p2-mission *::after,.p2-nb-sheet *,.p2-demo-modal * { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
   .p2-circuit-list ion-accordion::part(content) { transition:none !important; }
+}
+
+/* P4 · Estados honestos y espacio compartido para lectura, foco y dock. */
+.app-shell .screen > .screen-scroll { min-height:0; overscroll-behavior-y:contain; }
+.wellness-loading,.wellness-empty { padding:20px; color:var(--wellness-navy); }
+.wellness-loading > p,.wellness-empty p { color:var(--wellness-muted); font-size:14px; line-height:1.6; }
+.wellness-skeleton-hero { height:148px; border-radius:var(--wellness-radius); }
+.wellness-skeleton-card { height:80px; border-radius:18px; margin:16px 0; }
+.wellness-chat-loading,.wellness-chat-state { width:100%; max-width:760px; margin-inline:auto; padding:16px; border-radius:20px; background:var(--wellness-surface); color:var(--wellness-navy); font-size:14px; line-height:1.6; }
+.wellness-chat-state h2 { font-size:19px; margin:0 0 8px; }
+.wellness-chat-state p { margin:0; }
+.wellness-chat-state ion-button { min-width:44px; min-height:44px; --color:var(--wellness-primary); text-transform:none; }
+.p3-mission ion-button:focus-within,.chat-reference ion-button:focus-within { outline:3px solid var(--wellness-action); outline-offset:3px; }
+.p3-podcast ion-button:focus-within { outline-color:var(--wellness-on-dark-muted); }
+.kb-open .app-shell .premium-nav.bnav { display:none; }
+.kb-open .chat-reference.screen .composer.chat-composer { margin-bottom:max(12px,env(safe-area-inset-bottom)); }
+.chat-reference.screen .chat-list.screen-scroll { min-height:0; }
+.ntr-screen .ntr-scroll { padding-left:max(20px,env(safe-area-inset-left)); padding-right:max(20px,env(safe-area-inset-right)); }
+.p2-mission .lesson-sheet,.p3-mission .lesson-sheet { padding-left:max(20px,env(safe-area-inset-left)); padding-right:max(20px,env(safe-area-inset-right)); }
+.ntr-screen .ntr-tabs ion-segment-button { --indicator-transition:transform 180ms ease-out; }
+@media (prefers-reduced-motion:reduce) {
+  .app-shell *,.app-shell *::before,.app-shell *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+  .app-shell ion-segment-button { --indicator-transition:none!important; }
+  .app-shell ion-button::part(native),.app-shell ion-progress-bar::part(progress),.app-shell ion-accordion::part(content),.app-shell ion-segment-button::part(indicator-background) { animation:none!important; transition:none!important; }
 }

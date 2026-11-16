@@ -11,7 +11,7 @@ describe('Nutrición: visualizaciones con datos reales', () => {
   it('no convierte la ausencia de adherencia en un porcentaje cero', () => {
     const retry = vi.fn()
     render(<NutritionWeek current={null} previous={null} loading={false} failed onRetry={retry} locale="es-ES" />)
-    expect(screen.getByText('Sin datos esta semana')).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toContain('No pudimos cargar tu adherencia semanal.')
     expect(screen.queryByText('0%')).toBeNull()
     fireEvent.click(screen.getByText('Reintentar'))
     expect(retry).toHaveBeenCalledOnce()

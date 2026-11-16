@@ -1,0 +1,3454 @@
+{
+  "baseline": "715fd40",
+  "generatedAt": "2026-11-16T03:07:15.684Z",
+  "tests": {
+    "passed": 1714,
+    "failed": 0
+  },
+  "gates": [
+    {
+      "name": "test",
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "i18n",
+      "exitCode": 0
+    }
+  ],
+  "checks": 276,
+  "states": [
+    {
+      "lang": "es",
+      "width": 320,
+      "checks": [
+        "nutricion-skeleton",
+        "nutricion-error",
+        "reintento-recupera-datos",
+        "nutricion-vacio",
+        "historial-skeleton",
+        "historial-error",
+        "foco-teclado-visible",
+        "chat-vacio",
+        "chat-carga-fallo",
+        "chat-reintento-sin-envio",
+        "chat-safe-area",
+        "dock-ancho-completo",
+        "teclado-dock-oculto-compositor-disponible",
+        "reduced-motion-sin-animaciones"
+      ],
+      "focus": {
+        "tag": "BUTTON",
+        "outline": "solid"
+      },
+      "geometry": {
+        "listBottom": 610,
+        "composerTop": 614,
+        "composerBottom": 674,
+        "sosTop": 688
+      },
+      "runningAnimations": 0,
+      "smallTargets": [],
+      "pageErrors": [],
+      "requests": [],
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "checks": [
+        "nutricion-skeleton",
+        "nutricion-error",
+        "reintento-recupera-datos",
+        "nutricion-vacio",
+        "historial-skeleton",
+        "historial-error",
+        "foco-teclado-visible",
+        "chat-vacio",
+        "chat-carga-fallo",
+        "chat-reintento-sin-envio",
+        "chat-safe-area",
+        "dock-ancho-completo",
+        "teclado-dock-oculto-compositor-disponible",
+        "reduced-motion-sin-animaciones"
+      ],
+      "focus": {
+        "tag": "BUTTON",
+        "outline": "solid"
+      },
+      "geometry": {
+        "listBottom": 610,
+        "composerTop": 614,
+        "composerBottom": 674,
+        "sosTop": 688
+      },
+      "runningAnimations": 0,
+      "smallTargets": [],
+      "pageErrors": [],
+      "requests": [],
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ]
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "checks": [
+        "nutricion-skeleton",
+        "nutricion-error",
+        "reintento-recupera-datos",
+        "nutricion-vacio",
+        "historial-skeleton",
+        "historial-error",
+        "foco-teclado-visible",
+        "chat-vacio",
+        "chat-carga-fallo",
+        "chat-reintento-sin-envio",
+        "chat-safe-area",
+        "dock-ancho-completo",
+        "teclado-dock-oculto-compositor-disponible",
+        "reduced-motion-sin-animaciones"
+      ],
+      "focus": {
+        "tag": "BUTTON",
+        "outline": "solid"
+      },
+      "geometry": {
+        "listBottom": 610,
+        "composerTop": 614,
+        "composerBottom": 674,
+        "sosTop": 688
+      },
+      "runningAnimations": 0,
+      "smallTargets": [],
+      "pageErrors": [],
+      "requests": [],
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "checks": [
+        "nutricion-skeleton",
+        "nutricion-error",
+        "reintento-recupera-datos",
+        "nutricion-vacio",
+        "historial-skeleton",
+        "historial-error",
+        "foco-teclado-visible",
+        "chat-vacio",
+        "chat-carga-fallo",
+        "chat-reintento-sin-envio",
+        "chat-safe-area",
+        "dock-ancho-completo",
+        "teclado-dock-oculto-compositor-disponible",
+        "reduced-motion-sin-animaciones"
+      ],
+      "focus": {
+        "tag": "BUTTON",
+        "outline": "solid"
+      },
+      "geometry": {
+        "listBottom": 610,
+        "composerTop": 614,
+        "composerBottom": 674,
+        "sosTop": 688
+      },
+      "runningAnimations": 0,
+      "smallTargets": [],
+      "pageErrors": [],
+      "requests": [],
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "checks": [
+        "nutricion-skeleton",
+        "nutricion-error",
+        "reintento-recupera-datos",
+        "nutricion-vacio",
+        "historial-skeleton",
+        "historial-error",
+        "foco-teclado-visible",
+        "chat-vacio",
+        "chat-carga-fallo",
+        "chat-reintento-sin-envio",
+        "chat-safe-area",
+        "dock-ancho-completo",
+        "teclado-dock-oculto-compositor-disponible",
+        "reduced-motion-sin-animaciones"
+      ],
+      "focus": {
+        "tag": "BUTTON",
+        "outline": "solid"
+      },
+      "geometry": {
+        "listBottom": 610,
+        "composerTop": 614,
+        "composerBottom": 674,
+        "sosTop": 688
+      },
+      "runningAnimations": 0,
+      "smallTargets": [],
+      "pageErrors": [],
+      "requests": [],
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "checks": [
+        "nutricion-skeleton",
+        "nutricion-error",
+        "reintento-recupera-datos",
+        "nutricion-vacio",
+        "historial-skeleton",
+        "historial-error",
+        "foco-teclado-visible",
+        "chat-vacio",
+        "chat-carga-fallo",
+        "chat-reintento-sin-envio",
+        "chat-safe-area",
+        "dock-ancho-completo",
+        "teclado-dock-oculto-compositor-disponible",
+        "reduced-motion-sin-animaciones"
+      ],
+      "focus": {
+        "tag": "BUTTON",
+        "outline": "solid"
+      },
+      "geometry": {
+        "listBottom": 610,
+        "composerTop": 614,
+        "composerBottom": 674,
+        "sosTop": 688
+      },
+      "runningAnimations": 0,
+      "smallTargets": [],
+      "pageErrors": [],
+      "requests": [],
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/threads/qa-p3-thread/messages"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        }
+      ]
+    }
+  ],
+  "nav": [
+    {
+      "lang": "es",
+      "width": 320,
+      "readingBottom": 696,
+      "navTop": 760,
+      "sosTop": 710,
+      "lastCardBottom": 671.5,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 674,
+        "sosTop": 688,
+        "lastCardBottom": 649.5
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "readingBottom": 696,
+      "navTop": 760,
+      "sosTop": 710,
+      "lastCardBottom": 671.625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 674,
+        "sosTop": 688,
+        "lastCardBottom": 649.625
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "readingBottom": 696,
+      "navTop": 760,
+      "sosTop": 710,
+      "lastCardBottom": 672.046875,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 674,
+        "sosTop": 688,
+        "lastCardBottom": 650.046875
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "readingBottom": 696,
+      "navTop": 760,
+      "sosTop": 710,
+      "lastCardBottom": 671.90625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 674,
+        "sosTop": 688,
+        "lastCardBottom": 649.90625
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "readingBottom": 696,
+      "navTop": 760,
+      "sosTop": 710,
+      "lastCardBottom": 671.625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 674,
+        "sosTop": 688,
+        "lastCardBottom": 649.625
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "readingBottom": 696,
+      "navTop": 760,
+      "sosTop": 710,
+      "lastCardBottom": 671.65625,
+      "navDoesNotCoverReading": true,
+      "lastCardClear": true,
+      "safeArea": {
+        "top": 20,
+        "bottom": 34,
+        "marginBottom": "34px",
+        "readingBottom": 674,
+        "sosTop": 688,
+        "lastCardBottom": 649.65625
+      }
+    }
+  ],
+  "regression": {
+    "p2": [
+      {
+        "lang": "es",
+        "width": 320,
+        "viewport": {
+          "width": 320,
+          "height": 900
+        },
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "warning",
+            "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          }
+        ],
+        "checks": [
+          "pausa-sin-saltos",
+          "siguiente-anterior",
+          "demostracion-pausa-sin-puntos",
+          "exito-solo-tras-HTTP-200-y-puntos-reales",
+          "cancelar-sin-POST",
+          "hoja-foco-Escape-conserva-borrador",
+          "objetivos-tactiles-44px",
+          "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+          "registro-unico-y-preview-sin-publicacion",
+          "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+          "reduced-motion",
+          "borrador-con-foto-misma-cuenta-sin-upload",
+          "sin-publicacion-y-sin-duplicados",
+          "descanso-y-vacio-sin-completar",
+          "pendiente-sin-celebracion-ni-compartir"
+        ],
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "ejercicio",
+            "clientRequestId": "6bb08545-5998-4e6e-a993-33211f77f015"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "3ca021c2-be91-4386-a0cb-d1d6ac30c8d3"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "b34349b5-ea11-4226-8e2b-3996637db621"
+          }
+        ]
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "viewport": {
+          "width": 390,
+          "height": 900
+        },
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "warning",
+            "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          }
+        ],
+        "checks": [
+          "pausa-sin-saltos",
+          "siguiente-anterior",
+          "demostracion-pausa-sin-puntos",
+          "exito-solo-tras-HTTP-200-y-puntos-reales",
+          "cancelar-sin-POST",
+          "hoja-foco-Escape-conserva-borrador",
+          "objetivos-tactiles-44px",
+          "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+          "registro-unico-y-preview-sin-publicacion",
+          "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+          "reduced-motion",
+          "borrador-con-foto-misma-cuenta-sin-upload",
+          "sin-publicacion-y-sin-duplicados",
+          "descanso-y-vacio-sin-completar",
+          "pendiente-sin-celebracion-ni-compartir"
+        ],
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "ejercicio",
+            "clientRequestId": "e0682b14-f997-4e21-9856-8ce86dcdb181"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "669e289a-e558-4e53-aeec-e895ce8f5fa1"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "c05541b9-acae-4348-a1c0-5a6776e99e17"
+          }
+        ]
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "warning",
+            "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          }
+        ],
+        "checks": [
+          "pausa-sin-saltos",
+          "siguiente-anterior",
+          "demostracion-pausa-sin-puntos",
+          "exito-solo-tras-HTTP-200-y-puntos-reales",
+          "cancelar-sin-POST",
+          "hoja-foco-Escape-conserva-borrador",
+          "objetivos-tactiles-44px",
+          "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+          "registro-unico-y-preview-sin-publicacion",
+          "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+          "reduced-motion",
+          "borrador-con-foto-misma-cuenta-sin-upload",
+          "sin-publicacion-y-sin-duplicados",
+          "descanso-y-vacio-sin-completar",
+          "pendiente-sin-celebracion-ni-compartir"
+        ],
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "ejercicio",
+            "clientRequestId": "482389c5-7d0f-464a-a3ca-dc70555400a6"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "5e256332-ed0b-4ae8-b3f4-9c340b84bc33"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "b726eaea-ae25-46da-afa9-e5cda0cf788c"
+          }
+        ]
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "viewport": {
+          "width": 320,
+          "height": 900
+        },
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Full Body"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Sentadilla"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Mancuernas"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Mantén la espalda recta."
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Press banca"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Remo"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Burpees"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Zancadas"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": En pausa"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Añadir foto"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": The test entry could not be saved."
+          },
+          {
+            "type": "warning",
+            "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          }
+        ],
+        "checks": [
+          "pausa-sin-saltos",
+          "siguiente-anterior",
+          "demostracion-pausa-sin-puntos",
+          "exito-solo-tras-HTTP-200-y-puntos-reales",
+          "cancelar-sin-POST",
+          "hoja-foco-Escape-conserva-borrador",
+          "objetivos-tactiles-44px",
+          "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+          "registro-unico-y-preview-sin-publicacion",
+          "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+          "reduced-motion",
+          "borrador-con-foto-misma-cuenta-sin-upload",
+          "sin-publicacion-y-sin-duplicados",
+          "descanso-y-vacio-sin-completar",
+          "pendiente-sin-celebracion-ni-compartir"
+        ],
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "ejercicio",
+            "clientRequestId": "84a9eb19-2764-424e-9984-794f75a5e808"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "09c2aa08-4c7c-4e6f-8891-5f9685603119"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "fbcf4428-164f-4e3b-b519-aa64e98340a1"
+          }
+        ]
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "viewport": {
+          "width": 390,
+          "height": 900
+        },
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Full Body"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Sentadilla"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Mancuernas"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Mantén la espalda recta."
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Press banca"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Remo"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Burpees"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Zancadas"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": En pausa"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Añadir foto"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": The test entry could not be saved."
+          },
+          {
+            "type": "warning",
+            "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          }
+        ],
+        "checks": [
+          "pausa-sin-saltos",
+          "siguiente-anterior",
+          "demostracion-pausa-sin-puntos",
+          "exito-solo-tras-HTTP-200-y-puntos-reales",
+          "cancelar-sin-POST",
+          "hoja-foco-Escape-conserva-borrador",
+          "objetivos-tactiles-44px",
+          "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+          "registro-unico-y-preview-sin-publicacion",
+          "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+          "reduced-motion",
+          "borrador-con-foto-misma-cuenta-sin-upload",
+          "sin-publicacion-y-sin-duplicados",
+          "descanso-y-vacio-sin-completar",
+          "pendiente-sin-celebracion-ni-compartir"
+        ],
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "ejercicio",
+            "clientRequestId": "2f43e9a5-9d37-40ed-ac84-f94ca1c6536b"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "592fb7df-b4a2-4c3c-99d1-e71c13529a71"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "cfd9ff70-2514-49fe-b7f8-bdb3efe52946"
+          }
+        ]
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Full Body"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Sentadilla"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Mancuernas"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Mantén la espalda recta."
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Press banca"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Remo"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Burpees"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Zancadas"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": En pausa"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": Añadir foto"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "warning",
+            "text": "[i18n] Missing key for \"en\": The test entry could not be saved."
+          },
+          {
+            "type": "warning",
+            "text": "You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          }
+        ],
+        "checks": [
+          "pausa-sin-saltos",
+          "siguiente-anterior",
+          "demostracion-pausa-sin-puntos",
+          "exito-solo-tras-HTTP-200-y-puntos-reales",
+          "cancelar-sin-POST",
+          "hoja-foco-Escape-conserva-borrador",
+          "objetivos-tactiles-44px",
+          "rechazo-422-conserva-foto-mensaje-y-sin-exito",
+          "registro-unico-y-preview-sin-publicacion",
+          "contrato-identidad-fecha-idempotencia-sin-foto-clinica",
+          "reduced-motion",
+          "borrador-con-foto-misma-cuenta-sin-upload",
+          "sin-publicacion-y-sin-duplicados",
+          "descanso-y-vacio-sin-completar",
+          "pendiente-sin-celebracion-ni-compartir"
+        ],
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "ejercicio",
+            "clientRequestId": "32ca9eaa-f297-44e5-abf9-43a5bcf5cafb"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "c4c9fc87-f423-4142-8799-c3b02dc06bbc"
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "nutraceutico",
+            "clientRequestId": "f7c516f7-14fc-4efe-ae87-d8952c4bbab8"
+          }
+        ]
+      }
+    ],
+    "p3": [
+      {
+        "lang": "es",
+        "width": 320,
+        "checks": [
+          "animo-solo-permite-guardar-sin-inventar-sueno",
+          "sueno-manual-validado-y-nota-opcional",
+          "rechazo-conserva-formulario-y-doble-toque-un-POST",
+          "contrato-emocional-fecha-origen-puntos-confirmados",
+          "audio-nativo-play-pausa-sin-saltos",
+          "velocidad-cambia-audio-real",
+          "temporizador-seleccionable",
+          "bajo-70-sin-premio",
+          "70-confirmado-no-corta-audio-un-POST",
+          "completado-conserva-controles-y-seek",
+          "pendiente-no-celebra",
+          "voz-cabecera-compositor-SOS-conservan-handlers",
+          "adjuntos-hoja-Ionic-Escape",
+          "feedback-HTTP-503-rollback-reintento-confirmado",
+          "IA-503-no-rompe-pantalla-ni-compositor",
+          "reduced-motion",
+          "chat-safe-area-compositor-y-SOS-separados"
+        ],
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          }
+        ],
+        "safeArea": {
+          "listBottom": 666,
+          "composerTop": 670,
+          "composerBottom": 730,
+          "sosTop": 744,
+          "navMargin": "34px"
+        },
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "647cb294-0823-436a-9008-85dfb5c73160",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "Dormí mejor."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "5c443099-45b2-4552-b148-0cfb1bd8e52d",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "Dormí mejor."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "podcast",
+            "clientRequestId": "e0e0acbe-30ae-42f4-b1e9-7e32c9a11726"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/threads/qa-p3-thread/messages"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "es"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "es"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat",
+            "language": "es"
+          }
+        ]
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "checks": [
+          "animo-solo-permite-guardar-sin-inventar-sueno",
+          "sueno-manual-validado-y-nota-opcional",
+          "rechazo-conserva-formulario-y-doble-toque-un-POST",
+          "contrato-emocional-fecha-origen-puntos-confirmados",
+          "audio-nativo-play-pausa-sin-saltos",
+          "velocidad-cambia-audio-real",
+          "temporizador-seleccionable",
+          "bajo-70-sin-premio",
+          "70-confirmado-no-corta-audio-un-POST",
+          "completado-conserva-controles-y-seek",
+          "pendiente-no-celebra",
+          "voz-cabecera-compositor-SOS-conservan-handlers",
+          "adjuntos-hoja-Ionic-Escape",
+          "feedback-HTTP-503-rollback-reintento-confirmado",
+          "IA-503-no-rompe-pantalla-ni-compositor",
+          "reduced-motion",
+          "chat-safe-area-compositor-y-SOS-separados"
+        ],
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          }
+        ],
+        "safeArea": {
+          "listBottom": 666,
+          "composerTop": 670,
+          "composerBottom": 730,
+          "sosTop": 744,
+          "navMargin": "34px"
+        },
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "75f8a7e2-95e3-4ff6-87cf-5457020dcda2",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "Dormí mejor."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "55244cea-a450-4447-86a4-c61d04df3f7e",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "Dormí mejor."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "podcast",
+            "clientRequestId": "f78cb6c5-118c-4b9b-9aaa-b321c409e53c"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/threads/qa-p3-thread/messages"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "es"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "es"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat",
+            "language": "es"
+          }
+        ]
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "checks": [
+          "animo-solo-permite-guardar-sin-inventar-sueno",
+          "sueno-manual-validado-y-nota-opcional",
+          "rechazo-conserva-formulario-y-doble-toque-un-POST",
+          "contrato-emocional-fecha-origen-puntos-confirmados",
+          "audio-nativo-play-pausa-sin-saltos",
+          "velocidad-cambia-audio-real",
+          "temporizador-seleccionable",
+          "bajo-70-sin-premio",
+          "70-confirmado-no-corta-audio-un-POST",
+          "completado-conserva-controles-y-seek",
+          "pendiente-no-celebra",
+          "voz-cabecera-compositor-SOS-conservan-handlers",
+          "adjuntos-hoja-Ionic-Escape",
+          "feedback-HTTP-503-rollback-reintento-confirmado",
+          "IA-503-no-rompe-pantalla-ni-compositor",
+          "reduced-motion",
+          "chat-safe-area-compositor-y-SOS-separados"
+        ],
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          }
+        ],
+        "safeArea": {
+          "listBottom": 666,
+          "composerTop": 670,
+          "composerBottom": 730,
+          "sosTop": 744,
+          "navMargin": "34px"
+        },
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "3cb5c794-6829-49d3-b745-4fa582a8c225",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "Dormí mejor."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "513d8c32-3ce5-44d0-bf9e-e108cd746cd4",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "Dormí mejor."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "podcast",
+            "clientRequestId": "53ef8eb8-3c7b-4986-b87e-8b594213c770"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "es"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/threads/qa-p3-thread/messages"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "es"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "es"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat",
+            "language": "es"
+          }
+        ]
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "checks": [
+          "animo-solo-permite-guardar-sin-inventar-sueno",
+          "sueno-manual-validado-y-nota-opcional",
+          "rechazo-conserva-formulario-y-doble-toque-un-POST",
+          "contrato-emocional-fecha-origen-puntos-confirmados",
+          "audio-nativo-play-pausa-sin-saltos",
+          "velocidad-cambia-audio-real",
+          "temporizador-seleccionable",
+          "bajo-70-sin-premio",
+          "70-confirmado-no-corta-audio-un-POST",
+          "completado-conserva-controles-y-seek",
+          "pendiente-no-celebra",
+          "voz-cabecera-compositor-SOS-conservan-handlers",
+          "adjuntos-hoja-Ionic-Escape",
+          "feedback-HTTP-503-rollback-reintento-confirmado",
+          "IA-503-no-rompe-pantalla-ni-compositor",
+          "reduced-motion",
+          "chat-safe-area-compositor-y-SOS-separados"
+        ],
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          }
+        ],
+        "safeArea": {
+          "listBottom": 666,
+          "composerTop": 670,
+          "composerBottom": 730,
+          "sosTop": 744,
+          "navMargin": "34px"
+        },
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "84204862-4892-412a-ba3c-b5e160afdc7b",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "I slept better."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "7a55d195-3864-4e86-909f-1174a6a1e25b",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "I slept better."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "podcast",
+            "clientRequestId": "2c1eb2ae-6231-48f0-82a0-c945b0effd92"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/threads/qa-p3-thread/messages"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "en"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "en"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat",
+            "language": "en"
+          }
+        ]
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "checks": [
+          "animo-solo-permite-guardar-sin-inventar-sueno",
+          "sueno-manual-validado-y-nota-opcional",
+          "rechazo-conserva-formulario-y-doble-toque-un-POST",
+          "contrato-emocional-fecha-origen-puntos-confirmados",
+          "audio-nativo-play-pausa-sin-saltos",
+          "velocidad-cambia-audio-real",
+          "temporizador-seleccionable",
+          "bajo-70-sin-premio",
+          "70-confirmado-no-corta-audio-un-POST",
+          "completado-conserva-controles-y-seek",
+          "pendiente-no-celebra",
+          "voz-cabecera-compositor-SOS-conservan-handlers",
+          "adjuntos-hoja-Ionic-Escape",
+          "feedback-HTTP-503-rollback-reintento-confirmado",
+          "IA-503-no-rompe-pantalla-ni-compositor",
+          "reduced-motion",
+          "chat-safe-area-compositor-y-SOS-separados"
+        ],
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          }
+        ],
+        "safeArea": {
+          "listBottom": 666,
+          "composerTop": 670,
+          "composerBottom": 730,
+          "sosTop": 744,
+          "navMargin": "34px"
+        },
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "40cce85f-fd1d-4b98-b3b8-ac13c667c837",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "I slept better."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "f68a173b-3e42-4940-b546-19120b0313a8",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "I slept better."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "podcast",
+            "clientRequestId": "a723c04d-0dff-4e1b-b8f1-59cee86ed18e"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/threads/qa-p3-thread/messages"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "en"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "en"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat",
+            "language": "en"
+          }
+        ]
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "checks": [
+          "animo-solo-permite-guardar-sin-inventar-sueno",
+          "sueno-manual-validado-y-nota-opcional",
+          "rechazo-conserva-formulario-y-doble-toque-un-POST",
+          "contrato-emocional-fecha-origen-puntos-confirmados",
+          "audio-nativo-play-pausa-sin-saltos",
+          "velocidad-cambia-audio-real",
+          "temporizador-seleccionable",
+          "bajo-70-sin-premio",
+          "70-confirmado-no-corta-audio-un-POST",
+          "completado-conserva-controles-y-seek",
+          "pendiente-no-celebra",
+          "voz-cabecera-compositor-SOS-conservan-handlers",
+          "adjuntos-hoja-Ionic-Escape",
+          "feedback-HTTP-503-rollback-reintento-confirmado",
+          "IA-503-no-rompe-pantalla-ni-compositor",
+          "reduced-motion",
+          "chat-safe-area-compositor-y-SOS-separados"
+        ],
+        "pageErrors": [],
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+          }
+        ],
+        "safeArea": {
+          "listBottom": 666,
+          "composerTop": 670,
+          "composerBottom": 730,
+          "sosTop": 744,
+          "navMargin": "34px"
+        },
+        "requests": [
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "db88cf92-d842-4231-bb80-361694dfd0fe",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "I slept better."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "emocional",
+            "clientRequestId": "b11a7951-32c9-4881-92c9-76fc81d20a6d",
+            "moodScore": 4,
+            "barriers": "",
+            "emotional": {
+              "sleepMinutes": 450,
+              "sleepNightDate": "2026-11-15",
+              "sleepSource": "manual",
+              "notes": "I slept better."
+            }
+          },
+          {
+            "enrollmentId": "11111111-1111-4111-8111-111111111111",
+            "localDate": "2026-11-15",
+            "taskCode": "podcast",
+            "clientRequestId": "8e63f369-4f30-4d27-84e6-5af37221f291"
+          }
+        ],
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/program/tasks/complete",
+            "language": "en"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/program/me/snapshot"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/threads/qa-p3-thread/messages"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "en"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat/feedback",
+            "language": "en"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/chat",
+            "language": "en"
+          }
+        ]
+      }
+    ]
+  },
+  "runtime": {
+    "stubs": false,
+    "cases": [
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "es",
+        "width": 320,
+        "mission": "chat"
+      },
+      {
+        "lang": "es",
+        "width": 390,
+        "mission": "chat"
+      },
+      {
+        "lang": "es",
+        "width": 1440,
+        "mission": "chat"
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "emocional",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "podcast",
+        "overflow": false
+      },
+      {
+        "lang": "en",
+        "width": 320,
+        "mission": "chat"
+      },
+      {
+        "lang": "en",
+        "width": 390,
+        "mission": "chat"
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "mission": "chat"
+      }
+    ],
+    "clinicalWrites": [],
+    "pageErrors": [],
+    "protectedBefore": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    },
+    "protectedAfter": {
+      "intakes": {
+        "count": 34,
+        "digest": "36beca98dea89924acd0a3b256ef3cf7"
+      },
+      "publishedReviews": {
+        "count": 2,
+        "digest": "8c74c771430a76489dc69c2af51c3183"
+      },
+      "publishedPlans": {
+        "count": 4,
+        "digest": "46ce32b6e650626d99bd38fae11966a1"
+      }
+    }
+  },
+  "textContrast": [
+    {
+      "name": "navy/surface",
+      "foreground": "0b2a4a",
+      "background": "ffffff",
+      "ratio": 14.54
+    },
+    {
+      "name": "muted/background",
+      "foreground": "52677e",
+      "background": "f2f7fd",
+      "ratio": 5.42
+    },
+    {
+      "name": "white/action",
+      "foreground": "ffffff",
+      "background": "2c7da0",
+      "ratio": 4.62
+    },
+    {
+      "name": "on-dark/primary",
+      "foreground": "d4e4f6",
+      "background": "1d4e79",
+      "ratio": 6.71
+    },
+    {
+      "name": "success/surface",
+      "foreground": "2e7d6b",
+      "background": "ffffff",
+      "ratio": 4.93
+    },
+    {
+      "name": "error/surface",
+      "foreground": "b42318",
+      "background": "ffffff",
+      "ratio": 6.57
+    }
+  ],
+  "images": [
+    {
+      "file": "after/en-1440-chat-error.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "67c33a3c2e501954c99648a80dad0d78df8553e8d584730444a90145cd2bdfc8"
+    },
+    {
+      "file": "after/en-1440-chat-safe-area.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "0c7f86ca7ea8739d39d71c2607f507ebe8e3870c741030d9a2cbb914583678df"
+    },
+    {
+      "file": "after/en-1440-chat-skeleton.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "7745bcfde104f455cc7bf489980c1e816f048e88b3f145b732d5d7f16ebdf8a2"
+    },
+    {
+      "file": "after/en-1440-chat-teclado.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "d960b0752d80e19dd23afc77637e66afe77afc1ac6de73c24e49c024c400efe9"
+    },
+    {
+      "file": "after/en-1440-chat-vacio.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "687a141b6a5df8fc7bdc08643d4972bec35633bfb0dfb53285d8564f97e47b1b"
+    },
+    {
+      "file": "after/en-1440-historial-error.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "cc2cc2fcf855b82781860b4307e373a0ecbbc787429878bd2a23fbcc73a28c38"
+    },
+    {
+      "file": "after/en-1440-historial-skeleton.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "e6abadd40f764c9764c982d09f70c5d50f6759937fa02faca3c5ef1151a88196"
+    },
+    {
+      "file": "after/en-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "f399a3fb91015b81f4a6f8f35ce684ec35b5a458bcdc039378f3ea1f06806f07"
+    },
+    {
+      "file": "after/en-1440-hoy-safe-area.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "f970d803f9950f86753d1a526139a3bc1082ad66e83c1e892034a8912aa981e1"
+    },
+    {
+      "file": "after/en-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "3d2582d8aacc8660d55ec9bd5c12bb768d781d21f68b4016ce00739e26b5a384"
+    },
+    {
+      "file": "after/en-1440-nutricion-error.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "78ccca107187e6d645e2ba01d149dce0993c40464298ee50239fb2e687865728"
+    },
+    {
+      "file": "after/en-1440-nutricion-skeleton.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "d6f3311ed12b3ab31ad45d3f903ce3fb735a89a9fc39cf40ac7ae21871c84b7a"
+    },
+    {
+      "file": "after/en-1440-nutricion-vacio.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "71cb4fc1664afaf559258e2ee38b90a6b061597fb25b3fdeb919384dd5c59a58"
+    },
+    {
+      "file": "after/en-320-chat-error.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "878906e7c20dcd02abdbcc0b850268c9193d3053054576f47387f1435a1c3638"
+    },
+    {
+      "file": "after/en-320-chat-safe-area.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "8f85c7ed620ddf26bab2daa8eb49745e1af26584bc491812527e75f565128d67"
+    },
+    {
+      "file": "after/en-320-chat-skeleton.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "178839c925fd14c7a896c50325f850ce8ab5f26077fe1410580fb21435aef95f"
+    },
+    {
+      "file": "after/en-320-chat-teclado.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "588a2de73adfe404d47663809c68f1fc504f984c3dcef9e742ee72b52cd00223"
+    },
+    {
+      "file": "after/en-320-chat-vacio.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "e67b1fff0a044aa7b9c93af5f3da578532dddec5b765c7984b086d152438c058"
+    },
+    {
+      "file": "after/en-320-historial-error.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "fcc98b6e5e6ee0998b30c8857bac24fbc82bc8de68ebdc726a0dba720e6b3d9d"
+    },
+    {
+      "file": "after/en-320-historial-skeleton.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "16864a489d43867d52f020ab04cdc5772ab374693d242c85e98fa9bc79a68a08"
+    },
+    {
+      "file": "after/en-320-hoy-dock.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "9f1e38a164757cae5c03130664b4093c843af2909d09ceb54c7b2a2ebcbb6a2f"
+    },
+    {
+      "file": "after/en-320-hoy-safe-area.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "7ae503072f5618c69598abd92ea96202394ff5e97ef551bef651ecf86534fdee"
+    },
+    {
+      "file": "after/en-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "3448c9c58b896ef6bfbd736afda42bf3141151676c1eba1e07c51f714aa04442"
+    },
+    {
+      "file": "after/en-320-nutricion-error.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "de8bbce71116626dcb9a065bd754a27497a6d966da4535f072c2412e679dccac"
+    },
+    {
+      "file": "after/en-320-nutricion-skeleton.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "94e449a414c4311afc6894e9f731645e8b7603a8779a1f6cfc5cbc7914afd16b"
+    },
+    {
+      "file": "after/en-320-nutricion-vacio.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "a1a18ff326168bbe27fa3d4b621b4ef492e14413bd144d86691fba12bd0a49ac"
+    },
+    {
+      "file": "after/en-390-chat-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "fb850dce4bec7fa9b0ffc6e3b2403bc8cef6b92df32ab2227e05962a1b940fea"
+    },
+    {
+      "file": "after/en-390-chat-safe-area.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "4c2586de40334b60a3d7b4bdcfdb67b2c8b3d4e419f424876826395b935c9268"
+    },
+    {
+      "file": "after/en-390-chat-skeleton.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "761373d62444216c1d68a309107474854eaae56e435c86eff6aa2b10ecbc5683"
+    },
+    {
+      "file": "after/en-390-chat-teclado.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0cf3e11feba22733143b06f11ebb230761abd96f77416d37bc32698d92ffdd4e"
+    },
+    {
+      "file": "after/en-390-chat-vacio.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "b90cdfda7ff0cd047d0efcc2b49b89c64c402c57b3f1b3e82c2067bf14c5ac7a"
+    },
+    {
+      "file": "after/en-390-historial-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "a1eb7683599991feec95e7dcdc1e62a4c0e536727687f46fe7392feef9a188a6"
+    },
+    {
+      "file": "after/en-390-historial-skeleton.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "63e238bec8b4f3c37b662f939ac928471f6e7be0b8a6bc43892d926286528e81"
+    },
+    {
+      "file": "after/en-390-hoy-dock.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "419232a45c747d853a601c0fbf96f6d90622793259c1abc4c1328e9e90af05a1"
+    },
+    {
+      "file": "after/en-390-hoy-safe-area.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "6ff65a046edbd43739f01a693036ca334a7edff451655adfc472ab8a9939a44f"
+    },
+    {
+      "file": "after/en-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d425023bd3406770fc0b83f7e2f4ea4113d6a7dc7708b1c12b5b1b0310354d12"
+    },
+    {
+      "file": "after/en-390-nutricion-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d5832ff36305f1a948d9a85e5551916e5ffc17eb063637d17e586cec5912b3aa"
+    },
+    {
+      "file": "after/en-390-nutricion-skeleton.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "eabc84d3d57e2ea302863ef2cab620b95ebeee5e5f44c194b335fffd5aa782a7"
+    },
+    {
+      "file": "after/en-390-nutricion-vacio.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "cd739ee1b9b32bea71baa356833efe0a1185ae9246cd2a210864f214e7063dd1"
+    },
+    {
+      "file": "after/es-1440-chat-error.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "95b6ebf48c586067aaef08d2b0043d04df4920fcb7dc50b5124856c731301293"
+    },
+    {
+      "file": "after/es-1440-chat-safe-area.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "1cbc74f6cc2e7dc736d388cdf545132e5d6391c9c890f7e9d00ec95e84213615"
+    },
+    {
+      "file": "after/es-1440-chat-skeleton.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "2e4c78e0340013339ac4dc965b7aeb070afafcc3d8ac4e5163b0ae9b14450651"
+    },
+    {
+      "file": "after/es-1440-chat-teclado.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "d5de51c589ae93d9ac7c30d3613cff885fad88a2a7860a554e415ea0ae822621"
+    },
+    {
+      "file": "after/es-1440-chat-vacio.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "14d66ce85b06c167efc57a7e6f10483c255e44d0889610b5bfb63c6448f032b2"
+    },
+    {
+      "file": "after/es-1440-historial-error.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "fd80b77125a8b6084821641267eb72d3d148e6039e1e25210056dccaff32ec78"
+    },
+    {
+      "file": "after/es-1440-historial-skeleton.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "866f82b1d5b4992632f007628972cf393d0ed96c65190f7d20b657ae2944ecda"
+    },
+    {
+      "file": "after/es-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "c10fcae09987d15c4ef62ad54e938ea6a7b0b1697be919bdfffd7b41b8756b3c"
+    },
+    {
+      "file": "after/es-1440-hoy-safe-area.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "2f330c49d57e0034aa7e08b87f1bbb22fd7cb94585ab6306455705a8c64a806e"
+    },
+    {
+      "file": "after/es-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "c3c89403e57863a0dc39dea7baa979519663d5dce4d19eb1fd625054b63f499d"
+    },
+    {
+      "file": "after/es-1440-nutricion-error.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "411320cd07c8bc3c123144d91fd39717dd851e17754955a05b22a3625168a13e"
+    },
+    {
+      "file": "after/es-1440-nutricion-skeleton.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "6700500215d1d886ca84248dc8cb6dab4fe96dba12f0b8dd74f8bef716d08b08"
+    },
+    {
+      "file": "after/es-1440-nutricion-vacio.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "4f540f316d1f699f40f77bac11b1a45407c6f0a0de53d864b21a658aefe8e266"
+    },
+    {
+      "file": "after/es-320-chat-error.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "f13f25f76b2a811969d52702c8e41b462e996108d9f2113e70a4987a3eae8b87"
+    },
+    {
+      "file": "after/es-320-chat-safe-area.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "a4c11cabefc2e3bacae8f678ced5a86719b9573846eb2c7f2bb4ee5bb4b10c72"
+    },
+    {
+      "file": "after/es-320-chat-skeleton.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "1b6ccdf8df9f065ab442053374a67633ffdbbbac686b061580f4c7d3d0505257"
+    },
+    {
+      "file": "after/es-320-chat-teclado.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "341c35e197abaa26389cf4c6ffc5d16905a0853dcd84653d2f4e5858e36b491d"
+    },
+    {
+      "file": "after/es-320-chat-vacio.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "7a6ace8a90e259811320dcf908cc9f54e9c025c7dad2c181b739e2ced9d5cf7d"
+    },
+    {
+      "file": "after/es-320-historial-error.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "c4e69c4019bedd723a01e924aa7e8e7db78f3fb437c8d36665dac7aac7fa4dfe"
+    },
+    {
+      "file": "after/es-320-historial-skeleton.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "531b1a05f8db056f4369d0488a7fe85543392df811683414e8d0e03ce5a006f1"
+    },
+    {
+      "file": "after/es-320-hoy-dock.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "868ec847baceed4cbae23ba5d413dda7a98c5e60f4a47fb1903c5b7b4b7926fd"
+    },
+    {
+      "file": "after/es-320-hoy-safe-area.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "ac2be33c38e8101640b98816c898f3803cab78a1d61c1e6ca4a1964c36500385"
+    },
+    {
+      "file": "after/es-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "c707221c6d15ba548eeaa95ca8ca1a9a15b3fa079f78fdf14e99914112905a07"
+    },
+    {
+      "file": "after/es-320-nutricion-error.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "f3c218e4fce852260431b868eda9c95a9072ff1d60a58bbfbbedb6a5932ba392"
+    },
+    {
+      "file": "after/es-320-nutricion-skeleton.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "fc11b0c1e3a830724da930ff9759e64117b2a5faac70c8e92d22c1bf617675e0"
+    },
+    {
+      "file": "after/es-320-nutricion-vacio.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "3f861c78b46008d22db910cb6f9ae6272846767b17a717bf76e348465170251f"
+    },
+    {
+      "file": "after/es-390-chat-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "16a132c87f5c82d1595fecca63e3eeba33372a3aeea5d88e6d77d944be61434d"
+    },
+    {
+      "file": "after/es-390-chat-safe-area.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "74674f1db294a419e8fb21887943c4f5780eaea6c73b702fd7725a8c1be0f41a"
+    },
+    {
+      "file": "after/es-390-chat-skeleton.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0641a88a69324013aad8beb2ea2500f3b861476fccea259286c11321724ca6b6"
+    },
+    {
+      "file": "after/es-390-chat-teclado.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "50dcda46b725db166be6f9e6e14678c6fec231af334a89dc79c3682592a9c031"
+    },
+    {
+      "file": "after/es-390-chat-vacio.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "dee102f55bc9b6cae24de62ca44ab8824712d0777bf1f66b40bf581edae47417"
+    },
+    {
+      "file": "after/es-390-historial-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "60a6108918ba019e8e7556eef02ef6307695f0280861e6a55d2c23190c92338e"
+    },
+    {
+      "file": "after/es-390-historial-skeleton.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "235b737259ce54fd39517cfe9e211eb8084417f5c2094610b6d8097a6941b7a0"
+    },
+    {
+      "file": "after/es-390-hoy-dock.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ebd0af56b9467b45072d55fa09f11c0c08b01f1057f2fc22ba696851a598fa9c"
+    },
+    {
+      "file": "after/es-390-hoy-safe-area.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "fb70ad73a364f4335bc17b99771e2845b193c24b596f18c4005694791dcb5e9d"
+    },
+    {
+      "file": "after/es-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "e6cd3e4609ec6c1251c879a5fa17f4dff5eefb27d0e495aad69658e07676bcbd"
+    },
+    {
+      "file": "after/es-390-nutricion-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "25aded4ec6ae764ecd9f42d0eb225c7385c0f417a4b7bd243af5402ec46f0b41"
+    },
+    {
+      "file": "after/es-390-nutricion-skeleton.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "b7abb05a460db6835100587f05d4a018a0383e5df2590165730ef83ef3560db3"
+    },
+    {
+      "file": "after/es-390-nutricion-vacio.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "a2e735c805014b8d28a2ef6fa9e19c72b11d75e63c44d53bf83497050cd730a9"
+    },
+    {
+      "file": "before/en-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "96da0b1f091cfb4817258eec05087d1af34a6284fcba399ab6274e9478b11692"
+    },
+    {
+      "file": "before/en-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "64cd75ff73836e00d4d5f60524ce305165a1a7157caea8a3b9e31058711c7465"
+    },
+    {
+      "file": "before/en-320-hoy-dock.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "5d6f1ad1bc9cce9f18118d4959060b32e4bee291a05e8cd807535467690c6bc4"
+    },
+    {
+      "file": "before/en-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "07ac738c3de8e439f793b8294239ed56cebe72a6b1372c6f0e7f2d382c65c0f6"
+    },
+    {
+      "file": "before/en-390-hoy-dock.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ebfd439605627e7ca506709c2a389d98be2512643ba0f90969ee2aebf68726c1"
+    },
+    {
+      "file": "before/en-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "36422ee33f91b8a03cf4cd85e49444a07bc6e0c747de4cdf86447f9deb77c1d0"
+    },
+    {
+      "file": "before/es-1440-hoy-dock.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "69a35fd492f4814b7f7bb79bafda14fb4217f17c68f6d02620dcea5ba5325561"
+    },
+    {
+      "file": "before/es-1440-hoy-ultima-tarjeta.png",
+      "width": 1440,
+      "height": 844,
+      "sha256": "0816dd676dfdcdb6f274a12d6020f88018affb48799e3032ebd9b6ecb3f22c2d"
+    },
+    {
+      "file": "before/es-320-hoy-dock.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "4977b8a3a98e716a24ab579693727c03840ff598b879d41cf49d9c817b65ede5"
+    },
+    {
+      "file": "before/es-320-hoy-ultima-tarjeta.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "73e781220c212e381964453b07bc47be75a3bc05b82fada623e6514f02da5c26"
+    },
+    {
+      "file": "before/es-390-hoy-dock.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9e3de8ce244a762721bf5e80567668875fdcb41019ce4d9a7596be516e6f4394"
+    },
+    {
+      "file": "before/es-390-hoy-ultima-tarjeta.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "366333ddba695d94e9eac9cae5ee87538b903a02b031a651567a356416bb4ff7"
+    },
+    {
+      "file": "regression-p2/after/en-1440-ejercicio-activo.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05529ce0d1effa177e16ca6af08977f7bca641f22d68237e162f8bbf925d2922"
+    },
+    {
+      "file": "regression-p2/after/en-1440-ejercicio-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2484fea965959b43dbdb07b59edb8e93855f67aa8c468becfdc73252f4756ea1"
+    },
+    {
+      "file": "regression-p2/after/en-1440-ejercicio-descanso.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05fddd3dfb6b8a22ffa50c56e059e684a8b5584226945a8df4e12ee407e6f355"
+    },
+    {
+      "file": "regression-p2/after/en-1440-ejercicio-lista.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5f45087053027d9591f6543042b466f6191eb303fe0a4a1b3e27b5db3da3691a"
+    },
+    {
+      "file": "regression-p2/after/en-1440-ejercicio-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4fc0b1a3c5281a6c8066c58d0f3618aa5922b7f106fa88b304377b7b1af830ff"
+    },
+    {
+      "file": "regression-p2/after/en-1440-nutraceutico-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6431f3dcb0e30ba5aa24e09316927d197a834de0b8f044cf08afb2cd040defab"
+    },
+    {
+      "file": "regression-p2/after/en-1440-nutraceutico-exito.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a67f15b63b85ba9cef717de2db9a0571743b2a1d856ea881a11c0b55df1d18d2"
+    },
+    {
+      "file": "regression-p2/after/en-1440-nutraceutico-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "bc4708828f4d6aa99aa33ff1a93a37f6206358180df4b68b48ee6ab2bbfcf558"
+    },
+    {
+      "file": "regression-p2/after/en-1440-nutraceutico-registro.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a2242b08c8dba2422489404aa013a2e60fc5889e883a2b63d40b0eeee452d19f"
+    },
+    {
+      "file": "regression-p2/after/en-320-ejercicio-activo.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "8fb553751f4a7557c7bbd582a789e70ec421f900ef33c29a405c5df4395a2101"
+    },
+    {
+      "file": "regression-p2/after/en-320-ejercicio-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "dadcc8e5e12032a29fc8581c4adc4d863c794874e04e11c12520df6768eb087b"
+    },
+    {
+      "file": "regression-p2/after/en-320-ejercicio-descanso.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c372f5797aeb55cf45ee096048302e7512e1c4fe014689cd9f6a6abd912532ac"
+    },
+    {
+      "file": "regression-p2/after/en-320-ejercicio-lista.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "ebaf6f3314408229969d65c3e59805531e7fb29d6adc37f34e06554eef51c872"
+    },
+    {
+      "file": "regression-p2/after/en-320-ejercicio-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d875305339d100ae5730187423c46f253def99f63ec46903ca2c5113d0360467"
+    },
+    {
+      "file": "regression-p2/after/en-320-nutraceutico-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "1e13cafc88dfeb42e73038b44d5dd853d7eee85d870c8f8ee510ce835216fe33"
+    },
+    {
+      "file": "regression-p2/after/en-320-nutraceutico-exito.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "10ad674d2b550aeb0a35332c0120d4adaf4d030f919e2b94b6dff93201900d93"
+    },
+    {
+      "file": "regression-p2/after/en-320-nutraceutico-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "6d08be428cd158877c87df781d1cb68e39435b1cfc1b99db2b4732298f602385"
+    },
+    {
+      "file": "regression-p2/after/en-320-nutraceutico-registro.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "caed9a0d32ac7b5e46c0d0ddd1ec00727228028710902258ca83f7ed0cd8e0b3"
+    },
+    {
+      "file": "regression-p2/after/en-390-ejercicio-activo.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "8dcb0ac7c9f75a5c361502faa65c5575a4449a97117ace9afd412d020a52d69e"
+    },
+    {
+      "file": "regression-p2/after/en-390-ejercicio-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "35e650953258497697ebab3e621a768a477a2d3877905d32e84b03b629c1af62"
+    },
+    {
+      "file": "regression-p2/after/en-390-ejercicio-descanso.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "2529ef04c2893264a2d72a9c2a3753b7d42a73403117ca6a9c598afb831d0ccc"
+    },
+    {
+      "file": "regression-p2/after/en-390-ejercicio-lista.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "04576de53caf3684e9950fa579b741638768e474b1cf4638030926d056b7acf5"
+    },
+    {
+      "file": "regression-p2/after/en-390-ejercicio-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "fbd42b1ebaed19760fc11e3e6a1038ae08d7d6e9e1820399acc279a969d0b213"
+    },
+    {
+      "file": "regression-p2/after/en-390-nutraceutico-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "0fb6777434412a09938db325b323858eb5ff75a6f33f9bf7598ee65a1f96c9f6"
+    },
+    {
+      "file": "regression-p2/after/en-390-nutraceutico-exito.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "b8979f1a43532967dcbe83851c857128dd725c7d5a12941e7548b1631d4e239b"
+    },
+    {
+      "file": "regression-p2/after/en-390-nutraceutico-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d052c364479a9cba837e662e5832c7012f9e2a21beb93023f363c18a8d94afd0"
+    },
+    {
+      "file": "regression-p2/after/en-390-nutraceutico-registro.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "55f084e62ac9ce93bcef70645319ab0b155f635995b0a412736cab1112340ae3"
+    },
+    {
+      "file": "regression-p2/after/es-1440-ejercicio-activo.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9cba95d002c9632e7e610ce50aaf3c3dce19f9291de642a51f669f516dc0c91b"
+    },
+    {
+      "file": "regression-p2/after/es-1440-ejercicio-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "692a389d6df844589f569721c2a73a2e318821fecee1685923b22e026b52f59a"
+    },
+    {
+      "file": "regression-p2/after/es-1440-ejercicio-descanso.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f11ee0e73fd3240b09a2eb91c6a09552ea0ef98f46eba4d30dac3b186c0d43a8"
+    },
+    {
+      "file": "regression-p2/after/es-1440-ejercicio-lista.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4016eff48557d267c16f35ae10457f51f59c4146e2d42ba1230dec23a3934cd3"
+    },
+    {
+      "file": "regression-p2/after/es-1440-ejercicio-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "34112c8004072bce141b2ac3e5bd3cd09dbe2631e888e49e114b5bb5c58e223c"
+    },
+    {
+      "file": "regression-p2/after/es-1440-nutraceutico-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "67bfb4ba06e3e42ace27955ebf4576c97a20abbf44d9235cc30b76635f0844ce"
+    },
+    {
+      "file": "regression-p2/after/es-1440-nutraceutico-exito.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b148b27ed207b9cd2fc44eae4b64de2d8d0b1134b1bfbcb4d3e8808644288916"
+    },
+    {
+      "file": "regression-p2/after/es-1440-nutraceutico-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "fc6865ffca11d0587b4d8b2b049f541a8a454865279e1f4513462080ed350a6b"
+    },
+    {
+      "file": "regression-p2/after/es-1440-nutraceutico-registro.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2bfd49768f53fb85bb97499d2d597f5d4059cc78b1399d378e683c2f0f525252"
+    },
+    {
+      "file": "regression-p2/after/es-320-ejercicio-activo.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "732c1437d37c91283324986edb6f982d3037d606b7edccde62355f1d770a3a4c"
+    },
+    {
+      "file": "regression-p2/after/es-320-ejercicio-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "86b1046f55a4c82d6f050a0530b379b1f401c4fc4bbef50351ce6d059d663a2f"
+    },
+    {
+      "file": "regression-p2/after/es-320-ejercicio-descanso.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "731710568877cbdd0380e1a41fa568106016290c420ec965e573ab44f8fcd7e3"
+    },
+    {
+      "file": "regression-p2/after/es-320-ejercicio-lista.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "b4eeaba81e2d6d7518b25b5a946046c835389753f651c7102b03670eb5bb2ccf"
+    },
+    {
+      "file": "regression-p2/after/es-320-ejercicio-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "f3f66847fb8e6ab23f094b8405b5a152d970813f54b9ea1067ff5e50aec80c32"
+    },
+    {
+      "file": "regression-p2/after/es-320-nutraceutico-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "675b72449202e7379cca7eb4444505b45bad395b78d87c0c3d78e1a9728c234c"
+    },
+    {
+      "file": "regression-p2/after/es-320-nutraceutico-exito.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "e30dddbc275ea272353c18513cca66f61b58d570fdf681cc48c62041e0b56739"
+    },
+    {
+      "file": "regression-p2/after/es-320-nutraceutico-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "61cf53f4447491054bc50bae79d708de27b6322e916355caca5bfd239bb99306"
+    },
+    {
+      "file": "regression-p2/after/es-320-nutraceutico-registro.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3e663d679fb7dbb44f70812db1aa873956984eda6310ef959a30b6199d21f971"
+    },
+    {
+      "file": "regression-p2/after/es-390-ejercicio-activo.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "cf7ddd4cd7d477bc6e6affdfdf56c745148158f1265dec240a838804fbec914f"
+    },
+    {
+      "file": "regression-p2/after/es-390-ejercicio-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ff1b7af434bd9d076a0688971408209b7c13c50e25b27f127b1060dba38642c1"
+    },
+    {
+      "file": "regression-p2/after/es-390-ejercicio-descanso.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "6f2a2114fb6bcd15433380f5eb1dbf51c3322899ca3bf6efbf33ad8d7a44b45e"
+    },
+    {
+      "file": "regression-p2/after/es-390-ejercicio-lista.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ca0d3676e5615ac1997a022813043dba42411d38d0c07eb45d96a7fe4d818638"
+    },
+    {
+      "file": "regression-p2/after/es-390-ejercicio-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "57bf9f8cb4cf4d24cd58ac776610487905e868b82254d33bca162464bf72a788"
+    },
+    {
+      "file": "regression-p2/after/es-390-nutraceutico-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "67b41d9161a4e10aa66e55b4eb0a7dd2334eaa98663ea93299de0660acab8177"
+    },
+    {
+      "file": "regression-p2/after/es-390-nutraceutico-exito.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "25774c9bcad07933e0760613f1b8b80f79d2ce42b4441dd0ff8700d6c0fb05b9"
+    },
+    {
+      "file": "regression-p2/after/es-390-nutraceutico-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "54e3648d7ba0d9bbc6a74c7753b9f5139abc25f7f97abb9755377bd08caf93ba"
+    },
+    {
+      "file": "regression-p2/after/es-390-nutraceutico-registro.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ba798ddd0a0d614b2eb78d9de57ce5fd94c868cd2d4fb16df7cb233701869d9c"
+    },
+    {
+      "file": "regression-p3/en-1440-chat-ia-caida.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e7d7c27fb39664821100e6d15c0a647e772941e855e8f6405f564f5ca15e7519"
+    },
+    {
+      "file": "regression-p3/en-1440-chat-reduced-motion.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "776a089cfd2a1a69efa5dc0979a41da0c5507905c434532b5350f8c98cc2b8c1"
+    },
+    {
+      "file": "regression-p3/en-1440-chat-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e60998f346a3871fa688ba50c7e1088cc84626f531a2c87031e55312349abbe1"
+    },
+    {
+      "file": "regression-p3/en-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "13715d204e5175fd28c136d840940ccd6f6b6a5c1f22447ef92d8f107cb9cebc"
+    },
+    {
+      "file": "regression-p3/en-1440-emocional-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d66867e50b5ea835547f0b279957e9d3041dfe3a4f66914ac7322f7cd1cb6274"
+    },
+    {
+      "file": "regression-p3/en-1440-emocional-guardada.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5b900434d1f3371791ef1c9b0bd7bcdc01f0ad851d31972183fa040d3be282ba"
+    },
+    {
+      "file": "regression-p3/en-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e1b93112a0123c95326a5d63d8d211491e487238212343bd64432cd971ab6aec"
+    },
+    {
+      "file": "regression-p3/en-1440-podcast-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0cced35aa8655b023c2c9eb3c0772fb040858f89d2f35b7cce025ee4e48b90f2"
+    },
+    {
+      "file": "regression-p3/en-1440-podcast-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1d8aa0f179c21cf475a43875e64497974fc70f0d069676c01f3b80886255688b"
+    },
+    {
+      "file": "regression-p3/en-1440-podcast-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2b743f3b2b6fc9aec0b31eff43103ab18027d4baed78c8ec2c56e2e100390132"
+    },
+    {
+      "file": "regression-p3/en-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c336318c5e74151bf1cc6fbe72e5d52e19a13f62c69cd7f6e14dc2b9edf30404"
+    },
+    {
+      "file": "regression-p3/en-320-chat-ia-caida.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c3caef76fd0e24276e084e8d97422101c0091b0b7be4310c17b19da7256b40f9"
+    },
+    {
+      "file": "regression-p3/en-320-chat-reduced-motion.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "36a8b75950096c6dcd7e571da5c06e8caaace88907c7fba10576e20694e2883c"
+    },
+    {
+      "file": "regression-p3/en-320-chat-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "a55162a9226b34e0703f76711209fde71a4636b2ae280e25c6fa98c887da0004"
+    },
+    {
+      "file": "regression-p3/en-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "280f8fe0b7015cd4b3f072c82a0d06875c01f434bbc8496278126e26d3a47614"
+    },
+    {
+      "file": "regression-p3/en-320-emocional-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "321f330bcdb7b15d805f95abbe49151acfd713a5ab4ea3380935e58c710db8cb"
+    },
+    {
+      "file": "regression-p3/en-320-emocional-guardada.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "4aed06046510507d95ab4769f94472b172ffaf8225ee37bfdbecef1c9c560fcc"
+    },
+    {
+      "file": "regression-p3/en-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "64b970ffb2f3d1c76bad024a832a8c62dc359ebf6a21593f76f35f634a67ff72"
+    },
+    {
+      "file": "regression-p3/en-320-podcast-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "49bf4ee17808619b171b0166193663932b69a43ec938ad8c37d02dadbd98feaf"
+    },
+    {
+      "file": "regression-p3/en-320-podcast-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "27cd51c3bb20cf358997b927958aca9c015b21926803ff1cce3d9a7473502b38"
+    },
+    {
+      "file": "regression-p3/en-320-podcast-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "7d1154cebac9e1221c4368200a2dbe6aa8ab63189ef0ea1ac7c199be5a45c19f"
+    },
+    {
+      "file": "regression-p3/en-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3d49bf838cf40043887b939ee824451a54f6d0302b606deb4806751ccc6968d7"
+    },
+    {
+      "file": "regression-p3/en-390-chat-ia-caida.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "761d460f6837a7140f5a7587be93756722d9a0d653304724b78df9eb3a7916f3"
+    },
+    {
+      "file": "regression-p3/en-390-chat-reduced-motion.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d43be58fbbc6f7a66377e34f86f7cae2760fb25553b871bbac562d61e6b8a858"
+    },
+    {
+      "file": "regression-p3/en-390-chat-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c54d274fc623d23e1c7911d16b45d2295d6f2b07a9172c116e66b3b6b983e48c"
+    },
+    {
+      "file": "regression-p3/en-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "db09d23662a402e758356969d350eb388a324a7b15c64330fe6e29d8ae3fe70d"
+    },
+    {
+      "file": "regression-p3/en-390-emocional-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "56215f234011282bc0a685f261f9ec71d3479211c2861a437c7359dd6ffb127a"
+    },
+    {
+      "file": "regression-p3/en-390-emocional-guardada.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "d67703791fa97e2674608de32e71e603cc04818e66c338f75bd92fd6fd4ef505"
+    },
+    {
+      "file": "regression-p3/en-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "41b25bc8b5ec7182c5de1772a8b32df60b69bf92f26896a46fa6581ba264481c"
+    },
+    {
+      "file": "regression-p3/en-390-podcast-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "168fbe73e178ef796cf193a0a470c406d3ebacd11ede68a3cf23f6555b9a0dd8"
+    },
+    {
+      "file": "regression-p3/en-390-podcast-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "2955cae41a86e9b387a4de6348f4c7ebe02d0c5c544a89cf9ec1b38b0a8cf216"
+    },
+    {
+      "file": "regression-p3/en-390-podcast-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "1dc2ba59ecdc86c2340b7da4cdb1502e534e5d609801c3f07ce272bf1dbb3639"
+    },
+    {
+      "file": "regression-p3/en-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "c3fe4dc753b446b7fecd508c855f6f203ebc19035f385e4da48a13cd14136df9"
+    },
+    {
+      "file": "regression-p3/es-1440-chat-ia-caida.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "533f68e1e2531faf2d421f9f6b4cfee683ab65e579ed425f5d2f5d59932524e3"
+    },
+    {
+      "file": "regression-p3/es-1440-chat-reduced-motion.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "76e8d441c236a84fdf03519be921579e802f3d8d5ddccf053b07c56ea538ea70"
+    },
+    {
+      "file": "regression-p3/es-1440-chat-safe-area.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2e8a94bf4f178a3926e3c30c00f2592dfe2b190ddeba52ea67c5914f94c40413"
+    },
+    {
+      "file": "regression-p3/es-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05a3537d3d87226e671e8e4cb2b810f78ab58e59d174680240bcbd5edf96586c"
+    },
+    {
+      "file": "regression-p3/es-1440-emocional-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a4b95379f384f4792db8f652775d930b736c227723106624a3e70d28e14c9811"
+    },
+    {
+      "file": "regression-p3/es-1440-emocional-guardada.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "dad1b4d72e3f15b97cbe51845a95586a72ecc27e00f795ce3219384256a95f3f"
+    },
+    {
+      "file": "regression-p3/es-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ca771117d33eab4c68122d71abc9d9c7b62d5693ac4b4b647e121cbe9e94f837"
+    },
+    {
+      "file": "regression-p3/es-1440-podcast-completado.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9c8428f5105064c61e98c67f6163caf1e5179e81d3a1ec3930aadb38f04a7794"
+    },
+    {
+      "file": "regression-p3/es-1440-podcast-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4e4c2752c40855f0305d3aad2b4e7c3b6800ec7551bc39fa54ba41baa5de5e60"
+    },
+    {
+      "file": "regression-p3/es-1440-podcast-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f15fbc07afb8b392fade339c263d868f9dc88603a1e1d397a1a21e2ae286ecd7"
+    },
+    {
+      "file": "regression-p3/es-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "3f75dd131eebbd4efc584b0323b5a26fb86539d672bd0fd6e429f51f50d9bccb"
+    },
+    {
+      "file": "regression-p3/es-320-chat-ia-caida.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "fff3323b25d4d7abab76e188d69a85b28aaebaca8bcaad15adbcde68fa4586e4"
+    },
+    {
+      "file": "regression-p3/es-320-chat-reduced-motion.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9f8b20b5ca0f197321f952a6a35e3f90b2812a29b64267b2238ac5ff05f293d9"
+    },
+    {
+      "file": "regression-p3/es-320-chat-safe-area.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "5c15ecd23493286c4a7c0cc1a6f3e421338de687cbc456af78db8f9a49ffaabb"
+    },
+    {
+      "file": "regression-p3/es-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "6d939fffeefd84ea8231dc5a2b2a69a35fe01b450414b47e388dbb9667896082"
+    },
+    {
+      "file": "regression-p3/es-320-emocional-detalle.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "74cb66219fae687c0aa885dc8e9d477ba9ad3eea46c8c28526c14a6db1e7dc29"
+    },
+    {
+      "file": "regression-p3/es-320-emocional-guardada.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "7460d21d156796d20f1405789fd4f1f596668fac20b221857ac8c6cd63fa5752"
+    },
+    {
+      "file": "regression-p3/es-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "0be0fc32f2882fcfd9af5fd56a141f3dbd268fe2cdc5fe29b14771533cf8cd82"
+    },
+    {
+      "file": "regression-p3/es-320-podcast-completado.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "47ede36fad3b628ea319adfa2bc4b8cd58f68654f89d05d7b6074a950e744295"
+    },
+    {
+      "file": "regression-p3/es-320-podcast-pendiente.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "c38d99cfa0618ae491b2b4bd2b3e2b79e5fbc06041b65eaeb24f5ee102cde3e5"
+    },
+    {
+      "file": "regression-p3/es-320-podcast-vacio.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "abae494c51443feeb1ef06bc06d5a41b4acd018a475ec8f82f0b70d948e525f2"
+    },
+    {
+      "file": "regression-p3/es-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3da10dced8e3ac355ad3a00a2e7c2c422856c8d4855978223d4960926cd24d35"
+    },
+    {
+      "file": "regression-p3/es-390-chat-ia-caida.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "5fe0700ed2ad15238413dde1d88f1774b6d14ed45220f4ac6a9a4f1a53df4ba3"
+    },
+    {
+      "file": "regression-p3/es-390-chat-reduced-motion.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e5db7bc36c641b9b399d42956924e005be2b41889545a61a2c3816c4a1c3a431"
+    },
+    {
+      "file": "regression-p3/es-390-chat-safe-area.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "a8aaf15a5328a6ba9fb733a3aab03f8bf8dadc60d76af02efba9423c5db55492"
+    },
+    {
+      "file": "regression-p3/es-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "5244b285a6302de510d3e08254a168373e557d4857138ec79496de8865657655"
+    },
+    {
+      "file": "regression-p3/es-390-emocional-detalle.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "7b9e5cfdb67e8abebead0a06f6024df94927912fc439adaf631d3d6dd87fbc5d"
+    },
+    {
+      "file": "regression-p3/es-390-emocional-guardada.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "422084c364554bce85ac5ca11932d4f638cffb87e14a732229043264b2a0fb34"
+    },
+    {
+      "file": "regression-p3/es-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "b5ddff16b2faef9da6fcc71054d06ab4a9678b5211c7466ff892ea36cbaac2ae"
+    },
+    {
+      "file": "regression-p3/es-390-podcast-completado.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "431b7dacfd098a1dd229aefffaa8a031d9f9e18201e2b2bd01785454fcd35efd"
+    },
+    {
+      "file": "regression-p3/es-390-podcast-pendiente.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "fb7e7c39e2e8e00faad0420683c822cd5d69fff42b8d50090ee91de29cd1d4c4"
+    },
+    {
+      "file": "regression-p3/es-390-podcast-vacio.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "9349bfd829e1892950c9c06bc8e6870d1bc5821913ea15be2cc66ddf42c9c2f6"
+    },
+    {
+      "file": "regression-p3/es-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "8f729cd6a2c26e25f4fd71a75a31457ca9a27e9513d8621ff695083ad2cdec29"
+    },
+    {
+      "file": "runtime/en-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "232cc2fef87b9decea8c005a19846f8a0889a82deafe17795650c83b3bcf16fd"
+    },
+    {
+      "file": "runtime/en-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "31765998a27c354e136376f7670ae4c54eeba9e873ee52c4c0315a5b1e2e6c85"
+    },
+    {
+      "file": "runtime/en-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ada693fee4192666561edf3ad04314f8cc13ed9d53083c295417fbdfe3cd4113"
+    },
+    {
+      "file": "runtime/en-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "3fd676b493c1492042875e0b8f17f0fac01f4a1cc39b9ba561460e877e825981"
+    },
+    {
+      "file": "runtime/en-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "fa9291433f9783e32e01855a1bd5a276f282cb60e5b6fa99944b58a3544deb7d"
+    },
+    {
+      "file": "runtime/en-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "278edafbd7f4adc9934460d0f90b91c059197b8c7f8518837158a2b4a62fce64"
+    },
+    {
+      "file": "runtime/en-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "9b1177409108d94f2801abe3d2cc08b3102f636a950992458444eff211df86e3"
+    },
+    {
+      "file": "runtime/en-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ff3d097bb00dbc9793632d8b7eb4fa7774b9bd85dc5f45d7255fa4dda695be46"
+    },
+    {
+      "file": "runtime/en-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "ced62ba5d72dbd554dbc56d4d3a2407d91a5561ae6d17f5786d22378fb7c3fe8"
+    },
+    {
+      "file": "runtime/es-1440-chat.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2cdc57eee3ab72339d900e3460edfaf1704798d4246d8874ef1467c8ba72fbb4"
+    },
+    {
+      "file": "runtime/es-1440-emocional.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5bfca17886139f213d52e8800f7dea48fbc5c2e6074f6e3c84806d73609cad84"
+    },
+    {
+      "file": "runtime/es-1440-podcast.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "7b16825c2749a4a34a06fbbe74e17eb5d155c204441887f52a37fd12d7c9d5a1"
+    },
+    {
+      "file": "runtime/es-320-chat.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "d4c37b2b577ba28965b26ed3efd84e374e50fe7975b53790ad3b6544dbb0fb53"
+    },
+    {
+      "file": "runtime/es-320-emocional.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "4c1ca2af4de32d29bdafb770bf3d69ead043bb3ab2fd886419dea46697150397"
+    },
+    {
+      "file": "runtime/es-320-podcast.png",
+      "width": 320,
+      "height": 900,
+      "sha256": "9a3b17d270684c90e18b5ed8d5a0341f3f36ab21e0645ed868501a87e5c991c2"
+    },
+    {
+      "file": "runtime/es-390-chat.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "e4cf793c967a73fc0597f3b211202dd08450c52c9062bddb72b0daeb5b05cc0f"
+    },
+    {
+      "file": "runtime/es-390-emocional.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "eac18212334277b70b78499b1bbe8248921fb7e8f603b42a01be84a387926f14"
+    },
+    {
+      "file": "runtime/es-390-podcast.png",
+      "width": 390,
+      "height": 900,
+      "sha256": "544234d5fdea578d4a4b711d6656856861547b6e299250503cf0f0a0c9355dd1"
+    }
+  ]
+}

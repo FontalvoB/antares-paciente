@@ -135,6 +135,35 @@ describe("ChatPage — paginación server-driven del historial", () => {
     );
   });
 
+  it("distingue carga, fallo y vacío; reintenta sin enviar mensajes", async () => {
+    let resolveHistory: (value: ThreadState | null) => void = () => {};
+    vi.mocked(fetchThreadState).mockImplementationOnce(() => new Promise(resolve => { resolveHistory = resolve; }));
+    render(<ChatPage />);
+    expect(screen.getByRole('status', { name: 'Cargando conversación…' }).getAttribute('aria-busy')).toBe('true');
+    expect(screen.queryByText('Tu conversación empieza aquí')).toBeNull();
+    await act(async () => resolveHistory(null));
+    expect(screen.getByRole('alert').textContent).toContain('No pudimos cargar el historial');
+    vi.mocked(fetchThreadState).mockResolvedValueOnce({ threadId: 'thread-1', messageCount: 0, lastMessage: null, messages: [] });
+    fireEvent.click(screen.getByText('Reintentar'));
+    await waitFor(() => expect(screen.getByText('Tu conversación empieza aquí')).toBeTruthy());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(vi.mocked(fetchThreadState)).toHaveBeenCalledTimes(2);
+  });
+
+  it("el reintento explícito conserva cursor y mensajes si una página falla", async () => {
+    const { container } = render(<ChatPage />);
+    await waitFor(() => expect(screen.getByText('Mensaje 25')).toBeTruthy());
+    vi.mocked(fetchThreadState).mockResolvedValueOnce(null);
+    fireEvent.scroll(getList(container));
+    await waitFor(() => expect(screen.getByText('No pudimos cargar los mensajes anteriores.')).toBeTruthy());
+    getList(container).scrollTop = 200;
+    fireEvent.click(screen.getByText('Reintentar'));
+    await waitFor(() => expect(screen.getByText('Mensaje 06')).toBeTruthy());
+    expect(screen.getByText('Mensaje 25')).toBeTruthy();
+    expect(vi.mocked(fetchThreadState)).toHaveBeenLastCalledWith('thread-1', 'user-1', { limit: 10, before: 10 });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it("al abrir pide la página más reciente con { limit: 10 } y la renderiza", async () => {
     render(<ChatPage />);
 

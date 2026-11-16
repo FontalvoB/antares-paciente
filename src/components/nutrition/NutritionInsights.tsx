@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { IonAccordion, IonAccordionGroup, IonButton, IonIcon, IonItem, IonLabel, IonProgressBar, IonSkeletonText } from '@ionic/react'
 import { bodyOutline, waterOutline, fitnessOutline, calendarOutline } from 'ionicons/icons'
 import { useT } from '../../i18n/I18nContext'
@@ -9,6 +10,7 @@ import type { MetricSeriesDto } from '../../services/program/types'
 /** Tarjetas clínicas compartidas por Plan e Historial: solo mediciones reales. */
 export function NutritionMetrics({ metrics, loading, locale }: { metrics: MetricSeriesDto[]; loading: boolean; locale: string }) {
   const t = useT()
+  const reducedMotion = useReducedMotion()
   const definitions = [
     { code: 'bmi', label: 'IMC', icon: bodyOutline },
     { code: 'hba1c', label: 'HbA1c', icon: waterOutline },
@@ -22,7 +24,7 @@ export function NutritionMetrics({ metrics, loading, locale }: { metrics: Metric
       const first = points[0]
       return <article className="ntr-metric" key={code}>
         <span className="premium-metric-label"><IonIcon icon={icon} aria-hidden="true" />{t(label)}</span>
-        {loading && !latest ? <IonSkeletonText animated /> : <strong>{latest ? formatMetricValue(latest.value, 1, locale) : '—'}<small>{series?.unit}</small></strong>}
+        {loading && !latest ? <IonSkeletonText animated={!reducedMotion} /> : <strong>{latest ? formatMetricValue(latest.value, 1, locale) : '—'}<small>{series?.unit}</small></strong>}
         <footer>{latest && first && points.length > 1 ? <><b className="premium-metric-delta">{latest.value < first.value ? '↓' : latest.value > first.value ? '↑' : '—'} {formatMetricValue(Math.abs(latest.value-first.value),1,locale)}</b>{t('Desde {value}', { value: formatMetricValue(first.value, 1, locale) })}</> : latest ? formatDateForDisplay(latest.date) : t('Sin medición')}</footer>
       </article>
     })}
@@ -33,6 +35,7 @@ export function NutritionWeek({ current, previous, loading, failed, onRetry, loc
   current: number | null; previous: number | null; loading: boolean; failed: boolean; onRetry: () => void; locale: string;
 }) {
   const t = useT()
+  const reducedMotion = useReducedMotion()
   const difference = current != null && previous != null ? current - previous : null
   return <div className="ntr-view">
     <IonAccordionGroup className="ntr-adherence">
@@ -41,12 +44,12 @@ export function NutritionWeek({ current, previous, loading, failed, onRetry, loc
           <IonIcon slot="start" icon={calendarOutline} aria-hidden="true" />
           <IonLabel>{t('Adherencia semanal')}</IonLabel>
           <span slot="end" className="ntr-adherence-value" aria-busy={loading && current == null}>
-            {loading && current == null ? <IonSkeletonText animated /> : current == null ? t('Sin datos') : `${formatMetricValue(current, 0, locale)}%`}
+            {loading && current == null ? <IonSkeletonText animated={!reducedMotion} /> : current == null ? t('Sin datos') : `${formatMetricValue(current, 0, locale)}%`}
           </span>
         </IonItem>
         <div slot="content" className="ntr-adherence-details">
-          {loading && current == null ? <IonSkeletonText animated className="ntr-skeleton" /> : current == null ? <div className="ntr-adherence-empty">
-            <span>{t('Sin datos esta semana')}</span>
+          {loading && current == null ? <IonSkeletonText animated={!reducedMotion} className="ntr-skeleton" /> : current == null ? <div className="ntr-adherence-empty" role={failed ? 'alert' : 'status'}>
+            <span>{t(failed ? 'No pudimos cargar tu adherencia semanal.' : 'Sin datos esta semana')}</span>
             {failed && <IonButton fill="clear" size="small" onClick={onRetry}>{t('Reintentar')}</IonButton>}
           </div> : <>
             <div className="ntr-row"><span>{t('Esta semana')}</span><strong>{formatMetricValue(current, 0, locale)}%</strong></div>

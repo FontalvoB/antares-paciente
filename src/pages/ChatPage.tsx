@@ -6,6 +6,7 @@ import {
   IonIcon,
   IonInput,
   IonSpinner,
+  IonSkeletonText,
 } from "@ionic/react";
 import { CameraSource } from "@capacitor/camera";
 import {
@@ -90,6 +91,9 @@ export function ChatPage() {
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [historyAttempt, setHistoryAttempt] = useState(0);
+  const [historyState, setHistoryState] = useState<{thread: string; status: 'loading' | 'ready' | 'error'}>({thread: threadId, status: 'loading'});
+  const [olderHistoryError, setOlderHistoryError] = useState(false);
   // Contador que solo dispara el efecto de anclaje tras cada fetch de página
   // (éxito o error) para compensar el scroll y apagar `loadingMore`.
   const [pagesLoaded, setPagesLoaded] = useState(0);
@@ -113,13 +117,18 @@ export function ChatPage() {
   // Al abrir el chat se intenta cargar la última página del thread estable: si
   // el backend inyectó un mensaje del bot (push proactivo), se muestra al inicio.
   const historyLoaded = useRef<string | null>(null);
+  const hydrateChatRef = useRef(hydrateChat);
+  useEffect(() => { hydrateChatRef.current = hydrateChat; }, [hydrateChat]);
   useEffect(() => {
     if (historyLoaded.current === threadId) return;
     if (!userId) return;
     let cancelled = false;
+    setHistoryState({thread: threadId, status: 'loading'});
     void fetchThreadState(threadId, userId, { limit: PAGE_SIZE }).then(
       (state) => {
         if (cancelled) return;
+        setHistoryState({thread: threadId, status: state ? 'ready' : 'error'});
+        if (!state) return;
         // Página más reciente cuando el backend la expone (roles user/bot
         // mapeados); fallback al último mensaje con backends anteriores.
         const history = (state?.messages ?? [])
@@ -130,7 +139,7 @@ export function ChatPage() {
           }));
         let more = Boolean(state?.hasMore);
         if (!history.length) {
-          if (!state?.lastMessage) return;
+          if (!state?.lastMessage) { historyLoaded.current = threadId; return; }
           history.push({ text: state.lastMessage, role: "bot" as const });
           // El fallback de un único mensaje no deja tramos anteriores.
           more = false;
@@ -142,13 +151,13 @@ export function ChatPage() {
         historyLoaded.current = threadId;
         setHasMore(more);
         setNextCursor(state?.nextCursor ?? null);
-        hydrateChat(history);
+        hydrateChatRef.current(history);
       },
     );
     return () => {
       cancelled = true;
     };
-  }, [threadId, userId, hydrateChat]);
+  }, [threadId, userId, historyAttempt]);
 
   useEffect(() => {
     if (prependingRef.current) {
@@ -166,16 +175,17 @@ export function ChatPage() {
     setHasMore(false);
     setNextCursor(null);
     setLoadingMore(false);
+    setOlderHistoryError(false);
     anchorRef.current = null;
     // Un prepend en vuelo del hilo anterior quedará descartado: se libera la
     // marca para que el próximo mensaje del hilo nuevo vuelva a scrollear.
     prependingRef.current = false;
   }, [threadId]);
 
-  const handleScroll = () => {
+  const handleScroll = (retry = false) => {
     const el = listRef.current;
     if (!el || loadingMore || !hasMore || !userId) return;
-    if (el.scrollTop > SCROLL_TOP_THRESHOLD) return;
+    if (!retry && el.scrollTop > SCROLL_TOP_THRESHOLD) return;
     if (nextCursor == null) {
       // hasMore sin cursor (backend viejo o inconsistente): se apaga la
       // paginación para no reintentar la misma página en loop.
@@ -188,6 +198,7 @@ export function ChatPage() {
     };
     prependingRef.current = true;
     setLoadingMore(true);
+    setOlderHistoryError(false);
     const requestThreadId = threadId;
     void fetchThreadState(threadId, userId, {
       limit: PAGE_SIZE,
@@ -200,6 +211,7 @@ export function ChatPage() {
       // historial vacío tras un fallo del AI service. No significa "no hay
       // más páginas": se conservan hasMore/nextCursor para reintentar.
       if (state && (state.messageCount ?? 0) === 0) {
+        setOlderHistoryError(true);
         prependingRef.current = false;
         setPagesLoaded((n) => n + 1);
         return;
@@ -216,6 +228,7 @@ export function ChatPage() {
         setHasMore(Boolean(state.hasMore));
         setNextCursor(state.nextCursor ?? null);
       } else {
+        setOlderHistoryError(true);
         // Fetch fallido: no se tocan hasMore/nextCursor para poder reintentar
         // en el próximo scroll; no hubo prepend, así que se libera la marca.
         prependingRef.current = false;
@@ -372,7 +385,7 @@ export function ChatPage() {
       <div
         ref={listRef}
         className="screen-scroll chat-list"
-        onScroll={handleScroll}
+        onScroll={() => handleScroll()}
       >
         {/* Alcance de Vita: educación y apoyo al plan publicado, sin sustituir al equipo. */}
         <div className="chat-disclaimer" role="note">
@@ -387,6 +400,10 @@ export function ChatPage() {
             )}
           </span>
         </div>
+        {(historyState.thread !== threadId || historyState.status === 'loading') && !visibleChat.length && <section className="wellness-chat-loading" role="status" aria-busy="true" aria-label={t('Cargando conversación…')}><p>{t('Cargando conversación…')}</p><div aria-hidden="true">{[0,1,2].map(index => <IonSkeletonText key={index} animated={!reducedMotion} className="wellness-skeleton-card" />)}</div></section>}
+        {historyState.thread === threadId && historyState.status === 'error' && <section className="wellness-chat-state" role="alert"><p>{t('No pudimos cargar el historial. Puedes reintentar o seguir conversando.')}</p><IonButton fill="clear" onClick={() => setHistoryAttempt(value => value + 1)}>{t('Reintentar')}</IonButton></section>}
+        {historyState.thread === threadId && historyState.status === 'ready' && !visibleChat.length && <section className="wellness-chat-state" role="status"><h2>{t('Tu conversación empieza aquí')}</h2><p>{t('Elige un tema o escribe a Vita cuando quieras.')}</p></section>}
+        {olderHistoryError && <div className="wellness-chat-state" role="alert"><p>{t('No pudimos cargar los mensajes anteriores.')}</p><IonButton fill="clear" disabled={loadingMore} onClick={() => handleScroll(true)}>{t('Reintentar')}</IonButton></div>}
         {hasMore ? (
           <div className="chat-history-hint" role="status">
             {loadingMore ? (

@@ -3,6 +3,7 @@ import { arrowBackOutline, checkmarkOutline, clipboardOutline, heartOutline, pau
 import { useT } from '../../i18n/I18nContext'
 import type { ProgramState } from '../../hooks/useProgram'
 import vitaPortrait from '../../assets/vita-coach.png'
+import { useReducedMotion } from 'framer-motion'
 
 export function ProgramPendingState({ loading, state, message, onTests, onRetry, completedAssessments, onHome }: {
   loading: boolean
@@ -14,6 +15,7 @@ export function ProgramPendingState({ loading, state, message, onTests, onRetry,
   onHome?: () => void
 }) {
   const t = useT()
+  const reducedMotion = useReducedMotion()
   const pendingTests = state === 'pending-tests'
   const pendingClinical = state === 'pending-assignment'
   const count = completedAssessments != null && Number.isFinite(completedAssessments) ? Math.max(0, Math.min(9, completedAssessments)) : null
@@ -58,7 +60,7 @@ export function ProgramPendingState({ loading, state, message, onTests, onRetry,
         <span className="program-state-eyebrow">{loading ? t('Un momento') : state === 'recoverable' ? t('Vamos paso a paso') : t('Tu bienestar, a tu ritmo')}</span>
         <h1>{loading ? t('Cargando tu programa') : t(availability.title)}</h1>
         <p className="program-state-description">{loading ? t('Estamos cargando tus actividades del día.') : t(availability.description)}</p>
-        {loading ? <div className="program-state-skeletons" aria-hidden="true">{[0, 1, 2].map(index => <div key={index}><IonSkeletonText animated className="program-state-skeleton-icon" /><span><IonSkeletonText animated /><IonSkeletonText animated /></span></div>)}</div> : <div className="program-state-actions">
+        {loading ? <div className="program-state-skeletons" aria-hidden="true">{[0, 1, 2].map(index => <div key={index}><IonSkeletonText animated={!reducedMotion} className="program-state-skeleton-icon" /><span><IonSkeletonText animated={!reducedMotion} /><IonSkeletonText animated={!reducedMotion} /></span></div>)}</div> : <div className="program-state-actions">
           {state === 'recoverable' && <IonButton expand="block" className="program-state-retry" onClick={onRetry}><IonIcon slot="start" icon={refreshOutline} />{t('Reintentar')}</IonButton>}
           {onHome && <IonButton expand="block" fill="outline" className="program-state-home" onClick={onHome}>{t('Volver a Inicio')}</IonButton>}
         </div>}

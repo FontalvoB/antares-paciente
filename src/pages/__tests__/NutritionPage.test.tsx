@@ -57,13 +57,18 @@ vi.mock("@ionic/react", async (importOriginal) => {
 // Estado mutable compartido con los mocks (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   plan: null as MyNutritionPlanDto | null,
-  snapshot: null as unknown as ProgramSnapshotDto,
+  snapshot: null as ProgramSnapshotDto | null,
   isMockFallback: false,
   online: true,
   mutate: vi.fn(),
   queueHydration: vi.fn(),
   showToast: vi.fn(),
   metricsHistory: null as MetricsHistoryDto | null,
+  loading: false,
+  planLoading: false,
+  programState: 'active',
+  refetchProgram: vi.fn(),
+  refetchPlan: vi.fn(),
 }));
 
 const snapshotFixture = {
@@ -122,18 +127,20 @@ vi.mock("../../services/offline/offline-queue-service", () => ({
 vi.mock("../../hooks/useMyNutritionPlan", () => ({
   useMyNutritionPlan: () => ({
     plan: mockState.plan,
-    isLoading: false,
+    isLoading: mockState.planLoading,
     error: null,
-    refetch: vi.fn(),
+    refetch: mockState.refetchPlan,
   }),
 }));
 
 vi.mock("../../hooks/useProgram", () => ({
   useProgram: () => ({
     snapshot: mockState.snapshot,
-    isLoading: false,
+    isLoading: mockState.loading,
     isMockFallback: mockState.isMockFallback,
     productMessage: null,
+    programState: mockState.programState,
+    refetch: mockState.refetchProgram,
   }),
 }));
 
@@ -185,6 +192,32 @@ describe("NutritionPage — pestaña Hoy con metas del plan (Fase 8)", () => {
     mockState.queueHydration.mockReset();
     mockState.showToast.mockReset();
     mockState.metricsHistory = null;
+    mockState.loading = false;
+    mockState.planLoading = false;
+    mockState.programState = 'active';
+    mockState.refetchProgram.mockReset();
+    mockState.refetchPlan.mockReset();
+  });
+
+  it('espera el plan pendiente con skeletons antes de afirmar que está vacío', () => {
+    mockState.snapshot = null;
+    mockState.plan = null;
+    mockState.planLoading = true;
+    render(<NutritionPage />);
+    expect(screen.getByRole('status', {name:'Cargando tu alimentación…'}).getAttribute('aria-busy')).toBe('true');
+    expect(screen.queryByText('Sin programa activo')).toBeNull();
+  });
+
+  it('el fallo recuperable muestra alerta y reintenta programa y plan', () => {
+    mockState.snapshot = null;
+    mockState.plan = null;
+    mockState.programState = 'recoverable';
+    render(<NutritionPage />);
+    expect(screen.getByRole('alert').textContent).toContain('No pudimos cargar tu alimentación');
+    expect(screen.queryByText('Sin programa activo')).toBeNull();
+    fireEvent.click(screen.getByText('Reintentar'));
+    expect(mockState.refetchProgram).toHaveBeenCalledOnce();
+    expect(mockState.refetchPlan).toHaveBeenCalledOnce();
   });
 
   it.each(['publicadas', 'sin recomendaciones', 'IA caída'])('3.18: Plan funciona con %s desde el envoltorio D0014', scenario => {

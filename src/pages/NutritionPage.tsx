@@ -113,7 +113,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
   // verdad del servidor. isLoading distingue carga inicial de estados
   // terminales honestos; productMessage (estados paused/withdrawn/
   // no-template/recoverable) se muestra crudo, como en ProgramPage.
-  const { snapshot, isLoading, isMockFallback, productMessage } = useProgram();
+  const { snapshot, isLoading, isMockFallback, productMessage, programState, refetch: refetchProgram } = useProgram();
   const { t, lang } = useI18n();
   const nutritionMutation = useNutritionLog();
   const completeNutrition = useCompleteTask();
@@ -557,16 +557,15 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
     <Scroll className="ntr-scroll"><NutritionRecommendationHistory history={recommendations?.previous} unavailable={recommendationsUnavailable} loading={recommendationsLoading} errorMessage={recommendationsErrorMessage} onRetry={onRetryRecommendations} labelledBy={historyTitleId}/></Scroll>
   </Screen>;
 
-  // Carga inicial: placeholder de IonSpinner centrado, sin contenido.
-  if (!snapshot && isLoading) {
+  // La carga tiene su propia estructura; no se anuncia como ausencia de plan.
+  if (!snapshot && (isLoading || planLoading)) {
     return (
       <Screen className="ntr-screen">
         <PageHeader title={t("Nutrición")} onBack={() => navigate('home')} />
-        <div
-          style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}
-        >
-          <IonSpinner name="crescent" style={{ width: 34, height: 34 }} />
-        </div>
+        <Scroll className="ntr-scroll"><section className="wellness-loading" role="status" aria-busy="true" aria-label={t('Cargando tu alimentación…')}>
+          <p>{t('Cargando tu alimentación…')}</p>
+          <div aria-hidden="true"><IonSkeletonText animated={!reducedMotion} className="wellness-skeleton-hero" />{[0,1,2].map(index => <IonSkeletonText key={index} animated={!reducedMotion} className="wellness-skeleton-card" />)}</div>
+        </section></Scroll>
       </Screen>
     );
   }
@@ -589,14 +588,14 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
         <PageHeader
           title={t("Nutrición")}
           onBack={() => navigate('home')}
-          sub={t("Sin plan nutricional asignado")}
+          sub={programState === 'recoverable' || planError ? undefined : t("Sin plan nutricional asignado")}
         />
-        <div className="card" style={{ margin: "10px 14px 0" }}>
+        <Scroll className="ntr-scroll"><section className="ntr-card wellness-empty" role={programState === 'recoverable' || planError ? 'alert' : 'status'}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 26 }}>🥗</span>
+            <span style={{ fontSize: 26 }} aria-hidden="true">🥗</span>
             <div>
               <div style={{ fontWeight: 800, fontSize: 15 }}>
-                {t("Sin programa activo")}
+                {t(programState === 'recoverable' || planError ? "No pudimos cargar tu alimentación" : "Sin programa activo")}
               </div>
               {productMessage && (
                 <div
@@ -612,7 +611,9 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
               )}
             </div>
           </div>
-        </div>
+          {planError && <p>{localizedError(planError, {t,lang}, 'No se pudo cargar el plan alimentario')}</p>}
+          {(programState === 'recoverable' || planError) && <IonButton expand="block" onClick={() => { void refetchProgram(); void refetchPlan(); void refreshPlanStatus(); }}>{t('Reintentar')}</IonButton>}
+        </section></Scroll>
       </Screen>
     );
   }
@@ -1098,7 +1099,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
                   </div>
                 )}
               </>
-            ) : metricsLoading ? <IonSkeletonText animated className="ntr-skeleton" /> : (
+            ) : metricsLoading ? <IonSkeletonText animated={!reducedMotion} className="ntr-skeleton" /> : (
               <div
                 style={{
                   padding: 16,
@@ -1107,7 +1108,7 @@ export function NutritionPageContent({ recommendations, recommendationsUnavailab
                   lineHeight: 1.6,
                 }}
               >
-                {t("Aún no hay mediciones registradas")}
+                <span role={metricsFailed ? 'alert' : 'status'}>{t(metricsFailed ? "No pudimos cargar tus mediciones." : "Aún no hay mediciones registradas")}</span>
                 {metricsFailed && <IonButton fill="clear" onClick={() => void refetchMetrics()}>{t("Reintentar")}</IonButton>}
               </div>
             )}
