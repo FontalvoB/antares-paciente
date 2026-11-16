@@ -21,7 +21,6 @@ import {
   documentOutline,
   imagesOutline,
   informationCircle,
-  arrowBackOutline,
   mic,
   nutritionOutline,
   calendarOutline,
@@ -469,7 +468,6 @@ export function ChatPage() {
   return (
     <Screen className="chat-kb chat-reference">
       <header className="chat-premium-header p3-vita-header">
-        <IonButton fill="clear" className="p3-chat-back" aria-label={t('Volver al inicio')} onClick={()=>navigate('home')}><IonIcon icon={arrowBackOutline} slot="icon-only"/></IonButton>
         <div className="p3-vita-identity"><img src={vitaPortrait} alt="" className="p3-vita-avatar"/><div><h1>Vita</h1><p role="status">{chatGenerating ? t("Preparando tu respuesta…") : t("Tu coach de salud y bienestar")}</p></div></div>
         <div className="p3-vita-actions"><IonButton fill="clear" className="vita-header-clear" disabled={chatClearing || clearConfirm || clearError} aria-label={t("Limpiar conversación")} title={t("Limpiar conversación")} onClick={() => { clearTarget.current = historyScope; setClearConfirm(true); }}>{chatClearing ? <IonSpinner name="crescent" /> : <IonIcon icon={trashOutline} aria-hidden="true" />}</IonButton><IonButton fill="clear" className="p3-vita-voice" disabled={chatClearing} aria-label={t('Agente de voz')} onClick={openVoice}><IonIcon icon={mic} slot="icon-only"/></IonButton><IonButton fill="clear" className="chat-panic" aria-label={t('SOS · Botón de pánico')} onClick={openPanic}>SOS</IonButton></div>
       </header>

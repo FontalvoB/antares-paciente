@@ -1,5 +1,5 @@
 import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
-import { IonBadge, IonIcon } from "@ionic/react";
+import { IonBadge, IonButton, IonIcon } from "@ionic/react";
 import {
   calendar,
   calendarOutline,
@@ -44,35 +44,37 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
   ];
 
   return (
-    <nav className={`bnav ${dark ? "bnav-dark" : ""}`}>
+    <nav className={`bnav premium-nav ${dark ? "bnav-dark" : ""}`} aria-label={t('Navegación principal')}>
       {items.map((it, i) => {
         if (it.sos) {
           return (
-            <button
+            <IonButton
               key="sos"
               type="button"
-              className="ni ni-sos"
+              className="ni ni-center"
+              fill="clear"
               onClick={openPanic}
               aria-label={t("Botón de pánico")}
             >
-              <span className="ni-ico">
-                <IonIcon icon={medkit} />
+              <span className="premium-nav-content"><span className="ni-ico">
+                <IonIcon icon={medkit} aria-hidden="true" />
               </span>
-              <span>SOS</span>
-            </button>
+              <span>SOS</span></span>
+            </IonButton>
           );
         }
         const on = screen === it.id;
         return (
-          <button
+          <IonButton
             key={`${it.id}-${i}`}
             type="button"
+            fill="clear"
             className={`ni ${on ? "on" : ""}`}
             onClick={() => navigate(it.id)}
             aria-current={on ? "page" : undefined}
           >
-            <span className="ni-ico">
-              <IonIcon icon={on ? it.iconOn : it.icon} />
+            <span className="premium-nav-content"><span className="ni-ico">
+              <IonIcon icon={on ? it.iconOn : it.icon} aria-hidden="true" />
               {it.id === "chat" && Boolean(chatUnread) && (
                 <IonBadge
                   className="ni-dot"
@@ -80,8 +82,8 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
                 />
               )}
             </span>
-            <span>{it.label}</span>
-          </button>
+            <span>{it.label}</span></span>
+          </IonButton>
         );
       })}
     </nav>

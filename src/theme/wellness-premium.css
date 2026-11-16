@@ -2,6 +2,17 @@
 .app-shell .screen { background: linear-gradient(180deg,var(--wellness-bg-start),var(--wellness-bg-end)); }
 .app-shell .screen > .screen-scroll { background: transparent; background-image: none; }
 .screen .premium-back { --background: var(--wellness-surface); --color: var(--wellness-navy); --border-radius: 50%; --padding-start: 0; --padding-end: 0; width:44px; height:44px; min-width:44px; margin:0; box-shadow:var(--wellness-shadow); border-radius:50%; }
+.app-shell .premium-nav.bnav { position:absolute; inset:auto 16px max(12px,env(safe-area-inset-bottom)) 16px; width:auto; height:72px; padding:8px 4px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); border:1px solid var(--wellness-border); border-radius:26px; background:var(--wellness-accent); box-shadow:var(--wellness-shadow); overflow:visible; }
+.premium-nav.bnav ion-button.ni { --background:transparent; --background-hover:rgba(255,255,255,.5); --color:var(--wellness-primary); --padding-start:0; --padding-end:0; --border-radius:18px; display:block; width:100%; height:56px; margin:0; min-width:0; font-size:11px; font-weight:600; text-transform:none; letter-spacing:0; }
+.premium-nav.bnav ion-button.ni::part(native) { display:flex; flex-direction:column; gap:4px; padding:0; }
+.premium-nav.bnav .ni-ico { display:flex; height:24px; font-size:23px; position:relative; }
+.premium-nav .premium-nav-content { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:100%; }
+.premium-nav.bnav .ni-center .ni-ico,.premium-nav.bnav .ni-center .premium-nav-content { color:white; }
+.premium-nav.bnav .ni.on { --color:var(--wellness-navy); font-weight:800; }
+.premium-nav.bnav .ni.on .ni-ico::after { content:''; position:absolute; height:3px; width:14px; border-radius:4px; background:currentColor; bottom:-4px; left:5px; }
+.premium-nav.bnav ion-button.ni-center { height:72px; transform:translateY(-23px); border-radius:50%; --background:linear-gradient(140deg,var(--wellness-primary),var(--wellness-navy)); --color:white; box-shadow:0 6px 18px rgba(11,42,74,.24); border:5px solid var(--wellness-bg-end); }
+.premium-nav.bnav .ni-center .ni-ico { font-size:25px; }
+.app-shell .screen-scroll:not(.no-nav) { padding-bottom:calc(152px + env(safe-area-inset-bottom)); }
 .ntr-screen.screen { color:var(--wellness-navy); --navy:var(--wellness-navy); --tx:var(--wellness-navy); --blue:var(--wellness-primary); --blue-l:var(--wellness-accent); --bd:var(--wellness-border); --teal:var(--wellness-success); --teal-l:var(--wellness-success-bg); --org:#80511a; --org-l:var(--wellness-warning-bg); --red:var(--wellness-error); --red-l:var(--wellness-error-bg); --g0:var(--wellness-bg-start); --mu:#52677e; --ion-color-primary:var(--wellness-navy); }
 .ntr-screen.screen .page-head { padding:calc(16px + env(safe-area-inset-top)) 20px 14px; background:transparent; border:0; }
 .ntr-screen.screen .page-head-row { display:flex; align-items:center; justify-content:flex-start; gap:12px; }
@@ -201,7 +212,7 @@
   .ntr-screen .ntd-meals-heading h2 { font-size:18px; }
   .ntr-screen .ntd-meal-count { max-width:94px; text-align:right; line-height:1.5; }
   .premium-nav.bnav ion-button.ni { font-size:9px; }
-  .premium-nav.bnav ion-button.ni-vita { height:64px; border-width:4px; transform:translateY(-19px); }
+  .premium-nav.bnav ion-button.ni-center { height:64px; border-width:4px; transform:translateY(-19px); }
   .premium-meal-actions { flex-direction:column; }
   .nutrition-legal-body { padding-left:20px; padding-right:20px; }
 }
@@ -212,6 +223,9 @@
   .premium-days ion-button.is-selected { transform:none; }
 }
 
+/* P2: el dock ocupa espacio real; ni SOS ni Vita pisan el área de lectura. */
+.app-shell .premium-nav.bnav { position:relative; inset:auto; flex:0 0 var(--wellness-dock-height); margin:var(--wellness-dock-clearance) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); width:calc(100% - max(16px,env(safe-area-inset-left)) - max(16px,env(safe-area-inset-right))); align-self:stretch; transform:none; z-index:30; }
+.app-shell .screen-scroll:not(.no-nav) { padding-bottom:24px; scroll-padding-bottom:24px; }
 .app-shell .screen.p2-mission { --navy:var(--wellness-navy); --tx:var(--wellness-navy); --blue:var(--wellness-primary); --mu:var(--wellness-muted); color:var(--wellness-navy); }
 .p2-mission.lesson-page .lesson-page-scroll { background:transparent; padding:0; }
 .p2-mission.lesson-page .lesson-sheet { max-width:960px; padding:calc(20px + env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom)); }
@@ -361,6 +375,7 @@
 .chat-reference.screen .chat-list .bub-usr { background:linear-gradient(130deg,var(--wellness-navy),var(--wellness-action)); color:white; }
 .chat-reference.screen .chat-composer ion-input.chat-inp,.chat-reference.screen .chat-composer ion-textarea.chat-inp { border:0; border-radius:0; font-size:15px; --padding-start:6px; --color:var(--wellness-navy); }
 .chat-reference.screen .chat-composer ion-button.chat-send { --background:linear-gradient(140deg,var(--wellness-navy),var(--wellness-action)); --color:white; }
+.chat-reference.screen .premium-nav { margin-top:var(--wellness-dock-clearance); }
 .p3-pod-controls ion-button.pod-play { --background-hover:white; --background-focused:white; --background-activated:var(--wellness-accent); --color:var(--wellness-navy); }
 .p3-emotion ion-button.emotion-mood.selected { --background-activated:var(--wellness-primary); --background-hover:var(--wellness-navy); --background-focused:var(--wellness-navy); }
 .p3-pod-controls ion-button.is-selected { --background:var(--wellness-dark-glass); }
