@@ -13,7 +13,7 @@ vi.mock("../../components/LanguageToggle", () => ({ LanguageToggle: () => null }
 vi.mock("../../components/SlideCtaButton", () => ({ SlideCtaButton: ({ label, onAct, disabled }: { label: string; onAct: () => void; disabled: boolean }) => <button disabled={disabled} onClick={onAct}>{label}</button> }));
 vi.mock("framer-motion", () => ({ AnimatePresence: ({ children }: { children: ReactNode }) => children, motion: { div: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div> } }));
 vi.mock("@ionic/react", () => ({
-  IonButton: ({ children, onClick, "aria-label": ariaLabel }: { children: ReactNode; onClick: () => void; "aria-label"?: string }) => <button type="button" aria-label={ariaLabel} onClick={onClick}>{children}</button>,
+  IonButton: ({ children, onClick, type, "aria-label": ariaLabel }: { children: ReactNode; onClick?: () => void; type?: "button" | "submit" | "reset"; "aria-label"?: string }) => <button type={type ?? "button"} aria-label={ariaLabel} onClick={onClick}>{children}</button>,
   IonInput: ({ id, value, onIonInput }: { id: string; value: string; onIonInput: (event: { detail: { value: string } }) => void }) => <input id={id} value={value} onChange={event => onIonInput({ detail: { value: event.target.value } })} />,
   IonCheckbox: () => <input type="checkbox" />,
   IonSpinner: () => null, IonIcon: () => null, IonProgressBar: () => null,
@@ -37,7 +37,7 @@ describe("English account access", () => {
     renderLogin();
     fireEvent.change(screen.getByLabelText("ID number"), { target: { value: "QA-ID" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "Example123!" } });
-    fireEvent.click(screen.getByRole("button", { name: "Let's begin" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await waitFor(() => expect(app.showToast).toHaveBeenCalledWith("Invalid credentials", "err"));
   });
   it("requests recovery email in the current English UI language", async () => {

@@ -18835,7 +18835,7 @@ ion-button.ht-cta[disabled] {
   margin-bottom: 14px;
 }
 
-.auth-field label {
+.auth-field > label {
   display: block;
   margin: 0 0 7px 4px;
   font-size: 12px;
@@ -22888,44 +22888,12 @@ html.plt-tablet .mcar-page {
   }
 }
 
-/* Login: entre el logo y el título, solo en el panel de acceso. Vive fuera
-   del auth-body (que centra su contenido con flex) para no desplazar el
-   flujo hacia arriba y chocar con el logo en pantallas cortas. */
-.mascot-auth {
-  width: 120px;
-  height: 162px;
-  margin: -6px 0 8px;
-  align-self: center;
-}
-.kb-open .mascot-auth {
-  display: none;
-}
+/* Login: el héroe del acceso no lleva ilustración; el espacio lo ocupa
+   el titular de marca. */
 
-/* Home: esquina superior derecha, flotando junto al saludo y bajo los
-   accesos del header. hm-head se vuelve contenedor del absoluto. */
+/* Home: hm-head es contenedor de sus absolutos decorativos. */
 .hm-head {
   position: relative;
-}
-.mascot-home {
-  position: absolute;
-  right: 28px;
-  top: calc(76px + env(safe-area-inset-top, 0px));
-  width: 117px;
-  height: 157px;
-  z-index: 2;
-}
-@media (max-width: 374px) {
-  .mascot-home {
-    width: 102px;
-    height: 136px;
-  }
-  .hm-hello {
-    padding-right: 138px;
-  }
-}
-/* Nombres largos: envuelven antes de meterse debajo de la mascota. */
-.hm-hello {
-  padding-right: 153px;
 }
 
 /* Onboarding completado: celebra junto al banner de "Cuenta lista". */
@@ -27067,16 +27035,6 @@ sin cambios en los datos. */
   border-left: 16px solid color-mix(in srgb, var(--home-aqua) 35%, transparent);
   border-bottom: 13px solid color-mix(in srgb, var(--home-leaf) 50%, var(--wh));
 }
-.home .mascot-home {
-  top: 83px;
-  right: -4px;
-  width: 170px;
-  height: auto;
-  z-index: 1;
-}
-.home .mascot-home .mascot-character {
-  height: auto;
-}
 .hm-leaf {
   position: absolute;
   right: -7px;
@@ -27298,10 +27256,6 @@ sin cambios en los datos. */
     width: 96%;
     gap: 6px;
   }
-  .home .mascot-home {
-    right: 0;
-    width: 128px;
-  }
 }
 @media (min-width: 768px) {
   .home .hm-head {
@@ -27321,11 +27275,6 @@ sin cambios en los datos. */
   }
   .hm-purpose {
     margin-bottom: 30px;
-  }
-  .home .mascot-home {
-    width: 185px;
-    right: 35px;
-    top: 66px;
   }
   .hm-day-panel {
     max-width: 450px;
@@ -29697,10 +29646,6 @@ ion-button.vc-btn:active {
 }
 .vita-call-bar ion-button:first-child ion-icon {
   margin-right: 8px;
-}
-.vita-home-portrait {
-  object-fit: contain;
-  object-position: center bottom;
 }
 /* Teclado abierto: la navegación se oculta y el compositor queda sobre el teclado. */
 .kb-open .chat-reference .chat-composer {
@@ -33647,3 +33592,454 @@ ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd)
   margin: 0;
 }
 .chat-reference .vita-header-clear ion-spinner { width: 18px; height: 18px; }
+
+/* ==========================================================================
+   ACCESO MÓVIL (2026-11) — superficie limpia, titular de marca y dos CTA.
+   Solo el panel de acceso: el flujo de activación conserva sus reglas y el
+   botón deslizable de sus pasos.
+   ========================================================================== */
+
+.screen.auth {
+  background:
+    radial-gradient(
+      120% 54% at 50% -14%,
+      color-mix(in srgb, var(--brand-sky) 15%, var(--wh)) 0%,
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      var(--wh) 0%,
+      color-mix(in srgb, var(--brand-sky) 4%, var(--wh)) 64%,
+      color-mix(in srgb, var(--brand-sky) 9%, var(--wh)) 100%
+    );
+}
+
+.auth-scroll {
+  position: relative;
+  z-index: 1;
+  padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+}
+
+.auth-logo {
+  width: min(196px, 52%);
+  margin-bottom: 16px;
+  filter: drop-shadow(0 10px 22px rgba(20, 40, 85, 0.07));
+}
+
+/* El acceso se lee de arriba a abajo, no centrado en pantallas altas. */
+.auth-body-login {
+  justify-content: flex-start;
+}
+
+.auth-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2px 0 24px;
+}
+
+.auth-title {
+  margin: 0;
+  font-size: clamp(30px, 8.6vw, 37px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -1.3px;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--brand-navy);
+}
+
+.auth-title strong {
+  display: block;
+  font-weight: 800;
+  color: var(--brand-green);
+}
+
+.auth-underline {
+  width: 132px;
+  height: 10px;
+  margin-top: 6px;
+  color: var(--brand-green);
+  opacity: 0.85;
+}
+
+.auth-underline path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.auth-body-login .auth-form {
+  width: 100%;
+}
+
+.auth-body-login .auth-field {
+  margin-bottom: 13px;
+}
+
+.auth-body-login .auth-field > label {
+  margin: 0 0 7px 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--brand-sky-deep);
+}
+
+.auth-body-login ion-input.auth-input {
+  --background: color-mix(in srgb, var(--brand-sky) 6%, var(--wh));
+  --padding-start: 4px;
+  --padding-end: 18px;
+  min-height: 58px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--brand-sky) 20%, var(--wh));
+  background: color-mix(in srgb, var(--brand-sky) 6%, var(--wh));
+  box-shadow: inset 0 1px 2px rgba(20, 40, 85, 0.03);
+}
+
+.auth-body-login ion-input.auth-input.has-focus {
+  border-color: var(--brand-green-soft);
+  background: var(--wh);
+  --background: var(--wh);
+  box-shadow: 0 0 0 3px rgba(61, 123, 114, 0.12);
+}
+
+.auth-input-ico {
+  margin: 0 12px 0 14px;
+  color: var(--brand-sky-deep);
+  font-size: 20px;
+  transition: color 0.18s var(--ease);
+}
+
+.auth-body-login ion-input.auth-input.has-focus .auth-input-ico {
+  color: var(--brand-green);
+}
+
+.auth-body-login .auth-eye {
+  bottom: 5px;
+  right: 6px;
+  z-index: 3;
+  --color: var(--brand-sky-deep);
+}
+
+.auth-body-login .auth-options {
+  margin: 3px 0 18px;
+}
+
+.auth-body-login .auth-remember {
+  font-size: 13px;
+}
+
+.auth-body-login .auth-link-btn {
+  --padding-start: 0;
+  --padding-end: 0;
+  color: var(--brand-navy);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+/* CTA principal: píldora navy con flecha en cápsula translúcida. */
+ion-button.auth-submit {
+  --background: linear-gradient(135deg, #0f3a63 0%, #142855 55%, #0a2647 100%);
+  --background-activated: #0a1e3b;
+  --background-focused: #0a1e3b;
+  --background-hover: #1a3668;
+  --border-radius: 999px;
+  --padding-start: 24px;
+  --padding-end: 58px;
+  --box-shadow:
+    0 16px 30px -14px rgba(20, 40, 85, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  position: relative;
+  height: 58px;
+  margin: 2px 0 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-button.auth-submit.button-disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+/* Ionic pinta el botón deshabilitado en gris; durante el envío conservamos
+   la identidad navy y el spinner como única señal de progreso. */
+ion-button.auth-submit.button-disabled::part(native) {
+  background: linear-gradient(135deg, #0f3a63 0%, #142855 55%, #0a2647 100%);
+  color: #fff;
+  box-shadow:
+    0 16px 30px -14px rgba(20, 40, 85, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.auth-submit-label {
+  flex: 1;
+  text-align: center;
+}
+
+.auth-submit-arrow {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  translate: 0 -50%;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+  font-size: 19px;
+}
+
+.auth-submit-arrow ion-spinner {
+  width: 19px;
+  height: 19px;
+  color: var(--wh);
+  --color: var(--wh);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 12px;
+  color: var(--brand-sky-deep);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--brand-sky) 30%, var(--wh));
+}
+
+.auth-divider::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--brand-sky) 34%, var(--wh))
+  );
+}
+
+.auth-divider::after {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--brand-sky) 34%, var(--wh)),
+    transparent
+  );
+}
+
+.auth-divider span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+/* Activación: segunda acción explícita, nunca escondida tras un enlace. */
+.auth-activate-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-activate-hint {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+ion-button.auth-activate {
+  --background: color-mix(in srgb, var(--wh) 78%, transparent);
+  --background-activated: color-mix(in srgb, var(--brand-sky) 10%, var(--wh));
+  --background-hover: color-mix(in srgb, var(--brand-sky) 7%, var(--wh));
+  --border-color: color-mix(in srgb, var(--brand-sky) 38%, var(--wh));
+  --border-style: solid;
+  --border-width: 1.5px;
+  --border-radius: 999px;
+  --color: var(--brand-navy);
+  --box-shadow: none;
+  height: 54px;
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-button.auth-activate::part(native) {
+  padding-inline: 18px;
+}
+
+ion-button.auth-activate.button-disabled {
+  opacity: 0.55;
+}
+
+ion-button.auth-activate ion-icon[slot="start"] {
+  margin-right: 8px;
+  font-size: 19px;
+}
+
+ion-button.auth-activate ion-icon[slot="end"] {
+  margin-left: 4px;
+  font-size: 16px;
+  opacity: 0.55;
+}
+
+.auth-tagline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: auto 0 0;
+  padding-top: 26px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--brand-sky-deep);
+}
+
+.auth-tagline i {
+  font-style: normal;
+  letter-spacing: 0;
+  color: color-mix(in srgb, var(--brand-sky) 55%, var(--wh));
+}
+
+.auth-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  width: 100%;
+  height: 78px;
+  pointer-events: none;
+}
+
+.auth-wave-back {
+  fill: color-mix(in srgb, var(--brand-sky) 11%, var(--wh));
+}
+
+.auth-wave-front {
+  fill: color-mix(in srgb, var(--brand-sky) 19%, var(--wh));
+}
+
+/* Teclado abierto: el héroe y la ola estorban; el formulario manda. */
+.kb-open .auth-hero,
+.kb-open .auth-tagline,
+.kb-open .auth-wave {
+  display: none;
+}
+
+.kb-open .auth-body-login {
+  justify-content: flex-start;
+}
+
+.kb-open .auth-scroll {
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Móviles bajos: conserva CTA y activación en el primer viewport. */
+@media (max-height: 780px) {
+  .auth-logo {
+    width: min(164px, 46%);
+    margin-bottom: 10px;
+  }
+  .auth-title {
+    font-size: clamp(26px, 7.6vw, 31px);
+    margin-bottom: 0;
+  }
+  .auth-hero {
+    margin-bottom: 18px;
+  }
+  .auth-body-login ion-input.auth-input {
+    min-height: 54px;
+  }
+  .auth-tagline {
+    padding-top: 18px;
+  }
+}
+
+@media (max-width: 359px) {
+  .auth-scroll {
+    padding-inline: 20px;
+  }
+  .auth-body-login .auth-options {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+  .auth-body-login .auth-link-btn {
+    height: 24px;
+  }
+}
+
+/* Pantallas muy bajas (iPhone SE 1.ª gen, 568 px): el acceso completo,
+   incluida la activación, entra sin desplazamiento. */
+@media (max-height: 640px) {
+  .auth-scroll {
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .auth-logo {
+    width: min(132px, 42%);
+    margin-bottom: 8px;
+  }
+  .auth-hero {
+    margin-bottom: 12px;
+  }
+  .auth-title {
+    font-size: clamp(23px, 7vw, 27px);
+    letter-spacing: -1px;
+  }
+  .auth-underline {
+    width: 104px;
+    height: 8px;
+    margin-top: 3px;
+  }
+  .auth-body-login .auth-field {
+    margin-bottom: 9px;
+  }
+  .auth-body-login .auth-field > label {
+    margin-bottom: 4px;
+    font-size: 9.5px;
+  }
+  .auth-body-login ion-input.auth-input {
+    min-height: 50px;
+    border-radius: 15px;
+  }
+  .auth-input-ico {
+    margin: 0 10px 0 12px;
+    font-size: 18px;
+  }
+  .auth-body-login .auth-options {
+    margin: 2px 0 12px;
+  }
+  .auth-body-login .auth-submit {
+    height: 54px;
+  }
+  .auth-divider {
+    margin: 12px 0 8px;
+  }
+  .auth-activate-hint {
+    display: none;
+  }
+  .auth-body-login .auth-activate {
+    height: 48px;
+  }
+  .auth-tagline {
+    display: none;
+  }
+  .auth-wave {
+    height: 58px;
+  }
+}
