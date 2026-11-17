@@ -18768,9 +18768,9 @@ ion-button.ht-cta[disabled] {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* safe: con contenido más alto que la caja (p. ej. login con mascota)
-     alinea al inicio en vez de desbordar centrado por arriba y tapar el logo. */
-  justify-content: safe center;
+  /* El acceso se lee de arriba abajo: el contenido no flota en el centro
+     de la pantalla (el login ya lo alinea explícitamente al inicio). */
+  justify-content: flex-start;
 }
 
 .auth-title {
@@ -18972,177 +18972,7 @@ ion-button.cta-pill.button-disabled {
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* Botón deslizable para confirmar (SlideCtaButton) ------------------------
-   Reemplaza el clic puro de .cta-pill en la autenticación: el pulgar se
-   arrastra a la derecha para ejecutar la acción; el clic en el track y el
-   teclado siguen funcionando (el gesto es mejora, no requisito). */
 
-.slide-cta {
-  position: relative;
-  height: 62px;
-  margin: 4px 0 0;
-}
-
-.slide-cta-track {
-  position: absolute;
-  inset: 0;
-  display: block;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-  background: var(--brand-navy);
-  box-shadow: 0 14px 30px rgba(20, 40, 85, 0.3);
-  overflow: hidden;
-  text-align: left;
-}
-
-.slide-cta-track:disabled {
-  opacity: 1;
-  cursor: default;
-}
-
-.slide-cta-fill {
-  position: absolute;
-  inset: 3px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(61, 123, 114, 0) 0%,
-    rgba(61, 123, 114, 0.45) 100%
-  );
-  transform-origin: left center;
-  pointer-events: none;
-}
-
-.slide-cta-label {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 0 62px;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  pointer-events: none;
-}
-
-.slide-cta-chevrons {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  translate: 0 -50%;
-  display: flex;
-  gap: 1px;
-  font-size: 14px;
-  color: #fff;
-  pointer-events: none;
-}
-
-.slide-cta-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 56px;
-  height: 56px;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  font-size: 19px;
-  color: #fff;
-  border-radius: 50%;
-  background: linear-gradient(150deg, #3d7b72 0%, #0f4a44 100%);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-  /* El pulgar respeta el scroll vertical de la página (framer drag="x"
-     usa pan-y internamente; esto lo documenta y garantiza en CSS). */
-  touch-action: pan-y;
-}
-
-/* Botón deslizable para confirmar (SlideCtaButton) ------------------------
-   Reemplaza el clic puro de .cta-pill en la autenticación: el pulgar se
-   arrastra a la derecha para ejecutar la acción; el clic en el track y el
-   teclado siguen funcionando (el gesto es mejora, no requisito). */
-
-.slide-cta {
-  position: relative;
-  height: 62px;
-  margin: 4px 0 0;
-}
-
-.slide-cta-track {
-  position: absolute;
-  inset: 0;
-  display: block;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-  background: var(--brand-navy);
-  box-shadow: 0 14px 30px rgba(20, 40, 85, 0.3);
-  overflow: hidden;
-  text-align: left;
-}
-
-.slide-cta-track:disabled {
-  opacity: 1;
-  cursor: default;
-}
-
-.slide-cta-fill {
-  position: absolute;
-  inset: 3px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(61, 123, 114, 0) 0%,
-    rgba(61, 123, 114, 0.45) 100%
-  );
-  transform-origin: left center;
-  pointer-events: none;
-}
-
-.slide-cta-label {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 0 62px;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  pointer-events: none;
-}
-
-.slide-cta-chevrons {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  translate: 0 -50%;
-  display: flex;
-  gap: 1px;
-  font-size: 14px;
-  color: #fff;
-  pointer-events: none;
-}
-
-.slide-cta-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 56px;
-  height: 56px;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  font-size: 19px;
-  color: #fff;
-  border-radius: 50%;
-  background: linear-gradient(150deg, #3d7b72 0%, #0f4a44 100%);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-  /* El pulgar respeta el scroll vertical de la página (framer drag="x"
-     usa pan-y internamente; esto lo documenta y garantiza en CSS). */
-  touch-action: pan-y;
-}
 
 .auth-demo {
   margin: 14px 0 0;
@@ -33763,19 +33593,37 @@ ion-button.auth-submit {
   letter-spacing: 0;
 }
 
-ion-button.auth-submit.button-disabled {
+ion-button.auth-submit.is-busy.button-disabled {
   opacity: 1;
   cursor: progress;
 }
 
-/* Ionic pinta el botón deshabilitado en gris; durante el envío conservamos
-   la identidad navy y el spinner como única señal de progreso. */
-ion-button.auth-submit.button-disabled::part(native) {
+/* Durante el envío conservamos la identidad navy y el spinner como única
+   señal de progreso; Ionic pinta todo botón deshabilitado en gris. */
+ion-button.auth-submit.is-busy.button-disabled::part(native) {
   background: linear-gradient(135deg, #0f3a63 0%, #142855 55%, #0a2647 100%);
   color: #fff;
   box-shadow:
     0 16px 30px -14px rgba(20, 40, 85, 0.65),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Deshabilitado por validación (p. ej. OTP incompleto): se ve inactivo,
+   no como un CTA navy que invita a pulsar. */
+ion-button.auth-submit.is-disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+ion-button.auth-submit.is-disabled::part(native) {
+  background: var(--g1);
+  color: var(--mu);
+  box-shadow: none;
+}
+
+ion-button.auth-submit.is-disabled .auth-submit-arrow {
+  background: color-mix(in srgb, var(--brand-sky) 14%, var(--wh));
+  color: var(--brand-sky-deep);
 }
 
 .auth-submit-label {

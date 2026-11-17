@@ -25,7 +25,7 @@ import { useApp } from "../context/AppContext";
 import { useI18n } from "../i18n/I18nContext";
 import { localizedError } from "../utils/localizedError";
 import { LanguageToggle } from "../components/LanguageToggle";
-import { SlideCtaButton } from "../components/SlideCtaButton";
+import { AuthSubmitButton } from "../components/AuthSubmitButton";
 import {
   loginUser,
   lookupId,
@@ -401,24 +401,13 @@ export function LoginPage() {
                   </IonButton>
                 </div>
 
-                <IonButton
+                <AuthSubmitButton
                   type="submit"
-                  expand="block"
-                  className="auth-submit"
-                  disabled={busy}
-                  aria-busy={busy}
-                >
-                  <span className="auth-submit-label" aria-live="polite">
-                    {busy ? t("Ingresando…") : t("Ingresar")}
-                  </span>
-                  <span className="auth-submit-arrow" aria-hidden="true">
-                    {busy ? (
-                      <IonSpinner name="crescent" />
-                    ) : (
-                      <IonIcon icon={arrowForward} />
-                    )}
-                  </span>
-                </IonButton>
+                  label={t("Ingresar")}
+                  busyLabel={t("Ingresando…")}
+                  busy={busy}
+                  icon={arrowForward}
+                />
               </form>
 
               <div className="auth-divider" role="separator" aria-hidden="true">
@@ -527,11 +516,10 @@ export function LoginPage() {
 
                       {busyBar}
 
-                      <SlideCtaButton
+                      <AuthSubmitButton
                         label={t("Confirmar identidad")}
                         busyLabel={t("Buscando…")}
                         busy={busy}
-                        disabled={busy}
                         icon={shieldCheckmarkOutline}
                         onAct={confirmId}
                       />
@@ -674,11 +662,11 @@ export function LoginPage() {
                       </div>}
                       {busyBar}
 
-                      <SlideCtaButton
+                      <AuthSubmitButton
                         label={t(mode === "recovery" ? "Actualizar contraseña" : "Verificar y entrar")}
                         busyLabel={t("Verificando…")}
                         busy={busy}
-                        disabled={busy || otp.join("").length !== 6}
+                        disabled={otp.join("").length !== 6}
                         icon={lockClosedOutline}
                         onAct={submitOtp}
                       />

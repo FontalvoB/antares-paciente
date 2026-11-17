@@ -10,7 +10,6 @@ vi.mock("../../utils/authApi", () => api);
 vi.mock("../../context/AppContext", () => ({ useApp: () => app }));
 vi.mock("../../components/Mascot", () => ({ Mascot: () => null }));
 vi.mock("../../components/LanguageToggle", () => ({ LanguageToggle: () => null }));
-vi.mock("../../components/SlideCtaButton", () => ({ SlideCtaButton: ({ label, onAct, disabled }: { label: string; onAct: () => void; disabled: boolean }) => <button disabled={disabled} onClick={onAct}>{label}</button> }));
 vi.mock("framer-motion", () => ({ AnimatePresence: ({ children }: { children: ReactNode }) => children, motion: { div: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div> } }));
 vi.mock("@ionic/react", () => ({
   IonButton: ({ children, onClick, type, "aria-label": ariaLabel }: { children: ReactNode; onClick?: () => void; type?: "button" | "submit" | "reset"; "aria-label"?: string }) => <button type={type ?? "button"} aria-label={ariaLabel} onClick={onClick}>{children}</button>,
