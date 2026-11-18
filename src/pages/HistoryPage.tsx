@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -30,11 +30,8 @@ import {
   flaskOutline,
   personOutline,
 } from "ionicons/icons";
-import {
-  normalizeSource,
-  SOURCE_LABEL_KEYS,
-  SOURCE_META,
-} from "../utils/measurement-source";
+import { isSupersededMeasurement } from "../utils/measurement-source";
+import { MeasurementProvenance } from "../components/MeasurementProvenance";
 import { Screen, Scroll } from "../components/Screen";
 import { MyDocumentsSection } from "../components/MyDocumentsSection";
 import { useApp } from "../context/AppContext";
@@ -96,13 +93,6 @@ function formatMeasurementValue(
 }
 
 /**
- * Etiqueta legible del origen: mapa compartido (`utils/measurement-source`;
- * alias clínicos como `seed-hist` → "Consulta médica"). El crudo viaja tal
- * cual si aparece un origen desconocido.
- */
-const SOURCE_LABELS = SOURCE_LABEL_KEYS;
-
-/**
  * Icono temático por métrica (coincidencia por subcadena sobre código +
  * nombre del backend). Solo presentación: no altera ningún dato ni cálculo.
  */
@@ -161,6 +151,7 @@ interface HcSection {
 }
 
 export function HistoryPage() {
+  const [expandedSection, setExpandedSection] = useState<string>("ident");
   const { user } = useApp();
   const { snapshot, isMockFallback } = useProgram();
   const { history: metricsHistory, isLoading: metricsLoading } =
@@ -180,6 +171,10 @@ export function HistoryPage() {
   } = useMyMeasurements();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "es-ES";
+  const currentMeasurements = useMemo(
+    () => measurements.filter((measurement) => !isSupersededMeasurement(measurement)),
+    [measurements],
+  );
 
   // Tarjetas clínicas con la verdad de metrics-history (mismo resolver del
   // Home): IMC (con fallback peso/talla), HbA1c y % de grasa. Sin filas →
@@ -205,10 +200,10 @@ export function HistoryPage() {
       ...(metricsHistory?.metrics ?? []).flatMap((series) =>
         series.points.map((point) => point.date),
       ),
-      ...measurements.map((m) => m.observedAt.split("T")[0] ?? ""),
+      ...currentMeasurements.map((m) => m.observedAt.split("T")[0] ?? ""),
     ].filter(Boolean);
     return dates.length ? dates.reduce((a, b) => (b > a ? b : a)) : null;
-  }, [metricsHistory, measurements]);
+  }, [metricsHistory, currentMeasurements]);
 
   const identityRows: HcRow[] = [
     { label: "Nombre", value: user.nombre },
@@ -358,7 +353,17 @@ export function HistoryPage() {
 
         <div className="sec">{t("Secciones del expediente")}</div>
 
-        <IonAccordionGroup className="hc-acc" value="ident">
+        <IonAccordionGroup
+          className="hc-acc"
+          value={expandedSection}
+          onIonChange={(event) => {
+            if (event.target === event.currentTarget) {
+              setExpandedSection(
+                typeof event.detail.value === "string" ? event.detail.value : "",
+              );
+            }
+          }}
+        >
           {sections.map((s) => (
             <IonAccordion key={s.id} value={s.id}>
               <IonItem slot="header" lines="none">
@@ -412,9 +417,9 @@ export function HistoryPage() {
                 <IonIcon icon={clipboardOutline} />
               </span>
               <IonLabel>{t("Historial de mediciones")}</IonLabel>
-              {measurements.length > 0 ? (
+              {currentMeasurements.length > 0 ? (
                 <IonBadge slot="end" color="primary">
-                  {measurements.length}
+                  {currentMeasurements.length}
                 </IonBadge>
               ) : null}
             </IonItem>
@@ -463,45 +468,25 @@ export function HistoryPage() {
               ) : (
                 <>
                   <IonList className="hc-meas-list" lines="none">
-                    {measurements.map((m) => {
-                      const sourceKey = normalizeSource(m.source);
-                      const meta = SOURCE_META[sourceKey];
-                      return (
-                        <IonItem key={m.id} lines="none" className="hc-meas">
-                          <span className="hc-meas-ico" aria-hidden="true">
-                            <IonIcon
-                              icon={metricIcon(m.metricCode, m.metricName)}
-                            />
-                          </span>
-                          <IonLabel>
-                            <h2>{m.metricName}</h2>
-                            <p>
-                              <strong>
-                                {formatMeasurementValue(
-                                  m.value,
-                                  m.unitSymbol,
-                                  locale,
-                                )}
-                              </strong>
-                              <span className="hc-meas-date">
-                                {formatObservedAt(m.observedAt, locale)}
-                              </span>
-                            </p>
-                          </IonLabel>
-                          <IonBadge
-                            slot="end"
-                            className={`hc-src ${meta?.className ?? "hc-src-prof"}`}
-                          >
-                            {meta ? (
-                              <IonIcon icon={meta.icon} aria-hidden="true" />
-                            ) : null}
-                            {SOURCE_LABELS[sourceKey]
-                              ? t(SOURCE_LABELS[sourceKey])
-                              : m.source}
-                          </IonBadge>
-                        </IonItem>
-                      );
-                    })}
+                    {measurements.map((m) => (
+                      <IonItem key={m.id} lines="none" className="hc-meas">
+                        <span className="hc-meas-ico" aria-hidden="true">
+                          <IonIcon icon={metricIcon(m.metricCode, m.metricName)} />
+                        </span>
+                        <IonLabel>
+                          <h2>{m.metricName}</h2>
+                          <p>
+                            <strong>
+                              {formatMeasurementValue(m.value, m.unitSymbol, locale)}
+                            </strong>
+                            <span className="hc-meas-date">
+                              {formatObservedAt(m.observedAt, locale)}
+                            </span>
+                          </p>
+                          <MeasurementProvenance measurement={m} />
+                        </IonLabel>
+                      </IonItem>
+                    ))}
                   </IonList>
                   {measurementsError ? (
                     <div className="hc-err">

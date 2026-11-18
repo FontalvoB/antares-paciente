@@ -1,34 +1,45 @@
 import { describe, expect, it } from "vitest";
-import {
-  normalizeSource,
-  SOURCE_LABEL_KEYS,
-  SOURCE_META,
-} from "../measurement-source";
+import type { MeasurementItemDto } from "../../services/measurements/types";
+import { getMeasurementSourceBadge, isSupersededMeasurement } from "../measurement-source";
 
-describe("measurement-source — etiquetas humanas de origen", () => {
-  it("mapea alias clínicos a Consulta médica (sin crudo técnico visible)", () => {
-    for (const raw of [
-      "seed-hist",
-      "seed_hist",
-      "professional",
-      "provider",
-      "clinic",
-      "Professional",
-      " SEED-HIST ",
-    ]) {
-      const key = normalizeSource(raw);
-      expect(SOURCE_LABEL_KEYS[key]).toBe("Consulta médica");
-      expect(SOURCE_META[key]?.className).toBe("hc-src-prof");
-    }
+describe("procedencia de mediciones", () => {
+  it.each([
+    ["vita_chat", "Reportado por ti · Chat"],
+    ["vita_voice", "Reportado por ti · Voz"],
+    ["vita_whatsapp", "Reportado por ti · WhatsApp"],
+  ] as const)("muestra el canal %s del reporte del paciente", (sourceChannel, label) => {
+    expect(getMeasurementSourceBadge({ sourceChannel, reportedBy: "patient" }))
+      .toEqual({ label, variant: "patient" });
+    expect(getMeasurementSourceBadge({ sourceChannel })).toBeNull();
   });
 
-  it("conserva dispositivo, laboratorio y autorreporte", () => {
-    expect(SOURCE_LABEL_KEYS["device"]).toBe("Dispositivo");
-    expect(SOURCE_LABEL_KEYS["lab"]).toBe("Laboratorio");
-    expect(SOURCE_LABEL_KEYS["patient"]).toBe("Autorreporte");
+  it("muestra el actor paciente sin atribuirle un canal Vita", () => {
+    expect(getMeasurementSourceBadge({ reportedBy: "patient", sourceChannel: "app_manual" }))
+      .toEqual({ label: "Reportado por ti", variant: "patient" });
   });
 
-  it("origen desconocido queda sin etiqueta (el crudo se muestra tal cual)", () => {
-    expect(SOURCE_LABEL_KEYS[normalizeSource("wearable-x")]).toBeUndefined();
+  it.each([
+    [{ reportedBy: "professional" }, "Profesional", "prof"],
+    [{ sourceChannel: "professional", reportedBy: null }, "Profesional", "prof"],
+    [{ reportedBy: "device" }, "Dispositivo", "device"],
+    [{ sourceChannel: "device" }, "Dispositivo", "device"],
+    [{ sourceChannel: "lab", reportedBy: "professional" }, "Laboratorio", "lab"],
+  ] as const)("reconoce la procedencia registrada %j", (record, label, variant) => {
+    expect(getMeasurementSourceBadge(record)).toEqual({ label, variant });
+  });
+
+  it("omite la procedencia si el backend anterior solo devuelve source o devuelve null", () => {
+    const legacy: Pick<MeasurementItemDto, "source" | "sourceChannel" | "reportedBy"> = {
+      source: "patient",
+    };
+    expect(getMeasurementSourceBadge(legacy)).toBeNull();
+    expect(getMeasurementSourceBadge({ sourceChannel: null, reportedBy: null })).toBeNull();
+  });
+
+  it("distingue una fila reemplazada de las demás y de las filas antiguas", () => {
+    expect(isSupersededMeasurement({ status: "superseded" })).toBe(true);
+    expect(isSupersededMeasurement({ status: "confirmed" })).toBe(false);
+    expect(isSupersededMeasurement({ status: "pending_confirmation" })).toBe(false);
+    expect(isSupersededMeasurement({})).toBe(false);
   });
 });

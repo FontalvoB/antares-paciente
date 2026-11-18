@@ -1,44 +1,37 @@
-import {
-  bluetoothOutline,
-  flaskOutline,
-  medkitOutline,
-  personOutline,
-} from "ionicons/icons";
+import type { MeasurementItemDto } from "../services/measurements/types";
 
-/**
- * Origen de una medición → etiqueta humana (clave t()).
- *
- * El contrato documenta `device | patient | professional | lab`, pero en la
- * práctica llegan alias clínicos (`seed-hist`, `provider`, `clinic`): todos
- * describen una toma en consulta y se agrupan bajo "Consulta médica".
- * Separación marca/presentación (PROMPT_CONTINUA §5): el crudo del backend
- * nunca se renombra, solo su etiqueta visible.
- */
-export const SOURCE_LABEL_KEYS: Record<string, string> = {
-  device: "Dispositivo",
-  lab: "Laboratorio",
-  patient: "Autorreporte",
-  professional: "Consulta médica",
-  provider: "Consulta médica",
-  clinic: "Consulta médica",
-  "seed-hist": "Consulta médica",
-  seed_hist: "Consulta médica",
-};
+type MeasurementSource = Pick<MeasurementItemDto, "sourceChannel" | "reportedBy">;
 
-/** Chip pastel + mini-ícono por origen (clases `.hc-src-*` en global.css). */
-export const SOURCE_META: Record<string, { className: string; icon: string }> =
-  {
-    device: { className: "hc-src-device", icon: bluetoothOutline },
-    lab: { className: "hc-src-lab", icon: flaskOutline },
-    patient: { className: "hc-src-patient", icon: personOutline },
-    professional: { className: "hc-src-prof", icon: medkitOutline },
-    provider: { className: "hc-src-prof", icon: medkitOutline },
-    clinic: { className: "hc-src-prof", icon: medkitOutline },
-    "seed-hist": { className: "hc-src-prof", icon: medkitOutline },
-    seed_hist: { className: "hc-src-prof", icon: medkitOutline },
-  };
+const PATIENT_SOURCE_LABELS = {
+  vita_chat: "Reportado por ti · Chat",
+  vita_voice: "Reportado por ti · Voz",
+  vita_whatsapp: "Reportado por ti · WhatsApp",
+} as const;
 
-/** Normaliza el crudo del backend antes de buscar etiqueta o chip. */
-export function normalizeSource(source: string): string {
-  return source.trim().toLowerCase();
+export function getMeasurementSourceBadge({ sourceChannel, reportedBy }: MeasurementSource) {
+  if (sourceChannel === "lab") {
+    return { label: "Laboratorio", variant: "lab" };
+  }
+
+  switch (reportedBy ?? sourceChannel) {
+    case "device":
+      return { label: "Dispositivo", variant: "device" };
+    case "professional":
+      return { label: "Profesional", variant: "prof" };
+    case "patient":
+      switch (sourceChannel) {
+        case "vita_chat":
+        case "vita_voice":
+        case "vita_whatsapp":
+          return { label: PATIENT_SOURCE_LABELS[sourceChannel], variant: "patient" };
+        default:
+          return { label: "Reportado por ti", variant: "patient" };
+      }
+    default:
+      return null;
+  }
+}
+
+export function isSupersededMeasurement({ status }: Pick<MeasurementItemDto, "status">) {
+  return status === "superseded";
 }

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  IonBadge,
   IonButton,
   IonIcon,
   IonItem,
@@ -22,11 +21,8 @@ import {
   scaleOutline,
   speedometerOutline,
 } from "ionicons/icons";
-import {
-  normalizeSource,
-  SOURCE_LABEL_KEYS,
-  SOURCE_META,
-} from "../utils/measurement-source";
+import { isSupersededMeasurement } from "../utils/measurement-source";
+import { MeasurementProvenance } from "../components/MeasurementProvenance";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useI18n, useT } from "../i18n/I18nContext";
@@ -64,13 +60,6 @@ const BODY_LABELS: Record<string, string> = {
   wrist: "Muñeca",
   body_fat: "Grasa corporal",
 };
-
-/**
- * Etiqueta legible del origen: mapa compartido (`utils/measurement-source`;
- * alias clínicos como `seed-hist` → "Consulta médica"). Mismo mapa que
- * Historia.
- */
-const SOURCE_LABELS = SOURCE_LABEL_KEYS;
 
 /** Icono temático por código corporal (presentación; el valor es del backend). */
 const BODY_ICONS: Record<string, string> = {
@@ -223,6 +212,7 @@ export function BodyProfilePage() {
   const latestByCode = useMemo(() => {
     const out: Record<string, MeasurementItemDto> = {};
     for (const item of items) {
+      if (isSupersededMeasurement(item)) continue;
       const code = item.metricCode.trim().toLowerCase();
       const prev = out[code];
       if (!prev || Date.parse(item.observedAt) >= Date.parse(prev.observedAt))
@@ -375,8 +365,6 @@ export function BodyProfilePage() {
                 <IonList className="bp-list" lines="none">
                   {ordered.map((m) => {
                     const code = m.metricCode.trim().toLowerCase();
-                    const sourceKey = normalizeSource(m.source);
-                    const meta = SOURCE_META[sourceKey];
                     return (
                       <IonItem key={m.id} lines="none" className="bp-meas">
                         <span className="bp-meas-ico" aria-hidden="true">
@@ -384,16 +372,7 @@ export function BodyProfilePage() {
                         </span>
                         <IonLabel>
                           <h3>{t(BODY_LABELS[code] ?? m.metricName)}</h3>
-                          {SOURCE_LABELS[sourceKey] && <p>
-                            <IonBadge
-                              className={`hc-src ${meta?.className ?? "hc-src-prof"}`}
-                            >
-                              {meta ? (
-                                <IonIcon icon={meta.icon} aria-hidden="true" />
-                              ) : null}
-                              {t(SOURCE_LABELS[sourceKey])}
-                            </IonBadge>
-                          </p>}
+                          <MeasurementProvenance measurement={m} />
                         </IonLabel>
                         <IonNote slot="end" className="bp-note">
                           <b>

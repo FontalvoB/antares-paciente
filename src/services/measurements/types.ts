@@ -23,6 +23,18 @@ export interface MeasurementItemDto {
    * clínicos como `seed-hist`/`provider`/`clinic`, que la UI agrupa como
    * consulta médica). */
   source: string;
+  /** Campos aditivos. Los servidores anteriores pueden omitirlos. */
+  sourceChannel?:
+    | "vita_chat"
+    | "vita_voice"
+    | "vita_whatsapp"
+    | "app_manual"
+    | "device"
+    | "professional"
+    | "lab"
+    | null;
+  reportedBy?: "patient" | "professional" | "device" | null;
+  status?: "confirmed" | "pending_confirmation" | "superseded" | null;
 }
 
 /** Página por cursor opaco: `nextCursor` null + `hasNextPage` false = última. */

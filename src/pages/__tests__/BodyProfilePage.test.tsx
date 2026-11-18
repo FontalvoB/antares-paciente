@@ -212,6 +212,7 @@ describe("BodyProfilePage — Perfil corporal con mediciones reales", () => {
   it("0.13 — convierte pct a % y oculta orígenes técnicos conservando etiquetas conocidas", () => {
     mockState.measurements = fullFixture.map(m => ({ ...m,
       source: m.metricCode === 'weight' ? 'rich-seed' : m.metricCode === 'height' ? 'origen-interno' : m.source,
+      reportedBy: m.metricCode === 'waist' || m.metricCode === 'body_fat' ? 'device' : null,
       unitSymbol: m.metricCode === 'body_fat' ? 'pct' : m.unitSymbol,
     }));
     const { container } = render(<BodyProfilePage />);
@@ -223,6 +224,28 @@ describe("BodyProfilePage — Perfil corporal con mediciones reales", () => {
     expect(container.textContent).not.toContain('origen-interno');
     expect(container.querySelectorAll('ion-badge')).toHaveLength(2);
     expect(screen.getAllByText('Dispositivo')).toHaveLength(2);
+  });
+
+  it("usa el último peso vigente para la fila y el IMC aunque una fila reemplazada tenga fecha posterior", () => {
+    const [weight, ...otherMeasurements] = fullFixture;
+    mockState.measurements = [
+      { ...weight, reportedBy: "patient", sourceChannel: "vita_voice", status: "confirmed" },
+      {
+        ...weight,
+        id: "m-replaced",
+        observedAt: "2026-08-16T10:00:00.000+00:00",
+        value: 80,
+        status: "superseded",
+      },
+      ...otherMeasurements,
+    ];
+
+    render(<BodyProfilePage />);
+
+    expect(screen.getByText("70,5 kg")).toBeTruthy();
+    expect(screen.getByText("Reportado por ti · Voz")).toBeTruthy();
+    expect(screen.queryByText("80 kg")).toBeNull();
+    expect(screen.getByText("kg/m²").closest("strong")?.textContent).toContain("24,4");
   });
 
   it("sin mediciones muestra estado vacío honesto", () => {

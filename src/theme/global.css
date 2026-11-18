@@ -25076,26 +25076,24 @@ ion-modal.previsit-modal::part(content) {
 }
 
 /* Chips médicos de origen: pastel sutil sobre IonBadge (sigue Ionic). */
-ion-badge.hc-src {
-  display: inline-flex;
-  align-items: center;
+.measurement-provenance {
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  flex-shrink: 0;
-  max-width: 46%;
+  margin-top: 5px;
+}
+ion-badge.hc-src {
+  max-width: 100%;
   margin: 0;
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid transparent;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-ion-badge.hc-src ion-icon {
-  font-size: 12px;
-  flex-shrink: 0;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: start;
 }
 ion-badge.hc-src-device {
   --background: var(--hc-src-device-bg);
@@ -25116,6 +25114,11 @@ ion-badge.hc-src-prof {
   --background: var(--hc-src-prof-bg);
   --color: var(--hc-src-prof-tx);
   border-color: rgba(2, 64, 54, 0.2);
+}
+ion-badge.hc-src-superseded {
+  --background: var(--g0);
+  --color: var(--mu);
+  border-color: var(--bd);
 }
 
 /* Mediciones de Historia: tarjetas limpias con micro-interacción. */
@@ -25162,6 +25165,7 @@ ion-list.hc-meas-list ion-item.hc-meas:active {
 }
 .hc-meas ion-label p {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 6px;
   font-size: 12px;
@@ -25205,6 +25209,7 @@ ion-segment.bp-seg {
 }
 ion-segment.bp-seg ion-segment-button {
   min-width: 0;
+  min-height: 44px;
   flex: 1;
   --padding-start: 2px;
   --padding-end: 2px;
@@ -25354,9 +25359,6 @@ ion-list.bp-list {
   font-size: 14px;
   font-weight: 700;
   color: var(--brand-navy);
-}
-.bp-meas ion-label p {
-  margin-top: 4px;
 }
 .bp-avatar-note {
   margin: 10px 20px 0;

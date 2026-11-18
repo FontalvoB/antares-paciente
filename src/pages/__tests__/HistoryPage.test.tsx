@@ -160,6 +160,7 @@ const measurementsFixture: MeasurementItemDto[] = [
     unitSymbol: "kg",
     observedAt: "2026-08-14T10:00:00.000+00:00",
     source: "device",
+    reportedBy: "device",
   },
   {
     id: "m-2",
@@ -170,6 +171,7 @@ const measurementsFixture: MeasurementItemDto[] = [
     unitSymbol: "mg/dL",
     observedAt: "2026-08-15T08:00:00.000+00:00",
     source: "lab",
+    sourceChannel: "lab",
   },
 ];
 
@@ -308,6 +310,42 @@ describe("HistoryPage — historial de mediciones persistidas (sin inscripción)
       ),
     ).toBeTruthy();
     expect(screen.queryByText("Cargar mediciones anteriores")).toBeNull();
+  });
+
+  it("conserva la fila reemplazada fuera del conteo y de la fecha vigente", () => {
+    mockState.measurements = [
+      ...measurementsFixture,
+      {
+        ...measurementsFixture[0],
+        id: "m-old",
+        metricName: "Peso anterior",
+        observedAt: "2026-08-16T08:00:00.000+00:00",
+        source: "patient",
+        reportedBy: "patient",
+        sourceChannel: "vita_whatsapp",
+        status: "superseded",
+      },
+    ];
+
+    const { container } = render(<HistoryPage />);
+
+    expect(screen.getByText("Peso anterior")).toBeTruthy();
+    expect(screen.getByText("Reemplazado")).toBeTruthy();
+    expect(screen.getByText("Reportado por ti · WhatsApp")).toBeTruthy();
+    expect(container.querySelector('ion-accordion[value="meas"] ion-badge[slot="end"]')?.textContent)
+      .toBe("2");
+    expect(screen.getByText("Actualizada 15/08/2026")).toBeTruthy();
+    expect(screen.queryByText("Actualizada 16/08/2026")).toBeNull();
+  });
+
+  it("mantiene el valor de una medición anterior al contrato sin etiqueta de origen", () => {
+    const { reportedBy: _reportedBy, ...legacy } = measurementsFixture[0];
+    mockState.measurements = [legacy];
+
+    const { container } = render(<HistoryPage />);
+
+    expect(screen.getByText("70,5 kg")).toBeTruthy();
+    expect(container.querySelector("ion-item.hc-meas ion-badge")).toBeNull();
   });
 
   it("muestra skeleton inicial mientras cargan las mediciones", () => {
