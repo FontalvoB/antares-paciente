@@ -5,7 +5,7 @@ export const MedicationLabel = registerPlugin<{
   read(options: { image: string }): Promise<{ text: string }>;
 }>("MedicationLabel");
 
-export async function captureMedicationLabel(): Promise<string> {
+export async function captureMedicationLabel(): Promise<{ dataUrl: string; read: () => Promise<string> } | null> {
   const photo = await Camera.getPhoto({
     source: CameraSource.Camera,
     resultType: CameraResultType.Base64,
@@ -15,8 +15,13 @@ export async function captureMedicationLabel(): Promise<string> {
     correctOrientation: true,
     saveToGallery: false,
   });
-  if (!photo.base64String) return "";
-  return (await MedicationLabel.read({ image: photo.base64String })).text;
+  const image = photo.base64String;
+  if (!image) return null;
+  const mime = photo.format === "png" ? "image/png" : "image/jpeg";
+  return {
+    dataUrl: `data:${mime};base64,${image}`,
+    read: async () => (await MedicationLabel.read({ image })).text,
+  };
 }
 
 function normalizeLabel(text: string): string {

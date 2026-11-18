@@ -29,9 +29,13 @@ for (const scenario of scenarios) {
         { name: 'Camera', methods: [{ name: 'getPhoto', rtype: 'promise' }] },
         { name: 'MedicationLabel', methods: [{ name: 'read', rtype: 'promise' }] },
       ],
-      nativePromise: async plugin => plugin === 'Camera'
-        ? { base64String: 'fixture', format: 'jpeg' }
-        : { text: matches ? 'Tratamiento QA' : 'Otro medicamento' },
+      nativePromise: async plugin => {
+        if (plugin === 'Camera') {
+          return { base64String: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0XQAAAAASUVORK5CYII=', format: 'png' };
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return { text: matches ? 'Tratamiento QA' : 'Otro medicamento' };
+      },
     };
   }, scenario === 'photo-match');
   const writes = [];
@@ -167,12 +171,26 @@ for (const scenario of scenarios) {
         assert.equal(snoozes[0].body.scheduledAt, workspace.doses[0].scheduledAt);
       }
       if (scenario === 'omitted') {
-        await page.getByRole('button', { name: 'Omitir', exact: true }).click();
+        const skip = page.getByRole('button', { name: 'Omitir', exact: true });
+        const confirm = page.locator('ion-alert').filter({ hasText: '¿Seguro que quieres omitir esta toma?' });
+        await skip.click();
+        await expect(confirm.getByText('Tratamiento QA', { exact: true })).toBeVisible();
+        assert.equal(writes.filter(write => write.kind === 'event').length, 0);
+        await confirm.getByRole('button', { name: 'Cancelar', exact: true }).click();
+        await expect(confirm).toBeHidden();
+        await expect(page.locator('.medications-dose')).toContainText('Pendiente');
+        assert.equal(writes.filter(write => write.kind === 'event').length, 0);
+        await skip.click();
+        await confirm.getByRole('button', { name: 'Omitir toma', exact: true }).click();
       } else {
         const dialog = page.locator('ion-modal.medications-capture-modal');
         await page.getByRole('button', { name: english ? 'Log dose' : 'Registrar toma', exact: true }).click();
         if (photo) {
+          await expect(dialog.getByRole('button', { name: 'Registrar manualmente', exact: true })).toBeVisible();
           await dialog.getByRole('button', { name: 'Tomar foto', exact: true }).click();
+          const scanStage = dialog.locator('.food-photo-stage.is-analyzing');
+          await expect(scanStage).toBeVisible();
+          await expect(scanStage.getByRole('img', { name: 'Fotografía del empaque' })).toBeVisible();
           await expect(dialog.getByRole('status')).toContainText(
             scenario === 'photo-match' ? 'El nombre coincide' : 'No hubo una coincidencia clara',
           );

@@ -6,37 +6,42 @@ import { FOOD_SPRING } from "./foodMotion";
 import { useT } from "../../i18n/I18nContext";
 
 /** Composición de dominio compartida por revisión y análisis; el barrido es decorativo. */
-export function FoodPhotoStage({ src, analyzing = false, children }: {
-  src: string; analyzing?: boolean; children?: ReactNode;
+export function FoodPhotoStage({ src, analyzing = false, variant = "food", children }: {
+  src: string; analyzing?: boolean; variant?: "food" | "medication"; children?: ReactNode;
 }) {
   const t = useT();
   const reduced = useReducedMotion();
+  const medication = variant === "medication";
   const [step, setStep] = useState(0);
   useEffect(() => {
     if (!analyzing || reduced) return;
     const timer = window.setInterval(() => setStep(value => (value + 1) % 3), 1200);
     return () => window.clearInterval(timer);
   }, [analyzing, reduced]);
-  const steps = [
+  const steps = medication ? [
+    { label: t("Leyendo la etiqueta…"), icon: scanOutline },
+    { label: t("Buscando una coincidencia"), icon: shieldCheckmarkOutline },
+    { label: t("Preparando la revisión"), icon: scanOutline },
+  ] : [
     { label: t("Detectando alimentos"), icon: restaurantOutline },
     { label: t("Estimando porciones"), icon: scaleOutline },
     { label: t("Calculando nutrición"), icon: nutritionOutline },
   ];
   return <section className={`food-photo-stage${analyzing ? ' is-analyzing' : ''}`}>
     <header className="food-photo-heading">
-      <span className="food-photo-brand"><IonIcon icon={scanOutline} aria-hidden="true" /> FOOD AI</span>
-      <h3>{analyzing ? t("Analizando tu comida…") : t("Revisa tu foto")}</h3>
-      <p>{analyzing ? t("Estamos estimando los alimentos, las porciones y sus nutrientes.") : t("Un plato completo. Una foto clara.")}</p>
+      <span className="food-photo-brand"><IonIcon icon={scanOutline} aria-hidden="true" /> {medication ? t("Etiqueta del medicamento") : "FOOD AI"}</span>
+      <h3>{analyzing ? t(medication ? "Analizando la etiqueta…" : "Analizando tu comida…") : t("Revisa tu foto")}</h3>
+      <p>{analyzing ? t(medication ? "Comparamos el texto con tu toma programada." : "Estamos estimando los alimentos, las porciones y sus nutrientes.") : t(medication ? "Comprueba el nombre en el empaque." : "Un plato completo. Una foto clara.")}</p>
     </header>
     <div className="food-photo-frame">
       <img className="food-photo-backdrop" src={src} alt="" aria-hidden="true" />
-      <img src={src} alt={t("Fotografía de la comida")} />
+      <img src={src} alt={t(medication ? "Fotografía del empaque" : "Fotografía de la comida")} />
       <div className="food-photo-corners" aria-hidden="true" />
       {analyzing && <div className="food-photo-scan" aria-hidden="true" />}
       <span className="food-photo-caption">{analyzing && <IonSpinner name="crescent" aria-hidden="true" />}{analyzing ? t("Análisis en curso") : t("Vista previa")}</span>
     </div>
     {analyzing ? <div className="food-photo-status" role="status">
-      <strong>{t("Preparando tu resumen nutricional")}</strong>
+      <strong>{t(medication ? "Identificando el medicamento" : "Preparando tu resumen nutricional")}</strong>
       <IonProgressBar type="indeterminate" aria-label={t("Análisis en curso")} />
       <ol className="food-analysis-steps" aria-label={t("Análisis en curso")}>
         {steps.map((item, index) => <li key={item.label} className={index === step ? 'is-active' : ''} aria-current={index === step ? 'step' : undefined}>
@@ -53,7 +58,7 @@ export function FoodPhotoStage({ src, analyzing = false, children }: {
         </li>)}
       </ol>
       <p>{t("Esto puede tardar unos segundos.")}</p>
-    </div> : <p className="food-photo-privacy"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />{t("Tu foto se enviará solo cuando pulses analizar.")}</p>}
+    </div> : <p className="food-photo-privacy"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />{t(medication ? "La foto se procesa en tu teléfono." : "Tu foto se enviará solo cuando pulses analizar.")}</p>}
     {children}
   </section>;
 }
