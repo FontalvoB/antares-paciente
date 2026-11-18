@@ -1,0 +1,38 @@
+/** Real local stack and synthetic demo account only. No API interception or production access. Credentials never printed. */
+import { chromium, expect } from 'playwright/test';
+import { readFile, writeFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const fixture=process.env.COP_MEDICATION_DEMO_FIXTURE;
+assert(fixture?.startsWith('/tmp/'), 'Explicit local synthetic-account fixture required');
+const account=JSON.parse(await readFile(fixture,'utf8'));
+assert(account.Document === '900006701' && account.Email === 'medication.demo.20261118@copp.test', 'Only the authorized synthetic local account may be changed');
+const browser=await chromium.launch();
+const context=await browser.newContext({viewport:{width:390,height:900},reducedMotion:'reduce'});
+const gateway='http://localhost:5080';
+const response=await context.request.post(gateway+'/api/auth/login',{data:{email:account.Email,password:account.Password,application:'app'}});
+assert.equal(response.status(),200,'real patient login');const login=await response.json();const headers={Authorization:'Bearer '+login.accessToken};
+const snapshotResponse=await context.request.get(gateway+'/api/v1/program/me/snapshot',{headers});
+assert.equal(snapshotResponse.status(),200,'real program snapshot');const snapshot=await snapshotResponse.json();assert(snapshot.optionalTaskCodes?.includes('nutraceutico'),'server marks nutraceutical optional for opt-in account');
+const caps=await context.request.get(gateway+'/api/v1/me/capabilities',{headers});assert((await caps.json()).modules.medications.enabled);
+const query='?timeZone=America%2FBogota';const wsResponse=await context.request.get(gateway+'/api/v1/me/medications'+query,{headers});assert.equal(wsResponse.status(),200);const ws=await wsResponse.json();assert.equal(ws.treatments.length,2);assert(ws.doses.some(d=>d.status==='taken'));
+const page=await context.newPage();await page.goto('http://localhost:5188/');
+await expect(page.locator('.wheel')).toBeVisible({timeout:40000});
+await page.locator('.wheel').getByRole('button',{name:'Medicamentos',exact:true}).click();
+await expect(page.locator('.medications-extra')).toContainText('Nutracéutico DEMO');
+const pending=page.locator('.medications-dose-list .medications-dose-pending').first();
+if(await pending.count()){await pending.getByRole('button',{name:'Ya lo tomé',exact:true}).click();await expect(page.locator('.medications-dose-list .medications-dose-taken')).toHaveCount(2);}
+await page.screenshot({path:'/tmp/copp-full-local/medication-demo/app-medications.png'});
+await page.getByRole('navigation').getByRole('button',{name:'Inicio',exact:true}).click();
+await page.locator('.hm-day-link').click();
+await expect(page.locator('.pcard-medications')).toContainText('2 de 2 tomas registradas');
+await page.screenshot({path:'/tmp/copp-full-local/medication-demo/app-protocol.png'});
+const erpContext=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+const erpLogin=await erpContext.request.post(gateway+'/api/auth/login',{data:{email:'admin@coppaddresd.com',password:'Test@1234',application:'erp'}});
+assert.equal(erpLogin.status(),200,'local admin login');const erpToken=(await erpLogin.json()).accessToken;
+const overview=await erpContext.request.get(gateway+'/api/v1/medications/overview?timeZone=America%2FBogota',{headers:{Authorization:'Bearer '+erpToken}});assert.equal(overview.status(),200);const stats=await overview.json();assert(stats.takenToday>=2);
+const staffWs=await erpContext.request.get(gateway+'/api/v1/medications/patients/'+account.PatientId+query,{headers:{Authorization:'Bearer '+erpToken}});assert.equal(staffWs.status(),200);const saved=await staffWs.json();assert.equal(saved.summary.takenDoses,2);assert.equal(saved.treatments.length,2);
+const staff=await erpContext.newPage();await staff.goto('http://localhost:3100/medications/'+account.PatientId+'?tab=history');await expect(staff.getByRole('heading',{name:'Demo Medicamentos LOCAL',exact:true})).toBeVisible({timeout:30000});await staff.screenshot({path:'/tmp/copp-full-local/medication-demo/erp-history.png'});
+await staff.goto('http://localhost:3100/medications');await expect(staff.getByRole('heading',{name:'Actividad semanal',exact:true})).toBeVisible();await staff.screenshot({path:'/tmp/copp-full-local/medication-demo/erp-dashboard.png'});
+await writeFile('/tmp/copp-full-local/medication-demo/verification.json',JSON.stringify({login:true,snapshot:true,optional:true,treatments:ws.treatments.length,doses:ws.doses.length,alreadyTaken:ws.doses.filter(d=>d.status==='taken').length,uiUrl:page.url(),appToErp:true,takenAfterUi:2}));
+console.log('Real API login, program opt-in and persisted treatment/intake reads passed.');
+await browser.close();

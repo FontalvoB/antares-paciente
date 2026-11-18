@@ -227,6 +227,7 @@ export interface ProgramUpcomingDayDto {
 }
 
 export interface ProgramSnapshotDto {
+  optionalTaskCodes?: string[] | null
   enrollmentId: string
   template: ProgramTemplateDto
   todayLocalDate: string

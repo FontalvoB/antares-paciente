@@ -33240,7 +33240,7 @@ ion-button.hm-appt.hm-nutrition-card {
 ion-button.hm-module-card { margin: 0; min-width: 0; height: auto; align-self: stretch; border: 1px solid color-mix(in srgb, var(--a) 16%, var(--g1)); border-radius: 24px; overflow: hidden; --background: var(--wh); --color: var(--navy); --border-radius: 24px; --padding-start: 0; --padding-end: 0; --padding-top: 0; --padding-bottom: 0; --box-shadow: none; text-transform: none; letter-spacing: normal; white-space: normal; }
 .hm-module-card::part(native) { width: 100%; height: 100%; align-items: stretch; }
 ion-button.hm-module-card { --background-hover: var(--g0); --background-focused: var(--g0); --background-activated: var(--ice-l); }
-.hm-module-content { display: flex; flex-direction: column; align-items: stretch; width: 100%; padding-bottom: 12px; text-align: left; }
+.hm-module-content { display: flex; flex-direction: column; align-items: stretch; width: 100%; height: 100%; padding-bottom: 12px; text-align: left; }
 .hm-modules .mcar-txt { flex: 1; }
 .hm-modules .mcar-cta { opacity: 1; transform: none; }
 
@@ -33423,6 +33423,92 @@ ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd)
 }
 .chat-reference .vita-header-clear ion-spinner { width: 18px; height: 18px; }
 
+/* Control de medicamentos: filas de dominio con controles Ionic y tokens COPP. */
+.medications-page { background: var(--wellness-bg-start); }
+.medications-header { display: flex; align-items: center; gap: 12px; flex-shrink: 0; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); color: var(--wellness-navy); background: var(--wellness-surface); border-bottom: 1px solid var(--wellness-border); }
+.medications-heading-row { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; }
+.medications-heading-row h1 { min-width: 0; margin: 0; font-size: 19px; font-weight: 750; line-height: 1.25; letter-spacing: -.5px; }
+.medications-heading-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 36px; border-radius: 12px; color: var(--brand-green); background: var(--wellness-success-bg); }
+.medications-heading-icon ion-icon { font-size: 22px; }
+.medications-header-actions { display: flex; flex-shrink: 0; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--wellness-border); border-radius: 16px; background: var(--wellness-bg-start); }
+.medications-header-actions > ion-button { margin: 0; min-width: 44px; height: 44px; min-height: 44px; --padding-start: 8px; --padding-end: 8px; --border-radius: 12px; --color: var(--wellness-primary); --background-hover: var(--wellness-accent); --background-activated: var(--wellness-accent); }
+.medications-header-actions > ion-button:last-child { border-left: 1px solid var(--wellness-border); border-radius: 0; }
+@media (max-width: 359px) {
+  .medications-heading-icon { display: none; }
+  .medications-heading-row h1 { font-size: 18px; }
+}
+.medications-scroll { padding: 18px 18px calc(var(--wellness-dock-height) + var(--wellness-dock-clearance) + env(safe-area-inset-bottom, 0px) + 24px); }
+.medications-topline { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.medications-topline > div { display: flex; flex-direction: column; gap: 4px; }
+.medications-topline > div > span { color: var(--wellness-muted); font-size: 12px; }
+.medications-topline strong { font-size: 15px; color: var(--wellness-navy); }
+.medications-add { margin: 0; min-height: 44px; --border-radius: 14px; --background: var(--wellness-primary); --box-shadow: none; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.medications-tabs { margin-bottom: 18px; padding: 4px; border-radius: 14px; --background: var(--wellness-border); }
+.medications-tabs ion-segment-button { min-width: 0; min-height: 44px; --border-radius: 10px; --indicator-color: var(--wellness-surface); --color: var(--wellness-muted); --color-checked: var(--wellness-navy); font-size: 12px; font-weight: 650; letter-spacing: 0; text-transform: none; }
+.medications-tabs ion-segment-button span { white-space: normal; line-height: 1.25; }
+.medications-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 13px; min-width: 0; }
+.medications-section-heading > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.medications-section-heading h2 { margin: 0; color: var(--wellness-navy); font-size: 17px; font-weight: 750; }
+.medications-section-heading > div > span { color: var(--wellness-muted); font-size: 12px; }
+.medications-section-heading > div > ion-icon { color: var(--wellness-primary); font-size: 18px; }
+.medications-section-heading > strong { color: var(--wellness-success); font-family: "Space Grotesk", sans-serif; font-size: 18px; }
+.medications-dose-list, .medications-treatment-list { display: grid; gap: 12px; }
+.medications-dose, .medications-treatment { min-width: 0; padding: 16px; border: 1px solid var(--wellness-border); border-radius: 19px; background: var(--wellness-surface); box-shadow: 0 3px 12px color-mix(in srgb, var(--wellness-navy) 3%, transparent); }
+.medications-dose-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.medications-time { display: flex; align-items: center; gap: 6px; color: var(--wellness-primary); font-size: 14px; font-weight: 700; }
+.medications-dose h3, .medications-treatment h3, .medications-history-row h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; font-size: 15px; font-weight: 700; color: var(--wellness-navy); }
+.medications-dose > p { margin: 6px 0 0; font-size: 13px; color: var(--wellness-muted); }
+.medications-dose-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; margin-top: 16px; }
+.medications-dose-actions ion-button { min-width: 0; min-height: 44px; margin: 0; --border-radius: 12px; --box-shadow: none; --background: var(--wellness-primary); --color: var(--wellness-surface); font-size: 13px; font-weight: 650; letter-spacing: 0; text-transform: none; }
+.medications-dose-actions ion-button[fill="outline"] { --background: transparent; --border-color: var(--wellness-border); --border-width: 1px; --color: var(--wellness-muted); }
+.medications-badge { padding: 5px 9px; border-radius: 8px; background: var(--ice-l); color: var(--wellness-muted); font-size: 10px; font-weight: 650; white-space: nowrap; }
+.medications-badge-active, .medications-badge-taken { background: var(--wellness-success-bg); color: var(--wellness-success); }
+.medications-badge-paused, .medications-badge-omitted { background: var(--wellness-warning-bg); color: var(--wellness-warning); }
+.medications-badge-completed, .medications-badge-cancelled { background: var(--ice-l); color: var(--wellness-muted); }
+.medications-recorded { display: flex; align-items: center; gap: 5px; margin-top: 13px; font-size: 12px; color: var(--wellness-success); }
+.medications-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 18px; border: 1px solid var(--wellness-border); border-radius: 19px; background: var(--wellness-surface); }
+.medications-state > ion-icon { margin-bottom: 14px; font-size: 36px; color: var(--brand-sky-deep); }
+.medications-state h2, .medications-state h3 { margin: 0; max-width: 250px; color: var(--wellness-navy); font-size: 16px; line-height: 1.5; }
+.medications-state ion-button { min-height: 44px; margin: 18px 0 0; --border-radius: 12px; --box-shadow: none; text-transform: none; letter-spacing: 0; }
+.medications-treatment-heading { display: flex; align-items: center; min-width: 0; gap: 10px; }
+.medications-treatment-heading > div { flex: 1; min-width: 0; }
+.medications-treatment-heading > div > span { display: block; margin-top: 4px; color: var(--wellness-muted); font-size: 11px; }
+.medications-product-icon { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 11px; background: var(--wellness-accent); color: var(--wellness-primary); }
+.medications-product-vitamin { background: var(--wellness-warning-bg); color: var(--wellness-warning); }
+.medications-product-supplement { background: var(--wellness-success-bg); color: var(--wellness-success); }
+.medications-product-icon ion-icon { font-size: 20px; }
+.medications-treatment-dose { margin: 14px 0 8px; font-size: 13px; color: var(--wellness-navy); }
+.medications-times { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--wellness-muted); }
+.medications-instructions { padding: 11px 12px; border-radius: 10px; background: var(--ice-l); color: var(--wellness-navy); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.medications-treatment-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 12px; margin-top: 13px; color: var(--wellness-muted); font-size: 10px; }
+.medications-treatment-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--wellness-border); }
+.medications-treatment-actions ion-button { min-height: 44px; margin: 0; --padding-start: 0; --padding-end: 6px; --color: var(--wellness-primary); font-size: 12px; text-transform: none; letter-spacing: 0; }
+.medications-history { padding: 0 14px; border: 1px solid var(--wellness-border); border-radius: 19px; background: var(--wellness-surface); }
+.medications-history > .medications-state { border: 0; padding-inline: 0; }
+.medications-history-row { display: flex; align-items: center; gap: 10px; padding: 16px 0; min-width: 0; border-bottom: 1px solid var(--wellness-border); }
+.medications-history-row:last-child { border: 0; }
+.medications-history-icon { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px; font-size: 19px; }
+.medications-history-row > div { flex: 1; min-width: 0; }
+.medications-history-row > div > span { display: block; margin-top: 5px; color: var(--wellness-muted); font-size: 11px; }
+.medications-history-row p { margin: 6px 0 0; color: var(--wellness-muted); font-size: 12px; overflow-wrap: anywhere; }
+.medications-error { margin: 12px 0; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--wellness-error) 20%, transparent); border-radius: 12px; background: var(--wellness-error-bg); color: var(--wellness-error); font-size: 13px; line-height: 1.5; }
+.medications-form-section { padding: 16px; border: 1px solid var(--wellness-border); border-radius: 20px; background: var(--wellness-surface); }
+.medications-form { display: grid; gap: 15px; }
+.medications-form ion-input, .medications-form ion-select, .medications-form ion-textarea { min-width: 0; padding: 10px 12px; border: 1px solid var(--wellness-border); border-radius: 12px; --background: var(--wellness-surface); --color: var(--wellness-navy); --placeholder-color: var(--wellness-muted); font-size: 14px; }
+.medications-form ion-input.has-focus, .medications-form ion-textarea.has-focus { border-color: var(--brand-sky-deep); }
+.medications-form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-width: 0; }
+.medications-form ion-button[type="submit"] { min-height: 46px; margin: 0; --background: var(--wellness-primary); --border-radius: 13px; --box-shadow: none; text-transform: none; letter-spacing: 0; }
+.medications-form ion-checkbox { --size: 20px; padding-block: 5px; font-size: 12px; }
+.medications-date-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding-block: 4px; color: var(--wellness-muted); font-size: 12px; }
+.medications-date-modal { --width: fit-content; --min-width: 290px; --height: fit-content; --border-radius: 20px; }
+.medications-loading { padding: 20px 0; display: grid; gap: 15px; }
+
+/* Medicamentos es seguimiento clínico; el nutracéutico comparte sus mismas dosis. */
+ion-button.pcard-medications { margin: 0; height: auto; text-transform: none; letter-spacing: 0; --padding-start: 0; --padding-end: 0; --padding-top: 0; --padding-bottom: 0; --border-radius: 22px; --background: var(--wellness-surface); --color: var(--wellness-navy); white-space: normal; }
+.pcard-medication-content { display: block; width: 100%; text-align: left; }
+.medications-extra { margin-top: 24px; padding: 16px; border: 1px solid var(--wellness-border); border-radius: 20px; background: var(--wellness-success-bg); }
+.medications-extra-list { display: grid; gap: 12px; }
+.medications-extra > p { font-size: 13px; color: var(--wellness-muted); }
 /* ==========================================================================
    ACCESO MÓVIL (2026-11) — superficie limpia, titular de marca y dos CTA.
    Solo el panel de acceso: el flujo de activación conserva sus reglas y el

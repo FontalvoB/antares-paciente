@@ -47,6 +47,7 @@ import {
   type HomeMetricCard,
   type MetricId,
 } from "../data/metrics";
+import { useDailyMedications } from "../hooks/useDailyMedications";
 import { useProgram } from "../hooks/useProgram";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
@@ -58,7 +59,7 @@ import { programDayNumber } from "../utils/programDayNumber";
 import { scheduledDayTasks } from "../utils/programRest";
 import logoIcon from "../assets/LogoIndividual.png";
 import coverComunidad from "../assets/modules/comunidad.png";
-import coverPerfil from "../assets/modules/perfil.png";
+import coverMedicamentos from "../assets/modules/medicamentos.webp";
 import type { CSSProperties } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
 
@@ -75,6 +76,8 @@ export function HomePage() {
     realMode,
   } = useApp();
   const { snapshot } = useProgram();
+  const dailyMedications = useDailyMedications();
+  const medicationProtocol = dailyMedications.enabled && Boolean(snapshot?.optionalTaskCodes?.includes("nutraceutico"));
   const todayTasks = useMemo(() => scheduledDayTasks(snapshot?.todayTasks, snapshot?.rest), [snapshot]);
   const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
   const { unreadCount } = useNotifications();
@@ -125,12 +128,12 @@ export function HomePage() {
       cta: t("Entrar"),
     },
     {
-      id: "prof",
-      title: t("Mi perfil"),
-      sub: t("Seguros, equipo y ajustes"),
-      accent: "var(--mod-profile)",
-      cover: coverPerfil,
-      cta: t("Ver perfil"),
+      id: "medications",
+      title: t("Control de medicamentos"),
+      sub: t("Tomas, tratamientos e historial"),
+      accent: "var(--brand-green)",
+      cover: coverMedicamentos,
+      cta: t("Ver medicamentos"),
     },
   ];
 
@@ -226,9 +229,10 @@ export function HomePage() {
     };
   }, [todayTasks, appProgram]);
 
-  const missionTotal = todayTasks?.length ?? PROGRAM_TASKS.length;
+  const requiredTasks = todayTasks?.filter(task => !snapshot?.optionalTaskCodes?.includes(task.taskCode));
+  const missionTotal = (requiredTasks?.length ?? PROGRAM_TASKS.length) + (medicationProtocol ? 1 : 0);
   const todayDone = todayTasks
-    ? todayTasks.filter(task => task.status === "Completed").length
+    ? (requiredTasks?.filter(task => task.status === "Completed").length ?? 0) + (medicationProtocol && dailyMedications.data && dailyMedications.recorded === dailyMedications.scheduled ? 1 : 0)
     : PROGRAM_TASKS.filter((task) => program[task.id]).length;
   // La rueda suma el cofre del día como último segmento.
   const todayTotal = missionTotal + 1;
@@ -388,12 +392,13 @@ export function HomePage() {
           <span className="hm-wheel-kicker">{t("Protocolo diario")}</span>
           <ProtocolWheel
             program={program}
-            taskCodes={todayTasks?.map(task => task.taskCode)}
+            medications={medicationProtocol ? { done: Boolean(dailyMedications.data && dailyMedications.recorded === dailyMedications.scheduled) } : undefined}
+            taskCodes={requiredTasks?.map(task => task.taskCode)}
             chestClaimed={chestClaimed}
             title={t("Protocolo diario")}
             count={todayDone + (chestClaimed ? 1 : 0)}
             total={todayTotal}
-            onSelect={(id) => navigate(id === "chest" ? "program-racha" : `program-${id}`)}
+            onSelect={(id) => navigate(id === "chest" ? "program-racha" : id === "nutraceutico" && medicationProtocol ? "medications" : `program-${id}`)}
             onOpenProgram={() => navigate("prog")}
           />
           <span className="hm-wheel-foot">

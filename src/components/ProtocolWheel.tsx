@@ -3,7 +3,7 @@ import logoIcon from '../assets/LogoIndividual.png'
 import { useT } from '../i18n/I18nContext'
 import { IonButton, IonIcon } from '@ionic/react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { checkmark, gift, trophy } from 'ionicons/icons'
+import { checkmark, gift, trophy, medicalOutline } from 'ionicons/icons'
 import { PROGRAM_TASKS } from '../data/program'
 import { TASK_ICONS } from '../pages/program/ui'
 import type { ProgramDay, ProgramTaskId } from '../types'
@@ -43,9 +43,10 @@ function arc(center: number, slice: number) {
  * El estado proviene del protocolo, nunca de una animación ni de estado local.
  */
 export function ProtocolWheel({
-  program, chestClaimed = false, title, count, total, onSelect, onOpenProgram, taskCodes,
+  program, chestClaimed = false, title, count, total, onSelect, onOpenProgram, taskCodes, medications,
 }: {
   program: ProgramDay
+  medications?: { done: boolean }
   chestClaimed?: boolean
   title: string
   count: number
@@ -57,13 +58,13 @@ export function ProtocolWheel({
 }) {
   const t = useT()
   const reduce = useReducedMotion()
-  const keys = SEGMENT_KEYS.filter(key => key === 'chest' || !taskCodes || taskCodes.includes(key))
+  const keys = SEGMENT_KEYS.filter(key => key === 'chest' || key === 'nutraceutico' && medications || !taskCodes || taskCodes.includes(key))
   const slice = 360 / keys.length
   const segments = keys.map((key, i) => ({
     key,
     color: WHEEL_COLORS[key],
-    icon: key === 'chest' ? (chestClaimed ? trophy : gift) : TASK_ICONS[key],
-    done: key === 'chest' ? chestClaimed : Boolean(program[key]),
+    icon: key === 'nutraceutico' && medications ? medicalOutline : key === 'chest' ? (chestClaimed ? trophy : gift) : TASK_ICONS[key],
+    done: key === 'nutraceutico' && medications ? medications.done : key === 'chest' ? chestClaimed : Boolean(program[key]),
     center: i * slice,
   }))
   const complete = total > 0 && count >= total
@@ -96,7 +97,7 @@ export function ProtocolWheel({
             data-task={seg.key}
             style={{ '--wheel-accent': seg.color, left: `${x / VIEW * 100}%`, top: `${y / VIEW * 100}%` } as CSSProperties}>
             {onSelect && <IonButton fill="clear" className="wheel-node-action"
-              aria-label={seg.key === "chest" ? t("Racha") : t(PROGRAM_TASKS.find(task => task.id === seg.key)!.title)}
+              aria-label={seg.key === "chest" ? t("Racha") : seg.key === "nutraceutico" && medications ? t("Medicamentos") : t(PROGRAM_TASKS.find(task => task.id === seg.key)!.title)}
               onClick={() => onSelect(seg.key)} />}
             <IonIcon icon={seg.icon} aria-hidden="true" />
             <span className="wheel-number">
