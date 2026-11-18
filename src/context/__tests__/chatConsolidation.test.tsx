@@ -121,18 +121,20 @@ function Harness({ message = "hola", withChat = false }: { message?: string; wit
 }
 
 async function renderApp(message?: string, withChat = false) {
-  const view = render(
-    <I18nProvider>
-      <AppProvider>
-        <Harness message={message} withChat={withChat} />
-      </AppProvider>
-    </I18nProvider>,
-  );
-  await waitFor(() => {
-    expect(screen.getByTestId("auth-loading").textContent).toBe("false");
-    expect(mirror.app?.user.id).toBe("10247381");
-    expect(mirror.app?.threadId).toBe("proactive-10247381");
+  let view: ReturnType<typeof render>;
+  // La sesión simulada y los efectos al cambiar de hilo se completan al montar.
+  await act(async () => {
+    view = render(
+      <I18nProvider>
+        <AppProvider>
+          <Harness message={message} withChat={withChat} />
+        </AppProvider>
+      </I18nProvider>,
+    );
   });
+  expect(screen.getByTestId("auth-loading").textContent).toBe("false");
+  expect(mirror.app?.user.id).toBe("10247381");
+  expect(mirror.app?.threadId).toBe("proactive-10247381");
   return view;
 }
 
@@ -418,11 +420,12 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     vi.mocked(sendChatMessage).mockRejectedValue(new Error("Network unavailable"));
     const message = "Me duele el pecho; quiero ver mi progreso y agendar una cita";
     await renderApp(message);
-    fireEvent.click(screen.getByText("send"));
+    await act(async () => { fireEvent.click(screen.getByText("send")); });
+    expect(streamChatMessage).toHaveBeenCalledTimes(1);
     const expected = language === "en"
       ? "The assistant is unavailable right now. Please try again in a few minutes."
       : "El asistente no está disponible en este momento. Inténtalo de nuevo en unos minutos.";
-    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe(expected));
+    expect(screen.getByTestId("last-bot").textContent).toBe(expected);
     expect(mirror.chat.filter(m => m.role === "user").map(m => m.text)).toEqual([message]);
     const replies = mirror.chat.filter(m => m.role !== "user");
     expect(replies).toHaveLength(1);
