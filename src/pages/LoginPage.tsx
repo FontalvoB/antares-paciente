@@ -10,11 +10,14 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import {
   arrowBackOutline,
+  arrowForward,
   chevronForwardOutline,
   eye,
   eyeOff,
   lockClosedOutline,
   mailOutline,
+  personAddOutline,
+  personOutline,
   phonePortraitOutline,
   shieldCheckmarkOutline,
 } from "ionicons/icons";
@@ -22,8 +25,7 @@ import { useApp } from "../context/AppContext";
 import { useI18n } from "../i18n/I18nContext";
 import { localizedError } from "../utils/localizedError";
 import { LanguageToggle } from "../components/LanguageToggle";
-import { Mascot } from "../components/Mascot";
-import { SlideCtaButton } from "../components/SlideCtaButton";
+import { AuthSubmitButton } from "../components/AuthSubmitButton";
 import {
   loginUser,
   lookupId,
@@ -263,6 +265,8 @@ export function LoginPage() {
       {busy && (
         <motion.div
           className="auth-busy"
+          role="status"
+          aria-live="polite"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
@@ -285,21 +289,31 @@ export function LoginPage() {
       <div className="auth-scroll">
         <img className="auth-logo" src={logoLetras} alt="COPP-ADRESD" />
 
-        {/* La mascota solo en el panel de acceso; el flujo de activación
-            (primera vez) es más denso y no necesita ilustración. */}
-        {mode === "login" && <Mascot pose="welcome" className="mascot-auth" />}
-
         <AnimatePresence mode="wait" initial={false}>
           {mode === "login" ? (
-            <motion.div key="login" className="auth-body" {...panelMotion}>
-              <h1 className="auth-title">
-                {t("Transforma")}
-                <br />
-                <strong>{t("tus")}</strong> {t("hábitos")}
-              </h1>
+            <motion.div
+              key="login"
+              className="auth-body auth-body-login"
+              {...panelMotion}
+            >
+              <div className="auth-hero">
+                <h1 className="auth-title">
+                  {t("Cuida tu salud,")}
+                  <strong>{t("vive mejor")}</strong>
+                </h1>
+                <svg
+                  className="auth-underline"
+                  viewBox="0 0 168 12"
+                  aria-hidden="true"
+                >
+                  <path d="M3 9.5C47 2.8 114 1.6 165 6.4" />
+                </svg>
+              </div>
 
               <form
                 className="auth-form"
+                aria-label={t("Iniciar sesión")}
+                aria-busy={busy}
                 onSubmit={(e) => {
                   e.preventDefault();
                   submit();
@@ -311,10 +325,10 @@ export function LoginPage() {
                   </label>
                   <IonInput
                     id="login-id"
-                    className="auth-input"
+                    className="auth-input auth-input-icon"
                     type="text"
                     inputmode="numeric"
-                    autocomplete="off"
+                    autocomplete="username"
                     enterkeyhint="next"
                     value={documentNumber}
                     placeholder={t("Ej. 32534534")}
@@ -323,21 +337,36 @@ export function LoginPage() {
                         (e.detail.value ?? "").replace(/\s/g, ""),
                       )
                     }
-                  />
+                  >
+                    <IonIcon
+                      slot="start"
+                      icon={personOutline}
+                      className="auth-input-ico"
+                      aria-hidden="true"
+                    />
+                  </IonInput>
                 </div>
 
                 <div className="auth-field">
                   <label htmlFor="login-password">{t("Contraseña")}</label>
                   <IonInput
                     id="login-password"
-                    className="auth-input"
+                    className="auth-input auth-input-icon"
                     type={showPwd ? "text" : "password"}
+                    autocomplete="current-password"
                     enterkeyhint="done"
                     value={pwd}
                     placeholder={t("••••••••")}
                     style={{ "--padding-end": "48px" } as CSSProperties}
                     onIonInput={(e) => setPwd(e.detail.value ?? "")}
-                  />
+                  >
+                    <IonIcon
+                      slot="start"
+                      icon={lockClosedOutline}
+                      className="auth-input-ico"
+                      aria-hidden="true"
+                    />
+                  </IonInput>
                   <IonButton
                     type="button"
                     fill="clear"
@@ -372,28 +401,51 @@ export function LoginPage() {
                   </IonButton>
                 </div>
 
-                {busyBar}
-
-                <SlideCtaButton
-                  label={t("Comencemos")}
-                  busyLabel={t("Verificando…")}
+                <AuthSubmitButton
+                  type="submit"
+                  label={t("Ingresar")}
+                  busyLabel={t("Ingresando…")}
                   busy={busy}
-                  disabled={busy}
-                  icon={chevronForwardOutline}
-                  onAct={submit}
+                  icon={arrowForward}
                 />
               </form>
 
-              <div className="auth-alt">
-                <span>{t("¿Es tu primera vez aquí?")}</span>
-                <button
-                  type="button"
-                  className="auth-alt-link"
+              <div className="auth-divider" role="separator" aria-hidden="true">
+                <span>{t("o")}</span>
+              </div>
+
+              <div className="auth-activate-block">
+                <span className="auth-activate-hint">
+                  {t("¿Es tu primera vez aquí?")}
+                </span>
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  className="auth-activate"
+                  disabled={busy}
                   onClick={() => goFirst()}
                 >
-                  {t("Activa tu cuenta")}
-                </button>
+                  <IonIcon
+                    slot="start"
+                    icon={personAddOutline}
+                    aria-hidden="true"
+                  />
+                  <span>{t("Activa tu cuenta")}</span>
+                  <IonIcon
+                    slot="end"
+                    icon={chevronForwardOutline}
+                    aria-hidden="true"
+                  />
+                </IonButton>
               </div>
+
+              <p className="auth-tagline">
+                <span>{t("Prevención")}</span>
+                <i aria-hidden="true">·</i>
+                <span>{t("Bienestar")}</span>
+                <i aria-hidden="true">·</i>
+                <span>{t("Salud")}</span>
+              </p>
             </motion.div>
           ) : (
             <motion.div key="first" className="auth-body" {...panelMotion}>
@@ -464,11 +516,10 @@ export function LoginPage() {
 
                       {busyBar}
 
-                      <SlideCtaButton
+                      <AuthSubmitButton
                         label={t("Confirmar identidad")}
                         busyLabel={t("Buscando…")}
                         busy={busy}
-                        disabled={busy}
                         icon={shieldCheckmarkOutline}
                         onAct={confirmId}
                       />
@@ -611,11 +662,11 @@ export function LoginPage() {
                       </div>}
                       {busyBar}
 
-                      <SlideCtaButton
+                      <AuthSubmitButton
                         label={t(mode === "recovery" ? "Actualizar contraseña" : "Verificar y entrar")}
                         busyLabel={t("Verificando…")}
                         busy={busy}
-                        disabled={busy || otp.join("").length !== 6}
+                        disabled={otp.join("").length !== 6}
                         icon={lockClosedOutline}
                         onAct={submitOtp}
                       />
@@ -638,6 +689,24 @@ export function LoginPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Ola decorativa de marca: cierra la pantalla sin competir con el
+          formulario ni con el área táctil (puramente visual). */}
+      <svg
+        className="auth-wave"
+        viewBox="0 0 390 84"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          className="auth-wave-back"
+          d="M0 42c72-26 145-30 221-9 74 20 121 17 169-8v59H0Z"
+        />
+        <path
+          className="auth-wave-front"
+          d="M0 62c83-25 160-16 236 2 57 13 105 9 154-7v27H0Z"
+        />
+      </svg>
     </div>
   );
 }

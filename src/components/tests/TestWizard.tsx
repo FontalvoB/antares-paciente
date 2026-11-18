@@ -600,7 +600,7 @@ function isStepAnswered(
   return typeof answers[step.index] === "number";
 }
 
-/** Haptics ya viaja en el bundle (SlideCtaButton lo importa estático): el
+/** Haptics ya viaja en el bundle (este archivo lo importa estático): el
     import dinámico no separaba chunk y rompía el build con warning. */
 function tapHaptic() {
   void Haptics.impact({ style: ImpactStyle.Light }).catch(() => {
