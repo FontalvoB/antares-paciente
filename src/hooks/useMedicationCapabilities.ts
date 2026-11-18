@@ -24,6 +24,7 @@ export function useMedicationCapabilities() {
     owner,
     enabled: Boolean(owner && capability?.enabled === true && capability.canView === true),
     canManage: Boolean(owner && capability?.enabled === true && capability.canManage === true),
+    canSnooze: Boolean(owner && capability?.enabled === true && capability.canManage === true && capability.canSnooze === true),
     isLoading: Boolean(owner && query.isLoading),
     refresh: query.refetch,
   };

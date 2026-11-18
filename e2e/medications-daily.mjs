@@ -26,11 +26,14 @@ return route.fulfill({status:404,json:{}});});
 try{
 await page.goto(origin);
 await page.locator('.wheel').getByRole('button',{name:'Medicamentos',exact:true}).click();
-await expect(page.getByRole('heading',{name:'Control de medicamentos',exact:true})).toBeVisible();
+await expect(page.getByRole('heading',{name:'Mi medicación',exact:true})).toBeVisible();
 await expect(page.locator('.medications-extra')).toContainText('Nutracéutico QA');
 await expect(page.locator('.medications-dose-list .medications-dose')).toHaveCount(1);
 await expect(page.locator('.medications-extra .medications-dose')).toHaveCount(1);
-await page.locator('.medications-extra').getByRole('button',{name:'Ya lo tomé',exact:true}).click();
+await page.screenshot({path:out+'/daily-medications.png'});
+await page.locator('.medications-extra').getByRole('button',{name:'Registrar toma',exact:true}).click();
+await page.locator('ion-modal.medications-capture-modal').getByRole('button',{name:'Registrar manualmente',exact:true}).click();
+await page.locator('ion-modal.medications-capture-modal').getByRole('button',{name:'Confirmar toma',exact:true}).click();
 await expect(page.locator('.medications-extra')).toContainText('Tomado');
 assert.equal(writes.filter(w=>w.p.includes('/doses/')).length,1);
 assert.equal(writes.filter(w=>w.p.includes('/tasks/complete')).length,0);

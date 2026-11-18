@@ -34018,3 +34018,66 @@ ion-card.wearable-measure-feedback {
 .medications-effect-note {margin-top:10px;}
 .medications-monitoring-skeleton {height:180px;border-radius:18px;}
 .medications-monitoring-empty,.medications-form-product {font-size:13px;color:var(--wellness-muted);margin-bottom:16px;}
+
+/* Mi medicación: resumen y controles dentro de la pantalla existente. */
+.medications-overview {
+  background: linear-gradient(130deg, #172d5f, #1a4e7e);
+  color: #fff;
+  padding: 20px;
+  border-radius: 22px;
+  margin-bottom: 18px;
+}
+.medications-overview .medications-topline { margin: 0; }
+.medications-overview .medications-topline > div > span { color: #c9def3; }
+.medications-overview .medications-topline strong { color: #fff; font-size: 17px; }
+.medications-overview .medications-add { --background: #eaf4ff; --color: #17345b; }
+.medications-overview .medications-adherence {
+  margin: 14px 0 0;
+  background: #eef6fd;
+  border: 0;
+}
+.medications-page .medications-tabs { --background: #e4edf6; }
+.medications-dose-actions .medications-photo-action {
+  --background: linear-gradient(125deg, #205a9d, #183768);
+  --color: #fff;
+}
+.medications-capture-modal { --height: min(440px, calc(100% - 28px)); --width: min(calc(100% - 24px), 440px); --border-radius: 24px; }
+.medications-capture-modal ion-content { --background: var(--wellness-surface, #fff); }
+.medications-capture { position: relative; padding: 28px 24px; color: var(--wellness-navy, #172d5f); }
+.medications-capture-close { position: absolute; top: 12px; right: 12px; min-height: 44px; }
+.medications-capture-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #3f82ce, #1b4b86);
+  color: #fff;
+  font-size: 28px;
+}
+.medications-capture h2 { margin: 14px 0; font-size: 26px; font-weight: 750; }
+.medications-capture-dose { display: grid; gap: 5px; padding: 15px; border-radius: 14px; background: #eef5fc; overflow-wrap: anywhere; }
+.medications-capture-dose span { color: #3e556e; font-size: 13px; }
+.medications-capture p { line-height: 1.55; }
+.medications-capture ion-button[expand="block"] { min-height: 44px; --border-radius: 13px; text-transform: none; }
+.medications-capture ion-button ion-spinner { margin-inline-end: 8px; }
+.medications-dose-next {
+  background: #f5faff;
+  border-color: #c9def2;
+  box-shadow: 0 5px 16px rgb(28 75 123 / .08);
+}
+.medications-next-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #205a9d;
+  font-size: 13px;
+  font-weight: 750;
+}
+.medications-dose-next h3 { font-size: 17px; white-space: normal; overflow-wrap: anywhere; }
+.medications-snooze {
+  margin: 6px 0 0;
+  min-height: 44px;
+  --color: #205a9d;
+  text-transform: none;
+  font-weight: 650;
+}
