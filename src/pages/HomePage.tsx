@@ -58,7 +58,7 @@ import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import { programDayNumber } from "../utils/programDayNumber";
 import { scheduledDayTasks } from "../utils/programRest";
 import logoIcon from "../assets/LogoIndividual.png";
-import coverComunidad from "../assets/modules/comunidad.png";
+import coverComunidad from "../assets/modules/comunidad.webp";
 import coverMedicamentos from "../assets/modules/medicamentos.webp";
 import type { CSSProperties } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
@@ -123,7 +123,7 @@ export function HomePage() {
       id: "com",
       title: t("Comunidad"),
       sub: t("Diagnóstico, grupos y apoyo"),
-      accent: "var(--mod-com)",
+      accent: "var(--home-card-mid)",
       cover: coverComunidad,
       cta: t("Entrar"),
     },
@@ -131,7 +131,7 @@ export function HomePage() {
       id: "medications",
       title: t("Control de medicamentos"),
       sub: t("Tomas, tratamientos e historial"),
-      accent: "var(--brand-green)",
+      accent: "var(--home-card-mid)",
       cover: coverMedicamentos,
       cta: t("Ver medicamentos"),
     },
