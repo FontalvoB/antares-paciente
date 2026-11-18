@@ -24,7 +24,7 @@ archive Release → IPA → upload a App Store Connect.
                                │   npm run release:check (Info.plist)         │
                                │   npm run build  → artefacto dist-web        │
                                │                                              │
-                               │  JOB 2 · testflight (macos-26 + Xcode 26.6)  │
+                               │  JOB 2 · testflight (macos-26-intel + Xcode 26.6)  │
                                │   ruby 3.4 + bundle (Gemfile.lock)           │
                                │   dist-web → npx cap sync ios                │
                                │   App Store Connect API Key (.p8)            │
@@ -389,3 +389,18 @@ FORCE_SIGNING=true bundle exec fastlane ios signing
 | `.github/workflows/ios-testflight.yml` | CI/CD en GitHub Actions                                        |
 | `.env.production`                      | Config pública del bundle de producción (versionada)           |
 | `ios/App/App.xcodeproj`                | Proyecto real (bundle id, team, versiones) — sin cambios       |
+
+## Recuperación de capacidad del runner (18/11/2026)
+
+La ejecución 44335883826 aprobó quality, pero el job iOS no obtuvo runner
+durante 15 minutos. GitHub anotó `The job was not acquired by Runner of type
+hosted even after multiple attempts` y avisos de capacidad del pool macOS
+arm64. No se ejecutó ningún paso de firma o compilación nativa.
+
+Se fija `macos-26-intel`, conservando Xcode 26.6 y el resto del pipeline.
+La arquitectura del host no cambia el destino iOS/arm64 del archive. El lock
+de Bundler incluye x86_64-darwin-25 además de arm64 y ruby. No lanzar otro
+upload en paralelo: se mantiene el grupo de concurrencia existente.
+
+Referencias oficiales: [runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+y [imagen Intel con Xcode 26.6](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md).

@@ -15,3 +15,5 @@ conclusión clínica de Vita ni a evidencia de validación del instrumento.
 - Comparar FC u16 en décimas antes de redondear: 72.1 y 72.4 deben contar como distintas aunque se vean como 72.
 - El primer u16 puede ser eco: durante FC manual no reemplazar la lectura confirmada hasta observar variación cruda.
 - Cerrar un fallo debe limpiar la cola; callbacks y escrituras tardías se aíslan por generación de intento.
+
+- CI iOS: `macos-26` usa pool arm64; si falla antes de ejecutar pasos por falta de runner, `macos-26-intel` mantiene Xcode 26.6 y evita ese pool. Registrar x86_64-darwin-25 en Bundler y conservar la concurrencia de uploads.

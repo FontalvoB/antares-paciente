@@ -114,7 +114,9 @@ jobs:
     # Los PRs solo validan: nunca suben builds (los secretos y el upload
     # ocurren en push/merge a dev o vía workflow_dispatch).
     if: github.event_name != 'pull_request'
-    runs-on: macos-26
+    # El pool arm64 puede agotar la cola sin ejecutar pasos (18/11/2026).
+    # Intel conserva macOS 26 y Xcode 26.6; compila igual el IPA para iPhone.
+    runs-on: macos-26-intel
     timeout-minutes: 120
     steps:
       - name: Checkout
