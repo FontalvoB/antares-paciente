@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "dev": false,
       "feat/kan-77-medication-reference": false,
+      "dev": false,
       "feat/kan-77-camera-dose": false
     }
   }
