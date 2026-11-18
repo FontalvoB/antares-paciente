@@ -19,6 +19,10 @@ export interface MedicationSupply {
   revision: number;
   tracked: boolean;
 }
+export function isLowMedicationStock(supply: MedicationSupply): boolean {
+  return supply.tracked && supply.daysRemaining !== null && supply.daysRemaining <= 7;
+}
+
 export interface StockRequest {
   clientRequestId: string;
   kind: "initial" | "refill" | "adjustment";

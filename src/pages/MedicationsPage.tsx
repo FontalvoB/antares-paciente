@@ -1,23 +1,26 @@
 import { useId, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  IonActionSheet, IonBadge, IonButton, IonCheckbox, IonDatetime, IonDatetimeButton, IonIcon,
+  IonActionSheet, IonAlert, IonBadge, IonButton, IonCheckbox, IonDatetime, IonDatetimeButton, IonIcon,
   IonInput, IonModal, IonSegment, IonSegmentButton, IonSelect, IonSelectOption,
   IonSkeletonText, IonSpinner, IonTextarea, IonContent,
 } from "@ionic/react";
 import {
-  addOutline, calendarOutline, cameraOutline, checkmarkCircleOutline, closeOutline, flaskOutline,
-  leafOutline, medicalOutline, pauseOutline, playOutline,
+  addOutline, cameraOutline, cubeOutline, warningOutline, sunnyOutline, partlySunnyOutline, moonOutline, checkmarkCircleOutline, closeOutline, flaskOutline,
+  createOutline, leafOutline, medicalOutline, pauseOutline, playOutline,
   refreshOutline, timeOutline,
 } from "ionicons/icons";
 import { Capacitor } from "@capacitor/core";
 import { captureMedicationLabel, matchesMedicationLabel } from "../services/media/medication-label";
+import { FoodPhotoStage } from "../components/nutrition/FoodPhotoStage";
 import { Screen, Scroll } from "../components/Screen";
 import {PatientMedicationInventory} from "../components/medications/PatientMedicationInventory";
+import { PatientMedicationHistory } from "../components/medications/PatientMedicationHistory";
 import {PatientMedicationEffects} from "../components/medications/PatientMedicationEffects";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../i18n/I18nContext";
+import { fetchMyInventory, isLowMedicationStock } from "../utils/medicationMonitoringApi";
 import { useMedicationCapabilities } from "../hooks/useMedicationCapabilities";
 import { ApiError } from "../utils/apiClient";
 import { getAccessToken } from "../utils/authApi";
@@ -54,14 +57,19 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedDose, setSelectedDose] = useState<MedicationDose | null>(null);
   const [captureState, setCaptureState] = useState<"ready" | "reading" | "no-match" | "unavailable" | "matched" | "manual">("ready");
+  const [omittingDose, setOmittingDose] = useState<MedicationDose | null>(null);
   const [snoozingDose, setSnoozingDose] = useState<MedicationDose | null>(null);
   const [snoozedDoses, setSnoozedDoses] = useState<ReadonlySet<string>>(() => new Set());
   const scanInProgress = useRef(false);
   const savingDose = useRef(false);
   const eventOperations = useRef(new Map<string, RecordMedicationDoseRequest>());
-  const date = toLocalISODate();
+  const today = toLocalISODate();
+  const date = selectedDate ?? today;
+  const isToday = date === today;
   const timeZone = currentTimeZone();
   const locale = lang === "en" ? "en-US" : "es-ES";
   const query = useQuery({
@@ -74,10 +82,21 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     refetchOnMount: "always",
     refetchOnWindowFocus: "always",
   });
+  const inventory = useQuery({
+    queryKey: ["medications", "inventory", owner, 1],
+    queryFn: ({ signal }) => fetchMyInventory(owner!, 1, signal),
+    enabled: Boolean(owner && capabilities.enabled && tab === "today"),
+    retry: false,
+    gcTime: 0,
+    refetchOnWindowFocus: "always",
+  });
   const isCurrent = () => Boolean(owner && sessionUserId(getAccessToken()) === owner);
   const refresh = async () => {
     if (!isCurrent()) return;
-    await queryClient.invalidateQueries({ queryKey: ["medications", "workspace", owner] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["medications", "workspace", owner] }),
+      queryClient.invalidateQueries({ queryKey: ["medications", "inventory", owner] }),
+    ]);
   };
   const failure = (error: unknown) => {
     if (!isCurrent()) return;
@@ -153,9 +172,16 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     const selected = workspace.treatments.find(treatment => treatment.id === selectedDose.treatmentId);
     if (!selected) { setCaptureState("no-match"); return; }
     scanInProgress.current = true;
+    setPhotoPreview(null);
     setCaptureState("reading");
     try {
-      const text = await captureMedicationLabel();
+      const photo = await captureMedicationLabel();
+      if (!isCurrent()) return;
+      if (!photo) { setCaptureState("ready"); return; }
+      setPhotoPreview(photo.dataUrl);
+      // Deja pintar la foto y el barrido antes de invocar OCR nativo.
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const text = await photo.read();
       if (isCurrent()) setCaptureState(matchesMedicationLabel(text, selected, workspace.treatments) ? "matched" : "no-match");
     } catch {
       if (isCurrent()) setCaptureState("unavailable");
@@ -181,30 +207,68 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
   const extraDoses = workspace?.doses.filter(d => supplementIds.has(d.treatmentId)) ?? [];
   const hasExtra = workspace?.treatments.some(t => t.productType === "supplement" && t.status === "active");
   const renderDose = (dose: MedicationDose) => {
-            const future = new Date(dose.scheduledAt).getTime() > Date.now();
-            const pending = dose.status === "pending";
-            const isNext = dose.id === nextDose?.id;
-            const instructions = isNext ? workspace?.treatments.find(treatment => treatment.id === dose.treatmentId)?.instructions : null;
-            return <article className={`medications-dose medications-dose-${dose.status}${isNext ? " medications-dose-next" : ""}`} key={dose.id}>
-              {isNext && <span className="medications-next-label">{t(future ? "Próxima toma" : "Toma pendiente")}</span>}
-              <div className="medications-dose-line"><span className="medications-time"><IonIcon icon={timeOutline} aria-hidden="true" />{time(dose.scheduledAt, dose.timeZone)}</span><IonBadge className={`medications-badge medications-badge-${dose.status}`}>{t(doseLabels[dose.status])}</IonBadge></div>
-              <h3 title={dose.name}>{dose.name}</h3><p>{new Intl.NumberFormat(locale).format(dose.dosage)} {dose.unit}</p>
-              {instructions && <p>{instructions}</p>}
-              {pending && capabilities.canManage ? <div className="medications-dose-actions"><IonButton fill="outline" disabled={Boolean(busy) || future} onClick={() => void recordDose(dose, "omitted")}>{t("Omitir")}</IonButton><IonButton className="medications-photo-action" disabled={Boolean(busy) || future} onClick={() => {
-                setActionError(null);
-                setCaptureState(canScan ? "ready" : "unavailable");
-                setSelectedDose(dose);
-              }}><IonIcon icon={canScan ? cameraOutline : checkmarkCircleOutline} slot="start" />{t("Registrar toma")}</IonButton></div> : dose.occurredAt ? <span className="medications-recorded"><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" />{t("Registrado a las {time}", { time: time(dose.occurredAt, dose.timeZone) })}</span> : null}
-              {pending && !future && capabilities.canSnooze &&
-                Date.now() - Date.parse(dose.scheduledAt) < 100 * 60_000 && (
-                <IonButton className="medications-snooze" fill="clear" size="small"
-                  disabled={Boolean(busy) || snoozedDoses.has(dose.id)} onClick={() => setSnoozingDose(dose)}>
-                  {t(snoozedDoses.has(dose.id) ? "Recordatorio pospuesto" : "Posponer recordatorio")}
-                </IonButton>
-              )}
-            </article>;
-            };
+    const future = new Date(dose.scheduledAt).getTime() > Date.now();
+    const pending = dose.status === "pending";
+    const isNext = dose.id === nextDose?.id;
+    const treatment = workspace?.treatments.find(treatment => treatment.id === dose.treatmentId);
+    const kind = treatment?.productType ?? "medication";
+    const instructions = treatment?.instructions;
+    return <article className={`medications-dose medications-dose-${dose.status}${isNext ? " medications-dose-next" : ""}`} key={dose.id}>
+      {isNext && <span className="medications-next-label">{t(future ? "Próxima toma" : "Toma pendiente")}</span>}
+      <div className="medications-dose-line"><span className="medications-time"><IonIcon icon={timeOutline} aria-hidden="true" />{time(dose.scheduledAt, dose.timeZone)}</span><IonBadge className={`medications-badge medications-badge-${dose.status}`}>{t(doseLabels[dose.status])}</IonBadge></div>
+      <div className="medications-dose-product">
+        <span className={`medications-product-icon medications-product-${kind}`}><IonIcon icon={kind === "vitamin" ? sunnyOutline : kind === "supplement" ? leafOutline : medicalOutline} aria-hidden="true" /></span>
+        <div><h3 title={dose.name}>{dose.name}</h3>
+          <span className="medications-dose-quantity">{new Intl.NumberFormat(locale).format(dose.dosage)} {dose.unit}</span>
+        </div>
+      </div>
+      {instructions && <p>{instructions}</p>}
+      {pending && capabilities.canManage ? <div className="medications-dose-actions">
+        <IonButton fill="outline" disabled={Boolean(busy) || future} onClick={() => setOmittingDose(dose)}>
+          {t("Omitir")}
+        </IonButton>
+        <IonButton className="medications-photo-action" disabled={Boolean(busy) || future} onClick={() => {
+          setActionError(null);
+          setPhotoPreview(null);
+          setCaptureState(canScan ? "ready" : "unavailable");
+          setSelectedDose(dose);
+        }}>
+          <IonIcon icon={canScan ? cameraOutline : checkmarkCircleOutline} slot="start" />
+          {t("Registrar toma")}
+        </IonButton>
+      </div> : dose.occurredAt ? <span className="medications-recorded">
+        <IonIcon icon={checkmarkCircleOutline} aria-hidden="true" />
+        {t("Registrado a las {time}", { time: time(dose.occurredAt, dose.timeZone) })}
+      </span> : null}
+      {pending && !future && capabilities.canSnooze &&
+        Date.now() - Date.parse(dose.scheduledAt) < 100 * 60_000 && (
+        <IonButton className="medications-snooze" fill="clear" size="small"
+          disabled={Boolean(busy) || snoozedDoses.has(dose.id)} onClick={() => setSnoozingDose(dose)}>
+          {t(snoozedDoses.has(dose.id) ? "Recordatorio pospuesto" : "Posponer recordatorio")}
+        </IonButton>
+      )}
+    </article>;
+  };
 
+  const week = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(`${today}T12:00:00`);
+    day.setDate(day.getDate() + index - 3);
+    return { day, key: toLocalISODate(day) };
+  });
+  const visibleDoses = [...mainDoses, ...reportedDoses, ...extraDoses].filter(dose => dose.status !== "cancelled");
+  const taken = visibleDoses.filter(dose => dose.status === "taken").length;
+  const due = visibleDoses.filter(dose => dose.status === "pending" && Date.parse(dose.scheduledAt) <= Date.now()).length;
+  const progress = visibleDoses.length ? (taken / visibleDoses.length) * 100 : 0;
+  const lowStock = (inventory.data?.items ?? []).filter(isLowMedicationStock);
+  const firstLowStock = lowStock[0];
+  const lowStockCount = inventory.data && inventory.data.total === inventory.data.items.length
+    ? lowStock.length : "—";
+  const agenda = new Map<string, MedicationDose[]>();
+  for (const dose of mainDoses) {
+    const group = agenda.get(dose.scheduledAt) ?? [];
+    group.push(dose);
+    agenda.set(dose.scheduledAt, group);
+  }
   return <Screen className="medications-page">
     <header className="medications-header">
       <div className="medications-heading-row">
@@ -217,15 +281,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
       {loading ? <section className="medications-loading" role="status" aria-label={t("Cargando medicamentos")}><IonSkeletonText animated style={{ width: "55%", height: 24 }} /><IonSkeletonText animated style={{ width: "100%", height: 122 }} /><IonSkeletonText animated style={{ width: "100%", height: 122 }} /></section> :
       unavailable ? <section className="medications-state"><IonIcon icon={medicalOutline} aria-hidden="true" /><h2>{t("Control de medicamentos no disponible")}</h2><IonButton onClick={() => navigate("prof")}>{t("Ir a mi perfil")}</IonButton></section> :
       query.isError || !workspace ? <section className="medications-state" role="alert"><IonIcon icon={refreshOutline} aria-hidden="true" /><h2>{t(accessDenied ? "No tienes acceso a este módulo." : "No pudimos cargar tus medicamentos")}</h2>{accessDenied ? <IonButton onClick={() => navigate("prof")}>{t("Ir a mi perfil")}</IonButton> : <IonButton onClick={() => { void query.refetch(); }}>{t("Reintentar")}</IonButton>}</section> :
-      adding && owner ? <MedicationForm owner={owner} onCancel={() => setAdding(false)} onSaved={async () => { if (!isCurrent()) return; await refresh(); setAdding(false); setTab("today"); showToast(t("Medicamento guardado"), "ok"); }} onAccessError={() => { void capabilities.refresh(); }} /> : <>
-        <div className="medications-overview">
-        <div className="medications-topline"><div><span>{t("Tu seguimiento")}</span><strong>{workspace.summary.activeTreatments === 1 ? t("1 tratamiento activo") : t("{count} tratamientos activos", { count: String(workspace.summary.activeTreatments) })}</strong></div>{capabilities.canManage && <IonButton className="medications-add" size="small" onClick={() => setAdding(true)}><IonIcon slot="start" icon={addOutline} />{t("Añadir medicamento")}</IonButton>}</div>
-        {adherence && <section className="medications-adherence" aria-label={t("Adherencia al plan")} aria-live="polite">
-          <div><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" /><strong>{t("Adherencia al plan")}</strong><IonBadge className="medications-badge">{adherence.percent === null ? "—" : `${adherence.percent}%`}</IonBadge></div>
-          <p>{adherence.dueDoses > 0 ? t("{taken} de {total} tomas asignadas", {taken: String(adherence.takenDoses), total: String(adherence.dueDoses)}) : t("Sin tomas asignadas para evaluar")}</p>
-          {deviating && <p className="medications-plan-warning">{t("No estás siguiendo el plan asignado")}</p>}
-        </section>}
-        </div>
+      adding && owner ? <MedicationForm owner={owner} onCancel={() => setAdding(false)} onSaved={async () => { if (!isCurrent()) return; await refresh(); setAdding(false); setSelectedDate(null); setTab("today"); showToast(t("Medicamento guardado"), "ok"); }} onAccessError={() => { void capabilities.refresh(); }} /> : <>
         <IonSegment className="medications-tabs" value={tab} onIonChange={event => { setTab(String(event.detail.value ?? "today")); setActionError(null); }} aria-label={t("Secciones de medicamentos")}>
           <IonSegmentButton value="today"><span>{t("Hoy")}</span></IonSegmentButton>
           <IonSegmentButton value="treatments"><span>{t("Mi lista")}</span></IonSegmentButton>
@@ -233,19 +289,66 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
           <IonSegmentButton value="effects"><span>{t("Reportes")}</span></IonSegmentButton>
           <IonSegmentButton value="history"><span>{t("Historial")}</span></IonSegmentButton>
         </IonSegment>
+        {tab === "today" && <>
+          <div className="medications-calendar">
+            <p>{new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(new Date(`${date}T12:00:00`))}</p>
+            <div className="medications-week">
+              {week.map(({ day, key }) => <button key={key} type="button" aria-pressed={date === key}
+                aria-label={new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(day)}
+                className={date === key ? "medications-day is-selected" : "medications-day"}
+                onClick={() => setSelectedDate(key)}>
+                <span><small>{new Intl.DateTimeFormat(locale, { weekday: "narrow" }).format(day)}</small><strong>{day.getDate()}</strong></span>
+              </button>)}
+            </div>
+          </div>
+          <section className="medications-overview">
+            <div className="medications-overview-main">
+              <div className="medications-progress-ring" role="img" style={{ "--med-progress": `${progress}%` } as React.CSSProperties}
+                aria-label={t("{taken} de {total} tomas", { taken: String(taken), total: String(visibleDoses.length) })}>
+                <span>{taken}/{visibleDoses.length}</span>
+              </div>
+              <div><p>{t(isToday ? "Tomas de hoy" : "Tomas programadas")}</p>
+                <strong>{t("{count} por registrar", { count: String(due) })}</strong>
+                {nextDose && <small>{nextDose.name} · {time(nextDose.scheduledAt, nextDose.timeZone)}</small>}
+              </div>
+            </div>
+            <div className="medications-metrics">
+              <div><IonIcon icon={cubeOutline} aria-hidden="true" /><strong>{workspace.summary.activeTreatments}</strong><span>{t("Tratamientos")}</span></div>
+              <div><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" /><strong>{adherence?.percent == null ? "—" : `${adherence.percent}%`}</strong><span>{t("Adherencia al plan")}</span></div>
+              <div className="medications-metric-stock"><IonIcon icon={warningOutline} aria-hidden="true" /><strong>{lowStockCount}</strong><span>{t("Por agotarse")}</span></div>
+            </div>
+            {deviating && <p>{t("No estás siguiendo el plan asignado")}</p>}
+          </section>
+        </>}
+        {capabilities.canManage && <IonButton className="medications-add" size="small" onClick={() => setAdding(true)}><IonIcon slot="start" icon={addOutline} />{t("Añadir medicamento")}</IonButton>}
         {actionError && !selectedDose && <p role="alert" className="medications-error">{actionError}</p>}
-        {tab === "today" && <section className="medications-today" aria-label={t("Dosis de hoy")}>
-          <div className="medications-section-heading"><div><IonIcon icon={calendarOutline} aria-hidden="true" /><h2>{t("Hoy")}</h2><span>{formatDateForDisplay(date)}</span></div>{mainDoses.length > 0 && <strong>{mainDoses.filter(d => d.status === "taken").length}/{mainDoses.length}</strong>}</div>
+        {tab === "today" && <section className="medications-today" aria-label={t(isToday ? "Dosis de hoy" : "Tomas programadas")}>
+          {firstLowStock && <div className="medications-low-stock">
+            <span><IonIcon icon={cubeOutline} aria-hidden="true" /></span>
+            <div><strong>{firstLowStock.name}</strong><small>{lowStock.length > 1
+              ? t("{count} productos por agotarse", { count: String(lowStock.length) })
+              : t("Por agotarse")}</small></div>
+            <IonButton fill="clear" size="small" onClick={() => setTab("inventory")}>{t("Ver inventario")}</IonButton>
+          </div>}
           <section aria-label={t("Plan asignado")}>
             <div className="medications-section-heading"><h2>{t("Plan asignado")}</h2></div>
-            {mainDoses.length ? <div className="medications-dose-list">{mainDoses.map(renderDose)}</div> : <p>{t("Sin tomas asignadas para hoy")}</p>}
+            {mainDoses.length ? <div className="medications-dose-list">{Array.from(agenda).map(([scheduledAt, doses]) => {
+              if (!doses?.length) return null;
+              const zone = doses[0].timeZone;
+              const hour = Number(new Intl.DateTimeFormat("en", { hour: "numeric", hourCycle: "h23", timeZone: zone }).format(new Date(scheduledAt)));
+              return <section className="medications-time-group" key={scheduledAt}>
+                <h3><span><IonIcon icon={hour < 12 ? sunnyOutline : hour < 18 ? partlySunnyOutline : moonOutline} aria-hidden="true" /></span>
+                  {time(scheduledAt, zone)} <small>{t(hour < 12 ? "Mañana" : hour < 18 ? "Tarde" : "Noche")}</small></h3>
+                {doses.map(renderDose)}
+              </section>;
+            })}</div> : <p>{t(isToday ? "Sin tomas asignadas para hoy" : "Sin tomas asignadas para esta fecha")}</p>}
           </section>
           {reportedDoses.length > 0 && <section className="medications-reported" aria-label={t("Fuera del plan")}>
             <div className="medications-section-heading"><h2>{t("Fuera del plan")}</h2><IonBadge className="medications-badge">{t("Registrado por ti")}</IonBadge></div>
             <p>{t("Estas tomas no sustituyen tu plan.")}</p>
             <div className="medications-extra-list">{reportedDoses.map(renderDose)}</div>
           </section>}
-        {hasExtra && <section className="medications-extra" aria-label={t("Nutracéutico")}><div className="medications-section-heading"><div><IonIcon icon={leafOutline} aria-hidden="true" /><h2>{t("Nutracéutico")}</h2><span>{t("Adicional")}</span></div></div>{extraDoses.length ? <div className="medications-extra-list">{extraDoses.map(renderDose)}</div> : <p>{t("Sin tomas programadas para hoy")}</p>}</section>}
+        {hasExtra && <section className="medications-extra" aria-label={t("Nutracéutico")}><div className="medications-section-heading"><div><IonIcon icon={leafOutline} aria-hidden="true" /><h2>{t("Nutracéutico")}</h2><span>{t("Adicional")}</span></div></div>{extraDoses.length ? <div className="medications-extra-list">{extraDoses.map(renderDose)}</div> : <p>{t(isToday ? "Sin tomas programadas para hoy" : "Sin tomas programadas para esta fecha")}</p>}</section>}
         </section>}
         {tab === "treatments" && <section className="medications-treatment-list" aria-label={t("Mis medicamentos")}>
           {workspace.treatments.length ? workspace.treatments.map(treatment => <article className="medications-treatment" key={treatment.id}>
@@ -259,11 +362,25 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
         </section>}
         {tab === "inventory" && owner && <PatientMedicationInventory owner={owner} canManage={capabilities.canManage}/>}
         {tab === "effects" && owner && <PatientMedicationEffects owner={owner} canManage={capabilities.canManage} treatments={workspace.treatments}/>}
-        {tab === "history" && <section className="medications-history" aria-label={t("Historial de tomas")}>
-          {workspace.history.length ? workspace.history.map(event => <article className="medications-history-row" key={event.id}><span className={`medications-history-icon medications-badge-${event.status}`}><IonIcon icon={event.status === "taken" ? checkmarkCircleOutline : closeOutline} aria-hidden="true" /></span><div><h3 title={event.name}>{event.name}</h3><span>{formatDateForDisplay(toLocalISODate(new Date(event.occurredAt)))} · {time(event.occurredAt)}</span>{event.reason && <p>{event.reason}</p>}</div><IonBadge className={`medications-badge medications-badge-${event.status}`}>{t(doseLabels[event.status])}</IonBadge></article>) : <section className="medications-state"><IonIcon icon={timeOutline} aria-hidden="true" /><h3>{t("Tu historial aparecerá aquí")}</h3></section>}
-        </section>}
+        {tab === "history" && owner && <PatientMedicationHistory
+          owner={owner} today={today} date={date} timeZone={timeZone} locale={locale} workspace={workspace}
+        />}
       </>}
     </Scroll>
+    <IonAlert
+      isOpen={Boolean(omittingDose)}
+      header={t("¿Seguro que quieres omitir esta toma?")}
+      subHeader={omittingDose?.name}
+      message={t("Se registrará como omitida en tu historial.")}
+      buttons={[
+        { text: t("Cancelar"), role: "cancel" },
+        { text: t("Omitir toma"), role: "destructive" },
+      ]}
+      onDidDismiss={event => {
+        setOmittingDose(null);
+        if (event.detail.role === "destructive" && omittingDose) void recordDose(omittingDose, "omitted");
+      }}
+    />
     <IonActionSheet isOpen={Boolean(snoozingDose)} header={t("Posponer recordatorio")}
       onDidDismiss={() => setSnoozingDose(null)}
       buttons={[
@@ -271,22 +388,27 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
         { text: t("30 minutos"), handler: () => { if (snoozingDose) void snoozeDose(snoozingDose, 30); } },
         { text: t("Cancelar"), role: "cancel" },
       ]} />
-    <IonModal isOpen={Boolean(selectedDose)} className="medications-capture-modal"
+    <IonModal isOpen={Boolean(selectedDose)} className={`medications-capture-modal${photoPreview && (captureState === "reading" || captureState === "matched") ? " is-processing" : ""}`}
       aria-label={t("Registrar toma")} backdropDismiss={false}
-      onDidDismiss={() => setSelectedDose(null)}>
+      onDidDismiss={() => { setSelectedDose(null); setPhotoPreview(null); }}>
       {selectedDose && <IonContent>
-        <section className="medications-capture">
+        {photoPreview && captureState === "reading" ? <div className="medications-scan-stage">
+          <FoodPhotoStage src={photoPreview} analyzing variant="medication" />
+        </div> : <section className="medications-capture">
           <IonButton className="medications-capture-close" fill="clear" aria-label={t("Cerrar")}
             disabled={captureState === "reading" || Boolean(busy)} onClick={() => setSelectedDose(null)}>
             <IonIcon icon={closeOutline} slot="icon-only" />
           </IonButton>
-          <span className="medications-capture-icon"><IonIcon icon={cameraOutline} aria-hidden="true" /></span>
+          <span className="medications-capture-icon">
+            <IonIcon icon={captureState === "manual" || !canScan ? createOutline : cameraOutline} aria-hidden="true" />
+          </span>
           <h2>{t("Registrar toma")}</h2>
           <div className="medications-capture-dose">
             <strong>{selectedDose.name}</strong>
             <span>{new Intl.NumberFormat(locale).format(selectedDose.dosage)} {selectedDose.unit} · {time(selectedDose.scheduledAt, selectedDose.timeZone)}</span>
           </div>
           {captureState === "matched" || captureState === "manual" ? <>
+            {photoPreview && captureState === "matched" && <FoodPhotoStage src={photoPreview} variant="medication" />}
             <p role="status">{captureState === "matched"
               ? t("El nombre coincide con tu registro. Verifica el empaque y confirma solo si ya tomaste esta dosis.")
               : t("Confirma solo si ya tomaste la dosis indicada arriba.")}</p>
@@ -298,19 +420,26 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
           </> : <>
             <p role="status">{t(captureState === "reading" ? "Leyendo la etiqueta…"
               : captureState === "no-match" ? "No hubo una coincidencia clara. Repite la foto o registra la toma manualmente."
+              : !canScan ? "Puedes registrar esta toma manualmente."
               : captureState === "unavailable" ? "No pudimos usar la cámara o leer la etiqueta."
               : "Fotografía el empaque con el nombre y la concentración visibles.")}</p>
             {canScan && <IonButton expand="block" disabled={captureState === "reading"} onClick={() => void scan()}>
               {captureState === "reading" ? <IonSpinner name="crescent" aria-hidden="true" /> : <IonIcon icon={cameraOutline} slot="start" />}
               {t(captureState === "reading" ? "Leyendo la etiqueta…" : captureState === "ready" ? "Tomar foto" : "Repetir foto")}
             </IonButton>}
-            <IonButton expand="block" fill="clear" disabled={captureState === "reading"}
-              onClick={() => setCaptureState("manual")}>{t("Registrar manualmente")}</IonButton>
+            <IonButton className="medications-capture-manual" expand="block" fill={canScan ? "outline" : "solid"}
+              disabled={captureState === "reading"} onClick={() => {
+                setPhotoPreview(null);
+                setCaptureState("manual");
+              }}>
+              <IonIcon icon={createOutline} slot="start" aria-hidden="true" />
+              {t("Registrar manualmente")}
+            </IonButton>
           </>}
           {(actionError || !doseStillPending) && <p role="alert" className="medications-error">
             {actionError ?? t("El registro cambió. Actualiza e inténtalo de nuevo.")}
           </p>}
-        </section>
+        </section>}
       </IonContent>}
     </IonModal>
   </Screen>;

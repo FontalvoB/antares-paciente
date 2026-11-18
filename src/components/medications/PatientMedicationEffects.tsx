@@ -7,12 +7,14 @@ import {
   IonCardContent,
   IonCardHeader,
   IonCardTitle,
+  IonIcon,
   IonInput,
   IonSelect,
   IonSelectOption,
   IonSkeletonText,
   IonTextarea,
 } from "@ionic/react";
+import { addOutline, pulseOutline } from "ionicons/icons";
 import { useI18n } from "../../i18n/I18nContext";
 import { useApp } from "../../context/AppContext";
 import {
@@ -77,13 +79,15 @@ export function PatientMedicationEffects({
     );
   return (
     <section className="medications-effects">
+      {canManage && (
+        <IonButton className="medications-effect-cta" expand="block" onClick={() => setAdding(true)}>
+          <span className="medications-monitoring-icon"><IonIcon icon={pulseOutline} aria-hidden="true" /></span>
+          <span>{t("Reportar síntoma")}</span>
+          <IonIcon icon={addOutline} slot="end" aria-hidden="true" />
+        </IonButton>
+      )}
       <div className="medications-section-heading">
         <h2>{t("Síntomas reportados")}</h2>
-        {canManage && (
-          <IonButton size="small" onClick={() => setAdding(true)}>
-            {t("Reportar síntoma")}
-          </IonButton>
-        )}
       </div>
       {query.isLoading ? (
         <IonSkeletonText animated className="medications-monitoring-skeleton" />
@@ -96,18 +100,15 @@ export function PatientMedicationEffects({
         </section>
       ) : query.data?.length ? (
         query.data.map((report) => (
-          <IonCard className="medications-effect-card" key={report.id}>
-            <IonCardHeader>
-              <IonCardTitle>{report.symptom}</IonCardTitle>
-              <div className="medications-effect-meta">
-                <span>
-                  {formatDateForDisplay(
-                    toLocalISODate(new Date(report.occurredAt)),
-                  )}
-                </span>
-                <IonBadge className="medications-badge">
-                  {t(statuses[report.status])}
-                </IonBadge>
+          <IonCard className={`medications-effect-card medications-effect-${report.severity}`} key={report.id}>
+            <IonCardHeader className="medications-monitoring-heading">
+              <span className="medications-monitoring-icon"><IonIcon icon={pulseOutline} aria-hidden="true" /></span>
+              <div>
+                <IonCardTitle>{report.symptom}</IonCardTitle>
+                <div className="medications-effect-meta">
+                  <span>{formatDateForDisplay(toLocalISODate(new Date(report.occurredAt)))}</span>
+                  <IonBadge className="medications-badge">{t(statuses[report.status])}</IonBadge>
+                </div>
               </div>
             </IonCardHeader>
             <IonCardContent>

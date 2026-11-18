@@ -3,6 +3,7 @@
   "git": {
     "deploymentEnabled": {
       "dev": false,
+      "feat/kan-77-medication-reference": false,
       "feat/kan-77-camera-dose": false
     }
   }

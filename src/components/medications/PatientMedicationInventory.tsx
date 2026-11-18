@@ -10,11 +10,13 @@ import {
   IonCheckbox,
   IonDatetime,
   IonDatetimeButton,
+  IonIcon,
   IonInput,
   IonModal,
   IonSkeletonText,
   IonTextarea,
 } from "@ionic/react";
+import { cubeOutline } from "ionicons/icons";
 import { useI18n } from "../../i18n/I18nContext";
 import { useApp } from "../../context/AppContext";
 import { getAccessToken } from "../../utils/authApi";
@@ -23,6 +25,7 @@ import { createMedicationRequestId } from "../../utils/medicationsApi";
 import { formatDateForDisplay, toLocalISODate } from "../../utils/dates";
 import {
   fetchMyInventory,
+  isLowMedicationStock,
   saveMyStock,
   fetchMyStockMovements,
   type MedicationSupply,
@@ -111,8 +114,9 @@ export function PatientMedicationInventory({
         </IonButton>
       </div>
       {query.data?.items.map((supply) => (
-        <IonCard className="medications-stock-card" key={supply.treatmentId}>
-          <IonCardHeader>
+        <IonCard className={`medications-stock-card${isLowMedicationStock(supply) ? " is-low-stock" : ""}`} key={supply.treatmentId}>
+          <IonCardHeader className="medications-monitoring-heading">
+            <span className="medications-monitoring-icon"><IonIcon icon={cubeOutline} aria-hidden="true" /></span>
             <IonCardTitle title={supply.name}>{supply.name}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
