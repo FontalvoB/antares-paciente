@@ -1,11 +1,13 @@
 import { useMemo, type ReactNode } from 'react'
 import { IonButton, IonIcon } from '@ionic/react'
 import { motion } from 'framer-motion'
-import { checkmark, chevronForward, gift, heartOutline, leaf, sparkles, trophy } from 'ionicons/icons'
+import { checkmark, chevronForward, gift, medicalOutline, heartOutline, leaf, sparkles, trophy } from 'ionicons/icons'
 import {
   DAY_BONUS_PTS,
   PROGRAM_TASKS,
 } from '../../data/program'
+import medicationPhoto from '../../assets/modules/medicamentos.webp'
+import type { useDailyMedications } from '../../hooks/useDailyMedications'
 import { MISSION_PHOTOS } from '../../data/missionPhotos'
 import type { ProgramDay, ProgramTaskId } from '../../types'
 import type { ProgramUpcomingDayDto, ScoresResponseDto, TodayTaskDto } from '../../services/program/types'
@@ -19,6 +21,8 @@ import { scheduledDayTasks } from '../../utils/programRest'
 
 export function TodayView({
   program,
+  medicationDay,
+  onOpenMedications,
   todayTasks,
   upcoming,
   rest,
@@ -34,6 +38,8 @@ export function TodayView({
   onGoChat,
 }: {
   program: ProgramDay
+  medicationDay?: ReturnType<typeof useDailyMedications>
+  onOpenMedications?: () => void
   /** Misiones del día servidas por el backend; sin ellas se usa el plan local. */
   todayTasks?: TodayTaskDto[]
   upcoming?: ProgramUpcomingDayDto[] | null
@@ -172,6 +178,12 @@ export function TodayView({
     <div className="pg-pane">
       {rest === true && <ExerciseRestNotice />}
       <div className="pcards">
+        {medicationDay && <IonButton fill="clear" className="pcard pcard-medications" onClick={onOpenMedications}>
+          <span className="pcard-medication-content"><img className="pcard-photo" src={medicationPhoto} alt="" />
+          <span className="pcard-panel"><span className="pcard-action-icon"><IonIcon icon={medicalOutline} aria-hidden="true" /></span>
+          <span className="pcard-copy"><strong>{t('Medicamentos')}</strong><small>{medicationDay.isError ? t('No pudimos cargar tus medicamentos') : medicationDay.isLoading ? t('Cargando medicamentos') : medicationDay.scheduled ? t('{done} de {total} tomas registradas', {done:String(medicationDay.recorded), total:String(medicationDay.scheduled)}) : t('Sin tomas programadas para hoy')}</small></span><IonIcon icon={chevronForward} aria-hidden="true" /></span></span>
+        </IonButton>}
+
         {taskList.map((task, i) => {
           const done = task.done
           const current = task.id === currentId
@@ -193,12 +205,14 @@ export function TodayView({
               transition={{ delay: 0.04 + i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
               <img
+                key={task.thumbnailUrl || MISSION_PHOTOS[task.id]}
                 className="pcard-photo"
                 src={task.thumbnailUrl || MISSION_PHOTOS[task.id]}
                 alt=""
                 loading="lazy"
                 onError={(e) => {
                   const img = e.currentTarget;
+                  // La key reinicia el fallback cuando el snapshot renueva la portada.
                   if (img.dataset.fallback) return;
                   img.dataset.fallback = "1";
                   img.src = MISSION_PHOTOS[task.id];

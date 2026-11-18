@@ -8,6 +8,7 @@ export type Screen =
   | "bt"
   | "chat"
   | "prof"
+  | "medications"
   | "avatar"
   | "prog"
   | `program-${ProgramTaskId}`
@@ -18,7 +19,7 @@ export type Screen =
 
 export type Flow = "login" | "onboarding" | "tests" | "app";
 
-export type TabId = "home" | "book" | "nut" | "chat" | "prof";
+export type TabId = "home" | "book" | "nut" | "chat" | "prof" | "medications";
 
 export type ToastKind = "ok" | "warn" | "err" | "info";
 

@@ -4,6 +4,7 @@ import { AppProvider, useApp } from "../AppContext";
 import { BottomNav } from "../../components/BottomNav";
 import { I18nProvider } from "../../i18n/I18nContext";
 import { fetchThreadState } from "../../utils/threadApi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 vi.mock("../../utils/threadApi", () => ({
   fetchThreadState: vi.fn(),
@@ -54,11 +55,13 @@ function Harness() {
 
 function renderApp(): ReturnType<typeof render> {
   return render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
     <I18nProvider>
       <AppProvider>
         <Harness />
       </AppProvider>
-    </I18nProvider>,
+    </I18nProvider>
+    </QueryClientProvider>,
   );
 }
 

@@ -1005,8 +1005,8 @@ html.vita-call-active .app-shell { padding-top:48px; box-sizing:border-box; }
   content: "";
   position: absolute;
   z-index: -1;
-  left: -50vw;
-  right: -50vw;
+  left: calc(-1 * max(16px, env(safe-area-inset-left)));
+  right: calc(-1 * max(16px, env(safe-area-inset-right)));
   bottom: 100%;
   height: 40px;
   background: linear-gradient(

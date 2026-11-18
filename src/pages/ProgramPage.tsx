@@ -40,6 +40,7 @@ import { ProgramCompletionView } from "./program/ProgramCompletionView";
 import { ProgramHeader } from "./program/ProgramHeader";
 import { RankingView } from "./program/RankingView";
 import { StreakView } from "./program/StreakView";
+import { useDailyMedications } from "../hooks/useDailyMedications";
 import { TodayView } from "./program/TodayView";
 import { nutritionMissionSubtitle } from "../utils/nutritionMissionSubtitle";
 import { paneMotion } from "./program/ui";
@@ -144,8 +145,13 @@ export function ProgramPage() {
     initialAssessmentsCompleted,
     refetch: refetchProgram,
   } = useProgram();
+  const medicationDay = useDailyMedications();
+  const medicationProtocol = medicationDay.enabled && Boolean(snapshot?.optionalTaskCodes?.includes("nutraceutico"));
+  useEffect(() => {
+    if (medicationProtocol && screen === "program-nutraceutico") navigate("medications");
+  }, [medicationProtocol, screen, navigate]);
   const resting = snapshot?.rest === true;
-  const todayTasks = useMemo(() => scheduledDayTasks(snapshot?.todayTasks, snapshot?.rest), [snapshot]);
+  const todayTasks = useMemo(() => scheduledDayTasks(snapshot?.todayTasks, snapshot?.rest)?.filter(task => !snapshot?.optionalTaskCodes?.includes(task.taskCode)), [snapshot]);
 
   const completeTaskMutation = useCompleteTask();
   const queryClient = useQueryClient();
@@ -727,6 +733,8 @@ export function ProgramPage() {
     taskPts,
   ]);
 
+  if (medicationProtocol && screen === "program-nutraceutico") return <Screen hideNav><IonSpinner aria-label={t("Cargando medicamentos")} /></Screen>;
+
   if (newProgram || (programState === "completed" && completion && !programLoading)) {
     return <Screen hideNav className="pg-reference"><Scroll noNav className="program-completion-scroll">
       {completionEvolution && !newProgram ? <>
@@ -807,6 +815,8 @@ export function ProgramPage() {
             {tab === "hoy" && (
               <TodayView
                 program={program}
+                medicationDay={medicationProtocol ? medicationDay : undefined}
+                onOpenMedications={() => navigate("medications")}
                 todayTasks={todayTasks}
                 upcoming={snapshot?.upcoming}
                 rest={snapshot?.rest}
