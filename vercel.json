@@ -4,7 +4,8 @@
     "deploymentEnabled": {
       "feat/kan-77-medication-reference": false,
       "dev": false,
-      "feat/kan-77-camera-dose": false
+      "feat/kan-77-camera-dose": false,
+      "fix/chat-consolidation-test": false
     }
   }
 }
