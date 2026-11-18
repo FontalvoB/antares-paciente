@@ -96,6 +96,7 @@ export type MeasureOutcome =
   | "completed"
   | "refused"
   | "failed"
+  | "command-failed"
   | "cancelled"
   | "replaced"
   | "timeout"

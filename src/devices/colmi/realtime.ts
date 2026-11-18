@@ -13,6 +13,8 @@ import { notificationReceivedAt } from "../ble/notification-clock";
 
 export interface HeartRateReading {
   bpm: number;
+  /** Precisión original para distinguir lecturas antes de redondear la UI. */
+  rawBpm: number;
   /** `byte` = layout documentado; `u16` = décimas de lpm del firmware H59. */
   layout: "byte" | "u16";
 }
@@ -34,12 +36,12 @@ export function heartRateFromPayload(
 ): HeartRateReading | null {
   const classic = payload[2] ?? 0;
   if (classic >= HR_BYTE_MIN && classic <= HR_BYTE_MAX) {
-    return { bpm: classic, layout: "byte" };
+    return { bpm: classic, rawBpm: classic, layout: "byte" };
   }
   if (classic > 0) return null;
   const raw = (payload[5] ?? 0) | ((payload[6] ?? 0) << 8);
   if (raw < HR_MIN || raw > HR_MAX) return null;
-  return { bpm: Math.round(raw / 10), layout: "u16" };
+  return { bpm: Math.round(raw / 10), rawBpm: raw / 10, layout: "u16" };
 }
 
 /** SpO2 real: por debajo de 70 no hay persona consciente que lo sostenga. */

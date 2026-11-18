@@ -12,6 +12,7 @@ const hoisted = vi.hoisted(() => ({
   sink: null as null | ((bytes: Uint8Array) => void),
   debug: false,
   writes: [] as number[][],
+  failStart: false,
 }));
 
 vi.mock("../ble/ble-client", () => ({
@@ -34,6 +35,7 @@ vi.mock("../ble/ble-client", () => ({
     bytes: Uint8Array,
   ) => {
     hoisted.writes.push(Array.from(bytes));
+    if (hoisted.failStart && bytes[0] === CMD.START_REALTIME && bytes[2] === 1) throw new Error("write failed");
   },
 }));
 
@@ -57,6 +59,7 @@ describe("ColmiSession — FC en vivo", () => {
     vi.useFakeTimers();
     hoisted.notes = [];
     hoisted.sink = null;
+    hoisted.failStart = false;
     hoisted.debug = false;
     hoisted.writes = [];
   });
@@ -190,6 +193,7 @@ describe("ColmiSession.measure — contrato de fin", () => {
     vi.useFakeTimers();
     hoisted.notes = [];
     hoisted.sink = null;
+    hoisted.failStart = false;
   });
 
   afterEach(() => {
@@ -199,16 +203,18 @@ describe("ColmiSession.measure — contrato de fin", () => {
   async function startedSession(): Promise<{
     session: ColmiSession;
     outcomes: Array<[boolean, MeasureOutcome]>;
+    samples: HealthSample[];
   }> {
     const session = new ColmiSession(descriptor);
     const outcomes: Array<[boolean, MeasureOutcome]> = [];
+    const samples: HealthSample[] = [];
     const started = session.start(
-      () => undefined,
+      sample => samples.push(sample),
       () => undefined,
     );
     await vi.advanceTimersByTimeAsync(1_000);
     await started;
-    return { session, outcomes };
+    return { session, outcomes, samples };
   }
 
   it("cierra con completed al reunir 3 muestras del tipo pedido", async () => {
@@ -245,12 +251,50 @@ describe("ColmiSession.measure — contrato de fin", () => {
     await stopping;
   });
 
+  it("distingue dos décimas distintas aunque ambas se muestren como 72 lpm", async () => {
+    const { session, outcomes, samples } = await startedSession();
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+    await vi.advanceTimersByTimeAsync(100);
+    emit([1, 0, 0, 0, 0, 0xd1, 0x02, ...zeros(7)]); // 72.1
+    expect(outcomes).toEqual([]);
+    expect(samples).toEqual([]);
+    emit([1, 0, 0, 0, 0, 0xd4, 0x02, ...zeros(7)]); // 72.4
+    expect(outcomes).toEqual([[true, "completed"]]);
+    expect(samples).toHaveLength(1);
+    expect(samples[0].value).toBe(72);
+    const stopping = session.stop();
+    await vi.advanceTimersByTimeAsync(1_000); await stopping;
+  });
+
+  it("un START rechazado termina una vez sin esperar un timeout falso", async () => {
+    const { session, outcomes } = await startedSession();
+    hoisted.failStart = true;
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(outcomes).toEqual([[false, "command-failed"]]);
+    hoisted.failStart = false;
+    await vi.advanceTimersByTimeAsync(41_000);
+    expect(outcomes).toHaveLength(1);
+    const stopping = session.stop();
+    await vi.advanceTimersByTimeAsync(1_000); await stopping;
+  });
+
+  it("una sola lectura sin variación termina en 40 s, sin éxito inventado", async () => {
+    const { session, outcomes } = await startedSession();
+    session.measure("heart_rate", (ok, reason) => outcomes.push([ok, reason]));
+    for (let i = 0; i < 4; i++) emit([1, 0, 0, 0, 0, 0xd1, 0x02, ...zeros(7)]);
+    await vi.advanceTimersByTimeAsync(40_100);
+    expect(outcomes).toEqual([[false, "timeout"]]);
+    const stopping = session.stop();
+    await vi.advanceTimersByTimeAsync(1_000); await stopping;
+  });
+
   it("cierra con timeout si la banda no manda muestras", async () => {
     const { session, outcomes } = await startedSession();
     session.measure("spo2", (ok, reason) => outcomes.push([ok, reason]));
 
     await vi.advanceTimersByTimeAsync(31_000);
-    expect(outcomes).toEqual([[false, "timeout"]]);
+    expect(outcomes).toEqual([[false, "no-signal"]]);
     const stopping = session.stop();
     await vi.advanceTimersByTimeAsync(1_000);
     await stopping;
@@ -323,7 +367,7 @@ describe("ColmiSession.measure — contrato de fin", () => {
     expect(outcomes).toEqual([]);
 
     await vi.advanceTimersByTimeAsync(50_000);
-    expect(outcomes).toEqual([[false, "timeout"]]);
+    expect(outcomes).toEqual([[false, "no-signal"]]);
     const stopping = session.stop();
     await vi.advanceTimersByTimeAsync(1_000);
     await stopping;

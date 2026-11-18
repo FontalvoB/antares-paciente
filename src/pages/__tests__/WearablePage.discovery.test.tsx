@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
-import type { WearableErrorCode } from '../../devices/types';
+import type { MeasureCallback, MetricKind, WearableErrorCode } from '../../devices/types';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { setupIonicReact } from '@ionic/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fixture = vi.hoisted(() => ({
   t: (key: string) => key,
+  callbacks: [] as MeasureCallback[],
   app: { wearableConnected: false, wearableName: 'H59_E206', showToast: vi.fn() },
   state: {
     phase: 'idle', sessionStale: false, hasScanned: false,
@@ -16,10 +17,11 @@ const fixture = vi.hoisted(() => ({
     ],
     info: {}, samples: {}, today: { steps: null, sleepMinutes: null }, error: null as WearableErrorCode | null,
     diagnostics: false, accessoryDiscoverySupported: true, addingAccessory: false,
-    gatt: [], log: [], measureKinds: [], syncing: false, syncStage: null,
+    gatt: [], log: [], measureKinds: [] as MetricKind[], syncing: false, syncStage: null,
     lastSyncAt: null, savedDevice: null,
     connect: vi.fn(), scan: vi.fn(), refreshInfo: vi.fn(), syncHistory: vi.fn(), cancelSync: vi.fn(),
     setDiagnostics: vi.fn(), measurePolicy: vi.fn(),
+    measure: vi.fn(), stopMeasure: vi.fn(),
   },
 }));
 vi.mock('../../context/WearableContext', () => ({ useWearable: () => fixture.state }));
@@ -44,6 +46,8 @@ vi.mock('../../i18n/I18nContext', () => ({ useI18n: () => ({ t: fixture.t, lang:
 vi.mock('../../components/icons3d', () => ({ WatchIcon3D: () => null }));
 vi.mock('../../components/MeasureFocusOverlay', async (importOriginal) => ({
   ...await importOriginal<typeof import('../../components/MeasureFocusOverlay')>(),
+  MeasureFocusOverlay: ({ isOpen, onCancel }: { isOpen: boolean; onCancel: () => void }) => isOpen
+    ? <div data-testid="measure-focus"><button onClick={onCancel}>cancel measure</button></div> : null,
   MeasureSyncOverlay: ({ isOpen, onCancel }: { isOpen: boolean; onCancel: () => void }) => isOpen
     ? <div data-testid="history-progress"><button onClick={onCancel}>cancel history</button></div> : null,
 }));
@@ -59,6 +63,8 @@ describe('WearablePage — compatibilidad y alta', () => {
     vi.clearAllMocks(); fixture.app.wearableConnected = false; fixture.state.sessionStale = false;
     fixture.state.syncing = false; fixture.state.diagnostics = false; fixture.state.error = null; fixture.state.phase = 'idle';
     fixture.state.samples = {};
+    fixture.state.measureKinds = []; fixture.callbacks = [];
+    fixture.state.measure.mockImplementation((_kind, done) => fixture.callbacks.push(done));
     fixture.state.syncHistory.mockReset(); fixture.state.cancelSync.mockReset();
   });
   afterEach(cleanup);
@@ -75,6 +81,43 @@ describe('WearablePage — compatibilidad y alta', () => {
     expect(screen.getByText('Animación decorativa; no es un electrocardiograma (ECG).')).toBeTruthy();
     expect(container.querySelector('canvas')).toBeNull();
     expect(JSON.stringify(fixture.state.samples)).toBe(recorded);
+  });
+
+  it('recupera el fallo en la página, conserva la lectura y permite reintentar', () => {
+    fixture.app.wearableConnected = true; fixture.state.phase = 'connected';
+    fixture.state.measureKinds = ['heart_rate'];
+    fixture.state.samples = { heart_rate: { metric: 'heart_rate', value: 72, unit: 'bpm', deviceId: 'band', ts: Date.now() - 60_000 } };
+    const original = JSON.stringify(fixture.state.samples);
+    const { container } = render(<WearablePage />);
+    fireEvent.click(screen.getByText('Medir todo (FC, SpO2, presión)'));
+    expect(screen.getByTestId('measure-focus')).toBeTruthy();
+    act(() => fixture.callbacks[0](false, 'timeout'));
+    expect(screen.queryByTestId('measure-focus')).toBeNull();
+    expect(screen.getByText('No pudimos confirmar una nueva lectura. Inténtalo de nuevo.')).toBeTruthy();
+    expect(container.querySelector('.vital-hero-val')?.textContent).toContain('72');
+    expect(JSON.stringify(fixture.state.samples)).toBe(original);
+    expect(fixture.app.showToast).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Reintentar'));
+    expect(fixture.state.measure).toHaveBeenCalledTimes(2);
+    act(() => fixture.callbacks[0](false, 'timeout'));
+    expect(screen.getByTestId('measure-focus')).toBeTruthy();
+    expect(screen.queryByText('No pudimos confirmar una nueva lectura. Inténtalo de nuevo.')).toBeNull();
+  });
+
+  it('Medir siguiente salta solo el fallo y Cerrar libera toda la cola', () => {
+    fixture.app.wearableConnected = true; fixture.state.phase = 'connected';
+    fixture.state.measureKinds = ['heart_rate', 'spo2', 'blood_pressure'];
+    render(<WearablePage />);
+    fireEvent.click(screen.getByText('Medir todo (FC, SpO2, presión)'));
+    act(() => fixture.callbacks[0](false, 'no-signal'));
+    fireEvent.click(screen.getByText('Medir siguiente'));
+    expect(fixture.state.measure.mock.calls.at(-1)?.[0]).toBe('spo2');
+    act(() => fixture.callbacks[1](false, 'no-signal'));
+    fireEvent.click(screen.getByText('Cerrar'));
+    expect(screen.queryByText('Medir siguiente')).toBeNull();
+    fireEvent.click(screen.getByText('Medir todo (FC, SpO2, presión)'));
+    expect(fixture.state.measure.mock.calls.at(-1)?.[0]).toBe('heart_rate');
+    expect(fixture.state.measure).toHaveBeenCalledTimes(3);
   });
 
   it('muestra los modelos compatibles y ofrece el selector iOS', () => {

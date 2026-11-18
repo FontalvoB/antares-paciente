@@ -33977,3 +33977,16 @@ ion-button.auth-activate ion-icon[slot="end"] {
     height: 58px;
   }
 }
+
+/* Recuperación de una medida sin ocultar las métricas ni su fecha. */
+ion-card.wearable-measure-feedback {
+  margin: 16px 0;
+  box-shadow: none;
+  border: 1px solid var(--wellness-border);
+  background: var(--wellness-surface);
+  color: var(--wellness-navy);
+}
+.wearable-measure-feedback h2 { font-weight: 600; margin: 0 0 8px; }
+.wearable-measure-feedback p { margin: 6px 0; color: var(--wellness-muted); }
+.wearable-measure-feedback-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+.wearable-measure-feedback-actions ion-button { min-height: 44px; }

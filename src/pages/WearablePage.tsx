@@ -45,6 +45,7 @@ import {
   type FocusSessionValue,
   type FocusStep,
 } from "../components/MeasureFocusOverlay";
+import { WearableMeasurementFeedback } from "../components/WearableMeasurementFeedback";
 import { PageHeader } from "../components/PageHeader";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
@@ -394,6 +395,7 @@ export function WearablePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(
     () => () => {
+      measurementGeneration.current += 1;
       if (measureSafety.current !== undefined) {
         window.clearTimeout(measureSafety.current);
         measureSafety.current = undefined;
@@ -407,6 +409,7 @@ export function WearablePage() {
   );
 
   /** Métricas cuya última medida falló: la tarjeta ofrece Reintentar. */
+  const measurementGeneration = useRef(0);
   const [failedKinds, setFailedKinds] = useState<MetricKind[]>([]);
   /** Cierra la medida en curso y encadena la siguiente de la cola, si hay. */
   const finishMeasure = useCallback(
@@ -461,30 +464,35 @@ export function WearablePage() {
       }
       {
         // Mensaje por causa real, no un genérico: el driver distingue entre
-        // rechazo del sensor, fallo por contacto/movimiento, silencio total y
-        // el resto de cierres. En secuencia se frena aquí (sin auto-avance):
-        // la vista de foco ofrece Reintentar esa métrica.
+        // rechazo del sensor, error de escritura, silencio total y el resto
+        // de cierres. La secuencia espera Reintentar, Medir siguiente o Cerrar
+        // desde la propia página, sin afirmar una causa física no comprobada.
         const message =
-          reason === "refused"
-            ? "El wearable rechazó esta medición."
-            : reason === "failed"
-              ? "La medición falló por falta de contacto o movimiento."
+          reason === "command-failed"
+            ? "No se pudo enviar la medición al wearable. Comprueba la conexión e inténtalo de nuevo."
+            : reason === "disconnected"
+              ? "Se perdió la conexión con el wearable."
               : reason === "no-signal"
-                ? "Sin señal del anillo. Ajusta el anillo, quédate quieto e inténtalo de nuevo."
-                : "La medición no se completó. Mantén el wearable en contacto e inténtalo de nuevo.";
+                ? "No recibimos datos del wearable. Comprueba la conexión e inténtalo de nuevo."
+                : reason === "refused"
+                  ? "El wearable no pudo iniciar esta medición."
+                  : reason === "failed"
+                    ? "El wearable no pudo obtener una lectura. Ajusta su posición e inténtalo de nuevo."
+                    : "No pudimos confirmar una nueva lectura. Inténtalo de nuevo.";
         setFocusResult({ ok: false, kind, message });
         setFailedKinds((prev) =>
           prev.includes(kind) ? prev : [...prev, kind],
         );
-        showToast(t(message), "err");
       }
     },
-    [showToast, syncQueue, t],
+    [syncQueue],
   );
 
   const startMeasure = useCallback(
     (kind: MetricKind) => {
       clearFlash();
+      const generation = ++measurementGeneration.current;
+      setFocusResult(null);
       setMeasuring({ kind, since: Date.now() });
       setFailedKinds((prev) => prev.filter((failed) => failed !== kind));
       // Si el driver no avisa (bug o hardware mudo), la UI se libera sola:
@@ -502,13 +510,22 @@ export function WearablePage() {
       // El resto conserva su red.
       if (kind !== "heart_rate") {
         measureSafety.current = window.setTimeout(
-          () => finishMeasure(kind, false, "timeout"),
+          () => {
+            if (measurementGeneration.current !== generation) return;
+            measurementGeneration.current += 1;
+            finishMeasure(kind, false, "timeout");
+            stopMeasure();
+          },
           (measurePolicy(kind)?.windowMs ?? 30_000) + MEASURE_SAFETY_MARGIN_MS,
         );
       }
-      measure(kind, (ok, reason) => finishMeasure(kind, ok, reason));
+      measure(kind, (ok, reason) => {
+        if (measurementGeneration.current !== generation) return;
+        measurementGeneration.current += 1;
+        finishMeasure(kind, ok, reason);
+      });
     },
-    [finishMeasure, measure, measurePolicy, clearFlash],
+    [finishMeasure, measure, measurePolicy, clearFlash, stopMeasure],
   );
   startRef.current = startMeasure;
 
@@ -566,6 +583,7 @@ export function WearablePage() {
    * no muestra toast ni avanza nada (ver finishMeasure).
    */
   const cancelFocus = useCallback(() => {
+    measurementGeneration.current += 1;
     historyRequestGeneration.current += 1;
     setHistoryProgressRequested(false);
     clearFlash();
@@ -597,12 +615,21 @@ export function WearablePage() {
     startRef.current(kind);
   }, []);
 
-  /** Cierre manual de la vista de foco (tras el fallo). */
+  /** Cerrar el aviso libera también las métricas pendientes. */
   const closeFocus = useCallback(() => {
+    measureQueue.current = [];
+    syncQueue();
     setFocusResult(null);
     setFocusDone([]);
     setSessionValues([]);
-  }, []);
+  }, [syncQueue]);
+
+  const skipFailedMeasure = () => {
+    setFocusResult(null);
+    const next = measureQueue.current.shift();
+    syncQueue();
+    if (next) startRef.current(next);
+  };
 
   /** Métrica en foco + pasos de la secuencia para la vista de foco. */
   const focusKind = measuring?.kind ?? syncStage?.kind ?? null;
@@ -634,9 +661,11 @@ export function WearablePage() {
         ];
   const focusPhase = measuring ? measureProgress : syncProgress;
   const focusElapsed = measuring ? elapsed : syncElapsed;
-  const focusReading =
-    focusKind !== null
-      ? formatMeasureReading(focusKind, samples[focusKind])
+  const focusSample = focusKind !== null ? samples[focusKind] : undefined;
+  // Una cifra de antes del START sigue en el dashboard, no como lectura nueva.
+  const focusReading = focusKind !== null &&
+    (!measuring || (focusSample && focusSample.ts >= measuring.since && focusSample.source !== "history"))
+      ? formatMeasureReading(focusKind, focusSample)
       : null;
 
   const copyDiagnostics = () => {
@@ -855,6 +884,13 @@ export function WearablePage() {
             </IonButton>
           </div>
         )}
+        {focusResult && <WearableMeasurementFeedback
+          result={focusResult}
+          canMeasure={connOn && measuring === null && !syncing}
+          onRetry={() => retryFocus(focusResult.kind)}
+          onNext={queued > 0 ? skipFailedMeasure : undefined}
+          onClose={closeFocus}
+        />}
         {!wearableConnected ? (
           <div className="watch-pair">
             <IonList className="group-list" lines="none">
@@ -1047,7 +1083,7 @@ export function WearablePage() {
                   <i style={{ width: `${measurePct("heart_rate")}%` }} />
                 </span>
               )}
-              {failedKinds.includes("heart_rate") &&
+              {failedKinds.includes("heart_rate") && focusResult?.kind !== "heart_rate" &&
                 !isMeasuringKind("heart_rate") &&
                 connOn && (
                   <button
@@ -1097,7 +1133,7 @@ export function WearablePage() {
                       <i style={{ width: `${measurePct("spo2")}%` }} />
                     </span>
                   )}
-                  {failedKinds.includes("spo2") &&
+                  {failedKinds.includes("spo2") && focusResult?.kind !== "spo2" &&
                     !isMeasuringKind("spo2") &&
                     connOn && (
                       <button
@@ -1147,7 +1183,7 @@ export function WearablePage() {
                       />
                     </span>
                   )}
-                  {failedKinds.includes("blood_pressure") &&
+                  {failedKinds.includes("blood_pressure") && focusResult?.kind !== "blood_pressure" &&
                     !isMeasuringKind("blood_pressure") &&
                     connOn && (
                       <button
@@ -1394,7 +1430,7 @@ export function WearablePage() {
         onDidDismiss={() => setConfirmOff(false)}
       />
       {(() => {
-        const overlayKind = focusKind ?? focusResult?.kind ?? null;
+        const overlayKind = focusKind;
         if (overlayKind === null) {
           // El refresco automático conserva visible Reloj y su conexión.
           // El foco se abre solo al solicitar Sincronizar ahora explícitamente.
@@ -1403,7 +1439,7 @@ export function WearablePage() {
           }
           return null;
         }
-        const showingResult = focusKind === null ? focusResult : null;
+
         return (
           <MeasureFocusOverlay
             isOpen
@@ -1414,7 +1450,7 @@ export function WearablePage() {
             liveUnit={focusReading ? t(focusReading.unit) : ""}
             steps={focusSteps.map(step => ({ ...step, unit: step.unit ? t(step.unit) : undefined }))}
             queue={queuedKinds.length}
-            result={showingResult}
+            result={null}
             complete={flashKind !== null}
             onCancel={cancelFocus}
             onRetry={() => retryFocus(overlayKind)}

@@ -102,6 +102,8 @@ export class ColmiSession implements DeviceSession {
    * una medición; las rampas reales de calentamiento siempre varían).
    */
   private measureLastHrValue: number | null = null;
+  /** Invalida respuestas asíncronas de intentos ya cerrados. */
+  private measureGeneration = 0;
   private measureDone?: MeasureCallback;
   /** Instrumentación de tiempos (Registro BLE): métrica, inicio y primer dato. */
   private measureKind: MetricKind | null = null;
@@ -293,6 +295,7 @@ export class ColmiSession implements DeviceSession {
     }
     // Otra medida en curso: se cierra avisando, para no dejarla colgada.
     if (this.measureType !== null) this.finishMeasure(false, "replaced");
+    const generation = ++this.measureGeneration;
     const policy = MEASURE_POLICY[kind] ?? DEFAULT_MEASURE_POLICY;
     this.measureType = type;
     this.measureKind = kind;
@@ -306,7 +309,7 @@ export class ColmiSession implements DeviceSession {
     this.clearMeasureTimer();
     this.note(formatMeasureTiming({ device: "colmi", kind, event: "start" }));
     this.measureTimer = window.setTimeout(
-      () => this.finishMeasure(false, "timeout"),
+      () => this.finishMeasure(false, this.measureFrames === 0 ? "no-signal" : "timeout"),
       policy.windowMs,
     );
     if (policy.retryMs) {
@@ -315,7 +318,11 @@ export class ColmiSession implements DeviceSession {
         policy.retryMs,
       );
     }
-    void this.send(CMD.START_REALTIME, [type, 1]).catch(() => undefined);
+    void this.send(CMD.START_REALTIME, [type, 1]).catch(() => {
+      if (this.measureGeneration === generation && this.measureType !== null) {
+        this.finishMeasure(false, "command-failed");
+      }
+    });
   }
 
   // ─── Sesión Colmi ──────────────────────────────────────────────────────
@@ -330,6 +337,7 @@ export class ColmiSession implements DeviceSession {
    * re-arma el pulso continuo, que la medida puntual pausa.
    */
   private finishMeasure(ok: boolean, reason: MeasureOutcome): void {
+    this.measureGeneration += 1;
     const type = this.measureType;
     const kind = this.measureKind;
     const startedAt = this.measureStartedAt;
@@ -388,6 +396,7 @@ export class ColmiSession implements DeviceSession {
    */
   private retryMeasure(): void {
     const type = this.measureType;
+    const generation = this.measureGeneration;
     if (
       type === null ||
       this.measureCount > 0 ||
@@ -400,11 +409,13 @@ export class ColmiSession implements DeviceSession {
     void (async () => {
       try {
         await this.send(CMD.STOP_REALTIME, [type, 0, 0]);
-        if (this.stopped || !this.appActive || this.measureType !== type)
+        if (this.stopped || !this.appActive || this.measureGeneration !== generation)
           return;
         await this.send(CMD.START_REALTIME, [type, 1]);
       } catch {
-        // Sin conexión: nada que reintentar.
+        if (this.measureGeneration === generation && this.measureType !== null) {
+          this.finishMeasure(false, "command-failed");
+        }
       }
     })();
   }
@@ -560,6 +571,12 @@ export class ColmiSession implements DeviceSession {
           }),
         );
       }
+      // El primer u16 puede ser un eco del firmware: no reemplazar el dato
+      // confirmado de la pantalla hasta observar variación a precisión cruda.
+      const hr = this.measureKind === "heart_rate" && type === this.measureType
+        ? heartRateFromPayload(frame.payload) : null;
+      if (hr?.layout === "u16" &&
+          (this.measureLastHrValue === null || hr.rawBpm === this.measureLastHrValue)) continue;
       this.onSample?.(sample);
     }
     if (this.measureType !== null && type === this.measureType) {
@@ -568,9 +585,7 @@ export class ColmiSession implements DeviceSession {
       // el eco de estado sí (`27 03` idéntico en FC/SpO2/presión). Sin esto,
       // 3 ecos cerraban el barrido en 1.6 s con un número inventado.
       if (this.measureKind === "heart_rate") {
-        const hr = samples.find(
-          (sample) => sample.metric === "heart_rate",
-        )?.value;
+        const hr = heartRateFromPayload(frame.payload)?.rawBpm;
         if (hr === undefined || hr === this.measureLastHrValue) return;
         this.measureLastHrValue = hr;
       }

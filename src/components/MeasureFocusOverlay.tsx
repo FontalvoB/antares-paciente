@@ -2,10 +2,7 @@ import { IonButton, IonContent, IonIcon, IonModal } from "@ionic/react";
 import { LayoutGroup, motion } from "framer-motion";
 import {
   checkmarkCircle,
-  close,
-  refresh,
   syncOutline,
-  warning,
 } from "ionicons/icons";
 import type { MeasurePhase } from "../utils/measure";
 import { MEASURE_SHORT, measureIcon } from "../utils/measure";
@@ -72,103 +69,84 @@ export function MeasureFocusContent({
   result,
   complete = false,
   onCancel,
-  onRetry,
-  onClose,
 }: MeasureFocusContentProps) {
   const t = useT();
-  const metric = t(MEASURE_SHORT[kind] ?? "Medición");
-  const running = result === null;
+  if (result !== null) return null;
   return (
     <div className="mfocus-wrap">
-      {running ? (
-        <LayoutGroup>
-          <div className="mfocus-steps" aria-hidden="true">
-            {steps.map((step) => (
-              <span key={step.kind} className={`mfocus-step is-${step.state}`}>
-                <IonIcon
-                  icon={
-                    step.state === "done" && step.value === undefined
-                      ? checkmarkCircle
-                      : measureIcon(step.kind)
-                  }
-                />
-                {step.value !== undefined ? (
-                  <motion.span
-                    className="mfocus-stepval"
-                    initial={{ opacity: 0, x: 24 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.45, ease: "easeOut" }}
-                  >
-                    <motion.strong layoutId={`mfocus-val-${step.kind}`}>
-                      {step.value}
-                    </motion.strong>
-                    <span>{step.unit}</span>
-                  </motion.span>
-                ) : (
-                  t(MEASURE_SHORT[step.kind] ?? "Medición")
-                )}
-              </span>
-            ))}
-          </div>
-          <span className="mfocus-bigico" aria-hidden="true">
-            <IonIcon
-              icon={measureIcon(kind)}
-            />
-          </span>
-          <div className="mfocus-live" aria-live="polite">
-            {liveValue !== null ? (
-              <>
-                <motion.strong layoutId={`mfocus-val-${kind}`}>
-                  {liveValue}
-                </motion.strong>
-                <span>{liveUnit}</span>
-              </>
-            ) : (
-              <span className="mfocus-wait">{t("Esperando la lectura…")}</span>
-            )}
-          </div>
-          {kind === "heart_rate" && (
-            <EcgTrace
-              height={84}
-              className="mfocus-pulse"
-            />
-          )}
-          {(kind === "spo2" || kind === "blood_pressure") && <figure className="mfocus-decoration">
-            {kind === "spo2" ? <Spo2Bubbles /> : <BpWave />}
-            <figcaption>{t("Animación decorativa; no representa una señal medida.")}</figcaption>
-          </figure>}
-          <MeasureProgressCard
-            kind={kind}
-            phase={phase}
-            elapsedSec={elapsedSec}
-            queue={queue}
-            bare
-            complete={complete}
-          />
-          <IonButton
-            expand="block"
-            fill="outline"
-            className="bt"
-            onClick={onCancel}
-          >
-            {t("Cancelar")}
-          </IonButton>
-        </LayoutGroup>
-      ) : (
-        <div className="mfocus-result is-err">
-          <IonIcon icon={warning} aria-hidden="true" />
-          <span className="mfocus-metric">{metric}</span>
-          <p>{t(result.message)}</p>
-          <IonButton expand="block" className="bt bt-primary" onClick={onRetry}>
-            <IonIcon icon={refresh} slot="start" />
-            {t("Reintentar")}
-          </IonButton>
-          <IonButton expand="block" fill="clear" onClick={onClose}>
-            <IonIcon icon={close} slot="start" />
-            {t("Cerrar")}
-          </IonButton>
+      <LayoutGroup>
+        <div className="mfocus-steps" aria-hidden="true">
+          {steps.map((step) => (
+            <span key={step.kind} className={`mfocus-step is-${step.state}`}>
+              <IonIcon
+                icon={
+                  step.state === "done" && step.value === undefined
+                    ? checkmarkCircle
+                    : measureIcon(step.kind)
+                }
+              />
+              {step.value !== undefined ? (
+                <motion.span
+                  className="mfocus-stepval"
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.45, ease: "easeOut" }}
+                >
+                  <motion.strong layoutId={`mfocus-val-${step.kind}`}>
+                    {step.value}
+                  </motion.strong>
+                  <span>{step.unit}</span>
+                </motion.span>
+              ) : (
+                t(MEASURE_SHORT[step.kind] ?? "Medición")
+              )}
+            </span>
+          ))}
         </div>
-      )}
+        <span className="mfocus-bigico" aria-hidden="true">
+          <IonIcon
+            icon={measureIcon(kind)}
+          />
+        </span>
+        <div className="mfocus-live" aria-live="polite">
+          {liveValue !== null ? (
+            <>
+              <motion.strong layoutId={`mfocus-val-${kind}`}>
+                {liveValue}
+              </motion.strong>
+              <span>{liveUnit}</span>
+            </>
+          ) : (
+            <span className="mfocus-wait">{t("Esperando la lectura…")}</span>
+          )}
+        </div>
+        {kind === "heart_rate" && (
+          <EcgTrace
+            height={84}
+            className="mfocus-pulse"
+          />
+        )}
+        {(kind === "spo2" || kind === "blood_pressure") && <figure className="mfocus-decoration">
+          {kind === "spo2" ? <Spo2Bubbles /> : <BpWave />}
+          <figcaption>{t("Animación decorativa; no representa una señal medida.")}</figcaption>
+        </figure>}
+        <MeasureProgressCard
+          kind={kind}
+          phase={phase}
+          elapsedSec={elapsedSec}
+          queue={queue}
+          bare
+          complete={complete}
+        />
+        <IonButton
+          expand="block"
+          fill="outline"
+          className="bt"
+          onClick={onCancel}
+        >
+          {t("Cancelar")}
+        </IonButton>
+      </LayoutGroup>
     </div>
   );
 }
@@ -181,17 +159,19 @@ export interface MeasureFocusOverlayProps extends MeasureFocusContentProps {
  * Marco Ionic de la vista de foco: el contenido vive en MeasureFocusContent
  * (probable sin montar el stack de overlays) y aquí solo se envuelve en el
  * IonModal de pantalla completa. Cerrar con gesto/fondo equivale a Cancelar
- * si aún mide, o a Cerrar si ya hay resultado.
+ * durante una medición. Los errores se presentan dentro de Reloj.
  */
 export function MeasureFocusOverlay({
   isOpen,
   ...content
 }: MeasureFocusOverlayProps) {
   const running = content.result === null;
+  // Los fallos se recuperan junto a las métricas, nunca en pantalla completa.
+  if (!running) return null;
   return (
     <IonModal
       isOpen={isOpen}
-      onDidDismiss={running ? content.onCancel : content.onClose}
+      onDidDismiss={content.onCancel}
       className="measure-focus-modal"
       data-testid="measure-focus"
     >

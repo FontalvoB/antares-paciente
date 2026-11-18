@@ -93,23 +93,11 @@ describe("MeasureFocusOverlay", () => {
     expect(bar?.getAttribute("aria-valuenow")).toBe("100");
   });
 
-  it("fallo muestra el mensaje con Reintentar y Cerrar", () => {
-    const onRetry = vi.fn();
-    const onClose = vi.fn();
-    render(
-      <MeasureFocusOverlay
-        {...base}
-        isOpen
-        result={{ ok: false, kind: "spo2", message: "Sin señal" }}
-        onRetry={onRetry}
-        onClose={onClose}
-      />,
-    );
-    expect(screen.getByText("Sin señal")).not.toBeNull();
-    fireEvent.click(screen.getByText("Reintentar"));
-    expect(onRetry).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByText("Cerrar"));
-    expect(onClose).toHaveBeenCalledOnce();
+  it("un fallo nunca abre un modal de pantalla completa", () => {
+    render(<MeasureFocusOverlay {...base} isOpen
+      result={{ ok: false, kind: "spo2", message: "Sin señal" }} />);
+    expect(screen.queryByTestId("test-ion-modal")).toBeNull();
+    expect(screen.queryByText("Sin señal")).toBeNull();
   });
 
   it("modo bare de la tarjeta: solo mensaje, % y barra (sin orbe ni pie)", () => {

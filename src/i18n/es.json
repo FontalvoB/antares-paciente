@@ -4060,5 +4060,14 @@
   "Ver medicamentos": "Ver medicamentos",
   "1 tratamiento activo": "1 tratamiento activo",
   "Adicional": "Adicional",
-  "{done} de {total} tomas registradas": "{done} de {total} tomas registradas"
+  "{done} de {total} tomas registradas": "{done} de {total} tomas registradas",
+  "Medición pendiente": "Medición pendiente",
+  "Las lecturas anteriores conservan su fecha original.": "Las lecturas anteriores conservan su fecha original.",
+  "Medir siguiente": "Medir siguiente",
+  "No se pudo enviar la medición al wearable. Comprueba la conexión e inténtalo de nuevo.": "No se pudo enviar la medición al wearable. Comprueba la conexión e inténtalo de nuevo.",
+  "Se perdió la conexión con el wearable.": "Se perdió la conexión con el wearable.",
+  "No recibimos datos del wearable. Comprueba la conexión e inténtalo de nuevo.": "No recibimos datos del wearable. Comprueba la conexión e inténtalo de nuevo.",
+  "El wearable no pudo iniciar esta medición.": "El wearable no pudo iniciar esta medición.",
+  "El wearable no pudo obtener una lectura. Ajusta su posición e inténtalo de nuevo.": "El wearable no pudo obtener una lectura. Ajusta su posición e inténtalo de nuevo.",
+  "No pudimos confirmar una nueva lectura. Inténtalo de nuevo.": "No pudimos confirmar una nueva lectura. Inténtalo de nuevo."
 }

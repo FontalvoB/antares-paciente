@@ -3,10 +3,9 @@ import type { ButtonHTMLAttributes } from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { I18nProvider, useI18n } from '../../../i18n/I18nContext'
 import { NutraceuticLesson } from '../NutraceuticLesson'
-import { MeasureFocusContent } from '../../../components/MeasureFocusOverlay'
+import { WearableMeasurementFeedback } from '../../../components/WearableMeasurementFeedback'
 import { NutritionPlanTab } from '../../../components/nutrition/NutritionPlanTab'
 import { ApiError } from '../../../utils/apiClient'
-import { measurePhase } from '../../../utils/measure'
 
 vi.mock('@ionic/react', async (original) => ({
   ...(await original<typeof import('@ionic/react')>()),
@@ -71,15 +70,18 @@ describe('English care flows', () => {
     expect(screen.getByText(`Logged · ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`)).toBeTruthy()
   })
 
-  it('updates an existing wearable failure dialog when language changes', () => {
-    const result = { ok: false as const, kind: 'heart_rate' as const, message: 'El wearable rechazó esta medición.' }
-    render(<I18nProvider><LanguageSwitch /><MeasureFocusContent kind="heart_rate" phase={measurePhase(0)} elapsedSec={0}
-      liveValue={null} liveUnit="" steps={[]} queue={0} result={result}
-      onCancel={() => {}} onRetry={() => {}} onClose={() => {}} /></I18nProvider>)
+  it('updates an inline wearable recovery notice and its actions when language changes', () => {
+    const result = { ok: false as const, kind: 'heart_rate' as const, message: 'No pudimos confirmar una nueva lectura. Inténtalo de nuevo.' }
+    render(<I18nProvider><LanguageSwitch /><WearableMeasurementFeedback result={result} canMeasure
+      onRetry={() => {}} onNext={() => {}} onClose={() => {}} /></I18nProvider>)
     expect(screen.getByText(result.message)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
-    expect(screen.getByText('The wearable rejected this measurement.')).toBeTruthy()
-    expect(result.message).toBe('El wearable rechazó esta medición.')
+    expect(screen.getByText('We could not confirm a new reading. Try again.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Measure next' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy()
+    expect(screen.queryByText(result.message)).toBeNull()
+    expect(result.message).toBe('No pudimos confirmar una nueva lectura. Inténtalo de nuevo.')
   })
 
   it('provides an English recovery message for an untranslated meal-plan error', () => {
