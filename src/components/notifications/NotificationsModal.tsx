@@ -14,6 +14,7 @@ import {
   checkmarkDoneOutline,
   close,
   flameOutline,
+  medicalOutline,
   notificationsOutline,
   peopleOutline,
   refreshOutline,
@@ -50,6 +51,7 @@ import type { Screen } from "../../types";
 
 /** Destino clínico por prefijo del código de aviso. null = sin navegación. */
 export function resolveNotificationTarget(type: string): Screen | null {
+  if (type === "medication_reminder") return "medications";
   if (type.startsWith("appointment_")) return APPOINTMENTS_ENABLED ? "book" : null;
   if (type.startsWith("hydration_") || type.startsWith("nutrition_"))
     return "nut";
@@ -65,6 +67,7 @@ interface IconTheme {
 
 /** Icono temático + tono pastel según el código del aviso. */
 export function themeForNotification(type: string): IconTheme {
+  if (type === "medication_reminder") return { icon: medicalOutline, tone: "default" };
   if (
     type.startsWith("appointment_video") ||
     type.startsWith("appointment_telemedicina")

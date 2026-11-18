@@ -28,6 +28,7 @@ interface PushRegistrationOptions {
   onOpenChat?: (threadId?: string) => void
   /** Se invoca al tocar una notificación de sala (quien navega resuelve la cita). */
   onOpenRoom?: (appointmentId: string) => void
+  onOpenMedications?: () => void
 }
 
 // Los listeners del plugin se registran una sola vez por sesión; el guard evita
@@ -132,6 +133,10 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
   })
   void PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
     const data = notification.notification?.data as Record<string, unknown> | undefined
+    if (data?.type === 'medication_reminder') {
+      if (getAccessToken()) currentOptions.onOpenMedications?.()
+      return
+    }
     if(!APPOINTMENTS_ENABLED && (isAppointmentNotification(String(data?.type??"")) || ["appointment","book","room"].includes(String(data?.screen??""))))return
     const rawAppointmentId = data?.appointmentId ?? data?.appointment_id
     const appointmentId =

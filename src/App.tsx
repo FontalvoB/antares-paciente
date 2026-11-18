@@ -219,6 +219,7 @@ function Shell() {
         }
         navigate("chat");
       },
+      onOpenMedications: () => navigate("medications"),
       onOpenRoom: (appointmentId) => {
         void openRoomFromPush(appointmentId);
       },

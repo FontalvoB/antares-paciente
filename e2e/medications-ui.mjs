@@ -12,15 +12,28 @@ assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(origin), 'Only local UI hosts are perm
 const userId = '11111111-1111-4111-8111-111111111111';
 const token = 'x.' + Buffer.from(JSON.stringify({ sub: userId, exp: Math.floor(Date.now() / 1000) + 86400 })).toString('base64url') + '.x';
 const browser = await chromium.launch();
-const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto'];
+const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto', 'photo-match', 'photo-mismatch', 'snooze'];
 const results = [];
 
 for (const scenario of scenarios) {
   const english = scenario === 'english';
+  const photo = scenario.startsWith('photo-');
   const page = await browser.newPage({ viewport: { width: 390, height: 900 }, timezoneId: 'America/Bogota', reducedMotion: 'reduce' });
   page.setDefaultTimeout(8000);
   if (scenario === 'legacy-crypto') await page.addInitScript(() => Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true }));
   if (english) await page.addInitScript(() => localStorage.setItem('antares_lang', 'en'));
+  if (photo) await page.addInitScript(matches => {
+    // Solo sustituye el puente nativo. La UI y la comparación de etiquetas son reales.
+    window.Capacitor = {
+      PluginHeaders: [
+        { name: 'Camera', methods: [{ name: 'getPhoto', rtype: 'promise' }] },
+        { name: 'MedicationLabel', methods: [{ name: 'read', rtype: 'promise' }] },
+      ],
+      nativePromise: async plugin => plugin === 'Camera'
+        ? { base64String: 'fixture', format: 'jpeg' }
+        : { text: matches ? 'Tratamiento QA' : 'Otro medicamento' },
+    };
+  }, scenario === 'photo-match');
   const writes = [];
   let failedOnce = false;
   let doseFailedOnce = false;
@@ -39,7 +52,7 @@ for (const scenario of scenarios) {
     if (pathname === '/api/v1/me/capabilities') {
       if (scenario === 'old-server') return reply({}, 404);
       if (scenario === 'capability-error') return reply({}, 503);
-      return reply({ policyVersion: 'medications-v1:1', modules: { medications: { enabled: scenario !== 'disabled', canView: true, canManage: scenario !== 'read-only', canManageAccess: false } } });
+      return reply({ policyVersion: 'medications-v1:1', modules: { medications: { enabled: scenario !== 'disabled', canView: true, canManage: scenario !== 'read-only', canManageAccess: false, canSnooze: scenario === 'snooze' } } });
     }
     if (pathname === '/api/v1/me/medications') return scenario === 'forbidden' ? reply({}, 403) : reply(workspace);
     if (pathname === '/api/v1/me/medications/treatments' && request.method() === 'POST') {
@@ -52,6 +65,10 @@ for (const scenario of scenarios) {
       }
       if (scenario === 'retry' && !failedOnce) { failedOnce = true; return reply({ message: 'SYNTHETIC_PRIVATE_DETAIL' }, 503); }
       return reply(workspace.treatments[0], 201);
+    }
+    if (/\/doses\/[^/]+\/snooze$/.test(pathname)) {
+      writes.push({ kind: 'snooze', body: request.postDataJSON() });
+      return route.fulfill({ status: 204 });
     }
     if (/\/doses\/[^/]+\/events$/.test(pathname)) {
       const body = request.postDataJSON(); writes.push({ kind: 'event', body });
@@ -107,7 +124,7 @@ for (const scenario of scenarios) {
       await modules.scrollIntoViewIfNeeded();
       await modules.screenshot({ path: path.join(output, scenario + '-home-modules.png') });
       await modules.getByRole('button', { name: /Control de medicamentos/ }).click();
-      await expect(page.getByRole('heading', { name: 'Control de medicamentos', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Mi medicación', exact: true })).toBeVisible();
       await verifyHeader();
       await expect(page.getByRole('button', { name: 'Añadir medicamento', exact: true })).toHaveCount(0);
       await nav.getByRole('button', { name: 'Perfil', exact: true }).click();
@@ -116,7 +133,7 @@ for (const scenario of scenarios) {
     } else {
       await expect(page.locator('.hm-modules').getByRole('button', { name: english ? /Medication control/ : /Control de medicamentos/ })).toBeVisible();
       await page.locator('.hm-modules').getByRole('button', { name: english ? /Medication control/ : /Control de medicamentos/ }).click();
-      await expect(page.getByRole('heading', { name: english ? 'Medication control' : 'Control de medicamentos', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { name: english ? 'My medication' : 'Mi medicación', exact: true })).toBeVisible();
       await verifyHeader();
       if (scenario === 'forbidden' || scenario === 'read-only') {
         if (scenario === 'forbidden') await expect(page.getByRole('alert')).toContainText('No tienes acceso');
@@ -140,13 +157,45 @@ for (const scenario of scenarios) {
         assert.equal(writes[0].body.clientRequestId, writes[1].body.clientRequestId, 'Ambiguous save retry must preserve operation ID');
       }
       await expect(page.locator('.medications-dose').filter({ hasText: 'Tratamiento QA' })).toBeVisible();
-      await page.getByRole('button', { name: scenario === 'omitted' ? 'Omitir' : english ? 'Taken' : 'Ya lo tomé', exact: true }).click();
-      if (scenario === 'dose-retry') {
-        await expect(page.getByRole('alert')).toContainText('No pudimos guardar');
-        await page.getByRole('button', { name: 'Ya lo tomé', exact: true }).click();
-        const events = writes.filter(write => write.kind === 'event');
-        assert.equal(events[0].body.clientRequestId, events[1].body.clientRequestId);
-        assert.equal(events[0].body.occurredAt, events[1].body.occurredAt);
+      if (scenario === 'snooze') {
+        await page.getByRole('button', { name: 'Posponer recordatorio', exact: true }).click();
+        await page.getByRole('button', { name: '30 minutos', exact: true }).click();
+        await expect(page.getByRole('button', { name: 'Recordatorio pospuesto', exact: true })).toBeDisabled();
+        const snoozes = writes.filter(write => write.kind === 'snooze');
+        assert.equal(snoozes.length, 1);
+        assert.equal(snoozes[0].body.minutes, 30);
+        assert.equal(snoozes[0].body.scheduledAt, workspace.doses[0].scheduledAt);
+      }
+      if (scenario === 'omitted') {
+        await page.getByRole('button', { name: 'Omitir', exact: true }).click();
+      } else {
+        const dialog = page.locator('ion-modal.medications-capture-modal');
+        await page.getByRole('button', { name: english ? 'Log dose' : 'Registrar toma', exact: true }).click();
+        if (photo) {
+          await dialog.getByRole('button', { name: 'Tomar foto', exact: true }).click();
+          await expect(dialog.getByRole('status')).toContainText(
+            scenario === 'photo-match' ? 'El nombre coincide' : 'No hubo una coincidencia clara',
+          );
+          if (scenario === 'photo-mismatch') {
+            await expect(dialog.getByRole('button', { name: 'Confirmar toma', exact: true })).toHaveCount(0);
+          }
+        }
+        assert.equal(writes.filter(write => write.kind === 'event').length, 0, 'Opening or scanning must not record intake');
+        if (scenario !== 'photo-match') {
+          await dialog.getByRole('button', { name: english ? 'Log manually' : 'Registrar manualmente', exact: true }).click();
+        }
+        if (scenario === 'photo-match') {
+          await dialog.screenshot({ path: path.join(output, 'photo-confirmation.png') });
+        }
+        const confirm = dialog.getByRole('button', { name: english ? 'Confirm intake' : 'Confirmar toma', exact: true });
+        await confirm.click();
+        if (scenario === 'dose-retry') {
+          await expect(dialog.getByRole('alert')).toContainText('No pudimos guardar');
+          await confirm.click();
+          const events = writes.filter(write => write.kind === 'event');
+          assert.equal(events[0].body.clientRequestId, events[1].body.clientRequestId);
+          assert.equal(events[0].body.occurredAt, events[1].body.occurredAt);
+        }
       }
       await expect(page.locator('.medications-dose')).toContainText(scenario === 'omitted' ? 'Omitido' : english ? 'Taken' : 'Tomado');
       await page.locator('ion-segment-button[value="history"]').click();

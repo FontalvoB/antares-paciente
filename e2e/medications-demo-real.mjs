@@ -20,7 +20,7 @@ await expect(page.locator('.wheel')).toBeVisible({timeout:40000});
 await page.locator('.wheel').getByRole('button',{name:'Medicamentos',exact:true}).click();
 await expect(page.locator('.medications-extra')).toContainText('Nutracéutico DEMO');
 const pending=page.locator('.medications-dose-list .medications-dose-pending').first();
-if(await pending.count()){await pending.getByRole('button',{name:'Ya lo tomé',exact:true}).click();await expect(page.locator('.medications-dose-list .medications-dose-taken')).toHaveCount(2);}
+if(await pending.count()){await pending.getByRole('button',{name:'Registrar toma',exact:true}).click();await page.locator('ion-modal.medications-capture-modal').getByRole('button',{name:'Registrar manualmente',exact:true}).click();await page.locator('ion-modal.medications-capture-modal').getByRole('button',{name:'Confirmar toma',exact:true}).click();await expect(page.locator('.medications-dose-list .medications-dose-taken')).toHaveCount(2);}
 await page.screenshot({path:'/tmp/copp-full-local/medication-demo/app-medications.png'});
 await page.getByRole('navigation').getByRole('button',{name:'Inicio',exact:true}).click();
 await page.locator('.hm-day-link').click();

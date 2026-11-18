@@ -5,6 +5,7 @@ export interface MedicationCapability {
   canView: boolean;
   canManage: boolean;
   canManageAccess: boolean;
+  canSnooze?: boolean;
 }
 
 export interface MedicationCapabilities {
@@ -141,6 +142,11 @@ export const createMyMedication = (owner: string, body: CreateMedicationRequest)
 export const recordMyMedicationDose = (owner: string, doseId: string, body: RecordMedicationDoseRequest) =>
   apiFetch<MedicationDose>(`/api/v1/me/medications/doses/${encodeURIComponent(doseId)}/events`, {
     method: "POST", body, expectedUserId: owner,
+  });
+
+export const snoozeMyMedicationDose = (owner: string, dose: MedicationDose, minutes: 15 | 30) =>
+  apiFetch<void>(`/api/v1/me/medications/doses/${encodeURIComponent(dose.id)}/snooze`, {
+    method: "POST", body: { scheduledAt: dose.scheduledAt, minutes }, expectedUserId: owner,
   });
 
 export const setMyMedicationStatus = (owner: string, treatment: MedicationTreatment, status: MedicationStatus) =>
