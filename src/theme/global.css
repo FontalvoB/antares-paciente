@@ -33990,3 +33990,31 @@ ion-card.wearable-measure-feedback {
 .wearable-measure-feedback p { margin: 6px 0; color: var(--wellness-muted); }
 .wearable-measure-feedback-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
 .wearable-measure-feedback-actions ion-button { min-height: 44px; }
+
+
+/* Plan del equipo y registros personales: sin mezclar sus indicadores. */
+.medications-adherence { margin-bottom: 16px; padding: 14px 16px; border: 1px solid var(--wellness-border); border-radius: 16px; background: var(--ice-l); }
+.medications-adherence > div { display: flex; align-items: center; gap: 9px; }
+.medications-adherence > div > strong { flex: 1; color: var(--wellness-navy); font-size: 14px; }
+.medications-adherence > div > ion-icon { color: var(--wellness-success); font-size: 20px; }
+.medications-adherence p, .medications-reported > p { margin: 7px 0 0; color: var(--wellness-muted); font-size: 12px; }
+.medications-adherence .medications-plan-warning { color: var(--wellness-warning); font-weight: 650; }
+.medications-reported { margin-top: 22px; }
+.medications-reported > p { margin-bottom: 12px; }
+
+/* Inventario y reportes del paciente comparten las pautas y el mismo historial. */
+.medications-tabs ion-segment-button { flex:1 1 0;min-width:0;font-size:11px;--padding-start:2px;--padding-end:2px; }
+.medications-stock-card,.medications-effect-card { margin:0 0 12px;border:1px solid var(--wellness-border);border-radius:18px;background:var(--wellness-surface);box-shadow:none; }
+.medications-stock-card ion-card-header,.medications-effect-card ion-card-header { padding:16px 16px 10px; }
+.medications-stock-card ion-card-title,.medications-effect-card ion-card-title { color:var(--wellness-navy);font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.medications-stock-card ion-card-content,.medications-effect-card ion-card-content { padding:0 16px 16px;color:var(--wellness-muted);font-size:12px; }
+.medications-stock-balance,.medications-effect-meta { display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.medications-stock-balance > strong { font-size:20px;color:var(--wellness-navy);font-variant-numeric:tabular-nums; }
+.medications-stock-actions {display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.medications-stock-actions ion-button {margin:0;min-height:44px;font-size:12px;--border-radius:12px;}
+.medications-stock-ledger > div,.medications-effect-note {border-top:1px solid var(--wellness-border);padding:10px 0;display:grid;gap:4px;}
+.medications-stock-ledger strong {color:var(--wellness-navy);font-size:12px;}
+.medications-effect-meta {margin-top:10px;font-size:11px;}
+.medications-effect-note {margin-top:10px;}
+.medications-monitoring-skeleton {height:180px;border-radius:18px;}
+.medications-monitoring-empty,.medications-form-product {font-size:13px;color:var(--wellness-muted);margin-bottom:16px;}
