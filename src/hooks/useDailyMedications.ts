@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMedicationCapabilities } from './useMedicationCapabilities';
-import { fetchMyMedications } from '../utils/medicationsApi';
+import { fetchMyMedications, isRequiredMedication } from '../utils/medicationsApi';
 import { toLocalISODate } from '../utils/dates';
 
 /** Misma consulta y mismos registros que la pantalla de medicamentos. */
@@ -14,9 +14,9 @@ export function useDailyMedications() {
     enabled: Boolean(capability.owner && capability.enabled), retry: false, staleTime: 0,
     refetchOnMount: 'always', refetchOnWindowFocus: 'always',
   });
-  const extras = new Set(query.data?.treatments.filter(t => t.productType === 'supplement').map(t => t.id));
-  const doses = query.data?.doses.filter(d => !extras.has(d.treatmentId)) ?? [];
+  const assigned = new Set(query.data?.treatments.filter(isRequiredMedication).map(t => t.id));
+  const doses = query.data?.doses.filter(d => assigned.has(d.treatmentId) && d.status !== 'cancelled') ?? [];
   return { enabled: capability.enabled, data: query.data, isLoading: query.isLoading, isError: query.isError,
-    scheduled: doses.length, recorded: doses.filter(d => ['taken','omitted'].includes(d.status)).length,
+    scheduled: doses.length, recorded: doses.filter(d => d.status === 'taken').length,
     extras: query.data?.treatments.filter(t => t.productType === 'supplement' && t.status === 'active').length ?? 0 };
 }

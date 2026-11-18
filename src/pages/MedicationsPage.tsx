@@ -11,6 +11,8 @@ import {
   refreshOutline, timeOutline,
 } from "ionicons/icons";
 import { Screen, Scroll } from "../components/Screen";
+import {PatientMedicationInventory} from "../components/medications/PatientMedicationInventory";
+import {PatientMedicationEffects} from "../components/medications/PatientMedicationEffects";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../i18n/I18nContext";
@@ -20,7 +22,7 @@ import { getAccessToken } from "../utils/authApi";
 import { sessionUserId } from "../utils/sessionIdentity";
 import { formatDateForDisplay, toLocalISODate } from "../utils/dates";
 import {
-  createMedicationRequestId, createMyMedication, fetchMyMedications, recordMyMedicationDose, setMyMedicationStatus,
+  createMedicationRequestId, createMyMedication, fetchMyMedications, isRequiredMedication, recordMyMedicationDose, setMyMedicationStatus,
 } from "../utils/medicationsApi";
 import type {
   CreateMedicationRequest, MedicationDose, MedicationProductType, MedicationStatus,
@@ -99,7 +101,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     finally { if (isCurrent()) setBusy(null); }
   };
   const changeStatus = async (treatment: MedicationTreatment, status: MedicationStatus) => {
-    if (!owner || busy || !capabilities.canManage || !isCurrent()) return;
+    if (!owner || busy || !capabilities.canManage || treatment.origin !== "patient_reported" || !isCurrent()) return;
     setBusy(treatment.id); setActionError(null);
     try {
       await setMyMedicationStatus(owner, treatment, status);
@@ -117,7 +119,11 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
   }).format(new Date(value));
 
   const supplementIds = new Set(workspace?.treatments.filter(t => t.productType === "supplement").map(t => t.id));
-  const mainDoses = workspace?.doses.filter(d => !supplementIds.has(d.treatmentId)) ?? [];
+  const assignedIds = new Set(workspace?.treatments.filter(isRequiredMedication).map(t => t.id));
+  const mainDoses = workspace?.doses.filter(d => assignedIds.has(d.treatmentId) && d.status !== "cancelled") ?? [];
+  const reportedDoses = workspace?.doses.filter(d => !assignedIds.has(d.treatmentId) && !supplementIds.has(d.treatmentId)) ?? [];
+  const adherence = workspace?.adherence;
+  const deviating = Boolean(adherence && adherence.offPlanTakenDoses > 0 && adherence.dueDoses > adherence.takenDoses);
   const extraDoses = workspace?.doses.filter(d => supplementIds.has(d.treatmentId)) ?? [];
   const hasExtra = workspace?.treatments.some(t => t.productType === "supplement" && t.status === "active");
   const renderDose = (dose: MedicationDose) => {
@@ -144,27 +150,44 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
       query.isError || !workspace ? <section className="medications-state" role="alert"><IonIcon icon={refreshOutline} aria-hidden="true" /><h2>{t(accessDenied ? "No tienes acceso a este módulo." : "No pudimos cargar tus medicamentos")}</h2>{accessDenied ? <IonButton onClick={() => navigate("prof")}>{t("Ir a mi perfil")}</IonButton> : <IonButton onClick={() => { void query.refetch(); }}>{t("Reintentar")}</IonButton>}</section> :
       adding && owner ? <MedicationForm owner={owner} onCancel={() => setAdding(false)} onSaved={async () => { if (!isCurrent()) return; await refresh(); setAdding(false); setTab("today"); showToast(t("Medicamento guardado"), "ok"); }} onAccessError={() => { void capabilities.refresh(); }} /> : <>
         <div className="medications-topline"><div><span>{t("Tu seguimiento")}</span><strong>{workspace.summary.activeTreatments === 1 ? t("1 tratamiento activo") : t("{count} tratamientos activos", { count: String(workspace.summary.activeTreatments) })}</strong></div>{capabilities.canManage && <IonButton className="medications-add" size="small" onClick={() => setAdding(true)}><IonIcon slot="start" icon={addOutline} />{t("Añadir medicamento")}</IonButton>}</div>
+        {adherence && <section className="medications-adherence" aria-label={t("Adherencia al plan")} aria-live="polite">
+          <div><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" /><strong>{t("Adherencia al plan")}</strong><IonBadge className="medications-badge">{adherence.percent === null ? "—" : `${adherence.percent}%`}</IonBadge></div>
+          <p>{adherence.dueDoses > 0 ? t("{taken} de {total} tomas asignadas", {taken: String(adherence.takenDoses), total: String(adherence.dueDoses)}) : t("Sin tomas asignadas para evaluar")}</p>
+          {deviating && <p className="medications-plan-warning">{t("No estás siguiendo el plan asignado")}</p>}
+        </section>}
         <IonSegment className="medications-tabs" value={tab} onIonChange={event => { setTab(String(event.detail.value ?? "today")); setActionError(null); }} aria-label={t("Secciones de medicamentos")}>
           <IonSegmentButton value="today"><span>{t("Hoy")}</span></IonSegmentButton>
-          <IonSegmentButton value="treatments"><span>{t("Mis medicamentos")}</span></IonSegmentButton>
+          <IonSegmentButton value="treatments"><span>{t("Mi lista")}</span></IonSegmentButton>
+          <IonSegmentButton value="inventory"><span>{t("Inventario")}</span></IonSegmentButton>
+          <IonSegmentButton value="effects"><span>{t("Reportes")}</span></IonSegmentButton>
           <IonSegmentButton value="history"><span>{t("Historial")}</span></IonSegmentButton>
         </IonSegment>
         {actionError && <p role="alert" className="medications-error">{actionError}</p>}
         {tab === "today" && <section className="medications-today" aria-label={t("Dosis de hoy")}>
           <div className="medications-section-heading"><div><IonIcon icon={calendarOutline} aria-hidden="true" /><h2>{t("Hoy")}</h2><span>{formatDateForDisplay(date)}</span></div>{mainDoses.length > 0 && <strong>{mainDoses.filter(d => d.status === "taken").length}/{mainDoses.length}</strong>}</div>
-          {mainDoses.length ? <div className="medications-dose-list">{mainDoses.map(renderDose)}</div> : <section className="medications-state"><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" /><h3>{t("Sin tomas programadas para hoy")}</h3>{workspace.treatments.length === 0 && capabilities.canManage && <IonButton fill="outline" onClick={() => setAdding(true)}>{t("Añadir medicamento")}</IonButton>}</section>}
+          <section aria-label={t("Plan asignado")}>
+            <div className="medications-section-heading"><h2>{t("Plan asignado")}</h2></div>
+            {mainDoses.length ? <div className="medications-dose-list">{mainDoses.map(renderDose)}</div> : <p>{t("Sin tomas asignadas para hoy")}</p>}
+          </section>
+          {reportedDoses.length > 0 && <section className="medications-reported" aria-label={t("Fuera del plan")}>
+            <div className="medications-section-heading"><h2>{t("Fuera del plan")}</h2><IonBadge className="medications-badge">{t("Registrado por ti")}</IonBadge></div>
+            <p>{t("Estas tomas no sustituyen tu plan.")}</p>
+            <div className="medications-extra-list">{reportedDoses.map(renderDose)}</div>
+          </section>}
         {hasExtra && <section className="medications-extra" aria-label={t("Nutracéutico")}><div className="medications-section-heading"><div><IonIcon icon={leafOutline} aria-hidden="true" /><h2>{t("Nutracéutico")}</h2><span>{t("Adicional")}</span></div></div>{extraDoses.length ? <div className="medications-extra-list">{extraDoses.map(renderDose)}</div> : <p>{t("Sin tomas programadas para hoy")}</p>}</section>}
         </section>}
         {tab === "treatments" && <section className="medications-treatment-list" aria-label={t("Mis medicamentos")}>
           {workspace.treatments.length ? workspace.treatments.map(treatment => <article className="medications-treatment" key={treatment.id}>
-            <div className="medications-treatment-heading"><span className={`medications-product-icon medications-product-${treatment.productType}`}><IonIcon icon={treatment.productType === "medication" ? medicalOutline : treatment.productType === "vitamin" ? flaskOutline : leafOutline} aria-hidden="true" /></span><div><h3 title={treatment.name}>{treatment.name}</h3><span>{t(productLabels[treatment.productType])}</span></div><IonBadge className={`medications-badge medications-badge-${treatment.status}`}>{t(treatmentLabels[treatment.status])}</IonBadge></div>
+            <div className="medications-treatment-heading"><span className={`medications-product-icon medications-product-${treatment.productType}`}><IonIcon icon={treatment.productType === "medication" ? medicalOutline : treatment.productType === "vitamin" ? flaskOutline : leafOutline} aria-hidden="true" /></span><div><h3 title={treatment.name}>{treatment.name}</h3><span>{t(isRequiredMedication(treatment) ? "Plan asignado" : treatment.productType === "supplement" ? "Adicional" : "Fuera del plan")}</span></div><IonBadge className={`medications-badge medications-badge-${treatment.status}`}>{t(treatmentLabels[treatment.status])}</IonBadge></div>
             <p className="medications-treatment-dose">{new Intl.NumberFormat(locale).format(treatment.dosage)} {treatment.unit}{treatment.route ? ` · ${treatment.route}` : ""}</p>
             <div className="medications-times"><IonIcon icon={timeOutline} aria-hidden="true" />{treatment.times.join(" · ")}</div>
             {treatment.instructions && <p className="medications-instructions">{treatment.instructions}</p>}
             <div className="medications-treatment-meta"><span>{formatDateForDisplay(treatment.startDate)}{treatment.endDate ? ` — ${formatDateForDisplay(treatment.endDate)}` : ""}</span><span>{t(treatment.origin === "patient_reported" ? "Registrado por ti" : treatment.origin === "staff_recorded" ? "Registrado por tu equipo" : "Registro anterior")}</span></div>
-            {capabilities.canManage && treatment.status !== "completed" && <div className="medications-treatment-actions"><IonButton fill="clear" disabled={Boolean(busy)} onClick={() => void changeStatus(treatment, treatment.status === "paused" ? "active" : "paused")}><IonIcon icon={treatment.status === "paused" ? playOutline : pauseOutline} slot="start" />{t(treatment.status === "paused" ? "Reanudar" : "Pausar")}</IonButton><IonButton fill="clear" disabled={Boolean(busy)} onClick={() => void changeStatus(treatment, "completed")}>{t("Finalizar")}</IonButton></div>}
+            {capabilities.canManage && treatment.origin === "patient_reported" && treatment.status !== "completed" && <div className="medications-treatment-actions"><IonButton fill="clear" disabled={Boolean(busy)} onClick={() => void changeStatus(treatment, treatment.status === "paused" ? "active" : "paused")}><IonIcon icon={treatment.status === "paused" ? playOutline : pauseOutline} slot="start" />{t(treatment.status === "paused" ? "Reanudar" : "Pausar")}</IonButton><IonButton fill="clear" disabled={Boolean(busy)} onClick={() => void changeStatus(treatment, "completed")}>{t("Finalizar")}</IonButton></div>}
           </article>) : <section className="medications-state"><IonIcon icon={medicalOutline} aria-hidden="true" /><h3>{t("Aún no tienes medicamentos registrados")}</h3>{capabilities.canManage && <IonButton onClick={() => setAdding(true)}>{t("Añadir medicamento")}</IonButton>}</section>}
         </section>}
+        {tab === "inventory" && owner && <PatientMedicationInventory owner={owner} canManage={capabilities.canManage}/>}
+        {tab === "effects" && owner && <PatientMedicationEffects owner={owner} canManage={capabilities.canManage} treatments={workspace.treatments}/>}
         {tab === "history" && <section className="medications-history" aria-label={t("Historial de tomas")}>
           {workspace.history.length ? workspace.history.map(event => <article className="medications-history-row" key={event.id}><span className={`medications-history-icon medications-badge-${event.status}`}><IonIcon icon={event.status === "taken" ? checkmarkCircleOutline : closeOutline} aria-hidden="true" /></span><div><h3 title={event.name}>{event.name}</h3><span>{formatDateForDisplay(toLocalISODate(new Date(event.occurredAt)))} · {time(event.occurredAt)}</span>{event.reason && <p>{event.reason}</p>}</div><IonBadge className={`medications-badge medications-badge-${event.status}`}>{t(doseLabels[event.status])}</IonBadge></article>) : <section className="medications-state"><IonIcon icon={timeOutline} aria-hidden="true" /><h3>{t("Tu historial aparecerá aquí")}</h3></section>}
         </section>}
@@ -216,7 +239,7 @@ function MedicationForm({ owner, onCancel, onSaved, onAccessError }: { owner: st
     } finally { if (isCurrent()) setSaving(false); }
   };
   return <section className="medications-form-section">
-    <div className="medications-section-heading"><h2>{t("Registrar medicamento")}</h2><IonButton fill="clear" disabled={saving} onClick={onCancel}>{t("Cancelar")}</IonButton></div>
+    <div className="medications-section-heading"><h2>{t("Añadir fuera del plan")}</h2><IonButton fill="clear" disabled={saving} onClick={onCancel}>{t("Cancelar")}</IonButton></div>
     <form className="medications-form" onSubmit={event => { event.preventDefault(); void save(); }}>
       <IonInput label={t("Nombre del medicamento")} labelPlacement="stacked" value={name} maxlength={200} required disabled={saving} onIonInput={event => setName(event.detail.value ?? "")} autocomplete="off" enterkeyhint="next" />
       <IonSelect label={t("Tipo de producto")} labelPlacement="stacked" value={productType} disabled={saving} interface="popover" onIonChange={event => setProductType(event.detail.value)}>{Object.entries(productLabels).map(([value, label]) => <IonSelectOption key={value} value={value}>{t(label)}</IonSelectOption>)}</IonSelect>

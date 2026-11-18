@@ -120,7 +120,7 @@ for (const scenario of scenarios) {
       await verifyHeader();
       if (scenario === 'forbidden' || scenario === 'read-only') {
         if (scenario === 'forbidden') await expect(page.getByRole('alert')).toContainText('No tienes acceso');
-        else await expect(page.getByText('Sin tomas programadas para hoy', { exact: true })).toBeVisible();
+        else await expect(page.getByText('Sin tomas asignadas para hoy', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Añadir medicamento', exact: true })).toHaveCount(0);
         assert.equal(writes.length, 0);
         await page.screenshot({ path: path.join(output, scenario + '.png') });

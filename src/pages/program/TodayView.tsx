@@ -181,7 +181,7 @@ export function TodayView({
         {medicationDay && <IonButton fill="clear" className="pcard pcard-medications" onClick={onOpenMedications}>
           <span className="pcard-medication-content"><img className="pcard-photo" src={medicationPhoto} alt="" />
           <span className="pcard-panel"><span className="pcard-action-icon"><IonIcon icon={medicalOutline} aria-hidden="true" /></span>
-          <span className="pcard-copy"><strong>{t('Medicamentos')}</strong><small>{medicationDay.isError ? t('No pudimos cargar tus medicamentos') : medicationDay.isLoading ? t('Cargando medicamentos') : medicationDay.scheduled ? t('{done} de {total} tomas registradas', {done:String(medicationDay.recorded), total:String(medicationDay.scheduled)}) : t('Sin tomas programadas para hoy')}</small></span><IonIcon icon={chevronForward} aria-hidden="true" /></span></span>
+          <span className="pcard-copy"><strong>{t('Medicamentos')}</strong><small>{medicationDay.isError ? t('No pudimos cargar tus medicamentos') : medicationDay.isLoading ? t('Cargando medicamentos') : medicationDay.scheduled ? t('{done} de {total} tomas del plan', {done:String(medicationDay.recorded), total:String(medicationDay.scheduled)}) : t('Sin tomas programadas para hoy')}</small></span><IonIcon icon={chevronForward} aria-hidden="true" /></span></span>
         </IonButton>}
 
         {taskList.map((task, i) => {
