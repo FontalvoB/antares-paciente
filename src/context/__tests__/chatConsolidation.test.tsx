@@ -499,8 +499,12 @@ describe("AppContext — consolidación del streaming del asistente", () => {
       vi.mocked(streamChatMessage).mockImplementation(async (_text, thread) => ({ reply: "Sí", threadId: thread, executionId: "tracker-live" }));
       await renderApp("Sí", true);
       for (let index = 0; index < turns; index += 1) {
-        fireEvent.click(screen.getByText("send"));
-        await waitFor(() => expect(mirror.chat.filter(message => message.role === "bot" && message.delivery === "received")).toHaveLength(index + 1));
+        // El stream simulado termina en microtareas. Espera también a que React
+        // aplique el turno completo antes de enviar el siguiente.
+        await act(async () => { fireEvent.click(screen.getByText("send")); });
+        expect(streamChatMessage).toHaveBeenCalledTimes(index + 1);
+        expect(mirror.chat.filter(message => message.role === "bot" && message.delivery === "received"))
+          .toHaveLength(index + 1);
       }
       const localIds = mirror.chat.map(message => message.id);
       fireEvent.click(screen.getByText("toggle chat"));

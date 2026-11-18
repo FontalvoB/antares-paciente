@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "dev": false,
-      "feat/kan-77-camera-dose": false
+      "feat/kan-77-camera-dose": false,
+      "fix/chat-consolidation-test": false
     }
   }
 }
