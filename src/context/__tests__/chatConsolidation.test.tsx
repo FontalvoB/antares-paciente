@@ -121,10 +121,9 @@ function Harness({ message = "hola", withChat = false }: { message?: string; wit
 }
 
 async function renderApp(message?: string, withChat = false) {
-  let view: ReturnType<typeof render>;
   // La sesión simulada y los efectos al cambiar de hilo se completan al montar.
   await act(async () => {
-    view = render(
+    render(
       <I18nProvider>
         <AppProvider>
           <Harness message={message} withChat={withChat} />
@@ -135,7 +134,6 @@ async function renderApp(message?: string, withChat = false) {
   expect(screen.getByTestId("auth-loading").textContent).toBe("false");
   expect(mirror.app?.user.id).toBe("10247381");
   expect(mirror.app?.threadId).toBe("proactive-10247381");
-  return view;
 }
 
 describe("AppContext — consolidación del streaming del asistente", () => {
