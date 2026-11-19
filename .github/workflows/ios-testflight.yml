@@ -114,18 +114,17 @@ jobs:
     # Los PRs solo validan: nunca suben builds (los secretos y el upload
     # ocurren en push/merge a dev o vía workflow_dispatch).
     if: github.event_name != 'pull_request'
-    # El pool arm64 puede agotar la cola sin ejecutar pasos (18/11/2026).
-    # Intel conserva macOS 26 y Xcode 26.6; compila igual el IPA para iPhone.
-    runs-on: macos-26-intel
+    # La imagen xcode-27 es ARM64 e incluye el SDK de iOS 27.
+    runs-on: xcode-27
     timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Xcode 26.6 (fijado para builds reproducibles)
+      - name: Xcode 27.2 (fijado para builds reproducibles)
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "26.6"
+          xcode-version: "27.2"
 
       - name: Ruby 3.4 + Bundler (cache de gems)
         uses: ruby/setup-ruby@v1

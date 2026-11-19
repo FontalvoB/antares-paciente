@@ -24,7 +24,7 @@ archive Release → IPA → upload a App Store Connect.
                                │   npm run release:check (Info.plist)         │
                                │   npm run build  → artefacto dist-web        │
                                │                                              │
-                               │  JOB 2 · testflight (macos-26-intel + Xcode 26.6)  │
+                               │  JOB 2 · testflight (xcode-27 + Xcode 27.2)  │
                                │   ruby 3.4 + bundle (Gemfile.lock)           │
                                │   dist-web → npx cap sync ios                │
                                │   App Store Connect API Key (.p8)            │
@@ -201,7 +201,7 @@ bundle exec fastlane ios signing                 # crea/actualiza cert + profile
 
 ## 7. Uso local (Mac)
 
-Prerrequisitos: Xcode instalado (local: Xcode 27), `bundle install`, y las
+Prerrequisitos: Xcode 27 o posterior instalado, `bundle install`, y las
 variables de entorno (`APP_STORE_CONNECT_*`, `MATCH_PASSWORD`; o el `.p8` en la
 ruta estándar de fastlane). Para no exportarlas a mano, crear `fastlane/.env`
 (ignorado por git):
@@ -244,8 +244,11 @@ El IPA y los dSYMs quedan en `ios/App/output/` (ignorado por git).
   - **push a `dev`** (ignora cambios solo-docs) → validaciones + upload.
   - **PR hacia `dev`** → solo el job de validaciones (sin secretos ni upload).
   - **workflow_dispatch** (manual, con `skip_upload` y `build_number`).
-- Runners fijos (sin `-latest`): `ubuntu-24.04` para validaciones y `macos-26`
-  con **Xcode 26.6** para el build iOS. Node 24 + Ruby 3.4.
+- Runners fijos (sin `-latest`): `ubuntu-24.04` para validaciones y `xcode-27`
+  (ARM64) con **Xcode 27.2** para el build iOS. Node 24 + Ruby 3.4.
+- Desde abril de 2027, App Store Connect exige compilar con el SDK de iOS 27
+  o posterior. Antares conserva iOS 15 como versión mínima.
+  [Requisitos de App Store](https://developer.apple.com/app-store/submitting/)
 - Cachés: `yarn` (setup-node) y gems (ruby/setup-ruby `bundler-cache`).
 - El job `quality` es obligatorio antes de `testflight`; cualquier fallo
   (lint, tests, i18n, release:check, build) **detiene el despliegue**.
@@ -357,7 +360,7 @@ FORCE_SIGNING=true bundle exec fastlane ios signing
 | `Error cloning certificates repo` + `fatal: The empty string is not a valid path`               | `MATCH_GIT_URL` llegó **vacío** (p. ej. variable de repo inexistente): fastlane prioriza la env var aunque sea vacía y pisa el Matchfile. Definir la variable con una URL o no pasarla (el workflow trae fallback)                                                                   |
 | `unable to access ...: The requested URL returned error: 400` al clonar el repo de certificados | `MATCH_GIT_BASIC_AUTHORIZATION` con formato raro (p. ej. un `\n` final del `pbcopy`). El Fastfile quita espacios y acepta tanto `base64('usuario:token')` como el token crudo; si el error persiste, regenerar el valor con `printf 'usuario:PAT' \| base64 \| tr -d '\n' \| pbcopy` |
 | `fatal: Authentication failed` al clonar los certificados                                       | Con la rama interna no debería pasar (GITHUB_TOKEN). Si migraste a un repo privado aparte: verificar que el PAT sea _Fine-grained_ con **Contents: Read** sobre ese repo y que no haya expirado                                                                                      |
-| Cambió el Xcode del runner y falla el build                                                     | El workflow fija `xcode-version: "26.6"` en una imagen `macos-26`; si GitHub retira esa versión, actualizar el pin en el workflow                                                                                                                                                    |
+| Cambió el Xcode del runner y falla el build                                                     | El workflow fija `xcode-version: "27.2"` en la imagen `xcode-27`; si GitHub retira esa versión, actualizar el pin en el workflow                                                                                                                                                    |
 | `Mixing lockfiles` en el log de Yarn                                                            | Ruido por `package-lock.json`/`pnpm-lock.yaml` obsoletos; no rompe el build (recomendado eliminarlos)                                                                                                                                                                                |
 
 ---
@@ -397,10 +400,10 @@ durante 15 minutos. GitHub anotó `The job was not acquired by Runner of type
 hosted even after multiple attempts` y avisos de capacidad del pool macOS
 arm64. No se ejecutó ningún paso de firma o compilación nativa.
 
-Se fija `macos-26-intel`, conservando Xcode 26.6 y el resto del pipeline.
-La arquitectura del host no cambia el destino iOS/arm64 del archive. El lock
-de Bundler incluye x86_64-darwin-25 además de arm64 y ruby. No lanzar otro
-upload en paralelo: se mantiene el grupo de concurrencia existente.
+Se usó `macos-26-intel` con Xcode 26.6 para recuperar capacidad el 18/11/2026.
+La migración a `xcode-27` con Xcode 27.2 vuelve a usar un runner ARM64.
+Si el job falla antes del checkout, revisar la disponibilidad del runner.
+El grupo de concurrencia sigue serializando los uploads.
 
 Referencias oficiales: [runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
-y [imagen Intel con Xcode 26.6](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md).
+y [software instalado en xcode-27](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md).
