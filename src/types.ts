@@ -80,6 +80,7 @@ export interface ChatMessage {
   time: string;
   channel?: "voice" | "text";
   delivery?: "received" | "streaming" | "interrupted" | "failed";
+  retryUnavailable?: boolean;
   providerEventId?: number;
   providerResponseId?: string;
   providerLocalId?: string;
@@ -105,6 +106,7 @@ export interface ChatMessage {
   cta?: ChatSuggestion | null;
   /** Imagen adjunta del remitente (solo burbujas user; vista local). */
   image?: { dataUrl: string } | null;
+  vitaAttachments?: (import("./services/chat/vita-attachments-service").PendingVitaAttachment & { readable?: boolean })[];
   /** Marcador local de adjunto de laboratorio o aviso de indisponibilidad. */
   kind?: "lab-exam" | "lab-exam-pending" | "service-error";
 }

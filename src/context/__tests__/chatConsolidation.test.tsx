@@ -12,7 +12,7 @@ import { AppProvider, useApp } from "../AppContext";
 import { I18nProvider } from "../../i18n/I18nContext";
 import { clearThreadMessages, fetchThreadState, sendChatMessage, streamChatMessage, uploadLabExam } from "../../utils/threadApi";
 import { ChatPage } from "../../pages/ChatPage";
-import { sendChatFeedback } from "../../services/chat/chat-service";
+import { sendChatFeedback, sendChatMessage as sendAttachmentChat } from "../../services/chat/chat-service";
 import { consentFailure, requireLegalConsent } from "../../utils/legalConsents";
 import type { ChatMessage } from "../../types";
 import { voiceMessage } from "../../utils/voiceMessages";
@@ -33,7 +33,9 @@ vi.mock("../../utils/threadApi", () => ({
   streamChatMessage: vi.fn(),
 }));
 vi.mock("../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("../../services/chat/chat-service", async original => ({ ...await original<object>(), sendChatFeedback: vi.fn().mockResolvedValue({ ok: true }) }));
+vi.mock("../../services/chat/chat-service", async original => ({
+  ...await original<object>(), sendChatFeedback: vi.fn().mockResolvedValue({ ok: true }), sendChatMessage: vi.fn(),
+}));
 vi.mock("../../components/Screen", () => ({ Screen: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 // La prueba integra contexto/página/feedback reales; los controles headless evitan
 // errores de CSS de Stencil en happy-dom, sin sustituir sus handlers de negocio.
@@ -137,6 +139,20 @@ async function renderApp(message?: string, withChat = false) {
 }
 
 describe("AppContext — consolidación del streaming del asistente", () => {
+  it("envía el turno con adjuntos por el contrato síncrono y conserva sus avisos", async () => {
+    await renderApp();
+    const file = { attachmentId: "file-1", kind: "pdf" as const, contentType: "application/pdf",
+      name: "fixture.pdf", sizeBytes: 10, pageCount: 1, expiresAt: "2099-02-01T00:00:00Z" };
+    vi.mocked(sendAttachmentChat).mockResolvedValueOnce({
+      threadId: mirror.app!.threadId, reply: "Vita respondió.",
+      attachments: [{ attachmentId: file.attachmentId, kind: "pdf", readable: false }],
+    });
+    act(() => mirror.app!.sendChat("Revisa el documento", undefined, [file]));
+    await waitFor(() => expect(mirror.chat.at(-1)?.vitaAttachments).toEqual([{ ...file, readable: false }]));
+    expect(sendAttachmentChat).toHaveBeenCalledWith("Revisa el documento", mirror.app!.threadId, "es", [file.attachmentId], expect.any(AbortSignal));
+    expect(streamChatMessage).not.toHaveBeenCalled();
+    expect(mirror.chat.at(-1)?.text).toBe("Vita respondió.");
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(streamChatMessage).mockReset();
@@ -237,7 +253,7 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     await renderApp(undefined, true);
     let finish!: (value: any) => void;
     vi.mocked(uploadLabExam).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
-    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(["synthetic"], "fixture.pdf", { type: "application/pdf" })] } });
+    fireEvent.change(document.querySelector('input[aria-label="Examen de laboratorio"]')!, { target: { files: [new File(["synthetic"], "fixture.pdf", { type: "application/pdf" })] } });
     await waitFor(() => expect(finish).toBeTypeOf("function"));
     await act(async () => { await mirror.app!.clearChat(); });
     await act(async () => finish({ verificationStatus: "pending_review" }));

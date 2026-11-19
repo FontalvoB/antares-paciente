@@ -6,7 +6,10 @@ import {
   IonToast,
   IonBadge,
   IonButton,
+  IonChip,
   IonIcon,
+  IonNote,
+  IonProgressBar,
   IonTextarea,
   IonSpinner,
   IonSkeletonText,
@@ -40,11 +43,16 @@ import { Screen } from "../components/Screen";
 import vitaPortrait from "../assets/vita-coach.png";
 import { ChatRichText } from "../components/ChatRichText";
 import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
+import { ArchiveVitaAttachmentModal } from "../components/chat/ArchiveVitaAttachmentModal";
 import { useApp } from "../context/AppContext";
+import { useVitaAttachmentDraft } from "../hooks/useVitaAttachmentDraft";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
-import { captureChatImage } from "../services/media/camera-service";
+import { captureChatImage, dataUrlToBlob } from "../services/media/camera-service";
+import { VITA_ATTACHMENT_LIMIT, VITA_FILE_ACCEPT } from "../services/chat/vita-attachments-service";
+import type { PendingVitaAttachment } from "../services/chat/vita-attachments-service";
 import { localizedError } from "../utils/localizedError";
+import { queryClient } from "../utils/queryClient";
 import {
   canShowChatAction,
   chatTextForDisplay,
@@ -104,13 +112,9 @@ export function ChatPage() {
   const [uploading, setUploading] = useState(false);
   // Progressive disclosure del compositor (+): hoja de acciones de adjuntos.
   const [attachSheetOpen, setAttachSheetOpen] = useState(false);
-  // Imagen conversacional pendiente (agente-asistente-citas D3): miniatura
-  // removible en el compositor; viaja con el próximo mensaje como multimodal.
-  const [pendingImage, setPendingImage] = useState<{
-    base64: string;
-    mimeType: string;
-    dataUrl: string;
-  } | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<{ file: PendingVitaAttachment; scope: string } | null>(null);
+  const [archivedIds, setArchivedIds] = useState<Set<string>>(() => new Set());
+  const [archiveSuccess, setArchiveSuccess] = useState(false);
   // Paginación server-driven: `hasMore`/`nextCursor` los define el backend y
   // `loadingMore` cubre la carga del tramo anterior al llegar al tope.
   const [hasMore, setHasMore] = useState(false);
@@ -127,6 +131,7 @@ export function ChatPage() {
   const [newMessages, setNewMessages] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const labFileInputRef = useRef<HTMLInputElement>(null);
   // Posición del scroll previa a insertar mensajes por encima: permite
   // compensar el scrollTop y que el contenido visible no salte.
   const anchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(
@@ -143,6 +148,11 @@ export function ChatPage() {
   const historyScope = `${userId}\0${threadId}`;
   const historyScopeRef = useRef(historyScope);
   historyScopeRef.current = historyScope;
+  const attachmentScope = `${historyScope}\0${chatHistoryEpoch}`;
+  const attachmentScopeRef = useRef(attachmentScope);
+  attachmentScopeRef.current = attachmentScope;
+  const draft = useVitaAttachmentDraft(threadId, attachmentScope, captureChatGuard);
+  const composerBusy = uploading || draft.phase !== null;
   const paginationController = useRef<AbortController | null>(null);
   const hydrateRef = useRef(hydrateChat);
   hydrateRef.current = hydrateChat;
@@ -261,7 +271,8 @@ export function ChatPage() {
     setLoadingMore(false);
     setOlderHistoryError(false);
     setNewMessages(false); nearEnd.current = true;
-    setText(""); setPendingImage(null); setUploading(false); setAttachSheetOpen(false);
+    setText(""); setUploading(false); setAttachSheetOpen(false);
+    setArchiveTarget(null); setArchivedIds(new Set()); setArchiveSuccess(false);
     anchorRef.current = null;
     // Un prepend en vuelo del hilo anterior quedará descartado: se libera la
     // marca para que el próximo mensaje del hilo nuevo vuelva a scrollear.
@@ -371,44 +382,43 @@ export function ChatPage() {
     displayText: message.role === "user" ? message.text : appointmentLinksForDisplay(chatTextForDisplay(message.text)),
     visibleCta: message.cta && (APPOINTMENTS_ENABLED || !isAppointmentAction(message.cta.type, message.cta.ctaText)) && canShowChatAction(message.cta.type, message.cta.ctaText)
       ? message.cta : null,
-  })).filter((message) => !message.text || message.displayText.trim() || message.image || message.visibleCta);
+  })).filter((message) => !message.text || message.displayText.trim() || message.image || message.visibleCta || message.vitaAttachments?.length);
 
   const send = (msg = text) => {
-    if (uploading || chatGenerating || chatClearing) return;
-    const v = msg.trim();
+    if (composerBusy || chatGenerating || chatClearing) return;
+    const v = msg.trim() || (draft.files.length ? t("Ayúdame a entender estos archivos.") : "");
     if (!v) return;
+    const files = draft.take();
+    if (!files) return;
     nearEnd.current = true; setNewMessages(false);
-    sendChat(v, pendingImage ?? undefined);
-    setPendingImage(null);
+    if (files.length) sendChat(v, undefined, files);
+    else sendChat(v, undefined);
     setText("");
   };
 
-  /**
-   * Adjunto conversacional desde el ActionSheet del compositor (+).
-   * REUTILIZA `captureChatImage` (una sola configuración de captura: Base64
-   * q75, ancho 1280, orientación corregida) para mantener el payload
-   * multimodal en el presupuesto del backend; la fuente (cámara o galería)
-   * la elige la hoja de acciones del propio chat. Cancelación o permiso
-   * denegado → silencioso (nunca rompe el compositor).
-   */
-  const attachFromSource = async (source: CameraSource) => {
-    if (uploading || chatClearing) return;
-    const current = captureChatGuard?.();
-    try {
+  const attachFromSource = (source: CameraSource) => {
+    if (composerBusy || chatClearing || chatGenerating) return;
+    void draft.attach(async () => {
       const photo = await captureChatImage(source, lang);
-      if (photo && (!current || current())) setPendingImage(photo);
-    } catch {
-      // El usuario canceló: no mostrar ruido.
-    }
+      if (!photo) return null;
+      const extension = photo.mimeType === "image/png" ? "png" : "jpg";
+      return new File([dataUrlToBlob(photo.dataUrl)], `${t("Foto adjunta")}.${extension}`, { type: photo.mimeType });
+    });
   };
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0];
+    e.currentTarget.value = "";
+    if (file && !composerBusy && !chatClearing && !chatGenerating) void draft.attach(() => file);
+  };
+
+  const handleLabFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (labFileInputRef.current) {
+      labFileInputRef.current.value = "";
     }
     if (!file) return;
-    if (chatClearing) return;
+    if (composerBusy || chatClearing || chatGenerating) return;
     const current = captureChatGuard?.();
 
     if (file.size > 20 * 1024 * 1024) {
@@ -460,7 +470,7 @@ export function ChatPage() {
 
   const isEmpty = !chat.length || chat.every(message => message.id === "welcome");
   const quickActions = <div className={`chat-quick-actions${isEmpty ? " is-empty" : ""}`} aria-label={t("Acciones rápidas del chat")}>
-    {quick.filter(([label]) => canShowChatAction("", label)).map(([label, question, icon]) => <IonButton key={label} fill="clear" className="chat-quick-action" disabled={chatClearing || chatGenerating || uploading} onClick={() => send(t(question))}>
+    {quick.filter(([label]) => canShowChatAction("", label)).map(([label, question, icon]) => <IonButton key={label} fill="clear" className="chat-quick-action" disabled={chatClearing || chatGenerating || composerBusy} onClick={() => send(t(question))}>
       <span className="chat-quick-content"><span className="chat-quick-icon" aria-hidden="true"><IonIcon icon={icon} /></span><span>{t(label)}</span></span>
     </IonButton>)}
   </div>;
@@ -565,10 +575,23 @@ export function ChatPage() {
                     }}
                   />
                 )}
+                {isUser && m.vitaAttachments?.map(file => <IonChip key={file.attachmentId} className="vita-file-chip">
+                  <IonIcon icon={documentOutline} aria-hidden="true" />
+                  <span>{file.name}</span>
+                </IonChip>)}
                 {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Paciente") }) : m.displayText} />}
+                {m.role === "bot" && m.vitaAttachments?.map(file => <div className="vita-archive-action" key={file.attachmentId}>
+                  <span className="vita-archive-filename">{file.name}</span>
+                  {file.readable === false && <IonNote role="status" color="warning">{t("Vita no pudo leer el contenido de este adjunto.")}</IonNote>}
+                  {archivedIds.has(file.attachmentId)
+                    ? <IonButton fill="clear" expand="block" onClick={() => navigate("hc")}>{t("Ver mi historia")}</IonButton>
+                    : <IonButton fill="outline" expand="block" disabled={chatClearing} onClick={() => setArchiveTarget({ file, scope: attachmentScope })}>
+                      {t("Guardar en mi expediente")}
+                    </IonButton>}
+                </div>)}
                 {!m.text && m.delivery === "streaming" && <IonSpinner name="dots" aria-label={t("Preparando tu respuesta…")} />}
                 {m.delivery === "interrupted" && <p className="vita-delivery">{t("Respuesta interrumpida")}</p>}
-                {(m.delivery === "failed" || m.delivery === "interrupted") && m.channel !== "voice" && m.id === [...chat].reverse().find(message => message.role === "bot" && message.channel !== "voice")?.id && <IonButton fill="clear" disabled={chatGenerating} onClick={retryChat}>{t("Reintentar respuesta")}</IonButton>}
+                {(m.delivery === "failed" || m.delivery === "interrupted") && !m.retryUnavailable && m.channel !== "voice" && m.id === [...chat].reverse().find(message => message.role === "bot" && message.channel !== "voice")?.id && <IonButton fill="clear" disabled={chatGenerating} onClick={retryChat}>{t("Reintentar respuesta")}</IonButton>}
                 {m.role === "alert" && (
                   <IonButton
                     expand="block"
@@ -648,28 +671,30 @@ export function ChatPage() {
         <div ref={end} />
       </div>
       {newMessages && <IonButton className="vita-new-messages" fill="solid" onClick={() => { nearEnd.current = true; setNewMessages(false); end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }}>{t("Ver mensajes nuevos")}</IonButton>}
-      {pendingImage && (
-        // Miniatura removible del adjunto pendiente (D3): preview + descarte,
-        // sobre el composer (patrón ChatGPT) para que el adjunto se vea
-        // junto al mensaje que lo llevará.
-        <div
-          className="chat-pending-image"
-          role="status"
-          aria-label={t("Imagen lista para enviar")}
-        >
-          <img src={pendingImage.dataUrl} alt={t("Imagen adjunta")} />
-          <span>{t("Imagen lista para enviar")}</span>
-          <IonButton
-            size="small"
-            fill="clear"
-            className="chat-pending-remove"
-            aria-label={t("Quitar imagen adjunta")}
-            onClick={() => setPendingImage(null)}
-          >
-            <IonIcon icon={closeCircle} style={{ fontSize: 22 }} />
-          </IonButton>
+      <div className={`vita-draft${draft.files.length || draft.phase === "uploading" || draft.error ? " vita-draft-active" : ""}`}>
+        <div role="status" aria-live="polite">
+          {draft.phase === "uploading" && t("Subiendo adjunto a Vita…")}
+          {draft.phase === "removing" && t("Quitando adjunto…")}
+          {!draft.phase && (draft.files.length === VITA_ATTACHMENT_LIMIT
+            ? t("Ya tienes el máximo de adjuntos para este mensaje.")
+            : draft.files.length > 0 && t("Los adjuntos se usan temporalmente en el chat. Tú decides si los guardas en tu expediente."))}
         </div>
-      )}
+        <IonNote aria-live="assertive" color="danger">{draft.error}</IonNote>
+        {draft.phase === "uploading" && <>
+          <IonProgressBar type="indeterminate" aria-hidden="true" />
+          <IonButton fill="clear" onClick={draft.cancelUpload}>{t("Cancelar carga")}</IonButton>
+        </>}
+        <div className="vita-draft-files">
+          {draft.files.map(file => <IonChip className="vita-file-chip" key={file.attachmentId}>
+            <IonIcon icon={documentOutline} aria-hidden="true" />
+            <span>{file.name}</span>
+            <IonButton fill="clear" disabled={composerBusy || chatClearing} aria-label={t("Quitar adjunto: {name}", { name: file.name })}
+              onClick={() => void draft.remove(file.attachmentId)}>
+              <IonIcon slot="icon-only" icon={closeCircle} aria-hidden="true" />
+            </IonButton>
+          </IonChip>)}
+        </div>
+      </div>
       {/* Compositor ChatGPT-style: [+ adjuntos] [voz] [entrada] [enviar].
           El + abre la hoja de acciones (progressive disclosure) con las
           fuentes de adjuntos; los mismos handlers subyacentes. */}
@@ -677,14 +702,17 @@ export function ChatPage() {
         <input
           type="file"
           ref={fileInputRef}
-          accept="image/jpeg,image/png,application/pdf"
+          accept={VITA_FILE_ACCEPT}
+          aria-label={t("Archivo para el chat")}
           style={{ display: "none" }}
           onChange={handleFileSelected}
         />
+        <input type="file" ref={labFileInputRef} accept="image/jpeg,image/png,application/pdf"
+          aria-label={t("Examen de laboratorio")} style={{ display: "none" }} onChange={handleLabFileSelected} />
         <IonButton
           className="bt bt-round chat-plus"
           aria-label={t("Adjuntar al chat")}
-          disabled={uploading || chatClearing}
+          disabled={composerBusy || chatClearing || chatGenerating}
           onClick={() => setAttachSheetOpen(true)}
         >
           <IonIcon icon={attachOutline} style={{ fontSize: 22 }} />
@@ -692,7 +720,7 @@ export function ChatPage() {
         <IonButton
           className="bt bt-round chat-voice"
           aria-label={t("Agente de voz")}
-          disabled={uploading || chatClearing}
+          disabled={composerBusy || chatClearing}
           onClick={openVoice}
         >
           <IonIcon icon={mic} style={{ fontSize: 20 }} />
@@ -717,7 +745,7 @@ export function ChatPage() {
           <IonButton
             className="bt bt-round chat-send"
             aria-label={chatGenerating ? t("Detener respuesta") : t("Enviar")}
-            disabled={chatClearing || uploading || (!chatGenerating && !text.trim() && !pendingImage)}
+            disabled={chatClearing || composerBusy || (!chatGenerating && !text.trim() && !draft.files.length)}
             onClick={() => chatGenerating ? cancelChat() : send()}
           >
             <IonIcon icon={chatGenerating ? stopIcon : sendIcon} style={{ fontSize: 20 }} />
@@ -733,25 +761,44 @@ export function ChatPage() {
         message={t("No pudimos confirmar el cierre de la llamada o el borrado en el servidor. Reintenta para comprobar y completar la limpieza.")}
         buttons={[{ text: t("Cancelar"), role: "cancel" }, { text: t("Reintentar"), role: "retry" }]} />
       <IonToast isOpen={clearSuccess} message={t("Conversación limpiada")} duration={2600} onDidDismiss={() => setClearSuccess(false)} />
+      <IonToast isOpen={archiveSuccess} message={t("Documento guardado en tu expediente.")} color="success"
+        duration={3200} onDidDismiss={() => setArchiveSuccess(false)} />
+      {archiveTarget?.scope === attachmentScope && !chatClearing && (
+        <ArchiveVitaAttachmentModal key={archiveTarget.file.attachmentId} attachment={archiveTarget.file} onCancel={() => setArchiveTarget(null)}
+          onSaved={document => {
+            if (attachmentScopeRef.current !== attachmentScope) return;
+            setArchivedIds(previous => new Set([...previous, document.attachmentId]));
+            setArchiveTarget(null);
+            setArchiveSuccess(true);
+            void queryClient.invalidateQueries({ queryKey: ["my-documents", user.id] });
+          }} />
+      )}
       <IonActionSheet
         isOpen={attachSheetOpen}
         onDidDismiss={() => setAttachSheetOpen(false)}
         header={t("Adjuntar al chat")}
         buttons={[
+          ...(draft.files.length < VITA_ATTACHMENT_LIMIT ? [
+            {
+              text: t("Tomar foto"),
+              icon: cameraOutline,
+              handler: () => attachFromSource(CameraSource.Camera),
+            },
+            {
+              text: t("Fotos"),
+              icon: imagesOutline,
+              handler: () => attachFromSource(CameraSource.Photos),
+            },
+            {
+              text: t("Archivo"),
+              icon: documentOutline,
+              handler: () => fileInputRef.current?.click(),
+            },
+          ] : []),
           {
-            text: t("Tomar foto"),
-            icon: cameraOutline,
-            handler: () => void attachFromSource(CameraSource.Camera),
-          },
-          {
-            text: t("Fotos"),
-            icon: imagesOutline,
-            handler: () => void attachFromSource(CameraSource.Photos),
-          },
-          {
-            text: t("Archivo"),
-            icon: documentOutline,
-            handler: () => fileInputRef.current?.click(),
+            text: t("Examen de laboratorio"),
+            icon: pulseOutline,
+            handler: () => labFileInputRef.current?.click(),
           },
           { text: t("Cancelar"), role: "cancel" as const },
         ]}

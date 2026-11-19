@@ -13,6 +13,8 @@ interface ImportMetaEnv {
   readonly VITE_PROGRAM_API_ENABLED?: string;
   /** Solo "true" restaura los accesos de Nutrición dentro del chat. */
   readonly VITE_CHAT_NUTRITION_ENABLED?: string;
+  /** Tipo clínico general para archivar adjuntos Vita con JWT app. */
+  readonly VITE_VITA_GENERAL_DOCUMENT_TYPE_ID?: string;
   /** `"true"` habilita las herramientas de dev en un build de pruebas (`sync:dev`). */
   readonly VITE_DEV_TOOLS?: string;
 }

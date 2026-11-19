@@ -169,7 +169,7 @@ function resolveUrl(path: string): string {
  * Authenticated fetch to the backend API.
  *
  * @param path - API path (e.g., '/api/v1/program/me/snapshot')
- * @param options - Fetch options with body auto-serialized to JSON
+ * @param options - Fetch options with a FormData body or a value serialized as JSON
  * @returns Parsed JSON response (or null for 204)
  * @throws ApiError on any failure
  */
@@ -194,7 +194,8 @@ export async function apiFetch<T>(
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  if (body !== undefined) {
+  const multipart = body instanceof FormData;
+  if (body !== undefined && !multipart) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -210,11 +211,12 @@ export async function apiFetch<T>(
 
   try {
     assertAccount();
+    const requestBody = multipart ? body : body !== undefined ? JSON.stringify(body) : undefined;
     const res = await fetch(url, {
       ...rest,
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: requestBody,
       credentials: "include",
       signal,
     });
@@ -279,7 +281,7 @@ export async function apiFetch<T>(
         ...rest,
         method,
         headers: retryHeaders,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: requestBody,
         credentials: "include",
         signal: retrySignal,
       });

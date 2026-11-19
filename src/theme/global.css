@@ -34398,3 +34398,117 @@ ion-card.wearable-measure-feedback {
     grid-template-columns: 1fr;
   }
 }
+
+.vita-draft {
+  color: var(--tx);
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.vita-draft-active {
+  padding: 6px 14px 0;
+}
+
+.vita-draft > ion-progress-bar {
+  margin-top: 6px;
+}
+
+.vita-draft > ion-note {
+  display: block;
+}
+
+.vita-draft-files {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  max-height: 104px;
+  overflow-y: auto;
+}
+
+ion-chip.vita-file-chip {
+  max-width: 100%;
+  min-height: 32px;
+  height: auto;
+  margin: 2px 0;
+  cursor: default;
+}
+
+.bub-usr ion-chip.vita-file-chip {
+  display: flex;
+  margin-bottom: 6px;
+  background: var(--g1);
+  color: var(--navy);
+}
+
+.vita-file-chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vita-file-chip > ion-icon {
+  flex: 0 0 auto;
+}
+
+.vita-file-chip > ion-button {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0 -10px 0 0;
+}
+
+.vita-archive-action {
+  border-top: 1px solid var(--bd);
+  margin-top: 10px;
+  padding-top: 8px;
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+
+.vita-archive-filename {
+  font-size: 12px;
+}
+
+.vita-archive-action ion-note,
+.vita-archive-form ion-note {
+  display: block;
+}
+
+.vita-archive-action ion-button,
+.vita-draft > ion-button,
+.vita-archive-form ion-button {
+  min-height: 44px;
+  white-space: normal;
+}
+
+ion-modal.vita-archive-modal {
+  --width: min(100%, 440px);
+  --height: min(100%, 420px);
+  --border-radius: var(--radius-lg);
+}
+
+ion-modal.vita-archive-modal ion-title {
+  padding-inline: 16px;
+}
+
+.vita-archive-form {
+  display: grid;
+  gap: 8px;
+  color: var(--tx);
+  font-size: 14px;
+}
+
+.vita-archive-form p {
+  margin: 0;
+}
+
+.vita-archive-form ion-input,
+.vita-archive-form ion-select {
+  min-height: 52px;
+}
+
+.vita-archive-progress {
+  min-height: 0;
+}

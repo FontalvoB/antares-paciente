@@ -113,6 +113,18 @@ describe("sendChatMessage — POST /api/v1/chat", () => {
     expect(apiFetchMock).not.toHaveBeenCalled();
   });
 
+  it("envía attachmentIds junto con supportsVita y conserva la legibilidad por adjunto", async () => {
+    const attachments = [{ attachmentId: "file-1", kind: "pdf", readable: false }];
+    apiFetchMock.mockResolvedValue({ reply: "I could not read this file.", threadId: "thread-1", attachments });
+    const signal = new AbortController().signal;
+    const result = await sendChatMessage("Read this", "thread-1", "en", ["file-1"], signal);
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/v1/chat", expect.objectContaining({
+      method: "POST", signal,
+      body: { message: "Read this", threadId: "thread-1", language: "en", supportsVita: true, attachmentIds: ["file-1"] },
+    }));
+    expect(result.attachments).toEqual(attachments);
+  });
+
   it("502 indisponibilidad del AI Service → mensaje amigable", async () => {
     apiFetchMock.mockRejectedValue(
       new ApiError({ message: "Bad Gateway", status: 502 }),

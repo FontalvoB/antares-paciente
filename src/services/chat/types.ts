@@ -12,6 +12,8 @@
 import type { HistoryMessage } from "../../utils/chatHistory";
 import type { ThreadHistoryMetadata } from "../../utils/threadHistoryMetadata";
 import type { ChatSuggestion as SharedChatSuggestion } from "../../types";
+import type { VitaAttachmentReading } from "./vita-attachments-service";
+import type { VitaAction } from "../../utils/vitaActions";
 
 /** Mensaje individual del historial del thread (rol user | bot). */
 export interface ChatMessage extends HistoryMessage {
@@ -28,6 +30,10 @@ export interface ChatResult {
   threadId: string;
   executionId?: string;
   agent?: string;
+  /** Respuesta canónica del evento SSE, si el servidor la emite. */
+  answer?: string | null;
+  actions?: VitaAction[];
+  attachments?: VitaAttachmentReading[] | null;
   /** Sugerencias de acción del bot. Ausente = sin sugerencia. */
   suggestions?: ChatSuggestion[] | null;
 }

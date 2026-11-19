@@ -7,14 +7,23 @@ import { ChatPage } from "../ChatPage";
 import { fetchThreadState, uploadLabExam } from "../../utils/threadApi";
 import { captureChatImage } from "../../services/media/camera-service";
 import { sendChatFeedback } from "../../services/chat/chat-service";
+import { deleteVitaAttachment, uploadVitaAttachment, VITA_FILE_ACCEPT } from "../../services/chat/vita-attachments-service";
+import { ApiError } from "../../utils/apiClient";
 
 vi.mock("../../utils/threadApi", () => ({
   fetchThreadState: vi.fn().mockResolvedValue(null),
   uploadLabExam: vi.fn(),
 }));
 
-vi.mock("../../services/media/camera-service", () => ({
+vi.mock("../../services/media/camera-service", async original => ({
+  ...await original<object>(),
   captureChatImage: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock("../../services/chat/vita-attachments-service", async original => ({
+  ...await original<object>(),
+  uploadVitaAttachment: vi.fn(),
+  deleteVitaAttachment: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("../../services/chat/chat-service", () => ({
@@ -101,7 +110,10 @@ vi.mock("../../context/AppContext", () => ({
 
 vi.mock("../../i18n/I18nContext", async () => {
   const { default: english } = await import("../../i18n/en.json");
-  const t = (key: string) => mockState.lang === "en" ? (english as Record<string, string>)[key] ?? key : key;
+  const t = (key: string, params?: Record<string, string>) => {
+    const value = mockState.lang === "en" ? (english as Record<string, string>)[key] ?? key : key;
+    return value.replace(/\{(\w+)\}/g, (token, name) => params?.[name] ?? token);
+  };
   return { useT: () => t, useI18n: () => ({ t, lang: mockState.lang }) };
 });
 
@@ -229,14 +241,14 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
       'input[type="file"]',
     ) as HTMLInputElement;
     expect(fileInput).toBeTruthy();
-    expect(fileInput.accept).toBe("image/jpeg,image/png,application/pdf");
+    expect(fileInput.accept).toBe(VITA_FILE_ACCEPT);
     expect(fileInput.style.display).toBe("none");
   });
 
   it("rejects file larger than 20 MB with a toast warning", async () => {
     const { container } = render(<ChatPage />);
     const fileInput = container.querySelector(
-      'input[type="file"]',
+      'input[aria-label="Examen de laboratorio"]',
     ) as HTMLInputElement;
 
     const oversizedFile = new File(["dummy"], "large_scan.pdf", {
@@ -258,7 +270,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
   it("rejects unsupported file format with a toast warning", async () => {
     const { container } = render(<ChatPage />);
     const fileInput = container.querySelector(
-      'input[type="file"]',
+      'input[aria-label="Examen de laboratorio"]',
     ) as HTMLInputElement;
 
     const unsupportedFile = new File(["dummy"], "results.docx", {
@@ -285,7 +297,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
 
     const { container } = render(<ChatPage />);
     const fileInput = container.querySelector(
-      'input[type="file"]',
+      'input[aria-label="Lab test"]',
     ) as HTMLInputElement;
 
     const validFile = new File(["sample content"], "exam_results.pdf", {
@@ -322,7 +334,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
       extractedMetrics: [{ metricName: "Glucosa", metricCode: "glucose_fasting", value: 95, source: "ocr_unverified" }],
     });
     const { container } = render(<ChatPage />);
-    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(["result"], "exam.pdf", { type: "application/pdf" })] } });
+    fireEvent.change(container.querySelector('input[aria-label="Examen de laboratorio"]')!, { target: { files: [new File(["result"], "exam.pdf", { type: "application/pdf" })] } });
     await waitFor(() => expect(appendChatMessagesMock).toHaveBeenCalledWith([
       { role: "user", text: "📄 exam.pdf" },
       { role: "bot", text: "Documento guardado. Los valores detectados están pendientes de verificación y no se han añadido a tus mediciones. Tu equipo puede revisar el archivo original.", kind: "lab-exam-pending" },
@@ -336,7 +348,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
 
     const { container } = render(<ChatPage />);
     const fileInput = container.querySelector(
-      'input[type="file"]',
+      'input[aria-label="Examen de laboratorio"]',
     ) as HTMLInputElement;
 
     const validFile = new File(["sample content"], "exam_results.pdf", {
@@ -359,7 +371,7 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
     mockState.lang = "en";
     vi.mocked(uploadLabExam).mockRejectedValueOnce(new Error("El servicio de IA no pudo procesar el examen de laboratorio."));
     const { container } = render(<ChatPage />);
-    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(["result"], "exam.pdf", { type: "application/pdf" })] } });
+    fireEvent.change(container.querySelector('input[aria-label="Lab test"]')!, { target: { files: [new File(["result"], "exam.pdf", { type: "application/pdf" })] } });
     await waitFor(() => expect(showToastMock).toHaveBeenCalledWith("The AI service could not process the lab test.", "err"));
   });
 
@@ -415,7 +427,16 @@ describe("ChatPage — Lab Exam Upload Integration", () => {
   });
 });
 
-describe("ChatPage — CTA de agendamiento y imagen conversacional (REQ-AG-02/03)", () => {
+const vitaUpload = {
+  attachmentId: "vita-1",
+  kind: "image" as const,
+  contentType: "image/jpeg",
+  sizeBytes: 6,
+  pageCount: null,
+  expiresAt: "2099-02-01T00:00:00Z",
+};
+
+describe("ChatPage — CTA y adjuntos efímeros", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockState.lang = "es";
@@ -448,59 +469,47 @@ describe("ChatPage — CTA de agendamiento y imagen conversacional (REQ-AG-02/03
     expect(screen.queryByLabelText("Agenda tu cita aquí")).toBeNull();
   });
 
-  it("captura imagen con cámara: miniatura en el compositor y envío con adjunto", async () => {
+  it("sube una foto de la cámara, muestra el chip y envía sus metadatos", async () => {
+    vi.mocked(uploadVitaAttachment).mockResolvedValueOnce(vitaUpload);
     vi.mocked(captureChatImage).mockResolvedValueOnce({
       base64: "aW1hZ2Vu",
       mimeType: "image/jpeg",
       dataUrl: "data:image/jpeg;base64,aW1hZ2Vu",
     });
 
-    const { container } = render(<ChatPage />);
+    render(<ChatPage />);
 
     // [+] → ActionSheet → Tomar foto (flujo real del composer rediseñado).
     fireEvent.click(screen.getByLabelText("Adjuntar al chat"));
     fireEvent.click(await screen.findByText("Tomar foto"));
-    await waitFor(() => {
-      expect(screen.getByLabelText("Imagen lista para enviar")).toBeTruthy();
-    });
-    // La miniatura previsualiza la imagen pendiente.
-    const thumb = container.querySelector<HTMLImageElement>(
-      'img[alt="Imagen adjunta"]',
-    );
-    expect(thumb?.src).toContain("data:image/jpeg;base64,aW1hZ2Vu");
+    await screen.findByText("Foto adjunta.jpg");
+    expect(uploadVitaAttachment).toHaveBeenCalledWith(expect.any(File), "test-thread-123", "es", expect.any(AbortSignal));
+    expect(uploadLabExam).not.toHaveBeenCalled();
 
     // El envío (quick chip → send con imagen pendiente) incluye el adjunto.
     fireEvent.click(screen.getByText("Hábitos"));
     await waitFor(() => {
       expect(sendChatMock).toHaveBeenCalledWith(
         "¿Cómo puedo organizar mis hábitos diarios?",
-        {
-          base64: "aW1hZ2Vu",
-          mimeType: "image/jpeg",
-          dataUrl: "data:image/jpeg;base64,aW1hZ2Vu",
-        },
+        undefined,
+        [{ ...vitaUpload, name: "Foto adjunta.jpg" }],
       );
     });
     // El adjunto se consumió al enviar.
-    expect(screen.queryByLabelText("Imagen lista para enviar")).toBeNull();
+    expect(screen.queryByText("Foto adjunta.jpg")).toBeNull();
+    expect(deleteVitaAttachment).not.toHaveBeenCalled();
   });
 
-  it("descartar la imagen pendiente: el envío viaja solo con texto", async () => {
-    vi.mocked(captureChatImage).mockResolvedValueOnce({
-      base64: "aG9sYQ==",
-      mimeType: "image/jpeg",
-      dataUrl: "data:image/jpeg;base64,aG9sYQ==",
-    });
-
+  it("quita el adjunto en el servidor antes de enviar solo texto", async () => {
+    vi.mocked(uploadVitaAttachment).mockResolvedValueOnce({ ...vitaUpload, kind: "pdf", contentType: "application/pdf" });
     render(<ChatPage />);
-    fireEvent.click(screen.getByLabelText("Adjuntar al chat"));
-    fireEvent.click(await screen.findByText("Tomar foto"));
+    const file = new File(["fixture"], "fixture.pdf", { type: "application/pdf" });
+    fireEvent.change(screen.getByLabelText("Archivo para el chat"), { target: { files: [file] } });
+    fireEvent.click(await screen.findByLabelText("Quitar adjunto: fixture.pdf"));
     await waitFor(() => {
-      expect(screen.getByLabelText("Imagen lista para enviar")).toBeTruthy();
+      expect(screen.queryByText("fixture.pdf")).toBeNull();
     });
-
-    fireEvent.click(screen.getByLabelText("Quitar imagen adjunta"));
-    expect(screen.queryByLabelText("Imagen lista para enviar")).toBeNull();
+    expect(deleteVitaAttachment).toHaveBeenCalledWith("vita-1");
 
     // Sin imagen pendiente el envío va solo con texto (second arg undefined).
     fireEvent.click(screen.getByText("Progreso"));
@@ -510,6 +519,43 @@ describe("ChatPage — CTA de agendamiento y imagen conversacional (REQ-AG-02/03
         undefined,
       );
     });
+  });
+
+  it("anuncia el fallo de carga en inglés y mantiene el archivo fuera del borrador", async () => {
+    mockState.lang = "en";
+    vi.mocked(uploadVitaAttachment).mockRejectedValueOnce(new ApiError({ status: 415, message: "attachment_type_not_allowed" }));
+    render(<ChatPage />);
+    fireEvent.change(screen.getByLabelText("File for chat"), {
+      target: { files: [new File(["fixture"], "bad.pdf", { type: "application/pdf" })] },
+    });
+    const error = await screen.findByText("Unsupported file type. Please upload a JPEG, PNG, or PDF.");
+    expect(error.getAttribute("aria-live")).toBe("assertive");
+    expect(screen.queryByText("bad.pdf")).toBeNull();
+  });
+
+  it("puede cancelar una carga y elimina el archivo si el resultado llega tarde", async () => {
+    let complete!: (result: typeof vitaUpload) => void;
+    vi.mocked(uploadVitaAttachment).mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
+    render(<ChatPage />);
+    fireEvent.change(screen.getByLabelText("Archivo para el chat"), {
+      target: { files: [new File(["fixture"], "pending.jpg", { type: "image/jpeg" })] },
+    });
+    fireEvent.click(await screen.findByText("Cancelar carga"));
+    expect(vi.mocked(uploadVitaAttachment).mock.calls[0][3]?.aborted).toBe(true);
+    await act(async () => complete(vitaUpload));
+    expect(deleteVitaAttachment).toHaveBeenCalledWith("vita-1", null);
+    expect(screen.queryByText("pending.jpg")).toBeNull();
+  });
+
+  it("muestra la respuesta, el aviso de adjunto ilegible y la opción de archivo", () => {
+    mockState.chat = [{
+      id: "vite-reply", role: "bot", text: "No pude leer tu foto.", time: "",
+      vitaAttachments: [{ ...vitaUpload, name: "scan.jpg", readable: false }],
+    }];
+    render(<ChatPage />);
+    expect(screen.getByText("No pude leer tu foto.")).toBeTruthy();
+    expect(screen.getByText("Vita no pudo leer el contenido de este adjunto.")).toBeTruthy();
+    expect(screen.getByText("Guardar en mi expediente")).toBeTruthy();
   });
 
   it("muestra la imagen del remitente en la burbuja user", () => {

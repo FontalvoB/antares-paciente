@@ -10,6 +10,8 @@ import { Capacitor } from "@capacitor/core";
 import { getAccessToken } from "./authApi";
 import { getApiBaseUrl } from "./apiBaseUrl";
 import type { ChatImageAttachment, ChatSuggestion } from "../types";
+import type { ChatResult } from "../services/chat/types";
+export type { ChatResult } from "../services/chat/types";
 import { assertLegalConsentOwner, legalConsentOwner, legalConsentResponseError, requireLegalConsent } from "./legalConsents";
 
 /** Idioma de la app ('es' | 'en'), espejo de `Language` en i18n/I18nContext. */
@@ -99,22 +101,6 @@ export async function clearThreadMessages(threadId: string, signal?: AbortSignal
     throw new Error("History deletion was not confirmed");
   }
   return state;
-}
-
-export interface ChatResult {
-  reply: string;
-  threadId: string;
-  executionId?: string;
-  agent?: string;
-  actions?: VitaAction[];
-  /**
-   * Respuesta canónica consolidada del AI Service (evento `done`, change
-   * agente-asistente-citas D1). Ausente con backends previos: el consumidor
-   * cae a `reply` (tokens acumulados).
-   */
-  answer?: string | null;
-  /** Sugerencias de acción del bot (v1: appointment CTA). Ausente = sin sugerencia. */
-  suggestions?: ChatSuggestion[] | null;
 }
 
 /**

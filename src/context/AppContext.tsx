@@ -40,6 +40,8 @@ import {
   streamChatMessage,
 } from "../utils/threadApi";
 import type { ThreadState } from "../utils/threadApi";
+import { sendChatMessage as sendAttachmentChat } from "../services/chat/chat-service";
+import type { PendingVitaAttachment } from "../services/chat/vita-attachments-service";
 import {
   cancelAppointment as cancelAppointmentApi,
   createRequest,
@@ -145,7 +147,7 @@ interface AppState {
   activateSos: () => void;
   openVoice: () => void;
   closeVoice: () => void;
-  sendChat: (text: string, image?: ChatImageAttachment) => void;
+  sendChat: (text: string, image?: ChatImageAttachment, attachments?: PendingVitaAttachment[]) => void;
   /**
    * Turno de chat para el agente de voz (agente-asistente-citas D4): mismo
    * pipeline que `sendChat` (streaming + fallbacks + persistencia en la
@@ -326,7 +328,7 @@ export function AppProvider({
   const [chatGenerating, setChatGenerating] = useState(false);
   const chatController = useRef<AbortController | null>(null);
   const chatTurnGeneration = useRef(0);
-  const retryTurn = useRef<{ text: string; image?: ChatImageAttachment; userId: string; botId: string } | null>(null);
+  const retryTurn = useRef<{ text: string; image?: ChatImageAttachment; attachments?: PendingVitaAttachment[]; userId: string; botId: string } | null>(null);
   const [chatHistoryRevision, setChatHistoryRevision] = useState(0);
   const [chatClearing, setChatClearing] = useState(false);
   const historyGeneration = useRef(0);
@@ -921,7 +923,7 @@ export function AppProvider({
    * (`sendVoiceMessage`), que necesita el mensaje final para vocalizarlo.
    */
   const runChatTurn = useCallback(
-    async (text: string, image?: ChatImageAttachment, retry = false): Promise<ChatMessage | null> => {
+    async (text: string, image?: ChatImageAttachment, retry = false, attachments?: PendingVitaAttachment[]): Promise<ChatMessage | null> => {
       if (clearingHistory.current || chatController.current || !text.trim()) return null;
         chatTurnGeneration.current += 1;
       let controller = new AbortController();
@@ -950,21 +952,28 @@ export function AppProvider({
             history = historyGeneration.current; setChatGenerating(true);
           }
         }
-        retryTurn.current = { text, image, userId, botId };
-        const userMessage: ChatMessage = { id: userId, role: "user", text, time: nowLabel(lang), threadId, image: image ? { dataUrl: image.dataUrl } : undefined };
+        retryTurn.current = { text, image, attachments, userId, botId };
+        const userMessage: ChatMessage = { id: userId, role: "user", text, time: nowLabel(lang), threadId, image: image ? { dataUrl: image.dataUrl } : undefined,
+          ...(attachments?.length ? { vitaAttachments: attachments } : {}) };
         const live: ChatMessage = { id: botId, role: "bot", text: "", time: nowLabel(lang), threadId, delivery: "streaming" };
         setChat(prev => [...prev.filter(m => m.id !== "welcome" && m.id !== botId), ...(!previous ? [userMessage] : []), live]);
-        const result = await streamChatMessage(text, threadId, { onToken: piece => {
-          if (!isCurrent()) return;
-          painted += piece;
-          const snapshot = painted;
-          setChat(prev => prev.map(m => m.id === botId ? { ...m, text: snapshot } : m));
-        } }, image, lang, controller.signal);
+        const result = attachments?.length
+          ? await sendAttachmentChat(text, threadId, lang, attachments.map(attachment => attachment.attachmentId), controller.signal)
+          : await streamChatMessage(text, threadId, { onToken: piece => {
+            if (!isCurrent()) return;
+            painted += piece;
+            const snapshot = painted;
+            setChat(prev => prev.map(m => m.id === botId ? { ...m, text: snapshot } : m));
+          } }, image, lang, controller.signal);
         if (!isCurrent()) return null;
         const canonical = result.answer ?? result.reply;
         if (!canonical?.trim()) throw new Error("Empty chat response");
         const final: ChatMessage = { ...live, text: canonical, delivery: "received", threadId: result.threadId || threadId,
-          cta: result.suggestions?.find(suggestion => suggestion.type === "appointment"), executionId: result.executionId, actions: result.actions };
+          cta: result.suggestions?.find(suggestion => suggestion.type === "appointment"), executionId: result.executionId, actions: result.actions,
+          ...(attachments?.length ? { vitaAttachments: attachments.map(attachment => ({
+            ...attachment,
+            readable: result.attachments?.find(item => item.attachmentId === attachment.attachmentId)?.readable,
+          })) } : {}) };
         setChat(prev => prev.map(m => m.id === botId ? final : m));
         retryTurn.current = null;
         return final;
@@ -978,7 +987,15 @@ export function AppProvider({
           setChat(prev => prev.filter(m => m.id !== botId));
           showToast(t(legalConsentMessage(error)), "warn"); return null;
         }
-        const failed: ChatMessage = { id: botId, role: "bot", text: t(CHAT_UNAVAILABLE_MESSAGE), time: nowLabel(lang), threadId, kind: "service-error", delivery: "failed" };
+        const code = typeof error === "object" && error && "code" in error ? error.code : null;
+        const invalidAttachments = attachments?.length && (code === "vita_attachment_not_found" || code === "attachment_limit_exceeded");
+        if (invalidAttachments) retryTurn.current = null;
+        const failureText = invalidAttachments
+          ? code === "attachment_limit_exceeded" ? t("Vita no pudo usar tantos adjuntos. Envía menos archivos por mensaje.")
+            : t("Uno de los adjuntos ya no está disponible. Vuelve a adjuntarlo.")
+          : t(CHAT_UNAVAILABLE_MESSAGE);
+        const failed: ChatMessage = { id: botId, role: "bot", text: failureText, time: nowLabel(lang), threadId, kind: "service-error",
+          delivery: "failed", ...(invalidAttachments ? { retryUnavailable: true } : {}) };
         setChat(prev => prev.map(m => m.id === botId ? failed : m));
         return failed;
       } finally {
@@ -1106,7 +1123,7 @@ export function AppProvider({
       voiceMinimized,
       chatGenerating,
       cancelChat: () => chatController.current?.abort(),
-      retryChat: () => { const turn = retryTurn.current; if (turn) void runChatTurn(turn.text, turn.image, true); },
+      retryChat: () => { const turn = retryTurn.current; if (turn) void runChatTurn(turn.text, turn.image, true, turn.attachments); },
       minimizeVoice: () => { setVoiceMinimized(true); setScreen("chat"); },
       upsertVoiceMessage: ((history: number) => (message: ChatMessage) => {
         if (history !== historyGeneration.current || clearingHistory.current || message.threadId !== currentThread.current) return;
@@ -1225,8 +1242,8 @@ export function AppProvider({
       activateSos: () => setSosActive(true),
       openVoice: () => { if (!clearingHistory.current) { setVoiceMinimized(false); setVoiceOpen(true); } },
       closeVoice: () => { setVoiceOpen(false); setVoiceMinimized(false); },
-      sendChat: (text, image) => {
-        void runChatTurn(text, image);
+      sendChat: (text, image, attachments) => {
+        void runChatTurn(text, image, false, attachments);
       },
       sendVoiceMessage: (text, image) => runChatTurn(text, image),
       hydrateChat: messages => {

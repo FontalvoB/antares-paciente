@@ -22,6 +22,7 @@ import { apiFetch, ApiError } from "../../utils/apiClient";
 import { normalizeThreadHistory } from "../../utils/threadHistoryMetadata";
 import {
   isLegalConsentError,
+  legalConsentOwner,
   requireLegalConsent,
 } from "../../utils/legalConsents";
 import type { ChatLanguage } from "../../utils/threadApi";
@@ -84,18 +85,24 @@ export async function sendChatMessage(
   message: string,
   threadId: string,
   language?: ChatLanguage,
+  attachmentIds?: string[],
+  signal?: AbortSignal,
 ): Promise<ChatResult> {
   const text = message.trim();
   if (!text) throw new Error("El mensaje no puede estar vacío.");
   if (!threadId.trim()) throw new Error("El threadId no puede estar vacío.");
-  await requireLegalConsent("chat", language);
+  const expectedUserId = legalConsentOwner();
+  await requireLegalConsent("chat", language, signal);
   try {
     return await apiFetch<ChatResult>(CHAT_PATH, {
       method: "POST",
+      ...(attachmentIds?.length ? { expectedUserId, timeoutMs: 65_000 } : {}),
+      ...(signal ? { signal } : {}),
       body: {
         message: text,
         threadId,
         supportsVita: true,
+        ...(attachmentIds?.length ? { attachmentIds } : {}),
         ...(language ? { language } : {}),
       },
     });
