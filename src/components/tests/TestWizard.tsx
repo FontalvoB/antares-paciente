@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { IonButton, IonIcon, IonProgressBar, IonSpinner, IonTextarea } from "@ionic/react";
+import { IonButton, IonInput, IonIcon, IonProgressBar, IonSpinner, IonTextarea } from "@ionic/react";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import {
   arrowBackOutline,
@@ -28,6 +28,8 @@ export interface WizardExtras {
 }
 
 export function TestWizard({
+  initialStep = 0,
+  onStepChange,
   theme,
   steps,
   answers,
@@ -39,12 +41,14 @@ export function TestWizard({
   saving = false,
   hidden = false,
 }: {
+  initialStep?: number;
+  onStepChange?: (step: number) => void;
   theme: TestTheme;
   steps: WizardStep[];
   answers: Record<number, number | number[] | string>;
   extras: WizardExtras;
   onScale: (index: number, value: number) => void;
-  onNum: (index: number, value: number) => void;
+  onNum: (index: number, value: number | string) => void;
   onBackendMulti: (index: number, option: number) => void;
   onComplete: () => void;
   saving?: boolean;
@@ -52,7 +56,7 @@ export function TestWizard({
 }) {
   const t = useT();
   const reduce = useReducedMotion();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => Math.min(initialStep, Math.max(0, steps.length - 1)));
   const [dir, setDir] = useState(1);
 
   const current = steps[step];
@@ -69,16 +73,18 @@ export function TestWizard({
     [current, answers, extras],
   );
 
+  const resumeRef = useRef(initialStep);
+  resumeRef.current = initialStep;
   const stepSequence = JSON.stringify(steps.map(item => item.key));
   useEffect(() => {
-    setStep(0);
+    setStep(Math.min(resumeRef.current, Math.max(0, steps.length - 1)));
     setDir(1);
-  }, [stepSequence]);
+  }, [stepSequence, steps.length]);
 
   // Fidelidad al HTML: la pregunta num responde con su valor por defecto en
   // cuanto se muestra (el stepper parte de ahí), sin exigir tocar +/−.
   useEffect(() => {
-    if (current?.kind === "num" && typeof answers[current.index] !== "number") {
+    if (current?.kind === "num" && answers[current.index] === undefined) {
       onNum(current.index, current.def);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,16 +92,26 @@ export function TestWizard({
 
   const go = (next: number) => {
     if (next < 0 || next >= steps.length) return;
+    window.clearTimeout(advanceTimer.current);
     setDir(next > step ? 1 : -1);
     setStep(next);
+    onStepChange?.(next);
   };
+
+  const advanceTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(advanceTimer.current), []);
 
   const selectScale = (index: number, value: number) => {
     if (saving) return;
     onScale(index, value);
     void tapHaptic();
     if (!isLast) {
-      window.setTimeout(() => go(step + 1), reduce ? 0 : 380);
+      onStepChange?.(step + 1);
+      window.clearTimeout(advanceTimer.current);
+      advanceTimer.current = window.setTimeout(() => {
+        setDir(1);
+        setStep(step + 1);
+      }, reduce ? 0 : 380);
     }
   };
 
@@ -227,7 +243,7 @@ function StepView({
   answers: Record<number, number | number[] | string>;
   extras: WizardExtras;
   onScale: (index: number, value: number) => void;
-  onNum: (index: number, value: number) => void;
+  onNum: (index: number, value: number | string) => void;
   onBackendMulti: (index: number, option: number) => void;
 }) {
   const t = useT();
@@ -320,7 +336,18 @@ function StepView({
             −
           </motion.button>
           <div className="ht-num-val">
-            <strong>{current}</strong>
+            <IonInput
+              className="ht-num-input"
+              aria-label={t(step.text)}
+              type="text"
+              inputmode="numeric"
+              value={typeof answers[step.index] === "string" ? answers[step.index] as string : current}
+              onIonInput={(event) => {
+                const raw = String(event.detail.value ?? "").trim();
+                const value = Number(raw);
+                onNum(step.index, raw !== "" && Number.isInteger(value) && value >= step.min && value <= step.max ? value : raw);
+              }}
+            />
             {step.unit && <span className="ht-num-unit">{t(step.unit)}</span>}
           </div>
           <motion.button
@@ -597,7 +624,11 @@ function isStepAnswered(
   if (step.kind === "intro" || step.kind === "multi" || step.kind === "open") {
     return true;
   }
-  return typeof answers[step.index] === "number";
+  const value = answers[step.index];
+  if (step.kind === "num") {
+    return typeof value === "number" && Number.isInteger(value) && value >= step.min && value <= step.max;
+  }
+  return typeof value === "number";
 }
 
 /** Haptics ya viaja en el bundle (este archivo lo importa estático): el

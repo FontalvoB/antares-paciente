@@ -620,7 +620,6 @@
   "Bajar 5 kg desde tu línea base": "Lose 5 kg from your baseline",
   "Bajo": "Low",
   "Baneado": "Banned",
-  "Batería de evaluación inicial": "Initial assessment battery",
   "Beneficios de la plataforma": "Platform benefits",
   "Bien": "Good",
   "Bienestar": "Wellness",
@@ -2319,7 +2318,6 @@
   "Elige cómo quieres leernos": "Choose your reading language",
   "Acceso al protocolo de emergencia": "Access the emergency protocol",
   "Tu bienestar empieza contigo.": "Your wellbeing starts with you.",
-  "Batería de evaluación": "Health assessments",
   "Tests de salud pendientes": "Pending health assessments",
   "Registrar": "Log",
   "Foto IA": "AI photo",
@@ -2960,7 +2958,6 @@
   "Disponibilidad · Tiempo": "Availability · Time",
   "Dolor frecuente que me limita": "Frequent pain that limits me",
   "Dolor leve ocasional": "Occasional mild pain",
-  "El Dr. Godoy Cruz leerá esto personalmente. Sé tan honesto/a como puedas.": "Dr. Godoy Cruz will read this personally. Be as honest as you can.",
   "El ambiente en mi hogar es tranquilo y me siento apoyado/a.": "My home environment is calm, and I feel supported.",
   "El estrés en casa o en el trabajo es la barrera #1 de la adherencia.": "Stress at home or at work is the main barrier to adherence.",
   "El sueño impacta directamente tu glucosa, tu peso y tu adherencia.": "Sleep directly affects your blood glucose, weight, and adherence.",
@@ -4318,5 +4315,7 @@
   "Examen de laboratorio": "Lab test",
   "Documento guardado en tu expediente.": "Document saved to your medical record.",
   "Guardar documento": "Save document",
-  "Ya tienes el máximo de adjuntos para este mensaje.": "You’ve reached the attachment limit for this message."
+  "Ya tienes el máximo de adjuntos para este mensaje.": "You’ve reached the attachment limit for this message.",
+  "Tests de evaluación": "Assessment tests",
+  "Cuéntanos...": "Tell us..."
 }

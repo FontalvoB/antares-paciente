@@ -34529,3 +34529,4 @@ ion-modal.vita-archive-modal ion-title {
 .vita-archive-progress {
   min-height: 0;
 }
+.ht-num-val ion-input.ht-num-input { width: 100px; min-height: 44px; font-size: 34px; font-weight: 800; --padding-start: 0; --padding-end: 0; text-align: center; }

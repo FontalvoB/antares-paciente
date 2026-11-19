@@ -707,7 +707,6 @@ export const TESTS: DemoTest[] = [
         id: "prop_nota",
         section: "Nota personal · Para tu equipo médico",
         text: "Cuéntanos con tus propias palabras: ¿qué te trajo al programa Copp Adresd?",
-        hint: "El Dr. Godoy Cruz leerá esto personalmente. Sé tan honesto/a como puedas.",
         type: "open",
       },
     ],

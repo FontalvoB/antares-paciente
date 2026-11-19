@@ -9,7 +9,7 @@ const api = vi.hoisted(() => ({ fetchMyAssignments: vi.fn(), fetchMyResults: vi.
 const toast = vi.hoisted(() => vi.fn());
 const language = vi.hoisted(() => ({ current: 'es' as 'es' | 'en' }));
 vi.mock('../../utils/healthTestsApi', () => api);
-vi.mock('../../context/AppContext', () => ({ useApp: () => ({ showToast: toast, skipTests: vi.fn(), finishTests: vi.fn(), navigate: vi.fn() }) }));
+vi.mock('../../context/AppContext', () => ({ useApp: () => ({ patientCareContext: null, showToast: toast, skipTests: vi.fn(), finishTests: vi.fn(), navigate: vi.fn() }) }));
 vi.mock('../../i18n/I18nContext', () => {
   const t = (key: string, params: Record<string, string> = {}) =>
     Object.entries(params).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), key);
@@ -17,9 +17,9 @@ vi.mock('../../i18n/I18nContext', () => {
 });
 vi.mock('../../components/tests/TestWizard', async () => {
   const { useState } = await import('react');
-  return { TestWizard: function TestWizardDouble({ onComplete, steps, extras, hidden }: { hidden?: boolean; onComplete: () => void; steps: Array<{ kind: string; question?: string }>; extras: { openNotes: string[]; onOpenNote: (index: number, value: string) => void } }) {
-    const [position, setPosition] = useState(0);
-    return <div hidden={hidden}><p>{steps.find(step => step.kind === 'open')?.question}</p><input aria-label="QA draft" value={extras.openNotes[0]} onChange={event => extras.onOpenNote(0, event.target.value)} /><span data-testid="wizard-position">{position}</span><button onClick={() => setPosition(value => value + 1)}>Next local step</button><button onClick={onComplete}>Submit real assessment</button></div>;
+  return { TestWizard: function TestWizardDouble({ onComplete, steps, extras, hidden, initialStep = 0, onStepChange, answers }: { initialStep?: number; onStepChange?: (step: number) => void; answers: Record<number, string>; hidden?: boolean; onComplete: () => void; steps: Array<{ kind: string; question?: string }>; extras: { openNotes: string[]; onOpenNote: (index: number, value: string) => void } }) {
+    const [position, setPosition] = useState(initialStep);
+    return <div hidden={hidden}><p>{steps.find(step => step.kind === 'open')?.question}</p><input aria-label="QA draft" value={answers[0] ?? extras.openNotes[0]} onChange={event => extras.onOpenNote(0, event.target.value)} /><span data-testid="wizard-position">{position}</span><button onClick={() => { setPosition(position + 1); onStepChange?.(position + 1); }}>Next local step</button><button onClick={onComplete}>Submit real assessment</button></div>;
   } };
 });
 vi.mock('@ionic/react', () => ({
@@ -39,9 +39,10 @@ vi.mock('framer-motion', () => ({ useReducedMotion: () => true,
   motion: { button: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => <button onClick={onClick}>{children}</button> }
 }));
 
-const assigned = [{ id: 'assignment-1', testCode: 'qa-test', testName: 'Real assigned test', status: 'pending' }];
+const assigned = [{ id: 'assignment-1', patientId: 'patient-1', testCode: 'qa-test', testName: 'Real assigned test', status: 'pending' }];
 beforeEach(() => {
   cleanup();
+  localStorage.clear();
   language.current = 'es';
   localStorage.setItem('antares_lang', 'es');
   api.fetchMyAssignments.mockResolvedValue(assigned);
@@ -324,4 +325,50 @@ describe('assessment read recovery', () => {
     await screen.findByText(/Current English assessment/);
     expect(screen.queryByText(/Evaluación antigua en español/)).toBeNull();
   });
+});
+
+ it('restores answers and position after leaving the page and clears the draft after submission', async () => {
+    const first = render(<TestsPage />);
+    fireEvent.click(await screen.findByText(/Real assigned test/));
+    fireEvent.change(await screen.findByLabelText('QA draft'), { target: { value: 'Mi respuesta' } });
+    fireEvent.click(screen.getByText('Next local step'));
+    first.unmount();
+    render(<TestsPage />);
+    fireEvent.click(await screen.findByText(/Real assigned test/));
+    expect((await screen.findByLabelText('QA draft') as HTMLInputElement).value).toBe('Mi respuesta');
+    expect(screen.getByTestId('wizard-position').textContent).toBe('1');
+    fireEvent.click(screen.getByText('Submit real assessment'));
+    await waitFor(() => expect(screen.queryByText('Submit real assessment')).toBeNull());
+    expect(localStorage.getItem('assessment-draft:v1:patient-1:assignment-1')).toBeNull();
+ });
+
+it('does not restore a draft belonging to another patient', async () => {
+  localStorage.setItem('assessment-draft:v1:other-patient:assignment-1', JSON.stringify({ answers: { 0: 'Otra persona' }, step: 3 }));
+  render(<TestsPage />);
+  fireEvent.click(await screen.findByText(/Real assigned test/));
+  expect((await screen.findByLabelText('QA draft') as HTMLInputElement).value).toBe('');
+  expect(screen.getByTestId('wizard-position').textContent).toBe('0');
+});
+it('keeps the draft if submission fails', async () => {
+  api.submitMyTest.mockRejectedValueOnce(new Error('offline'));
+  render(<TestsPage />);
+  fireEvent.click(await screen.findByText(/Real assigned test/));
+  fireEvent.change(await screen.findByLabelText('QA draft'), { target: { value: 'Conservar respuesta' } });
+  fireEvent.click(screen.getByText('Submit real assessment'));
+  await waitFor(() => expect(toast).toHaveBeenCalledWith('No se pudo guardar la evaluación', 'err'));
+  expect(JSON.parse(localStorage.getItem('assessment-draft:v1:patient-1:assignment-1')!).answers[0]).toBe('Conservar respuesta');
+});
+
+it('resumes from the list back arrow even before patient context is loaded', async () => {
+  api.fetchMyAssignments.mockResolvedValue([{ ...assigned[0], testCode: 'bateria-antares' }]);
+  render(<TestsPage />);
+  const openPurpose = async () => fireEvent.click(await screen.findByText(/¿Cuál es tu propósito/));
+  await openPurpose();
+  fireEvent.change(await screen.findByLabelText('QA draft'), { target: { value: 'Mi propósito' } });
+  fireEvent.click(screen.getByText('Next local step'));
+  fireEvent.click(screen.getByText('Next local step'));
+  fireEvent.click(screen.getByRole('button', { name: 'Volver' }));
+  await openPurpose();
+  expect((await screen.findByLabelText('QA draft') as HTMLInputElement).value).toBe('Mi propósito');
+  expect(screen.getByTestId('wizard-position').textContent).toBe('2');
 });

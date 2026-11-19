@@ -520,7 +520,6 @@
   "Bajar 5 kg desde tu línea base": "Bajar 5 kg desde tu línea base",
   "Bajo": "Bajo",
   "Baneado": "Baneado",
-  "Batería de evaluación inicial": "Batería de evaluación inicial",
   "Beneficios de la plataforma": "Beneficios de la plataforma",
   "Bien": "Bien",
   "Bienestar": "Bienestar",
@@ -2250,7 +2249,6 @@
   "Elige cómo quieres leernos": "Elige cómo quieres leernos",
   "Acceso al protocolo de emergencia": "Acceso al protocolo de emergencia",
   "Tu bienestar empieza contigo.": "Tu bienestar empieza contigo.",
-  "Batería de evaluación": "Batería de evaluación",
   "Tests de salud pendientes": "Tests de salud pendientes",
   "Registrar": "Registrar",
   "Foto IA": "Foto IA",
@@ -2858,7 +2856,6 @@
   "Disponibilidad · Tiempo": "Disponibilidad · Tiempo",
   "Dolor frecuente que me limita": "Dolor frecuente que me limita",
   "Dolor leve ocasional": "Dolor leve ocasional",
-  "El Dr. Godoy Cruz leerá esto personalmente. Sé tan honesto/a como puedas.": "El Dr. Godoy Cruz leerá esto personalmente. Sé tan honesto/a como puedas.",
   "El ambiente en mi hogar es tranquilo y me siento apoyado/a.": "El ambiente en mi hogar es tranquilo y me siento apoyado/a.",
   "El estrés en casa o en el trabajo es la barrera #1 de la adherencia.": "El estrés en casa o en el trabajo es la barrera #1 de la adherencia.",
   "El sueño impacta directamente tu glucosa, tu peso y tu adherencia.": "El sueño impacta directamente tu glucosa, tu peso y tu adherencia.",
@@ -4318,5 +4315,7 @@
   "Examen de laboratorio": "Examen de laboratorio",
   "Documento guardado en tu expediente.": "Documento guardado en tu expediente.",
   "Guardar documento": "Guardar documento",
-  "Ya tienes el máximo de adjuntos para este mensaje.": "Ya tienes el máximo de adjuntos para este mensaje."
+  "Ya tienes el máximo de adjuntos para este mensaje.": "Ya tienes el máximo de adjuntos para este mensaje.",
+  "Tests de evaluación": "Tests de evaluación",
+  "Cuéntanos...": "Cuéntanos..."
 }

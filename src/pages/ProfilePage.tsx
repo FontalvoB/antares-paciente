@@ -718,7 +718,7 @@ export function ProfilePage() {
                     },
                     {
                       icon: clipboardOutline,
-                      title: "Batería de evaluación",
+                      title: "Tests de evaluación",
                       sub: "Tests de salud pendientes",
                       tone: "lilac",
                       action: () => openTests(),

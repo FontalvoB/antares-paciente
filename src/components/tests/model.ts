@@ -506,8 +506,8 @@ function demoStep(q: DemoQuestion, qi: number): WizardStep {
       key: q.id,
       index: qi,
       question: q.text,
-      placeholder: q.hint ?? "Escribe aquí…",
-      hint: q.hint,
+      placeholder: "Cuéntanos...",
+      hint: q.hint && !/Godoy\s+Cruz/i.test(q.hint) ? q.hint : undefined,
       emoji: base.emoji,
     };
   }
@@ -589,8 +589,8 @@ export function buildBackendSteps(
         key: q.id,
         index: qi,
         question: q.text,
-        placeholder: q.hint ?? q.text,
-        hint: q.hint ?? undefined,
+        placeholder: "Cuéntanos...",
+        hint: q.hint && !/Godoy\s+Cruz/i.test(q.hint) ? q.hint : undefined,
         emoji: base.emoji,
       };
     }

@@ -74,7 +74,7 @@ interface AssessmentReadError {
 }
 
 export function TestsPage() {
-  const { skipTests, finishTests, showToast, navigate } =
+  const { skipTests, finishTests, showToast, navigate, patientCareContext } =
     useApp();
   const i18n = useI18n();
   const { t, lang } = i18n;
@@ -107,6 +107,13 @@ export function TestsPage() {
   const [answers, setAnswers] = useState<
     Record<number, Record<number, number | number[] | string>>
   >({});
+  const [resumeStep, setResumeStep] = useState(0);
+  const [openDraftKey, setOpenDraftKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!openDraftKey || openId === null) return;
+    try { localStorage.setItem(openDraftKey, JSON.stringify({ answers: answers[openId] ?? {}, step: resumeStep })); } catch { /* Almacenamiento no disponible. */ }
+  }, [answers, resumeStep, openDraftKey, openId]);
+
   const [openNotes, setOpenNotes] = useState<string[]>(["", "", "", ""]);
   const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -163,6 +170,7 @@ export function TestsPage() {
           key: a.id,
           id: idx,
           assignmentId: a.id,
+          patientId: a.patientId,
           title:
             PATIENT_TITLES[a.testCode ?? ""] ??
             a.testName ??
@@ -191,6 +199,14 @@ export function TestsPage() {
       showToast(t("Ya completaste esta evaluación"), "ok");
       return;
     }
+    let draft: { answers?: Record<number, number | number[] | string>; step?: number } = {};
+    const owner = item.patientId || patientCareContext?.patientId || "assignment";
+    const key = `assessment-draft:v1:${owner}:${item.assignmentId}`;
+    setOpenDraftKey(key);
+    try { draft = key ? JSON.parse(localStorage.getItem(key) ?? "{}") ?? {} : {}; } catch { /* Borrador ilegible: comenzar vacío. */ }
+    setAnswers(previous => ({ ...previous, [item.id]: draft.answers && typeof draft.answers === "object" && !Array.isArray(draft.answers) ? draft.answers : {} }));
+    setOpenNotes(["", "", "", ""]);
+    setResumeStep(Number.isInteger(draft.step) && draft.step! >= 0 ? draft.step! : 0);
     setOpenId(item.id);
     setOpenAssignmentId(item.assignmentId);
     setOpenTitle({ text: item.title, language: lang });
@@ -267,6 +283,8 @@ export function TestsPage() {
         });
         await startMyTest(openAssignmentId);
         await submitMyTest(openAssignmentId, answersPayload);
+        const key = openDraftKey;
+        if (key) { try { localStorage.removeItem(key); } catch { /* Almacenamiento no disponible. */ } }
         setAssignments((prev) =>
           prev
             ? prev.map((a) =>
@@ -395,7 +413,7 @@ export function TestsPage() {
               <div className="h2">
                 {openId !== null
                   ? t(displayedTitle || theme.kicker)
-                  : t("Batería de evaluación inicial")}
+                  : t("Tests de evaluación")}
               </div>
             </div>
             {canSkip && (
@@ -550,6 +568,8 @@ export function TestsPage() {
             <IonSpinner name="crescent" /><p>{t("Preparando tu evaluación…")}</p>
           </div>}
           {openQuestions && <TestWizard
+          initialStep={resumeStep}
+          onStepChange={setResumeStep}
           hidden={questionsLoading || questionsLanguage !== lang || Boolean(questionsError)}
           theme={theme}
           steps={steps}
