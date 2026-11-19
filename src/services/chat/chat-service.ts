@@ -20,7 +20,10 @@
 
 import { apiFetch, ApiError } from "../../utils/apiClient";
 import { normalizeThreadHistory } from "../../utils/threadHistoryMetadata";
-import { isLegalConsentError, requireLegalConsent } from "../../utils/legalConsents";
+import {
+  isLegalConsentError,
+  requireLegalConsent,
+} from "../../utils/legalConsents";
 import type { ChatLanguage } from "../../utils/threadApi";
 import type {
   ChatResult,
@@ -68,6 +71,12 @@ function toFriendlyChatError(error: unknown): unknown {
  * de idioma a mitad de conversación. Opcional: con backends anteriores el
  * campo extra se ignora (compatible hacia atrás).
  *
+ * `supportsVita` (siempre true): opt-in obligatorio del cliente APP para que
+ * el AI Service active el agente Vita (persona, tools y RAG). El backend
+ * valida la autorización server-side (JWT `aud=app` + módulo habilitado); sin
+ * este campo la ejecución cae en `agentTypeId=base` con `tools_used=[]` y
+ * `rag_sources=[]`. Enviarlo no concede acceso por sí mismo.
+ *
  * @throws ApiError — 401 sesión inválida, 502/503 con mensaje amigable,
  *   resto propagado. Nunca retorna null: el llamador muestra error + reintento.
  */
@@ -83,7 +92,12 @@ export async function sendChatMessage(
   try {
     return await apiFetch<ChatResult>(CHAT_PATH, {
       method: "POST",
-      body: { message: text, threadId, ...(language ? { language } : {}) },
+      body: {
+        message: text,
+        threadId,
+        supportsVita: true,
+        ...(language ? { language } : {}),
+      },
     });
   } catch (error) {
     throw toFriendlyChatError(error);
@@ -153,7 +167,9 @@ export async function fetchThreadHistory(
     `/api/v1/threads/${encodeURIComponent(threadId)}/messages` +
     (query ? `?${query}` : "");
   try {
-    return normalizeThreadHistory(await apiFetch<ThreadState>(path, { method: "GET" }));
+    return normalizeThreadHistory(
+      await apiFetch<ThreadState>(path, { method: "GET" }),
+    );
   } catch (error) {
     throw toFriendlyChatError(error);
   }
