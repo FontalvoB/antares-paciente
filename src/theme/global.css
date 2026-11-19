@@ -34350,3 +34350,51 @@ ion-card.wearable-measure-feedback {
 .medications-history-empty {
   margin: 0; padding: 13px 0; color: var(--wellness-muted); font-size: 13px;
 }
+
+/* Proximamente: Podcast y Ejercicios al final del protocolo (KAN-92). */
+.hm-soon {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: calc(100% - 32px);
+  margin: 10px 16px 0;
+}
+
+.hm-soon-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(16, 42, 80, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink, #102a50);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.hm-soon-card ion-icon {
+  font-size: 20px;
+  opacity: 0.65;
+}
+
+.hm-soon-badge {
+  margin-left: auto;
+  --background: rgba(16, 42, 80, 0.08);
+  --color: #102a50;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: none;
+}
+
+@media (max-width: 360px) {
+  .hm-soon {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  IonAlert,
   IonBadge,
   IonButton,
   IonPopover,
@@ -116,6 +117,7 @@ export function HomePage() {
   const kcalValue = snapshot ? intake.calories : null;
 
   const [metricId, setMetricId] = useState<MetricId | null>(null);
+  const [comingSoonNotice, setComingSoonNotice] = useState<string | null>(null);
 
   // Dos accesos permanentes: sin paginación, arrastre ni autoavance.
   const modules: { id: ScreenId; title: string; sub: string; accent: string; cover: string; cta: string }[] = [
@@ -404,6 +406,31 @@ export function HomePage() {
             {activeStreak} {t("días")}/{t("Semana")} {activeProgramWeek}
           </span>
         </section>
+
+        <div className="hm-soon" aria-label={t("Próximamente")}>
+          {([
+            { id: "podcast", label: "Podcast", icon: school },
+            { id: "ejercicio", label: "Ejercicios", icon: walk },
+          ] as const).map(({ id, label, icon }) => (
+            <button
+              key={id}
+              type="button"
+              className="hm-soon-card"
+              onClick={() => setComingSoonNotice(t(label))}
+            >
+              <IonIcon icon={icon} aria-hidden="true" />
+              <span>{t(label)}</span>
+              <IonBadge className="hm-soon-badge">{t("Próximamente")}</IonBadge>
+            </button>
+          ))}
+        </div>
+        <IonAlert
+          isOpen={comingSoonNotice !== null}
+          header={t("Próximamente")}
+          message={t("Contenido no disponible aún — tu equipo lo está preparando")}
+          buttons={[t("Entendido")]}
+          onDidDismiss={() => setComingSoonNotice(null)}
+        />
 
         <div className="hm-metrics" aria-label={t("Indicadores de salud")}>
           {HOME_METRIC_CARDS.map((meta) => {
