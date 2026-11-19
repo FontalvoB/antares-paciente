@@ -174,7 +174,7 @@ export function PatientMedicationHistory({ owner, today, date, timeZone, locale,
               {event.reason && <p>{event.reason}</p>}
             </div>
             <IonBadge className={`medications-badge medications-badge-${event.status}`}>
-              {t(event.status === "taken" ? "Tomado" : "Omitido")}
+              {t(event.status === "taken" ? "Tomado" : event.status === "pending" ? "Toma deshecha" : "Omitido")}
             </IonBadge>
           </article>;
         }) : <p className="medications-history-empty">{t("Tu historial aparecerá aquí")}</p>}

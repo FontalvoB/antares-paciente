@@ -33585,7 +33585,7 @@ ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd)
 .medications-dose-actions ion-button[fill="outline"] { --background: transparent; --border-color: var(--wellness-border); --border-width: 1px; --color: var(--wellness-muted); }
 .medications-badge { padding: 5px 9px; border-radius: 8px; background: var(--ice-l); color: var(--wellness-muted); font-size: 10px; font-weight: 650; white-space: nowrap; }
 .medications-badge-active, .medications-badge-taken { background: var(--wellness-success-bg); color: var(--wellness-success); }
-.medications-badge-paused, .medications-badge-omitted { background: var(--wellness-warning-bg); color: var(--wellness-warning); }
+.medications-badge-paused, .medications-badge-omitted, .medications-badge-overdue { background: var(--wellness-warning-bg); color: var(--wellness-warning); }
 .medications-badge-completed, .medications-badge-cancelled { background: var(--ice-l); color: var(--wellness-muted); }
 .medications-recorded { display: flex; align-items: center; gap: 5px; margin-top: 13px; font-size: 12px; color: var(--wellness-success); }
 .medications-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 18px; border: 1px solid var(--wellness-border); border-radius: 19px; background: var(--wellness-surface); }
@@ -34530,3 +34530,7 @@ ion-modal.vita-archive-modal ion-title {
   min-height: 0;
 }
 .ht-num-val ion-input.ht-num-input { width: 100px; min-height: 44px; font-size: 34px; font-weight: 800; --padding-start: 0; --padding-end: 0; text-align: center; }
+
+.medications-dose-actions .medications-photo-optional {
+  grid-column: 1 / -1;
+}

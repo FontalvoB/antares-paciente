@@ -51,6 +51,7 @@ import type { Screen as ScreenId } from "../types";
 import { useLeague } from "../hooks/useLeague";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useProgram } from "../hooks/useProgram";
+import { useMedicationCapabilities } from "../hooks/useMedicationCapabilities";
 import { useClinicalHistoryAvailability } from "../hooks/useClinicalHistoryAvailability";
 import { formatMetricValue } from "../data/metrics";
 import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
@@ -375,6 +376,7 @@ export function ProfilePage() {
   // (sin exámenes/mediciones, documentos ni medicamentos). Carga y errores la
   // conservan para no esconder contenido real por un fallo de red.
   const clinicalHistory = useClinicalHistoryAvailability();
+  const medication = useMedicationCapabilities();
   const { lang, toggleLang, t } = useI18n();
   const { openPrivacyChoices } = useLegalConsents();
   const locale = lang === "en" ? "en-US" : "es-ES";
@@ -698,6 +700,13 @@ export function ProfilePage() {
                 </div>
                 <IonList className="pf-menu" lines="none">
                   {[
+                    ...(medication.enabled ? [{
+                      icon: medkit,
+                      title: "Control de medicamentos",
+                      sub: "Tomas, tratamientos e historial",
+                      tone: "mint",
+                      action: () => go("medications"),
+                    }] : []),
                     ...(clinicalHistory.visible
                       ? [
                           {
