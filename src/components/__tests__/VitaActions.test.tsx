@@ -3,11 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VitaActions } from "../chat/VitaActions";
 import { ApiError } from "../../utils/apiClient";
 import { toLocalISODate } from "../../utils/dates";
+import { isComingSoonTask } from "../../data/program";
 
-const mocks = vi.hoisted(() => ({ api: vi.fn(), navigate: vi.fn(), tests: vi.fn(), invalidate: vi.fn().mockResolvedValue(undefined) }));
+const mocks = vi.hoisted(() => ({ api: vi.fn(), navigate: vi.fn(), tests: vi.fn(), toast: vi.fn(), comingSoon: vi.fn(), invalidate: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("../../data/program", async original => {
+  const actual = await original<typeof import("../../data/program")>();
+  mocks.comingSoon.mockImplementation(actual.isComingSoonTask);
+  return { ...actual, isComingSoonTask: mocks.comingSoon };
+});
 vi.mock("../../utils/apiClient", async original => ({ ...await original<object>(), apiFetch: mocks.api }));
 vi.mock("../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("../../context/AppContext", () => ({ useApp: () => ({ navigate: mocks.navigate, openTests: mocks.tests }) }));
+vi.mock("../../context/AppContext", () => ({ useApp: () => ({ navigate: mocks.navigate, openTests: mocks.tests, showToast: mocks.toast }) }));
 vi.mock("../../utils/queryClient", () => ({ queryClient: { invalidateQueries: mocks.invalidate } }));
 vi.mock("../../i18n/I18nContext", () => ({ useI18n: () => ({ lang: "es", t: (key: string) => key }) }));
 vi.mock("@ionic/react", async () => {
@@ -34,9 +40,21 @@ describe("acciones Vita y confirmación de actividad", () => {
     localStorage.clear();
     localStorage.setItem("copp_access_token", `header.${btoa(JSON.stringify({ sub: "owner-a" }))}.signature`);
     mocks.api.mockReset(); mocks.api.mockImplementation(fixture);
-    mocks.invalidate.mockClear(); mocks.navigate.mockClear();
+    mocks.invalidate.mockClear(); mocks.navigate.mockClear(); mocks.toast.mockClear();
+    vi.mocked(isComingSoonTask).mockImplementation(() => false);
   });
   afterEach(cleanup);
+
+  it.each([['podcast', 'Podcast'], ['exercise', 'Ejercicios']] as const)('bloquea la navegación y el registro de %s', async (destination, label) => {
+    const policy = await vi.importActual<typeof import('../../data/program')>('../../data/program');
+    vi.mocked(isComingSoonTask).mockImplementation(policy.isComingSoonTask);
+    render(<VitaActions actions={[{ ...action(), destination }]} />);
+    fireEvent.click(screen.getByText(label));
+    expect(mocks.toast).toHaveBeenCalledExactlyOnceWith('Esta actividad estará disponible próximamente.', 'info');
+    expect(screen.queryByText('Registrar que terminé')).toBeNull();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+    expect(mocks.api).not.toHaveBeenCalled();
+  });
 
   it("navegar revalida la revisión, sin preparar ni completar una tarea", async () => {
     render(<VitaActions actions={[action()]} />);

@@ -52,7 +52,7 @@ describe('TodayView · próximos días del contrato 2.5', () => {
   it.each([undefined, null, []])('tolera upcoming ausente o vacío sin inventar un calendario: %s', value => {
     setup(value)
     expect(screen.queryByRole('region', { name: 'Lo que viene' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Hacer ejercicio del día' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Ejercicios, Próximamente' })).toBeTruthy()
   })
 
   it('traduce las etiquetas y conserva el título clínico recibido', () => {

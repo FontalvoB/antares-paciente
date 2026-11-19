@@ -13,6 +13,10 @@ import type { ProgramDay } from '../../types'
 import type { ProgramSnapshotDto } from '../../services/program/types'
 
 const state = vi.hoisted(() => ({ screen: 'program-vitals', load: vi.fn(), complete: vi.fn() }))
+// Conserva la cobertura de los reproductores para cuando se reactiven.
+vi.mock('../../data/program', async original => ({
+  ...await original<typeof import('../../data/program')>(), isComingSoonTask: () => false,
+}))
 vi.mock('../../services/program/program-service', () => ({ getSnapshot: state.load }))
 vi.mock('../../context/AppContext', () => ({ useApp: () => ({ screen: state.screen, program: {}, completeStep: vi.fn(), pointsToday: 0, navigate: vi.fn(), openTests: vi.fn(), showToast: vi.fn(), streak: 0, programWeek: 1, weekCheckins: [], user: { nombre: 'QA Patient', id: 'qa' }, wearableConnected: false }) }))
 vi.mock('../../context/WearableContext', () => ({ useWearable: () => ({ samples: {}, today: {}, info: {}, device: null, phase: 'idle', sessionStale: false, lastSyncAt: null, syncing: false, syncHistory: vi.fn() }) }))

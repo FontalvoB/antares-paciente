@@ -1,9 +1,10 @@
 import { useMemo, type ReactNode } from 'react'
-import { IonButton, IonIcon } from '@ionic/react'
+import { IonBadge, IonButton, IonIcon } from '@ionic/react'
 import { motion } from 'framer-motion'
 import { checkmark, chevronForward, gift, medicalOutline, heartOutline, leaf, sparkles, trophy } from 'ionicons/icons'
 import {
   DAY_BONUS_PTS,
+  isComingSoonTask,
   PROGRAM_TASKS,
 } from '../../data/program'
 import medicationPhoto from '../../assets/modules/medicamentos.webp'
@@ -17,7 +18,6 @@ import { nutritionMissionSubtitle } from '../../utils/nutritionMissionSubtitle'
 import { TASK_ICONS } from './ui'
 import { UpcomingDays } from './UpcomingDays'
 import { ExerciseRestNotice } from './ExerciseRestNotice'
-import { scheduledDayTasks } from '../../utils/programRest'
 
 export function TodayView({
   program,
@@ -62,9 +62,22 @@ export function TodayView({
 
   // La lista viene del backend cuando hay snapshot; si no, del plan local.
   const taskList = useMemo(() => {
-    const scheduled = scheduledDayTasks(todayTasks, rest)
-    if (scheduled) {
-      return scheduled.map((task) => {
+    const scheduled = todayTasks?.filter(task => !isComingSoonTask(task.taskCode)
+      && (rest !== true || task.taskCode !== 'ejercicio'))
+    const localTasks = PROGRAM_TASKS.filter(task =>
+      isComingSoonTask(task.id) || (!scheduled && (rest !== true || task.id !== 'ejercicio')),
+    ).map(task => ({
+      id: task.id,
+      title: task.id === 'podcast' && isComingSoonTask(task.id) ? 'Podcast'
+        : task.id === 'ejercicio' && isComingSoonTask(task.id) ? 'Ejercicios' : task.title,
+      short: t(task.short),
+      pts: task.pts,
+      done: Boolean(program[task.id]),
+      tone: task.tone,
+      icon: TASK_ICONS[task.id],
+      thumbnailUrl: null,
+    }))
+    const serverTasks = scheduled?.map((task) => {
         const fallback = PROGRAM_TASKS.find((pt) => pt.id === task.taskCode)
         let shortText = t(task.short || fallback?.short || '')
         if (task.taskCode === 'podcast' && task.content?.title) {
@@ -93,20 +106,12 @@ export function TodayView({
           icon: TASK_ICONS[task.taskCode as ProgramTaskId] ?? checkmark,
           thumbnailUrl: task.content?.thumbnailUrl ?? null,
         }
-      })
-    }
-    return PROGRAM_TASKS.filter(pt => rest !== true || pt.id !== 'ejercicio').map((pt) => ({
-      id: pt.id,
-      title: pt.title,
-      short: t(pt.short),
-      pts: pt.pts,
-      done: Boolean(program[pt.id]),
-      tone: pt.tone,
-      icon: TASK_ICONS[pt.id],
-      thumbnailUrl: null,
-    }))
+    }) ?? []
+    return [...serverTasks, ...localTasks]
   }, [todayTasks, rest, program, programWeek, t, lang])
 
+  const activeCount = taskList.filter(task => !isComingSoonTask(task.id)).length
+  const comingSoonLabel = t('Próximamente')
   // --- Cofre del día: verdad del snapshot cuando existe ---
   // `todayBonusAvailable === false` → bonus ya otorgado; `=== true` → aún
   // ganable; `undefined` (API previa) → derivación local legada (allDone).
@@ -118,11 +123,11 @@ export function TodayView({
       return {
         done: false,
         amount: dailyBonusAmount ?? DAY_BONUS_PTS,
-        n: taskList.length,
+        n: activeCount,
       }
     }
-    return { done: allDone, amount: dailyBonusAmount ?? DAY_BONUS_PTS, n: taskList.length }
-  }, [todayBonusAvailable, dailyBonusAmount, taskList.length, allDone])
+    return { done: allDone, amount: dailyBonusAmount ?? DAY_BONUS_PTS, n: activeCount }
+  }, [todayBonusAvailable, dailyBonusAmount, activeCount, allDone])
 
   // --- Burbuja del AI Health Coach: composición honesta desde los puntajes ---
   const hs = scores?.health_score ?? scores?.healthScore
@@ -185,8 +190,10 @@ export function TodayView({
         </IonButton>}
 
         {taskList.map((task, i) => {
-          const done = task.done
-          const current = task.id === currentId
+          const comingSoon = isComingSoonTask(task.id)
+          const done = !comingSoon && task.done
+          const current = !comingSoon && task.id === currentId
+          const status = comingSoon ? `, ${comingSoonLabel}` : done ? t(', completada') : current ? t(', siguiente') : ''
           // "Mediterráneo · 1,800 kcal" → subtítulo a la izquierda, dato a la
           // derecha. Solo se separa cuando el último tramo es una cifra
           // ("8 min", "Semana 12"); si no, el texto va entero al subtítulo.
@@ -197,8 +204,8 @@ export function TodayView({
             <motion.button
               key={task.id}
               type="button"
-              className={`pcard${done ? ' done' : ''}${current ? ' current' : ''}`}
-              aria-label={`${t(task.title)}${done ? t(', completada') : current ? t(', siguiente') : ''}`}
+              className={`pcard${comingSoon ? ' pcard-coming-soon' : ''}${done ? ' done' : ''}${current ? ' current' : ''}`}
+              aria-label={`${t(task.title)}${status}`}
               onClick={() => onOpenTask(task.id)}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -226,19 +233,21 @@ export function TodayView({
                 <span className="pcard-action-icon" aria-hidden="true"><IonIcon icon={done ? checkmark : task.icon} /></span>
                 <span className="pcard-copy">
                   <strong>{t(task.title)}</strong>
-                  <small>{done ? t('Completada') : subtitle}</small>
+                  {!comingSoon && <small>{done ? t('Completada') : subtitle}</small>}
                 </span>
-                <span className="pcard-side">
-                  <span className="pcard-pts">+{task.pts} XP</span>
-                  {tail && <span className="pcard-meta">{tail}</span>}
-                </span>
-                <IonIcon className="pcard-chevron" icon={chevronForward} aria-hidden="true" />
+                {comingSoon ? <IonBadge className="pcard-availability">{comingSoonLabel}</IonBadge> : <>
+                  <span className="pcard-side">
+                    <span className="pcard-pts">+{task.pts} XP</span>
+                    {tail && <span className="pcard-meta">{tail}</span>}
+                  </span>
+                  <IonIcon className="pcard-chevron" icon={chevronForward} aria-hidden="true" />
+                </>}
               </span>
             </motion.button>
           )
         })}
 
-        {taskList.length > 0 && <motion.div
+        {activeCount > 0 && <motion.div
           className={`pcard pcard-chest${chest.done ? ' done' : ''}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -253,7 +262,7 @@ export function TodayView({
               <small>
                 {chest.done
                   ? t('Desbloqueado. Mañana se abre de nuevo.')
-                  : t('Completa las {n} misiones', { n: String(chest.n) })}
+                  : allDone ? t('Bonus pendiente de confirmación') : t('Completa las {n} misiones', { n: String(chest.n) })}
               </small>
             </span>
             <span className="pcard-side">

@@ -13,7 +13,8 @@ import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../i18n/I18nContext";
 import {
-  DAY_BONUS_PTS,
+  ACTIVE_PROGRAM_TASKS,
+  isComingSoonTask,
   PROGRAM_POINTS_MAX,
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
@@ -59,7 +60,7 @@ import { useProgramCalendar } from "../hooks/useProgramCalendar";
 import { resolveStationSec } from "../utils/exerciseSteps";
 import { programDayNumber } from "../utils/programDayNumber";
 import { queueCommunityShareDraft } from "../utils/communityShareDraft";
-import { scheduledDayTasks } from "../utils/programRest";
+import { protocolDayXp, requiredProtocolTasks } from "../utils/dailyProtocol";
 import { localizedError } from '../utils/localizedError';
 import type {
   CompleteTaskInput,
@@ -99,8 +100,15 @@ export function ProgramPage() {
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "es-ES";
   const [tab, setTab] = useState<ProgramTab>(screen === "program-racha" ? "racha" : "hoy");
-  const active = PROGRAM_TASKS.find(item => screen === `program-${item.id}`)?.id ?? null;
-  const setActive = useCallback((id: ProgramTaskId | null) => navigate(id ? `program-${id}` : "prog"), [navigate]);
+  const activeTask = PROGRAM_TASKS.find(item => screen === `program-${item.id}`);
+  const active = activeTask && !isComingSoonTask(activeTask.id) ? activeTask.id : null;
+  const setActive = useCallback((id: ProgramTaskId | null) => {
+    if (id && isComingSoonTask(id)) {
+      showToast(t("Esta actividad estará disponible próximamente."), "info");
+      return;
+    }
+    navigate(id ? `program-${id}` : "prog");
+  }, [navigate, showToast, t]);
   const [celebrate, setCelebrate] = useState(false);
   const [newProgram, setNewProgram] = useState<ProgramEnrollmentDto | null>(null);
   const [completionEvolution, setCompletionEvolution] = useState(false);
@@ -151,7 +159,7 @@ export function ProgramPage() {
     if (medicationProtocol && screen === "program-nutraceutico") navigate("medications");
   }, [medicationProtocol, screen, navigate]);
   const resting = snapshot?.rest === true;
-  const todayTasks = useMemo(() => scheduledDayTasks(snapshot?.todayTasks, snapshot?.rest)?.filter(task => !snapshot?.optionalTaskCodes?.includes(task.taskCode)), [snapshot]);
+  const todayTasks = useMemo(() => requiredProtocolTasks(snapshot), [snapshot]);
 
   const completeTaskMutation = useCompleteTask();
   const queryClient = useQueryClient();
@@ -211,7 +219,7 @@ export function ProgramPage() {
   // renderiza (nada inventado).
   const activeStreakLongest = snapshot?.streak?.longest ?? null;
   const activeFreezes = snapshot?.streak?.freezesRemaining ?? 0;
-  const activePointsToday = snapshot?.todayPoints ?? appPointsToday;
+  const todayXp = snapshot ? protocolDayXp(snapshot) : { points: appPointsToday, max: PROGRAM_POINTS_MAX };
   const activeProgramWeek =
     snapshot?.template?.currentWeekNumber ?? appProgramWeek;
   const activeTotalWeeks = snapshot?.template?.totalWeeks ?? PROGRAM_WEEKS;
@@ -259,17 +267,19 @@ export function ProgramPage() {
         allDone: serverCount > 0 && serverDone === serverCount,
       };
     }
-    const localDone = PROGRAM_TASKS.filter((pt) => program[pt.id]).length;
+    const localDone = ACTIVE_PROGRAM_TASKS.filter((pt) => program[pt.id]).length;
     return {
       doneCount: localDone,
-      total: PROGRAM_TASKS.length,
-      allDone: localDone === PROGRAM_TASKS.length,
+      total: ACTIVE_PROGRAM_TASKS.length,
+      allDone: localDone === ACTIVE_PROGRAM_TASKS.length,
     };
   }, [todayTasks, program]);
   const { doneCount, allDone } = progress;
   const currentId = todayTasks
     ? todayTasks.find(task => task.status !== "Completed")?.taskCode
-    : PROGRAM_TASKS.find((pt) => !program[pt.id])?.id;
+    : ACTIVE_PROGRAM_TASKS.find((pt) => !program[pt.id])?.id;
+  const perfectDay = allDone && snapshot?.todayBonusAvailable !== true
+    && !todayTasks?.some(task => task.clientPending);
   const task = useMemo(
     () => PROGRAM_TASKS.find((pt) => pt.id === active) ?? null,
     [active],
@@ -374,7 +384,7 @@ export function ProgramPage() {
         emotional?: EmotionalAssessmentPayload | null;
       },
     ) => {
-      if (program[id] || completeTaskMutation.isPending || ((['ejercicio','nutraceutico','podcast','emocional'].includes(id))&&missionWriteInFlight.current) || (id === "ejercicio" && snapshot?.rest === true)) return;
+      if (isComingSoonTask(id) || program[id] || completeTaskMutation.isPending || ((['ejercicio','nutraceutico','podcast','emocional'].includes(id))&&missionWriteInFlight.current) || (id === "ejercicio" && snapshot?.rest === true)) return;
       setMissionError(null);
 
       // Fase 12 (offline-first): sin red se encola persistente el check-in
@@ -408,12 +418,6 @@ export function ProgramPage() {
         return;
       }
 
-      const willComplete = progress.doneCount + 1 === progress.total;
-      // El monto del bonus sale del snapshot (regla DAY_BONUS real) para que
-      // el toast/burst coincida con la tarjeta del cofre; DAY_BONUS_PTS solo
-      // como fallback local.
-      const bonusPts = snapshot?.dailyBonusAmount ?? DAY_BONUS_PTS;
-
       // Todo el feedback local (marca AppContext, toast ok, confeti) queda
       // ATADO AL SUCCESS del servidor: un 422 del gate de adherencia (o
       // cualquier rechazo) no debe dejar la tarea "completada" en la UI —
@@ -435,7 +439,7 @@ export function ProgramPage() {
             const premiumMission=['ejercicio','nutraceutico','podcast','emocional'].includes(id);
             const awarded=premiumMission ? data.pointsAwarded : pts;
             const feedback=premiumMission ? t('Registro confirmado · +{pts} pts',{pts:String(awarded)}) : msg;
-            const awardedBonus=premiumMission ? data.dailyBonusAwarded : willComplete ? bonusPts : 0;
+            const awardedBonus=data.dailyBonusAwarded;
             if(['ejercicio','nutraceutico','podcast','emocional'].includes(id)) {
               setMissionReceipt({id,points:data.pointsAwarded,seconds:exActiveSeconds});
               if(id==='ejercicio')setExRunning(false);
@@ -465,7 +469,6 @@ export function ProgramPage() {
       completeStep,
       queryClient,
       setActive,
-      progress,
       snapshot,
       showToast,
       t,
@@ -542,11 +545,10 @@ export function ProgramPage() {
     // baseline (no celebra ni al entrar con tareas pendientes ni al entrar
     // con el día ya hecho). La condición anterior invertida abría el cofre
     // al ENTRAR con el día sin terminar ("¡0 DÍAS!" en el Protocolo).
-    const confirmedAll = allDone && !todayTasks?.some(task => task.clientPending);
-    if (prevAll.current !== null && confirmedAll && !prevAll.current)
+    if (prevAll.current !== null && perfectDay && !prevAll.current)
       setCelebrate(true);
-    prevAll.current = confirmedAll;
-  }, [allDone,todayTasks]);
+    prevAll.current = perfectDay;
+  }, [perfectDay]);
 
   useEffect(() => {
     if (active !== "ejercicio") setExRunning(false);
@@ -799,9 +801,9 @@ export function ProgramPage() {
           dayNumber={activeProgramDay}
           doneCount={doneCount}
           total={progress.total}
-          allDone={allDone}
-          pointsToday={activePointsToday}
-          pointsMax={snapshot?.todayPointsMax ?? PROGRAM_POINTS_MAX}
+          allDone={perfectDay}
+          pointsToday={todayXp.points}
+          pointsMax={todayXp.max}
           // Chests are auto-granted server-side now: nothing sits in a
           // "ready to claim" state anymore (chests module, R3.2).
           readyChests={0}
@@ -1089,7 +1091,7 @@ export function ProgramPage() {
                 </p>
                 <div className="ms-mini">
                   <div>
-                    <b>+{activePointsToday}</b>
+                    <b>+{todayXp.points}</b>
                     <span>{t("pts hoy")}</span>
                   </div>
                   {/* Multiplicador SOLO con el dato real del snapshot; un `x2 ·
