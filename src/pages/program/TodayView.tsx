@@ -233,9 +233,11 @@ export function TodayView({
                 <span className="pcard-action-icon" aria-hidden="true"><IonIcon icon={done ? checkmark : task.icon} /></span>
                 <span className="pcard-copy">
                   <strong>{t(task.title)}</strong>
-                  {!comingSoon && <small>{done ? t('Completada') : subtitle}</small>}
+                  {comingSoon
+                    ? <IonBadge className="pcard-availability">{comingSoonLabel}</IonBadge>
+                    : <small>{done ? t('Completada') : subtitle}</small>}
                 </span>
-                {comingSoon ? <IonBadge className="pcard-availability">{comingSoonLabel}</IonBadge> : <>
+                {!comingSoon && <>
                   <span className="pcard-side">
                     <span className="pcard-pts">+{task.pts} XP</span>
                     {tail && <span className="pcard-meta">{tail}</span>}
