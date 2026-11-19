@@ -34236,7 +34236,8 @@ ion-card.wearable-measure-feedback {
 .medications-time-group { display: grid; gap: 9px; }
 .medications-time-group > h3 { display: flex; align-items: center; gap: 8px; margin: 7px 0 0; color: #172f5b; font-size: 16px; }
 .medications-time-group > h3 span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: #9d4e0e; background: #fff0df; }
-.medications-time-group > h3 small { color: #52687c; font-size: 12px; }
+.medications-dose-next + .medications-timeline { margin-top: 12px; }
+.medications-undo { min-height: 44px; --color: var(--wellness-primary); }
 .medications-dose { border-radius: 21px; background: #fff; box-shadow: 0 6px 18px rgb(26 43 95 / .09); }
 .medications-dose-next { border-color: #bcd5ef; }
 .medications-dose-product { display: flex; align-items: center; gap: 11px; }

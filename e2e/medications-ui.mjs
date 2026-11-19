@@ -12,14 +12,28 @@ assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(origin), 'Only local UI hosts are perm
 const userId = '11111111-1111-4111-8111-111111111111';
 const token = 'x.' + Buffer.from(JSON.stringify({ sub: userId, exp: Math.floor(Date.now() / 1000) + 86400 })).toString('base64url') + '.x';
 const browser = await chromium.launch();
-const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto', 'photo-match', 'photo-mismatch', 'snooze'];
+const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto', 'photo-match', 'photo-mismatch', 'snooze', 'agenda-es', 'agenda-en', 'empty-es', 'empty-en'];
 const results = [];
 
 for (const scenario of scenarios) {
-  const english = scenario === 'english';
+  const english = scenario === 'english' || scenario.endsWith('-en');
+  const agenda = scenario.startsWith('agenda-');
+  const empty = scenario.startsWith('empty-');
+  const modern = agenda || empty;
+  const localDate = new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Bogota'}).format(new Date());
+  const at = time => new Date(localDate + 'T' + time + ':00-05:00').toISOString();
+  const simulatedNow = at('17:15');
   const photo = scenario.startsWith('photo-');
   const page = await browser.newPage({ viewport: { width: 390, height: 900 }, timezoneId: 'America/Bogota', reducedMotion: 'reduce' });
   page.setDefaultTimeout(8000);
+  const applicationErrors = [];
+  if (modern) {
+    page.on('pageerror', error => applicationErrors.push(error.message));
+    page.on('console', entry => {
+      if (entry.type() === 'error' && !entry.text().startsWith('Failed to load resource:')) applicationErrors.push(entry.text());
+    });
+    await page.clock.setFixedTime(new Date(simulatedNow));
+  }
   if (scenario === 'legacy-crypto') await page.addInitScript(() => Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true }));
   if (english) await page.addInitScript(() => localStorage.setItem('antares_lang', 'en'));
   if (photo) await page.addInitScript(matches => {
@@ -46,6 +60,26 @@ for (const scenario of scenarios) {
     access: { enabled: true, revision: 1 }, treatments: [], doses: [], history: [],
     summary: { activeTreatments: 0, scheduledDoses: 0, takenDoses: 0, pendingDoses: 0 },
   };
+  if (modern) workspace.version = '66666666-6666-4666-8666-666666666666';
+  if (agenda) {
+    workspace.treatments.push({
+      id: 'assigned', name: 'Tratamiento asignado QA', productType: 'medication', origin: 'staff_recorded',
+      isRequired: true, status: 'active', dosage: 2, unit: 'mg', route: 'oral', instructions: 'QA',
+      times: ['08:15','09:30','13:00','16:10','16:30','20:45'], timeZone: 'America/Bogota', startDate: localDate,
+    });
+    for (const [name, time, status] of [
+      ['Primera dosis QA', '08:15', 'taken'], ['Segunda dosis QA', '09:30', 'omitted'],
+      ['Dosis mediodía QA', '13:00', 'taken'], ['Dosis prioritaria QA', '16:10', 'pending'],
+      ['Dosis siguiente QA', '16:30', 'pending'], ['Dosis noche QA', '20:45', 'pending'],
+    ]) {
+      workspace.doses.push({
+        id: 'dose-' + time, treatmentId: 'assigned', name, status, dosage: 2, unit: 'mg',
+        scheduledAt: at(time), timeZone: 'America/Bogota', instructions: 'QA',
+        occurredAt: status === 'pending' ? null : at(time), revision: status === 'pending' ? 0 : 1,
+      });
+    }
+    workspace.summary = {activeTreatments: 1, scheduledDoses: 6, takenDoses: 2, pendingDoses: 3};
+  }
   const profile = { patientId: userId, firstName: 'Paciente', lastName: 'Medicamentos QA', documentNumber: 'QA-MED', email: 'medication@example.invalid', phone: '5550101', insurerId: null, memberId: '', dateOfBirth: '1990-01-01', emergencyName: 'Contacto QA', emergencyRelationship: 'Familiar', emergencyPhone: '5550102', emergencyEmail: 'contact@example.invalid' };
   await page.route('**/api/**', async route => {
     const request = route.request(), url = new URL(request.url()), pathname = url.pathname;
@@ -56,8 +90,9 @@ for (const scenario of scenarios) {
     if (pathname === '/api/v1/me/capabilities') {
       if (scenario === 'old-server') return reply({}, 404);
       if (scenario === 'capability-error') return reply({}, 503);
-      return reply({ policyVersion: 'medications-v1:1', modules: { medications: { enabled: scenario !== 'disabled', canView: true, canManage: scenario !== 'read-only', canManageAccess: false, canSnooze: scenario === 'snooze' } } });
+      return reply({ policyVersion: 'medications-v1:1', modules: { medications: { enabled: scenario !== 'disabled', canView: true, canManage: scenario !== 'read-only', canManageAccess: false, canSnooze: modern || scenario === 'snooze' } } });
     }
+    if (pathname === '/api/v1/me/medications/version' && modern) return reply(workspace.version);
     if (pathname === '/api/v1/me/medications') return scenario === 'forbidden' ? reply({}, 403) : reply(workspace);
     if (pathname === '/api/v1/me/medications/treatments' && request.method() === 'POST') {
       const body = request.postDataJSON(); writes.push({ kind: 'create', body });
@@ -71,11 +106,24 @@ for (const scenario of scenarios) {
       return reply(workspace.treatments[0], 201);
     }
     if (/\/doses\/[^/]+\/snooze$/.test(pathname)) {
-      writes.push({ kind: 'snooze', body: request.postDataJSON() });
+      const body = request.postDataJSON();
+      writes.push({ kind: 'snooze', body });
+      if (modern) {
+        const dose = workspace.doses.find(item => item.scheduledAt === body.scheduledAt);
+        dose.snoozedUntil = new Date(Date.parse(simulatedNow) + body.minutes * 60_000).toISOString();
+      }
       return route.fulfill({ status: 204 });
     }
     if (/\/doses\/[^/]+\/events$/.test(pathname)) {
       const body = request.postDataJSON(); writes.push({ kind: 'event', body });
+      if (modern) {
+        const dose = workspace.doses.find(item => item.scheduledAt === body.scheduledAt);
+        dose.status = body.status;
+        dose.occurredAt = body.status === 'pending' ? null : body.occurredAt;
+        dose.undoUntil = body.status === 'taken' ? at('17:20') : null;
+        dose.revision++;
+        return reply(dose);
+      }
       workspace.doses[0] = { ...workspace.doses[0], status: body.status, occurredAt: body.occurredAt ?? new Date().toISOString(), revision: 1 };
       workspace.history = [{ id: '44444444-4444-4444-8444-444444444444', doseId: workspace.doses[0].id, treatmentId: workspace.treatments[0].id, name: workspace.treatments[0].name, status: body.status, occurredAt: workspace.doses[0].occurredAt, recordedAt: new Date().toISOString(), reason: body.reason ?? null, origin: 'patient_reported' }];
       workspace.summary.takenDoses = body.status === 'taken' ? 1 : 0;
@@ -120,6 +168,7 @@ for (const scenario of scenarios) {
     await expect(nav.getByRole('button', { name: english ? 'Medication control' : 'Control de medicamentos', exact: true })).toHaveCount(0);
     await profileTab.click();
     await expect(page.locator('.pf-screen')).toBeVisible();
+    if (modern) await expect(page.locator('.pf-menu-row').filter({hasText: english ? 'Medication control' : 'Control de medicamentos'})).toBeVisible();
     await nav.getByRole('button', { name: english ? 'Home' : 'Inicio', exact: true }).click();
     if (scenario === 'disabled' || scenario === 'old-server' || scenario === 'capability-error') {
       const modules = page.locator('.hm-modules');
@@ -135,13 +184,62 @@ for (const scenario of scenarios) {
       await expect(page.locator('.medications-page')).toHaveCount(0);
       assert.equal(writes.length, 0);
     } else {
-      await expect(page.locator('.hm-modules').getByRole('button', { name: english ? /Medication control/ : /Control de medicamentos/ })).toBeVisible();
-      await page.locator('.hm-modules').getByRole('button', { name: english ? /Medication control/ : /Control de medicamentos/ }).click();
+      const medicationCard = page.locator('.hm-modules').getByRole('button', { name: english ? /Medication control/ : /Control de medicamentos/ });
+      await expect(medicationCard).toBeVisible();
+      if (agenda) await expect(page.locator('.hm-module-card').filter({hasText:'Dosis prioritaria QA'})).toBeVisible();
+      await medicationCard.click();
       await expect(page.getByRole('heading', { name: english ? 'My medication' : 'Mi medicación', exact: true })).toBeVisible();
       await verifyHeader();
+      if (modern) {
+        const next = page.locator('.medications-dose-next');
+        const timeline = page.locator('.medications-timeline');
+        const emptyText = english ? 'No active medications' : 'Sin medicamentos activos';
+        for (const width of [320, 390, 768]) {
+          await page.setViewportSize({width, height: 900});
+          assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No overflow at ' + width);
+          if (empty) {
+            await expect(page.getByRole('heading', {name: emptyText, exact: true})).toBeVisible();
+            await expect(page.locator('.medications-overview')).toHaveCount(0);
+          } else {
+            await expect(next).toContainText('Dosis prioritaria QA');
+            await expect(next).toContainText(english ? 'Overdue' : 'Atrasada');
+            await expect(timeline).toBeVisible();
+            assert(await next.evaluate(card => Boolean(card.compareDocumentPosition(document.querySelector('.medications-timeline')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'Priority dose appears before the timeline');
+            await expect(timeline.locator('section > h3')).toHaveText(english ? ['Morning','Afternoon','Evening'] : ['Mañana','Tarde','Noche']);
+            await expect(timeline.locator('section').first().locator('article h3')).toHaveText(['Primera dosis QA', 'Segunda dosis QA']);
+            for (const action of await next.locator('ion-button').all()) {
+              const rect = await action.boundingBox();
+              assert(rect.width >= 43.9 && rect.height >= 43.9, 'Dose actions have 44 px targets at ' + width);
+            }
+          }
+        }
+        if (agenda) {
+          await next.getByRole('button', {name: english ? 'Snooze 15 min' : 'Posponer 15 min', exact: true}).click();
+          await expect(next).toContainText(english ? 'Reminder snoozed' : 'Recordatorio pospuesto');
+          assert.equal(writes[0]?.body.minutes, 15);
+          const priorityDose = page.locator('.medications-dose').filter({hasText:'Dosis prioritaria QA'});
+          await priorityDose.getByRole('button', {name: english ? 'I took it' : 'Ya lo tomé', exact: true}).click();
+          const undo = priorityDose.getByRole('button', {name: english ? 'Undo dose' : 'Deshacer toma', exact: true});
+          await expect(undo).toBeVisible();
+          assert((await undo.boundingBox()).height >= 43.9, 'Undo has a 44 px touch target');
+          await undo.click();
+          await expect(next).toContainText('Dosis prioritaria QA');
+          await page.locator('.medications-dose').filter({hasText: 'Dosis siguiente QA'})
+            .getByRole('button', {name: english ? 'Skip' : 'Omitir', exact: true}).click();
+          await expect(page.locator('.medications-dose').filter({hasText: 'Dosis siguiente QA'}))
+            .toContainText(english ? 'Omitted' : 'Omitido');
+          assert.deepEqual(writes.filter(write => write.kind === 'event').map(write => write.body.status), ['taken', 'pending', 'omitted']);
+        } else {
+          assert.equal(writes.length, 0);
+        }
+        assert.deepEqual(applicationErrors, [], 'The medication UI has no runtime or authored console errors');
+        await page.screenshot({path: path.join(output, scenario + '.png')});
+        results.push({scenario, passed:true});
+        continue;
+      }
       if (scenario === 'forbidden' || scenario === 'read-only') {
         if (scenario === 'forbidden') await expect(page.getByRole('alert')).toContainText('No tienes acceso');
-        else await expect(page.getByText('Sin tomas asignadas para hoy', { exact: true })).toBeVisible();
+        else await expect(page.getByRole('heading', {name:'Sin medicamentos activos', exact:true})).toBeVisible();
         await expect(page.getByRole('button', { name: 'Añadir medicamento', exact: true })).toHaveCount(0);
         assert.equal(writes.length, 0);
         await page.screenshot({ path: path.join(output, scenario + '.png') });
