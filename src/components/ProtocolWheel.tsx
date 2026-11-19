@@ -4,7 +4,7 @@ import { useT } from '../i18n/I18nContext'
 import { IonButton, IonIcon } from '@ionic/react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { checkmark, gift, trophy, medicalOutline } from 'ionicons/icons'
-import { PROGRAM_TASKS } from '../data/program'
+import { ACTIVE_PROGRAM_TASKS } from '../data/program'
 import { TASK_ICONS } from '../pages/program/ui'
 import type { ProgramDay, ProgramTaskId } from '../types'
 
@@ -12,7 +12,7 @@ const VIEW = 240
 const C = VIEW / 2
 const R_ORBIT = 96
 const SEGMENT_KEYS: (ProgramTaskId | 'chest')[] = [
-  ...PROGRAM_TASKS.map((task) => task.id),
+  ...ACTIVE_PROGRAM_TASKS.map((task) => task.id),
   'chest',
 ]
 
@@ -97,7 +97,7 @@ export function ProtocolWheel({
             data-task={seg.key}
             style={{ '--wheel-accent': seg.color, left: `${x / VIEW * 100}%`, top: `${y / VIEW * 100}%` } as CSSProperties}>
             {onSelect && <IonButton fill="clear" className="wheel-node-action"
-              aria-label={seg.key === "chest" ? t("Racha") : seg.key === "nutraceutico" && medications ? t("Medicamentos") : t(PROGRAM_TASKS.find(task => task.id === seg.key)!.title)}
+              aria-label={seg.key === "chest" ? t("Racha") : seg.key === "nutraceutico" && medications ? t("Medicamentos") : t(ACTIVE_PROGRAM_TASKS.find(task => task.id === seg.key)!.title)}
               onClick={() => onSelect(seg.key)} />}
             <IonIcon icon={seg.icon} aria-hidden="true" />
             <span className="wheel-number">

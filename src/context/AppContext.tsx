@@ -76,7 +76,7 @@ import type {
   UserProfile,
 } from "../types";
 import { weekdayMondayIndex } from "../utils/dates";
-import { DAY_BONUS_PTS } from "../data/program";
+import { ACTIVE_PROGRAM_TASKS, DAY_BONUS_PTS, isComingSoonTask } from "../data/program";
 
 /** Baseline por usuario del conteo de mensajes ya vistos del chat. */
 const CHAT_LAST_SEEN_PREFIX = "antares:chat-last-seen:";
@@ -1282,12 +1282,11 @@ export function AppProvider({
       },
       disconnectWearable: () => setWatchConnected(false),
       completeStep: (id, pts) => {
+        if (isComingSoonTask(id)) return;
         setProgram((p) => {
           if (p[id]) return p;
           const next = { ...p, [id]: true };
-          const finished = (Object.keys(next) as ProgramTaskId[]).every(
-            (k) => next[k],
-          );
+          const finished = !realMode && ACTIVE_PROGRAM_TASKS.every(task => next[task.id]);
           const gain = finished ? pts + DAY_BONUS_PTS : pts;
           if (finished) {
             setStreak((s) => s + 1);

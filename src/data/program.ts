@@ -23,15 +23,6 @@ export const PROGRAM_TASKS: {
   emoji: string;
 }[] = [
   {
-    id: "podcast",
-    title: "Escuchar podcast",
-    short: "Biohacking y metabolismo · 8 min",
-    pts: 80,
-    tone: "pur",
-    hint: "Episodio del día · Dr. Ramírez",
-    emoji: "🎙️",
-  },
-  {
     id: "vitals",
     title: "Medir signos vitales",
     short: "FC · SpO2 · Glucosa · Peso",
@@ -48,15 +39,6 @@ export const PROGRAM_TASKS: {
     tone: "teal",
     hint: "Adherencia del menú de hoy",
     emoji: "🥗",
-  },
-  {
-    id: "ejercicio",
-    title: "Hacer ejercicio del día",
-    short: "Circuito 12 min · Semana 12",
-    pts: 150,
-    tone: "blue",
-    hint: "6 estaciones guiadas",
-    emoji: "🏃",
   },
   {
     id: "nutraceutico",
@@ -76,9 +58,33 @@ export const PROGRAM_TASKS: {
     hint: "Check-in de bienestar",
     emoji: "🧠",
   },
+  {
+    id: "podcast",
+    title: "Escuchar podcast",
+    short: "Biohacking y metabolismo · 8 min",
+    pts: 80,
+    tone: "pur",
+    hint: "Episodio del día · Dr. Ramírez",
+    emoji: "🎙️",
+  },
+  {
+    id: "ejercicio",
+    title: "Hacer ejercicio del día",
+    short: "Circuito 12 min · Semana 12",
+    pts: 150,
+    tone: "blue",
+    hint: "6 estaciones guiadas",
+    emoji: "🏃",
+  },
 ];
 
-export const PROGRAM_POINTS_MAX = PROGRAM_TASKS.reduce(
+export function isComingSoonTask(id: string): boolean {
+  return id === "podcast" || id === "ejercicio";
+}
+
+export const ACTIVE_PROGRAM_TASKS = PROGRAM_TASKS.filter(task => !isComingSoonTask(task.id));
+
+export const PROGRAM_POINTS_MAX = ACTIVE_PROGRAM_TASKS.reduce(
   (sum, t) => sum + t.pts,
   0,
 );

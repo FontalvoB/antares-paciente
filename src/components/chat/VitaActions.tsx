@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IonAlert, IonButton, IonSpinner } from "@ionic/react";
 import { useApp } from "../../context/AppContext";
+import { isComingSoonTask } from "../../data/program";
 import { useI18n } from "../../i18n/I18nContext";
 import { getAccessToken } from "../../utils/authApi";
 import { sessionUserId } from "../../utils/sessionIdentity";
@@ -18,8 +19,10 @@ export function VitaActions({ actions }: { actions: VitaAction[] }) {
 }
 
 function VitaActionControls({ action }: { action: VitaAction }) {
-  const { navigate, openTests } = useApp();
+  const { navigate, openTests, showToast } = useApp();
   const { t, lang } = useI18n();
+  const destination = vitaDestinations[action.destination];
+  const comingSoon = isComingSoonTask(destination.screen?.replace(/^program-/, "") ?? "");
   const [proposal, setProposal] = useState<VitaTaskProposal | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -60,11 +63,16 @@ function VitaActionControls({ action }: { action: VitaAction }) {
       || !normalizeVitaActions(result.actions).some(currentAction => currentAction.destination === action.destination && currentAction.resourceId === action.resourceId)) throw new Error("VITA_STALE");
     return true;
   };
-  const open = () => void run(async () => {
-    if (!await validate()) return;
-    const destination = vitaDestinations[action.destination];
-    if (destination.screen) navigate(destination.screen); else openTests();
-  });
+  const open = () => {
+    if (comingSoon) {
+      showToast(t("Esta actividad estará disponible próximamente."), "info");
+      return;
+    }
+    void run(async () => {
+      if (!await validate()) return;
+      if (destination.screen) navigate(destination.screen); else openTests();
+    });
+  };
   const prepare = () => void run(async () => {
     if (!await validate()) return;
     const result = await prepareVitaCompletion(action, context());
@@ -82,8 +90,8 @@ function VitaActionControls({ action }: { action: VitaAction }) {
     catch { if (current()) setMessage("Actividad registrada. No pudimos actualizar el programa; vuelve a abrirlo."); }
   });
   return <div className="vita-action-controls">
-    <IonButton fill="outline" disabled={busy || invalid} onClick={open}>{t(vitaDestinations[action.destination].label)}</IonButton>
-    {(action.destination === "podcast" || action.destination === "exercise") && !recorded && <IonButton fill="clear" disabled={busy || invalid || dialogClosing} onClick={prepare}>{t("Registrar que terminé")}</IonButton>}
+    <IonButton fill="outline" disabled={busy || invalid} onClick={open}>{t(destination.label)}</IonButton>
+    {!comingSoon && (action.destination === "podcast" || action.destination === "exercise") && !recorded && <IonButton fill="clear" disabled={busy || invalid || dialogClosing} onClick={prepare}>{t("Registrar que terminé")}</IonButton>}
     {busy && <IonSpinner name="dots" aria-label={t("Comprobando…")} />}
     {message && <p role="status">{t(message)}</p>}
     <IonAlert isOpen={Boolean(proposal)} backdropDismiss={false}

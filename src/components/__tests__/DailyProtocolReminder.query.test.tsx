@@ -40,10 +40,20 @@ describe('2.24b · observador real del snapshot en Inicio', () => {
       ] } as ProgramSnapshotDto
     const client = setup(snapshot)
     act(() => { void client.invalidateQueries({ queryKey: programKeys.snapshot }); vi.advanceTimersByTime(12_000) })
-    expect(screen.getByRole('dialog').textContent).toContain(`Tienes ${rest ? 2 : 3} actividades pendientes`)
+    expect(screen.getByRole('dialog').textContent).toContain('Tienes 1 actividades pendientes')
     expect(client.getQueryData(programKeys.snapshot)).toEqual(snapshot)
     expect(api.snapshot).not.toHaveBeenCalled()
     expect([...errors.mock.calls, ...warnings.mock.calls].flat().filter(value => String(value).includes('No queryFn'))).toEqual([])
+  })
+
+  it('no muestra un recordatorio si solo quedan actividades próximamente u opcionales', () => {
+    setup({ enrollmentId: crypto.randomUUID(), todayLocalDate: '2026-11-14',
+      template: { currentWeekStatus: 'Active' }, optionalTaskCodes: ['nutraceutico'], todayTasks: [
+        { taskCode: 'vitals', status: 'Completed' }, { taskCode: 'podcast', status: 'Pending' },
+        { taskCode: 'ejercicio', status: 'Pending' }, { taskCode: 'nutraceutico', status: 'Pending' },
+      ] } as ProgramSnapshotDto)
+    act(() => vi.advanceTimersByTime(60_000))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('sin snapshot no consulta ni muestra recordatorio y reacciona al poblar la caché', () => {

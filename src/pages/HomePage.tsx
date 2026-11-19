@@ -37,7 +37,7 @@ import {
 import { ProtocolWheel } from "../components/ProtocolWheel";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
-import { PROGRAM_TASKS } from "../data/program";
+import { ACTIVE_PROGRAM_TASKS } from "../data/program";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { MetricHistoryModal } from "../components/MetricHistoryModal";
 import {
@@ -56,7 +56,7 @@ import { useScoresHistory } from "../hooks/useScoresHistory";
 import { useWearable } from "../context/WearableContext";
 import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import { programDayNumber } from "../utils/programDayNumber";
-import { scheduledDayTasks } from "../utils/programRest";
+import { requiredProtocolTasks } from "../utils/dailyProtocol";
 import logoIcon from "../assets/LogoIndividual.png";
 import coverComunidad from "../assets/modules/comunidad.webp";
 import coverMedicamentos from "../assets/modules/medicamentos.webp";
@@ -78,7 +78,7 @@ export function HomePage() {
   const { snapshot } = useProgram();
   const dailyMedications = useDailyMedications();
   const medicationProtocol = dailyMedications.enabled && Boolean(snapshot?.optionalTaskCodes?.includes("nutraceutico"));
-  const todayTasks = useMemo(() => scheduledDayTasks(snapshot?.todayTasks, snapshot?.rest), [snapshot]);
+  const todayTasks = useMemo(() => requiredProtocolTasks(snapshot), [snapshot]);
   const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
   const { unreadCount } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -229,11 +229,10 @@ export function HomePage() {
     };
   }, [todayTasks, appProgram]);
 
-  const requiredTasks = todayTasks?.filter(task => !snapshot?.optionalTaskCodes?.includes(task.taskCode));
-  const missionTotal = (requiredTasks?.length ?? PROGRAM_TASKS.length) + (medicationProtocol ? 1 : 0);
+  const missionTotal = (todayTasks?.length ?? ACTIVE_PROGRAM_TASKS.length) + (medicationProtocol ? 1 : 0);
   const todayDone = todayTasks
-    ? (requiredTasks?.filter(task => task.status === "Completed").length ?? 0) + (medicationProtocol && dailyMedications.data && dailyMedications.recorded === dailyMedications.scheduled ? 1 : 0)
-    : PROGRAM_TASKS.filter((task) => program[task.id]).length;
+    ? todayTasks.filter(task => task.status === "Completed").length + (medicationProtocol && dailyMedications.data && dailyMedications.recorded === dailyMedications.scheduled ? 1 : 0)
+    : ACTIVE_PROGRAM_TASKS.filter((task) => program[task.id]).length;
   // La rueda suma el cofre del día como último segmento.
   const todayTotal = missionTotal + 1;
   const dayComplete = missionTotal > 0 && todayDone === missionTotal;
@@ -393,7 +392,7 @@ export function HomePage() {
           <ProtocolWheel
             program={program}
             medications={medicationProtocol ? { done: Boolean(dailyMedications.data && dailyMedications.recorded === dailyMedications.scheduled) } : undefined}
-            taskCodes={requiredTasks?.map(task => task.taskCode)}
+            taskCodes={todayTasks?.map(task => task.taskCode)}
             chestClaimed={chestClaimed}
             title={t("Protocolo diario")}
             count={todayDone + (chestClaimed ? 1 : 0)}
