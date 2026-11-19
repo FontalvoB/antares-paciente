@@ -34,6 +34,8 @@ export interface MedicationTreatment {
   timeZone: string;
   startDate: string;
   endDate: string | null;
+  intervalHours?: number | null;
+  weekdayMask?: number | null;
 }
 
 export interface MedicationDose {
@@ -46,6 +48,9 @@ export interface MedicationDose {
   timeZone: string;
   status: "pending" | "taken" | "omitted" | "cancelled";
   occurredAt: string | null;
+  undoUntil?: string | null;
+  snoozedUntil?: string | null;
+  instructions?: string | null;
   revision: number;
 }
 
@@ -54,7 +59,7 @@ export interface MedicationEvent {
   doseId: string;
   treatmentId: string;
   name: string;
-  status: "taken" | "omitted";
+  status: "taken" | "omitted" | "pending";
   occurredAt: string;
   recordedAt: string;
   reason: string | null;
@@ -76,6 +81,7 @@ export interface MedicationAdherence {
 }
 
 export interface MedicationWorkspace {
+  version?: string;
   patient: { id: string; name: string; mrn: string };
   access: { enabled: boolean; revision: number };
   treatments: MedicationTreatment[];
@@ -108,7 +114,7 @@ export interface CreateMedicationRequest {
 export interface RecordMedicationDoseRequest {
   scheduledAt?: string;
   clientRequestId: string;
-  status: "taken" | "omitted";
+  status: "taken" | "omitted" | "pending";
   occurredAt: string;
   reason: string | null;
   expectedRevision: number;
@@ -132,6 +138,25 @@ export const fetchMyMedications = (owner: string, date: string, timeZone: string
   apiFetch<MedicationWorkspace>(`/api/v1/me/medications?${new URLSearchParams({ date, timeZone })}`, {
     signal,
     expectedUserId: owner,
+  });
+
+export const fetchMyMedicationVersion = (owner: string, signal?: AbortSignal) =>
+  apiFetch<string>("/api/v1/me/medications/version", { signal, expectedUserId: owner });
+
+export interface MedicationReminderPreferences {
+  push: boolean;
+  inApp: boolean;
+  whatsApp: boolean;
+  leadMinutes: number;
+  followUpMinutes: number | null;
+}
+
+export const fetchMyMedicationReminderPreferences = (owner: string, signal?: AbortSignal) =>
+  apiFetch<MedicationReminderPreferences>("/api/v1/me/medications/reminder-preferences", { signal, expectedUserId: owner });
+
+export const updateMyMedicationReminderPreferences = (owner: string, body: MedicationReminderPreferences) =>
+  apiFetch<MedicationReminderPreferences>("/api/v1/me/medications/reminder-preferences", {
+    method: "PUT", body, expectedUserId: owner,
   });
 
 export const createMyMedication = (owner: string, body: CreateMedicationRequest) =>

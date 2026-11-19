@@ -120,6 +120,11 @@ export function HomePage() {
   const [comingSoonNotice, setComingSoonNotice] = useState<string | null>(null);
 
   // Dos accesos permanentes: sin paginación, arrastre ni autoavance.
+  const upcomingMedication = dailyMedications.nextDose;
+  const nextMedicationTime = upcomingMedication && new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit", minute: "2-digit", timeZone: upcomingMedication.timeZone,
+  }).format(new Date(upcomingMedication.scheduledAt));
+
   const modules: { id: ScreenId; title: string; sub: string; accent: string; cover: string; cta: string }[] = [
     {
       id: "com",
@@ -132,7 +137,9 @@ export function HomePage() {
     {
       id: "medications",
       title: t("Control de medicamentos"),
-      sub: t("Tomas, tratamientos e historial"),
+      sub: upcomingMedication && nextMedicationTime
+        ? t("Próxima toma · {time}", { time: nextMedicationTime }) + " · " + upcomingMedication.name
+        : t("Tomas, tratamientos e historial"),
       accent: "var(--home-card-mid)",
       cover: coverMedicamentos,
       cta: t("Ver medicamentos"),
