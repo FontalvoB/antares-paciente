@@ -1,4 +1,5 @@
 import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
+import {TEAM_PROFESSIONALS_ENABLED} from "../utils/teamVisibility";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IonAccordion,
@@ -41,6 +42,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Mascot } from "../components/Mascot";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
 import logoIcon from "../assets/LogoIndividual.png";
+import vitaPortrait from "../assets/vita-coach.png";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { localizedError } from "../utils/localizedError";
@@ -756,57 +758,84 @@ export function ProfilePage() {
                 </IonList>
               </section>
 
-              {teamProfessionals !== null && (
-                <section className="pf-team" aria-labelledby="pf-team-title">
-                  <div className="pf-section-title">
-                    <div>
-                      <h2 id="pf-team-title">{t("Equipo Copp Adresd")}</h2>
-                      <p>{t("Profesionales que te acompañan")}</p>
-                    </div>
+              <section className="pf-team" aria-labelledby="pf-team-title">
+                <div className="pf-section-title">
+                  <div>
+                    <h2 id="pf-team-title">{t("Equipo Copp Adresd")}</h2>
+                    <p>
+                      {TEAM_PROFESSIONALS_ENABLED
+                        ? t("Profesionales que te acompañan")
+                        : t("Vita te acompaña en tu día a día.")}
+                    </p>
                   </div>
-                  {teamProfessionals.length > 0 ? (
-                    <div className="pf-team-grid">
-                      {teamProfessionals.map((pro) => (
-                        <IonButton
-                          fill="clear"
-                          key={pro.id}
-                          className="pf-team-card"
-                          onClick={() =>
-                            showToast(
-                              t("Contactando a {name}…", { name: pro.name }),
-                              "info",
-                            )
-                          }
-                        >
-                          <span className="pf-team-inner">
-                            <span className="pf-team-top">
-                              <IonAvatar
-                                className="pf-pro-avatar"
-                                aria-hidden="true"
-                              >
-                                {pro.name
-                                  .trim()
-                                  .split(/\s+/)
-                                  .filter(Boolean)
-                                  .slice(0, 2)
-                                  .map((part) => part[0])
-                                  .join("")}
-                              </IonAvatar>
-                              <IonIcon icon={arrowForward} aria-hidden="true" />
-                            </span>
-                            <strong>{pro.name}</strong>
-                            <small>{t(pro.role)}</small>
+                </div>
+                <div className="pf-team-grid">
+                  {/* KAN-96: Vita permanece visible; los profesionales se
+                      ocultan tras TEAM_PROFESSIONALS_ENABLED sin borrar su
+                      implementación. */}
+                  <IonButton
+                    fill="clear"
+                    className="pf-team-card pf-team-vita"
+                    aria-label={t("Hablar con Vita")}
+                    onClick={() => navigate("chat")}
+                  >
+                    <span className="pf-team-inner pf-vita-inner">
+                      <IonAvatar
+                        className="pf-pro-avatar pf-vita-avatar"
+                        aria-hidden="true"
+                      >
+                        <img src={vitaPortrait} alt="" />
+                      </IonAvatar>
+                      <span className="pf-vita-copy">
+                        <strong>Vita</strong>
+                        <small>{t("Asistente de salud")}</small>
+                      </span>
+                      <IonIcon icon={arrowForward} aria-hidden="true" />
+                    </span>
+                  </IonButton>
+                  {TEAM_PROFESSIONALS_ENABLED &&
+                    teamProfessionals?.map((pro) => (
+                      <IonButton
+                        fill="clear"
+                        key={pro.id}
+                        className="pf-team-card"
+                        onClick={() =>
+                          showToast(
+                            t("Contactando a {name}…", { name: pro.name }),
+                            "info",
+                          )
+                        }
+                      >
+                        <span className="pf-team-inner">
+                          <span className="pf-team-top">
+                            <IonAvatar
+                              className="pf-pro-avatar"
+                              aria-hidden="true"
+                            >
+                              {pro.name
+                                .trim()
+                                .split(/\s+/)
+                                .filter(Boolean)
+                                .slice(0, 2)
+                                .map((part) => part[0])
+                                .join("")}
+                            </IonAvatar>
+                            <IonIcon icon={arrowForward} aria-hidden="true" />
                           </span>
-                        </IonButton>
-                      ))}
-                    </div>
-                  ) : (
+                          <strong>{pro.name}</strong>
+                          <small>{t(pro.role)}</small>
+                        </span>
+                      </IonButton>
+                    ))}
+                </div>
+                {TEAM_PROFESSIONALS_ENABLED &&
+                  teamProfessionals !== null &&
+                  teamProfessionals.length === 0 && (
                     <p className="pf-empty">
                       {t("Aún no hay profesionales asignados a tu equipo.")}
                     </p>
                   )}
-                </section>
-              )}
+              </section>
 
               <section
                 className="pf-account"

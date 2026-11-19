@@ -23515,6 +23515,50 @@ ion-modal.previsit-modal::part(content) {
   color: var(--blue);
   outline-color: var(--blue-l);
 }
+
+/* KAN-96: Vita ocupa la fila completa del equipo; los profesionales quedan
+   detrás de TEAM_PROFESSIONALS_ENABLED (código intacto). */
+.pf-team-vita {
+  grid-column: 1 / -1;
+}
+.pf-team-vita::part(native) {
+  background: linear-gradient(120deg, var(--teal-l), var(--wh));
+  border-color: color-mix(in srgb, var(--teal) 18%, transparent);
+}
+.pf-vita-inner {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.pf-vita-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pf-vita-copy strong {
+  font-size: 15px;
+}
+.pf-vita-inner > ion-icon {
+  margin-left: auto;
+  color: var(--teal);
+}
+.pf-vita-avatar {
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--teal-l);
+  border: 2px solid var(--wh);
+  outline-color: color-mix(in srgb, var(--teal) 22%, transparent);
+}
+.pf-vita-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 16%;
+  border-radius: 50%;
+}
 .pf-empty {
   padding: 22px;
   border: 1px dashed var(--bd);
