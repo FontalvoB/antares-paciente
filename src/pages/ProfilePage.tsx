@@ -50,6 +50,7 @@ import type { Screen as ScreenId } from "../types";
 import { useLeague } from "../hooks/useLeague";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useProgram } from "../hooks/useProgram";
+import { useClinicalHistoryAvailability } from "../hooks/useClinicalHistoryAvailability";
 import { formatMetricValue } from "../data/metrics";
 import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
 import { contactFromProfile, emergencyContactsError, trimEmergencyContact } from "../utils/emergencyContacts";
@@ -369,6 +370,10 @@ export function ProfilePage() {
   } = useApp();
   const { snapshot, isMockFallback } = useProgram();
   const { history: metricsHistory } = useMetricsHistory();
+  // KAN-95: la entrada a Historia clínica se oculta solo con vacío confirmado
+  // (sin exámenes/mediciones, documentos ni medicamentos). Carga y errores la
+  // conservan para no esconder contenido real por un fallo de red.
+  const clinicalHistory = useClinicalHistoryAvailability();
   const { lang, toggleLang, t } = useI18n();
   const { openPrivacyChoices } = useLegalConsents();
   const locale = lang === "en" ? "en-US" : "es-ES";
@@ -683,13 +688,17 @@ export function ProfilePage() {
                 </div>
                 <IonList className="pf-menu" lines="none">
                   {[
-                    {
-                      icon: clipboardOutline,
-                      title: "Historia clínica",
-                      sub: "Diagnósticos · Lab · Medicamentos",
-                      tone: "sky",
-                      action: () => go("hc"),
-                    },
+                    ...(clinicalHistory.visible
+                      ? [
+                          {
+                            icon: clipboardOutline,
+                            title: "Historia clínica",
+                            sub: "Diagnósticos · Lab · Medicamentos",
+                            tone: "sky",
+                            action: () => go("hc"),
+                          },
+                        ]
+                      : []),
                     {
                       icon: bodyOutline,
                       title: "Visualización del perfil",

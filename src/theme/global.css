@@ -1941,6 +1941,46 @@ ion-accordion-group.hc-acc {
   line-height: 1.45;
 }
 
+/* Estado vacío honesto del expediente completo (KAN-95): sin exámenes,
+   documentos ni medicamentos no se listan secciones ni contadores en cero. */
+.hc-empty-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 26px 20px;
+  text-align: center;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.hc-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--teal-l);
+  color: var(--teal);
+  font-size: 24px;
+}
+.hc-empty-card h2 {
+  margin: 0;
+  font:
+    700 17px/1.3 "Space Grotesk",
+    sans-serif;
+  color: var(--navy);
+}
+.hc-empty-card p {
+  margin: 0;
+  max-width: 300px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mu);
+}
+
 /* --------------------------------------------------------------------------
    Visualización del perfil — figura corporal, índices y mediciones.
    Misma línea visual que el inicio y la historia clínica: cabecera clara,

@@ -56,6 +56,7 @@ const mockState = vi.hoisted(() => ({
   snapshot: null as unknown,
   isMockFallback: false,
   metrics: null as unknown,
+  clinicalHistory: "available" as "loading" | "available" | "empty" | "unknown",
 }));
 
 // Mock del endpoint de perfil: el guardado del contacto de emergencia.
@@ -108,6 +109,13 @@ vi.mock("../../hooks/useProgram", () => ({
   useProgram: () => ({
     snapshot: mockState.snapshot,
     isMockFallback: mockState.isMockFallback,
+  }),
+}));
+
+vi.mock("../../hooks/useClinicalHistoryAvailability", () => ({
+  useClinicalHistoryAvailability: () => ({
+    availability: mockState.clinicalHistory,
+    visible: mockState.clinicalHistory !== "empty",
   }),
 }));
 
@@ -207,6 +215,7 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     mockState.isMockFallback = false;
     mockState.metrics = metricsFixture;
     mockState.teamProfessionals = [realProfessionalFixture];
+    mockState.clinicalHistory = "available";
     profileMock.update.mockReset().mockResolvedValue({});
     profileMock.refresh.mockReset().mockResolvedValue(undefined);
   });
@@ -224,6 +233,27 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
       expect(screen.queryByText(new RegExp(escapeRe(text)))).toBeNull();
     }
   });
+
+  it("con vacío clínico confirmado oculta la entrada a Historia clínica (KAN-95)", () => {
+    mockState.clinicalHistory = "empty";
+
+    renderPage();
+
+    expect(screen.queryByText("Historia clínica")).toBeNull();
+    // El resto del plan sigue disponible.
+    expect(screen.getByText("Visualización del perfil")).toBeTruthy();
+  });
+
+  it.each(["available", "loading", "unknown"] as const)(
+    "con disponibilidad %s mantiene visible la Historia clínica (no oculta por duda)",
+    (availability) => {
+      mockState.clinicalHistory = availability;
+
+      renderPage();
+
+      expect(screen.getByText("Historia clínica")).toBeTruthy();
+    },
+  );
 
   it("renderiza el profesional real del catálogo en Equipo Copp Adresd", () => {
     renderPage();

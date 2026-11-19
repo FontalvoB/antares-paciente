@@ -2218,6 +2218,8 @@
   "No se pudo guardar tu perfil": "Could not save your profile",
   "Historial de mediciones": "Measurement history",
   "Aún no hay mediciones registradas en tu historial clínico": "No measurements recorded in your clinical history yet",
+  "Tu historia clínica aún está vacía": "Your clinical history is still empty",
+  "Cuando tengas exámenes, documentos o medicamentos, aparecerán aquí.": "When you have exams, documents or medications, they will appear here.",
   "Cargar mediciones anteriores": "Load older measurements",
   "No se pudieron cargar las mediciones": "We couldn't load the measurements",
   "No se pudieron cargar los profesionales": "We couldn't load the professionals",
