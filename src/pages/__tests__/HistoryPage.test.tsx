@@ -32,6 +32,7 @@ const mockState = vi.hoisted(() => ({
   measurementsHasMore: false,
   loadMoreMeasurements: vi.fn(),
   reloadMeasurements: vi.fn(),
+  availability: "available" as "loading" | "available" | "empty" | "unknown",
 }));
 
 vi.mock("../../context/AppContext", () => ({
@@ -64,6 +65,13 @@ vi.mock("../../hooks/useScoresHistory", () => ({
     history: mockState.scores,
     isLoading: mockState.scoresLoading,
     isError: false,
+  }),
+}));
+
+vi.mock("../../hooks/useClinicalHistoryAvailability", () => ({
+  useClinicalHistoryAvailability: () => ({
+    availability: mockState.availability,
+    visible: mockState.availability !== "empty",
   }),
 }));
 
@@ -195,6 +203,7 @@ describe("HistoryPage — datos reales (sin contenido clínico fabricado)", () =
     mockState.measurementsHasMore = false;
     mockState.loadMoreMeasurements.mockClear();
     mockState.reloadMeasurements.mockClear();
+    mockState.availability = "available";
   });
 
   it("renderiza nombre, documento y email reales del AppContext", () => {
@@ -399,4 +408,60 @@ describe("HistoryPage — historial de mediciones persistidas (sin inscripción)
     expect(screen.getAllByText("15/08/2026").length).toBeGreaterThan(0);
     expect(screen.queryByText("Seguimiento del programa")).toBeNull();
   });
+});
+
+
+describe("HistoryPage — disponibilidad del expediente (KAN-95)", () => {
+  beforeEach(() => {
+    mockState.lang = "es";
+    mockState.metrics = metricsFixture;
+    mockState.scores = scoresFixture;
+    mockState.metricsLoading = false;
+    mockState.scoresLoading = false;
+    mockState.snapshot = snapshotFixture;
+    mockState.measurements = [];
+    mockState.measurementsLoading = false;
+    mockState.measurementsFetchingMore = false;
+    mockState.measurementsError = null;
+    mockState.measurementsHasMore = false;
+    mockState.loadMoreMeasurements.mockClear();
+    mockState.reloadMeasurements.mockClear();
+    mockState.availability = "available";
+  });
+
+  it("con vacío confirmado muestra un estado vacío honesto y ninguna sección/contador", () => {
+    mockState.availability = "empty";
+
+    const { container } = render(<HistoryPage />);
+
+    expect(screen.getByText("Tu historia clínica aún está vacía")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Cuando tengas exámenes, documentos o medicamentos, aparecerán aquí.",
+      ),
+    ).toBeTruthy();
+    // No se renderizan acordeones vacíos ni badges en cero.
+    expect(container.querySelectorAll("ion-accordion")).toHaveLength(0);
+    expect(container.querySelectorAll("ion-badge")).toHaveLength(0);
+    expect(screen.queryByText("Historial de mediciones")).toBeNull();
+    expect(screen.queryByText("Resultados de laboratorio")).toBeNull();
+    // La identidad real sigue visible (no es contenido inventado).
+    expect(screen.getAllByText("Ana Torres").length).toBeGreaterThan(0);
+  });
+
+  it.each(["loading", "unknown", "available"] as const)(
+    "con disponibilidad %s conserva las secciones (no oculta por duda)",
+    (availability) => {
+      mockState.availability = availability;
+
+      const { container } = render(<HistoryPage />);
+
+      expect(
+        container.querySelector('ion-accordion[value="meas"]'),
+      ).toBeTruthy();
+      expect(
+        container.querySelectorAll("ion-accordion").length,
+      ).toBeGreaterThan(0);
+    },
+  );
 });

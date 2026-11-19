@@ -7,8 +7,9 @@ export function MeasurementProvenance({ measurement }: { measurement: Measuremen
   const t = useT();
   const source = getMeasurementSourceBadge(measurement);
   const superseded = isSupersededMeasurement(measurement);
+  const pending = measurement.status === "pending_confirmation";
 
-  if (!source && !superseded) return null;
+  if (!source && !superseded && !pending) return null;
 
   return (
     <div className="measurement-provenance">
@@ -20,6 +21,11 @@ export function MeasurementProvenance({ measurement }: { measurement: Measuremen
       {superseded && (
         <IonBadge className="hc-src hc-src-superseded">
           {t("Reemplazado")}
+        </IonBadge>
+      )}
+      {pending && (
+        <IonBadge className="hc-src hc-src-patient">
+          {t("Pendiente de confirmación clínica")}
         </IonBadge>
       )}
     </div>

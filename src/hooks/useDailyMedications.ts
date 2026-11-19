@@ -16,7 +16,7 @@ export function useDailyMedications() {
   });
   const assigned = new Set(query.data?.treatments.filter(isRequiredMedication).map(t => t.id));
   const doses = query.data?.doses.filter(d => assigned.has(d.treatmentId) && d.status !== 'cancelled') ?? [];
-  return { enabled: capability.enabled, data: query.data, isLoading: query.isLoading, isError: query.isError,
+  return { enabled: capability.enabled, capabilityLoading: capability.isLoading, data: query.data, isLoading: query.isLoading, isError: query.isError,
     scheduled: doses.length, recorded: doses.filter(d => d.status === 'taken').length,
     extras: query.data?.treatments.filter(t => t.productType === 'supplement' && t.status === 'active').length ?? 0 };
 }

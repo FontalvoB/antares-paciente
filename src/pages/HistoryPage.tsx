@@ -16,6 +16,7 @@ import {
   accessibilityOutline,
   bodyOutline,
   clipboardOutline,
+  documentTextOutline,
   heartOutline,
   manOutline,
   nutritionOutline,
@@ -35,6 +36,7 @@ import { MeasurementProvenance } from "../components/MeasurementProvenance";
 import { Screen, Scroll } from "../components/Screen";
 import { MyDocumentsSection } from "../components/MyDocumentsSection";
 import { useApp } from "../context/AppContext";
+import { useClinicalHistoryAvailability } from "../hooks/useClinicalHistoryAvailability";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useMyMeasurements } from "../hooks/useMyMeasurements";
 import { useProgram } from "../hooks/useProgram";
@@ -171,6 +173,10 @@ export function HistoryPage() {
   } = useMyMeasurements();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "es-ES";
+  // KAN-95: con vacío confirmado (sin exámenes/mediciones, documentos ni
+  // medicamentos) el expediente no finge secciones: muestra un estado vacío
+  // honesto. Carga y error conservan las secciones con sus estados propios.
+  const { availability } = useClinicalHistoryAvailability();
   const currentMeasurements = useMemo(
     () => measurements.filter((measurement) => !isSupersededMeasurement(measurement)),
     [measurements],
@@ -353,6 +359,25 @@ export function HistoryPage() {
 
         <div className="sec">{t("Secciones del expediente")}</div>
 
+        {availability === "empty" ? (
+          <section
+            className="hc-empty-card"
+            role="status"
+            aria-labelledby="hc-empty-title"
+          >
+            <span className="hc-empty-icon" aria-hidden="true">
+              <IonIcon icon={documentTextOutline} />
+            </span>
+            <h2 id="hc-empty-title">
+              {t("Tu historia clínica aún está vacía")}
+            </h2>
+            <p>
+              {t(
+                "Cuando tengas exámenes, documentos o medicamentos, aparecerán aquí.",
+              )}
+            </p>
+          </section>
+        ) : (
         <IonAccordionGroup
           className="hc-acc"
           value={expandedSection}
@@ -527,6 +552,7 @@ export function HistoryPage() {
             </div>
           </IonAccordion>
         </IonAccordionGroup>
+        )}
       </Scroll>
     </Screen>
   );

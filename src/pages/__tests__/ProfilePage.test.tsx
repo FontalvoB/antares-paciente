@@ -56,7 +56,11 @@ const mockState = vi.hoisted(() => ({
   snapshot: null as unknown,
   isMockFallback: false,
   metrics: null as unknown,
+  clinicalHistory: "available" as "loading" | "available" | "empty" | "unknown",
+  professionalsEnabled: false,
 }));
+
+const navigateMock = vi.hoisted(() => vi.fn());
 
 // Mock del endpoint de perfil: el guardado del contacto de emergencia.
 const profileMock = vi.hoisted(() => ({
@@ -83,7 +87,7 @@ vi.mock("../../context/AppContext", () => ({
       fam1Cel: "3009876543",
       fam1Email: "ana@example.com",
     },
-    navigate: vi.fn(),
+    navigate: navigateMock,
     openPanic: vi.fn(),
     showToast: vi.fn(),
     pointsTotal: mockState.pointsTotal,
@@ -93,6 +97,12 @@ vi.mock("../../context/AppContext", () => ({
     teamProfessionals: mockState.teamProfessionals,
     refreshPatientProfile: profileMock.refresh,
   }),
+}));
+
+vi.mock("../../utils/teamVisibility", () => ({
+  get TEAM_PROFESSIONALS_ENABLED() {
+    return mockState.professionalsEnabled;
+  },
 }));
 
 vi.mock("../../hooks/useLeague", () => ({
@@ -108,6 +118,13 @@ vi.mock("../../hooks/useProgram", () => ({
   useProgram: () => ({
     snapshot: mockState.snapshot,
     isMockFallback: mockState.isMockFallback,
+  }),
+}));
+
+vi.mock("../../hooks/useClinicalHistoryAvailability", () => ({
+  useClinicalHistoryAvailability: () => ({
+    availability: mockState.clinicalHistory,
+    visible: mockState.clinicalHistory !== "empty",
   }),
 }));
 
@@ -207,6 +224,9 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     mockState.isMockFallback = false;
     mockState.metrics = metricsFixture;
     mockState.teamProfessionals = [realProfessionalFixture];
+    mockState.clinicalHistory = "available";
+    mockState.professionalsEnabled = false;
+    navigateMock.mockClear();
     profileMock.update.mockReset().mockResolvedValue({});
     profileMock.refresh.mockReset().mockResolvedValue(undefined);
   });
@@ -225,16 +245,70 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     }
   });
 
-  it("renderiza el profesional real del catálogo en Equipo Copp Adresd", () => {
+  it("con vacío clínico confirmado oculta la entrada a Historia clínica (KAN-95)", () => {
+    mockState.clinicalHistory = "empty";
+
+    renderPage();
+
+    expect(screen.queryByText("Historia clínica")).toBeNull();
+    // El resto del plan sigue disponible.
+    expect(screen.getByText("Visualización del perfil")).toBeTruthy();
+  });
+
+  it.each(["available", "loading", "unknown"] as const)(
+    "con disponibilidad %s mantiene visible la Historia clínica (no oculta por duda)",
+    (availability) => {
+      mockState.clinicalHistory = availability;
+
+      renderPage();
+
+      expect(screen.getByText("Historia clínica")).toBeTruthy();
+    },
+  );
+
+  it("muestra solo a Vita y oculta temporalmente a los profesionales (KAN-96)", () => {
+    renderPage();
+
+    expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
+    expect(screen.getByText("Vita")).toBeTruthy();
+    expect(screen.getByText("Asistente de salud")).toBeTruthy();
+    expect(screen.getByText("Vita te acompaña en tu día a día.")).toBeTruthy();
+    expect(screen.queryByText("Dra. Sofía Vargas")).toBeNull();
+    expect(screen.queryByText("Profesionales que te acompañan")).toBeNull();
+  });
+
+  it("con el flag activo renderiza el profesional real del catálogo", () => {
+    mockState.professionalsEnabled = true;
+
     renderPage();
 
     expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
     expect(screen.getByText("Dra. Sofía Vargas")).toBeTruthy();
     expect(screen.getByText("Physician")).toBeTruthy();
+    expect(screen.getByText("Profesionales que te acompañan")).toBeTruthy();
+  });
+
+  it("el CTA de Vita abre el chat", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Hablar con Vita"));
+    expect(navigateMock).toHaveBeenCalledWith("chat");
+  });
+
+  it("el banner Personaliza tu avatar usa el retrato de doctora existente (KAN-97)", () => {
+    const { container } = renderPage();
+
+    const banner = container.querySelector(".pf-avatar-feature");
+    expect(banner).toBeTruthy();
+    const doctor = banner?.querySelector("img.pf-avatar-doctor");
+    expect(doctor).toBeTruthy();
+    expect(doctor?.getAttribute("src")).toContain("vita-coach");
+    expect(container.querySelector(".mascot")).toBeNull();
   });
 
   it("traduce el cargo profesional en inglés y conserva el nombre real", () => {
     mockState.lang = "en";
+    mockState.professionalsEnabled = true;
     mockState.teamProfessionals = [{ ...realProfessionalFixture, role: "Médico COPP-ADRESD" }];
     renderPage();
     expect(screen.getByText("COPP-ADRESD physician")).toBeTruthy();
@@ -243,6 +317,7 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
   });
 
   it("con catálogo vacío muestra estado vacío honesto, sin nombres fabricados", () => {
+    mockState.professionalsEnabled = true;
     mockState.teamProfessionals = [];
 
     renderPage();
@@ -260,13 +335,17 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     }
   });
 
-  it("sin catálogo disponible oculta la sección de equipo (no inventa)", () => {
+  it("sin catálogo de profesionales mantiene a Vita y no inventa nombres", () => {
     mockState.teamProfessionals = null;
 
     renderPage();
 
-    expect(screen.queryByText("Equipo Copp Adresd")).toBeNull();
+    expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
+    expect(screen.getByText("Vita")).toBeTruthy();
     expect(screen.queryByText("Dra. Sofía Vargas")).toBeNull();
+    expect(
+      screen.queryByText("Aún no hay profesionales asignados a tu equipo."),
+    ).toBeNull();
   });
 
   it("mantiene el valor real de puntos en el hero", () => {

@@ -9,7 +9,10 @@
  */
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-vi.mock("../../../utils/legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("../../../utils/legalConsents", async (original) => ({
+  ...(await original<object>()),
+  requireLegalConsent: vi.fn().mockResolvedValue(undefined),
+}));
 
 const apiFetchMock = vi.fn();
 
@@ -69,10 +72,38 @@ describe("sendChatMessage — POST /api/v1/chat", () => {
     const result = await sendChatMessage("Hola", "thread-1");
     expect(apiFetchMock).toHaveBeenCalledWith("/api/v1/chat", {
       method: "POST",
-      body: { message: "Hola", threadId: "thread-1" },
+      body: {
+        message: "Hola",
+        threadId: "thread-1",
+        supportsVita: true,
+      },
     });
     expect(result.reply).toBe("Hola, soy Antares AI.");
     expect(result.executionId).toBe("exec-1");
+  });
+
+  it("declara supportsVita=true en el body para activar el agente Vita", async () => {
+    apiFetchMock.mockResolvedValue({
+      reply: "Hola",
+      threadId: "thread-1",
+      executionId: "exec-1",
+      agent: "vita",
+    });
+
+    await sendChatMessage("Hola", "thread-1");
+    await sendChatMessage("Hello", "thread-1", "en");
+
+    const firstBody = apiFetchMock.mock.calls[0]?.[1]?.body as Record<
+      string,
+      unknown
+    >;
+    const secondBody = apiFetchMock.mock.calls[1]?.[1]?.body as Record<
+      string,
+      unknown
+    >;
+    expect(firstBody.supportsVita).toBe(true);
+    expect(secondBody.supportsVita).toBe(true);
+    expect(secondBody.language).toBe("en");
   });
 
   it("rechaza mensaje vacío sin llamar a la red", async () => {
@@ -157,7 +188,11 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
       }),
     ).rejects.toThrow("La calificación debe ser un entero entre 1 y 5.");
     await expect(
-      sendChatFeedback({ executionId: "exec-1", threadId: "thread-1", rating: 6 }),
+      sendChatFeedback({
+        executionId: "exec-1",
+        threadId: "thread-1",
+        rating: 6,
+      }),
     ).rejects.toThrow("La calificación debe ser un entero entre 1 y 5.");
     expect(apiFetchMock).not.toHaveBeenCalled();
   });
@@ -167,7 +202,11 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
       new ApiError({ message: "Bad Gateway", status: 502 }),
     );
     await expect(
-      sendChatFeedback({ executionId: "exec-1", threadId: "thread-1", rating: 5 }),
+      sendChatFeedback({
+        executionId: "exec-1",
+        threadId: "thread-1",
+        rating: 5,
+      }),
     ).rejects.toThrow(CHAT_UNAVAILABLE_MESSAGE);
   });
 
@@ -176,7 +215,11 @@ describe("sendChatFeedback — POST /api/v1/chat/feedback", () => {
       new ApiError({ message: "Unauthorized", status: 401 }),
     );
     await expect(
-      sendChatFeedback({ executionId: "exec-1", threadId: "thread-1", rating: 1 }),
+      sendChatFeedback({
+        executionId: "exec-1",
+        threadId: "thread-1",
+        rating: 1,
+      }),
     ).rejects.toMatchObject({ status: 401 });
   });
 });

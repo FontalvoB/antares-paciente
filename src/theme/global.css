@@ -1941,6 +1941,46 @@ ion-accordion-group.hc-acc {
   line-height: 1.45;
 }
 
+/* Estado vacío honesto del expediente completo (KAN-95): sin exámenes,
+   documentos ni medicamentos no se listan secciones ni contadores en cero. */
+.hc-empty-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 26px 20px;
+  text-align: center;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.hc-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--teal-l);
+  color: var(--teal);
+  font-size: 24px;
+}
+.hc-empty-card h2 {
+  margin: 0;
+  font:
+    700 17px/1.3 "Space Grotesk",
+    sans-serif;
+  color: var(--navy);
+}
+.hc-empty-card p {
+  margin: 0;
+  max-width: 300px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mu);
+}
+
 /* --------------------------------------------------------------------------
    Visualización del perfil — figura corporal, índices y mediciones.
    Misma línea visual que el inicio y la historia clínica: cabecera clara,
@@ -23475,6 +23515,50 @@ ion-modal.previsit-modal::part(content) {
   color: var(--blue);
   outline-color: var(--blue-l);
 }
+
+/* KAN-96: Vita ocupa la fila completa del equipo; los profesionales quedan
+   detrás de TEAM_PROFESSIONALS_ENABLED (código intacto). */
+.pf-team-vita {
+  grid-column: 1 / -1;
+}
+.pf-team-vita::part(native) {
+  background: linear-gradient(120deg, var(--teal-l), var(--wh));
+  border-color: color-mix(in srgb, var(--teal) 18%, transparent);
+}
+.pf-vita-inner {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.pf-vita-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pf-vita-copy strong {
+  font-size: 15px;
+}
+.pf-vita-inner > ion-icon {
+  margin-left: auto;
+  color: var(--teal);
+}
+.pf-vita-avatar {
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--teal-l);
+  border: 2px solid var(--wh);
+  outline-color: color-mix(in srgb, var(--teal) 22%, transparent);
+}
+.pf-vita-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 16%;
+  border-radius: 50%;
+}
 .pf-empty {
   padding: 22px;
   border: 1px dashed var(--bd);
@@ -25359,6 +25443,16 @@ ion-list.bp-list {
   font-size: 14px;
   font-weight: 700;
   color: var(--brand-navy);
+}
+.bp-meas ion-label .hc-src {
+  margin-top: 4px;
+}
+
+/* Talla derivada del perfil clínico (KAN-94): se distingue de una medición
+   con fecha/canal propios sin inventar esos metadatos. */
+.bp-list ion-item.bp-meas-profile .bp-meas-ico {
+  background: var(--hc-src-prof-bg);
+  color: var(--hc-src-prof-tx);
 }
 .bp-avatar-note {
   margin: 10px 20px 0;
@@ -27347,6 +27441,24 @@ formularios y lógica de guardado conservan su comportamiento. */
   height: auto;
   right: 37px;
   top: -5px;
+}
+
+/* KAN-97: retrato de doctora del banner "Personaliza tu avatar".
+   Asset existente: src/assets/vita-coach.png (ver comentario en ProfilePage). */
+.pf-avatar-doctor {
+  position: absolute;
+  right: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 108px;
+  width: auto;
+  max-width: 44%;
+  object-fit: contain;
+  object-position: 50% 0;
+  pointer-events: none;
+  filter: drop-shadow(
+    0 10px 16px color-mix(in srgb, var(--pur) 24%, transparent)
+  );
 }
 .pf-avatar-next {
   position: absolute;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  IonBadge,
   IonButton,
   IonIcon,
   IonItem,
@@ -38,6 +39,13 @@ import { useAvatarProgress } from "../hooks/useAvatarProgress";
 import { useMyMeasurements } from "../hooks/useMyMeasurements";
 import type { MeasurementItemDto } from "../services/measurements/types";
 import { getAccessToken, getMe } from "../utils/authApi";
+import {
+  computeBmi,
+  heightToMeters,
+  latestSeriesValue,
+  weightToKg,
+} from "../utils/body-composition";
+import { useMyMetricsHistory } from "../hooks/useMyMetricsHistory";
 
 type BodyView = "composition" | "evolution" | "appearance";
 
@@ -103,18 +111,6 @@ function formatMeasurementValue(
 ): string {
   const num = value.toLocaleString(locale, { maximumFractionDigits: 2 });
   return unitSymbol ? `${num} ${unitSymbol}` : num;
-}
-
-/**
- * Altura a metros para el IMC estándar. El backend persiste cm; si la unidad
- * es ambigua, un valor > 3 solo puede ser cm.
- */
-function heightToMeters(item: MeasurementItemDto): number | null {
-  const unit = `${item.unitCode} ${item.unitSymbol}`.toLowerCase();
-  if (unit.includes("mm")) return item.value / 1000;
-  if (unit.includes("cm")) return item.value / 100;
-  if (item.value > 3) return item.value / 100;
-  return item.value;
 }
 
 /**
@@ -209,6 +205,15 @@ export function BodyProfilePage() {
     error: mError,
     reload: mReload,
   } = useMyMeasurements({ codes: [...BODY_CODES], pageSize: 100 });
+  // Talla del perfil clínico + peso de la serie abierta (sin inscripción):
+  // cubre el caso en que la batería guardó la talla como signo vital y no
+  // como fila de clinical_measurements.
+  const { history: bodyMetrics } = useMyMetricsHistory(["weight", "height"]);
+  const profileHeightCm = bodyMetrics?.heightCm ?? null;
+  const seriesWeightKg = useMemo(
+    () => latestSeriesValue(bodyMetrics?.metrics ?? [], "weight"),
+    [bodyMetrics],
+  );
   const latestByCode = useMemo(() => {
     const out: Record<string, MeasurementItemDto> = {};
     for (const item of items) {
@@ -223,18 +228,25 @@ export function BodyProfilePage() {
   const ordered = BODY_CODES.map((code) => latestByCode[code]).filter(
     (m): m is MeasurementItemDto => Boolean(m),
   );
-  // IMC estándar con peso y talla registrados (sin estimaciones).
+  // IMC estándar: fila de talla si existe; si no, la talla del perfil clínico
+  // (heightCm de metrics-history). Peso: fila vigente o serie abierta.
+  const heightMeters = useMemo(
+    () =>
+      heightToMeters(latestByCode["height"]) ??
+      (profileHeightCm != null && profileHeightCm > 0
+        ? profileHeightCm / 100
+        : null),
+    [latestByCode, profileHeightCm],
+  );
   const bmi = useMemo(() => {
-    const weight = latestByCode["weight"];
-    const height = latestByCode["height"];
-    if (!weight || !height) return null;
-    const wUnit = `${weight.unitCode} ${weight.unitSymbol}`.toLowerCase();
-    if (!wUnit.includes("kg")) return null;
-    const meters = heightToMeters(height);
-    if (!meters || meters <= 0) return null;
-    const value = weight.value / (meters * meters);
-    return Number.isFinite(value) ? value : null;
-  }, [latestByCode]);
+    const weightKg = weightToKg(latestByCode["weight"]) ?? seriesWeightKg;
+    return computeBmi(weightKg, heightMeters);
+  }, [latestByCode, seriesWeightKg, heightMeters]);
+  // Talla mostrada desde el perfil clínico solo si no hay fila de medición.
+  const profileHeightOnly =
+    !latestByCode["height"] && profileHeightCm != null && profileHeightCm > 0
+      ? profileHeightCm
+      : null;
   const headerDate = ordered.length
     ? formatObservedAt(
         ordered.reduce((a, b) =>
@@ -355,13 +367,18 @@ export function BodyProfilePage() {
                 </IonButton>
               </>
             )}
-            {!mLoading && !mError && ordered.length === 0 && (
-              <p role="status">
-                {t("Aún no hay mediciones corporales registradas.")}
-              </p>
-            )}
-            {!mLoading && !mError && ordered.length > 0 && (
+            {!mLoading &&
+              !mError &&
+              ordered.length === 0 &&
+              bmi == null &&
+              profileHeightOnly == null && (
+                <p role="status">
+                  {t("Aún no hay mediciones corporales registradas.")}
+                </p>
+              )}
+            {!mLoading && !mError && (ordered.length > 0 || bmi != null) && (
               <>
+                {(ordered.length > 0 || profileHeightOnly != null) && (
                 <IonList className="bp-list" lines="none">
                   {ordered.map((m) => {
                     const code = m.metricCode.trim().toLowerCase();
@@ -387,7 +404,30 @@ export function BodyProfilePage() {
                       </IonItem>
                     );
                   })}
+                  {profileHeightOnly != null && (
+                    <IonItem lines="none" className="bp-meas bp-meas-profile">
+                      <span className="bp-meas-ico" aria-hidden="true">
+                        <IonIcon icon={accessibilityOutline} />
+                      </span>
+                      <IonLabel>
+                        <h3>{t("Talla")}</h3>
+                        <IonBadge className="hc-src hc-src-prof">
+                          {t("Perfil clínico")}
+                        </IonBadge>
+                      </IonLabel>
+                      <IonNote slot="end" className="bp-note">
+                        <b>
+                          {formatMeasurementValue(
+                            profileHeightOnly,
+                            "cm",
+                            locale,
+                          )}
+                        </b>
+                      </IonNote>
+                    </IonItem>
+                  )}
                 </IonList>
+                )}
                 {bmi != null && (
                   <div className="bp-bmi">
                     <div className="bp-bmi-top">
