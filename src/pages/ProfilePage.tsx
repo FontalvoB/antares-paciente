@@ -39,7 +39,6 @@ import {
   openOutline,
 } from "ionicons/icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { Mascot } from "../components/Mascot";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
 import logoIcon from "../assets/LogoIndividual.png";
 import vitaPortrait from "../assets/vita-coach.png";
@@ -645,7 +644,16 @@ export function ProfilePage() {
                       {t("Haz que tu experiencia sea única.")}
                     </span>
                   </span>
-                  <Mascot pose="success" className="pf-mascot" float={false} />
+                  {/* KAN-97: el banner usa el retrato de doctora ya existente
+                      en el repo (src/assets/vita-coach.png, scrubs teal y
+                      estetoscopio, fondo transparente). Sin assets nuevos. */}
+                  <img
+                    src={vitaPortrait}
+                    alt=""
+                    aria-hidden="true"
+                    className="pf-avatar-doctor"
+                    decoding="async"
+                  />
                   <span className="pf-avatar-next">
                     <IonIcon icon={chevronForward} aria-hidden="true" />
                   </span>

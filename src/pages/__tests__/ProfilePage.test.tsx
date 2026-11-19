@@ -295,6 +295,17 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     expect(navigateMock).toHaveBeenCalledWith("chat");
   });
 
+  it("el banner Personaliza tu avatar usa el retrato de doctora existente (KAN-97)", () => {
+    const { container } = renderPage();
+
+    const banner = container.querySelector(".pf-avatar-feature");
+    expect(banner).toBeTruthy();
+    const doctor = banner?.querySelector("img.pf-avatar-doctor");
+    expect(doctor).toBeTruthy();
+    expect(doctor?.getAttribute("src")).toContain("vita-coach");
+    expect(container.querySelector(".mascot")).toBeNull();
+  });
+
   it("traduce el cargo profesional en inglés y conserva el nombre real", () => {
     mockState.lang = "en";
     mockState.professionalsEnabled = true;

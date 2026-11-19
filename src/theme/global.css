@@ -27442,6 +27442,24 @@ formularios y lógica de guardado conservan su comportamiento. */
   right: 37px;
   top: -5px;
 }
+
+/* KAN-97: retrato de doctora del banner "Personaliza tu avatar".
+   Asset existente: src/assets/vita-coach.png (ver comentario en ProfilePage). */
+.pf-avatar-doctor {
+  position: absolute;
+  right: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 108px;
+  width: auto;
+  max-width: 44%;
+  object-fit: contain;
+  object-position: 50% 0;
+  pointer-events: none;
+  filter: drop-shadow(
+    0 10px 16px color-mix(in srgb, var(--pur) 24%, transparent)
+  );
+}
 .pf-avatar-next {
   position: absolute;
   right: 10px;
