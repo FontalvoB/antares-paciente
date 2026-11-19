@@ -34361,9 +34361,10 @@ ion-card.wearable-measure-feedback {
 }
 
 .hm-soon-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
   min-height: 52px;
   padding: 12px 14px;
   border: 1px dashed rgba(16, 42, 80, 0.18);
@@ -34377,18 +34378,34 @@ ion-card.wearable-measure-feedback {
 }
 
 .hm-soon-card ion-icon {
+  grid-row: span 2;
   font-size: 20px;
   opacity: 0.65;
 }
 
+.hm-soon-card > span {
+  overflow-wrap: anywhere;
+}
+
 .hm-soon-badge {
-  margin-left: auto;
+  justify-self: start;
+}
+
+.pcard-availability {
+  margin-block-start: 4px;
+}
+
+.hm-soon-badge,
+.pcard-availability {
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
   --background: rgba(16, 42, 80, 0.08);
   --color: #102a50;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  padding: 4px 8px;
   border-radius: 999px;
   text-transform: none;
 }
