@@ -38,8 +38,8 @@ function AccountDisclaimer({ account }: { account: string | null }) {
           <div className="nutrition-legal-top"><span className="nutrition-legal-mark"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" /></span><IonButton fill="clear" aria-label={t('Cerrar')} onClick={dismiss}><IonIcon slot="icon-only" icon={closeOutline} /></IonButton></div>
           <p className="nutrition-legal-kicker">{t('AVISO IMPORTANTE')}</p>
           <h2 id={titleId}>{t('Recomendaciones nutricionales')}</h2>
-          <p>{t('Este plan alimentario lo genera automáticamente el programa a partir de la información que diste en los cuestionarios de evaluación nutricional. Es solo informativo y de bienestar general: no es consejo médico, diagnóstico ni tratamiento, y no reemplaza la evaluación individual de un profesional de la nutrición habilitado.')}</p>
-          <p>{t('Te recomendamos que un profesional de la nutrición revise este plan antes de aplicarlo. El programa no garantiza resultados de salud específicos, y sigues siendo responsable de consultar a tu profesional de salud sobre tus necesidades.')}</p>
+          <p className="nutrition-legal-paragraph">{t('Este plan alimentario lo genera automáticamente el programa a partir de la información que diste en los cuestionarios de evaluación nutricional. Es solo informativo y de bienestar general: no es consejo médico, diagnóstico ni tratamiento, y no reemplaza la evaluación individual de un profesional de la nutrición habilitado.')}</p>
+          <p className="nutrition-legal-paragraph">{t('Te recomendamos que un profesional de la nutrición revise este plan antes de aplicarlo. El programa no garantiza resultados de salud específicos, y sigues siendo responsable de consultar a tu profesional de salud sobre tus necesidades.')}</p>
           <IonButton expand="block" onClick={dismiss}>{t('Entendido')}</IonButton>
           <small>{t('Se muestra una vez. Siempre puedes releerlo desde «Leer aviso».')}</small>
         </div>

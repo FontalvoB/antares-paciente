@@ -39,6 +39,7 @@
 .nutrition-legal-body .nutrition-legal-kicker { font-size:11px; letter-spacing:1.8px; font-weight:700; color:var(--wellness-primary); margin:16px 0 8px; }
 .nutrition-legal-body h2 { margin:0 0 18px; font-size:24px; line-height:1.25; font-weight:700; }
 .nutrition-legal-body p { font-size:15px; line-height:1.7; color:#455c73; margin:0 0 16px; }
+.nutrition-legal-body > .nutrition-legal-paragraph { text-align:justify; -webkit-hyphens:auto; hyphens:auto; }
 .nutrition-legal-body > ion-button { --background:linear-gradient(110deg,var(--wellness-primary),var(--wellness-navy)); --border-radius:16px; min-height:50px; font-size:15px; font-weight:700; text-transform:none; }
 .nutrition-legal-body > small { display:block; text-align:center; color:#52677e; font-size:12px; line-height:1.6; margin-top:12px; }
 .ntr-screen .ntd-hero { order:0; height:148px; min-height:148px; border-radius:22px; padding:0; margin:0; border:1px solid var(--wellness-border); box-shadow:var(--wellness-shadow); overflow:hidden; background:#eef5fc; }
