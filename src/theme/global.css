@@ -25400,6 +25400,16 @@ ion-list.bp-list {
   font-weight: 700;
   color: var(--brand-navy);
 }
+.bp-meas ion-label .hc-src {
+  margin-top: 4px;
+}
+
+/* Talla derivada del perfil clínico (KAN-94): se distingue de una medición
+   con fecha/canal propios sin inventar esos metadatos. */
+.bp-list ion-item.bp-meas-profile .bp-meas-ico {
+  background: var(--hc-src-prof-bg);
+  color: var(--hc-src-prof-tx);
+}
 .bp-avatar-note {
   margin: 10px 20px 0;
   font-size: 12.5px;

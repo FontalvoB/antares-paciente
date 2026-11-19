@@ -26,6 +26,8 @@ const mockState = vi.hoisted(() => ({
     { date: "2026-01-01", value: 80 },
     { date: "2026-02-01", value: 78 },
   ] as { date: string; value: number }[],
+  profileHeightCm: null as number | null,
+  seriesWeight: null as number | null,
 }));
 
 const configFixture = {
@@ -73,6 +75,33 @@ vi.mock("../../hooks/useAvatarProgress", () => ({
     owner: "tok",
     historyMs: 5,
     refresh: vi.fn(),
+  }),
+}));
+
+vi.mock("../../hooks/useMyMetricsHistory", () => ({
+  useMyMetricsHistory: () => ({
+    history: {
+      heightCm: mockState.profileHeightCm,
+      metrics:
+        mockState.seriesWeight == null
+          ? []
+          : [
+              {
+                code: "weight",
+                unit: "kg",
+                target: null,
+                favorableDirection: null,
+                points: [
+                  { date: "2026-08-01", value: 80 },
+                  { date: "2026-08-14", value: mockState.seriesWeight },
+                ],
+              },
+            ],
+    },
+    isLoading: false,
+    isError: false,
+    error: null,
+    reload: vi.fn(),
   }),
 }));
 
@@ -167,6 +196,8 @@ describe("BodyProfilePage — Perfil corporal con mediciones reales", () => {
       { date: "2026-01-01", value: 80 },
       { date: "2026-02-01", value: 78 },
     ];
+    mockState.profileHeightCm = null;
+    mockState.seriesWeight = null;
   });
 
   it("muestra las mediciones reales con valor, unidad y fecha, más el IMC", () => {
@@ -257,6 +288,79 @@ describe("BodyProfilePage — Perfil corporal con mediciones reales", () => {
       screen.getByText("Aún no hay mediciones corporales registradas."),
     ).toBeTruthy();
     expect(screen.queryByText("IMC")).toBeNull();
+  });
+
+  it("usa la talla del perfil clínico y calcula el IMC sin fila de talla", () => {
+    mockState.measurements = fullFixture.filter(
+      (m) => m.metricCode !== "height",
+    );
+    mockState.profileHeightCm = 170;
+
+    render(<BodyProfilePage />);
+
+    expect(screen.getByText("Talla")).toBeTruthy();
+    expect(screen.getByText("Perfil clínico")).toBeTruthy();
+    expect(screen.getByText("170 cm")).toBeTruthy();
+    expect(screen.getByText("kg/m²").closest("strong")?.textContent).toContain(
+      "24,4",
+    );
+  });
+
+  it("sin talla en mediciones ni perfil clínico no calcula IMC ni inventa talla", () => {
+    mockState.measurements = fullFixture.filter(
+      (m) => m.metricCode !== "height",
+    );
+    mockState.profileHeightCm = null;
+
+    render(<BodyProfilePage />);
+
+    expect(screen.queryByText("Talla")).toBeNull();
+    expect(screen.queryByText("IMC")).toBeNull();
+    expect(screen.getByText("Peso")).toBeTruthy();
+  });
+
+  it("convierte libras a kg para el IMC (sin alterar el valor mostrado)", () => {
+    mockState.measurements = fullFixture.map((m) =>
+      m.metricCode === "weight"
+        ? { ...m, value: 155.43, unitCode: "lb", unitSymbol: "lb" }
+        : m,
+    );
+
+    render(<BodyProfilePage />);
+
+    expect(screen.getByText("155,43 lb")).toBeTruthy();
+    expect(screen.getByText("kg/m²").closest("strong")?.textContent).toContain(
+      "24,4",
+    );
+  });
+
+  it("usa el último peso de la serie abierta si no hay fila de peso", () => {
+    mockState.measurements = fullFixture.filter(
+      (m) => m.metricCode !== "weight",
+    );
+    mockState.profileHeightCm = 170;
+    mockState.seriesWeight = 70.5;
+
+    render(<BodyProfilePage />);
+
+    expect(screen.queryByText("70,5 kg")).toBeNull();
+    expect(screen.getByText("kg/m²").closest("strong")?.textContent).toContain(
+      "24,4",
+    );
+  });
+
+  it("muestra el estado pendiente de confirmación de una medición", () => {
+    mockState.measurements = fullFixture.map((m) =>
+      m.metricCode === "weight"
+        ? { ...m, status: "pending_confirmation" as const }
+        : m,
+    );
+
+    render(<BodyProfilePage />);
+
+    expect(
+      screen.getByText("Pendiente de confirmación clínica"),
+    ).toBeTruthy();
   });
 
   it("no renderiza BodyMap ni cifras fabricadas", () => {
