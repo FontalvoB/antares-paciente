@@ -427,7 +427,7 @@ export function HomePage() {
         <IonAlert
           isOpen={comingSoonNotice !== null}
           header={t("Próximamente")}
-          message={t("Contenido no disponible aún — tu equipo lo está preparando")}
+          message={t("Contenido no disponible aún · tu equipo lo está preparando")}
           buttons={[t("Entendido")]}
           onDidDismiss={() => setComingSoonNotice(null)}
         />
