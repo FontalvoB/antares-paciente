@@ -4360,5 +4360,6 @@
   "Muy segura": "Very strong",
   "Crea tu nueva contraseña": "Create your new password",
   "La usarás para entrar a la app desde ahora.": "You'll use it to sign in from now on.",
-  "Tu contraseña aún no cumple todos los requisitos.": "Your password doesn't meet all the requirements yet."
+  "Tu contraseña aún no cumple todos los requisitos.": "Your password doesn't meet all the requirements yet.",
+  "Las contraseñas no coinciden.": "Passwords don't match."
 }
