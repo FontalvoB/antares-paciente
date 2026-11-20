@@ -1,5 +1,8 @@
 // Utilidades compartidas por la capa de dispositivos.
 
+/** Cadencia de la batería en primer plano, independiente del volcado. */
+export const BATTERY_REFRESH_INTERVAL_MS = 120_000;
+
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

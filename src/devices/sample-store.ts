@@ -96,6 +96,7 @@ function infoFrom(value: unknown): DeviceInfo | null {
     (value.name !== undefined && typeof value.name !== "string") ||
     (value.firmware !== undefined && typeof value.firmware !== "string") ||
     (value.wearing !== undefined && typeof value.wearing !== "boolean") ||
+    (value.charging !== undefined && typeof value.charging !== "boolean") ||
     (value.battery !== undefined &&
       (!nonnegative(value.battery) || value.battery > 100))) return null;
   return {
@@ -103,6 +104,7 @@ function infoFrom(value: unknown): DeviceInfo | null {
     ...(value.firmware !== undefined ? { firmware: value.firmware as string } : {}),
     ...(value.wearing !== undefined ? { wearing: value.wearing as boolean } : {}),
     ...(value.battery !== undefined ? { battery: value.battery as number } : {}),
+    ...(value.charging !== undefined ? { charging: value.charging as boolean } : {}),
   };
 }
 

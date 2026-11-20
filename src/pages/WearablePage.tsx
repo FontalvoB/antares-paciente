@@ -25,6 +25,9 @@ import {
   watchOutline,
   radioButtonOffOutline,
   chevronForward,
+  batteryChargingOutline,
+  batteryDeadOutline,
+  batteryFullOutline,
   batteryHalfOutline,
   bluetooth,
   copyOutline,
@@ -322,7 +325,21 @@ export function WearablePage() {
   // Pasos: SOLO el acumulado del día. `samples.steps` puede ser un registro del
   // historial de días atrás (el "Hace 63 h" de la tarjeta venía de ahí).
   const steps = today.steps ?? null;
-  const sleepMinutes = today.sleepMinutes;
+  const lastSleep = samples.sleep;
+  const wakeDate = lastSleep ? toLocalISODate(new Date(lastSleep.ts)) : null;
+  const previousNight = today.sleepMinutes == null &&
+    lastSleep?.sleepDurationVersion === 1 && wakeDate && wakeDate < toLocalISODate()
+    ? { minutes: lastSleep.value, date: formatDateForDisplay(wakeDate) }
+    : null;
+  const sleepMinutes = today.sleepMinutes ?? previousNight?.minutes;
+  const sleepDate = previousNight?.date ?? "";
+  const sleepValue = sleepMinutes == null ? "—" : formatSleep(sleepMinutes, t);
+  const battery = info.battery;
+  const batteryIcon = info.charging ? batteryChargingOutline
+    : (battery ?? 0) <= 15 ? batteryDeadOutline
+    : (battery ?? 0) < 75 ? batteryHalfOutline
+    : batteryFullOutline;
+  const batteryLabel = info.charging ? t("Batería cargando") : t("Batería");
   const lastReadingAt = Math.max(0, ...Object.values(samples).map((sample) => sample.ts));
   const savedReadingDate = new Date(lastReadingAt);
   const savedReadingLabel = lastReadingAt > 0
@@ -764,10 +781,10 @@ export function WearablePage() {
             <span className={`status-pill ${connOn ? "on" : ""}`}>
               <span className="dot" style={{ background: connDot }} />
               {connLabel}
-              {connOn && info.battery !== undefined && (
+              {connOn && battery !== undefined && (
                 <span className="wearable-battery">
-                  <IonIcon icon={batteryHalfOutline} />
-                  {info.battery}%
+                  <IonIcon icon={batteryIcon} role="img" aria-label={batteryLabel} />
+                  {battery}%
                 </span>
               )}
             </span>
@@ -840,11 +857,8 @@ export function WearablePage() {
             {
               label: "Sueño",
               icon: moonOutline,
-              value:
-                sleepMinutes != null
-                  ? formatSleep(sleepMinutes, t)
-                  : "—",
-              unit: "",
+              value: sleepValue,
+              unit: sleepDate,
             },
             {
               label: "Pasos",
@@ -1030,10 +1044,10 @@ export function WearablePage() {
                     {hr ? pointMeta(hrSample) : t("Bluetooth · sincronizando")}
                   </div>
                 </div>
-                {info.battery !== undefined && (
+                {battery !== undefined && (
                   <div className="watch-batt">
-                    <IonIcon icon={batteryHalfOutline} />
-                    <strong>{info.battery}%</strong>
+                    <IonIcon icon={batteryIcon} role="img" aria-label={batteryLabel} />
+                    <strong>{battery}%</strong>
                   </div>
                 )}
               </div>
@@ -1212,12 +1226,10 @@ export function WearablePage() {
                 <div className="watch-metric-copy">
                   <div className="watch-metric-label">{t("Sueño")}</div>
                   <div className="watch-metric-value">
-                    {sleepMinutes != null ? formatSleep(sleepMinutes, t) : "—"}
+                    {sleepValue}
                   </div>
                   <div className="watch-metric-meta">
-                    {sleepMinutes != null
-                      ? t("Última noche")
-                      : t("Sin datos aún")}
+                    {sleepDate || (sleepMinutes != null ? t("Última noche") : t("Sin datos aún"))}
                   </div>
                 </div>
               </article>

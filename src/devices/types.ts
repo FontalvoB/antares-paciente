@@ -51,6 +51,7 @@ export type DeviceKind = "ycbt" | "colmi" | "hrs" | "unknown";
 export interface DeviceInfo {
   name?: string;
   battery?: number;
+  charging?: boolean;
   firmware?: string;
   wearing?: boolean;
 }
