@@ -4351,5 +4351,14 @@
   "¿Confirmar tus respuestas?": "¿Confirmar tus respuestas?",
   "Una vez confirmadas, tus respuestas quedarán definitivas y ya no podrás modificarlas.": "Una vez confirmadas, tus respuestas quedarán definitivas y ya no podrás modificarlas.",
   "Seguir revisando": "Seguir revisando",
-  "Sí, confirmar": "Sí, confirmar"
+  "Sí, confirmar": "Sí, confirmar",
+  "8 caracteres o más": "8 caracteres o más",
+  "Una mayúscula": "Una mayúscula",
+  "Una minúscula": "Una minúscula",
+  "Un símbolo (!, #, $)": "Un símbolo (!, #, $)",
+  "Empieza a escribir": "Empieza a escribir",
+  "Muy segura": "Muy segura",
+  "Crea tu nueva contraseña": "Crea tu nueva contraseña",
+  "La usarás para entrar a la app desde ahora.": "La usarás para entrar a la app desde ahora.",
+  "Tu contraseña aún no cumple todos los requisitos.": "Tu contraseña aún no cumple todos los requisitos."
 }

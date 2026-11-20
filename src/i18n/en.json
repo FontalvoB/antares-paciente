@@ -4351,5 +4351,14 @@
   "¿Confirmar tus respuestas?": "Confirm your answers?",
   "Una vez confirmadas, tus respuestas quedarán definitivas y ya no podrás modificarlas.": "Once confirmed, your answers are final and cannot be changed.",
   "Seguir revisando": "Keep reviewing",
-  "Sí, confirmar": "Yes, confirm"
+  "Sí, confirmar": "Yes, confirm",
+  "8 caracteres o más": "8 characters or more",
+  "Una mayúscula": "One uppercase letter",
+  "Una minúscula": "One lowercase letter",
+  "Un símbolo (!, #, $)": "One symbol (!, #, $)",
+  "Empieza a escribir": "Start typing",
+  "Muy segura": "Very strong",
+  "Crea tu nueva contraseña": "Create your new password",
+  "La usarás para entrar a la app desde ahora.": "You'll use it to sign in from now on.",
+  "Tu contraseña aún no cumple todos los requisitos.": "Your password doesn't meet all the requirements yet."
 }

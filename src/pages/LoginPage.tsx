@@ -9,9 +9,12 @@ import {
 } from "@ionic/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  alertCircleOutline,
   arrowBackOutline,
   arrowForward,
+  checkmarkCircle,
   chevronForwardOutline,
+  ellipseOutline,
   eye,
   eyeOff,
   lockClosedOutline,
@@ -61,9 +64,13 @@ export function LoginPage() {
   const [documentNumber, setDocumentNumber] = useState("");
   const [pwd, setPwd] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [remember, setRemember] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Primer inicio de sesión (ID → contactos → OTP)
   const [idInput, setIdInput] = useState("");
@@ -93,6 +100,7 @@ export function LoginPage() {
 
   const submit = async () => {
     const doc = documentNumber.trim();
+    setLoginError(null);
     if (!doc || !pwd) {
       showToast(t("Ingresa tu número de identificación y contraseña"), "warn");
       return;
@@ -104,10 +112,9 @@ export function LoginPage() {
       finishLogin({ cedula: doc }, "app");
     } catch (e) {
       setBusy(false);
-      showToast(
-        localizedError(e, i18n, "Error al iniciar sesión"),
-        "err",
-      );
+      const message = localizedError(e, i18n, "Error al iniciar sesión");
+      setLoginError(message);
+      showToast(message, "err");
     }
   };
 
@@ -140,9 +147,10 @@ export function LoginPage() {
     startAction();
     setBusyMessage("Enviando tu código…");
     try {
-      const result = mode === "recovery"
-        ? await sendRecoveryCode(idInput.trim(), c.id, i18n.lang)
-        : await sendOtp(idInput.trim(), c.id, i18n.lang);
+      const result =
+        mode === "recovery"
+          ? await sendRecoveryCode(idInput.trim(), c.id, i18n.lang)
+          : await sendOtp(idInput.trim(), c.id, i18n.lang);
       setContact(c);
       setDevCode(result.devCode ?? null);
       setOtp(["", "", "", "", "", ""]);
@@ -157,10 +165,7 @@ export function LoginPage() {
       );
     } catch (e) {
       setBusy(false);
-      showToast(
-        localizedError(e, i18n, "No se pudo enviar el código"),
-        "err",
-      );
+      showToast(localizedError(e, i18n, "No se pudo enviar el código"), "err");
     }
   };
 
@@ -171,22 +176,42 @@ export function LoginPage() {
 
   const submitOtp = async () => {
     const code = otp.join("");
+    setFormError(null);
     if (code.length !== 6) {
       showToast(t("Ingresa el código de 6 dígitos"), "warn");
       return;
     }
-    if (mode === "recovery" && (newPassword.length < 8 || newPassword !== confirmPassword)) {
-      showToast(t("Usa al menos 8 caracteres y confirma la misma contraseña."), "warn"); return;
+    if (mode === "recovery" && !pwdChecks.every((check) => check.ok)) {
+      setFormError(t("Tu contraseña aún no cumple todos los requisitos."));
+      return;
+    }
+    if (mode === "recovery" && newPassword !== confirmPassword) {
+      setFormError(t("Las contraseñas no coinciden."));
+      return;
     }
     startAction();
     setBusyMessage("Verificando tu código…");
     try {
       if (mode === "recovery") {
         if (!contact) throw new Error(t("Selecciona un método de contacto."));
-        await recoverPassword(idInput.trim(), contact.id, code, newPassword, i18n.lang);
-        setBusy(false); setMode("login"); setPwd(""); setDocumentNumber(idInput.trim());
-        setNewPassword(""); setConfirmPassword("");
-        showToast(t("Contraseña actualizada. Inicia sesión con tu nueva contraseña."), "ok");
+        await recoverPassword(
+          idInput.trim(),
+          contact.id,
+          code,
+          newPassword,
+          i18n.lang,
+        );
+        setBusy(false);
+        setMode("login");
+        setPwd("");
+        setDocumentNumber(idInput.trim());
+        setNewPassword("");
+        setConfirmPassword("");
+        setFormError(null);
+        showToast(
+          t("Contraseña actualizada. Inicia sesión con tu nueva contraseña."),
+          "ok",
+        );
         return;
       }
       await verifyOtp(idInput.trim(), code, remember);
@@ -200,10 +225,7 @@ export function LoginPage() {
       finishLogin(seed);
     } catch (e) {
       setBusy(false);
-      showToast(
-        localizedError(e, i18n, "Código inválido o expirado"),
-        "err",
-      );
+      showToast(localizedError(e, i18n, "Código inválido o expirado"), "err");
     }
   };
 
@@ -235,7 +257,8 @@ export function LoginPage() {
 
   const goFirst = (recover = false) => {
     setMode(recover ? "recovery" : "first");
-    setNewPassword(""); setConfirmPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
     setFirstStep("id");
     setIdInput("");
     setLookup(null);
@@ -259,6 +282,35 @@ export function LoginPage() {
   const fullName = lookup
     ? `${lookup.firstName} ${lookup.lastName}`.trim()
     : "";
+
+  // Requisitos de contraseña (espejo de la política del Auth Service) y
+  // fuerza visual. El backend sigue siendo la autoridad final.
+  const pwdChecks = [
+    { key: "len", ok: newPassword.length >= 8, label: t("8 caracteres o más") },
+    { key: "upper", ok: /[A-Z]/.test(newPassword), label: t("Una mayúscula") },
+    { key: "lower", ok: /[a-z]/.test(newPassword), label: t("Una minúscula") },
+    { key: "digit", ok: /\d/.test(newPassword), label: t("Un número") },
+    {
+      key: "symbol",
+      ok: /[^A-Za-z0-9]/.test(newPassword),
+      label: t("Un símbolo (!, #, $)"),
+    },
+  ];
+  const pwdScore = pwdChecks.filter((check) => check.ok).length;
+  const pwdBars = Math.min(4, Math.max(0, pwdScore - 1));
+  const recoveryStepIndex = (["id", "contacts", "otp"] as FirstStep[]).indexOf(
+    firstStep,
+  );
+  const strengthLabel =
+    pwdScore === 0
+      ? t("Empieza a escribir")
+      : pwdScore <= 2
+        ? t("Débil")
+        : pwdScore === 3
+          ? t("Media")
+          : pwdScore === 4
+            ? t("Fuerte")
+            : t("Muy segura");
 
   const busyBar = (
     <AnimatePresence>
@@ -382,6 +434,13 @@ export function LoginPage() {
                   </IonButton>
                 </div>
 
+                {loginError && (
+                  <div className="auth-alert" role="alert">
+                    <IonIcon icon={alertCircleOutline} aria-hidden="true" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
                 <div className="auth-options">
                   <label className="auth-remember">
                     <IonCheckbox
@@ -459,7 +518,13 @@ export function LoginPage() {
                   <IonIcon icon={arrowBackOutline} />
                 </button>
                 <div>
-                  <h1 className="auth-head-title">{t(mode === "recovery" ? "Recupera tu contraseña" : "Activa tu cuenta")}</h1>
+                  <h1 className="auth-head-title">
+                    {t(
+                      mode === "recovery"
+                        ? "Recupera tu contraseña"
+                        : "Activa tu cuenta",
+                    )}
+                  </h1>
                   <p className="auth-head-sub">
                     {firstStep === "id" &&
                       t("Verifica tu identidad para completar tu perfil")}
@@ -470,6 +535,21 @@ export function LoginPage() {
                   </p>
                 </div>
               </header>
+
+              {mode === "recovery" && (
+                <div className="auth-steps" aria-hidden="true">
+                  {(["id", "contacts", "otp"] as FirstStep[]).map(
+                    (step, index) => (
+                      <span
+                        key={step}
+                        className={`auth-step ${
+                          firstStep === step ? "is-active" : ""
+                        } ${recoveryStepIndex > index ? "is-done" : ""}`}
+                      />
+                    ),
+                  )}
+                </div>
+              )}
 
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -541,10 +621,12 @@ export function LoginPage() {
                       )}
 
                       <p className="auth-hint">
-                        {t(lookup.contacts.length === 1
-                          ? "Encontramos {n} método de contacto asociado a tu identificación."
-                          : "Encontramos {n} métodos de contacto asociados a tu identificación.",
-                          { n: String(lookup.contacts.length) })}
+                        {t(
+                          lookup.contacts.length === 1
+                            ? "Encontramos {n} método de contacto asociado a tu identificación."
+                            : "Encontramos {n} métodos de contacto asociados a tu identificación.",
+                          { n: String(lookup.contacts.length) },
+                        )}
                       </p>
 
                       <div
@@ -653,17 +735,157 @@ export function LoginPage() {
                         )}
                       </div>
 
-                      {mode === "recovery" && <div className="auth-field">
-                        <label htmlFor="recovery-password">{t("Nueva contraseña")}</label>
-                        <input id="recovery-password" className="auth-input" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                        <label htmlFor="recovery-confirm">{t("Confirmar contraseña")}</label>
-                        <input id="recovery-confirm" className="auth-input" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
-                        <p className="auth-hint">{t("Usa mayúsculas, minúsculas, números y un símbolo. Tu contraseña debe tener al menos 8 caracteres.")}</p>
-                      </div>}
+                      {mode === "recovery" && (
+                        <div className="auth-recovery">
+                          <div className="auth-recovery-head">
+                            <span
+                              className="auth-recovery-badge"
+                              aria-hidden="true"
+                            >
+                              <IonIcon icon={shieldCheckmarkOutline} />
+                            </span>
+                            <div>
+                              <strong>{t("Crea tu nueva contraseña")}</strong>
+                              <p>
+                                {t(
+                                  "La usarás para entrar a la app desde ahora.",
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="auth-pwd">
+                            <label htmlFor="recovery-password">
+                              {t("Nueva contraseña")}
+                            </label>
+                            <div className="auth-pwd-box">
+                              <input
+                                id="recovery-password"
+                                className="auth-pwd-input"
+                                type={showNewPwd ? "text" : "password"}
+                                autoComplete="new-password"
+                                minLength={8}
+                                maxLength={128}
+                                value={newPassword}
+                                aria-describedby="recovery-reqs"
+                                onChange={(e) => {
+                                  setNewPassword(e.target.value);
+                                  setFormError(null);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="auth-pwd-eye"
+                                aria-label={t(
+                                  showNewPwd
+                                    ? "Ocultar contraseña"
+                                    : "Mostrar contraseña",
+                                )}
+                                aria-pressed={showNewPwd}
+                                onClick={() => setShowNewPwd((v) => !v)}
+                              >
+                                <IonIcon icon={showNewPwd ? eyeOff : eye} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="auth-pwd">
+                            <label htmlFor="recovery-confirm">
+                              {t("Confirmar contraseña")}
+                            </label>
+                            <div className="auth-pwd-box">
+                              <input
+                                id="recovery-confirm"
+                                className="auth-pwd-input"
+                                type={showConfirmPwd ? "text" : "password"}
+                                autoComplete="new-password"
+                                minLength={8}
+                                maxLength={128}
+                                value={confirmPassword}
+                                aria-invalid={
+                                  confirmPassword.length > 0 &&
+                                  confirmPassword !== newPassword
+                                }
+                                onChange={(e) => {
+                                  setConfirmPassword(e.target.value);
+                                  setFormError(null);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="auth-pwd-eye"
+                                aria-label={t(
+                                  showConfirmPwd
+                                    ? "Ocultar contraseña"
+                                    : "Mostrar contraseña",
+                                )}
+                                aria-pressed={showConfirmPwd}
+                                onClick={() => setShowConfirmPwd((v) => !v)}
+                              >
+                                <IonIcon icon={showConfirmPwd ? eyeOff : eye} />
+                              </button>
+                            </div>
+                            {confirmPassword.length > 0 &&
+                              confirmPassword !== newPassword && (
+                                <p className="auth-pwd-mismatch" role="alert">
+                                  {t("Las contraseñas no coinciden.")}
+                                </p>
+                              )}
+                          </div>
+
+                          <div className="auth-strength" data-score={pwdBars}>
+                            <div
+                              className="auth-strength-bars"
+                              aria-hidden="true"
+                            >
+                              {[0, 1, 2, 3].map((bar) => (
+                                <span
+                                  key={bar}
+                                  className={bar < pwdBars ? "on" : ""}
+                                />
+                              ))}
+                            </div>
+                            <span className="auth-strength-label">
+                              {strengthLabel}
+                            </span>
+                          </div>
+
+                          <ul className="auth-reqs" id="recovery-reqs">
+                            {pwdChecks.map((check) => (
+                              <li
+                                key={check.key}
+                                className={check.ok ? "ok" : ""}
+                              >
+                                <IonIcon
+                                  icon={
+                                    check.ok ? checkmarkCircle : ellipseOutline
+                                  }
+                                  aria-hidden="true"
+                                />
+                                <span>{check.label}</span>
+                              </li>
+                            ))}
+                          </ul>
+
+                          {formError && (
+                            <div className="auth-alert" role="alert">
+                              <IonIcon
+                                icon={alertCircleOutline}
+                                aria-hidden="true"
+                              />
+                              <span>{formError}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {busyBar}
 
                       <AuthSubmitButton
-                        label={t(mode === "recovery" ? "Actualizar contraseña" : "Verificar y entrar")}
+                        label={t(
+                          mode === "recovery"
+                            ? "Actualizar contraseña"
+                            : "Verificar y entrar",
+                        )}
                         busyLabel={t("Verificando…")}
                         busy={busy}
                         disabled={otp.join("").length !== 6}
