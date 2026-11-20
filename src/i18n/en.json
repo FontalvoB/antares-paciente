@@ -4343,5 +4343,13 @@
   "Los avisos de WhatsApp pueden incluir el nombre del medicamento.": "WhatsApp reminders may include the medication name.",
   "Sin medicamentos activos": "No active medications",
   "Agenda del día": "Daily timeline",
-  "Posponer 15 min": "Snooze 15 min"
+  "Posponer 15 min": "Snooze 15 min",
+  "Revisar respuestas": "Review answers",
+  "Tus tests están listos": "Your assessments are ready",
+  "Puedes revisar tus respuestas antes de confirmarlas.": "You can review your answers before confirming them.",
+  "Confirmar tests": "Confirm assessments",
+  "¿Confirmar tus respuestas?": "Confirm your answers?",
+  "Una vez confirmadas, tus respuestas quedarán definitivas y ya no podrás modificarlas.": "Once confirmed, your answers are final and cannot be changed.",
+  "Seguir revisando": "Keep reviewing",
+  "Sí, confirmar": "Yes, confirm"
 }

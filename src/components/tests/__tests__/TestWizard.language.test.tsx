@@ -28,7 +28,7 @@ describe('wizard translated question copy', () => {
   it('keeps the current question when only presentation text changes', () => {
     const view = render(wizard(false))
     fireEvent.click(screen.getByText('Comenzar evaluación'))
-    fireEvent.click(screen.getByText('Continuar'))
+    fireEvent.click(screen.getByText('Siguiente'))
     expect(screen.getByText('Segunda pregunta')).toBeTruthy()
     view.rerender(wizard(true))
     expect(screen.getByText('Second question')).toBeTruthy()

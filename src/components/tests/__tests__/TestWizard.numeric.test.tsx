@@ -73,3 +73,24 @@ it('records the next question immediately when leaving just after selecting a pu
   expect(saveAnswer).toHaveBeenCalledWith(1, 0);
   expect(saveStep).toHaveBeenCalledWith(2);
 });
+
+it('lets the patient review in either direction and stays on a corrected answer', () => {
+  const steps: WizardStep[] = [0, 1, 2].map(index => ({
+    kind: 'scale', key: String(index), index, text: 'Pregunta ' + index, emoji: '',
+    scale: ['Sí', 'No'], leftLabel: 'Sí', rightLabel: 'No', variant: 'cards',
+  }));
+  const move = vi.fn();
+  const change = vi.fn();
+  render(<TestWizard reviewing initialStep={1} theme={FALLBACK_THEME} steps={steps}
+    answers={{0: 1, 1: 0, 2: 1}} extras={{openNotes: [], onOpenNote: vi.fn()}}
+    onScale={change} onStepChange={move} onNum={vi.fn()} onBackendMulti={vi.fn()} onComplete={complete} />);
+  fireEvent.click(screen.getByText('No'));
+  expect(change).toHaveBeenCalledWith(1, 1);
+  expect(move).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText('Anterior'));
+  expect(screen.getByText('Pregunta 0')).toBeTruthy();
+  fireEvent.click(screen.getByText('Siguiente'));
+  fireEvent.click(screen.getByText('Siguiente'));
+  expect(screen.getByText('Pregunta 2')).toBeTruthy();
+  expect(change).toHaveBeenCalledTimes(1);
+});

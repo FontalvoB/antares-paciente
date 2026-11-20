@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
+  IonAlert,
   IonButton,
   IonIcon,
   IonSkeletonText,
@@ -28,6 +29,7 @@ import {
   type MeAssignment,
   type MeQuestion,
   type MeResult,
+  type MeSubmitAnswer,
 } from "../utils/healthTestsApi";
 import { AssessmentResults } from "../components/tests/AssessmentResults";
 import { TestWizard, type WizardExtras } from "../components/tests/TestWizard";
@@ -107,6 +109,7 @@ export function TestsPage() {
   const [answers, setAnswers] = useState<
     Record<number, Record<number, number | number[] | string>>
   >({});
+  const [reviewing, setReviewing] = useState(false);
   const [resumeStep, setResumeStep] = useState(0);
   const [openDraftKey, setOpenDraftKey] = useState<string | null>(null);
   useEffect(() => {
@@ -116,6 +119,8 @@ export function TestsPage() {
 
   const [openNotes, setOpenNotes] = useState<string[]>(["", "", "", ""]);
   const [showResult, setShowResult] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const sending = useRef(false);
   const [loading, setLoading] = useState(false);
 
   const currentAssignmentsError = assignmentsError?.language === lang ? assignmentsError : null;
@@ -127,7 +132,7 @@ export function TestsPage() {
   const completed = listedAssignments
     ? listedAssignments.filter((a) => a.status === "completed").length
     : 0;
-  const pct = Math.round((completed / Math.max(totalTests, 1)) * 100);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -167,6 +172,7 @@ export function TestsPage() {
       return visibleAssignments.filter(isListedAssignment).map((a, idx) => {
         const visual = themeFor(a.testCode ?? "");
         return {
+          draftKey: `assessment-draft:v1:${a.patientId || patientCareContext?.patientId || "assignment"}:${a.id}`,
           key: a.id,
           id: idx,
           assignmentId: a.id,
@@ -187,7 +193,20 @@ export function TestsPage() {
       });
     }
     return [];
-  }, [visibleAssignments]);
+  }, [visibleAssignments, patientCareContext?.patientId]);
+
+  function isReady(key: string) {
+    try { return localStorage.getItem(key + ":ready") !== null; }
+    catch { return false; }
+  }
+  const pending = listItems.filter(item => !item.done);
+  const filled = completed + pending.filter(item => isReady(item.draftKey)).length;
+  const pct = Math.round(filled / Math.max(totalTests, 1) * 100);
+  const canConfirm = pending.length > 0 && filled === totalTests;
+
+  function markEditing() {
+    if (openDraftKey) localStorage.removeItem(openDraftKey + ":ready");
+  }
 
   const theme: TestTheme =
     openId !== null
@@ -200,13 +219,14 @@ export function TestsPage() {
       return;
     }
     let draft: { answers?: Record<number, number | number[] | string>; step?: number } = {};
-    const owner = item.patientId || patientCareContext?.patientId || "assignment";
-    const key = `assessment-draft:v1:${owner}:${item.assignmentId}`;
+    const key = item.draftKey;
     setOpenDraftKey(key);
     try { draft = key ? JSON.parse(localStorage.getItem(key) ?? "{}") ?? {} : {}; } catch { /* Borrador ilegible: comenzar vacío. */ }
     setAnswers(previous => ({ ...previous, [item.id]: draft.answers && typeof draft.answers === "object" && !Array.isArray(draft.answers) ? draft.answers : {} }));
     setOpenNotes(["", "", "", ""]);
-    setResumeStep(Number.isInteger(draft.step) && draft.step! >= 0 ? draft.step! : 0);
+    const ready = isReady(item.draftKey);
+    setReviewing(ready);
+    setResumeStep(ready ? 1 : Number.isInteger(draft.step) && draft.step! >= 0 ? draft.step! : 0);
     setOpenId(item.id);
     setOpenAssignmentId(item.assignmentId);
     setOpenTitle({ text: item.title, language: lang });
@@ -281,23 +301,33 @@ export function TestsPage() {
             },
           ];
         });
-        await startMyTest(openAssignmentId);
-        await submitMyTest(openAssignmentId, answersPayload);
-        const key = openDraftKey;
-        if (key) { try { localStorage.removeItem(key); } catch { /* Almacenamiento no disponible. */ } }
-        setAssignments((prev) =>
-          prev
-            ? prev.map((a) =>
-                a.id === openAssignmentId
-                  ? {
-                      ...a,
-                      status: "completed",
-                      completedAt: new Date().toISOString(),
-                    }
-                  : a,
-              )
-            : prev,
-        );
+        if (!openDraftKey) return;
+        localStorage.setItem(openDraftKey, JSON.stringify({ answers: answers[openId], step: 1 }));
+        localStorage.setItem(openDraftKey + ":ready", JSON.stringify(answersPayload));
+        closeTest();
+      } catch {
+        showToast(t("No se pudo guardar la evaluación"), "err");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const confirmTests = async () => {
+    if (sending.current || !canConfirm) return;
+    sending.current = true;
+    setLoading(true);
+    try {
+      for (const item of pending) {
+        const payload = JSON.parse(localStorage.getItem(item.draftKey + ":ready") ?? "null") as MeSubmitAnswer[] | null;
+        if (!Array.isArray(payload)) throw new Error("Missing assessment draft");
+        await startMyTest(item.assignmentId);
+        await submitMyTest(item.assignmentId, payload);
+        setAssignments(prev => prev?.map(a => a.id === item.assignmentId
+          ? { ...a, status: "completed", completedAt: new Date().toISOString() } : a) ?? null);
+        localStorage.removeItem(item.draftKey + ":ready");
+        localStorage.removeItem(item.draftKey);
+      }
         const listLanguage = requestLanguage();
         await fetchMyAssignments().then(list => {
           if (listLanguage !== languageRef.current) return;
@@ -317,14 +347,13 @@ export function TestsPage() {
           if (resultLanguage === languageRef.current) setResultsError({ language: resultLanguage, error });
         });
         showToast(t("Evaluación guardada"), "ok");
-        closeTest();
       } catch {
         showToast(t("No se pudo guardar la evaluación"), "err");
+        setRefreshKey(key => key + 1);
       } finally {
+        sending.current = false;
         setLoading(false);
       }
-      return;
-    }
 
   };
 
@@ -359,6 +388,7 @@ export function TestsPage() {
   const extras: WizardExtras = {
     openNotes,
     onOpenNote: (i, value) => {
+      markEditing();
       setOpenNotes((prev) => {
         const next = [...prev];
         next[i] = value;
@@ -427,7 +457,7 @@ export function TestsPage() {
               <div className="ht-hero-meta">
                 <span>
                   {t("{completed} de {total} evaluaciones", {
-                    completed: String(completed),
+                    completed: String(filled),
                     total: String(totalTests),
                   })}
                 </span>
@@ -493,6 +523,7 @@ export function TestsPage() {
               type="button"
               className={`ht-list-card ${test.done ? "done" : ""} ${test.activeNow ? "now" : ""}`}
               onClick={() => void openTest(test)}
+              disabled={loading}
               aria-disabled={test.done || undefined}
               initial={reduce ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -523,7 +554,7 @@ export function TestsPage() {
                     <IonIcon icon={checkmarkCircle} />
                     {t("Hecho")}
                   </>
-                ) : test.activeNow ? (
+                ) : isReady(test.draftKey) ? t("Revisar respuestas") : test.activeNow ? (
                   t("Ahora")
                 ) : (
                   t("Pendiente")
@@ -534,6 +565,19 @@ export function TestsPage() {
               )}
             </motion.button>
           ))}
+          {canConfirm && <section className="ht-confirm-panel">
+            <IonIcon icon={checkmarkCircle} aria-hidden="true" />
+            <h2>{t("Tus tests están listos")}</h2>
+            <p>{t("Puedes revisar tus respuestas antes de confirmarlas.")}</p>
+            <IonButton expand="block" disabled={loading} onClick={() => setConfirmOpen(true)}>
+              {loading ? <IonSpinner /> : t("Confirmar tests")}
+            </IonButton>
+          </section>}
+          {confirmOpen && <IonAlert isOpen cssClass="ht-confirm-alert" header={t("¿Confirmar tus respuestas?")}
+            message={t("Una vez confirmadas, tus respuestas quedarán definitivas y ya no podrás modificarlas.")}
+            onDidDismiss={() => setConfirmOpen(false)}
+            buttons={[{ text: t("Seguir revisando"), role: "cancel" },
+              { text: t("Sí, confirmar"), cssClass: "ht-accept", handler: () => { setConfirmOpen(false); void confirmTests(); } }]} />}
           {completed > 0 && (
             <>
               <IonButton
@@ -568,6 +612,7 @@ export function TestsPage() {
             <IonSpinner name="crescent" /><p>{t("Preparando tu evaluación…")}</p>
           </div>}
           {openQuestions && <TestWizard
+          reviewing={reviewing}
           initialStep={resumeStep}
           onStepChange={setResumeStep}
           hidden={questionsLoading || questionsLanguage !== lang || Boolean(questionsError)}
@@ -577,6 +622,7 @@ export function TestsPage() {
           extras={extras}
           onScale={(index, value) => {
             if (openId === null) return;
+            markEditing();
             setAnswers((a) => ({
               ...a,
               [openId]: { ...(a[openId] ?? {}), [index]: value },
@@ -584,6 +630,7 @@ export function TestsPage() {
           }}
           onNum={(index, value) => {
             if (openId === null) return;
+            markEditing();
             setAnswers((a) => ({
               ...a,
               [openId]: { ...(a[openId] ?? {}), [index]: value },
@@ -591,6 +638,7 @@ export function TestsPage() {
           }}
           onBackendMulti={(index, option) => {
             if (openId === null) return;
+            markEditing();
             setAnswers((a) => {
               const cur = (a[openId]?.[index] as number[] | undefined) ?? [];
               const next = cur.includes(option)

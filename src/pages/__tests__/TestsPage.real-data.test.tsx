@@ -22,7 +22,13 @@ vi.mock('../../components/tests/TestWizard', async () => {
     return <div hidden={hidden}><p>{steps.find(step => step.kind === 'open')?.question}</p><input aria-label="QA draft" value={answers[0] ?? extras.openNotes[0]} onChange={event => extras.onOpenNote(0, event.target.value)} /><span data-testid="wizard-position">{position}</span><button onClick={() => { setPosition(position + 1); onStepChange?.(position + 1); }}>Next local step</button><button onClick={onComplete}>Submit real assessment</button></div>;
   } };
 });
+async function confirmReadyTests() {
+  fireEvent.click(await screen.findByText('Confirmar tests'));
+  fireEvent.click(await screen.findByText('Sí, confirmar'));
+}
 vi.mock('@ionic/react', () => ({
+  IonAlert: ({ message, buttons }: { message: string; buttons: {text: string; handler?: () => void}[] }) =>
+    <div role="alertdialog">{message}{buttons.map(button => <button key={button.text} onClick={button.handler}>{button.text}</button>)}</div>,
   IonButton: ({ children, onClick, 'aria-label': label }: { children: ReactNode; onClick?: () => void; 'aria-label'?: string }) => <button aria-label={label} onClick={onClick}>{children}</button>,
   IonIcon: () => null, IonSkeletonText: () => null, IonLoading: () => null,
   IonProgressBar: ({ value }: { value: number }) => <progress aria-label="Assessment progress" value={value} max={1} />,
@@ -79,14 +85,16 @@ describe('real assessment flow', () => {
     render(<TestsPage />);
     fireEvent.click(await screen.findByText(/Real assigned test/));
     fireEvent.click(await screen.findByText('Submit real assessment'));
+    await confirmReadyTests();
     await waitFor(() => expect(toast).toHaveBeenCalledWith('No se pudo guardar la evaluación', 'err'));
-    expect(screen.getByText('Submit real assessment')).toBeTruthy();
+    expect(screen.getByText('Confirmar tests')).toBeTruthy();
     expect(toast).not.toHaveBeenCalledWith('Evaluación guardada', 'ok');
   });
   it('shows saved only after the backend accepts submission', async () => {
     render(<TestsPage />);
     fireEvent.click(await screen.findByText(/Real assigned test/));
     fireEvent.click(await screen.findByText('Submit real assessment'));
+    await confirmReadyTests();
     await waitFor(() => expect(toast).toHaveBeenCalledWith('Evaluación guardada', 'ok'));
     expect(api.submitMyTest).toHaveBeenCalledWith('assignment-1', expect.any(Array));
     expect(screen.queryByText('Submit real assessment')).toBeNull();
@@ -190,6 +198,7 @@ describe('assessment language changes', () => {
     expect((screen.getByLabelText('QA draft') as HTMLInputElement).value).toBe('My personal draft');
     expect(screen.getByTestId('wizard-position').textContent).toBe('1');
     fireEvent.click(screen.getByText('Submit real assessment'));
+    await confirmReadyTests();
     await waitFor(() => expect(api.submitMyTest).toHaveBeenCalledWith('assignment-1', [{ questionId: 'question-1', answerOptionId: null, valueText: 'My personal draft' }]));
   });
 });
@@ -229,6 +238,7 @@ describe('assessment read recovery', () => {
     api.fetchMyAssignments.mockRejectedValueOnce(translationFailure());
     api.fetchMyResults.mockRejectedValueOnce(translationFailure());
     fireEvent.click(screen.getByText('Submit real assessment'));
+    await confirmReadyTests();
     await screen.findByText(CONTENT_TRANSLATION_RETRY_SOURCE);
     expect(screen.getByText(/^1\. English assessment$/)).toBeTruthy();
     expect(screen.getByText(/Earlier English assessment/)).toBeTruthy();
@@ -297,6 +307,9 @@ describe('assessment read recovery', () => {
     expect(screen.getByText('Recovered English title')).toBeTruthy();
     expect(screen.queryByText('Título anterior en español')).toBeNull();
     fireEvent.click(screen.getByText('Submit real assessment'));
+    api.fetchMyAssignments.mockResolvedValue(assigned);
+    fireEvent.click(await screen.findByRole('button', { name: 'Reintentar' }));
+    await confirmReadyTests();
     await waitFor(() => expect(api.submitMyTest).toHaveBeenCalledWith('assignment-1', [{ questionId: 'question-1', answerOptionId: null, valueText: 'Mi respuesta personal intacta' }]));
     await waitFor(() => expect(toast).toHaveBeenCalledWith('Evaluación guardada', 'ok'));
   });
@@ -338,6 +351,7 @@ describe('assessment read recovery', () => {
     expect((await screen.findByLabelText('QA draft') as HTMLInputElement).value).toBe('Mi respuesta');
     expect(screen.getByTestId('wizard-position').textContent).toBe('1');
     fireEvent.click(screen.getByText('Submit real assessment'));
+    await confirmReadyTests();
     await waitFor(() => expect(screen.queryByText('Submit real assessment')).toBeNull());
     expect(localStorage.getItem('assessment-draft:v1:patient-1:assignment-1')).toBeNull();
  });
@@ -355,6 +369,7 @@ it('keeps the draft if submission fails', async () => {
   fireEvent.click(await screen.findByText(/Real assigned test/));
   fireEvent.change(await screen.findByLabelText('QA draft'), { target: { value: 'Conservar respuesta' } });
   fireEvent.click(screen.getByText('Submit real assessment'));
+    await confirmReadyTests();
   await waitFor(() => expect(toast).toHaveBeenCalledWith('No se pudo guardar la evaluación', 'err'));
   expect(JSON.parse(localStorage.getItem('assessment-draft:v1:patient-1:assignment-1')!).answers[0]).toBe('Conservar respuesta');
 });
@@ -371,4 +386,23 @@ it('resumes from the list back arrow even before patient context is loaded', asy
   await openPurpose();
   expect((await screen.findByLabelText('QA draft') as HTMLInputElement).value).toBe('Mi propósito');
   expect(screen.getByTestId('wizard-position').textContent).toBe('2');
+});
+
+it('allows editing a filled test and confirms only after every test is ready', async () => {
+  api.fetchMyAssignments.mockResolvedValue([...assigned, { ...assigned[0], id: 'two', testName: 'Second test' }]);
+  render(<TestsPage />);
+  for (const answer of ['Original', 'Corregido']) {
+    fireEvent.click(await screen.findByText(/Real assigned test/));
+    const field = await screen.findByLabelText('QA draft') as HTMLInputElement;
+    if (answer === 'Corregido') expect(field.value).toBe('Original');
+    fireEvent.change(field, { target: { value: answer } });
+    fireEvent.click(screen.getByText('Submit real assessment'));
+    expect(screen.queryByText('Confirmar tests')).toBeNull();
+  }
+  fireEvent.click(await screen.findByText(/Second test/));
+  fireEvent.click(await screen.findByText('Submit real assessment'));
+  expect(api.submitMyTest).not.toHaveBeenCalled();
+  await confirmReadyTests();
+  await waitFor(() => expect(api.submitMyTest).toHaveBeenCalledTimes(2));
+  expect(api.submitMyTest.mock.calls[0][1][0].valueText).toBe('Corregido');
 });

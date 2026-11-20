@@ -17346,7 +17346,7 @@ ion-button.ht-skip {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 16px 118px;
+  padding: 12px 16px 20px;
   -webkit-overflow-scrolling: touch;
 }
 .ht-step {
@@ -17883,29 +17883,35 @@ ion-textarea.ht-area {
 }
 
 .ht-foot {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex: 0 0 auto;
   padding: 12px 14px calc(16px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(transparent, var(--ht-bg) 34%);
   z-index: 2;
 }
 .ht-foot-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(48px, auto);
   gap: 10px;
 }
-.ht-foot-row ion-button.bt-round {
+.ht-foot-row > ion-button {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  --border-radius: 14px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  white-space: normal;
+}
+.ht-foot-row ion-button.ht-previous {
   --background: var(--g1);
   --color: var(--tx);
-  flex-shrink: 0;
 }
-.ht-foot-row ion-button.bt-round ion-icon {
-  font-size: 20px;
-}
-.ht-foot-row ion-button.ht-cta {
-  flex: 1;
+.ht-foot-row ion-icon {
+  font-size: 18px;
 }
 ion-button.ht-cta {
   --border-radius: 14px;
@@ -34535,3 +34541,15 @@ ion-modal.vita-archive-modal ion-title {
 .medications-dose-actions .medications-photo-optional {
   grid-column: 1 / -1;
 }
+
+.ht-confirm-panel { margin: 18px 0; padding: 20px; border-radius: var(--radius-lg); background: var(--teal-l); color: var(--brand-navy); }
+.ht-confirm-panel > ion-icon { font-size: 28px; color: var(--brand-green); }
+.ht-confirm-panel h2 { margin: 8px 0 4px; font-size: 20px; }
+.ht-confirm-panel p { margin: 0 0 16px; line-height: 1.5; }
+.ht-confirm-panel ion-button { --background: var(--brand-navy); --border-radius: 14px; min-height: 48px; }
+
+ion-alert.ht-confirm-alert { --background: var(--wh); --max-width: min(360px, 90vw); }
+.ht-confirm-alert .alert-wrapper { border-radius: var(--radius-lg); }
+.ht-confirm-alert .alert-title { color: var(--brand-navy); }
+.ht-confirm-alert .alert-message { line-height: 1.5; }
+.ht-confirm-alert .alert-button.ht-accept { font-weight: 750; color: var(--brand-green); }

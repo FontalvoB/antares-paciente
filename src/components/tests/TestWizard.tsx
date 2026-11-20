@@ -3,7 +3,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { IonButton, IonInput, IonIcon, IonProgressBar, IonSpinner, IonTextarea } from "@ionic/react";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import {
-  arrowBackOutline,
   checkmarkCircle,
   chevronBack,
   chevronForward,
@@ -28,6 +27,7 @@ export interface WizardExtras {
 }
 
 export function TestWizard({
+  reviewing = false,
   initialStep = 0,
   onStepChange,
   theme,
@@ -41,6 +41,7 @@ export function TestWizard({
   saving = false,
   hidden = false,
 }: {
+  reviewing?: boolean;
   initialStep?: number;
   onStepChange?: (step: number) => void;
   theme: TestTheme;
@@ -105,7 +106,7 @@ export function TestWizard({
     if (saving) return;
     onScale(index, value);
     void tapHaptic();
-    if (!isLast) {
+    if (!isLast && !reviewing) {
       onStepChange?.(step + 1);
       window.clearTimeout(advanceTimer.current);
       advanceTimer.current = window.setTimeout(() => {
@@ -202,15 +203,13 @@ export function TestWizard({
           <div className="ht-foot-row">
             <IonButton
               fill="solid"
-              className="bt bt-ghost bt-round"
+              className="bt bt-ghost ht-previous"
               aria-label={t("Anterior")}
-              disabled={saving}
+              disabled={saving || questionIndex === 0}
               onClick={() => go(step - 1)}
             >
-              <IonIcon
-                slot="icon-only"
-                icon={step === 0 ? arrowBackOutline : chevronBack}
-              />
+              <IonIcon slot="start" icon={chevronBack} />
+              {t("Anterior")}
             </IonButton>
             <IonButton
               expand="block"
@@ -219,7 +218,7 @@ export function TestWizard({
               onClick={continueNext}
             >
               {saving && <IonSpinner name="crescent" slot="start" />}
-              {saving ? t("Guardando tu evaluación…") : isLast ? t("Guardar evaluación") : t("Continuar")}
+              {saving ? t("Guardando tu evaluación…") : isLast ? t("Guardar evaluación") : t("Siguiente")}
               {!isLast && <IonIcon icon={chevronForward} slot="end" />}
             </IonButton>
           </div>
