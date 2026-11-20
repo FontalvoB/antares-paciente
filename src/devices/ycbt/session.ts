@@ -1,6 +1,6 @@
 import type { BleService } from "@capacitor-community/bluetooth-le";
 import * as ble from "../ble/ble-client";
-import { delay } from "../util";
+import { BATTERY_REFRESH_INTERVAL_MS, delay } from "../util";
 import { HistorySync } from "./history";
 import {
   DEV_MEASUREMENT_RESULT,
@@ -120,6 +120,7 @@ export class YcbtSession implements DeviceSession {
   private stopped = false;
   private appActive = true;
   private refreshTimer?: number;
+  private batteryTimer?: number;
   private queue: Promise<void> = Promise.resolve();
   private subscribed: { service: string; characteristic: string }[] = [];
   // Medida puntual: un modo a la vez (el anillo tiene un solo sensor activo).
@@ -425,15 +426,22 @@ export class YcbtSession implements DeviceSession {
       if (this.stopped || !this.appActive || this.measureMode !== null) return;
       if (this.historyBusy) return;
       this.refreshLiveStatus();
-      this.requestInfo();
       void this.syncHistory();
     }, REFRESH_INTERVAL_MS);
+    this.batteryTimer = window.setInterval(
+      () => { if (!this.historyBusy) this.requestInfo(); },
+      BATTERY_REFRESH_INTERVAL_MS,
+    );
   }
 
   private stopRefresh(): void {
     if (this.refreshTimer !== undefined) {
       window.clearInterval(this.refreshTimer);
       this.refreshTimer = undefined;
+    }
+    if (this.batteryTimer !== undefined) {
+      window.clearInterval(this.batteryTimer);
+      this.batteryTimer = undefined;
     }
   }
 
@@ -546,9 +554,10 @@ export class YcbtSession implements DeviceSession {
 
   private handleGetReply(packet: YcbtPacket): void {
     if (packet.type === OP.GET_DEVICE_INFO && packet.payload.length >= 6) {
+      const battery = packet.payload[5];
       const info: DeviceInfo = {
         firmware: `${packet.payload[3]}.${packet.payload[2]}`,
-        battery: packet.payload[5],
+        ...(battery <= 100 ? { battery } : {}),
       };
       this.onInfo?.(info);
       return;
@@ -566,7 +575,7 @@ export class YcbtSession implements DeviceSession {
   private handleRealtime(packet: YcbtPacket): void {
     if (packet.type === OP.LIVE_BATTERY) {
       const battery = packet.payload[1];
-      if (battery !== undefined) this.onInfo?.({ battery });
+      if (battery !== undefined && battery <= 100) this.onInfo?.({ battery });
       return;
     }
     // Cualquier trama `06 xx` durante la medida cuenta como radio (aunque no

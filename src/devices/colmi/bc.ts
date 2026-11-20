@@ -276,26 +276,30 @@ export const MIN_NIGHT_HR_READINGS = 6;
 /**
  * Corrobora una noche de la banda con la curva de FC del mismo volcado: sin
  * puesto no hay FC, así que una noche "fantasma" (banda guardada sin usar) se
- * cae. Si el volcado no trajo ninguna FC (log 24/7 apagado en la banda) no se
- * filtra nada, para no perder noches legítimas.
+ * cae. La curva UART solo cubre hoy. Si no hay FC del día de despertar,
+ * la curva no sirve para rechazar una noche histórica.
  */
 export function nightHasHrSupport(
   night: HealthSample,
   hrSamples: readonly HealthSample[],
   minReadings = MIN_NIGHT_HR_READINGS,
 ): boolean {
-  if (hrSamples.length === 0) return true;
   const wake = night.ts;
+  const wakeDay = new Date(wake);
+  const dayStart = wakeDay.setHours(0, 0, 0, 0);
+  const dayEnd = wakeDay.setDate(wakeDay.getDate() + 1);
   const start = wake - Math.max(0, night.value) * 60_000;
   let count = 0;
+  let hasWakeDayHr = false;
   for (const hr of hrSamples) {
     if (hr.metric !== "heart_rate") continue;
+    if (hr.ts >= dayStart && hr.ts < dayEnd) hasWakeDayHr = true;
     if (hr.ts < start || hr.ts > wake) continue;
     if (hr.value < 30 || hr.value > 140) continue;
     count += 1;
     if (count >= minReadings) return true;
   }
-  return false;
+  return !hasWakeDayHr;
 }
 
 /**

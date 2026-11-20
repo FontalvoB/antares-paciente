@@ -445,6 +445,7 @@ export function WearableProvider({ children }: { children: ReactNode }) {
 
   const handleInfo = useCallback((delta: DeviceInfo) => {
     lastSeenAtRef.current = Date.now();
+    if (Object.keys(delta).length === 0) return;
     const snapshot = snapshotRef.current;
     if (snapshot && snapshot.accountId === accountRef.current) {
       const next = updateSampleSnapshot(snapshot, { info: delta });

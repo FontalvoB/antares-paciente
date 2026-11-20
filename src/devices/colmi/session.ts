@@ -1,5 +1,5 @@
 import * as ble from "../ble/ble-client";
-import { delay } from "../util";
+import { BATTERY_REFRESH_INTERVAL_MS, delay } from "../util";
 import { BcChannel, nightHasHrSupport } from "./bc";
 import { ColmiHistory, buildHistoryRequests } from "./history";
 import {
@@ -57,9 +57,6 @@ const MEASURE_POLICY: Partial<Record<MetricKind, MeasurePolicy>> = {
   blood_pressure: { windowMs: 60_000, retryMs: 15_000 },
 };
 const DEFAULT_MEASURE_POLICY: MeasurePolicy = { windowMs: MEASURE_TIMEOUT_MS };
-
-/** Relectura de la batería en sesiones largas (el anillo hace lo mismo). */
-const BATTERY_REFRESH_MS = 30 * 60_000;
 
 /** Nombre corto por tipo, para las notas de diagnóstico. */
 const MEASURE_NOTE: Partial<Record<ColmiMeasureType, string>> = {
@@ -448,8 +445,8 @@ export class ColmiSession implements DeviceSession {
   private startBatteryRefresh(): void {
     this.stopBatteryRefresh();
     this.batteryTimer = window.setInterval(
-      () => this.requestInfo(),
-      BATTERY_REFRESH_MS,
+      () => { if (!this.historyBusy) this.requestInfo(); },
+      BATTERY_REFRESH_INTERVAL_MS,
     );
   }
 
@@ -509,7 +506,8 @@ export class ColmiSession implements DeviceSession {
         break;
       case CMD.BATTERY: {
         const battery = parseBattery(frame.payload);
-        if (battery) this.onInfo?.({ battery: battery.level });
+        // Una respuesta sin porcentaje válido aún confirma que el enlace responde.
+        this.onInfo?.(battery ? { battery: battery.level, charging: battery.charging } : {});
         break;
       }
       default: {

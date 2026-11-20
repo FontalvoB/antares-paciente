@@ -2125,6 +2125,8 @@
   "{min} min": "{min} min",
   "{h} h {min} min": "{h} h {min} min",
   "Última noche": "Last night",
+  "Batería": "Battery",
+  "Batería cargando": "Battery charging",
   "Medir FC ahora": "Measure HR now",
   "Sincronizar ahora": "Sync now",
   "Sincronizando…": "Syncing…",

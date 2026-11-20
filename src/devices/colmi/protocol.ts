@@ -231,6 +231,6 @@ export function parseCapabilities(
 export function parseBattery(
   payload: Uint8Array,
 ): { level: number; charging: boolean } | null {
-  if (payload.length < 2) return null;
+  if (payload.length < 2 || payload[0] > 100) return null;
   return { level: payload[0], charging: payload[1] !== 0 };
 }

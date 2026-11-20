@@ -2056,6 +2056,8 @@
   "{min} min": "{min} min",
   "{h} h {min} min": "{h} h {min} min",
   "Última noche": "Última noche",
+  "Batería": "Batería",
+  "Batería cargando": "Batería cargando",
   "Medir FC ahora": "Medir FC ahora",
   "Sincronizar ahora": "Sincronizar ahora",
   "Sincronizando…": "Sincronizando…",
