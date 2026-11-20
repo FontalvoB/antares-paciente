@@ -407,3 +407,20 @@ El grupo de concurrencia sigue serializando los uploads.
 
 Referencias oficiales: [runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
 y [software instalado en xcode-27](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md).
+
+## Notificaciones push iOS (FCM)
+
+Para habilitar push en TestFlight, activa Push Notifications en el App ID
+`com.coppadresd.mobile`, renueva el perfil App Store de Match con esa capacidad
+y configura una clave APNs en el proyecto Firebase que usa el backend.
+Configura `FIREBASE_IOS_CONFIG_B64` en GitHub Actions con el
+`GoogleService-Info.plist` de ese App ID codificado en base64. Fastlane solo
+solicita la capacidad de push cuando se incluye ese archivo.
+
+Para un dispositivo de desarrollo, guarda el archivo en
+`ios/App/App/GoogleService-Info.plist`, firma con un perfil de desarrollo que
+incluya Push Notifications y agrega
+`PUSH_CODE_SIGN_ENTITLEMENTS=App/PushNotifications.entitlements` a los
+build settings del target. Debug usa el entorno APNs `development` y Release
+usa `production`. Después de instalar y aceptar el permiso, confirma en un
+dispositivo de prueba que llega un aviso y abre «Mi medicación» al tocarlo.

@@ -8,7 +8,7 @@ import { getApiBaseUrl } from './apiBaseUrl'
  * Registro de notificaciones push (FCM) en ANTARES Paciente.
  *
  * - Pide permiso (iOS) y registra el dispositivo en Capacitor.
- * - Con el token FCM/APNS obtenido, lo registra en el backend
+ * - Con el token FCM obtenido, lo registra en el backend
  *   (POST /api/v1/notifications/devices). El endpoint exige JWT: mientras el
  *   login demo no esté conectado el registro puede devolver 401 — se degrada
  *   con un log sin romper la app.
@@ -17,10 +17,10 @@ import { getApiBaseUrl } from './apiBaseUrl'
  * - Si la carga pide la sala (data.screen === "room" o data.appointmentId),
  *   delega en onOpenRoom con el id de la cita.
  *
- * Requiere (trabajo del usuario, fuera del alcance de código):
+ * Configuración por plataforma:
  *   - Android: android/app/google-services.json (proyecto Firebase + FCM)
- *   - iOS: App/App/GoogleService-Info.plist (proyecto Firebase + APNs)
- * Sin esos archivos el plugin registra pero FCM no entrega notificaciones.
+ *   - iOS: Firebase convierte el token APNs a FCM en AppDelegate. Requiere
+ *     GoogleService-Info.plist y una firma con la capacidad de push.
  */
 interface PushRegistrationOptions {
   language?: 'es' | 'en'
