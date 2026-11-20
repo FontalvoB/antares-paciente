@@ -38,6 +38,11 @@ import type {
 
 const treatmentLabels = { active: "Activo", paused: "Pausado", completed: "Finalizado" } as const;
 const doseLabels = { pending: "Pendiente", taken: "Tomado", omitted: "Omitido", cancelled: "Cancelado" } as const;
+const agendaPeriods = [
+  { start: 0, end: 12, label: "Mañana", icon: sunnyOutline },
+  { start: 12, end: 18, label: "Tarde", icon: partlySunnyOutline },
+  { start: 18, end: 24, label: "Noche", icon: moonOutline },
+] as const;
 const productLabels = { medication: "Medicamento", vitamin: "Vitamina", supplement: "Suplemento" } as const;
 
 function currentTimeZone() {
@@ -203,8 +208,8 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
   const unavailable = !capabilities.isLoading && !capabilities.enabled;
   const accessDenied = query.error instanceof ApiError && [403, 404].includes(query.error.status);
   const loading = capabilities.isLoading || (capabilities.enabled && query.isLoading);
-  const time = (value: string, zone?: string) => new Intl.DateTimeFormat(locale, {
-    hour: "2-digit", minute: "2-digit", ...(zone ? { timeZone: zone } : {}),
+  const time = (value: string) => new Intl.DateTimeFormat(locale, {
+    hour: "2-digit", minute: "2-digit", timeZone,
   }).format(new Date(value));
 
   const supplementIds = new Set(workspace?.treatments.filter(t => t.productType === "supplement").map(t => t.id));
@@ -235,7 +240,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     const instructions = dose.instructions ?? treatment?.instructions;
     return <article className={`medications-dose medications-dose-${dose.status}${isNext ? " medications-dose-next" : ""}`} key={dose.id}>
       {isNext && <span className="medications-next-label">{t(future ? "Próxima toma" : "Toma pendiente")}</span>}
-      <div className="medications-dose-line"><span className="medications-time"><IonIcon icon={timeOutline} aria-hidden="true" />{time(dose.scheduledAt, dose.timeZone)}</span><IonBadge className={`medications-badge medications-badge-${overdue ? "overdue" : dose.status}`}>{t(overdue ? "Atrasada" : doseLabels[dose.status])}</IonBadge></div>
+      <div className="medications-dose-line"><span className="medications-time"><IonIcon icon={timeOutline} aria-hidden="true" />{time(dose.scheduledAt)}</span><IonBadge className={`medications-badge medications-badge-${overdue ? "overdue" : dose.status}`}>{t(overdue ? "Atrasada" : doseLabels[dose.status])}</IonBadge></div>
       <div className="medications-dose-product">
         <span className={`medications-product-icon medications-product-${kind}`}><IonIcon icon={kind === "vitamin" ? sunnyOutline : kind === "supplement" ? leafOutline : medicalOutline} aria-hidden="true" /></span>
         <div><h3 title={dose.name}>{dose.name}</h3>
@@ -265,15 +270,15 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
         </IonButton>}
       </div> : dose.occurredAt ? <span className="medications-recorded">
         <IonIcon icon={checkmarkCircleOutline} aria-hidden="true" />
-        {t("Registrado a las {time}", { time: time(dose.occurredAt, dose.timeZone) })}
+        {t("Registrado a las {time}", { time: time(dose.occurredAt) })}
       </span> : null}
       {dose.status === "taken" && capabilities.canManage && dose.undoUntil && Date.parse(dose.undoUntil) > now && (
-        <IonButton fill="clear" size="small" disabled={Boolean(busy)} onClick={() => void recordDose(dose, "pending")}>
+        <IonButton className="medications-undo" fill="clear" size="small" disabled={Boolean(busy)} onClick={() => void recordDose(dose, "pending")}>
           {t("Deshacer toma")}
         </IonButton>
       )}
       {pending && !future && capabilities.canSnooze &&
-        Date.now() - Date.parse(dose.scheduledAt) < 100 * 60_000 && (
+        now - scheduledAt < 100 * 60_000 && (
         <IonButton className="medications-snooze" fill="clear" size="small"
           disabled={Boolean(busy) || snoozed} onClick={() => {
             if (quickDoseActions) void snoozeDose(dose, 15);
@@ -298,19 +303,23 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     return { day, key: toLocalISODate(day) };
   });
   const visibleDoses = [...mainDoses, ...reportedDoses, ...extraDoses].filter(dose => dose.status !== "cancelled");
+  const hasActiveMedication = workspace?.treatments.some((treatment) =>
+    treatment.status === "active" && treatment.startDate <= date
+      && (!treatment.endDate || treatment.endDate >= date),
+  );
+  const showEmptyToday = isToday && !hasActiveMedication && visibleDoses.length === 0;
   const taken = visibleDoses.filter(dose => dose.status === "taken").length;
-  const due = visibleDoses.filter(dose => dose.status === "pending" && Date.parse(dose.scheduledAt) <= Date.now()).length;
+  const due = visibleDoses.filter(dose => dose.status === "pending" && Date.parse(dose.scheduledAt) <= now).length;
   const progress = visibleDoses.length ? (taken / visibleDoses.length) * 100 : 0;
   const lowStock = (inventory.data?.items ?? []).filter(isLowMedicationStock);
   const firstLowStock = lowStock[0];
   const lowStockCount = inventory.data && inventory.data.total === inventory.data.items.length
     ? lowStock.length : "—";
-  const agenda = new Map<string, MedicationDose[]>();
-  for (const dose of mainDoses) {
-    const group = agenda.get(dose.scheduledAt) ?? [];
-    group.push(dose);
-    agenda.set(dose.scheduledAt, group);
-  }
+  const hourFormat = new Intl.DateTimeFormat("en", { hour: "numeric", hourCycle: "h23", timeZone });
+  const remainingDoses = mainDoses.filter(dose => dose.id !== nextDose?.id).map(dose => ({
+    dose,
+    hour: Number(hourFormat.format(new Date(dose.scheduledAt))),
+  }));
   return <Screen className="medications-page">
     <header className="medications-header">
       <div className="medications-heading-row">
@@ -349,7 +358,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
               </button>)}
             </div>
           </div>
-          <section className="medications-overview">
+          {!showEmptyToday && <section className="medications-overview">
             <div className="medications-overview-main">
               <div className="medications-progress-ring" role="img" style={{ "--med-progress": `${progress}%` } as React.CSSProperties}
                 aria-label={t("{taken} de {total} tomas", { taken: String(taken), total: String(visibleDoses.length) })}>
@@ -357,7 +366,6 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
               </div>
               <div><p>{t(isToday ? "Tomas de hoy" : "Tomas programadas")}</p>
                 <strong>{t("{count} por registrar", { count: String(due) })}</strong>
-                {nextDose && <small>{nextDose.name} · {time(nextDose.scheduledAt, nextDose.timeZone)}</small>}
               </div>
             </div>
             <div className="medications-metrics">
@@ -366,9 +374,9 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
               <div className="medications-metric-stock"><IonIcon icon={warningOutline} aria-hidden="true" /><strong>{lowStockCount}</strong><span>{t("Por agotarse")}</span></div>
             </div>
             {deviating && <p>{t("No estás siguiendo el plan asignado")}</p>}
-          </section>
+          </section>}
         </>}
-        {capabilities.canManage && <IonButton className="medications-add" size="small" onClick={() => setAdding(true)}><IonIcon slot="start" icon={addOutline} />{t("Añadir medicamento")}</IonButton>}
+        {capabilities.canManage && !(tab === "today" && showEmptyToday) && <IonButton className="medications-add" size="small" onClick={() => setAdding(true)}><IonIcon slot="start" icon={addOutline} />{t("Añadir medicamento")}</IonButton>}
         {actionError && !selectedDose && <p role="alert" className="medications-error">{actionError}</p>}
         {tab === "today" && <section className="medications-today" aria-label={t(isToday ? "Dosis de hoy" : "Tomas programadas")}>
           {firstLowStock && <div className="medications-low-stock">
@@ -378,19 +386,33 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
               : t("Por agotarse")}</small></div>
             <IonButton fill="clear" size="small" onClick={() => setTab("inventory")}>{t("Ver inventario")}</IonButton>
           </div>}
-          <section aria-label={t("Plan asignado")}>
-            <div className="medications-section-heading"><h2>{t("Plan asignado")}</h2></div>
-            {mainDoses.length ? <div className="medications-dose-list">{Array.from(agenda).map(([scheduledAt, doses]) => {
-              if (!doses?.length) return null;
-              const zone = doses[0].timeZone;
-              const hour = Number(new Intl.DateTimeFormat("en", { hour: "numeric", hourCycle: "h23", timeZone: zone }).format(new Date(scheduledAt)));
-              return <section className="medications-time-group" key={scheduledAt}>
-                <h3><span><IonIcon icon={hour < 12 ? sunnyOutline : hour < 18 ? partlySunnyOutline : moonOutline} aria-hidden="true" /></span>
-                  {time(scheduledAt, zone)} <small>{t(hour < 12 ? "Mañana" : hour < 18 ? "Tarde" : "Noche")}</small></h3>
-                {doses.map(renderDose)}
-              </section>;
-            })}</div> : <p>{t(isToday ? "Sin tomas asignadas para hoy" : "Sin tomas asignadas para esta fecha")}</p>}
-          </section>
+          {showEmptyToday ? (
+            <section className="medications-state">
+              <IonIcon icon={medicalOutline} aria-hidden="true" />
+              <h2>{t("Sin medicamentos activos")}</h2>
+              {capabilities.canManage && <IonButton onClick={() => setAdding(true)}>{t("Añadir medicamento")}</IonButton>}
+            </section>
+          ) : (
+            <section aria-label={t("Plan asignado")}>
+              <div className="medications-section-heading"><h2>{t("Plan asignado")}</h2></div>
+              {nextDose && renderDose(nextDose)}
+              {remainingDoses.length > 0 && (
+                <div className="medications-dose-list medications-timeline" aria-label={t("Agenda del día")}>
+                  {agendaPeriods.map(({ start, end, label, icon }) => {
+                    const doses = remainingDoses.filter(({ hour }) => start <= hour && hour < end);
+                    if (!doses.length) return null;
+                    return (
+                      <section className="medications-time-group" key={label}>
+                        <h3><span><IonIcon icon={icon} aria-hidden="true" /></span>{t(label)}</h3>
+                        {doses.map(({ dose }) => renderDose(dose))}
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
+              {mainDoses.length === 0 && <p>{t(isToday ? "Sin tomas asignadas para hoy" : "Sin tomas asignadas para esta fecha")}</p>}
+            </section>
+          )}
           {reportedDoses.length > 0 && <section className="medications-reported" aria-label={t("Fuera del plan")}>
             <div className="medications-section-heading"><h2>{t("Fuera del plan")}</h2><IonBadge className="medications-badge">{t("Registrado por ti")}</IonBadge></div>
             <p>{t("Estas tomas no sustituyen tu plan.")}</p>
@@ -459,7 +481,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
           <h2>{t("Registrar toma")}</h2>
           <div className="medications-capture-dose">
             <strong>{selectedDose.name}</strong>
-            <span>{new Intl.NumberFormat(locale).format(selectedDose.dosage)} {selectedDose.unit} · {time(selectedDose.scheduledAt, selectedDose.timeZone)}</span>
+            <span>{new Intl.NumberFormat(locale).format(selectedDose.dosage)} {selectedDose.unit} · {time(selectedDose.scheduledAt)}</span>
           </div>
           {captureState === "matched" || captureState === "manual" ? <>
             {photoPreview && captureState === "matched" && <FoodPhotoStage src={photoPreview} variant="medication" />}

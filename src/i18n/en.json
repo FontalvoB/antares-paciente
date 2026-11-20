@@ -4043,7 +4043,7 @@
   "Omitir toma": "Skip dose",
   "Puedes registrar esta toma manualmente.": "You can log this dose manually.",
   "Omitir": "Skip",
-  "Ya lo tomé": "Taken",
+  "Ya lo tomé": "I took it",
   "Registrado a las {time}": "Recorded at {time}",
   "Sin tomas programadas para hoy": "No doses scheduled for today",
   "Medicamento": "Medication",
@@ -4338,5 +4338,8 @@
   "Sáb": "Sat",
   "Dom": "Sun",
   "Atrasada": "Overdue",
-  "Los avisos de WhatsApp pueden incluir el nombre del medicamento.": "WhatsApp reminders may include the medication name."
+  "Los avisos de WhatsApp pueden incluir el nombre del medicamento.": "WhatsApp reminders may include the medication name.",
+  "Sin medicamentos activos": "No active medications",
+  "Agenda del día": "Daily timeline",
+  "Posponer 15 min": "Snooze 15 min"
 }
