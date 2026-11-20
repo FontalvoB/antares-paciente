@@ -384,11 +384,12 @@ export function LoginPage() {
                     enterkeyhint="next"
                     value={documentNumber}
                     placeholder={t("Ej. 32534534")}
-                    onIonInput={(e) =>
+                    onIonInput={(e) => {
                       setDocumentNumber(
                         (e.detail.value ?? "").replace(/\s/g, ""),
-                      )
-                    }
+                      );
+                      setLoginError(null);
+                    }}
                   >
                     <IonIcon
                       slot="start"
@@ -410,7 +411,10 @@ export function LoginPage() {
                     value={pwd}
                     placeholder={t("••••••••")}
                     style={{ "--padding-end": "48px" } as CSSProperties}
-                    onIonInput={(e) => setPwd(e.detail.value ?? "")}
+                    onIonInput={(e) => {
+                      setPwd(e.detail.value ?? "");
+                      setLoginError(null);
+                    }}
                   >
                     <IonIcon
                       slot="start"
