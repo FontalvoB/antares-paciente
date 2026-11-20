@@ -178,6 +178,10 @@ def build_release_ipa(build_number)
   output_dir = repo_path("ios/App/output")
   FileUtils.mkdir_p(output_dir)
   ipa_name = "#{APP_NAME.gsub(' ', '')}-#{build_number}.ipa"
+  xcargs = "CURRENT_PROJECT_VERSION=#{build_number}"
+  if File.file?(repo_path("ios/App/App/GoogleService-Info.plist"))
+    xcargs += " PUSH_CODE_SIGN_ENTITLEMENTS=App/PushNotifications.entitlements"
+  end
 
   with_manual_signing do
     build_app(
@@ -186,7 +190,7 @@ def build_release_ipa(build_number)
       configuration: "Release",
       export_method: "app-store",
       export_team_id: apple_team_id,
-      xcargs: "CURRENT_PROJECT_VERSION=#{build_number}",
+      xcargs: xcargs,
       export_options: {
         signingStyle: "manual",
         provisioningProfiles: { APP_IDENTIFIER => match_profile_name },

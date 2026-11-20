@@ -165,6 +165,19 @@ jobs:
       - name: Capacitor sync (ios)
         run: npx cap sync ios
 
+      - name: Preparar configuración iOS de Firebase si está habilitada
+        env:
+          FIREBASE_IOS_CONFIG_B64: ${{ secrets.FIREBASE_IOS_CONFIG_B64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "$FIREBASE_IOS_CONFIG_B64" ]; then
+            config="ios/App/App/GoogleService-Info.plist"
+            printf '%s' "$FIREBASE_IOS_CONFIG_B64" | base64 --decode > "$config"
+            /usr/bin/plutil -lint -s "$config"
+            bundle_id=$(/usr/libexec/PlistBuddy -c 'Print BUNDLE_ID' "$config")
+            test "$bundle_id" = 'com.coppadresd.mobile'
+          fi
+
       - name: Credencial de lectura para los certificados (GITHUB_TOKEN)
         env:
           GH_TOKEN_READ: ${{ secrets.GITHUB_TOKEN }}
