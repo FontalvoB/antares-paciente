@@ -295,17 +295,9 @@ export function VitalsLesson({
         </div>
       </div>
       <PageHeader
-        kicker={t(WEARABLE_ENABLED ? "Biometría en vivo" : "Bienestar")}
-        title={t(
-          WEARABLE_ENABLED
-            ? "Medir signos vitales"
-            : "Registrar datos de bienestar",
-        )}
-        sub={t(
-          WEARABLE_ENABLED
-            ? "Conecta, revisa y registra tus mediciones de hoy."
-            : "Registra tus mediciones de bienestar de hoy.",
-        )}
+        kicker={t("Bienestar")}
+        title={t("Registrar datos de bienestar")}
+        sub={t("Registra o sincroniza tus datos de bienestar de hoy.")}
         trailing={
           WEARABLE_ENABLED ? (
             <span className={`status-pill ${connState === "on" ? "on" : ""}`}>
@@ -344,12 +336,12 @@ export function VitalsLesson({
               ? t("Tu dispositivo está conectado")
               : connState === "connecting"
                 ? t("Conectando…")
-                : t("Conecta tu wearable")}
+                : t("Conecta tu accesorio de bienestar")}
           </h2>
           <p>
             {connState === "on"
               ? t("Tus datos de bienestar en tiempo real.")
-              : t("Mantén el wearable desbloqueado y cerca del teléfono.")}
+              : t("Mantén el accesorio desbloqueado y cerca del teléfono.")}
           </p>
         </section>
       )}
@@ -381,7 +373,7 @@ export function VitalsLesson({
             />
             {connState === "on"
               ? t("Abrir centro de medición")
-              : t("Ir a conectar el wearable")}
+              : t("Ir a conectar el accesorio")}
           </IonButton>
           {connState === "on" && !done && (
             <IonButton
@@ -395,7 +387,7 @@ export function VitalsLesson({
               ) : (
                 <IonIcon slot="start" icon={bluetooth} />
               )}
-              {syncing ? t("Leyendo el wearable…") : t("Sincronizar ahora")}
+              {syncing ? t("Leyendo el accesorio…") : t("Sincronizar ahora")}
             </IonButton>
           )}
           {lastSyncAt !== null && (
@@ -411,7 +403,7 @@ export function VitalsLesson({
         <div className="vitals-records-heading">
           <div>
             <span className="kicker">{t("Registro de mediciones")}</span>
-            <h2>{t("Signos de ahora")}</h2>
+            <h2>{t("Datos de ahora")}</h2>
           </div>
           <span>
             {filled}/{VITAL_FIELDS.length}
@@ -471,11 +463,11 @@ export function VitalsLesson({
               onClick={() => onComplete(buildVitalsPayload())}
             >
               {filled < 4
-                ? t("Registra al menos 4 signos ({filled}/{total})", {
+                ? t("Registra al menos 4 datos ({filled}/{total})", {
                     filled: String(filled),
                     total: String(VITAL_FIELDS.length),
                   })
-                : t("Guardar signos · +{pts} pts", { pts: String(pts) })}
+                : t("Guardar datos · +{pts} pts", { pts: String(pts) })}
             </IonButton>
           </>
         )}

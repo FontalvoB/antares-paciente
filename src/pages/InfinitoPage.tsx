@@ -20,7 +20,7 @@ export function InfinitoPage() {
           </div>
         </div>
         {[
-          ['BIO — El cuerpo', [['Health Care particular', 'Telemedicina · bienestar personal'], ['Experiencias de bienestar', 'Rituales · terapias · frecuencias']]],
+          ['BIO — El cuerpo', [['Health Care particular', 'Consultas virtuales · bienestar personal'], ['Experiencias de bienestar', 'Rituales · terapias · frecuencias']]],
           ['PSICO — La mente', [['Espiritualidad', 'Propósito de vida · yo interior'], ['Frecuencias y consciencia', 'Neurociencia · meditación']]],
           ['SOCIAL — Comunidad', [['Community Global', 'Red de miembros INFINITO'], ['Leadership Coaches', 'Liderazgo y desarrollo personal']]],
         ].map(([sec, cards]) => (

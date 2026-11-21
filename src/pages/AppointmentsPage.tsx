@@ -168,7 +168,7 @@ export function AppointmentsPage() {
                       else showToast(t("Entrando a la sala de espera…"), "ok");
                     }}
                   >
-                    {t("Unirse a telemedicina")}
+                    {t("Unirse a la consulta virtual")}
                   </IonButton>
                 ) : (
                   <span

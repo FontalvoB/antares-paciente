@@ -489,7 +489,7 @@ export function ChatPage() {
       >
         {isEmpty && <div className="vita-chat-welcome">
           <img src={vitaPortrait} alt={t("Vita, tu coach de bienestar")} />
-          <h2>{t("Hola, {nombre}", { nombre: user.nombre.split(" ")[0] || t("Paciente") })}</h2>
+          <h2>{t("Hola, {nombre}", { nombre: user.nombre.split(" ")[0] || t("Participante") })}</h2>
           <p>{t("Soy Vita. Pregúntame sobre tu programa y tus hábitos.")}</p>
           {quickActions}
           <IonButton className="bt bt-primary" expand="block" onClick={openVoice}><IonIcon icon={mic} slot="start" />{t("Hablar con Vita")}</IonButton>
@@ -579,7 +579,7 @@ export function ChatPage() {
                   <IonIcon icon={documentOutline} aria-hidden="true" />
                   <span>{file.name}</span>
                 </IonChip>)}
-                {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Paciente") }) : m.displayText} />}
+                {m.role === "user" ? m.text : <ChatRichText text={m.id === "welcome" ? t("Hola {nombre}, soy Vita, tu coach asignada. ¿En qué te puedo ayudar hoy?", { nombre: user.nombre.split(" ")[0] || t("Participante") }) : m.displayText} />}
                 {m.role === "bot" && m.vitaAttachments?.map(file => <div className="vita-archive-action" key={file.attachmentId}>
                   <span className="vita-archive-filename">{file.name}</span>
                   {file.readable === false && <IonNote role="status" color="warning">{t("Vita no pudo leer el contenido de este adjunto.")}</IonNote>}

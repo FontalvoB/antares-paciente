@@ -32,7 +32,7 @@ describe('registro neutral de mediciones', () => {
     }
     expect(screen.getAllByText('Valor ingresado')).toHaveLength(4);
     expect(screen.queryByText(/^(Alto|Bajo|En rango)$/)).toBeNull();
-    fireEvent.click(screen.getByText('Guardar signos · +50 pts'));
+    fireEvent.click(screen.getByText('Guardar datos · +50 pts'));
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ heartRate: 180, o2Saturation: 88, temperatureC: 39.2, glucose: 200, measuredAt: '2026-11-10T15:00:00.000Z' }));
   });
   it('una lectura histórica o de snapshot no se convierte en dato actual ni en juicio clínico', async () => {

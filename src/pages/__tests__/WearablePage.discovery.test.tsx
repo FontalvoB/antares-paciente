@@ -156,7 +156,7 @@ describe('WearablePage — compatibilidad y alta', () => {
     fixture.state.error = 'bluetooth-off';
     fixture.state.phase = 'scanning';
     render(<WearablePage />);
-    expect(screen.getByText('Conecta tu wearable')).toBeTruthy();
+    expect(screen.getByText('Conecta tu accesorio de bienestar')).toBeTruthy();
     expect(screen.getByText('Bluetooth apagado')).toBeTruthy();
     expect(screen.getByRole('alertdialog', { name: 'Activa Bluetooth' })).toBeTruthy();
     expect(screen.getByText('Enciende Bluetooth en Ajustes para conectar tu wearable.')).toBeTruthy();

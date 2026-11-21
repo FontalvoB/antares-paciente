@@ -258,7 +258,7 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
 
     renderPage();
 
-    expect(screen.queryByText("Historia clínica")).toBeNull();
+    expect(screen.queryByText("Mi historial de bienestar")).toBeNull();
     // El resto del plan sigue disponible.
     expect(screen.getByText("Visualización del perfil")).toBeTruthy();
   });
@@ -270,7 +270,7 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
 
       renderPage();
 
-      expect(screen.getByText("Historia clínica")).toBeTruthy();
+      expect(screen.getByText("Mi historial de bienestar")).toBeTruthy();
     },
   );
 

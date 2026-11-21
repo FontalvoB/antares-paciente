@@ -297,8 +297,8 @@ export function HistoryPage() {
         <header className="hc-head">
           <div className="hc-head-top">
             <div>
-              <span className="hc-kicker">{t("Expediente clínico")}</span>
-              <h1 className="hc-title">{t("Historia clínica")}</h1>
+              <span className="hc-kicker">{t("Mi bienestar")}</span>
+              <h1 className="hc-title">{t("Mi historial de bienestar")}</h1>
               {updatedIso ? (
                 <p className="hc-date">
                   {t("Actualizada {date}", {
@@ -325,7 +325,7 @@ export function HistoryPage() {
         </header>
 
         <div className="hc-patient">
-          <span className="hc-patient-kicker">{t("Paciente")}</span>
+          <span className="hc-patient-kicker">{t("Participante")}</span>
           <strong className="hc-patient-name">{user.nombre}</strong>
           {user.cedula ? (
             <span className="hc-patient-meta">{user.cedula}</span>

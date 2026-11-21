@@ -788,7 +788,7 @@ export function WearablePage() {
       <Screen className="wearable-reference">
         <Scroll className="wearable-scroll">
           <PageHeader
-            title={t("Wearable")}
+            title={t("Accesorio de bienestar")}
             sub={t("Esta función no está disponible en esta versión.")}
           />
           <p className="wearable-wellness-note" role="note">
@@ -826,7 +826,7 @@ export function WearablePage() {
         </div>
         <PageHeader
           kicker={t("Bienestar en vivo")}
-          title={t("Wearable")}
+          title={t("Accesorio de bienestar")}
           sub={
             wearableConnected
               ? `${info.name || wearableName} · ${t("datos en tiempo real")}`
@@ -881,7 +881,7 @@ export function WearablePage() {
                 ? t("Conectando…")
                 : scanning && !bluetoothOff
                   ? t("Buscando cerca de ti…")
-                  : t("Conecta tu wearable")}
+                  : t("Conecta tu accesorio de bienestar")}
           </h2>
           <p>
             {connOn
@@ -1551,7 +1551,7 @@ export function WearablePage() {
             handler: () => {
               disconnect();
               clearError();
-              showToast(t("Wearable desconectado"), "warn");
+              showToast(t("Accesorio desconectado"), "warn");
             },
           },
         ]}

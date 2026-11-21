@@ -91,7 +91,7 @@ export const THEMES_BY_ID: Record<number, TestTheme> = {
     hero: "hero-navy",
     mood: "clinic",
     sub: "Antecedentes, medicamentos y cómo te sientes físicamente.",
-    kicker: "Historia clínica",
+    kicker: "Bienestar",
     minutes: 3,
   },
   2: {

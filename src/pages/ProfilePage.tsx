@@ -802,8 +802,8 @@ export function ProfilePage() {
                       ? [
                           {
                             icon: medkit,
-                            title: "Control de medicamentos",
-                            sub: "Tomas, tratamientos e historial",
+                            title: "Medicamentos y suplementos",
+                            sub: "Registro y recordatorios",
                             tone: "mint",
                             action: () => go("medications"),
                           },
@@ -813,8 +813,8 @@ export function ProfilePage() {
                       ? [
                           {
                             icon: clipboardOutline,
-                            title: "Historia clínica",
-                            sub: "Diagnósticos · Lab · Medicamentos",
+                            title: "Mi historial de bienestar",
+                            sub: "Antecedentes · Estudios · Medicamentos",
                             tone: "sky",
                             action: () => go("hc"),
                           },
@@ -829,8 +829,8 @@ export function ProfilePage() {
                     },
                     {
                       icon: clipboardOutline,
-                      title: "Tests de evaluación",
-                      sub: "Tests de salud pendientes",
+                      title: "Evaluaciones de bienestar",
+                      sub: "Evaluaciones pendientes",
                       tone: "lilac",
                       action: () => openTests(),
                     },
@@ -839,7 +839,7 @@ export function ProfilePage() {
                           {
                             icon: calendarOutline,
                             title: "Calendario de citas",
-                            sub: "Agenda, control y telemedicina",
+                            sub: "Agenda y consultas virtuales",
                             tone: "sand",
                             action: () => go("book"),
                           },

@@ -57,7 +57,7 @@ export function MetricHistoryModal({
           <div className="mh-sheet">
             <div className="mh-head">
               <div>
-                <div className="mh-kicker">{t('Historial clínico')}</div>
+                <div className="mh-kicker">{t('Historial de bienestar')}</div>
                 <h2>{t(card.label)}</h2>
                 <p>{t('Todos los resultados registrados en tu protocolo.')}</p>
               </div>

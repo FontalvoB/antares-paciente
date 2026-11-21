@@ -580,7 +580,7 @@ export function PanicOverlay() {
     {
       key: "vit",
       ico: heart,
-      title: t("Signos vitales"),
+      title: t("Datos de emergencia"),
       sub: sosActive && sharedVitals
         ? t("Últimas lecturas registradas compartidas")
         : t("Sin lecturas disponibles para esta alerta"),

@@ -144,7 +144,7 @@ export const HEALTH_PROFILE: HealthProfile = {
     },
     {
       ico: "❤️",
-      label: "Riesgo cardiovascular",
+      label: "Bienestar cardiometabólico",
       value: 85,
       note: "ORP nivel 1 — BAJO",
       color: "#142855",

@@ -1,5 +1,4 @@
 import type { ProgramTaskId } from "../types";
-import { WEARABLE_ENABLED } from "../utils/features";
 
 export const PROGRAM_WEEKS = 83;
 
@@ -25,15 +24,11 @@ export const PROGRAM_TASKS: {
 }[] = [
   {
     id: "vitals",
-    title: WEARABLE_ENABLED
-      ? "Medir signos vitales"
-      : "Registrar datos de bienestar",
+    title: "Registrar datos de bienestar",
     short: "FC · SpO2 · Glucosa · Peso",
     pts: 120,
     tone: "red",
-    hint: WEARABLE_ENABLED
-      ? "Registra o sincroniza tu wearable"
-      : "Registra tus mediciones manualmente",
+    hint: "Sincroniza tu accesorio de bienestar",
     emoji: "❤️",
   },
   {

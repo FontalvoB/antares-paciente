@@ -95,6 +95,25 @@ export function MedicalSourcesPage() {
                 {t(title)}
               </h2>
               <p>{t(summary)}</p>
+              {id === "wearable" && (
+                <>
+                  <p>
+                    {t(
+                      "Las lecturas de frecuencia cardíaca, SpO₂, variabilidad de la frecuencia cardíaca (HRV), temperatura, pasos y sueño son estimaciones de bienestar y pueden no ser exactas.",
+                    )}
+                  </p>
+                  <p>
+                    {t(
+                      "Este accesorio no diagnostica, no trata y no sustituye una medición clínica ni la valoración de un profesional de la salud.",
+                    )}
+                  </p>
+                  <p>
+                    {t(
+                      "Si tienes una emergencia, usa los servicios de emergencia locales o el botón SOS de la app.",
+                    )}
+                  </p>
+                </>
+              )}
               <IonList lines="none">
                 {sources.map((source) => {
                   const sourceTitle = t(source.title);

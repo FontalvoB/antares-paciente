@@ -64,7 +64,7 @@ import { putNewestSample } from "../utils/samples";
 import { wearingInfoUpdate } from "../utils/wearing";
 import { useT } from "../i18n/I18nContext";
 import { useApp } from "./AppContext";
-import { WEARABLE_ENABLED } from "../utils/features";
+import { BLE_BACKGROUND_ENABLED, WEARABLE_ENABLED } from "../utils/features";
 import type {
   DeviceDescriptor,
   DeviceInfo,
@@ -848,16 +848,18 @@ export function WearableProvider({ children }: { children: ReactNode }) {
               return;
             }
           }
-          await startPersistentConnection(
-            connectedId,
-            ownerId,
-            options?.automatic === true,
-          );
-          if (!current()) {
-            await stopPersistentConnection(connectedId, true).catch(
-              () => undefined,
+          if (BLE_BACKGROUND_ENABLED) {
+            await startPersistentConnection(
+              connectedId,
+              ownerId,
+              options?.automatic === true,
             );
-            return;
+            if (!current()) {
+              await stopPersistentConnection(connectedId, true).catch(
+                () => undefined,
+              );
+              return;
+            }
           }
           await ble.connectDevice(
             connectedId,

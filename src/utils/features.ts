@@ -1,10 +1,16 @@
 /**
- * 1.0 se envía a App Review sin conexión a hardware externo.
+ * Posicionamiento 1.0: programa de apoyo para bajar de peso y hábitos saludables.
  *
- * Apple rechazó la build 63 por Guideline 1.4.1 (hardware médico) y pidió un
- * video del pairing/background BLE (2.1). La función se oculta por build flag
- * para 1.0 y se reactiva en 1.1 cuando exista la documentación del fabricante
- * y el video. En desarrollo local queda activa salvo que se apague a mano.
+ * El anillo/banda es un accesorio de bienestar de consumo, no un dispositivo
+ * médico. Se mantiene la conexión BLE solo en primer plano: sin
+ * `UIBackgroundModes` no se promete captura en segundo plano y se evita el
+ * requisito de video del modo background de App Review 2.1.
+ *
+ * `VITE_WEARABLE_ENABLED=false` sigue disponible para producir un build sin
+ * wearable si Apple vuelve a rechazar por 1.4.1.
  */
 export const WEARABLE_ENABLED =
   import.meta.env.VITE_WEARABLE_ENABLED !== "false";
+
+/** La app conserva el comportamiento original de conexión BLE, incluido background. */
+export const BLE_BACKGROUND_ENABLED = true;

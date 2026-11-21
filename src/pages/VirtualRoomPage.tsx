@@ -816,7 +816,7 @@ export function VirtualRoomPage() {
               <span className="room-prejoin-status">{t(statusLabel)}</span>
               <div className="room-info">
                 <span>
-                  <b>{t("Paciente")}</b>
+                  <b>{t("Participante")}</b>
                   <span>{user.nombre}</span>
                 </span>
                 <span>

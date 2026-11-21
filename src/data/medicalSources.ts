@@ -139,6 +139,21 @@ export const medicalSources = [
     ],
   },
   {
+    id: "wearable",
+    title: "Accesorio de bienestar (no dispositivo médico)",
+    summary:
+      "El anillo o la banda es un accesorio de bienestar de consumo. No es un dispositivo médico y sus lecturas son estimaciones, no mediciones clínicas.",
+    sources: [
+      {
+        organization:
+          "Administración de Alimentos y Medicamentos de EE. UU. (FDA)",
+        title: "Bienestar general. Política para dispositivos de bajo riesgo",
+        year: 2019,
+        url: "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/general-wellness-policy-low-risk-devices",
+      },
+    ],
+  },
+  {
     id: "ai",
     title: "IA y telemedicina",
     summary:
