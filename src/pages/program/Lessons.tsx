@@ -3,12 +3,7 @@ import type {
   RecentVitalsDto,
   VitalsPayload,
 } from "../../services/program/types";
-import {
-  IonButton,
-  IonIcon,
-  IonInput,
-  IonSpinner,
-} from "@ionic/react";
+import { IonButton, IonIcon, IonInput, IonSpinner } from "@ionic/react";
 import {
   batteryHalfOutline,
   bluetooth,
@@ -20,14 +15,13 @@ import {
   thermometerOutline,
   waterOutline,
 } from "ionicons/icons";
-import {
-  VITAL_FIELDS,
-} from "../../data/program";
+import { VITAL_FIELDS } from "../../data/program";
 import { WatchIcon3D } from "../../components/icons3d";
 import { PageHeader } from "../../components/PageHeader";
 import logoIcon from "../../assets/LogoIndividual.png";
 import type { MetricKind } from "../../devices/types";
 import { useWearable } from "../../context/WearableContext";
+import { WEARABLE_ENABLED } from "../../utils/features";
 import {
   hoursFromMinutes,
   minutesFromHours,
@@ -35,14 +29,10 @@ import {
   vitalStatus,
 } from "../../utils/vitals";
 import { agoLabel, formatSleep } from "../../utils/wearable";
-import {
-  formatDateForDisplay,
-  toLocalISODate,
-} from "../../utils/dates";
+import { formatDateForDisplay, toLocalISODate } from "../../utils/dates";
 import { useI18n } from "../../i18n/I18nContext";
 
-
-export { PodcastLesson } from './PodcastLesson';
+export { PodcastLesson } from "./PodcastLesson";
 
 export function VitalsLesson({
   done,
@@ -293,84 +283,202 @@ export function VitalsLesson({
     <div className="vitals-workspace">
       <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD">
         <img src={logoIcon} alt="" />
-        <div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div>
-      </div>
-      <PageHeader kicker={t("Biometría en vivo")} title={t("Medir signos vitales")}
-        sub={t("Conecta, revisa y registra tus mediciones de hoy.")}
-        trailing={<span className={`status-pill ${connState === "on" ? "on" : ""}`}>
-          <span className="dot" style={{ background: connDot }} />{connLabel}
-          {connState === "on" && info.battery !== undefined && <span className="wearable-battery"><IonIcon icon={batteryHalfOutline} />{info.battery}%</span>}
-        </span>} />
-      <section className={`wearable-showcase ${connState === "on" ? "is-connected" : ""} ${connState === "connecting" ? "is-busy" : ""}`}>
-        <div className="wearable-art" aria-hidden="true">
-          <span className="wearable-leaf wearable-leaf-left" /><span className="wearable-leaf wearable-leaf-right" />
-          <div className="wearable-orbit"><WatchIcon3D size={132} /></div>
-          <span className="wearable-bluetooth">{connState === "connecting" ? <IonSpinner name="crescent" /> : <IonIcon icon={bluetooth} />}</span>
+        <div>
+          <strong>
+            COPP-ADRESD<sup>®</sup>
+          </strong>
+          <small>
+            COMPREHENSIVE OBESITY
+            <br />
+            PREVENTION PROGRAM
+          </small>
         </div>
-        <h2>{connState === "on" ? t("Tu dispositivo está conectado") : connState === "connecting" ? t("Conectando…") : t("Conecta tu wearable")}</h2>
-        <p>{connState === "on" ? t("Tu salud en tiempo real, más cerca de ti.") : t("Mantén el wearable desbloqueado y cerca del teléfono.")}</p>
-      </section>
+      </div>
+      <PageHeader
+        kicker={t(WEARABLE_ENABLED ? "Biometría en vivo" : "Bienestar")}
+        title={t(
+          WEARABLE_ENABLED
+            ? "Medir signos vitales"
+            : "Registrar datos de bienestar",
+        )}
+        sub={t(
+          WEARABLE_ENABLED
+            ? "Conecta, revisa y registra tus mediciones de hoy."
+            : "Registra tus mediciones de bienestar de hoy.",
+        )}
+        trailing={
+          WEARABLE_ENABLED ? (
+            <span className={`status-pill ${connState === "on" ? "on" : ""}`}>
+              <span className="dot" style={{ background: connDot }} />
+              {connLabel}
+              {connState === "on" && info.battery !== undefined && (
+                <span className="wearable-battery">
+                  <IonIcon icon={batteryHalfOutline} />
+                  {info.battery}%
+                </span>
+              )}
+            </span>
+          ) : undefined
+        }
+      />
+      {WEARABLE_ENABLED && (
+        <section
+          className={`wearable-showcase ${connState === "on" ? "is-connected" : ""} ${connState === "connecting" ? "is-busy" : ""}`}
+        >
+          <div className="wearable-art" aria-hidden="true">
+            <span className="wearable-leaf wearable-leaf-left" />
+            <span className="wearable-leaf wearable-leaf-right" />
+            <div className="wearable-orbit">
+              <WatchIcon3D size={132} />
+            </div>
+            <span className="wearable-bluetooth">
+              {connState === "connecting" ? (
+                <IonSpinner name="crescent" />
+              ) : (
+                <IonIcon icon={bluetooth} />
+              )}
+            </span>
+          </div>
+          <h2>
+            {connState === "on"
+              ? t("Tu dispositivo está conectado")
+              : connState === "connecting"
+                ? t("Conectando…")
+                : t("Conecta tu wearable")}
+          </h2>
+          <p>
+            {connState === "on"
+              ? t("Tus datos de bienestar en tiempo real.")
+              : t("Mantén el wearable desbloqueado y cerca del teléfono.")}
+          </p>
+        </section>
+      )}
       <div className="wearable-summary">
-        {["fc", "spo2", "pa", "sueno", "pasos"].map(id => {
-          const field = VITAL_FIELDS.find(f => f.id === id)!;
-          return <div className="wearable-summary-item" key={id}>
-            <span className="wearable-summary-icon"><IonIcon icon={vitalIconFor(id)} /></span>
-            <span>{t(VITAL_SHORT_LABEL[id] ?? field.label)}</span><strong>{displayVal(id) || "—"}</strong><small>{t(field.unit)}</small>
-          </div>;
+        {["fc", "spo2", "pa", "sueno", "pasos"].map((id) => {
+          const field = VITAL_FIELDS.find((f) => f.id === id)!;
+          return (
+            <div className="wearable-summary-item" key={id}>
+              <span className="wearable-summary-icon">
+                <IonIcon icon={vitalIconFor(id)} />
+              </span>
+              <span>{t(VITAL_SHORT_LABEL[id] ?? field.label)}</span>
+              <strong>{displayVal(id) || "—"}</strong>
+              <small>{t(field.unit)}</small>
+            </div>
+          );
         })}
       </div>
-      <div className="wearable-sync">
-        <IonButton expand="block" className="bt bt-primary" onClick={onOpenWearable}>
-          <IonIcon icon={connState === "on" ? pulseOutline : bluetooth} slot="start" />
-          {connState === "on" ? t("Abrir centro de medición") : t("Ir a conectar el wearable")}
-        </IonButton>
-        {connState === "on" && !done && <IonButton expand="block" fill="outline" disabled={syncing} onClick={() => void sync()}>
-          {syncing ? <IonSpinner slot="start" name="crescent" /> : <IonIcon slot="start" icon={bluetooth} />}
-          {syncing ? t("Leyendo el wearable…") : t("Sincronizar ahora")}
-        </IonButton>}
-        {lastSyncAt !== null && <p className="vitals-sync-stamp">{t("Última sincronización: {when}", { when: agoLabel(lastSyncAt, t) })}</p>}
-      </div>
+      {WEARABLE_ENABLED && (
+        <div className="wearable-sync">
+          <IonButton
+            expand="block"
+            className="bt bt-primary"
+            onClick={onOpenWearable}
+          >
+            <IonIcon
+              icon={connState === "on" ? pulseOutline : bluetooth}
+              slot="start"
+            />
+            {connState === "on"
+              ? t("Abrir centro de medición")
+              : t("Ir a conectar el wearable")}
+          </IonButton>
+          {connState === "on" && !done && (
+            <IonButton
+              expand="block"
+              fill="outline"
+              disabled={syncing}
+              onClick={() => void sync()}
+            >
+              {syncing ? (
+                <IonSpinner slot="start" name="crescent" />
+              ) : (
+                <IonIcon slot="start" icon={bluetooth} />
+              )}
+              {syncing ? t("Leyendo el wearable…") : t("Sincronizar ahora")}
+            </IonButton>
+          )}
+          {lastSyncAt !== null && (
+            <p className="vitals-sync-stamp">
+              {t("Última sincronización: {when}", {
+                when: agoLabel(lastSyncAt, t),
+              })}
+            </p>
+          )}
+        </div>
+      )}
       <section className="vitals-records">
-        <div className="vitals-records-heading"><div><span className="kicker">{t("Registro de mediciones")}</span><h2>{t("Signos de ahora")}</h2></div><span>{filled}/{VITAL_FIELDS.length}</span></div>
+        <div className="vitals-records-heading">
+          <div>
+            <span className="kicker">{t("Registro de mediciones")}</span>
+            <h2>{t("Signos de ahora")}</h2>
+          </div>
+          <span>
+            {filled}/{VITAL_FIELDS.length}
+          </span>
+        </div>
         <div className="vitals-record-grid">
-          {VITAL_FIELDS.map(f => {
+          {VITAL_FIELDS.map((f) => {
             const value = displayVal(f.id);
             const n = vitalNumber(value) * (f.scale ?? 1);
             const status = vitalStatus(n, t, f.goal);
-            return <article className="vitals-record" key={f.id}>
-              <span className="wearable-summary-icon"><IonIcon icon={vitalIconFor(f.id)} /></span>
-              <div className="vitals-record-body">
-                <IonInput label={t(f.label)} labelPlacement="stacked" placeholder="—" inputmode="decimal" value={value} disabled={done}
-                  onIonInput={event => setVals(prev => ({ ...prev, [f.id]: event.detail.value ?? "" }))}>
-                  <span slot="end" className="vitals-unit">{t(f.unit)}</span>
-                </IonInput>
-                <small>{pendingFields[f.id] ? t("Sincronizando…") : status.label}{f.scale && !Number.isNaN(n) ? ` · ${formatSleep(n, t)}` : ""}</small>
-              </div>
-              {pendingFields[f.id] && <IonSpinner name="crescent" />}
-            </article>;
+            return (
+              <article className="vitals-record" key={f.id}>
+                <span className="wearable-summary-icon">
+                  <IonIcon icon={vitalIconFor(f.id)} />
+                </span>
+                <div className="vitals-record-body">
+                  <IonInput
+                    label={t(f.label)}
+                    labelPlacement="stacked"
+                    placeholder="—"
+                    inputmode="decimal"
+                    value={value}
+                    disabled={done}
+                    onIonInput={(event) =>
+                      setVals((prev) => ({
+                        ...prev,
+                        [f.id]: event.detail.value ?? "",
+                      }))
+                    }
+                  >
+                    <span slot="end" className="vitals-unit">
+                      {t(f.unit)}
+                    </span>
+                  </IonInput>
+                  <small>
+                    {pendingFields[f.id] ? t("Sincronizando…") : status.label}
+                    {f.scale && !Number.isNaN(n)
+                      ? ` · ${formatSleep(n, t)}`
+                      : ""}
+                  </small>
+                </div>
+                {pendingFields[f.id] && <IonSpinner name="crescent" />}
+              </article>
+            );
           })}
         </div>
       </section>
       <div className="wearable-sync">
-      {recordedStamp && <div className="vt-stamp">{recordedStamp}</div>}
+        {recordedStamp && <div className="vt-stamp">{recordedStamp}</div>}
 
-      {!done && (
-        <>
-          <IonButton
-            expand="block"
-            className="bt bt-primary"
-            disabled={filled < 4}
-            onClick={() => onComplete(buildVitalsPayload())}
-          >
-            {filled < 4
-              ? t("Registra al menos 4 signos ({filled}/{total})", {
-                  filled: String(filled),
-                  total: String(VITAL_FIELDS.length),
-                })
-              : t("Guardar signos · +{pts} pts", { pts: String(pts) })}
-          </IonButton>
-        </>
-      )}
+        {!done && (
+          <>
+            <IonButton
+              expand="block"
+              className="bt bt-primary"
+              disabled={filled < 4}
+              onClick={() => onComplete(buildVitalsPayload())}
+            >
+              {filled < 4
+                ? t("Registra al menos 4 signos ({filled}/{total})", {
+                    filled: String(filled),
+                    total: String(VITAL_FIELDS.length),
+                  })
+                : t("Guardar signos · +{pts} pts", { pts: String(pts) })}
+            </IonButton>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import type { ProgramTaskId } from "../types";
+import { WEARABLE_ENABLED } from "../utils/features";
 
 export const PROGRAM_WEEKS = 83;
 
@@ -24,11 +25,15 @@ export const PROGRAM_TASKS: {
 }[] = [
   {
     id: "vitals",
-    title: "Medir signos vitales",
+    title: WEARABLE_ENABLED
+      ? "Medir signos vitales"
+      : "Registrar datos de bienestar",
     short: "FC · SpO2 · Glucosa · Peso",
     pts: 120,
     tone: "red",
-    hint: "Registra o sincroniza tu wearable",
+    hint: WEARABLE_ENABLED
+      ? "Registra o sincroniza tu wearable"
+      : "Registra tus mediciones manualmente",
     emoji: "❤️",
   },
   {
@@ -82,7 +87,9 @@ export function isComingSoonTask(id: string): boolean {
   return id === "podcast" || id === "ejercicio";
 }
 
-export const ACTIVE_PROGRAM_TASKS = PROGRAM_TASKS.filter(task => !isComingSoonTask(task.id));
+export const ACTIVE_PROGRAM_TASKS = PROGRAM_TASKS.filter(
+  (task) => !isComingSoonTask(task.id),
+);
 
 export const PROGRAM_POINTS_MAX = ACTIVE_PROGRAM_TASKS.reduce(
   (sum, t) => sum + t.pts,

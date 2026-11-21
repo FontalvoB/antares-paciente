@@ -32,15 +32,15 @@ publicados en el idioma elegido.
 
 ## Entradas protegidas
 
-| Entrada | Alcance |
-| --- | --- |
-| Chat, stream y feedback | `chat` |
-| URL firmada, SDK de voz, herramientas y mensajes del SDK | `voice` |
-| Alternativa de voz del dispositivo + chat, tras elección explícita | `voice` y `chat` |
-| Foto de alimentos, antes de multipart | `food` |
-| Examen de laboratorio, antes de multipart | `lab` |
-| Generación del análisis de evaluaciones | `patient-ai` |
-| Paso de autorización del onboarding y comprobación previa a guardarlo | `program` |
+| Entrada                                                               | Alcance          |
+| --------------------------------------------------------------------- | ---------------- |
+| Chat, stream y feedback                                               | `chat`           |
+| URL firmada, SDK de voz, herramientas y mensajes del SDK              | `voice`          |
+| Alternativa de voz del dispositivo + chat, tras elección explícita    | `voice` y `chat` |
+| Foto de alimentos, antes de multipart                                 | `food`           |
+| Examen de laboratorio, antes de multipart                             | `lab`            |
+| Generación del análisis de evaluaciones                               | `patient-ai`     |
+| Paso de autorización del onboarding y comprobación previa a guardarlo | `program`        |
 
 FoodAI ahora envía el Bearer vigente después de comprobar la autorización. Las
 lecturas de historial y resultados guardados conservan su ruta de lectura. La
@@ -95,3 +95,28 @@ de consultar o ejecutar una acción; los resultados antiguos no se entregan al
 SDK nuevo. El contexto de paciente se consulta para cada acción y no se comparte
 entre cuentas. El cierre del modal legal es idempotente y está ligado a su
 presentación: un `onDidDismiss` tardío no cancela la siguiente petición autorizada.
+
+## Aviso local de IA (App Store 5.1.1(i)/5.1.2(i))
+
+Con el enforcement de documentos del backend desactivado en 1.0, la app mantiene
+un aviso local versionado (`AI_DISCLOSURE_VERSION = 2026-11-21`) que se muestra
+antes del primer envío a cualquier función de IA: chat, voz, foto de comida,
+laboratorio y análisis de evaluaciones (`patient-ai`). El permiso:
+
+- Explica qué datos se envían (mensajes, audio/transcripción, fotos de comida o
+  laboratorio y el contexto mínimo de perfil y plan), a quién (Anthropic, OpenAI,
+  ElevenLabs y AWS), para qué y durante cuánto tiempo. Incluye enlace a la
+  política de privacidad.
+- Exige marcar la casilla y pulsar «Aceptar y continuar». «No permitir» detiene
+  la petición sin enviar datos y no bloquea el resto de la app.
+- Se guarda por cuenta en `localStorage` (`copp.ai-disclosure.<userId>`) con la
+  versión del aviso; una versión nueva obliga a decidir de nuevo. No se hereda
+  entre cuentas.
+- Se puede revisar y retirar en Perfil > Privacidad de IA. La retirada no borra
+  datos ya procesados por un proveedor.
+- Se ejecuta en `requireLegalConsent` antes de la comprobación del flag del
+  backend, por lo que no depende de `VITE_ENFORCE_LEGAL_CONSENTS`. Si no hay
+  usuario autenticado no se aplica: el backend exige JWT para esas rutas.
+
+Pruebas: `src/utils/__tests__/aiDisclosure.test.ts` y
+`src/context/__tests__/AiDisclosureContext.test.tsx`.

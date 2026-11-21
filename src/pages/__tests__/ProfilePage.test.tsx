@@ -237,6 +237,14 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     expect(screen.getByText("Semana 7 de 24")).toBeTruthy();
   });
 
+  it("abre Fuentes y referencias médicas desde la zona de cuenta", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByText("Fuentes y referencias médicas"));
+
+    expect(navigateMock).toHaveBeenCalledWith("medical-sources");
+  });
+
   it("no renderiza ninguna cadena fabricada", () => {
     renderPage();
 

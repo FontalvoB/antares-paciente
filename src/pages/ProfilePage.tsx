@@ -1,5 +1,5 @@
-import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
-import {TEAM_PROFESSIONALS_ENABLED} from "../utils/teamVisibility";
+import { APPOINTMENTS_ENABLED } from "../utils/appointmentsVisibility";
+import { TEAM_PROFESSIONALS_ENABLED } from "../utils/teamVisibility";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IonAccordion,
@@ -37,6 +37,7 @@ import {
   star,
   locationOutline,
   openOutline,
+  sparklesOutline,
 } from "ionicons/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
@@ -47,6 +48,8 @@ import { useApp } from "../context/AppContext";
 import { localizedError } from "../utils/localizedError";
 import { useI18n } from "../i18n/I18nContext";
 import { useLegalConsents } from "../context/LegalConsentContext";
+import { useAiDisclosure } from "../context/AiDisclosureContext";
+import { aiDisclosureAccepted as aiDisclosureAcceptedForAccount } from "../utils/aiDisclosure";
 import type { Screen as ScreenId } from "../types";
 import { useLeague } from "../hooks/useLeague";
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
@@ -55,7 +58,11 @@ import { useMedicationCapabilities } from "../hooks/useMedicationCapabilities";
 import { useClinicalHistoryAvailability } from "../hooks/useClinicalHistoryAvailability";
 import { formatMetricValue } from "../data/metrics";
 import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
-import { contactFromProfile, emergencyContactsError, trimEmergencyContact } from "../utils/emergencyContacts";
+import {
+  contactFromProfile,
+  emergencyContactsError,
+  trimEmergencyContact,
+} from "../utils/emergencyContacts";
 import { updateLeaguePreferences } from "../services/program/league-service";
 import { programKeys } from "../hooks/queryKeys";
 import { ApiError } from "../utils/apiClient";
@@ -65,8 +72,7 @@ import { createAccountDeletionHandoff, restoreSession } from "../utils/authApi";
 import { updateMyPatientProfile } from "../utils/patientProfileApi";
 import { isValidNickname } from "../utils/league";
 import type { LeagueResponseDto } from "../services/program/types";
-
-const PRIVACY_POLICY_URL = "https://diomedescerda.github.io/coppadresd-privacy/";
+import { PRIVACY_POLICY_URL } from "../utils/legalLinks";
 
 /**
  * Tarjeta de contacto editable del paciente (FASE 2): email + celular con
@@ -177,33 +183,101 @@ function EmergencyContactSection() {
   const [saving, setSaving] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
   useEffect(() => {
-    setPrimary({ name: user.fam1Nombre ?? "", relationship: user.fam1Parentesco ?? "", phone: user.fam1Cel ?? "", email: user.fam1Email ?? "" });
-    setSecondary({ name: user.fam2Nombre ?? "", relationship: user.fam2Parentesco ?? "", phone: user.fam2Cel ?? "", email: user.fam2Email ?? "" });
-  }, [user.fam1Nombre, user.fam1Parentesco, user.fam1Cel, user.fam1Email, user.fam2Nombre, user.fam2Parentesco, user.fam2Cel, user.fam2Email]);
-  const dirty = JSON.stringify(primary) !== JSON.stringify(contactFromProfile(user, 1)) || JSON.stringify(secondary) !== JSON.stringify(contactFromProfile(user, 2));
+    setPrimary({
+      name: user.fam1Nombre ?? "",
+      relationship: user.fam1Parentesco ?? "",
+      phone: user.fam1Cel ?? "",
+      email: user.fam1Email ?? "",
+    });
+    setSecondary({
+      name: user.fam2Nombre ?? "",
+      relationship: user.fam2Parentesco ?? "",
+      phone: user.fam2Cel ?? "",
+      email: user.fam2Email ?? "",
+    });
+  }, [
+    user.fam1Nombre,
+    user.fam1Parentesco,
+    user.fam1Cel,
+    user.fam1Email,
+    user.fam2Nombre,
+    user.fam2Parentesco,
+    user.fam2Cel,
+    user.fam2Email,
+  ]);
+  const dirty =
+    JSON.stringify(primary) !== JSON.stringify(contactFromProfile(user, 1)) ||
+    JSON.stringify(secondary) !== JSON.stringify(contactFromProfile(user, 2));
   const save = async () => {
     if (saving) return;
     const error = emergencyContactsError(primary, secondary);
-    if (error) { setContactError(error); return; }
+    if (error) {
+      setContactError(error);
+      return;
+    }
     setContactError(null);
     setSaving(true);
     const first = trimEmergencyContact(primary);
     try {
-      await updateMyPatientProfile({ dateOfBirth: user.dob || null, email: user.email, phone: user.celular,
-        emergencyName: first.name, emergencyRelationship: first.relationship, emergencyPhone: first.phone, emergencyEmail: first.email,
-        secondaryEmergencyContact: trimEmergencyContact(secondary), insurerId: user.seguro || null, memberId: user.poliza });
+      await updateMyPatientProfile({
+        dateOfBirth: user.dob || null,
+        email: user.email,
+        phone: user.celular,
+        emergencyName: first.name,
+        emergencyRelationship: first.relationship,
+        emergencyPhone: first.phone,
+        emergencyEmail: first.email,
+        secondaryEmergencyContact: trimEmergencyContact(secondary),
+        insurerId: user.seguro || null,
+        memberId: user.poliza,
+      });
       await refreshPatientProfile();
       showToast(t("Contacto de emergencia actualizado"), "ok");
     } catch (err) {
-      showToast(localizedError(err, i18n, "No se pudo actualizar el contacto de emergencia"), "err");
-    } finally { setSaving(false); }
+      showToast(
+        localizedError(
+          err,
+          i18n,
+          "No se pudo actualizar el contacto de emergencia",
+        ),
+        "err",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
-  return <div className="pf-contact" style={{ marginTop: 18 }}>
-    <h3>{t("Contacto de emergencia")}</h3>
-    <EmergencyContactsForm prefix="pf-emg" primary={primary} secondary={secondary} onPrimaryChange={value => { setContactError(null); setPrimary(value); }} onSecondaryChange={value => { setContactError(null); setSecondary(value); }} disabled={saving} />
-    {contactError && <p role="alert" className="emergency-contact-error">{t(contactError)}</p>}
-    <IonButton expand="block" className="bt bt-primary" disabled={saving || !dirty} onClick={() => void save()}>{saving ? t("Guardando…") : t("Guardar contacto de emergencia")}</IonButton>
-  </div>;
+  return (
+    <div className="pf-contact" style={{ marginTop: 18 }}>
+      <h3>{t("Contacto de emergencia")}</h3>
+      <EmergencyContactsForm
+        prefix="pf-emg"
+        primary={primary}
+        secondary={secondary}
+        onPrimaryChange={(value) => {
+          setContactError(null);
+          setPrimary(value);
+        }}
+        onSecondaryChange={(value) => {
+          setContactError(null);
+          setSecondary(value);
+        }}
+        disabled={saving}
+      />
+      {contactError && (
+        <p role="alert" className="emergency-contact-error">
+          {t(contactError)}
+        </p>
+      )}
+      <IonButton
+        expand="block"
+        className="bt bt-primary"
+        disabled={saving || !dirty}
+        onClick={() => void save()}
+      >
+        {saving ? t("Guardando…") : t("Guardar contacto de emergencia")}
+      </IonButton>
+    </div>
+  );
 }
 
 /**
@@ -274,7 +348,11 @@ function LeagueSection() {
         // passthrough inline. El resto → toast.
         const first = e.errors ? Object.values(e.errors).flat()[0] : undefined;
         if (first) setServerError(e);
-        else showToast(localizedError(e, i18n, "No pudimos guardar tus preferencias."), "err");
+        else
+          showToast(
+            localizedError(e, i18n, "No pudimos guardar tus preferencias."),
+            "err",
+          );
       } else {
         showToast(t("No pudimos guardar tus preferencias."), "err");
       }
@@ -323,7 +401,15 @@ function LeagueSection() {
           aria-label={t("Aparecer en la Liga")}
         />
       </div>
-      {serverError && <small className="league-prefs-err">{localizedError(serverError, i18n, "No pudimos guardar tus preferencias.")}</small>}
+      {serverError && (
+        <small className="league-prefs-err">
+          {localizedError(
+            serverError,
+            i18n,
+            "No pudimos guardar tus preferencias.",
+          )}
+        </small>
+      )}
       {optedIn && (
         <div className="league-prefs-nick">
           <IonInput
@@ -379,6 +465,8 @@ export function ProfilePage() {
   const medication = useMedicationCapabilities();
   const { lang, toggleLang, t } = useI18n();
   const { openPrivacyChoices } = useLegalConsents();
+  const { openAiDisclosure } = useAiDisclosure();
+  const aiDisclosureAccepted = aiDisclosureAcceptedForAccount();
   const locale = lang === "en" ? "en-US" : "es-ES";
   const reduce = useReducedMotion();
   const accountRef = useRef<HTMLElement>(null);
@@ -391,7 +479,10 @@ export function ProfilePage() {
         presentationStyle: "popover",
       });
     } catch {
-      showToast(t("No se pudo abrir el sitio web. Inténtalo más tarde."), "err");
+      showToast(
+        t("No se pudo abrir el sitio web. Inténtalo más tarde."),
+        "err",
+      );
     }
   };
 
@@ -492,7 +583,14 @@ export function ProfilePage() {
   const heroMetrics: Array<[string, string]> = [];
   if (programWeek != null) heroMetrics.push([String(programWeek), "Semanas"]);
   if (weightDelta) heroMetrics.push([weightDelta, "Peso"]);
-  heroMetrics.push([snapshot?.xp?.balance != null && !isMockFallback ? String(snapshot.xp.balance) : realMode ? "—" : String(pointsTotal), "Puntos"]);
+  heroMetrics.push([
+    snapshot?.xp?.balance != null && !isMockFallback
+      ? String(snapshot.xp.balance)
+      : realMode
+        ? "—"
+        : String(pointsTotal),
+    "Puntos",
+  ]);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -700,13 +798,17 @@ export function ProfilePage() {
                 </div>
                 <IonList className="pf-menu" lines="none">
                   {[
-                    ...(medication.enabled ? [{
-                      icon: medkit,
-                      title: "Control de medicamentos",
-                      sub: "Tomas, tratamientos e historial",
-                      tone: "mint",
-                      action: () => go("medications"),
-                    }] : []),
+                    ...(medication.enabled
+                      ? [
+                          {
+                            icon: medkit,
+                            title: "Control de medicamentos",
+                            sub: "Tomas, tratamientos e historial",
+                            tone: "mint",
+                            action: () => go("medications"),
+                          },
+                        ]
+                      : []),
                     ...(clinicalHistory.visible
                       ? [
                           {
@@ -732,13 +834,17 @@ export function ProfilePage() {
                       tone: "lilac",
                       action: () => openTests(),
                     },
-                    ...(APPOINTMENTS_ENABLED ? [{
-                      icon: calendarOutline,
-                      title: "Calendario de citas",
-                      sub: "Agenda, control y telemedicina",
-                      tone: "sand",
-                      action: () => go("book"),
-                    }] : []),
+                    ...(APPOINTMENTS_ENABLED
+                      ? [
+                          {
+                            icon: calendarOutline,
+                            title: "Calendario de citas",
+                            sub: "Agenda, control y telemedicina",
+                            tone: "sand",
+                            action: () => go("book"),
+                          },
+                        ]
+                      : []),
                     {
                       icon: leafOutline,
                       title: "Plan nutricional",
@@ -933,10 +1039,46 @@ export function ProfilePage() {
                   fill="clear"
                   expand="block"
                   className="bt bt-ghost"
+                  onClick={() => navigate("medical-sources")}
+                >
+                  <IonIcon
+                    icon={clipboardOutline}
+                    slot="start"
+                    aria-hidden="true"
+                  />
+                  {t("Fuentes y referencias médicas")}
+                </IonButton>
+                <IonButton
+                  fill="clear"
+                  expand="block"
+                  className="bt bt-ghost"
+                  style={{ marginTop: 12 }}
+                  onClick={openAiDisclosure}
+                >
+                  <IonIcon
+                    icon={sparklesOutline}
+                    slot="start"
+                    aria-hidden="true"
+                  />
+                  {t("Privacidad de IA")}
+                  {aiDisclosureAccepted && (
+                    <span slot="end" className="pf-language">
+                      {t("Autorizado")}
+                    </span>
+                  )}
+                </IonButton>
+                <IonButton
+                  fill="clear"
+                  expand="block"
+                  className="bt bt-ghost"
                   style={{ marginTop: 12 }}
                   onClick={openPrivacyChoices}
                 >
-                  <IonIcon icon={optionsOutline} slot="start" aria-hidden="true" />
+                  <IonIcon
+                    icon={optionsOutline}
+                    slot="start"
+                    aria-hidden="true"
+                  />
                   {t("Autorizaciones y privacidad")}
                 </IonButton>
                 <IonButton
@@ -946,7 +1088,11 @@ export function ProfilePage() {
                   style={{ marginTop: 12 }}
                   onClick={() => void openPrivacyPolicy()}
                 >
-                  <IonIcon icon={shieldCheckmarkOutline} slot="start" aria-hidden="true" />
+                  <IonIcon
+                    icon={shieldCheckmarkOutline}
+                    slot="start"
+                    aria-hidden="true"
+                  />
                   {t("Política de privacidad")}
                   <IonIcon icon={openOutline} slot="end" aria-hidden="true" />
                 </IonButton>

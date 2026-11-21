@@ -79,6 +79,7 @@ import type {
 } from "../types";
 import { weekdayMondayIndex } from "../utils/dates";
 import { ACTIVE_PROGRAM_TASKS, DAY_BONUS_PTS, isComingSoonTask } from "../data/program";
+import type { MedicalSourceSectionId } from "../data/medicalSources";
 
 /** Baseline por usuario del conteo de mensajes ya vistos del chat. */
 const CHAT_LAST_SEEN_PREFIX = "antares:chat-last-seen:";
@@ -89,6 +90,7 @@ interface AppState {
   authLoading: boolean;
   flow: Flow;
   screen: Screen;
+  medicalSourcesEntry: { section?: MedicalSourceSectionId; returnTo: Screen } | null;
   toast: ToastState | null;
   panicOpen: boolean;
   voiceOpen: boolean;
@@ -122,7 +124,7 @@ interface AppState {
   weekCheckins: boolean[];
   pointsToday: number;
   pointsTotal: number;
-  navigate: (s: Screen) => void;
+  navigate: (s: Screen, sourceSection?: MedicalSourceSectionId) => void;
   /** Navega a Citas y auto-abre el asistente de solicitud (CTA del chat). */
   openBookingWizard: () => void;
   /** Consumido por AppointmentsPage: true = abrir el wizard al montar. */
@@ -315,6 +317,7 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
+  const [medicalSourcesEntry, setMedicalSourcesEntry] = useState<AppState["medicalSourcesEntry"]>(null);
   // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
   const [bookingWizardAutoOpen, setBookingWizardAutoOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -1116,6 +1119,7 @@ export function AppProvider({
       authLoading,
       flow,
       screen,
+      medicalSourcesEntry,
       toast,
       showToast,
       panicOpen,
@@ -1159,7 +1163,12 @@ export function AppProvider({
       // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
       // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
       // El protocolo nutricional abre el mismo módulo completo que la pestaña Nutrición.
-      navigate: (s) => setScreen(visibleScreen(s === "avatar" ? "body" : s === "program-nut" ? "nut" : s)),
+      navigate: (s, sourceSection) => {
+        if (s === "medical-sources" && screen !== "medical-sources") {
+          setMedicalSourcesEntry({ section: sourceSection, returnTo: screen });
+        }
+        setScreen(visibleScreen(s === "avatar" ? "body" : s === "program-nut" ? "nut" : s));
+      },
       openBookingWizard: () => {
         if(!APPOINTMENTS_ENABLED){setScreen("nut");return;}
         setBookingWizardAutoOpen(true);
@@ -1360,6 +1369,7 @@ export function AppProvider({
       resetPatientSession,
       flow,
       screen,
+      medicalSourcesEntry,
       bookingWizardAutoOpen,
       toast,
       showToast,

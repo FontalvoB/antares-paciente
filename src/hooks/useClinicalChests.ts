@@ -16,8 +16,8 @@
  *               additive `favorable` field → requires-data, no guessing.
  * - clin-adh  → adherence dimension vs goal 85% (single-window approximation).
  * - clin-w12  → current program week vs week 12 (snapshot, not scores).
- * - clin-hba1c → HbA1c current value below the 5.7% ADA goal. 5.7 is an
- *               HbA1c-% threshold — glucose (mg/dL) is NEVER substituted.
+ * - clin-hba1c → HbA1c por debajo del umbral de referencia del programa
+ *                (5,7 %). La glucosa en mg/dL no sustituye la HbA1c.
  *
  * When the underlying data is missing the chest renders a neutral
  * `requires-data` state — never a fake progress (spec S4).

@@ -32,6 +32,7 @@ import {
   bluetooth,
   copyOutline,
   footstepsOutline,
+  informationCircleOutline,
   moonOutline,
   pulseOutline,
   refresh,
@@ -57,6 +58,7 @@ import { describeServices, formatEntry } from "../devices/diagnostics";
 import { compareDeviceCompatibility } from "../devices/discovery";
 import { isSupportedWearable } from "../devices/support";
 import { useI18n } from "../i18n/I18nContext";
+import { WEARABLE_ENABLED } from "../utils/features";
 import { useElapsed } from "../hooks/useElapsed";
 import {
   FLASH_LAST_MS,
@@ -77,17 +79,15 @@ import type {
 } from "../devices/types";
 
 const ERROR_KEYS: Record<WearableErrorCode, string> = {
-  "bluetooth-not-ready":
-    "No se pudo conectar. Inténtalo de nuevo.",
-  "bluetooth-off":
-    "Enciende Bluetooth en Ajustes para conectar tu wearable.",
+  "bluetooth-not-ready": "No se pudo conectar. Inténtalo de nuevo.",
+  "bluetooth-off": "Enciende Bluetooth en Ajustes para conectar tu wearable.",
   "permission-denied":
     "Permiso de Bluetooth denegado. Habilítalo en los ajustes del sistema.",
   "scan-unavailable": "Tu navegador no permite buscar dispositivos Bluetooth.",
   "connection-failed": "No se pudo conectar. Inténtalo de nuevo.",
-  "session-unavailable": "No pudimos identificar tu sesión. Vuelve a iniciar sesión para conectar el wearable.",
-  "unsupported-device":
-    "Solo puedes conectar una banda H59 o un anillo R88.",
+  "session-unavailable":
+    "No pudimos identificar tu sesión. Vuelve a iniciar sesión para conectar el wearable.",
+  "unsupported-device": "Solo puedes conectar una banda H59 o un anillo R88.",
   "no-data":
     "El dispositivo no envía datos. Verifica que esté vinculado con su app oficial.",
   unknown: "Ocurrió un error inesperado. Inténtalo de nuevo.",
@@ -184,7 +184,7 @@ export function WearablePage() {
   const { t, lang } = useI18n();
   // S3: locale activo para números (es-ES coma decimal / en-US punto).
   const locale = lang === "en" ? "en-US" : "es-ES";
-  const { wearableConnected, wearableName, showToast } = useApp();
+  const { wearableConnected, wearableName, showToast, navigate } = useApp();
   const {
     phase,
     sessionStale,
@@ -223,7 +223,8 @@ export function WearablePage() {
   const [bluetoothPromptOpen, setBluetoothPromptOpen] = useState(false);
   const bluetoothPromptShown = useRef(false);
   const [pending, setPending] = useState<string | null>(null);
-  const [historyProgressRequested, setHistoryProgressRequested] = useState(false);
+  const [historyProgressRequested, setHistoryProgressRequested] =
+    useState(false);
   const historyRequestGeneration = useRef(0);
   const requestHistoryWithProgress = async () => {
     const generation = ++historyRequestGeneration.current;
@@ -231,7 +232,8 @@ export function WearablePage() {
     try {
       await syncHistory();
     } finally {
-      if (generation === historyRequestGeneration.current) setHistoryProgressRequested(false);
+      if (generation === historyRequestGeneration.current)
+        setHistoryProgressRequested(false);
     }
   };
   const [measuring, setMeasuring] = useState<{
@@ -311,11 +313,15 @@ export function WearablePage() {
     : connConnecting
       ? "var(--org)"
       : "var(--mu)";
-  const connLabel = bluetoothOff ? t("Bluetooth apagado") : connOn
-    ? t("Conectado")
-    : connConnecting
-      ? scanning ? t("Buscando dispositivos…") : t("Conectando…")
-      : t("Sin wearable");
+  const connLabel = bluetoothOff
+    ? t("Bluetooth apagado")
+    : connOn
+      ? t("Conectado")
+      : connConnecting
+        ? scanning
+          ? t("Buscando dispositivos…")
+          : t("Conectando…")
+        : t("Sin wearable");
   const hrSample = samples.heart_rate;
   const hr = hrSample?.value;
   const spo2Sample = samples.spo2;
@@ -327,24 +333,34 @@ export function WearablePage() {
   const steps = today.steps ?? null;
   const lastSleep = samples.sleep;
   const wakeDate = lastSleep ? toLocalISODate(new Date(lastSleep.ts)) : null;
-  const previousNight = today.sleepMinutes == null &&
-    lastSleep?.sleepDurationVersion === 1 && wakeDate && wakeDate < toLocalISODate()
-    ? { minutes: lastSleep.value, date: formatDateForDisplay(wakeDate) }
-    : null;
+  const previousNight =
+    today.sleepMinutes == null &&
+    lastSleep?.sleepDurationVersion === 1 &&
+    wakeDate &&
+    wakeDate < toLocalISODate()
+      ? { minutes: lastSleep.value, date: formatDateForDisplay(wakeDate) }
+      : null;
   const sleepMinutes = today.sleepMinutes ?? previousNight?.minutes;
   const sleepDate = previousNight?.date ?? "";
   const sleepValue = sleepMinutes == null ? "—" : formatSleep(sleepMinutes, t);
   const battery = info.battery;
-  const batteryIcon = info.charging ? batteryChargingOutline
-    : (battery ?? 0) <= 15 ? batteryDeadOutline
-    : (battery ?? 0) < 75 ? batteryHalfOutline
-    : batteryFullOutline;
+  const batteryIcon = info.charging
+    ? batteryChargingOutline
+    : (battery ?? 0) <= 15
+      ? batteryDeadOutline
+      : (battery ?? 0) < 75
+        ? batteryHalfOutline
+        : batteryFullOutline;
   const batteryLabel = info.charging ? t("Batería cargando") : t("Batería");
-  const lastReadingAt = Math.max(0, ...Object.values(samples).map((sample) => sample.ts));
+  const lastReadingAt = Math.max(
+    0,
+    ...Object.values(samples).map((sample) => sample.ts),
+  );
   const savedReadingDate = new Date(lastReadingAt);
-  const savedReadingLabel = lastReadingAt > 0
-    ? `${formatDateForDisplay(toLocalISODate(savedReadingDate))} ${savedReadingDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`
-    : null;
+  const savedReadingLabel =
+    lastReadingAt > 0
+      ? `${formatDateForDisplay(toLocalISODate(savedReadingDate))} ${savedReadingDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`
+      : null;
 
   /**
    * Lista única de dispositivos: el último guardado (primero, con `Reconectar`)
@@ -382,7 +398,9 @@ export function WearablePage() {
       announced.current = false;
       return;
     }
-    const count = devices.filter((device) => diagnostics || isSupportedWearable(device)).length;
+    const count = devices.filter(
+      (device) => diagnostics || isSupportedWearable(device),
+    ).length;
     if (announced.current || !count) return;
     announced.current = true;
     showToast(
@@ -680,8 +698,12 @@ export function WearablePage() {
   const focusElapsed = measuring ? elapsed : syncElapsed;
   const focusSample = focusKind !== null ? samples[focusKind] : undefined;
   // Una cifra de antes del START sigue en el dashboard, no como lectura nueva.
-  const focusReading = focusKind !== null &&
-    (!measuring || (focusSample && focusSample.ts >= measuring.since && focusSample.source !== "history"))
+  const focusReading =
+    focusKind !== null &&
+    (!measuring ||
+      (focusSample &&
+        focusSample.ts >= measuring.since &&
+        focusSample.source !== "history"))
       ? formatMeasureReading(focusKind, focusSample)
       : null;
 
@@ -702,7 +724,13 @@ export function WearablePage() {
   };
 
   const pair = (device: DeviceDescriptor) => {
-    if (bluetoothOff || connecting || addingAccessory || !isSupportedWearable(device)) return;
+    if (
+      bluetoothOff ||
+      connecting ||
+      addingAccessory ||
+      !isSupportedWearable(device)
+    )
+      return;
     setPending(device.deviceId);
     connect(device);
   };
@@ -739,9 +767,11 @@ export function WearablePage() {
         </span>
         <IonLabel>
           <h3>{t("Modo diagnóstico")}</h3>
-          <p>{accessoryDiscoverySupported
-            ? t("Muestra el detalle BLE de los accesorios autorizados.")
-            : t("Muestra todos los dispositivos y el detalle GATT.")}</p>
+          <p>
+            {accessoryDiscoverySupported
+              ? t("Muestra el detalle BLE de los accesorios autorizados.")
+              : t("Muestra todos los dispositivos y el detalle GATT.")}
+          </p>
         </IonLabel>
         <IonToggle
           slot="end"
@@ -752,6 +782,31 @@ export function WearablePage() {
       </IonItem>
     </IonList>
   );
+
+  if (!WEARABLE_ENABLED) {
+    return (
+      <Screen className="wearable-reference">
+        <Scroll className="wearable-scroll">
+          <PageHeader
+            title={t("Wearable")}
+            sub={t("Esta función no está disponible en esta versión.")}
+          />
+          <p className="wearable-wellness-note" role="note">
+            {t(
+              "La conexión con anillos o bandas estará disponible en una próxima versión.",
+            )}
+          </p>
+          <IonButton
+            expand="block"
+            className="bt bt-primary"
+            onClick={() => navigate("home")}
+          >
+            {t("Volver al inicio")}
+          </IonButton>
+        </Scroll>
+      </Screen>
+    );
+  }
 
   return (
     <Screen className="wearable-reference">
@@ -770,12 +825,12 @@ export function WearablePage() {
           </div>
         </div>
         <PageHeader
-          kicker={t("Biometría en vivo")}
+          kicker={t("Bienestar en vivo")}
           title={t("Wearable")}
           sub={
             wearableConnected
               ? `${info.name || wearableName} · ${t("datos en tiempo real")}`
-              : t("Conecta tu H59 o R88 para ver FC, sueño y SpO2")
+              : t("Conecta tu H59 o R88 para ver tus datos de bienestar")
           }
           trailing={
             <span className={`status-pill ${connOn ? "on" : ""}`}>
@@ -783,13 +838,24 @@ export function WearablePage() {
               {connLabel}
               {connOn && battery !== undefined && (
                 <span className="wearable-battery">
-                  <IonIcon icon={batteryIcon} role="img" aria-label={batteryLabel} />
+                  <IonIcon
+                    icon={batteryIcon}
+                    role="img"
+                    aria-label={batteryLabel}
+                  />
                   {battery}%
                 </span>
               )}
             </span>
           }
         />
+
+        <p className="wearable-wellness-note" role="note">
+          <IonIcon icon={informationCircleOutline} aria-hidden="true" />
+          {t(
+            "Este anillo o banda es un dispositivo de bienestar de consumo, no un dispositivo médico. Sus lecturas son estimaciones y no sirven para diagnosticar, tratar ni prevenir enfermedades.",
+          )}
+        </p>
 
         <section
           className={`wearable-showcase ${connOn ? "is-connected" : ""} ${connConnecting ? "is-busy" : ""}`}
@@ -820,13 +886,15 @@ export function WearablePage() {
           <p>
             {connOn
               ? sessionStale
-                ? t("Conexión activa. Esperando nuevas lecturas del dispositivo.")
-                : t("Tu salud en tiempo real, más cerca de ti.")
+                ? t(
+                    "Conexión activa. Esperando nuevas lecturas del dispositivo.",
+                  )
+                : t("Tus datos de bienestar en tiempo real.")
               : savedReadingLabel
                 ? t("Datos guardados · {when}", { when: savedReadingLabel })
-              : connecting && !bluetoothOff
-                ? t("Estableciendo sesión con el dispositivo…")
-                : t("Mantén el wearable desbloqueado y cerca del teléfono.")}
+                : connecting && !bluetoothOff
+                  ? t("Estableciendo sesión con el dispositivo…")
+                  : t("Mantén el wearable desbloqueado y cerca del teléfono.")}
           </p>
         </section>
         <div className="wearable-summary">
@@ -846,12 +914,11 @@ export function WearablePage() {
             {
               label: "Presión",
               icon: pulseOutline,
-              value:
-                blood
-                  ? Math.round(blood.value) +
-                    "/" +
-                    (blood.value2 == null ? "—" : Math.round(blood.value2))
-                  : "—",
+              value: blood
+                ? Math.round(blood.value) +
+                  "/" +
+                  (blood.value2 == null ? "—" : Math.round(blood.value2))
+                : "—",
               unit: "mmHg",
             },
             {
@@ -864,9 +931,7 @@ export function WearablePage() {
               label: "Pasos",
               icon: footstepsOutline,
               value:
-                steps != null
-                  ? Math.round(steps).toLocaleString(locale)
-                  : "—",
+                steps != null ? Math.round(steps).toLocaleString(locale) : "—",
               unit: "",
             },
           ].map((metric) => (
@@ -898,13 +963,15 @@ export function WearablePage() {
             </IonButton>
           </div>
         )}
-        {focusResult && <WearableMeasurementFeedback
-          result={focusResult}
-          canMeasure={connOn && measuring === null && !syncing}
-          onRetry={() => retryFocus(focusResult.kind)}
-          onNext={queued > 0 ? skipFailedMeasure : undefined}
-          onClose={closeFocus}
-        />}
+        {focusResult && (
+          <WearableMeasurementFeedback
+            result={focusResult}
+            canMeasure={connOn && measuring === null && !syncing}
+            onRetry={() => retryFocus(focusResult.kind)}
+            onNext={queued > 0 ? skipFailedMeasure : undefined}
+            onClose={closeFocus}
+          />
+        )}
         {!wearableConnected ? (
           <div className="watch-pair">
             <IonList className="group-list" lines="none">
@@ -914,7 +981,12 @@ export function WearablePage() {
                   <h3>{t("Banda H59 · Anillo R88")}</h3>
                   <p>{t("Dispositivos compatibles con la app")}</p>
                 </IonLabel>
-                <IonIcon icon={checkmarkCircle} slot="end" color="success" aria-label={t("Compatible")} />
+                <IonIcon
+                  icon={checkmarkCircle}
+                  slot="end"
+                  color="success"
+                  aria-label={t("Compatible")}
+                />
               </IonItem>
             </IonList>
             {phase === "error" && error && !bluetoothOff && (
@@ -931,51 +1003,75 @@ export function WearablePage() {
                   {deviceList.map((device) => {
                     const supported = isSupportedWearable(device);
                     return (
-                    <IonItem
-                      key={device.deviceId}
-                      className="group-item"
-                      button={supported}
-                      detail={false}
-                      disabled={bluetoothOff || connecting || addingAccessory || !supported}
-                      onClick={() => pair(device)}
-                    >
-                      <div className="bt-dev-ico" slot="start">
-                        <IonIcon icon={!supported ? banOutline : device.kind === "ycbt" ? radioButtonOffOutline : watchOutline} />
-                      </div>
-                      <IonLabel>
-                        <h3>{device.name || t("Dispositivo sin nombre")}</h3>
-                        <p>{supported ? t("Compatible con la app") : t("Dispositivo no compatible")}</p>
-                        <p>
-                          {device.paired
-                            ? t("Ya emparejado en los ajustes del teléfono")
-                            : t(signalLabel(device.rssi))}
-                        </p>
-                      </IonLabel>
-                      <div slot="end" className="bt-dev-end">
-                        {supported && <IonIcon icon={checkmarkCircle} color="success" aria-label={t("Compatible")} />}
-                        {device.paired ? (
-                          <span
-                            className="chip chip-teal"
-                            style={{ fontSize: 10, padding: "2px 8px" }}
-                          >
-                            {t("Emparejado")}
-                          </span>
-                        ) : (
-                          <Signal n={signalBars(device.rssi)} />
-                        )}
-                        {!supported ? null : pending === device.deviceId ? (
-                          <IonSpinner
-                            name="crescent"
-                            style={{ width: 18, height: 18 }}
+                      <IonItem
+                        key={device.deviceId}
+                        className="group-item"
+                        button={supported}
+                        detail={false}
+                        disabled={
+                          bluetoothOff ||
+                          connecting ||
+                          addingAccessory ||
+                          !supported
+                        }
+                        onClick={() => pair(device)}
+                      >
+                        <div className="bt-dev-ico" slot="start">
+                          <IonIcon
+                            icon={
+                              !supported
+                                ? banOutline
+                                : device.kind === "ycbt"
+                                  ? radioButtonOffOutline
+                                  : watchOutline
+                            }
                           />
-                        ) : (
-                          <span className="bt-connect">
-                            {device.saved ? t("Reconectar") : t("Conectar")}
-                          </span>
-                        )}
-                      </div>
-                    </IonItem>
-                  );})}
+                        </div>
+                        <IonLabel>
+                          <h3>{device.name || t("Dispositivo sin nombre")}</h3>
+                          <p>
+                            {supported
+                              ? t("Compatible con la app")
+                              : t("Dispositivo no compatible")}
+                          </p>
+                          <p>
+                            {device.paired
+                              ? t("Ya emparejado en los ajustes del teléfono")
+                              : t(signalLabel(device.rssi))}
+                          </p>
+                        </IonLabel>
+                        <div slot="end" className="bt-dev-end">
+                          {supported && (
+                            <IonIcon
+                              icon={checkmarkCircle}
+                              color="success"
+                              aria-label={t("Compatible")}
+                            />
+                          )}
+                          {device.paired ? (
+                            <span
+                              className="chip chip-teal"
+                              style={{ fontSize: 10, padding: "2px 8px" }}
+                            >
+                              {t("Emparejado")}
+                            </span>
+                          ) : (
+                            <Signal n={signalBars(device.rssi)} />
+                          )}
+                          {!supported ? null : pending === device.deviceId ? (
+                            <IonSpinner
+                              name="crescent"
+                              style={{ width: 18, height: 18 }}
+                            />
+                          ) : (
+                            <span className="bt-connect">
+                              {device.saved ? t("Reconectar") : t("Conectar")}
+                            </span>
+                          )}
+                        </div>
+                      </IonItem>
+                    );
+                  })}
                 </IonList>
               </>
             )}
@@ -983,8 +1079,12 @@ export function WearablePage() {
             {hasScanned && !deviceList.length && phase !== "error" && (
               <p className="watch-pair-copy">
                 {diagnostics
-                  ? t("No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.")
-                  : t("No encontramos wearables compatibles. Acerca tu H59 o R88 e inténtalo de nuevo.")}
+                  ? t(
+                      "No encontramos dispositivos cerca. Acércalo al teléfono e inténtalo de nuevo.",
+                    )
+                  : t(
+                      "No encontramos wearables compatibles. Acerca tu H59 o R88 e inténtalo de nuevo.",
+                    )}
               </p>
             )}
 
@@ -1046,7 +1146,11 @@ export function WearablePage() {
                 </div>
                 {battery !== undefined && (
                   <div className="watch-batt">
-                    <IonIcon icon={batteryIcon} role="img" aria-label={batteryLabel} />
+                    <IonIcon
+                      icon={batteryIcon}
+                      role="img"
+                      aria-label={batteryLabel}
+                    />
                     <strong>{battery}%</strong>
                   </div>
                 )}
@@ -1097,7 +1201,8 @@ export function WearablePage() {
                   <i style={{ width: `${measurePct("heart_rate")}%` }} />
                 </span>
               )}
-              {failedKinds.includes("heart_rate") && focusResult?.kind !== "heart_rate" &&
+              {failedKinds.includes("heart_rate") &&
+                focusResult?.kind !== "heart_rate" &&
                 !isMeasuringKind("heart_rate") &&
                 connOn && (
                   <button
@@ -1147,7 +1252,8 @@ export function WearablePage() {
                       <i style={{ width: `${measurePct("spo2")}%` }} />
                     </span>
                   )}
-                  {failedKinds.includes("spo2") && focusResult?.kind !== "spo2" &&
+                  {failedKinds.includes("spo2") &&
+                    focusResult?.kind !== "spo2" &&
                     !isMeasuringKind("spo2") &&
                     connOn && (
                       <button
@@ -1197,7 +1303,8 @@ export function WearablePage() {
                       />
                     </span>
                   )}
-                  {failedKinds.includes("blood_pressure") && focusResult?.kind !== "blood_pressure" &&
+                  {failedKinds.includes("blood_pressure") &&
+                    focusResult?.kind !== "blood_pressure" &&
                     !isMeasuringKind("blood_pressure") &&
                     connOn && (
                       <button
@@ -1225,11 +1332,12 @@ export function WearablePage() {
                 </span>
                 <div className="watch-metric-copy">
                   <div className="watch-metric-label">{t("Sueño")}</div>
-                  <div className="watch-metric-value">
-                    {sleepValue}
-                  </div>
+                  <div className="watch-metric-value">{sleepValue}</div>
                   <div className="watch-metric-meta">
-                    {sleepDate || (sleepMinutes != null ? t("Última noche") : t("Sin datos aún"))}
+                    {sleepDate ||
+                      (sleepMinutes != null
+                        ? t("Última noche")
+                        : t("Sin datos aún"))}
                   </div>
                 </div>
               </article>
@@ -1294,8 +1402,12 @@ export function WearablePage() {
                       <h3>{t("Modo diagnóstico")}</h3>
                       <p>
                         {accessoryDiscoverySupported
-                          ? t("Muestra el detalle BLE de los accesorios autorizados.")
-                          : t("Muestra todos los dispositivos y el detalle GATT.")}
+                          ? t(
+                              "Muestra el detalle BLE de los accesorios autorizados.",
+                            )
+                          : t(
+                              "Muestra todos los dispositivos y el detalle GATT.",
+                            )}
                       </p>
                     </IonLabel>
                   </IonItem>
@@ -1315,38 +1427,42 @@ export function WearablePage() {
 
                     {diagnostics && (
                       <>
-                        {typeof __DEV_TOOLS__ !== "undefined" && __DEV_TOOLS__ && <>
-                        <div className="cs" style={{ marginTop: 12 }}>
-                          {t("Inyectar muestra de prueba")}
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 8,
-                            flexWrap: "wrap",
-                            marginTop: 6,
-                          }}
-                        >
-                          {DEBUG_SAMPLES.map((entry) => (
-                            <IonButton
-                              key={entry.label}
-                              size="small"
-                              className="bt"
-                              fill="outline"
-                              onClick={() => {
-                                injectDebugSample(entry.sample());
-                                showToast(
-                                  t("Muestra de prueba inyectada (solo local)"),
-                                  "ok",
-                                );
-                              }}
-                            >
-                              {t(entry.label)}
-                            </IonButton>
-                          ))}
-                        </div>
-
-                        </>}
+                        {typeof __DEV_TOOLS__ !== "undefined" &&
+                          __DEV_TOOLS__ && (
+                            <>
+                              <div className="cs" style={{ marginTop: 12 }}>
+                                {t("Inyectar muestra de prueba")}
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 8,
+                                  flexWrap: "wrap",
+                                  marginTop: 6,
+                                }}
+                              >
+                                {DEBUG_SAMPLES.map((entry) => (
+                                  <IonButton
+                                    key={entry.label}
+                                    size="small"
+                                    className="bt"
+                                    fill="outline"
+                                    onClick={() => {
+                                      injectDebugSample(entry.sample());
+                                      showToast(
+                                        t(
+                                          "Muestra de prueba inyectada (solo local)",
+                                        ),
+                                        "ok",
+                                      );
+                                    }}
+                                  >
+                                    {t(entry.label)}
+                                  </IonButton>
+                                ))}
+                              </div>
+                            </>
+                          )}
 
                         <div className="cs" style={{ marginTop: 12 }}>
                           {t("Servicios GATT")}
@@ -1460,7 +1576,10 @@ export function WearablePage() {
             elapsedSec={focusElapsed}
             liveValue={focusReading?.value ?? null}
             liveUnit={focusReading ? t(focusReading.unit) : ""}
-            steps={focusSteps.map(step => ({ ...step, unit: step.unit ? t(step.unit) : undefined }))}
+            steps={focusSteps.map((step) => ({
+              ...step,
+              unit: step.unit ? t(step.unit) : undefined,
+            }))}
             queue={queuedKinds.length}
             result={null}
             complete={flashKind !== null}

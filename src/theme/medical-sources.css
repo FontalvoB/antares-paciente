@@ -1,0 +1,158 @@
+/* Referencias médicas. IonContent es el único contenedor de scroll. */
+.medical-sources ion-toolbar {
+  --background: var(--wh);
+  --color: var(--navy);
+}
+
+.medical-sources-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 16px 4px 4px;
+}
+
+.medical-sources-header ion-button {
+  flex: 0 0 44px;
+  min-height: 44px;
+  margin: 0;
+}
+
+.medical-sources-header h1 {
+  margin: 0;
+  padding-block: 4px;
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+
+.medical-sources-content {
+  --background: var(--g0);
+  --padding-start: max(16px, var(--ion-safe-area-left, 0px));
+  --padding-end: max(16px, var(--ion-safe-area-right, 0px));
+  --padding-bottom: calc(24px + var(--ion-safe-area-bottom, 0px));
+}
+
+.medical-sources-body {
+  max-width: 640px;
+  margin-inline: auto;
+  padding-top: 16px;
+  overflow-wrap: anywhere;
+}
+
+.medical-sources-intro {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--blue-l);
+  color: var(--navy);
+}
+
+.medical-sources-body p {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.medical-sources-intro p:last-child {
+  margin-bottom: 0;
+}
+
+.medical-sources-section {
+  margin-top: 24px;
+}
+
+.medical-sources-section h2 {
+  margin: 0 0 8px;
+  scroll-margin-top: 16px;
+  color: var(--navy);
+  font-size: 1.0625rem;
+  line-height: 1.35;
+}
+
+.medical-sources-section ion-list {
+  padding: 0;
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-sm);
+  background: var(--wh);
+}
+
+.medical-sources-section ion-item {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.medical-sources-section ion-item + ion-item {
+  border-top: 1px solid var(--bd);
+}
+
+.medical-source-link {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 14px;
+  color: var(--navy);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.medical-source-link:focus-visible {
+  outline: 2px solid var(--brand-blue-mid);
+  outline-offset: -3px;
+  border-radius: var(--radius-sm);
+}
+
+.medical-source-link:active {
+  background: var(--blue-l);
+}
+
+.medical-source-title,
+.medical-source-link small {
+  display: block;
+}
+
+.medical-source-title {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.medical-source-link small {
+  margin-top: 3px;
+  color: var(--mu);
+  font-size: 0.8125rem;
+}
+
+.medical-source-link ion-icon {
+  flex: none;
+  font-size: 1.125rem;
+}
+
+.medical-sources-action {
+  min-height: 44px;
+  margin-inline: 0;
+}
+
+/* Aviso de bienestar del wearable (no es un dispositivo médico). */
+.wearable-wellness-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 4px 24px 18px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--home-aqua) 34%, var(--wh));
+  color: var(--brand-navy);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wearable-wellness-note ion-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  font-size: 16px;
+  color: var(--brand-blue-mid);
+}

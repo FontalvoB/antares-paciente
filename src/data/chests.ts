@@ -153,7 +153,7 @@ export const CLINICAL_CHESTS: ClinicalChest[] = [
     kind: 'clinical',
     xp: 2000,
     title: 'Llevar HbA1c por debajo de 5.7%',
-    hint: 'Meta ADA · valor actual 5.9%',
+    hint: 'Umbral de referencia del programa',
     tone: 'gold',
     progress: 0,
     goal: 1,

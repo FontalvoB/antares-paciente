@@ -1,10 +1,21 @@
 import { IonButton, IonContent, IonIcon, IonModal } from '@ionic/react'
-import { close, sparkles, trendingDown, trendingUp } from 'ionicons/icons'
-import type { HomeMetricCard } from '../data/metrics'
+import { useRef } from 'react'
+import { clipboardOutline, close, sparkles, trendingDown, trendingUp } from 'ionicons/icons'
+import { useApp } from '../context/AppContext'
+import type { MedicalSourceSectionId } from '../data/medicalSources'
+import type { HomeMetricCard, MetricId } from '../data/metrics'
 import { formatMetricTarget, formatMetricValue } from '../data/metrics'
 import { useI18n } from '../i18n/I18nContext'
 import { formatDateForDisplay } from '../utils/dates'
 import { Sparkline } from '../pages/program/visuals'
+
+const sourceSections: Record<MetricId, MedicalSourceSectionId> = {
+  imc: 'imc',
+  hba1c: 'hba1c',
+  fat: 'fat',
+  adh: 'adherence',
+  pts: 'adherence',
+}
 
 /**
  * Modal de historial de una métrica del Home. Recibe la tarjeta YA resuelta
@@ -20,14 +31,22 @@ export function MetricHistoryModal({
   onClose: () => void
 }) {
   const { t, lang } = useI18n()
+  const { navigate } = useApp()
+  const modalRef = useRef<HTMLIonModalElement>(null)
   // S3: locale activo para números (es-ES coma decimal / en-US punto).
   const locale = lang === 'en' ? 'en-US' : 'es-ES'
   const fmt = (v: number) => formatMetricValue(v, card?.decimals ?? 0, locale)
 
   return (
     <IonModal
+      ref={modalRef}
       isOpen={!!card}
-      onDidDismiss={onClose}
+      onDidDismiss={(event) => {
+        onClose()
+        if (card && event.detail.role === 'medical-sources') {
+          navigate('medical-sources', sourceSections[card.id])
+        }
+      }}
       initialBreakpoint={1}
       breakpoints={[0, 1]}
       handle
@@ -46,6 +65,15 @@ export function MetricHistoryModal({
                 <IonIcon slot="icon-only" icon={close} />
               </IonButton>
             </div>
+
+            <IonButton
+              fill="outline"
+              className="medical-sources-action"
+              onClick={() => void modalRef.current?.dismiss(undefined, 'medical-sources')}
+            >
+              <IonIcon slot="start" icon={clipboardOutline} aria-hidden="true" />
+              {t('Ver fuentes')}
+            </IonButton>
 
             {card.kind === 'requires-data' ? (
               <div className="mh-empty">

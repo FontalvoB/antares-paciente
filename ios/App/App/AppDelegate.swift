@@ -1,6 +1,5 @@
  import UIKit
 import Capacitor
-import BluetoothLe
 import FirebaseCore
 import FirebaseMessaging
 
@@ -11,10 +10,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
     private var lastMessagingToken: String?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Restaurar Core Bluetooth antes de que exista el WebView de Capacitor.
-        if launchOptions?[.bluetoothCentrals] != nil {
-            BluetoothLe.restoreBluetoothState()
-        }
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
             FirebaseApp.configure()
             Messaging.messaging().delegate = self

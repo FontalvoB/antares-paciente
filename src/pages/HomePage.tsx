@@ -55,6 +55,7 @@ import { NotificationsModal } from "../components/notifications/NotificationsMod
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useScoresHistory } from "../hooks/useScoresHistory";
 import { useWearable } from "../context/WearableContext";
+import { WEARABLE_ENABLED } from "../utils/features";
 import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import { programDayNumber } from "../utils/programDayNumber";
 import { requiredProtocolTasks } from "../utils/dailyProtocol";
@@ -78,9 +79,15 @@ export function HomePage() {
   } = useApp();
   const { snapshot } = useProgram();
   const dailyMedications = useDailyMedications();
-  const medicationProtocol = dailyMedications.enabled && Boolean(snapshot?.optionalTaskCodes?.includes("nutraceutico"));
+  const medicationProtocol =
+    dailyMedications.enabled &&
+    Boolean(snapshot?.optionalTaskCodes?.includes("nutraceutico"));
   const todayTasks = useMemo(() => requiredProtocolTasks(snapshot), [snapshot]);
-  const activeProgramDay = programDayNumber(snapshot?.template.currentWeekNumber, snapshot?.template.currentWeekStartDateLocal, snapshot?.todayLocalDate);
+  const activeProgramDay = programDayNumber(
+    snapshot?.template.currentWeekNumber,
+    snapshot?.template.currentWeekStartDateLocal,
+    snapshot?.todayLocalDate,
+  );
   const { unreadCount } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuEvent, setMenuEvent] = useState<Event>();
@@ -121,11 +128,22 @@ export function HomePage() {
 
   // Dos accesos permanentes: sin paginación, arrastre ni autoavance.
   const upcomingMedication = dailyMedications.nextDose;
-  const nextMedicationTime = upcomingMedication && new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit", minute: "2-digit", timeZone: upcomingMedication.timeZone,
-  }).format(new Date(upcomingMedication.scheduledAt));
+  const nextMedicationTime =
+    upcomingMedication &&
+    new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: upcomingMedication.timeZone,
+    }).format(new Date(upcomingMedication.scheduledAt));
 
-  const modules: { id: ScreenId; title: string; sub: string; accent: string; cover: string; cta: string }[] = [
+  const modules: {
+    id: ScreenId;
+    title: string;
+    sub: string;
+    accent: string;
+    cover: string;
+    cta: string;
+  }[] = [
     {
       id: "com",
       title: t("Comunidad"),
@@ -137,9 +155,12 @@ export function HomePage() {
     {
       id: "medications",
       title: t("Control de medicamentos"),
-      sub: upcomingMedication && nextMedicationTime
-        ? t("Próxima toma · {time}", { time: nextMedicationTime }) + " · " + upcomingMedication.name
-        : t("Tomas, tratamientos e historial"),
+      sub:
+        upcomingMedication && nextMedicationTime
+          ? t("Próxima toma · {time}", { time: nextMedicationTime }) +
+            " · " +
+            upcomingMedication.name
+          : t("Tomas, tratamientos e historial"),
       accent: "var(--home-card-mid)",
       cover: coverMedicamentos,
       cta: t("Ver medicamentos"),
@@ -238,16 +259,24 @@ export function HomePage() {
     };
   }, [todayTasks, appProgram]);
 
-  const missionTotal = (todayTasks?.length ?? ACTIVE_PROGRAM_TASKS.length) + (medicationProtocol ? 1 : 0);
+  const missionTotal =
+    (todayTasks?.length ?? ACTIVE_PROGRAM_TASKS.length) +
+    (medicationProtocol ? 1 : 0);
   const todayDone = todayTasks
-    ? todayTasks.filter(task => task.status === "Completed").length + (medicationProtocol && dailyMedications.data && dailyMedications.recorded === dailyMedications.scheduled ? 1 : 0)
+    ? todayTasks.filter((task) => task.status === "Completed").length +
+      (medicationProtocol &&
+      dailyMedications.data &&
+      dailyMedications.recorded === dailyMedications.scheduled
+        ? 1
+        : 0)
     : ACTIVE_PROGRAM_TASKS.filter((task) => program[task.id]).length;
   // La rueda suma el cofre del día como último segmento.
   const todayTotal = missionTotal + 1;
   const dayComplete = missionTotal > 0 && todayDone === missionTotal;
-  const chestClaimed = snapshot?.todayBonusAvailable === undefined
-    ? dayComplete
-    : snapshot.todayBonusAvailable === false && missionTotal > 0;
+  const chestClaimed =
+    snapshot?.todayBonusAvailable === undefined
+      ? dayComplete
+      : snapshot.todayBonusAvailable === false && missionTotal > 0;
 
   // Serie de adherencia REAL: dimensions.adherence por punto del
   // scores-history (semana persistida con cómputo). Sin puntos → requires-data.
@@ -314,8 +343,14 @@ export function HomePage() {
             <div className="hm-wordmark" aria-label="COPP-ADRESD">
               <img src={logoIcon} alt="" />
               <span>
-                <strong>COPP-ADRESD<sup>®</sup></strong>
-                <small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small>
+                <strong>
+                  COPP-ADRESD<sup>®</sup>
+                </strong>
+                <small>
+                  COMPREHENSIVE OBESITY
+                  <br />
+                  PREVENTION PROGRAM
+                </small>
               </span>
             </div>
             <div className="hm-head-actions">
@@ -380,7 +415,13 @@ export function HomePage() {
             <div className="hm-day-copy">
               <span>{t("Hoy es")}</span>
               <strong className="hm-date">{today}</strong>
-              {activeProgramDay != null && <span className="hm-program-day">{t('Día {day} del programa', { day: String(activeProgramDay) })}</span>}
+              {activeProgramDay != null && (
+                <span className="hm-program-day">
+                  {t("Día {day} del programa", {
+                    day: String(activeProgramDay),
+                  })}
+                </span>
+              )}
               <span className="hm-chip navy">
                 {t("Semana {cur} de {total}", {
                   cur: String(activeProgramWeek),
@@ -388,7 +429,11 @@ export function HomePage() {
                 })}
               </span>
             </div>
-            <IonButton fill="clear" className="hm-day-link" onClick={() => navigate("prog")}>
+            <IonButton
+              fill="clear"
+              className="hm-day-link"
+              onClick={() => navigate("prog")}
+            >
               <IonIcon icon={clipboardOutline} aria-hidden="true" />
               <span>{t("Protocolo diario")}</span>
               <IonIcon icon={chevronForward} aria-hidden="true" />
@@ -400,13 +445,30 @@ export function HomePage() {
           <span className="hm-wheel-kicker">{t("Protocolo diario")}</span>
           <ProtocolWheel
             program={program}
-            medications={medicationProtocol ? { done: Boolean(dailyMedications.data && dailyMedications.recorded === dailyMedications.scheduled) } : undefined}
-            taskCodes={todayTasks?.map(task => task.taskCode)}
+            medications={
+              medicationProtocol
+                ? {
+                    done: Boolean(
+                      dailyMedications.data &&
+                      dailyMedications.recorded === dailyMedications.scheduled,
+                    ),
+                  }
+                : undefined
+            }
+            taskCodes={todayTasks?.map((task) => task.taskCode)}
             chestClaimed={chestClaimed}
             title={t("Protocolo diario")}
             count={todayDone + (chestClaimed ? 1 : 0)}
             total={todayTotal}
-            onSelect={(id) => navigate(id === "chest" ? "program-racha" : id === "nutraceutico" && medicationProtocol ? "medications" : `program-${id}`)}
+            onSelect={(id) =>
+              navigate(
+                id === "chest"
+                  ? "program-racha"
+                  : id === "nutraceutico" && medicationProtocol
+                    ? "medications"
+                    : `program-${id}`,
+              )
+            }
             onOpenProgram={() => navigate("prog")}
           />
           <span className="hm-wheel-foot">
@@ -415,10 +477,12 @@ export function HomePage() {
         </section>
 
         <div className="hm-soon" aria-label={t("Próximamente")}>
-          {([
-            { id: "podcast", label: "Podcast", icon: school },
-            { id: "ejercicio", label: "Ejercicios", icon: walk },
-          ] as const).map(({ id, label, icon }) => (
+          {(
+            [
+              { id: "podcast", label: "Podcast", icon: school },
+              { id: "ejercicio", label: "Ejercicios", icon: walk },
+            ] as const
+          ).map(({ id, label, icon }) => (
             <button
               key={id}
               type="button"
@@ -434,7 +498,9 @@ export function HomePage() {
         <IonAlert
           isOpen={comingSoonNotice !== null}
           header={t("Próximamente")}
-          message={t("Contenido no disponible aún · tu equipo lo está preparando")}
+          message={t(
+            "Contenido no disponible aún · tu equipo lo está preparando",
+          )}
           buttons={[t("Entendido")]}
           onDidDismiss={() => setComingSoonNotice(null)}
         />
@@ -456,13 +522,19 @@ export function HomePage() {
                 })}
               >
                 <span className="hm-metric-icon" aria-hidden="true">
-                  {meta.id === "fat" ? "%" : (
-                    <IonIcon icon={{
-                      imc: scaleOutline,
-                      hba1c: waterOutline,
-                      adh: checkmarkCircleOutline,
-                      pts: trophyOutline,
-                    }[meta.id]} />
+                  {meta.id === "fat" ? (
+                    "%"
+                  ) : (
+                    <IonIcon
+                      icon={
+                        {
+                          imc: scaleOutline,
+                          hba1c: waterOutline,
+                          adh: checkmarkCircleOutline,
+                          pts: trophyOutline,
+                        }[meta.id]
+                      }
+                    />
                   )}
                 </span>
                 {state === "loading" ? (
@@ -528,9 +600,9 @@ export function HomePage() {
               },
               {
                 id: "bt" as const,
-                label: t("Conectar"),
-                icon: watchOutline,
-                fn: () => navigate("bt"),
+                label: t(WEARABLE_ENABLED ? "Conectar" : "Historia"),
+                icon: WEARABLE_ENABLED ? watchOutline : clipboardOutline,
+                fn: () => navigate(WEARABLE_ENABLED ? "bt" : "hc"),
               },
               {
                 id: "sos" as const,
@@ -560,28 +632,56 @@ export function HomePage() {
             aria-label={t("Abrir protocolo de nutrición")}
           >
             <span className="hm-nutrition-content">
-              <span className="hm-appt-tele" aria-hidden="true"><IonIcon icon={restaurantOutline} /></span>
+              <span className="hm-appt-tele" aria-hidden="true">
+                <IonIcon icon={restaurantOutline} />
+              </span>
               <span className="hm-appt-time">{t("Nutrición")}</span>
               <span className="hm-appt-name">{t("Tu plan diario")}</span>
-              <span className="hm-appt-meta">{t("Tu plan y el registro del día")}</span>
+              <span className="hm-appt-meta">
+                {t("Tu plan y el registro del día")}
+              </span>
               <span className="hm-appt-chip">{t("Ver plan")}</span>
               <span className="hm-appt-people" aria-hidden="true">
-                <span className="hm-nutrition-leaf"><IonIcon icon={leafOutline} /></span>
-                <span className="hm-appt-add"><IonIcon icon={arrowForward} /></span>
+                <span className="hm-nutrition-leaf">
+                  <IonIcon icon={leafOutline} />
+                </span>
+                <span className="hm-appt-add">
+                  <IonIcon icon={arrowForward} />
+                </span>
               </span>
             </span>
           </IonButton>
         </div>
 
-        <div className="sec" id="home-modules-title">{t("Tus módulos")}</div>
+        <div className="sec" id="home-modules-title">
+          {t("Tus módulos")}
+        </div>
         <section className="hm-modules" aria-labelledby="home-modules-title">
-          {modules.map(module => <IonButton key={module.id} className="hm-module-card" style={{ "--a": module.accent } as CSSProperties} onClick={() => navigate(module.id)}>
-            <span className="hm-module-content">
-              <img className="mcar-cover" src={module.cover} alt="" aria-hidden="true" />
-              <span className="mcar-txt"><strong>{module.title}</strong><small>{module.sub}</small></span>
-              <span className="mcar-cta">{module.cta}<IonIcon icon={arrowForward} aria-hidden="true" /></span>
-            </span>
-          </IonButton>)}
+          {modules.map((module) => (
+            <IonButton
+              key={module.id}
+              className="hm-module-card"
+              style={{ "--a": module.accent } as CSSProperties}
+              onClick={() => navigate(module.id)}
+            >
+              <span className="hm-module-content">
+                <img
+                  className="mcar-cover"
+                  src={module.cover}
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span className="mcar-txt">
+                  <strong>{module.title}</strong>
+                  <small>{module.sub}</small>
+                </span>
+                <span className="mcar-cta">
+                  {module.cta}
+                  <IonIcon icon={arrowForward} aria-hidden="true" />
+                </span>
+              </span>
+            </IonButton>
+          ))}
         </section>
 
         {!realMode && (

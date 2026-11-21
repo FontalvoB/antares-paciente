@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import type { CSSProperties } from 'react'
 import { checkmarkCircle, gift, lockClosed, shareSocialOutline } from 'ionicons/icons'
 import { RingProgress } from '../../components/RingProgress'
+import { useApp } from '../../context/AppContext'
 import { useI18n } from '../../i18n/I18nContext'
 import type { StreakChestDto } from '../../services/program/types'
 import type { ClinicalChestView } from '../../hooks/useClinicalChests'
@@ -91,6 +92,7 @@ export function ClinicalChestCard({
   index?: number
 }) {
   const { lang, t } = useI18n()
+  const { navigate } = useApp()
   const numLocale = lang === 'en' ? 'en-US' : 'es-ES'
   const statusClass =
     chest.status === 'achieved' ? 'claimed' : chest.status === 'progress' ? 'ready' : 'locked'
@@ -143,6 +145,15 @@ export function ClinicalChestCard({
         <div className="cx-claimed">
           <IonIcon icon={checkmarkCircle} /> {t('Logrado')}
         </div>
+      )}
+      {chest.id === 'clin-hba1c' && (
+        <IonButton
+          fill="clear"
+          className="medical-sources-action"
+          onClick={() => navigate('medical-sources', 'hba1c')}
+        >
+          {t('Ver fuentes')}
+        </IonButton>
       )}
     </motion.article>
   )

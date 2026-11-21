@@ -1,8 +1,13 @@
-import {APPOINTMENTS_ENABLED} from "./utils/appointmentsVisibility";
+import { APPOINTMENTS_ENABLED } from "./utils/appointmentsVisibility";
 import { LanguageQuerySync } from "./components/LanguageQuerySync";
 import { AchievementCenter } from "./components/achievements/AchievementCenter";
 import { setupIonicReact, IonApp, IonSpinner } from "@ionic/react";
-import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  MotionConfig,
+  useReducedMotion,
+} from "framer-motion";
 import {
   useCallback,
   useEffect,
@@ -23,6 +28,7 @@ import { fetchMyAppointments } from "./utils/appointmentsApi";
 import { mapAppointmentToListed } from "./data/appointments";
 import { AppProvider, useApp } from "./context/AppContext";
 import { LegalConsentProvider } from "./context/LegalConsentContext";
+import { AiDisclosureProvider } from "./context/AiDisclosureContext";
 import { WearableProvider } from "./context/WearableContext";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
@@ -48,6 +54,7 @@ import { InfinitoPage } from "./pages/InfinitoPage";
 import { WearablePage } from "./pages/WearablePage";
 import { ChatPage } from "./pages/ChatPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { MedicalSourcesPage } from "./pages/MedicalSourcesPage";
 import { MedicationsPage } from "./pages/MedicationsPage";
 import { AvatarPage } from "./pages/AvatarPage";
 import { ProgramPage } from "./pages/ProgramPage";
@@ -56,7 +63,6 @@ import { VirtualRoomPage } from "./pages/VirtualRoomPage";
 import logoLetras from "./assets/LogoConLetras.png";
 
 setupIonicReact({ mode: "ios" });
-
 
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
@@ -88,7 +94,11 @@ function Router() {
   } else {
     switch (screen) {
       case "book":
-        content = APPOINTMENTS_ENABLED ? <AppointmentsPage /> : <NutritionPage />;
+        content = APPOINTMENTS_ENABLED ? (
+          <AppointmentsPage />
+        ) : (
+          <NutritionPage />
+        );
         break;
       case "hc":
         content = <HistoryPage />;
@@ -115,6 +125,9 @@ function Router() {
       case "prof":
         content = <ProfilePage />;
         break;
+      case "medical-sources":
+        content = <MedicalSourcesPage />;
+        break;
       case "medications":
         content = <MedicationsPage />;
         break;
@@ -134,7 +147,11 @@ function Router() {
         content = <CommunityPage />;
         break;
       case "room":
-        content = APPOINTMENTS_ENABLED ? <VirtualRoomPage /> : <NutritionPage />;
+        content = APPOINTMENTS_ENABLED ? (
+          <VirtualRoomPage />
+        ) : (
+          <NutritionPage />
+        );
         break;
       default:
         content = <HomePage />;
@@ -144,11 +161,17 @@ function Router() {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
-        key={flow === "app" ? `app-${screen.startsWith("program-") ? "prog" : screen}` : flow}
+        key={
+          flow === "app"
+            ? `app-${screen.startsWith("program-") ? "prog" : screen}`
+            : flow
+        }
         className="router-page"
         initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -14, scale: 0.985 }}
+        exit={
+          reducedMotion ? { opacity: 1 } : { opacity: 0, y: -14, scale: 0.985 }
+        }
         transition={reducedMotion ? { duration: 0 } : TRANSITION}
       >
         {content}
@@ -182,7 +205,7 @@ function Shell() {
   // o fue cancelada, avisa con un toast.
   const openRoomFromPush = useCallback(
     async (appointmentId: string) => {
-      if(!APPOINTMENTS_ENABLED)return;
+      if (!APPOINTMENTS_ENABLED) return;
       const isActive = (status?: string) =>
         status === "Confirmed" || status === "InProgress";
       const loaded = upcomingAppointments?.find((a) => a.id === appointmentId);
@@ -272,8 +295,23 @@ export default function App() {
     setCommunityClientState(createCommunityClient());
   }, []);
 
-  if (__DEV_TOOLS__ && new URLSearchParams(window.location.search).has("consent-test")) {
-    return <I18nProvider><IonApp><ConsentPreviewPage longText={new URLSearchParams(window.location.search).get("consent-test") === "long"} /></IonApp></I18nProvider>;
+  if (
+    __DEV_TOOLS__ &&
+    new URLSearchParams(window.location.search).has("consent-test")
+  ) {
+    return (
+      <I18nProvider>
+        <IonApp>
+          <ConsentPreviewPage
+            longText={
+              new URLSearchParams(window.location.search).get(
+                "consent-test",
+              ) === "long"
+            }
+          />
+        </IonApp>
+      </I18nProvider>
+    );
   }
 
   return (
@@ -283,11 +321,15 @@ export default function App() {
           <LanguageQuerySync />
           <IonApp>
             <LegalConsentProvider>
-              <AppProvider onResetCommunityClient={resetCommunityClient}>
-                <WearableProvider>
-                  <MotionConfig reducedMotion="user"><Shell /></MotionConfig>
-                </WearableProvider>
-              </AppProvider>
+              <AiDisclosureProvider>
+                <AppProvider onResetCommunityClient={resetCommunityClient}>
+                  <WearableProvider>
+                    <MotionConfig reducedMotion="user">
+                      <Shell />
+                    </MotionConfig>
+                  </WearableProvider>
+                </AppProvider>
+              </AiDisclosureProvider>
             </LegalConsentProvider>
           </IonApp>
         </I18nProvider>
