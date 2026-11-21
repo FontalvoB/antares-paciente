@@ -1,5 +1,6 @@
 import { APPOINTMENTS_ENABLED } from "../utils/appointmentsVisibility";
 import { TEAM_PROFESSIONALS_ENABLED } from "../utils/teamVisibility";
+import { HEALTH_ENABLED } from "../utils/features";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IonAccordion,
@@ -1081,6 +1082,13 @@ export function ProfilePage() {
                   />
                   {t("Autorizaciones y privacidad")}
                 </IonButton>
+                {HEALTH_ENABLED && (
+                  <IonButton fill="clear" expand="block" className="bt bt-ghost"
+                    onClick={() => navigate("health-accessory")}>
+                    <IonIcon icon={bodyOutline} slot="start" aria-hidden="true" />
+                    {t("Accesorio y datos de bienestar")}
+                  </IonButton>
+                )}
                 <IonButton
                   fill="clear"
                   expand="block"

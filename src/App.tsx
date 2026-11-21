@@ -30,6 +30,8 @@ import { AppProvider, useApp } from "./context/AppContext";
 import { LegalConsentProvider } from "./context/LegalConsentContext";
 import { AiDisclosureProvider } from "./context/AiDisclosureContext";
 import { WearableProvider } from "./context/WearableContext";
+import { HealthProvider } from "./context/HealthContext";
+import { HEALTH_ENABLED } from "./utils/features";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { useStatusBarContrast } from "./hooks/useStatusBarContrast";
@@ -52,6 +54,7 @@ import { NutritionPage } from "./pages/NutritionPage";
 import { AcademyPage } from "./pages/AcademyPage";
 import { InfinitoPage } from "./pages/InfinitoPage";
 import { WearablePage } from "./pages/WearablePage";
+import { HealthAccessoryPage } from "./pages/HealthAccessoryPage";
 import { ChatPage } from "./pages/ChatPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { MedicalSourcesPage } from "./pages/MedicalSourcesPage";
@@ -118,6 +121,9 @@ function Router() {
         break;
       case "bt":
         content = <WearablePage />;
+        break;
+      case "health-accessory":
+        content = HEALTH_ENABLED ? <HealthAccessoryPage /> : <HomePage />;
         break;
       case "chat":
         content = <ChatPage />;
@@ -265,7 +271,7 @@ function Shell() {
   return (
     <div className="app-stage">
       <div className="app-shell">
-        <Router />
+        <HealthProvider><Router /></HealthProvider>
         <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />

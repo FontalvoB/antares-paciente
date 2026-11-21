@@ -1,4 +1,5 @@
 import {APPOINTMENTS_ENABLED,visibleScreen} from "../utils/appointmentsVisibility";
+import { HEALTH_ENABLED } from "../utils/features";
 import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
 import { isConfirmedText, mergeChatHistory } from "../utils/chatHistory";
 import type { HistoryMessage } from "../utils/chatHistory";
@@ -91,6 +92,7 @@ interface AppState {
   flow: Flow;
   screen: Screen;
   medicalSourcesEntry: { section?: MedicalSourceSectionId; returnTo: Screen } | null;
+  healthReturnTo: "home" | "prof";
   toast: ToastState | null;
   panicOpen: boolean;
   voiceOpen: boolean;
@@ -317,6 +319,7 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
+  const [healthReturnTo, setHealthReturnTo] = useState<"home" | "prof">("home");
   const [medicalSourcesEntry, setMedicalSourcesEntry] = useState<AppState["medicalSourcesEntry"]>(null);
   // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
   const [bookingWizardAutoOpen, setBookingWizardAutoOpen] = useState(false);
@@ -1120,6 +1123,7 @@ export function AppProvider({
       flow,
       screen,
       medicalSourcesEntry,
+      healthReturnTo,
       toast,
       showToast,
       panicOpen,
@@ -1164,6 +1168,10 @@ export function AppProvider({
       // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
       // El protocolo nutricional abre el mismo módulo completo que la pestaña Nutrición.
       navigate: (s, sourceSection) => {
+        if (s === "health-accessory" && !HEALTH_ENABLED) return;
+        if (s === "health-accessory" && screen !== "health-accessory") {
+          setHealthReturnTo(screen === "prof" ? "prof" : "home");
+        }
         if (s === "medical-sources" && screen !== "medical-sources") {
           setMedicalSourcesEntry({ section: sourceSection, returnTo: screen });
         }
@@ -1370,6 +1378,7 @@ export function AppProvider({
       flow,
       screen,
       medicalSourcesEntry,
+      healthReturnTo,
       bookingWizardAutoOpen,
       toast,
       showToast,

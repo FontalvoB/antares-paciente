@@ -29,11 +29,15 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Copp Adresd usa Bluetooth para conectarse a tu anillo o banda de bienestar y leer tu frecuencia cardíaca, pasos y sueño. No es un dispositivo médico.</string>
+	<string>Copp Adresd no usa Bluetooth en esta versión. Si en el futuro se activa, solo se usará con tu permiso.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Copp Adresd usa Bluetooth para conectarse a tu anillo o banda de bienestar y leer tus datos de bienestar.</string>
+	<string>Copp Adresd no usa Bluetooth en esta versión. Si en el futuro se activa, solo se usará con tu permiso.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Copp Adresd lee, solo con tu permiso, los pasos, la actividad, el sueño y la frecuencia cardíaca que tu accesorio guarda en Salud, para mostrarte tu progreso en el programa de bienestar. No vendemos estos datos ni los usamos para publicidad.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Copp Adresd usa Salud para mostrarte tu progreso de bienestar. El acceso de esta versión es de solo lectura.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Copp Adresd usa tu ubicación para identificar el número de emergencias del país y compartirla con tu contacto si activas SOS.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -46,10 +50,6 @@
 	<string>Copp Adresd accede a tus fotos para analizar tus comidas.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>bluetooth-central</string>
-	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

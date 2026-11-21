@@ -56,8 +56,10 @@ export interface DeviceMetricsInput {
  */
 export function recordDeviceMetrics(
   input: DeviceMetricsInput,
+  options: Pick<ApiFetchOptions, "expectedUserId" | "signal"> = {},
 ): Promise<{ date: string; codes: string[]; observedAt: string }> {
   return apiFetch("/api/v1/program/me/device-metrics", {
+    ...options,
     method: "POST",
     body: input,
   });

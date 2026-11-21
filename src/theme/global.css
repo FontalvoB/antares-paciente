@@ -74,6 +74,139 @@ body {
   overflow: hidden;
 }
 
+/* Accesorio de bienestar. */
+.screen.health-accessory {
+  background: linear-gradient(var(--wellness-bg-start), var(--wellness-bg-end));
+  color: var(--wellness-navy);
+}
+.health-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: var(--ion-safe-area-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+}
+.health-header h1 {
+  margin: 0;
+  font: 700 clamp(21px, 6vw, 26px)/1.16 "Space Grotesk", sans-serif;
+}
+.health-header ion-button { min-width: 44px; }
+.screen > .screen-scroll.health-scroll {
+  padding: 10px max(14px, env(safe-area-inset-right)) calc(24px + var(--ion-safe-area-bottom)) max(14px, env(safe-area-inset-left));
+}
+.health-hero, .health-panel {
+  margin: 0 auto 12px;
+  padding: clamp(14px, 4vw, 20px);
+  max-width: 540px;
+  border-radius: var(--wellness-radius);
+  box-shadow: var(--wellness-shadow);
+}
+.health-hero {
+  background: var(--grad-brand-v);
+  color: var(--wh);
+}
+.health-hero > p {
+  margin: 0 0 16px;
+  max-width: 30ch;
+  font: 700 clamp(17px, 5vw, 22px)/1.25 "Space Grotesk", sans-serif;
+}
+.health-diagram {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  text-align: center;
+  gap: 4px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.health-diagram span { display: grid; justify-items: center; gap: 6px; }
+.health-diagram span ion-icon {
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  border: 1px solid var(--wellness-dark-track);
+  border-radius: 14px;
+  background: var(--wellness-dark-glass);
+}
+.health-diagram > ion-icon { margin-top: 12px; color: var(--wellness-on-dark-muted); }
+.health-panel {
+  background: var(--wellness-surface);
+  border: 1px solid var(--wellness-border);
+}
+.health-panel h2, .health-privacy h2 {
+  margin: 0;
+  font: 700 17px/1.25 "Space Grotesk", sans-serif;
+}
+.health-panel p, .health-privacy p, .health-permission-sheet p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--wellness-muted);
+}
+.health-steps { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.health-steps li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
+.health-steps li > span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--wellness-primary);
+  background: var(--wellness-accent);
+}
+.health-guide { margin-top: 12px; }
+.health-guide ion-item { --min-height: 44px; --padding-start: 10px; }
+.health-guide ion-accordion { border-radius: 12px; background: var(--wellness-bg-start); }
+.health-guide ion-item[slot="header"] { --background: var(--wellness-bg-start); font-weight: 650; }
+.health-panel .health-platform-name {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--wellness-primary);
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.health-platform ion-progress-bar { margin-block: 12px; border-radius: 4px; }
+.health-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
+.health-chips ion-chip {
+  margin: 0;
+  cursor: default;
+  height: auto;
+  min-height: 28px;
+  --background: var(--wellness-accent);
+  --color: var(--wellness-navy);
+  font-size: 13px;
+}
+.health-actions, .health-manual ion-button { margin-top: 12px; }
+.health-accessory ion-button, .health-permission-sheet ion-button {
+  --border-radius: 12px;
+  min-height: 44px;
+  font-weight: 700;
+}
+.health-accessory ion-button::part(native), .health-permission-sheet ion-button::part(native) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.health-accessory ion-button::part(native):focus-visible, .health-permission-sheet ion-button::part(native):focus-visible {
+  outline: 2px solid var(--wellness-action);
+  outline-offset: -3px;
+}
+.health-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.health-results > div { min-width: 0; background: var(--wellness-bg-start); border-radius: 12px; padding: 10px; }
+.health-results dt { font-size: 13px; color: var(--wellness-muted); overflow-wrap: anywhere; }
+.health-results dd { margin: 3px 0 0; font: 700 19px/1.2 "Space Grotesk", sans-serif; }
+.health-results small { font: 500 12px/1.4 Inter, sans-serif; color: var(--wellness-muted); display: block; }
+.health-privacy { max-width: 540px; margin: 14px auto 0; padding: 0 6px; }
+.health-privacy h2 { display: flex; gap: 7px; align-items: center; }
+.health-permission-sheet { --width: min(560px, 100%); --border-radius: 22px 22px 0 0; }
+.health-permission-sheet ion-content { --padding-bottom: calc(12px + var(--ion-safe-area-bottom)); }
+.health-permission-sheet ion-title { white-space: normal; }
+@media (prefers-reduced-motion: reduce) {
+  .health-accessory ion-progress-bar { display: none; }
+}
+
 .app-stage {
   min-height: 100dvh;
   width: 100%;

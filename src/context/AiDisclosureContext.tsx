@@ -205,6 +205,9 @@ export function AiDisclosureProvider({ children }: { children: ReactNode }) {
               "Los mensajes que escribes en el chat, el audio de tu voz cuando usas el asistente, las fotos de comidas o de exámenes de laboratorio que decidas analizar y el contexto de tu perfil y plan necesario para responderte. No enviamos tu documento, correo ni teléfono; el contexto de tu perfil se limita a lo necesario para responder.",
             )}
           </p>
+          <p>
+            {t("Si sincronizas datos de bienestar desde Apple Health o Health Connect y usas Vita, el contexto puede incluir pasos, distancia, energía activa y sueño para personalizar la respuesta.")}
+          </p>
 
           <h2>{t("A quién se envían")}</h2>
           <p>

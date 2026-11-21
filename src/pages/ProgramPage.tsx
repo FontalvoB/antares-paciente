@@ -821,6 +821,7 @@ export function ProgramPage() {
                 onOpenMedications={() => navigate("medications")}
                 todayTasks={todayTasks}
                 upcoming={snapshot?.upcoming}
+                dayDate={snapshot?.todayLocalDate}
                 rest={snapshot?.rest}
                 allDone={allDone}
                 currentId={currentId}

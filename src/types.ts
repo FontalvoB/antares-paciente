@@ -6,6 +6,7 @@ export type Screen =
   | "edu"
   | "infinito"
   | "bt"
+  | "health-accessory"
   | "chat"
   | "prof"
   | "medical-sources"

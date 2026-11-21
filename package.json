@@ -30,6 +30,7 @@
     "@capacitor/filesystem": "^8",
     "@capacitor/geolocation": "8.2.4",
     "@capacitor/haptics": "^8.0.2",
+    "@capacitor/health-fitness": "1.0.3",
     "@capacitor/ios": "^8.5.1",
     "@capacitor/keyboard": "^8.0.5",
     "@capacitor/local-notifications": "^8",

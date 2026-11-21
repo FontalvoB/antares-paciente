@@ -13,7 +13,7 @@ import type { LegalConsentScope } from "./legalConsents";
  * formal cuando está habilitado; este permiso local garantiza el aviso y el
  * bloqueo también en builds donde `VITE_ENFORCE_LEGAL_CONSENTS` está apagado.
  */
-export const AI_DISCLOSURE_VERSION = "2026-11-21";
+export const AI_DISCLOSURE_VERSION = "2026-11-21-health";
 
 export const AI_DISCLOSURE_SCOPES = [
   "chat",

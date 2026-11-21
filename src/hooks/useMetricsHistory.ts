@@ -17,10 +17,11 @@
  */
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
-import { getMetricsHistory } from '../services/program/metrics-history-service'
+import { DEVICE_METRICS_CODES, getMetricsHistory, METRICS_HISTORY_CODES } from '../services/program/metrics-history-service'
 import { programKeys } from './queryKeys'
 import { ApiError } from '../utils/apiClient'
 import type { MetricsHistoryDto } from '../services/program/types'
+import { HEALTH_ENABLED } from '../utils/features'
 
 export type UseMetricsHistoryResult = UseQueryResult<MetricsHistoryDto, ApiError> & {
   /** DTO del historial; undefined mientras carga o en error sin cache. */
@@ -30,7 +31,9 @@ export type UseMetricsHistoryResult = UseQueryResult<MetricsHistoryDto, ApiError
 export function useMetricsHistory(): UseMetricsHistoryResult {
   const query = useQuery<MetricsHistoryDto, ApiError>({
     queryKey: programKeys.metricsHistory,
-    queryFn: () => getMetricsHistory(),
+    queryFn: () => HEALTH_ENABLED
+      ? getMetricsHistory([...new Set([...METRICS_HISTORY_CODES, ...DEVICE_METRICS_CODES])])
+      : getMetricsHistory(),
     staleTime: 5 * 60 * 1000,
   })
 

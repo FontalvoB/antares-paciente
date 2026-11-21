@@ -87,7 +87,7 @@ const ERROR_KEYS: Record<WearableErrorCode, string> = {
   "connection-failed": "No se pudo conectar. Inténtalo de nuevo.",
   "session-unavailable":
     "No pudimos identificar tu sesión. Vuelve a iniciar sesión para conectar el wearable.",
-  "unsupported-device": "Solo puedes conectar una banda H59 o un anillo R88.",
+  "unsupported-device": "Conecta un accesorio H59/R88 o uno compatible con el estándar de frecuencia cardíaca.",
   "no-data":
     "El dispositivo no envía datos. Verifica que esté vinculado con su app oficial.",
   unknown: "Ocurrió un error inesperado. Inténtalo de nuevo.",
@@ -830,7 +830,7 @@ export function WearablePage() {
           sub={
             wearableConnected
               ? `${info.name || wearableName} · ${t("datos en tiempo real")}`
-              : t("Conecta tu H59 o R88 para ver tus datos de bienestar")
+              : t("Conecta tu accesorio H59/R88 o uno compatible con el estándar de frecuencia cardíaca")
           }
           trailing={
             <span className={`status-pill ${connOn ? "on" : ""}`}>
@@ -978,8 +978,8 @@ export function WearablePage() {
               <IonItem className="group-item">
                 <IonIcon icon={watchOutline} slot="start" aria-hidden="true" />
                 <IonLabel>
-                  <h3>{t("Banda H59 · Anillo R88")}</h3>
-                  <p>{t("Dispositivos compatibles con la app")}</p>
+                  <h3>{t("H59 · R88 · Estándar HRS")}</h3>
+                  <p>{t("Modelos H59/R88 o accesorios con frecuencia cardíaca estándar")}</p>
                 </IonLabel>
                 <IonIcon
                   icon={checkmarkCircle}

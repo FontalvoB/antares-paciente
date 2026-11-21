@@ -11,6 +11,12 @@ import { TodayView } from '../program/TodayView'
 const state = vi.hoisted(() => ({
   screen: 'prog', snapshot: null as ProgramSnapshotDto | null,
   complete: vi.fn(), completeStep: vi.fn(), navigate: vi.fn(), header: vi.fn(), toast: vi.fn(),
+  health: false, bluetooth: true,
+}))
+vi.mock('../../utils/features', async original => ({
+  ...(await original<typeof import('../../utils/features')>()),
+  get HEALTH_ENABLED() { return state.health },
+  get WEARABLE_ENABLED() { return state.bluetooth },
 }))
 vi.mock('../../hooks/useProgram', () => ({ useProgram: () => ({ snapshot: state.snapshot,
   isLoading: false, isRefreshing: false, programState: 'active', productMessage: null,
@@ -74,10 +80,18 @@ function setup(home = false) {
   const result = render(content())
   return { ...result, refresh: () => result.rerender(content()) }
 }
-beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); state.snapshot = restSnapshot(); state.screen = 'prog' })
+beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); state.snapshot = restSnapshot(); state.screen = 'prog'; state.health = false; state.bluetooth = true })
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.useRealTimers(); localStorage.clear() })
 
 describe('Protocolo diario · tareas activas y descanso', () => {
+  it.each([false, true])('Inicio abre el flujo Health con BLE=%s', bluetooth => {
+    state.health = true
+    state.bluetooth = bluetooth
+    setup(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Conectar' }))
+    expect(state.navigate).toHaveBeenCalledWith('health-accessory')
+  })
+
   it.each([false, true])('excluye podcast del progreso y de los XP del día, completo=%s', completeAll => {
     state.snapshot = restSnapshot(completeAll)
     const { container } = setup()

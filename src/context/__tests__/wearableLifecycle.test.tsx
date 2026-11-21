@@ -25,6 +25,8 @@ import type { WearableState } from "../WearableContext";
 
 const native = vi.hoisted(() => ({
   platform: "android",
+  bleBackground: true,
+  wearableEnabled: true,
   listener: null as null | ((event: { isActive: boolean }) => void),
   radioListener: null as null | ((on: boolean, state?: "on" | "off" | "unknown") => void),
   app: {
@@ -39,6 +41,11 @@ const native = vi.hoisted(() => ({
 }));
 
 vi.mock("../AppContext", () => ({ useApp: () => native.app }));
+vi.mock("../../utils/features", async original => ({
+  ...await original<typeof import("../../utils/features")>(),
+  get BLE_BACKGROUND_ENABLED() { return native.bleBackground; },
+  get WEARABLE_ENABLED() { return native.wearableEnabled; },
+}));
 vi.mock("../../i18n/I18nContext", () => ({ useT: () => native.translate }));
 vi.mock("@capacitor/core", () => ({
   Capacitor: { getPlatform: () => native.platform, isNativePlatform: () => true },
@@ -141,6 +148,8 @@ async function connect() {
 
 describe("WearableContext — reconexión y datos durables", () => {
   beforeEach(() => {
+    native.bleBackground = true;
+    native.wearableEnabled = true;
     vi.clearAllMocks();
     localStorage.clear();
     native.listener = null;
@@ -177,6 +186,20 @@ describe("WearableContext — reconexión y datos durables", () => {
     for (const client of clients.splice(0)) client.clear();
     vi.restoreAllMocks();
     localStorage.clear();
+  });
+
+  it("mantiene BLE inactivo al montar, escanear o conectar con su flag apagado", async () => {
+    native.wearableEnabled = false;
+    native.platform = "ios";
+    saveDevice(DEVICE, ACCOUNT);
+    renderWearable();
+    await act(async () => { await wearable.scan(); await wearable.connect(DEVICE); });
+    expect(supportsAccessoryDiscovery).not.toHaveBeenCalled();
+    expect(ble.getBluetoothState).not.toHaveBeenCalled();
+    expect(ble.watchBluetoothState).not.toHaveBeenCalled();
+    expect(ble.startScan).not.toHaveBeenCalled();
+    expect(ble.connectDevice).not.toHaveBeenCalled();
+    expect(startPersistentConnection).not.toHaveBeenCalled();
   });
 
   it("apagar Bluetooth interrumpe el escaneo y bloquea búsqueda/conexión hasta encenderlo", async () => {

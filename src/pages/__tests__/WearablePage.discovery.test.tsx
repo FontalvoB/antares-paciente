@@ -122,7 +122,7 @@ describe('WearablePage — compatibilidad y alta', () => {
 
   it('muestra los modelos compatibles y ofrece el selector iOS', () => {
     render(<WearablePage />);
-    expect(screen.getByText('Banda H59 · Anillo R88')).toBeTruthy();
+    expect(screen.getByText('H59 · R88 · Estándar HRS')).toBeTruthy();
     expect(screen.getAllByLabelText('Compatible').length).toBeGreaterThanOrEqual(3);
     expect(screen.getByText('R88 C1BF')).toBeTruthy();
     expect(screen.queryByText('Living Room TV')).toBeNull();

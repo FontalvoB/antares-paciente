@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
-import { IonBadge, IonButton, IonIcon } from '@ionic/react'
+import { IonBadge, IonButton, IonChip, IonIcon } from '@ionic/react'
 import { motion } from 'framer-motion'
 import { checkmark, chevronForward, gift, medicalOutline, heartOutline, leaf, sparkles, trophy } from 'ionicons/icons'
 import {
@@ -18,6 +18,33 @@ import { nutritionMissionSubtitle } from '../../utils/nutritionMissionSubtitle'
 import { TASK_ICONS } from './ui'
 import { UpcomingDays } from './UpcomingDays'
 import { ExerciseRestNotice } from './ExerciseRestNotice'
+import { useMetricsHistory } from '../../hooks/useMetricsHistory'
+import { HEALTH_ENABLED } from '../../utils/features'
+import { toLocalISODate } from '../../utils/dates'
+
+function ProgramHealthSummary({ date }: { date: string }) {
+  const { t, lang } = useI18n()
+  const { history } = useMetricsHistory()
+  const summary = [
+    { code: 'step_count', label: t('Pasos'), unit: '', scale: 1 },
+    { code: 'distance_m', label: t('Distancia'), unit: t('km'), scale: 1000 },
+    { code: 'activity_kcal', label: t('Energía activa'), unit: t('kcal'), scale: 1 },
+    { code: 'sleep_minutes', label: t('Sueño'), unit: t('min'), scale: 1 },
+  ].flatMap(metric => {
+    const point = history?.metrics.find(series => series.code === metric.code)?.points.find(point => point.date === date)
+    return point ? [{ ...metric, value: point.value / metric.scale }] : []
+  })
+  if (!summary.length) return null
+  const number = new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-CO', { maximumFractionDigits: 2 })
+  return (
+    <section className="health-panel" aria-labelledby="program-health-title">
+      <h2 id="program-health-title">{t('Bienestar hoy')}</h2>
+      <div className="health-chips">
+        {summary.map(metric => <IonChip key={metric.code}>{metric.label} · {number.format(metric.value)} {metric.unit}</IonChip>)}
+      </div>
+    </section>
+  )
+}
 
 export function TodayView({
   program,
@@ -25,6 +52,7 @@ export function TodayView({
   onOpenMedications,
   todayTasks,
   upcoming,
+  dayDate,
   rest,
   allDone,
   currentId,
@@ -43,6 +71,7 @@ export function TodayView({
   /** Misiones del día servidas por el backend; sin ellas se usa el plan local. */
   todayTasks?: TodayTaskDto[]
   upcoming?: ProgramUpcomingDayDto[] | null
+  dayDate?: string
   rest?: boolean | null
   allDone: boolean
   currentId?: ProgramTaskId
@@ -274,6 +303,7 @@ export function TodayView({
         </motion.div>}
       </div>
 
+      {HEALTH_ENABLED && <ProgramHealthSummary date={dayDate ?? toLocalISODate()} />}
       <UpcomingDays days={upcoming} />
 
       <div className="pg-encouragement">

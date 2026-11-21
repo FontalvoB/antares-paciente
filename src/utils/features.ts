@@ -12,5 +12,7 @@
 export const WEARABLE_ENABLED =
   import.meta.env.VITE_WEARABLE_ENABLED !== "false";
 
-/** La app conserva el comportamiento original de conexión BLE, incluido background. */
-export const BLE_BACKGROUND_ENABLED = true;
+export const HEALTH_ENABLED = import.meta.env.VITE_HEALTH_ENABLED === "true";
+
+/** La app no captura BLE en segundo plano en el build sin wearable. */
+export const BLE_BACKGROUND_ENABLED = false;

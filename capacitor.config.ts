@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from "@capacitor/cli";
+import manifest from "./package.json";
 
 const config: CapacitorConfig = {
   appId: "com.coppadresd.app",
@@ -24,6 +25,9 @@ const config: CapacitorConfig = {
   // @capacitor/camera) y galería (selector de fotos de comidas).
   // Se aplican en `npm run sync`.
   ios: {
+    // El plugin oficial solo se usa en Android. Su inicializador de iOS toma
+    // el delegado de notificaciones, que aquí pertenece al router de Capacitor.
+    includePlugins: Object.keys(manifest.dependencies).filter(name => name !== "@capacitor/health-fitness"),
     infoPlist: {
       // Permisos de Bluetooth: sin estas claves iOS mata la app al primer
       // acceso BLE. OJO: el CLI de Capacitor 8 NO aplica `ios.infoPlist` al
@@ -31,9 +35,9 @@ const config: CapacitorConfig = {
       // ios/App/App/Info.plist, que sí sobrevive a `cap sync`. Se dejan aquí
       // como documentación/por si una versión futura del CLI sí las aplica.
       NSBluetoothAlwaysUsageDescription:
-        "Copp Adresd usa Bluetooth para conectarse a tu wearable (anillo o banda) y leer tus signos vitales, pasos y sueño.",
+        "Copp Adresd no usa Bluetooth en esta versión. Si en el futuro se activa, solo se usará con tu permiso.",
       NSBluetoothPeripheralUsageDescription:
-        "Copp Adresd usa Bluetooth para conectarse a tu wearable y leer tus signos vitales.",
+        "Copp Adresd no usa Bluetooth en esta versión. Si en el futuro se activa, solo se usará con tu permiso.",
       NSCameraUsageDescription:
         "Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.",
       NSMicrophoneUsageDescription:

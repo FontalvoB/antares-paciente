@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A21020260000000000000001 /* WellnessHealthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21020260000000000000002 /* WellnessHealthPlugin.swift */; };
 		F01778000000000000000004 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F01778000000000000000002 /* FirebaseCore */; };
 		F01778000000000000000005 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = F01778000000000000000003 /* FirebaseMessaging */; };
 		D10520260000000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D10520260000000000000002 /* InfoPlist.strings */; };
@@ -24,6 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A21020260000000000000002 /* WellnessHealthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessHealthPlugin.swift; sourceTree = "<group>"; };
 		D10520260000000000000003 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D10520260000000000000004 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		FA1310260000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -80,6 +82,7 @@
 				FA1310260000000000000002 /* PrivacyInfo.xcprivacy */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				E2CD29BD6EBA4EEC91FD64A2 /* MedicationLabelPlugin.swift */,
+				A21020260000000000000002 /* WellnessHealthPlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -194,6 +197,7 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				E2CD29BD6EBA4EEC91FD64A1 /* MedicationLabelPlugin.swift in Sources */,
+				A21020260000000000000001 /* WellnessHealthPlugin.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -345,7 +349,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGN_ENTITLEMENTS = "$(PUSH_CODE_SIGN_ENTITLEMENTS)";
+				PUSH_CODE_SIGN_ENTITLEMENTS = "";
+				HEALTH_CODE_SIGN_ENTITLEMENTS = Health.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "$(HEALTH_CODE_SIGN_ENTITLEMENTS)";
 				APS_ENVIRONMENT = development;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = XZSSM34MU6;
@@ -372,7 +378,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGN_ENTITLEMENTS = "$(PUSH_CODE_SIGN_ENTITLEMENTS)";
+				PUSH_CODE_SIGN_ENTITLEMENTS = "";
+				HEALTH_CODE_SIGN_ENTITLEMENTS = Health.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "$(HEALTH_CODE_SIGN_ENTITLEMENTS)";
 				APS_ENVIRONMENT = production;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = XZSSM34MU6;

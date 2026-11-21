@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "STEPS": "Read",
+    "DISTANCE": "Read",
+    "HEART_RATE": "Read",
+    "SLEEP": "Read"
+  },
+  "disableBackgroundJobs": true,
+  "disableReadHealthDataHistory": true,
+  "privacyPolicyUrl": "https://diomedescerda.github.io/coppadresd-privacy/"
+}

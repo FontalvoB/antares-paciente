@@ -55,7 +55,8 @@ import { NotificationsModal } from "../components/notifications/NotificationsMod
 import { useMetricsHistory } from "../hooks/useMetricsHistory";
 import { useScoresHistory } from "../hooks/useScoresHistory";
 import { useWearable } from "../context/WearableContext";
-import { WEARABLE_ENABLED } from "../utils/features";
+import { HEALTH_ENABLED, WEARABLE_ENABLED } from "../utils/features";
+import { useHealth } from "../context/HealthContext";
 import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import { programDayNumber } from "../utils/programDayNumber";
 import { requiredProtocolTasks } from "../utils/dailyProtocol";
@@ -66,6 +67,7 @@ import type { CSSProperties } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
 
 export function HomePage() {
+  const health = useHealth();
   const {
     user,
     navigate,
@@ -600,9 +602,10 @@ export function HomePage() {
               },
               {
                 id: "bt" as const,
-                label: t(WEARABLE_ENABLED ? "Conectar" : "Historia"),
-                icon: WEARABLE_ENABLED ? watchOutline : clipboardOutline,
-                fn: () => navigate(WEARABLE_ENABLED ? "bt" : "hc"),
+                label: HEALTH_ENABLED && health?.summary.length ? t("Conectado")
+                  : HEALTH_ENABLED || WEARABLE_ENABLED ? t("Conectar") : t("Historia"),
+                icon: HEALTH_ENABLED || WEARABLE_ENABLED ? watchOutline : clipboardOutline,
+                fn: () => navigate(HEALTH_ENABLED ? "health-accessory" : WEARABLE_ENABLED ? "bt" : "hc"),
               },
               {
                 id: "sos" as const,
