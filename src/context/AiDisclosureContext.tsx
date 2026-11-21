@@ -202,7 +202,7 @@ export function AiDisclosureProvider({ children }: { children: ReactNode }) {
           <h2>{t("Qué datos se envían")}</h2>
           <p>
             {t(
-              "Los mensajes que escribes en el chat, el audio de tu voz cuando usas el asistente, las fotos de comidas o de exámenes de laboratorio que decidas analizar y el contexto de tu perfil y plan necesario para responderte. No enviamos tu nombre, documento, correo ni teléfono.",
+              "Los mensajes que escribes en el chat, el audio de tu voz cuando usas el asistente, las fotos de comidas o de exámenes de laboratorio que decidas analizar y el contexto de tu perfil y plan necesario para responderte. No enviamos tu documento, correo ni teléfono; el contexto de tu perfil se limita a lo necesario para responder.",
             )}
           </p>
 
