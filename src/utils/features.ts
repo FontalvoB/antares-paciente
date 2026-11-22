@@ -1,3 +1,5 @@
+import { Capacitor } from "@capacitor/core";
+
 /**
  * Posicionamiento 1.0: programa de apoyo para bajar de peso y hábitos saludables.
  *
@@ -12,7 +14,9 @@
 export const WEARABLE_ENABLED =
   import.meta.env.VITE_WEARABLE_ENABLED !== "false";
 
-export const HEALTH_ENABLED = import.meta.env.VITE_HEALTH_ENABLED === "true";
+// Pausa de Apple Health hasta renovar el perfil de distribución de TestFlight.
+export const HEALTH_ENABLED =
+  import.meta.env.VITE_HEALTH_ENABLED === "true" && Capacitor.getPlatform() !== "ios";
 
 /** La app no captura BLE en segundo plano en el build sin wearable. */
 export const BLE_BACKGROUND_ENABLED = false;
