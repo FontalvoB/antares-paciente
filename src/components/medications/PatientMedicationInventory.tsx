@@ -108,7 +108,7 @@ export function PatientMedicationInventory({
   return (
     <section className="medications-inventory" aria-label={t("Mi inventario")}>
       <div className="medications-section-heading">
-        <h2>{t("Mi inventario")}</h2>
+        <div><IonIcon icon={cubeOutline} aria-hidden="true" /><h2>{t("Mi inventario")}</h2></div>
         <IonButton fill="clear" onClick={() => void query.refetch()}>
           {t("Actualizar")}
         </IonButton>
@@ -236,7 +236,7 @@ export function PatientMedicationInventory({
         </IonCard>
       ))}
       {!query.data?.items.length && (
-        <p>{t("Añade un medicamento para registrar sus existencias.")}</p>
+        <p className="medications-empty-note">{t("Añade un medicamento para registrar sus existencias.")}</p>
       )}
       {query.data && query.data.total > query.data.pageSize && (
         <div className="medications-stock-actions">
@@ -322,7 +322,7 @@ function PatientStockForm({
     }
   }
   return (
-    <section>
+    <section className="medications-editor medications-editor-stock">
       <div className="medications-section-heading">
         <h2>
           {t(

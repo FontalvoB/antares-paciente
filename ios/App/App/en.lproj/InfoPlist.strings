@@ -1,7 +1,7 @@
 /* Textos de permisos del sistema para la localización inglesa de iOS. */
 "NSBluetoothAlwaysUsageDescription" = "Copp Adresd doesn't use Bluetooth in this version. If enabled in the future, it will only be used with your permission.";
 "NSBluetoothPeripheralUsageDescription" = "Copp Adresd doesn't use Bluetooth in this version. If enabled in the future, it will only be used with your permission.";
-"NSCameraUsageDescription" = "Copp Adresd uses the camera for telemedicine consultations and food analysis.";
+"NSCameraUsageDescription" = "Copp Adresd uses the camera for telemedicine consultations, meal analysis, and reading medication labels.";
 "NSHealthShareUsageDescription" = "Copp Adresd reads, only with your permission, the steps, activity, sleep and heart rate your wearable saves to Health, to show your progress in the wellness program. We don't sell this data or use it for advertising.";
 "NSHealthUpdateUsageDescription" = "Copp Adresd uses Health to show your wellness progress. Access in this version is read-only.";
 "NSLocationWhenInUseUsageDescription" = "Copp Adresd uses your location to identify the country's emergency number and share your location with your contact if you activate SOS.";
