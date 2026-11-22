@@ -21,6 +21,13 @@ import { sessionUserId } from "../../utils/sessionIdentity";
 
 const productLabels = { medication: "Medicamento", vitamin: "Vitamina", supplement: "Suplemento" } as const;
 
+function catalogDetails(item: MedicationCatalogItem) {
+  const name = item.name.toLowerCase();
+  return [item.strength, item.doseForm, item.description, item.code]
+    .filter(detail => detail && !name.includes(detail.toLowerCase()))
+    .join(" · ");
+}
+
 export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onSaved, onAccessError }: {
   owner: string;
   timeZone: string;
@@ -47,9 +54,15 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
   const [custom, setCustom] = useState(false);
   const [name, setName] = useState("");
   const [productType, setProductType] = useState<MedicationProductType>("medication");
-  const [dosage, setDosage] = useState("");
-  const [unit, setUnit] = useState("");
-  const [route, setRoute] = useState("");
+  const [doseEdits, setDoseEdits] = useState<{ dosage?: string; unit?: string; route?: string }>({});
+  const suggestedUnit = product?.doseUnit?.trim() ?? "";
+  const unit = doseEdits.unit ?? suggestedUnit;
+  const route = doseEdits.route ?? product?.route?.trim() ?? "";
+  const suggestedDosage = product?.dosage;
+  const dosage = doseEdits.dosage ?? (suggestedDosage && suggestedDosage > 0 && suggestedUnit && unit === suggestedUnit
+    ? String(suggestedDosage) : "");
+  const selectedType = product?.rxCui ? "medication" : productType;
+  const selectedDetails = product ? catalogDetails(product) : "";
   const [instructions, setInstructions] = useState("");
   const [times, setTimes] = useState("08:00");
   const [timeZone, setTimeZone] = useState(initialTimeZone);
@@ -79,6 +92,11 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
     retry: false,
     gcTime: 0,
   });
+
+  const clearProduct = () => {
+    setProduct(null);
+    setDoseEdits({});
+  };
 
   const scan = async () => {
     if (!canScan || reading.current || writing.current || !isCurrent()) return;
@@ -112,12 +130,14 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
     const zone = timeZone.trim();
     let validZone = Boolean(zone);
     try { new Intl.DateTimeFormat("es", { timeZone: zone }); } catch { validZone = false; }
-    if (!productName || !Number.isFinite(quantity) || quantity <= 0 || !unit.trim() || !validZone || schedule.length < 1 || schedule.length > 8 || new Set(schedule).size !== schedule.length || schedule.some(value => !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) || (endDate && endDate < startDate)) {
+    if (!productName || !Number.isFinite(quantity) || quantity <= 0 || !unit.trim() || (product?.rxCui && !route.trim()) || !validZone || schedule.length < 1 || schedule.length > 8 || new Set(schedule).size !== schedule.length || schedule.some(value => !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) || (endDate && endDate < startDate)) {
       setError(t("Revisa la dosis, los horarios y las fechas."));
       return;
     }
     const body = {
-      medicationId: product?.id ?? null, name: productName, productType, dosage: quantity,
+      medicationId: product?.rxCui ? null : product?.id ?? null,
+      ...(product?.rxCui && { rxCui: product.rxCui }),
+      name: productName, productType: selectedType, dosage: quantity,
       unit: unit.trim(), route: route.trim(), instructions: instructions.trim(),
       times: schedule, timeZone: zone, startDate, endDate,
     };
@@ -137,7 +157,7 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
         setError(t("No tienes acceso a este módulo."));
         onAccessError();
       } else if (failure instanceof ApiError && failure.status === 422 && product) {
-        setProduct(null);
+        clearProduct();
         setError(t("El producto seleccionado ya no está disponible. Busca otra presentación."));
         void catalog.refetch();
       } else if (failure instanceof ApiError && failure.status === 400) {
@@ -185,8 +205,8 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
             </header>
             {product ? <div className="medications-entry-selection">
               <IonIcon icon={checkmarkCircleOutline} aria-hidden="true" />
-              <div><strong>{product.name}</strong>{(product.description || product.code) && <p>{[product.description, product.code].filter(Boolean).join(" · ")}</p>}</div>
-              <IonButton fill="clear" disabled={saving} onClick={() => { setProduct(null); setError(null); }}>{t("Cambiar")}</IonButton>
+              <div><strong>{product.name}</strong>{selectedDetails && <p>{selectedDetails}</p>}</div>
+              <IonButton fill="clear" disabled={saving} onClick={() => { clearProduct(); setError(null); }}>{t("Cambiar")}</IonButton>
             </div> : custom ? <>
               <IonInput label={t("Nombre del medicamento")} labelPlacement="stacked" value={name} maxlength={200}
                 required disabled={saving} onIonInput={event => setName(event.detail.value ?? "")} autocomplete="off" />
@@ -220,17 +240,20 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
                 catalog.isError ? <div className="medications-error" role="alert">
                   {t("No pudimos consultar el catálogo.")} <IonButton fill="clear" onClick={() => void catalog.refetch()}>{t("Reintentar")}</IonButton>
                 </div> : catalog.data?.length ? <IonList className="medications-entry-results" aria-label={t("Resultados del catálogo")}>
-                  {catalog.data.map(item => <IonItem key={item.id} button type="button" detail
-                    onClick={() => { setProduct(item); setPhoto(null); setScanError(false); setError(null); }}>
-                    <IonLabel className="ion-text-wrap"><strong>{item.name}</strong>{(item.description || item.code) && <p>{[item.description, item.code].filter(Boolean).join(" · ")}</p>}</IonLabel>
-                  </IonItem>)}
+                  {catalog.data.map(item => {
+                    const details = catalogDetails(item);
+                    return <IonItem key={item.id} button type="button" detail
+                      onClick={() => { setProduct(item); setPhoto(null); setScanError(false); setError(null); }}>
+                      <IonLabel className="ion-text-wrap"><strong>{item.name}</strong>{details && <p>{details}</p>}</IonLabel>
+                    </IonItem>;
+                  })}
                 </IonList> : <div className="medications-entry-status">
                   <span role="status">{t("Sin resultados en el catálogo")}</span>
                   <IonButton fill="clear" onClick={() => { setName(queryText); setCustom(true); setError(null); }}>{t("Añadir sin catálogo")}</IonButton>
                 </div>)}
             </>}
-            <IonSelect label={t("Tipo de producto")} labelPlacement="stacked" value={productType}
-              disabled={saving} interface="popover" onIonChange={event => setProductType(event.detail.value)}>
+            <IonSelect label={t("Tipo de producto")} labelPlacement="stacked" value={selectedType}
+              disabled={saving || Boolean(product?.rxCui)} interface="popover" onIonChange={event => setProductType(event.detail.value)}>
               {Object.entries(productLabels).map(([value, label]) => <IonSelectOption key={value} value={value}>{t(label)}</IonSelectOption>)}
             </IonSelect>
           </section>
@@ -241,12 +264,13 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
             </header>
             <div className="medications-form-pair">
               <IonInput label={t("Cantidad por toma")} labelPlacement="stacked" inputmode="decimal" value={dosage}
-                required disabled={saving} onIonInput={event => setDosage(event.detail.value ?? "")} placeholder="1" />
+                required disabled={saving} onIonInput={event => setDoseEdits(edits => ({ ...edits, dosage: event.detail.value ?? "" }))} placeholder="1" />
               <IonInput label={t("Unidad")} labelPlacement="stacked" value={unit} maxlength={40}
-                required disabled={saving} onIonInput={event => setUnit(event.detail.value ?? "")} placeholder={t("tableta, ml…")} />
+                required disabled={saving} onIonInput={event => setDoseEdits(edits => ({ ...edits, unit: event.detail.value ?? "" }))} placeholder={t("tableta, ml…")} />
             </div>
             <IonInput label={t("Vía de administración")} labelPlacement="stacked" value={route}
-              maxlength={80} disabled={saving} onIonInput={event => setRoute(event.detail.value ?? "")} />
+              maxlength={80} required={Boolean(product?.rxCui)} disabled={saving}
+              onIonInput={event => setDoseEdits(edits => ({ ...edits, route: event.detail.value ?? "" }))} />
           </section>
           <section className="medications-entry-panel medications-entry-schedule" aria-labelledby={`${formId}-schedule`}>
             <header className="medications-entry-heading">

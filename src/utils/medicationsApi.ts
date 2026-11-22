@@ -1,4 +1,4 @@
-import { apiFetch } from "./apiClient";
+import { ApiError, apiFetch } from "./apiClient";
 
 export interface MedicationCapability {
   enabled: boolean;
@@ -99,6 +99,7 @@ export interface MedicationWorkspace {
 export interface CreateMedicationRequest {
   clientRequestId: string;
   medicationId: string | null;
+  rxCui?: string;
   name: string;
   productType: MedicationProductType;
   dosage: number;
@@ -162,14 +163,33 @@ export const updateMyMedicationReminderPreferences = (owner: string, body: Medic
 export interface MedicationCatalogItem {
   id: string;
   name: string;
-  code: string | null;
-  description: string | null;
+  code?: string | null;
+  description?: string | null;
+  rxCui?: string;
+  strength?: string | null;
+  doseForm?: string | null;
+  dosage?: number | null;
+  doseUnit?: string | null;
+  route?: string | null;
 }
 
-export const searchMedicationCatalog = (owner: string, search: string, signal?: AbortSignal) =>
-  apiFetch<MedicationCatalogItem[]>(`/api/v1/catalogs/medications?${new URLSearchParams({ search, limit: "12" })}`, {
-    signal, expectedUserId: owner,
-  });
+export async function searchMedicationCatalog(owner: string, search: string, signal?: AbortSignal): Promise<MedicationCatalogItem[]> {
+  const options = { signal, expectedUserId: owner };
+  const params = new URLSearchParams({ search, limit: "12" });
+  const [brand, legacy] = await Promise.allSettled([
+    search.length >= 3
+      ? apiFetch<MedicationCatalogItem[]>(`/api/v1/me/medications/catalog/us?${params}`, options)
+      : Promise.resolve([]),
+    apiFetch<MedicationCatalogItem[]>(`/api/v1/catalogs/medications?${params}`, options),
+  ]);
+  const brandItems = brand.status === "fulfilled" ? brand.value.slice(0, 12).map(item => ({ ...item, rxCui: item.id })) : [];
+  const legacyItems = legacy.status === "fulfilled" ? legacy.value : [];
+  if (brandItems.length || legacyItems.length) return [...brandItems, ...legacyItems];
+  // Una versión anterior del API todavía puede responder por el catálogo original.
+  if (brand.status === "rejected" && !(brand.reason instanceof ApiError && brand.reason.status === 404)) throw brand.reason;
+  if (legacy.status === "rejected") throw legacy.reason;
+  return [];
+}
 
 export const createMyMedication = (owner: string, body: CreateMedicationRequest) =>
   apiFetch<MedicationTreatment>("/api/v1/me/medications/treatments", {

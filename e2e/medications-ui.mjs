@@ -12,7 +12,7 @@ assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(origin), 'Only local UI hosts are perm
 const userId = '11111111-1111-4111-8111-111111111111';
 const token = 'x.' + Buffer.from(JSON.stringify({ sub: userId, exp: Math.floor(Date.now() / 1000) + 86400 })).toString('base64url') + '.x';
 const browser = await (process.env.COP_MEDICATIONS_BROWSER === 'webkit' ? webkit : chromium).launch();
-const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto', 'photo-match', 'photo-mismatch', 'snooze', 'agenda-es', 'agenda-en', 'empty-es', 'empty-en', 'add-photo', 'add-photo-empty', 'catalog-retry', 'catalog-empty', 'layout-es', 'layout-en'];
+const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto', 'photo-match', 'photo-mismatch', 'snooze', 'agenda-es', 'agenda-en', 'empty-es', 'empty-en', 'add-photo', 'add-photo-empty', 'catalog-retry', 'catalog-empty', 'catalog-autofill-en', 'layout-es', 'layout-en'];
 const results = [];
 
 for (const scenario of scenarios) {
@@ -27,6 +27,10 @@ for (const scenario of scenarios) {
   const addPhoto = scenario.startsWith('add-photo');
   const photo = addPhoto || scenario.startsWith('photo-');
   const catalogProduct = { id: '55555555-5555-4555-8555-555555555555', name: 'Tratamiento QA', description: 'Presentación de prueba', code: null };
+  const brandProducts = [
+    { id: '991001', name: 'Tylenol QA tablets', strength: '325 mg', doseForm: 'Oral Tablet', dosage: 2, doseUnit: 'tablet', route: 'Oral' },
+    { id: '991002', name: 'Tylenol QA liquid', strength: '160 mg/5 mL', doseForm: 'Oral Liquid', doseUnit: 'mL', route: 'Oral' },
+  ];
   const longName = 'Tratamiento QA de liberación prolongada con concentración combinada 1000 mg / 125 mg';
   const longUnit = 'tabletas de liberación prolongada';
   const page = await browser.newPage({ viewport: { width: 390, height: 900 }, timezoneId: 'America/Bogota', reducedMotion: 'reduce' });
@@ -133,6 +137,9 @@ for (const scenario of scenarios) {
       symptom: 'Malestar reportado para la prueba de texto largo y ajuste de tarjeta', severity: 'moderate',
       status: 'follow_up', notes: 'Observación de prueba', occurredAt: at('09:00'), createdAt: at('09:00'), revision: 1, followUps: [],
     }]);
+    if (pathname === '/api/v1/me/medications/catalog/us' && scenario === 'catalog-autofill-en') {
+      return reply(url.searchParams.get('search') === 'tyl' ? brandProducts : []);
+    }
     if (pathname === '/api/v1/catalogs/medications') {
       const search = url.searchParams.get('search');
       catalogSearches.push(search);
@@ -372,6 +379,37 @@ for (const scenario of scenarios) {
       await page.getByRole('button', { name: english ? 'Add medication' : 'Añadir medicamento', exact: true }).first().click();
       const search = page.getByRole('searchbox', { name: english ? 'Search medications' : 'Buscar medicamentos', exact: true });
       const save = page.getByRole('button', { name: english ? 'Save medication' : 'Guardar medicamento', exact: true });
+      if (scenario === 'catalog-autofill-en') {
+        const amount = page.getByRole('textbox', { name: 'Amount per dose', exact: true });
+        const unit = page.getByRole('textbox', { name: 'Unit', exact: true });
+        const route = page.getByRole('textbox', { name: 'Route of administration', exact: true });
+        await search.fill('tyl');
+        await page.getByRole('button', { name: /Tylenol QA tablets/ }).click();
+        await expect(page.getByText(/325 mg/)).toBeVisible();
+        await expect(amount).toHaveValue('2');
+        await expect(unit).toHaveValue('tablet');
+        await expect(route).toHaveValue('Oral');
+        await unit.fill('mg');
+        await expect(amount).toHaveValue('');
+        await page.getByRole('button', { name: 'Change', exact: true }).click();
+        await page.getByRole('button', { name: /Tylenol QA liquid/ }).click();
+        await expect(amount).toHaveValue('');
+        await expect(unit).toHaveValue('mL');
+        await expect(route).toHaveValue('Oral');
+        await expect(page.getByRole('textbox', { name: 'Times', exact: true })).toHaveValue('08:00');
+        await expect(page.getByRole('textbox', { name: 'Instructions', exact: true })).toHaveValue('');
+        assert.equal(writes.length, 0, 'Selection does not save a medication');
+        await amount.fill('2.5');
+        await route.fill('oral');
+        await save.click();
+        await expect(page.locator('ion-modal.medications-entry-modal')).toBeHidden();
+        const { medicationId, rxCui, dosage, unit: savedUnit, route: savedRoute } = writes[0].body;
+        assert.deepEqual({ medicationId, rxCui, dosage, savedUnit, savedRoute }, {
+          medicationId: null, rxCui: '991002', dosage: 2.5, savedUnit: 'mL', savedRoute: 'oral',
+        });
+        results.push({ scenario, passed: true });
+        continue;
+      }
       if (addPhoto) {
         const takePhoto = page.getByRole('button', { name: 'Tomar foto del empaque', exact: true });
         await expect(takePhoto).toBeVisible();
