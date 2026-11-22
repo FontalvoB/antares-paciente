@@ -159,6 +159,18 @@ export const updateMyMedicationReminderPreferences = (owner: string, body: Medic
     method: "PUT", body, expectedUserId: owner,
   });
 
+export interface MedicationCatalogItem {
+  id: string;
+  name: string;
+  code: string | null;
+  description: string | null;
+}
+
+export const searchMedicationCatalog = (owner: string, search: string, signal?: AbortSignal) =>
+  apiFetch<MedicationCatalogItem[]>(`/api/v1/catalogs/medications?${new URLSearchParams({ search, limit: "12" })}`, {
+    signal, expectedUserId: owner,
+  });
+
 export const createMyMedication = (owner: string, body: CreateMedicationRequest) =>
   apiFetch<MedicationTreatment>("/api/v1/me/medications/treatments", {
     method: "POST", body, expectedUserId: owner,

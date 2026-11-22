@@ -87,7 +87,7 @@ export function PatientMedicationEffects({
         </IonButton>
       )}
       <div className="medications-section-heading">
-        <h2>{t("Síntomas reportados")}</h2>
+        <div><IonIcon icon={pulseOutline} aria-hidden="true" /><h2>{t("Síntomas reportados")}</h2></div>
       </div>
       {query.isLoading ? (
         <IonSkeletonText animated className="medications-monitoring-skeleton" />
@@ -196,7 +196,7 @@ function EffectForm({
     }
   }
   return (
-    <section>
+    <section className="medications-editor medications-editor-report">
       <div className="medications-section-heading">
         <h2>{t("Reportar síntoma")}</h2>
         <IonButton fill="clear" onClick={onCancel} disabled={saving}>

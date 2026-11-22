@@ -1,7 +1,7 @@
 /* Conserva los propósitos de uso del Info.plist para la localización española. */
 "NSBluetoothAlwaysUsageDescription" = "Copp Adresd no usa Bluetooth en esta versión. Si en el futuro se activa, solo se usará con tu permiso.";
 "NSBluetoothPeripheralUsageDescription" = "Copp Adresd no usa Bluetooth en esta versión. Si en el futuro se activa, solo se usará con tu permiso.";
-"NSCameraUsageDescription" = "Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.";
+"NSCameraUsageDescription" = "Copp Adresd usa la cámara para consultas de telemedicina, análisis de comidas y lectura de etiquetas de medicamentos.";
 "NSHealthShareUsageDescription" = "Copp Adresd lee, solo con tu permiso, los pasos, la actividad, el sueño y la frecuencia cardíaca que tu accesorio guarda en Salud, para mostrarte tu progreso en el programa de bienestar. No vendemos estos datos ni los usamos para publicidad.";
 "NSHealthUpdateUsageDescription" = "Copp Adresd usa Salud para mostrarte tu progreso de bienestar. El acceso de esta versión es de solo lectura.";
 "NSLocationWhenInUseUsageDescription" = "Copp Adresd usa tu ubicación para identificar el número de emergencias del país y compartirla con tu contacto si activas SOS.";

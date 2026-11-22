@@ -33,7 +33,7 @@
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Copp Adresd no usa Bluetooth en esta versión. Si en el futuro se activa, solo se usará con tu permiso.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Copp Adresd usa la cámara para las consultas de telemedicina y el análisis de comidas.</string>
+	<string>Copp Adresd usa la cámara para consultas de telemedicina, análisis de comidas y lectura de etiquetas de medicamentos.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Copp Adresd lee, solo con tu permiso, los pasos, la actividad, el sueño y la frecuencia cardíaca que tu accesorio guarda en Salud, para mostrarte tu progreso en el programa de bienestar. No vendemos estos datos ni los usamos para publicidad.</string>
 	<key>NSHealthUpdateUsageDescription</key>

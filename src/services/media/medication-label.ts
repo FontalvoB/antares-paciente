@@ -24,6 +24,14 @@ export async function captureMedicationLabel(): Promise<{ dataUrl: string; read:
   };
 }
 
+/** El texto leído solo propone búsquedas. La presentación se elige en el catálogo. */
+export function medicationLabelSearchTerms(text: string): string[] {
+  const terms = text.split(/\r?\n/).map(line => line.trim()
+    .replace(/\s+\d+[.,]?\d*\s*(?:mg|mcg|[µμ]g|ug|ml|g|iu|ui)\b.*$/i, "")
+    .slice(0, 80).trim());
+  return [...new Set(terms.filter(term => /\p{L}{3}/u.test(term) && !/^\d/.test(term)))].slice(0, 4);
+}
+
 function normalizeLabel(text: string): string {
   return text.normalize("NFKD").replace(/\p{M}/gu, "")
     .toLowerCase().replace(/(\d),(?=\d)/g, "$1.")

@@ -1,20 +1,20 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  IonActionSheet, IonAlert, IonBadge, IonButton, IonCheckbox, IonDatetime, IonDatetimeButton, IonIcon,
-  IonInput, IonModal, IonSegment, IonSegmentButton, IonSelect, IonSelectOption,
-  IonSkeletonText, IonSpinner, IonTextarea, IonContent,
+  IonActionSheet, IonAlert, IonBadge, IonButton, IonIcon, IonModal, IonSegment, IonSegmentButton,
+  IonSkeletonText, IonSpinner, IonContent,
 } from "@ionic/react";
 import {
-  addOutline, cameraOutline, cubeOutline, warningOutline, sunnyOutline, partlySunnyOutline, moonOutline, checkmarkCircleOutline, closeOutline, flaskOutline,
+  addOutline, calendarOutline, cameraOutline, clipboardOutline, cubeOutline, warningOutline, sunnyOutline, partlySunnyOutline, moonOutline, checkmarkCircleOutline, closeOutline, flaskOutline,
   createOutline, leafOutline, medicalOutline, pauseOutline, playOutline,
-  notificationsOutline, refreshOutline, timeOutline,
+  listOutline, notificationsOutline, pulseOutline, refreshOutline, timeOutline,
 } from "ionicons/icons";
 import { Capacitor } from "@capacitor/core";
 import { captureMedicationLabel, matchesMedicationLabel } from "../services/media/medication-label";
 import { FoodPhotoStage } from "../components/nutrition/FoodPhotoStage";
 import { Screen, Scroll } from "../components/Screen";
 import {PatientMedicationInventory} from "../components/medications/PatientMedicationInventory";
+import { MedicationForm } from "../components/medications/MedicationForm";
 import { MedicationReminderSettings } from "../components/medications/MedicationReminderSettings";
 import { PatientMedicationHistory } from "../components/medications/PatientMedicationHistory";
 import {PatientMedicationEffects} from "../components/medications/PatientMedicationEffects";
@@ -29,10 +29,10 @@ import { getAccessToken } from "../utils/authApi";
 import { sessionUserId } from "../utils/sessionIdentity";
 import { formatDateForDisplay, toLocalISODate } from "../utils/dates";
 import {
-  createMedicationRequestId, createMyMedication, fetchMyMedications, isRequiredMedication, recordMyMedicationDose, setMyMedicationStatus, snoozeMyMedicationDose,
+  createMedicationRequestId, fetchMyMedications, isRequiredMedication, recordMyMedicationDose, setMyMedicationStatus, snoozeMyMedicationDose,
 } from "../utils/medicationsApi";
 import type {
-  CreateMedicationRequest, MedicationDose, MedicationProductType, MedicationStatus,
+  MedicationDose, MedicationStatus,
   MedicationTreatment, RecordMedicationDoseRequest,
 } from "../utils/medicationsApi";
 
@@ -43,7 +43,6 @@ const agendaPeriods = [
   { start: 12, end: 18, label: "Tarde", icon: partlySunnyOutline },
   { start: 18, end: 24, label: "Noche", icon: moonOutline },
 ] as const;
-const productLabels = { medication: "Medicamento", vitamin: "Vitamina", supplement: "Suplemento" } as const;
 
 function currentTimeZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -338,13 +337,13 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
       {loading ? <section className="medications-loading" role="status" aria-label={t("Cargando medicamentos")}><IonSkeletonText animated style={{ width: "55%", height: 24 }} /><IonSkeletonText animated style={{ width: "100%", height: 122 }} /><IonSkeletonText animated style={{ width: "100%", height: 122 }} /></section> :
       unavailable ? <section className="medications-state"><IonIcon icon={medicalOutline} aria-hidden="true" /><h2>{t("Control de medicamentos no disponible")}</h2><IonButton onClick={() => navigate("prof")}>{t("Ir a mi perfil")}</IonButton></section> :
       query.isError || !workspace ? <section className="medications-state" role="alert"><IonIcon icon={refreshOutline} aria-hidden="true" /><h2>{t(accessDenied ? "No tienes acceso a este módulo." : "No pudimos cargar tus medicamentos")}</h2>{accessDenied ? <IonButton onClick={() => navigate("prof")}>{t("Ir a mi perfil")}</IonButton> : <IonButton onClick={() => { void query.refetch(); }}>{t("Reintentar")}</IonButton>}</section> :
-      adding && owner ? <MedicationForm owner={owner} onCancel={() => setAdding(false)} onSaved={async () => { if (!isCurrent()) return; await refresh(); setAdding(false); setSelectedDate(null); setTab("today"); showToast(t("Medicamento guardado"), "ok"); }} onAccessError={() => { void capabilities.refresh(); }} /> : <>
+      <>
         <IonSegment className="medications-tabs" value={tab} onIonChange={event => { setTab(String(event.detail.value ?? "today")); setActionError(null); }} aria-label={t("Secciones de medicamentos")}>
-          <IonSegmentButton value="today"><span>{t("Hoy")}</span></IonSegmentButton>
-          <IonSegmentButton value="treatments"><span>{t("Mi lista")}</span></IonSegmentButton>
-          <IonSegmentButton value="inventory"><span>{t("Inventario")}</span></IonSegmentButton>
-          <IonSegmentButton value="effects"><span>{t("Reportes")}</span></IonSegmentButton>
-          <IonSegmentButton value="history"><span>{t("Historial")}</span></IonSegmentButton>
+          <IonSegmentButton value="today"><IonIcon icon={calendarOutline} aria-hidden="true" /><span>{t("Hoy")}</span></IonSegmentButton>
+          <IonSegmentButton value="treatments"><IonIcon icon={listOutline} aria-hidden="true" /><span>{t("Mi lista")}</span></IonSegmentButton>
+          <IonSegmentButton value="inventory"><IonIcon icon={cubeOutline} aria-hidden="true" /><span>{t("Inventario")}</span></IonSegmentButton>
+          <IonSegmentButton value="effects"><IonIcon icon={pulseOutline} aria-hidden="true" /><span>{t("Reportes")}</span></IonSegmentButton>
+          <IonSegmentButton value="history"><IonIcon icon={timeOutline} aria-hidden="true" /><span>{t("Historial")}</span></IonSegmentButton>
         </IonSegment>
         {tab === "today" && <>
           <div className="medications-calendar">
@@ -394,7 +393,9 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
             </section>
           ) : (
             <section aria-label={t("Plan asignado")}>
-              <div className="medications-section-heading"><h2>{t("Plan asignado")}</h2></div>
+              <div className="medications-section-heading">
+                <div><IonIcon icon={clipboardOutline} aria-hidden="true" /><h2>{t("Plan asignado")}</h2></div>
+              </div>
               {nextDose && renderDose(nextDose)}
               {remainingDoses.length > 0 && (
                 <div className="medications-dose-list medications-timeline" aria-label={t("Agenda del día")}>
@@ -410,11 +411,14 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
                   })}
                 </div>
               )}
-              {mainDoses.length === 0 && <p>{t(isToday ? "Sin tomas asignadas para hoy" : "Sin tomas asignadas para esta fecha")}</p>}
+              {mainDoses.length === 0 && <p className="medications-empty-note">{t(isToday ? "Sin tomas asignadas para hoy" : "Sin tomas asignadas para esta fecha")}</p>}
             </section>
           )}
           {reportedDoses.length > 0 && <section className="medications-reported" aria-label={t("Fuera del plan")}>
-            <div className="medications-section-heading"><h2>{t("Fuera del plan")}</h2><IonBadge className="medications-badge">{t("Registrado por ti")}</IonBadge></div>
+            <div className="medications-section-heading">
+              <div><IonIcon icon={medicalOutline} aria-hidden="true" /><h2>{t("Fuera del plan")}</h2></div>
+              <IonBadge className="medications-badge">{t("Registrado por ti")}</IonBadge>
+            </div>
             <p>{t("Estas tomas no sustituyen tu plan.")}</p>
             <div className="medications-extra-list">{reportedDoses.map(renderDose)}</div>
           </section>}
@@ -424,11 +428,15 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
           {workspace.treatments.length ? workspace.treatments.map(treatment => <article className="medications-treatment" key={treatment.id}>
             <div className="medications-treatment-heading"><span className={`medications-product-icon medications-product-${treatment.productType}`}><IonIcon icon={treatment.productType === "medication" ? medicalOutline : treatment.productType === "vitamin" ? flaskOutline : leafOutline} aria-hidden="true" /></span><div><h3 title={treatment.name}>{treatment.name}</h3><span>{t(isRequiredMedication(treatment) ? "Plan asignado" : treatment.productType === "supplement" ? "Adicional" : "Fuera del plan")}</span></div><IonBadge className={`medications-badge medications-badge-${treatment.status}`}>{t(treatmentLabels[treatment.status])}</IonBadge></div>
             <p className="medications-treatment-dose">{new Intl.NumberFormat(locale).format(treatment.dosage)} {treatment.unit}{treatment.route ? ` · ${treatment.route}` : ""}</p>
-            <div className="medications-times"><IonIcon icon={timeOutline} aria-hidden="true" />{treatment.intervalHours
-              ? t("Cada {hours} horas desde las {time}", { hours: String(treatment.intervalHours), time: treatment.times[0] })
-              : treatment.times.join(" · ")}
-              {treatment.weekdayMask && <span> · {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-                .filter((_, i) => Boolean(treatment.weekdayMask! & (1 << i))).map(label => t(label)).join(", ")}</span>}
+            <div className="medications-times">
+              <IonIcon icon={timeOutline} aria-hidden="true" />
+              <span>
+                {treatment.intervalHours
+                  ? t("Cada {hours} horas desde las {time}", { hours: String(treatment.intervalHours), time: treatment.times[0] })
+                  : treatment.times.join(" · ")}
+                {!!treatment.weekdayMask && <span> · {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+                  .filter((_, i) => Boolean(treatment.weekdayMask! & (1 << i))).map(label => t(label)).join(", ")}</span>}
+              </span>
             </div>
             {treatment.instructions && <p className="medications-instructions">{treatment.instructions}</p>}
             <div className="medications-treatment-meta"><span>{formatDateForDisplay(treatment.startDate)}{treatment.endDate ? ` — ${formatDateForDisplay(treatment.endDate)}` : ""}</span><span>{t(treatment.origin === "patient_reported" ? "Registrado por ti" : treatment.origin === "staff_recorded" ? "Registrado por tu equipo" : "Registro anterior")}</span></div>
@@ -442,6 +450,20 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
         />}
       </>}
     </Scroll>
+    {adding && owner && capabilities.canManage && <MedicationForm
+      owner={owner}
+      timeZone={timeZone}
+      onCancel={() => setAdding(false)}
+      onSaved={async () => {
+        if (!isCurrent()) return;
+        await refresh();
+        setAdding(false);
+        setSelectedDate(null);
+        setTab("today");
+        showToast(t("Medicamento guardado"), "ok");
+      }}
+      onAccessError={() => { void capabilities.refresh(); }}
+    />}
     {owner && settingsOpen && <MedicationReminderSettings owner={owner} onClose={() => setSettingsOpen(false)} />}
     <IonAlert
       isOpen={Boolean(omittingDose)}
@@ -519,66 +541,4 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
       </IonContent>}
     </IonModal>
   </Screen>;
-}
-
-function MedicationForm({ owner, onCancel, onSaved, onAccessError }: { owner: string; onCancel: () => void; onSaved: () => Promise<void>; onAccessError: () => void }) {
-  const { t, lang } = useI18n();
-  const dateId = useId().replace(/:/g, "");
-  const [name, setName] = useState("");
-  const [productType, setProductType] = useState<MedicationProductType>("medication");
-  const [dosage, setDosage] = useState("");
-  const [unit, setUnit] = useState("");
-  const [route, setRoute] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [times, setTimes] = useState("08:00");
-  const [timeZone, setTimeZone] = useState(currentTimeZone);
-  const [startDate, setStartDate] = useState(toLocalISODate);
-  const [endDate, setEndDate] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const operation = useRef<{ signature: string; body: CreateMedicationRequest } | null>(null);
-  const isCurrent = () => sessionUserId(getAccessToken()) === owner;
-  const save = async () => {
-    if (saving || !isCurrent()) return;
-    const quantity = Number(dosage.replace(",", "."));
-    const schedule = times.split(",").map(value => value.trim()).filter(Boolean).sort();
-    let validZone = true;
-    try { new Intl.DateTimeFormat("es", { timeZone }); } catch { validZone = false; }
-    if (!name.trim() || !Number.isFinite(quantity) || quantity <= 0 || !unit.trim() || !validZone || schedule.length < 1 || schedule.length > 8 || new Set(schedule).size !== schedule.length || schedule.some(value => !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) || (endDate && endDate < startDate)) {
-      setError(t("Revisa la dosis, los horarios y las fechas.")); return;
-    }
-    const body = { medicationId: null, name: name.trim(), productType, dosage: quantity, unit: unit.trim(), route: route.trim(), instructions: instructions.trim(), times: schedule, timeZone: timeZone.trim(), startDate, endDate };
-    const signature = JSON.stringify(body);
-    if (!operation.current || operation.current.signature !== signature) operation.current = { signature, body: { ...body, clientRequestId: createMedicationRequestId() } };
-    setSaving(true); setError(null);
-    try {
-      await createMyMedication(owner, operation.current.body);
-      if (isCurrent()) await onSaved();
-    } catch (failure) {
-      if (!isCurrent()) return;
-      if (failure instanceof ApiError && [401, 403, 404].includes(failure.status)) {
-        setError(t("No tienes acceso a este módulo.")); onAccessError();
-      } else if (failure instanceof ApiError && failure.status === 400) setError(t("Revisa la dosis, los horarios y las fechas."));
-      else if (failure instanceof ApiError && failure.status === 409) setError(t("El registro cambió. Actualiza e inténtalo de nuevo."));
-      else setError(t("No pudimos guardar. Reintenta cuando tengas conexión."));
-    } finally { if (isCurrent()) setSaving(false); }
-  };
-  return <section className="medications-form-section">
-    <div className="medications-section-heading"><h2>{t("Añadir fuera del plan")}</h2><IonButton fill="clear" disabled={saving} onClick={onCancel}>{t("Cancelar")}</IonButton></div>
-    <form className="medications-form" onSubmit={event => { event.preventDefault(); void save(); }}>
-      <IonInput label={t("Nombre del medicamento")} labelPlacement="stacked" value={name} maxlength={200} required disabled={saving} onIonInput={event => setName(event.detail.value ?? "")} autocomplete="off" enterkeyhint="next" />
-      <IonSelect label={t("Tipo de producto")} labelPlacement="stacked" value={productType} disabled={saving} interface="popover" onIonChange={event => setProductType(event.detail.value)}>{Object.entries(productLabels).map(([value, label]) => <IonSelectOption key={value} value={value}>{t(label)}</IonSelectOption>)}</IonSelect>
-      <div className="medications-form-pair"><IonInput label={t("Cantidad por toma")} labelPlacement="stacked" inputmode="decimal" value={dosage} required disabled={saving} onIonInput={event => setDosage(event.detail.value ?? "")} placeholder="1" /><IonInput label={t("Unidad")} labelPlacement="stacked" value={unit} maxlength={40} required disabled={saving} onIonInput={event => setUnit(event.detail.value ?? "")} placeholder={t("tableta, ml…")} /></div>
-      <IonInput label={t("Vía de administración")} labelPlacement="stacked" value={route} maxlength={80} disabled={saving} onIonInput={event => setRoute(event.detail.value ?? "")} />
-      <IonInput label={t("Horarios")} labelPlacement="stacked" value={times} required disabled={saving} onIonInput={event => setTimes(event.detail.value ?? "")} placeholder="08:00, 20:00" />
-      <IonInput label={t("Zona horaria")} labelPlacement="stacked" value={timeZone} required disabled={saving} onIonInput={event => setTimeZone(event.detail.value ?? "")} />
-      <div className="medications-date-row"><span>{t("Fecha de inicio")}</span><IonDatetimeButton datetime={`${dateId}-start`} disabled={saving} /></div>
-      <IonModal keepContentsMounted className="medications-date-modal"><IonDatetime id={`${dateId}-start`} presentation="date" locale={lang === "en" ? "en-US" : "es-ES"} value={startDate} showDefaultButtons doneText={t("Listo")} cancelText={t("Cancelar")} onIonChange={event => { const value = event.detail.value; if (typeof value === "string") setStartDate(value.slice(0, 10)); }} /></IonModal>
-      <IonCheckbox checked={Boolean(endDate)} disabled={saving} onIonChange={event => setEndDate(event.detail.checked ? startDate : null)}>{t("Añadir fecha de finalización")}</IonCheckbox>
-      {endDate && <><div className="medications-date-row"><span>{t("Fecha de finalización")}</span><IonDatetimeButton datetime={`${dateId}-end`} disabled={saving} /></div><IonModal keepContentsMounted className="medications-date-modal"><IonDatetime id={`${dateId}-end`} presentation="date" locale={lang === "en" ? "en-US" : "es-ES"} value={endDate} min={startDate} showDefaultButtons doneText={t("Listo")} cancelText={t("Cancelar")} onIonChange={event => { const value = event.detail.value; if (typeof value === "string") setEndDate(value.slice(0, 10)); }} /></IonModal></>}
-      <IonTextarea label={t("Indicaciones")} labelPlacement="stacked" value={instructions} maxlength={2000} disabled={saving} autoGrow rows={3} onIonInput={event => setInstructions(event.detail.value ?? "")} />
-      {error && <p role="alert" className="medications-error">{error}</p>}
-      <IonButton type="submit" expand="block" disabled={saving}>{saving ? t("Guardando…") : t("Guardar medicamento")}</IonButton>
-    </form>
-  </section>;
 }
