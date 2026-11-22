@@ -57,6 +57,7 @@ import { WearablePage } from "./pages/WearablePage";
 import { HealthAccessoryPage } from "./pages/HealthAccessoryPage";
 import { ChatPage } from "./pages/ChatPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { FamilyCamerasPage } from "./pages/FamilyCamerasPage";
 import { MedicalSourcesPage } from "./pages/MedicalSourcesPage";
 import { MedicationsPage } from "./pages/MedicationsPage";
 import { AvatarPage } from "./pages/AvatarPage";
@@ -130,6 +131,9 @@ function Router() {
         break;
       case "prof":
         content = <ProfilePage />;
+        break;
+      case "family-cameras":
+        content = <FamilyCamerasPage />;
         break;
       case "medical-sources":
         content = <MedicalSourcesPage />;

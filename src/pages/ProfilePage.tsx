@@ -39,6 +39,7 @@ import {
   locationOutline,
   openOutline,
   sparklesOutline,
+  videocamOutline,
 } from "ionicons/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
@@ -1081,6 +1082,11 @@ export function ProfilePage() {
                     aria-hidden="true"
                   />
                   {t("Autorizaciones y privacidad")}
+                </IonButton>
+                <IonButton fill="clear" expand="block" className="bt bt-ghost"
+                  onClick={() => navigate("family-cameras")}>
+                  <IonIcon icon={videocamOutline} slot="start" aria-hidden="true" />
+                  {t("Cámaras familiares")}
                 </IonButton>
                 {HEALTH_ENABLED && (
                   <IonButton fill="clear" expand="block" className="bt bt-ghost"

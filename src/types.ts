@@ -9,6 +9,7 @@ export type Screen =
   | "health-accessory"
   | "chat"
   | "prof"
+  | "family-cameras"
   | "medical-sources"
   | "medications"
   | "avatar"
