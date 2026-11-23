@@ -15,7 +15,7 @@ import { captureMedicationLabel, medicationLabelSearchTerms } from "../../servic
 import { ApiError } from "../../utils/apiClient";
 import { getAccessToken } from "../../utils/authApi";
 import { toLocalISODate } from "../../utils/dates";
-import { createMedicationRequestId, createMyMedication, searchMedicationCatalog } from "../../utils/medicationsApi";
+import { createMedicationRequestId, createMyMedication, isMedicationPhotoError, searchMedicationCatalog } from "../../utils/medicationsApi";
 import type { CreateMedicationRequest, MedicationCatalogItem, MedicationProductType } from "../../utils/medicationsApi";
 import { sessionUserId } from "../../utils/sessionIdentity";
 
@@ -149,13 +149,15 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
     setSaving(true);
     setError(null);
     try {
-      await createMyMedication(owner, operation.current.body);
+      await createMyMedication(owner, operation.current.body, photo?.src);
       if (isCurrent()) await onSaved();
     } catch (failure) {
       if (!isCurrent()) return;
       if (failure instanceof ApiError && [401, 403, 404].includes(failure.status)) {
         setError(t("No tienes acceso a este módulo."));
         onAccessError();
+      } else if (isMedicationPhotoError(failure)) {
+        setError(t("No pudimos guardar la foto."));
       } else if (failure instanceof ApiError && failure.status === 422 && product) {
         clearProduct();
         setError(t("El producto seleccionado ya no está disponible. Busca otra presentación."));
@@ -172,6 +174,18 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
       if (isCurrent()) setSaving(false);
     }
   };
+
+  const photoPreview = photo && <div className="medications-entry-photo">
+    <img src={photo.src} alt={t("Fotografía del empaque")} />
+    <div>
+      <p>{t(product || custom ? "La foto se guardará con este medicamento." : "Comprueba el nombre en el empaque.")}</p>
+      <IonButton fill="clear" disabled={saving || scanning} onClick={() => {
+        setPhoto(null);
+        setScanError(false);
+        setError(null);
+      }}>{t("Quitar foto")}</IonButton>
+    </div>
+  </div>;
 
   return (
     <IonModal ref={modal} isOpen className="medications-entry-modal" aria-labelledby={`${formId}-title`}
@@ -220,10 +234,7 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
               {scanning && <p className="medications-entry-status" role="status">
                 <IonSpinner name="crescent" aria-hidden="true" />{t("Leyendo la etiqueta…")}
               </p>}
-              {photo && <div className="medications-entry-photo">
-                <img src={photo.src} alt={t("Fotografía del empaque")} />
-                <p>{t("Comprueba el nombre en el empaque.")}</p>
-              </div>}
+              {photoPreview}
               {scanError && <p className="medications-entry-status" role="status">{t("No pudimos leer la etiqueta. Busca el nombre o repite la foto.")}</p>}
               {photo && photo.terms.length > 1 && <div className="medications-entry-terms">
                 {photo.terms.map(term => <IonButton key={term} fill="outline" size="small" disabled={scanning}
@@ -243,7 +254,7 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
                   {catalog.data.map(item => {
                     const details = catalogDetails(item);
                     return <IonItem key={item.id} button type="button" detail
-                      onClick={() => { setProduct(item); setPhoto(null); setScanError(false); setError(null); }}>
+                      onClick={() => { setProduct(item); setScanError(false); setError(null); }}>
                       <IonLabel className="ion-text-wrap"><strong>{item.name}</strong>{details && <p>{details}</p>}</IonLabel>
                     </IonItem>;
                   })}
@@ -252,6 +263,7 @@ export function MedicationForm({ owner, timeZone: initialTimeZone, onCancel, onS
                   <IonButton fill="clear" onClick={() => { setName(queryText); setCustom(true); setError(null); }}>{t("Añadir sin catálogo")}</IonButton>
                 </div>)}
             </>}
+            {(product || custom) && photoPreview}
             <IonSelect label={t("Tipo de producto")} labelPlacement="stacked" value={selectedType}
               disabled={saving || Boolean(product?.rxCui)} interface="popover" onIonChange={event => setProductType(event.detail.value)}>
               {Object.entries(productLabels).map(([value, label]) => <IonSelectOption key={value} value={value}>{t(label)}</IonSelectOption>)}

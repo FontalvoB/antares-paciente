@@ -29,7 +29,7 @@ import { getAccessToken } from "../utils/authApi";
 import { sessionUserId } from "../utils/sessionIdentity";
 import { formatDateForDisplay, toLocalISODate } from "../utils/dates";
 import {
-  createMedicationRequestId, fetchMyMedications, isRequiredMedication, recordMyMedicationDose, setMyMedicationStatus, snoozeMyMedicationDose,
+  createMedicationRequestId, fetchMyMedications, isMedicationPhotoError, isRequiredMedication, recordMyMedicationDose, setMyMedicationStatus, snoozeMyMedicationDose,
 } from "../utils/medicationsApi";
 import type {
   MedicationDose, MedicationStatus,
@@ -119,12 +119,14 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     } else if (error instanceof ApiError && error.status === 409) {
       setActionError(t("El registro cambió. Actualiza e inténtalo de nuevo."));
       void refresh();
+    } else if (isMedicationPhotoError(error)) {
+      setActionError(t("No pudimos guardar la foto."));
     } else {
       setActionError(t("No pudimos guardar. Reintenta cuando tengas conexión."));
     }
   };
-  const recordDose = async (dose: MedicationDose, status: RecordMedicationDoseRequest["status"]) => {
-    if (!owner || busy || savingDose.current || !capabilities.canManage || !isCurrent() ||
+  const recordDose = async (dose: MedicationDose, status: RecordMedicationDoseRequest["status"], photo?: string | null) => {
+    if (!owner || busy || savingDose.current || scanInProgress.current || !capabilities.canManage || !isCurrent() ||
         !query.data?.doses.some(current => current.id === dose.id && current.revision === dose.revision && current.status === (status === "pending" ? "taken" : "pending")) ||
         Date.parse(dose.scheduledAt) > Date.now()) return;
     const key = `${dose.id}:${dose.revision}:${status}`;
@@ -136,7 +138,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     savingDose.current = true;
     setBusy(dose.id); setActionError(null);
     try {
-      await recordMyMedicationDose(owner, dose.id, operation);
+      await recordMyMedicationDose(owner, dose.id, operation, photo);
       if (!isCurrent()) return;
       setSelectedDose(null);
       await refresh();
@@ -183,12 +185,13 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     dose.id === selectedDose.id && dose.revision === selectedDose.revision && dose.status === "pending",
   );
   const scan = async () => {
-    if (!selectedDose || !workspace || scanInProgress.current || !isCurrent()) return;
+    if (!selectedDose || !workspace || scanInProgress.current || savingDose.current || !isCurrent()) return;
     const selected = workspace.treatments.find(treatment => treatment.id === selectedDose.treatmentId);
     if (!selected) { setCaptureState("no-match"); return; }
     scanInProgress.current = true;
     setPhotoPreview(null);
     setCaptureState("reading");
+    setActionError(null);
     try {
       const photo = await captureMedicationLabel();
       if (!isCurrent()) return;
@@ -203,6 +206,11 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     } finally {
       scanInProgress.current = false;
     }
+  };
+  const useManualDose = () => {
+    setPhotoPreview(null);
+    setCaptureState("manual");
+    setActionError(null);
   };
   const unavailable = !capabilities.isLoading && !capabilities.enabled;
   const accessDenied = query.error instanceof ApiError && [403, 404].includes(query.error.status);
@@ -487,7 +495,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
         { text: t("Cancelar"), role: "cancel" },
       ]} />
     <IonModal isOpen={Boolean(selectedDose)} className={`medications-capture-modal${photoPreview && (captureState === "reading" || captureState === "matched") ? " is-processing" : ""}`}
-      aria-label={t("Registrar toma")} backdropDismiss={false}
+      aria-label={t("Registrar toma")} backdropDismiss={false} canDismiss={async () => !scanInProgress.current}
       onDidDismiss={() => { setSelectedDose(null); setPhotoPreview(null); }}>
       {selectedDose && <IonContent>
         {photoPreview && captureState === "reading" ? <div className="medications-scan-stage">
@@ -511,10 +519,11 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
               ? t("El nombre coincide con tu registro. Verifica el empaque y confirma solo si ya tomaste esta dosis.")
               : t("Confirma solo si ya tomaste la dosis indicada arriba.")}</p>
             <IonButton expand="block" disabled={Boolean(busy) || !capabilities.canManage || !doseStillPending}
-              onClick={() => void recordDose(selectedDose, "taken")}>
+              onClick={() => void recordDose(selectedDose, "taken", captureState === "matched" ? photoPreview : null)}>
               {busy ? t("Guardando…") : t("Confirmar toma")}
             </IonButton>
             {captureState === "matched" && <IonButton fill="clear" expand="block" disabled={Boolean(busy)} onClick={() => void scan()}>{t("Repetir foto")}</IonButton>}
+            {captureState === "matched" && actionError && <IonButton fill="outline" expand="block" disabled={Boolean(busy)} onClick={useManualDose}>{t("Registrar manualmente")}</IonButton>}
           </> : <>
             <p role="status">{t(captureState === "reading" ? "Leyendo la etiqueta…"
               : captureState === "no-match" ? "No hubo una coincidencia clara. Repite la foto o registra la toma manualmente."
@@ -526,10 +535,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
               {t(captureState === "reading" ? "Leyendo la etiqueta…" : captureState === "ready" ? "Tomar foto" : "Repetir foto")}
             </IonButton>}
             <IonButton className="medications-capture-manual" expand="block" fill={canScan ? "outline" : "solid"}
-              disabled={captureState === "reading"} onClick={() => {
-                setPhotoPreview(null);
-                setCaptureState("manual");
-              }}>
+              disabled={captureState === "reading"} onClick={useManualDose}>
               <IonIcon icon={createOutline} slot="start" aria-hidden="true" />
               {t("Registrar manualmente")}
             </IonButton>
