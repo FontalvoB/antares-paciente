@@ -11,9 +11,27 @@ const origin = process.env.COP_E2E_APP_URL ?? 'http://127.0.0.1:5189';
 assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(origin), 'Only local UI hosts are permitted');
 const userId = '11111111-1111-4111-8111-111111111111';
 const token = 'x.' + Buffer.from(JSON.stringify({ sub: userId, exp: Math.floor(Date.now() / 1000) + 86400 })).toString('base64url') + '.x';
-const browser = await (process.env.COP_MEDICATIONS_BROWSER === 'webkit' ? webkit : chromium).launch();
-const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto', 'photo-match', 'photo-mismatch', 'snooze', 'agenda-es', 'agenda-en', 'empty-es', 'empty-en', 'add-photo', 'add-photo-empty', 'catalog-retry', 'catalog-empty', 'catalog-autofill-en', 'layout-es', 'layout-en'];
+const useWebKit = process.env.COP_MEDICATIONS_BROWSER === 'webkit';
+const browser = await (useWebKit ? webkit : chromium).launch();
+const scenarios = process.env.COP_MEDICATIONS_SCENARIOS?.split(',') ?? ['enabled', 'disabled', 'old-server', 'capability-error', 'read-only', 'forbidden', 'english', 'retry', 'dose-retry', 'omitted', 'legacy-crypto', 'photo-match', 'photo-mismatch', 'snooze', 'agenda-es', 'agenda-en', 'empty-es', 'empty-en', 'add-photo', 'add-photo-empty', 'add-photo-remove', 'add-photo-cancel', 'catalog-retry', 'catalog-empty', 'catalog-autofill-en', 'layout-es', 'layout-en'];
 const results = [];
+const packagePng = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0XQAAAAASUVORK5CYII=';
+
+async function readMedicationWrite(request) {
+  const contentType = request.headers()['content-type'];
+  if (!contentType?.startsWith('multipart/form-data')) return { body: request.postDataJSON(), photo: null };
+  const form = await new Response(request.postDataBuffer(), { headers: { 'Content-Type': contentType } }).formData();
+  assert.deepEqual([...form.keys()].sort(), ['photo', 'request']);
+  const photo = form.get('photo');
+  assert(photo instanceof Blob, 'The attachment is a multipart file');
+  return { body: JSON.parse(form.get('request')), photo: { type: photo.type, bytes: Buffer.from(await photo.arrayBuffer()).toString('base64') } };
+}
+
+function assertAttachedPhoto(photo) {
+  assert.equal(photo?.type, 'image/png');
+  // WebKit's interception can report empty file parts even when fetch streams them.
+  if (!useWebKit || photo.bytes !== '') assert.equal(photo.bytes, packagePng);
+}
 
 for (const scenario of scenarios) {
   const english = scenario === 'english' || scenario.endsWith('-en');
@@ -45,7 +63,7 @@ for (const scenario of scenarios) {
   }
   if (scenario === 'legacy-crypto') await page.addInitScript(() => Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true }));
   if (english) await page.addInitScript(() => localStorage.setItem('antares_lang', 'en'));
-  if (photo) await page.addInitScript(label => {
+  if (photo) await page.addInitScript(({ label, image }) => {
     // Solo sustituye el puente nativo. La UI y la comparación de etiquetas son reales.
     window.Capacitor = {
       PluginHeaders: [
@@ -54,15 +72,16 @@ for (const scenario of scenarios) {
       ],
       nativePromise: async plugin => {
         if (plugin === 'Camera') {
-          return { base64String: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0XQAAAAASUVORK5CYII=', format: 'png' };
+          return { base64String: image, format: 'png' };
         }
         await new Promise(resolve => setTimeout(resolve, 500));
         return { text: label };
       },
     };
-  }, scenario === 'add-photo' ? 'Etiqueta QA\nTratamiento QA 500 mg\n500 mg' : scenario === 'add-photo-empty' ? '' :
-    scenario === 'photo-match' ? 'Tratamiento QA' : 'Otro medicamento');
+  }, { image: packagePng, label: scenario === 'add-photo-empty' ? '' : addPhoto ? 'Etiqueta QA\nTratamiento QA 500 mg\n500 mg' :
+    scenario === 'photo-match' ? 'Tratamiento QA' : 'Otro medicamento' });
   const writes = [];
+  const photoEventAttempts = [];
   const catalogSearches = [];
   let failedOnce = false;
   let doseFailedOnce = false;
@@ -147,7 +166,8 @@ for (const scenario of scenarios) {
       return reply(search && catalogProduct.name.toLowerCase().includes(search.toLowerCase()) ? [catalogProduct] : []);
     }
     if (pathname === '/api/v1/me/medications/treatments' && request.method() === 'POST') {
-      const body = request.postDataJSON(); writes.push({ kind: 'create', body });
+      const { body, photo } = await readMedicationWrite(request);
+      writes.push({ kind: 'create', body, photo });
       if (!workspace.treatments.length) {
         const treatment = { ...body, id: '22222222-2222-4222-8222-222222222222', revision: 1, status: 'active', origin: 'patient_reported', createdAt: new Date().toISOString() };
         workspace.treatments.push(treatment);
@@ -167,7 +187,12 @@ for (const scenario of scenarios) {
       return route.fulfill({ status: 204 });
     }
     if (/\/doses\/[^/]+\/events$/.test(pathname)) {
-      const body = request.postDataJSON(); writes.push({ kind: 'event', body });
+      const { body, photo } = await readMedicationWrite(request);
+      if (scenario === 'photo-match') {
+        photoEventAttempts.push({ body, photo });
+        if (photoEventAttempts.length === 1) return reply({}, 401);
+      }
+      writes.push({ kind: 'event', body, photo });
       if (modern) {
         const dose = workspace.doses.find(item => item.scheduledAt === body.scheduledAt);
         dose.status = body.status;
@@ -417,9 +442,18 @@ for (const scenario of scenarios) {
           await page.screenshot({ path: path.join(output, 'add-medication.png'), animations: 'disabled' });
         }
         await takePhoto.click();
-        if (scenario === 'add-photo') {
+        if (scenario !== 'add-photo-empty') {
           await expect(search).toHaveValue('Etiqueta QA');
           await expect(page.getByRole('img', { name: 'Fotografía del empaque' })).toBeVisible();
+          if (scenario === 'add-photo-cancel') {
+            await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+            await expect(search).toHaveCount(0);
+            assert.equal(writes.length, 0, 'Closing a package photo draft sends no write');
+            await page.getByRole('button', { name: 'Añadir medicamento', exact: true }).first().click();
+            await expect(page.getByRole('img', { name: 'Fotografía del empaque' })).toHaveCount(0);
+            results.push({ scenario, passed: true });
+            continue;
+          }
           await expect(page.getByText('Sin resultados en el catálogo')).toBeVisible();
           await page.getByRole('button', { name: 'Tratamiento QA', exact: true }).click();
           await expect(search).toHaveValue('Tratamiento QA');
@@ -436,7 +470,7 @@ for (const scenario of scenarios) {
         await page.getByRole('button', { name: 'Añadir medicamento', exact: true }).first().click();
         await expect(search).toHaveValue('');
       }
-      if (scenario !== 'add-photo') {
+      if (!addPhoto || scenario === 'add-photo-empty') {
         await search.fill(scenario === 'catalog-empty' ? 'Producto fuera del catálogo QA' : 'Tratamiento QA');
       }
       if (scenario === 'catalog-retry') {
@@ -456,6 +490,13 @@ for (const scenario of scenarios) {
         }
         await result.click();
         assert(catalogSearches.includes('Tratamiento QA'), 'The selection comes from the API');
+        if (addPhoto) {
+          await expect(page.getByRole('img', { name: 'Fotografía del empaque' })).toBeVisible();
+          if (scenario === 'add-photo-remove') {
+            await page.getByRole('button', { name: 'Quitar foto', exact: true }).click();
+            await expect(page.getByRole('img', { name: 'Fotografía del empaque' })).toHaveCount(0);
+          }
+        }
       }
       if (scenario === 'add-photo' || scenario === 'catalog-retry') {
         const form = page.locator('ion-modal.medications-entry-modal');
@@ -502,6 +543,8 @@ for (const scenario of scenarios) {
       const customProduct = scenario === 'catalog-empty';
       await expect(page.locator('.medications-dose').filter({ hasText: customProduct ? 'Producto fuera del catálogo QA' : catalogProduct.name })).toBeVisible();
       assert.equal(writes[0].body.medicationId, customProduct ? null : catalogProduct.id);
+      if (addPhoto && scenario !== 'add-photo-remove') assertAttachedPhoto(writes[0].photo);
+      else assert.equal(writes[0].photo, null);
       if (addPhoto || scenario === 'catalog-retry' || customProduct) {
         assert.deepEqual(writes.map(write => write.kind), ['create']);
         results.push({ scenario, passed: true });
@@ -553,6 +596,16 @@ for (const scenario of scenarios) {
         }
         const confirm = dialog.getByRole('button', { name: english ? 'Confirm intake' : 'Confirmar toma', exact: true });
         await confirm.click();
+        if (scenario === 'photo-match') {
+          await expect(dialog).toBeHidden();
+          assert.equal(photoEventAttempts.length, 2, 'An authentication retry resends the complete upload');
+          assert.deepEqual(photoEventAttempts[1], photoEventAttempts[0]);
+          assertAttachedPhoto(photoEventAttempts[1].photo);
+        }
+        if (scenario === 'photo-mismatch') {
+          await expect(dialog).toBeHidden();
+          assert.equal(writes.find(write => write.kind === 'event').photo, null, 'Manual confirmation after an unmatched scan sends no photo');
+        }
         if (scenario === 'dose-retry') {
           await expect(dialog.getByRole('alert')).toContainText('No pudimos guardar');
           await confirm.click();

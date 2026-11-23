@@ -1,4 +1,6 @@
 import { ApiError, apiFetch } from "./apiClient";
+import type { ApiFetchOptions } from "./apiClient";
+import { dataUrlToBlob } from "../services/media/camera-service";
 
 export interface MedicationCapability {
   enabled: boolean;
@@ -191,15 +193,25 @@ export async function searchMedicationCatalog(owner: string, search: string, sig
   return [];
 }
 
-export const createMyMedication = (owner: string, body: CreateMedicationRequest) =>
-  apiFetch<MedicationTreatment>("/api/v1/me/medications/treatments", {
-    method: "POST", body, expectedUserId: owner,
-  });
+function medicationWriteOptions(owner: string, body: CreateMedicationRequest | RecordMedicationDoseRequest, photo?: string | null): ApiFetchOptions {
+  const options: ApiFetchOptions = { method: "POST", body, expectedUserId: owner };
+  if (!photo) return options;
+  const file = dataUrlToBlob(photo);
+  const form = new FormData();
+  form.append("request", JSON.stringify(body));
+  form.append("photo", file, file.type === "image/png" ? "medication.png" : "medication.jpg");
+  return { ...options, body: form, timeoutMs: 45_000 };
+}
 
-export const recordMyMedicationDose = (owner: string, doseId: string, body: RecordMedicationDoseRequest) =>
-  apiFetch<MedicationDose>(`/api/v1/me/medications/doses/${encodeURIComponent(doseId)}/events`, {
-    method: "POST", body, expectedUserId: owner,
-  });
+export function isMedicationPhotoError(error: unknown) {
+  return error instanceof ApiError && (error.status === 413 || error.code === "MEDICATION_PHOTO_INVALID");
+}
+
+export const createMyMedication = (owner: string, body: CreateMedicationRequest, photo?: string | null) =>
+  apiFetch<MedicationTreatment>("/api/v1/me/medications/treatments", medicationWriteOptions(owner, body, photo));
+
+export const recordMyMedicationDose = (owner: string, doseId: string, body: RecordMedicationDoseRequest, photo?: string | null) =>
+  apiFetch<MedicationDose>(`/api/v1/me/medications/doses/${encodeURIComponent(doseId)}/events`, medicationWriteOptions(owner, body, photo));
 
 export const snoozeMyMedicationDose = (owner: string, dose: MedicationDose, minutes: 15 | 30) =>
   apiFetch<void>(`/api/v1/me/medications/doses/${encodeURIComponent(dose.id)}/snooze`, {

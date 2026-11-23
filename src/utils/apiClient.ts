@@ -266,7 +266,7 @@ export async function apiFetch<T>(
       if (retryToken) {
         retryHeaders.set("Authorization", `Bearer ${retryToken}`);
       }
-      if (body !== undefined) {
+      if (body !== undefined && !multipart) {
         retryHeaders.set("Content-Type", "application/json");
       }
 

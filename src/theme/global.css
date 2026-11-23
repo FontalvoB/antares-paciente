@@ -34199,6 +34199,7 @@ ion-card.nutrition-recommendations { margin: 20px 0; border: 1px solid var(--bd)
   object-fit: contain;
   background: var(--wellness-surface);
 }
+.medications-entry-photo > div { min-width: 0; }
 .medications-entry-results ion-label p, .medications-entry-selection p, .medications-entry-photo p {
   margin: 5px 0 0;
   color: var(--wellness-muted);
