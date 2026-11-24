@@ -33,7 +33,7 @@ const STEP_META: Record<
   {
     icon: string;
     description: string;
-    module?: "nut" | "program-vitals" | "program-ejercicio";
+    module?: "wellness-diet" | "program-vitals" | "program-ejercicio";
   }
 > = {
   exercise: {
@@ -45,7 +45,7 @@ const STEP_META: Record<
   diet: {
     icon: nutritionOutline,
     description: "Sigue tu plan de comidas y registra el agua del día.",
-    module: "nut",
+    module: "wellness-diet",
   },
   vitals: {
     icon: pulseOutline,
@@ -268,7 +268,7 @@ export function WellnessProtocol() {
                       {t("Hice la versión reducida")}
                     </IonButton>
                   )}
-                  {meta.module && !step.done && (
+                  {meta.module && (!step.done || step.id === "diet") && (
                     <IonButton
                       fill="clear"
                       color="primary"
