@@ -51,11 +51,13 @@ function readStorage(key: string): string | null {
   }
 }
 
-function writeStorage(key: string, value: string): void {
+function writeStorage(key: string, value: string): boolean {
   try {
-    if (typeof window !== "undefined") window.localStorage.setItem(key, value);
+    if (typeof window === "undefined") return false;
+    window.localStorage.setItem(key, value);
+    return true;
   } catch {
-    /* almacenamiento no disponible: el flujo sigue en memoria */
+    return false;
   }
 }
 
@@ -90,6 +92,8 @@ function writeAccounts(accounts: Record<string, string>): void {
 // ---------- implementación mock ----------
 
 export class MockWellnessOnboardingService implements WellnessOnboardingService {
+  private unsavedDraft: ObjectiveDraft | null = null;
+
   async checkEmail(email: string): Promise<EmailLookup> {
     const accounts = readAccounts();
     return { exists: Boolean(accounts[normalizeEmail(email)]) };
@@ -115,10 +119,12 @@ export class MockWellnessOnboardingService implements WellnessOnboardingService 
   }
 
   saveDraft(draft: ObjectiveDraft): void {
-    writeStorage(DRAFT_KEY, JSON.stringify(draft));
+    const saved = writeStorage(DRAFT_KEY, JSON.stringify(draft));
+    this.unsavedDraft = saved ? null : normalizeDraft(draft);
   }
 
   loadDraft(): ObjectiveDraft | null {
+    if (this.unsavedDraft) return this.unsavedDraft;
     const raw = readStorage(DRAFT_KEY);
     if (!raw) return null;
     try {
@@ -129,6 +135,7 @@ export class MockWellnessOnboardingService implements WellnessOnboardingService 
   }
 
   clearDraft(): void {
+    this.unsavedDraft = null;
     removeStorage(DRAFT_KEY);
   }
 

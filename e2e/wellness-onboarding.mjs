@@ -3,7 +3,7 @@
  *
  * Recorre la app real en modo navegador con la API sintética (mismo patrón que
  * `onboarding-emergency-contacts.mjs`): login/activación → onboarding nuevo →
- * plan listo. Captura evidencia en ES a 390 px y comprueba 320 px sin overflow.
+ * Inicio con generación en segundo plano. Captura evidencia en ES a 390/320 px.
  */
 import { chromium, expect } from "playwright/test";
 import assert from "node:assert/strict";
@@ -368,13 +368,36 @@ async function runFlow(page, baseUrl, width) {
     .getByRole("button", { name: "Generar mi plan", exact: true })
     .click();
 
+  const generation = page.getByRole("region", { name: "Preparación del plan" });
+  await expect(
+    generation.getByRole("heading", { name: "Estamos preparando tu plan" }),
+  ).toBeVisible({ timeout: 3000 });
+  await expect(generation.locator("ion-progress-bar")).toHaveCount(3);
+  await Promise.all([
+    shot(page, `13-home-generando-${width}`),
+    expect(generation).toBeHidden({ timeout: 3000 }),
+  ]);
+  const generationMs = await page.evaluate(() => {
+    const job = JSON.parse(localStorage.getItem("wellness.generation.v1"));
+    return Date.now() - job.startedAt;
+  });
+  assert(generationMs <= 3000, `generation took ${generationMs} ms`);
   await expect(
     page.getByRole("heading", { name: /tu plan de bienestar está listo/i }),
-  ).toBeVisible();
-  await expect(page.getByText("Día 1/365", { exact: true })).toBeVisible();
-  await shot(page, `13-plan-listo-${width}`);
+  ).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  const inbox = page.getByRole("region", { name: "Bandeja" });
+  for (const title of [
+    "Te damos la bienvenida",
+    "Tu plan de ejercicio está listo",
+    "Tu plan de nutrición está listo",
+    "Tus cuestionarios",
+  ]) {
+    await expect(
+      inbox.getByRole("heading", { name: title, exact: true }),
+    ).toBeVisible();
+  }
+  await expect(inbox.locator("time")).toHaveCount(4);
   await expect(page.locator(".wh-day")).toContainText("Día 1 de 365");
   await expect(
     page.getByText("Protocolo de hoy", { exact: true }),
@@ -382,12 +405,13 @@ async function runFlow(page, baseUrl, width) {
   await expect(page.getByText("0/5", { exact: true })).toBeVisible();
   await expect(page.getByText("0 de 7", { exact: true })).toBeVisible();
   await expect(page.getByText(/^(IMC|HbA1c|% de grasa)$/)).toHaveCount(0);
-  await page.waitForTimeout(1200);
   const afterEnter = await page.evaluate(() => ({
     text: document.body.innerText.slice(0, 400),
     nodes: document.body.querySelectorAll("*").length,
   }));
   await shot(page, `14-inicio-${width}`);
+  await inbox.scrollIntoViewIfNeeded();
+  await shot(page, `14-bandeja-${width}`);
   await page.locator(".wh-batteries").scrollIntoViewIfNeeded();
   await shot(page, `15-cuestionarios-${width}`);
 
@@ -530,7 +554,7 @@ async function runFlow(page, baseUrl, width) {
   await expect(page.getByText(/cena más temprana y ligera/i)).toBeVisible();
 
   await verifyNavigation(page, baseUrl, width);
-  return afterEnter;
+  return { ...afterEnter, generationMs };
 }
 
 const baseUrl = process.env.COP_E2E_APP_URL ?? "http://127.0.0.1:5173";

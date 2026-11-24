@@ -111,4 +111,4 @@ export interface EmailLookup {
 
 /** Paso del onboarding de 5 pasos. */
 export type OnboardingStage =
-  "email" | "emergency" | "terms" | "password" | "objective" | "ready";
+  "email" | "emergency" | "terms" | "password" | "objective";
