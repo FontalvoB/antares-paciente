@@ -109,7 +109,7 @@ describe("WellnessHome (KAN-142)", () => {
     seedPlan(0);
     render(<WellnessHome />);
     fireEvent.click(screen.getByText("Empezar mi día"));
-    expect(state.navigate).toHaveBeenCalledWith("program-ejercicio");
+    expect(state.navigate).toHaveBeenCalledWith("protocol");
   });
 
   it("refleja el estado real de los 5 pasos y los puntos", () => {

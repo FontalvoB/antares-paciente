@@ -40,11 +40,11 @@ const STEP_ICON: Record<ProtocolStepId, string> = {
  * módulos viejos. Evita botones muertos y se cambia en una sola tabla.
  */
 const STEP_SCREEN: Record<ProtocolStepId, Screen> = {
-  exercise: "program-ejercicio",
-  diet: "nut",
-  vitals: "program-vitals",
-  emotional: "chat",
-  chest: "program-racha",
+  exercise: "protocol",
+  diet: "protocol",
+  vitals: "protocol",
+  emotional: "protocol",
+  chest: "protocol",
 };
 
 const GOAL_LABEL = {
@@ -80,7 +80,10 @@ export function WellnessHome() {
     {
       id: "streak",
       label: t("Racha"),
-      value: t("{count} días", { count: number.format(data.streakDays) }),
+      value:
+        data.streakDays === 1
+          ? t("1 día")
+          : t("{count} días", { count: number.format(data.streakDays) }),
       icon: flameOutline,
     },
     {

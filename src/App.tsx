@@ -47,6 +47,7 @@ import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
+import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { BodyProfilePage } from "./pages/BodyProfilePage";
@@ -96,6 +97,9 @@ function Router() {
     content = <TestsPage />;
   } else {
     switch (screen) {
+      case "protocol":
+        content = <WellnessProtocol />;
+        break;
       case "book":
         content = APPOINTMENTS_ENABLED ? (
           <AppointmentsPage />

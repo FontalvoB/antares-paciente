@@ -310,3 +310,89 @@ export function toggleProtocolStep(
   saveProtocolHistory(history);
   return history;
 }
+
+// ---------- protocolo diario (KAN-143) ----------
+
+const CHEST_ID: ProtocolStepId = "chest";
+const CHEST_REQUIRED: ProtocolStepId[] = [
+  "exercise",
+  "diet",
+  "vitals",
+  "emotional",
+];
+
+/** `true` cuando los pasos 1–4 están completos y el cofre puede abrirse. */
+export function isChestUnlocked(
+  history: WellnessProtocolHistory,
+  today = new Date(),
+): boolean {
+  const done = new Set(history[localISODate(today)] ?? []);
+  return CHEST_REQUIRED.every((id) => done.has(id));
+}
+
+/** Pasos que faltan para abrir el cofre, en el orden del protocolo. */
+export function missingForChest(
+  history: WellnessProtocolHistory,
+  today = new Date(),
+): ProtocolStepId[] {
+  const done = new Set(history[localISODate(today)] ?? []);
+  return CHEST_REQUIRED.filter((id) => !done.has(id));
+}
+
+export interface CompleteStepResult {
+  history: WellnessProtocolHistory;
+  /** `false` si ya estaba hecho o el cofre estaba bloqueado. */
+  completed: boolean;
+  /** Puntos instantáneos ganados (sin bonus de secuencia). */
+  pointsEarned: number;
+  /** `true` si este paso cerró los 5 del día. */
+  dayComplete: boolean;
+  /** `true` si el cofre está desbloqueado después de la operación. */
+  chestUnlocked: boolean;
+}
+
+/**
+ * Completa un paso una sola vez al día. El cofre exige los pasos 1–4.
+ * No reinicia ni arrastra pasos: todo se guarda por fecha local.
+ */
+export function completeProtocolStep(
+  id: ProtocolStepId,
+  today = new Date(),
+): CompleteStepResult {
+  const history = loadProtocolHistory();
+  const date = localISODate(today);
+  const current = new Set(history[date] ?? []);
+  const alreadyDone = current.has(id);
+  const locked = id === CHEST_ID && !isChestUnlocked(history, today);
+
+  if (alreadyDone || locked) {
+    return {
+      history,
+      completed: false,
+      pointsEarned: 0,
+      dayComplete: current.size >= PROTOCOL_STEPS.length,
+      chestUnlocked: isChestUnlocked(history, today),
+    };
+  }
+
+  current.add(id);
+  history[date] = [...current];
+  saveProtocolHistory(history);
+
+  return {
+    history,
+    completed: true,
+    pointsEarned: POINTS_PER_STEP,
+    dayComplete: current.size >= PROTOCOL_STEPS.length,
+    chestUnlocked: isChestUnlocked(history, today),
+  };
+}
+
+/** ¿Se puede completar este paso hoy? El cofre depende de los pasos 1–4. */
+export function canCompleteStep(
+  id: ProtocolStepId,
+  today = new Date(),
+): boolean {
+  if (id !== CHEST_ID) return true;
+  return isChestUnlocked(loadProtocolHistory(), today);
+}

@@ -250,6 +250,37 @@ async function runFlow(page, baseUrl, width) {
   await shot(page, `14-inicio-${width}`);
   await page.locator(".wh-batteries").scrollIntoViewIfNeeded();
   await shot(page, `15-cuestionarios-${width}`);
+
+  await page
+    .getByRole("button", { name: "Empezar mi día", exact: true })
+    .click();
+  await expect(
+    page.getByText("Tu día de bienestar", { exact: true }),
+  ).toBeVisible();
+  await shot(page, `16-protocolo-${width}`);
+  for (let step = 0; step < 4; step += 1) {
+    await page
+      .getByRole("button", { name: "Marcar como hecho", exact: true })
+      .first()
+      .click();
+  }
+  await expect(page.getByText("4 de 5 pasos", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Abrir mi cofre", exact: true })
+    .click();
+  await expect(
+    page.getByText("¡Cofre abierto!", { exact: true }),
+  ).toBeVisible();
+  await shot(page, `17-cofre-${width}`);
+  await page.getByRole("button", { name: "Seguir", exact: true }).click();
+  await expect(page.getByText("5 de 5 pasos", { exact: true })).toBeVisible();
+  await shot(page, `18-protocolo-completo-${width}`);
+  await page
+    .getByRole("button", { name: "Volver al inicio", exact: true })
+    .click();
+  await expect(page.getByText("5/5", { exact: true })).toBeVisible();
+  await shot(page, `19-home-completo-${width}`);
+
   return afterEnter;
 }
 
