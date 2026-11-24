@@ -12,11 +12,11 @@ import type { GateIssue, ObjectiveDraft } from "../../../domain";
 // oxlint-disable-next-line react/only-export-components -- Shared with the summary within the objective module.
 export const SEX_OPTIONS = { F: "Femenino", M: "Masculino" } as const;
 const NUMERIC_FIELDS = [
-  { field: "age", label: "Edad (años)" },
-  { field: "heightCm", label: "Estatura (cm)" },
-  { field: "weightKg", label: "Peso actual (kg)" },
-  { field: "waistCm", label: "Cintura (cm)" },
-  { field: "targetWeightKg", label: "Peso meta (kg)" },
+  { field: "age", label: "Edad (años)", example: "35" },
+  { field: "heightCm", label: "Estatura (cm)", example: "165" },
+  { field: "weightKg", label: "Peso actual (kg)", example: "74" },
+  { field: "waistCm", label: "Cintura (cm)", example: "88" },
+  { field: "targetWeightKg", label: "Peso meta (kg)", example: "68" },
 ] as const;
 
 // oxlint-disable-next-line react/only-export-components -- Keeps numeric validation next to the fields it validates.
@@ -128,13 +128,14 @@ export function DataStep({
       </fieldset>
 
       <div className="wl-field-grid">
-        {NUMERIC_FIELDS.map(({ field, label }) => (
+        {NUMERIC_FIELDS.map(({ field, label, example }) => (
           <div className="field" key={field} style={{ minWidth: 0 }}>
             <IonInput
               type="text"
               inputmode={field === "age" ? "numeric" : "decimal"}
               label={t(label)}
               labelPlacement="stacked"
+              placeholder={t("Ej. {value}", { value: example })}
               required
               className={
                 invalidField === field ? "fld ion-invalid ion-touched" : "fld"

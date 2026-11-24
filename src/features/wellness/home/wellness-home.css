@@ -8,6 +8,17 @@
   background: var(--g0);
 }
 
+.journey-scroll {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.journey-plan-items {
+  margin: 8px 0 0;
+  padding-inline-start: 20px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .wh-hero {
   margin: 0 0 14px;
   padding: 18px 18px 16px;

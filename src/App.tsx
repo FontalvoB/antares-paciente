@@ -45,6 +45,7 @@ import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
 import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
@@ -74,8 +75,10 @@ setupIonicReact({ mode: "ios" });
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
 function Router() {
-  const { flow, screen, authLoading } = useApp();
+  const { flow, screen, authLoading, user } = useApp();
   const reducedMotion = useReducedMotion();
+  const paidJourney = import.meta.env.DEV && import.meta.env.VITE_WELLNESS_JOURNEY_DEMO === "true"
+    && new URLSearchParams(window.location.search).get("wellnessJourney") === "1";
 
   if (authLoading) {
     return (
@@ -92,7 +95,9 @@ function Router() {
 
   let content: ReactNode;
 
-  if (flow === "login") {
+  if (paidJourney && flow === "app" && user.id) {
+    content = <WellnessJourneyPage key={user.id} userId={user.id} />;
+  } else if (flow === "login" || (paidJourney && flow === "onboarding")) {
     content = <LoginPage />;
   } else if (flow === "onboarding") {
     content = <OnboardingPage />;

@@ -2,7 +2,7 @@ import { IonButton } from "@ionic/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useT } from "../../../../i18n/I18nContext";
 import { OBJECTIVE_STEP, evaluateGate } from "../../domain";
-import type { GateIssue, GateResult, ObjectiveDraft } from "../../domain";
+import type { GateIssue, GateResult, ObjectiveDraft, WellnessGoal } from "../../domain";
 import { GateNotice } from "./GateNotice";
 import { ActivityStep } from "./steps/ActivityStep";
 import { DataStep, dataIssues, issueParams } from "./steps/DataStep";
@@ -56,13 +56,14 @@ function getLocalGate(draft: ObjectiveDraft): GateResult {
   return { ok: validated.length === 0, issues: validated };
 }
 
-export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit }: {
+export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, allowedGoals }: {
   draft: ObjectiveDraft;
   onChange: (patch: Partial<ObjectiveDraft>) => void;
   gate: GateResult | null;
   generating: boolean;
   onGenerate: () => void;
-  onExit: () => void;
+  onExit?: () => void;
+  allowedGoals?: readonly WellnessGoal[];
 }) {
   const t = useT();
   const headingId = useId();
@@ -179,7 +180,7 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
       )}
 
       <div ref={content}>
-        {step === OBJECTIVE_STEP.goal && <GoalStep {...stepProps} />}
+        {step === OBJECTIVE_STEP.goal && <GoalStep {...stepProps} allowedGoals={allowedGoals} />}
         {step === OBJECTIVE_STEP.data && <DataStep {...stepProps} />}
         {step === OBJECTIVE_STEP.activity && <ActivityStep {...stepProps} />}
         {step === OBJECTIVE_STEP.preferences && <PreferencesStep {...stepProps} />}
@@ -204,15 +205,17 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
       )}
 
       <div className="wl-footer">
-        <IonButton
-          type="button"
-          fill="clear"
-          style={{ minHeight: 48, "--color": "var(--teal-d)", "--background-focused": "var(--teal-l)" }}
-          disabled={generating}
-          onClick={step === OBJECTIVE_STEP.goal ? onExit : () => goToStep(step - 1)}
-        >
-          {t("Volver")}
-        </IonButton>
+        {(step !== OBJECTIVE_STEP.goal || onExit) && (
+          <IonButton
+            type="button"
+            fill="clear"
+            style={{ minHeight: 48, "--color": "var(--teal-d)", "--background-focused": "var(--teal-l)" }}
+            disabled={generating}
+            onClick={step === OBJECTIVE_STEP.goal ? onExit : () => goToStep(step - 1)}
+          >
+            {t("Volver")}
+          </IonButton>
+        )}
         {step !== OBJECTIVE_STEP.generate && (
           <IonButton type="button" className="cta-pill" onClick={goForward}>
             {t("Continuar")}
