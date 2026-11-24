@@ -95,6 +95,8 @@ interface AppState {
   healthReturnTo: "home" | "prof";
   toast: ToastState | null;
   panicOpen: boolean;
+  /** Entrada del SOS: cuenta regresiva de 5 s (por defecto) o protocolo directo. */
+  panicEntry: "countdown" | "protocol";
   voiceOpen: boolean;
   voiceMinimized: boolean;
   minimizeVoice: () => void;
@@ -334,6 +336,7 @@ export function AppProvider({
     window.setTimeout(() => setToast(null), 2600);
   }, []);
   const [panicOpen, setPanicOpen] = useState(false);
+  const [panicEntry, setPanicEntry] = useState<"countdown" | "protocol">("countdown");
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [voiceMinimized, setVoiceMinimized] = useState(false);
   const [chatGenerating, setChatGenerating] = useState(false);
@@ -1132,6 +1135,7 @@ export function AppProvider({
       toast,
       showToast,
       panicOpen,
+      panicEntry,
       voiceOpen,
       voiceMinimized,
       chatGenerating,
@@ -1259,6 +1263,8 @@ export function AppProvider({
       markTest: (id) =>
         setTestsDone((prev) => (prev.includes(id) ? prev : [...prev, id])),
       openPanic: () => {
+        // KAN-137: cada apertura empieza por la cuenta regresiva de 5 s.
+        setPanicEntry("countdown");
         setSosActive(false);
         setPanicOpen(true);
       },
@@ -1393,6 +1399,7 @@ export function AppProvider({
       toast,
       showToast,
       panicOpen,
+      panicEntry,
       voiceOpen,
       voiceMinimized,
       chatGenerating,

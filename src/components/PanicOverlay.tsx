@@ -63,11 +63,22 @@ import type { EmergencyCountry } from "../utils/emergencyNumbers";
 import { loadEmergencyCityDirectory, resolveEmergencyCityRouting } from "../utils/emergencyCityRouting";
 import type { EmergencyCityDirectory, EmergencyService } from "../utils/emergencyCityRouting";
 import type { SosCoordinates } from "../services/sos/sos-service";
+import {
+  SOS_COUNTDOWN_SECONDS,
+  SOS_EVENT,
+  isSosAvailable,
+  recordSosAudit,
+  recordSosContactNotice,
+  type SosAuditResult,
+} from "../features/wellness/sos/sos-store";
 
 import logoIcon from "../assets/LogoIndividual.png";
+import "../features/wellness/sos/wellness-sos.css";
 
 type SosView = "protocol" | "confirm";
 type HelpView = "medical" | "services";
+/** Número usado si aún no se detectó el país (regla KAN-137: llamada al 911). */
+const FALLBACK_EMERGENCY_NUMBER = "911";
 /** Botones de llamada manual: emergencias del país (911/123) o el contacto
  * de emergencia (tel: nativo). */
 type DialTarget = "callEmergency" | "callFamily";
@@ -104,7 +115,7 @@ const EMERGENCY_SERVICES = [
 
 
 export function PanicOverlay() {
-  const { panicOpen, sosActive, closePanic, activateSos, user, showToast } =
+  const { panicOpen, panicEntry, sosActive, closePanic, activateSos, openPanic, user, showToast, flow, screen } =
     useApp();
   const { t, lang } = useI18n();
   const wearable = useWearable();
@@ -139,6 +150,12 @@ export function PanicOverlay() {
   const [emergencyCoordinates, setEmergencyCoordinates] = useState<SosCoordinates | null>(null);
   const [emergencyDirectory, setEmergencyDirectory] = useState<EmergencyCityDirectory | null>(null);
   const [routingNow, setRoutingNow] = useState(Date.now);
+  // KAN-137: cuenta regresiva de 5 s al abrir. Termina en llamada a
+  // emergencias + aviso local a contactos, llamada al contacto o cancelación.
+  const [countdownDone, setCountdownDone] = useState(false);
+  const [remaining, setRemaining] = useState(SOS_COUNTDOWN_SECONDS);
+  const countdownResolved = useRef(false);
+  const inCountdown = panicOpen && panicEntry === "countdown" && !countdownDone && !sosActive;
 
   useEffect(() => {
     if (!panicOpen) return;
@@ -246,7 +263,38 @@ export function PanicOverlay() {
       setRateLimitSecs(0);
       setFastPoll(false);
       setChoosingContact(false);
+      setCountdownDone(false);
+      setRemaining(SOS_COUNTDOWN_SECONDS);
+      countdownResolved.current = false;
     }
+  }, [panicOpen]);
+
+  // Evento global `wellness:sos` (voz, chat, IA): abre el SOS sin depender de
+  // la pantalla actual. Respeta la regla de disponibilidad del botón.
+  const sosTrigger = useRef({ open: openPanic, available: false, opened: panicOpen });
+  sosTrigger.current = { open: openPanic, available: isSosAvailable({ flow: flow ?? "app", user }), opened: panicOpen };
+  useEffect(() => {
+    const onSos = () => {
+      const current = sosTrigger.current;
+      if (current.available && !current.opened) current.open();
+    };
+    window.addEventListener(SOS_EVENT, onSos);
+    return () => window.removeEventListener(SOS_EVENT, onSos);
+  }, []);
+
+  // Nada puede tapar el SOS: sale de la pantalla completa de un video, cierra
+  // el teclado y desactiva la trampa de foco de los overlays Ionic de debajo.
+  useEffect(() => {
+    if (!panicOpen) return;
+    if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => undefined);
+    let active = document.activeElement;
+    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+    if (active instanceof HTMLElement && active.matches("input, textarea, [contenteditable='true']")) active.blur();
+    const overlays = Array.from(document.querySelectorAll<HTMLElement>(
+      "ion-modal, ion-popover, ion-alert, ion-action-sheet, ion-loading",
+    )).filter(overlay => !overlay.classList.contains("ion-disable-focus-trap") && !overlay.classList.contains("sos-contact-sheet"));
+    overlays.forEach(overlay => overlay.classList.add("ion-disable-focus-trap"));
+    return () => overlays.forEach(overlay => overlay.classList.remove("ion-disable-focus-trap"));
   }, [panicOpen]);
 
   // REQ-SOS-07 (eliminado): ya NO existe el temporizador que activaba SOS a
@@ -329,6 +377,56 @@ export function PanicOverlay() {
       );
     }
   };
+
+  const auditScreen = flow && flow !== "app" ? flow : screen || "unknown";
+  const dialNumber = emergencyNumber ?? FALLBACK_EMERGENCY_NUMBER;
+
+  /**
+   * Cierre de la cuenta regresiva (una sola vez por activación). Cancelar no
+   * envía nada; llamar a emergencias abre `tel:` y registra el aviso local a
+   * los contactos (mock, sin backend); llamar al contacto abre su marcador.
+   */
+  const resolveCountdown = (result: SosAuditResult) => {
+    if (countdownResolved.current) return;
+    countdownResolved.current = true;
+    recordSosAudit(result, auditScreen);
+    if (result === "cancelled") {
+      closePanic();
+      showToast(t("SOS cancelado. No se envió ningún aviso."), "ok");
+      return;
+    }
+    setCountdownDone(true);
+    setHelpView("medical");
+    if (result === "called_contact") {
+      startCall("callFamily");
+      return;
+    }
+    openNativeDialer(dialNumber);
+    recordSosContactNotice(manualContacts.length);
+    showToast(
+      manualContacts.length
+        ? t("Registramos el aviso a tus contactos de emergencia.")
+        : t("No hay contactos de emergencia para avisar."),
+      manualContacts.length ? "ok" : "err",
+    );
+  };
+  const resolveCountdownRef = useRef(resolveCountdown);
+  resolveCountdownRef.current = resolveCountdown;
+
+  // Plazo absoluto (no una cadena de timeouts): no se retrasa si el hilo se
+  // ocupa o la app pasa un instante a segundo plano.
+  useEffect(() => {
+    if (!inCountdown) return;
+    const deadline = Date.now() + SOS_COUNTDOWN_SECONDS * 1000;
+    const id = window.setInterval(() => {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setRemaining(left);
+      if (left > 0) return;
+      window.clearInterval(id);
+      resolveCountdownRef.current("called_911");
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [inCountdown]);
 
   /**
    * Confirmación deliberada (segundo paso de la doble confirmación):
@@ -607,7 +705,7 @@ export function PanicOverlay() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <IonActionSheet isOpen={panicOpen && choosingContact} header={t("¿A quién quieres llamar?")} onDidDismiss={() => setChoosingContact(false)} buttons={[
+      <IonActionSheet cssClass="sos-contact-sheet" isOpen={panicOpen && choosingContact} header={t("¿A quién quieres llamar?")} onDidDismiss={() => setChoosingContact(false)} buttons={[
         ...manualContacts.map(contact => ({ text: `${contact.name} · ${contact.label}`, icon: call, handler: () => { openNativeDialer(contact.phone); } })),
         { text: t("Cancelar"), role: "cancel" },
       ]} />
@@ -641,7 +739,7 @@ export function PanicOverlay() {
                 first?.shadowRoot?.querySelector("button")?.focus();
               }
             }}
-            className={`overlay overlay-panic sos-screen sos-modern sos-reference ${view === "protocol" ? "is-protocol" : ""} ${sosActive ? "is-hot" : ""}`}
+            className={`overlay overlay-panic sos-screen sos-modern sos-reference ${view === "protocol" ? "is-protocol" : ""} ${inCountdown ? "is-countdown" : ""} ${sosActive ? "is-hot" : ""}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -656,16 +754,16 @@ export function PanicOverlay() {
               <IonButton
                 fill="clear"
                 className="sos-top-close"
-                onClick={imOk}
+                onClick={inCountdown ? () => resolveCountdown("cancelled") : imOk}
                 aria-label={
-                  sosActive ? t("Estoy bien") : t("Cancelar activación")
+                  inCountdown ? t("Cancelar SOS") : sosActive ? t("Estoy bien") : t("Cancelar activación")
                 }
               >
                 <IonIcon icon={close} slot="start" />
                 {sosActive ? t("Cerrar") : t("Cancelar")}
               </IonButton>
             </header>
-            {view === "protocol" && (
+            {view === "protocol" && !inCountdown && (
               <div className="sos-help-switch">
                 <IonSegment
                   value={helpView}
@@ -686,7 +784,7 @@ export function PanicOverlay() {
                 </IonSegment>
               </div>
             )}
-            {view !== "protocol" && (            <div className="sos-demo-note">
+            {view !== "protocol" && !inCountdown && (            <div className="sos-demo-note">
               <IonIcon icon={informationCircleOutline} aria-hidden="true" />
               <span>
                 {t(
@@ -696,7 +794,83 @@ export function PanicOverlay() {
             </div>)}
 
             <AnimatePresence initial={false}>
-              {view !== "confirm" ? (
+              {inCountdown ? (
+                <motion.div
+                  key="countdown"
+                  className="sos-protocol sos-countdown"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className="sos-scroll-body">
+                    <section className="sos-alert-card">
+                      <header className="sos-head">
+                        <IonBadge className="sos-live on">{t("SOS EN MARCHA")}</IonBadge>
+                        <p>{t("Llamada automática al terminar")}</p>
+                      </header>
+                      <div className="sos-orb-wrap">
+                        <span className="sos-ripple r1" aria-hidden="true" />
+                        <span className="sos-ripple r2" aria-hidden="true" />
+                        <svg className="sos-count-ring" viewBox="0 0 180 180" aria-hidden="true">
+                          <circle cx="90" cy="90" r="78" className="sos-count-track" />
+                          <circle
+                            cx="90"
+                            cy="90"
+                            r="78"
+                            className="sos-count-fill"
+                            strokeDasharray={RING}
+                            strokeDashoffset={RING * (1 - remaining / SOS_COUNTDOWN_SECONDS)}
+                            transform="rotate(-90 90 90)"
+                          />
+                        </svg>
+                        <span className="sos-orb sos-countdown-orb" aria-hidden="true">
+                          <span className="sos-orb-content">
+                            <b data-testid="sos-countdown-seconds">{remaining}</b>
+                            <small>{t("segundos")}</small>
+                          </span>
+                        </span>
+                      </div>
+                      <div className="sos-copy" role="alert" aria-live="assertive" aria-atomic="true">
+                        <h1>{t("Llamaremos a emergencias en {seconds}", { seconds: `${remaining} s` })}</h1>
+                        <p>
+                          {t("Al terminar se abrirá la llamada al {number} y avisaremos a tus contactos de emergencia. Si fue un error, cancela.", { number: dialNumber })}
+                        </p>
+                      </div>
+                    </section>
+                  </div>
+                  <footer className="sos-action-dock">
+                    <div className="sos-actions">
+                      <IonButton
+                        className="bt sos-act-911"
+                        aria-label={t("Llamar a emergencias ({number})", { number: dialNumber })}
+                        onClick={() => resolveCountdown("called_911")}
+                      >
+                        <IonIcon icon={call} slot="start" />
+                        {t("Llamar a emergencias ({number})", { number: dialNumber })}
+                      </IonButton>
+                      <IonButton
+                        className="bt sos-act-fam"
+                        aria-label={t("Llamar a mi contacto")}
+                        disabled={!manualContacts.length}
+                        onClick={() => resolveCountdown("called_contact")}
+                      >
+                        <IonIcon icon={people} slot="start" />
+                        {t("Llamar a mi contacto")}
+                      </IonButton>
+                    </div>
+                    <IonButton
+                      expand="block"
+                      className="bt sos-act-ok"
+                      aria-label={t("Cancelar SOS")}
+                      onClick={() => resolveCountdown("cancelled")}
+                    >
+                      <IonIcon icon={close} slot="start" />
+                      {t("Cancelar")}
+                    </IonButton>
+                  </footer>
+                </motion.div>
+              ) : view !== "confirm" ? (
                 <motion.div
                   key="protocol"
                   className="sos-protocol"
@@ -875,7 +1049,7 @@ export function PanicOverlay() {
                     <section className="sos-network">
                       <div className="sos-section-heading">
                         <div>
-                          <h2>{t("Tu equipo médico y contactos")}</h2>
+                          <h2>{t("Tus contactos de emergencia")}</h2>
                         </div>
                         <IonIcon icon={people} aria-hidden="true" />
                       </div>

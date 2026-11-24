@@ -54,7 +54,7 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
               className="ni ni-center"
               fill="clear"
               onClick={openPanic}
-              aria-label={t("Botón de pánico")}
+              aria-label={t("Abrir SOS de emergencia")}
             >
               <span className="premium-nav-content"><span className="ni-ico">
                 <IonIcon icon={medkit} aria-hidden="true" />
