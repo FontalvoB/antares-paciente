@@ -46,7 +46,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
-import { HomePage } from "./pages/HomePage";
+import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { BodyProfilePage } from "./pages/BodyProfilePage";
@@ -123,7 +123,7 @@ function Router() {
         content = <WearablePage />;
         break;
       case "health-accessory":
-        content = HEALTH_ENABLED ? <HealthAccessoryPage /> : <HomePage />;
+        content = HEALTH_ENABLED ? <HealthAccessoryPage /> : <WellnessHome />;
         break;
       case "chat":
         content = <ChatPage />;
@@ -160,7 +160,7 @@ function Router() {
         );
         break;
       default:
-        content = <HomePage />;
+        content = <WellnessHome />;
     }
   }
 

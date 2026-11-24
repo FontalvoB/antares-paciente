@@ -235,12 +235,21 @@ async function runFlow(page, baseUrl, width) {
   await shot(page, `13-plan-listo-${width}`);
 
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await page.waitForTimeout(1500);
+  await expect(page.locator(".wh-day")).toContainText("Día 1 de 365");
+  await expect(
+    page.getByText("Protocolo de hoy", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("0/5", { exact: true })).toBeVisible();
+  await expect(page.getByText("0 de 7", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^(IMC|HbA1c|% de grasa)$/)).toHaveCount(0);
+  await page.waitForTimeout(1200);
   const afterEnter = await page.evaluate(() => ({
     text: document.body.innerText.slice(0, 400),
     nodes: document.body.querySelectorAll("*").length,
   }));
   await shot(page, `14-inicio-${width}`);
+  await page.locator(".wh-batteries").scrollIntoViewIfNeeded();
+  await shot(page, `15-cuestionarios-${width}`);
   return afterEnter;
 }
 

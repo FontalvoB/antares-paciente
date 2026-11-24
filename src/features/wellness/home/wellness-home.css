@@ -1,0 +1,315 @@
+/* =====================================================================
+   Home Agentic Wellness (KAN-142)
+   Solo tokens del design system. No introduce colores sueltos.
+   ===================================================================== */
+
+.wh-scroll {
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  background: var(--g0);
+}
+
+.wh-hero {
+  margin: 0 0 14px;
+  padding: 18px 18px 16px;
+  border-radius: 0 0 22px 22px;
+  background: linear-gradient(155deg, var(--blue) 0%, var(--teal) 100%);
+  color: var(--wh);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wh-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wh-brand {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--wh);
+}
+
+.wh-greeting {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: var(--wellness-on-dark-muted);
+}
+
+.wh-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wh-day {
+  margin: 0;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--wh);
+  line-height: 1.1;
+}
+
+.wh-day strong {
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.wh-goal {
+  --background: rgba(255, 255, 255, 0.16);
+  --color: var(--wh);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.wh-day-progress {
+  --progress-background: var(--wellness-dark-track);
+  --background: var(--wellness-dark-glass);
+  height: 8px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+
+.wh-demo-note {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--wellness-on-dark-muted);
+}
+
+.wh-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0 14px;
+  margin-bottom: 14px;
+}
+
+.wh-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+}
+
+.wh-kpi ion-icon {
+  font-size: 18px;
+  color: var(--teal);
+}
+
+.wh-kpi strong {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 17px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.wh-kpi span {
+  font-size: 10.5px;
+  color: var(--mu);
+  line-height: 1.2;
+}
+
+.wh-card {
+  margin: 0 14px 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+}
+
+.wh-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.wh-card-head h2 {
+  margin: 0;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wh-counter {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal-d);
+  background: var(--teal-l);
+  border-radius: 999px;
+  padding: 4px 9px;
+}
+
+.wh-steps {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wh-step {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1.5px solid var(--bd);
+  background: var(--wh);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wh-step:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.wh-step.is-done {
+  border-color: var(--teal);
+  background: var(--teal-l);
+  color: var(--teal-d);
+}
+
+.wh-step-ico {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--g1);
+  flex: none;
+}
+
+.wh-step-ico ion-icon {
+  font-size: 18px;
+  color: var(--teal);
+}
+
+.wh-step.is-done .wh-step-ico {
+  background: var(--wh);
+}
+
+.wh-cta {
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 700;
+}
+
+.wh-quick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0 14px 14px;
+}
+
+.wh-quick-btn {
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  border: 1px solid var(--bd);
+  background: var(--wh);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wh-quick-btn ion-icon {
+  font-size: 22px;
+  color: var(--teal);
+}
+
+.wh-quick-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.wh-body {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--mu);
+}
+
+.wh-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--g1);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.wh-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+}
+
+.wh-secondary {
+  --border-radius: 12px;
+  --border-color: var(--bd);
+  --color: var(--teal-d);
+  height: 44px;
+  font-weight: 700;
+}
+
+.wh-legal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 20px 0;
+  font-size: 11px;
+  color: var(--mu);
+  text-align: center;
+}
+
+.wh-legal ion-icon {
+  font-size: 14px;
+  color: var(--teal);
+  flex: none;
+}
+
+@media (max-width: 359px) {
+  .wh-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wh-day strong {
+    font-size: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wh-progress > i {
+    transition: none;
+  }
+}

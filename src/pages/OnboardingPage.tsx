@@ -18,6 +18,7 @@ import {
   evaluateGate,
 } from "../features/wellness/domain";
 import { wellnessOnboardingService } from "../features/wellness/services/wellness-onboarding-service";
+import { localISODate, savePlanSnapshot } from "../features/wellness/state/wellness-home-store";
 import { emergencyContactsError } from "../utils/emergencyContacts";
 import {
   EmailStep,
@@ -254,6 +255,19 @@ export function OnboardingPage() {
       setDraft(withTerms);
       if (result.status.ok && result.plan) {
         setPlan(result.plan);
+        // KAN-142: el Home necesita día 1, meta y macros al entrar.
+        savePlanSnapshot({
+          name: withTerms.name.trim(),
+          goal: result.plan.goal,
+          startDate: localISODate(new Date()),
+          kcal: result.plan.kcal,
+          proteinG: result.plan.proteinG,
+          carbsG: result.plan.carbsG,
+          fatG: result.plan.fatG,
+          waterMl: result.plan.waterMl,
+          totalDays: result.plan.totalDays,
+          createdAt: new Date().toISOString(),
+        });
         wellnessOnboardingService.clearDraft();
         setStage("ready");
       }
