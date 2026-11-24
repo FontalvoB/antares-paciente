@@ -1,703 +1,412 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
-import {
-  IonButton,
-  IonDatetime,
-  IonIcon,
-  IonInput,
-  IonModal,
-  IonProgressBar,
-  IonSelect,
-  IonSelectOption,
-} from "@ionic/react";
-import {
-  calendarOutline,
-  callOutline,
-  checkmark,
-  checkmarkCircle,
-  eye,
-  eyeOff,
-  lockClosedOutline,
-  personOutline,
-  shieldCheckmarkOutline,
-  walletOutline,
-} from "ionicons/icons";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { IonIcon } from "@ionic/react";
+import { shieldCheckmarkOutline } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../i18n/I18nContext";
-import { localizedError } from "../utils/localizedError";
-import { Mascot } from "../components/Mascot";
-import { formatDateForDisplay } from "../utils/dates";
-import {
-  fetchInsurers,
-  fetchMyPatientProfile,
-  toUserProfile,
-  updateMyPatientProfile,
-} from "../utils/patientProfileApi";
-import { setFirstPassword } from "../utils/authApi";
-import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
-import { isLegalConsentError, legalConsentMessage, requireLegalConsent, verifyLegalConsent } from "../utils/legalConsents";
-import { contactFromProfile, emergencyContactsError } from "../utils/emergencyContacts";
 import type { UserProfile } from "../types";
+import type {
+  GateResult,
+  ObjectiveDraft,
+  OnboardingStage,
+  PlanPreview,
+  WellnessEmergencyContact,
+} from "../features/wellness/domain";
+import {
+  EMPTY_EMERGENCY_CONTACT,
+  EMPTY_OBJECTIVE_DRAFT,
+  WELLNESS_TERMS_VERSION,
+  evaluateGate,
+} from "../features/wellness/domain";
+import { wellnessOnboardingService } from "../features/wellness/services/wellness-onboarding-service";
+import { emergencyContactsError } from "../utils/emergencyContacts";
+import {
+  EmailStep,
+  EmergencyStep,
+  PasswordStep,
+  PlanReady,
+  TermsStep,
+  WellnessStepper,
+} from "../features/wellness/components/onboarding";
+import { ObjectiveWizard } from "../features/wellness/components/objective";
+import "../features/wellness/wellness.css";
 
-export function OnboardingPage() {
-  const { finishOnboarding, showToast, backToLogin } = useApp();
-  const i18n = useI18n();
-  const { t, lang } = i18n;
-  const [step, setStep] = useState(1);
+/** Pasos visibles del onboarding de 5 pasos (el objetivo es el quinto). */
+const STEP_LABELS = [
+  "Correo",
+  "Emergencia",
+  "Términos",
+  "Contraseña",
+  "Objetivo",
+] as const;
 
-  const STEPS = [
-    {
-      title: t("Tus datos"),
-      sub: t("Así te identifica el equipo médico"),
-      name: t("Identidad"),
-    },
-    {
-      title: t("Contactos de emergencia"),
-      sub: t("Tu contacto principal y una persona de respaldo"),
-      name: t("Familia"),
-    },
-    {
-      title: t("Consentimiento"),
-      sub: t("Lee y acepta tu autorización"),
-      name: t("Consentimiento"),
-    },
-    {
-      title: t("Crea tu contraseña"),
-      sub: t("Protege tu expediente médico"),
-      name: t("Seguridad"),
-    },
-  ];
-  const [done, setDone] = useState(false);
-  const [programAccepted, setProgramAccepted] = useState(false);
-  const [checkingConsent, setCheckingConsent] = useState(false);
-  const [dateOpen, setDateOpen] = useState(false);
-  const [pwd, setPwd] = useState("");
-  const [pwd2, setPwd2] = useState("");
-  const [showPwd, setShowPwd] = useState(false);
-  /** Guardando el perfil en el backend (paso final). */
-  const [saving, setSaving] = useState(false);
-  /** Catálogo de aseguradoras administrado por el ERP (GET /api/v1/insurers). */
-  const [insurers, setInsurers] = useState<{ id: string; name: string }[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [form, setForm] = useState<UserProfile>({
-    nombre: "",
+const STAGE_INDEX: Record<OnboardingStage, number> = {
+  email: 0,
+  emergency: 1,
+  terms: 2,
+  password: 3,
+  objective: 4,
+  ready: 4,
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function baseProfile(draft: ObjectiveDraft, email: string): UserProfile {
+  const fallbackName = email.split("@")[0] || "Paciente";
+  return {
+    nombre: draft.name.trim() || fallbackName,
     cedula: "",
     dob: "",
     seguro: "",
     poliza: "",
     grupo: "",
-    email: "",
+    email,
     celular: "",
     fam1Nombre: "",
     fam1Parentesco: "",
     fam1Cel: "",
     fam1Email: "",
-    fam2Nombre: "", fam2Parentesco: "", fam2Cel: "", fam2Email: "",
-  });
-  const TOTAL_STEPS = STEPS.length;
+    fam2Nombre: "",
+    fam2Parentesco: "",
+    fam2Cel: "",
+    fam2Email: "",
+  };
+}
 
-  const set = (k: keyof UserProfile, v: string) =>
-    setForm((f) => ({ ...f, [k]: v }));
+export function OnboardingPage() {
+  const { finishWellnessOnboarding, backToLogin, showToast } = useApp();
+  const { t } = useI18n();
 
-  // Prefill del perfil real (si existe) y catálogo de aseguradoras del ERP.
-  // El 404 es el estado esperado en el primer acceso (aún no hay perfil editable).
+  const [stage, setStage] = useState<OnboardingStage>("email");
+  const [initialDraft] = useState<ObjectiveDraft>(
+    () => wellnessOnboardingService.loadDraft() ?? EMPTY_OBJECTIVE_DRAFT,
+  );
+  const [email, setEmail] = useState(initialDraft.email);
+  const [existingAccount, setExistingAccount] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [primaryContact, setPrimaryContact] =
+    useState<WellnessEmergencyContact>(EMPTY_EMERGENCY_CONTACT);
+  const [secondaryContact, setSecondaryContact] =
+    useState<WellnessEmergencyContact>(EMPTY_EMERGENCY_CONTACT);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [draft, setDraft] = useState<ObjectiveDraft>(initialDraft);
+  const [gate, setGate] = useState<GateResult | null>(null);
+  const [plan, setPlan] = useState<PlanPreview | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const dto = await fetchMyPatientProfile();
-        if (!cancelled) setForm((f) => ({ ...f, ...toUserProfile(dto) }));
-      } catch {
-        /* primer acceso: el backend aún no expone perfil (ERP creó al paciente) */
-      }
-    })();
-    void (async () => {
-      try {
-        const list = await fetchInsurers();
-        if (!cancelled) setInsurers(list);
-      } catch {
-        /* Sin catálogo: sigue disponible la opción Sin seguro, sin inventar aseguradoras. */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
+    // Cada paso arranca arriba: al cambiar de pantalla el scroll anterior se
+    // quedaba a mitad y el título del paso nuevo aparecía cortado.
     scrollRef.current?.scrollTo({ top: 0 });
-  }, [step, done]);
+  }, [stage]);
 
-  /**
-   * Persiste el onboarding: contraseña inicial (si la definió) + perfil del
-   * paciente vía PUT /me/patient-profile. Si el backend rechaza, el usuario
-   * NO pierde lo escrito (el form permanece) y puede reintentar (spec FASE 2).
-   */
-  const persistOnboarding = async () => {
-    if (saving) return;
-    setSaving(true);
+  const stepIndex = STAGE_INDEX[stage];
+
+  const title = useMemo(() => {
+    if (stage === "ready") return t("Tu plan está listo");
+    if (stage === "objective") return t("Cuéntanos tu objetivo");
+    return t(STEP_LABELS[stepIndex]);
+  }, [stage, stepIndex, t]);
+
+  const subtitle = useMemo(() => {
+    switch (stage) {
+      case "email":
+        return t("Entra con tu correo. Sin cédula y sin trámites.");
+      case "emergency":
+        return t("Una persona de confianza para avisarte si usas el SOS.");
+      case "terms":
+        return t("Lee y acepta para usar Agentic Wellness IA.");
+      case "password":
+        return t("Protege tu cuenta con una contraseña segura.");
+      case "objective":
+        return t("8 pasos cortos para armar tu plan de 365 días.");
+      default:
+        return t("Revisa tu punto de partida y empieza el día 1.");
+    }
+  }, [stage, t]);
+
+  const submitEmail = async () => {
+    setError(null);
+    const normalized = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(normalized)) {
+      setError(t("Ingresa un correo electrónico válido."));
+      return;
+    }
+    setBusy(true);
     try {
-      await verifyLegalConsent("program", lang);
-      if (pwd) await setFirstPassword(pwd);
-      const insurerId = form.seguro || null;
-      await updateMyPatientProfile({
-        dateOfBirth: form.dob || null,
-        email: form.email,
-        phone: form.celular,
-        emergencyName: form.fam1Nombre,
-        emergencyRelationship: form.fam1Parentesco,
-        emergencyPhone: form.fam1Cel,
-        emergencyEmail: form.fam1Email,
-        secondaryEmergencyContact: contactFromProfile(form, 2),
-        insurerId,
-        memberId: form.poliza,
-      });
-      finishOnboarding(form);
-    } catch (err) {
-      if (isLegalConsentError(err)) { setProgramAccepted(false); setDone(false); setStep(3); }
-      showToast(
-        localizedError(err, i18n, "No se pudo guardar tu perfil"),
-        "err",
+      if (existingAccount) {
+        await wellnessOnboardingService.signIn(normalized, password);
+        setDraft((prev) => ({ ...prev, email: normalized }));
+        setStage("emergency");
+        return;
+      }
+      const lookup = await wellnessOnboardingService.checkEmail(normalized);
+      if (lookup.exists) {
+        setExistingAccount(true);
+        setError(
+          t("Ya existe una cuenta con este correo. Ingresa tu contraseña."),
+        );
+        return;
+      }
+      setDraft((prev) => ({ ...prev, email: normalized }));
+      setStage("emergency");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : t("No pudimos comprobar tu correo."),
       );
     } finally {
-      setSaving(false);
+      setBusy(false);
     }
   };
 
-  const pwdOk =
-    pwd.length >= 8 &&
-    /[A-Z]/.test(pwd) &&
-    /\d/.test(pwd) &&
-    /[^A-Za-z0-9]/.test(pwd);
-  const strength = useMemo(() => {
-    let s = 0;
-    if (pwd.length >= 8) s += 25;
-    if (/[A-Z]/.test(pwd)) s += 25;
-    if (/\d/.test(pwd)) s += 25;
-    if (/[^A-Za-z0-9]/.test(pwd)) s += 25;
-    return s;
-  }, [pwd]);
-  const strengthLbl =
-    strength < 50 ? "Débil" : strength < 100 ? "Aceptable" : "Fuerte";
-  const strengthColor =
-    strength < 50
-      ? "var(--red)"
-      : strength < 100
-        ? "var(--org)"
-        : "var(--teal)";
-
-  const next = async () => {
-    if (step === 1) {
-      setStep(2);
+  const continueFromEmergency = () => {
+    const validation = emergencyContactsError(primaryContact, secondaryContact);
+    if (validation) {
+      setError(t(validation));
       return;
     }
-    if (step === 2) {
-      const error = emergencyContactsError(contactFromProfile(form, 1), contactFromProfile(form, 2));
-      if (error) {
-        showToast(t(error), "err");
+    setError(null);
+    setStage("terms");
+  };
+
+  const continueFromTerms = () => {
+    if (!termsAccepted) {
+      setError(
+        t("Acepta los términos y el aviso de bienestar para continuar."),
+      );
+      return;
+    }
+    setError(null);
+    // El aviso del paso 3 y el del wizard (paso 7) son el mismo documento:
+    // se registra una sola aceptación versionada para no pedirla dos veces.
+    const acceptedAt = new Date().toISOString();
+    setDraft((prev) => {
+      const next = {
+        ...prev,
+        terms: { version: WELLNESS_TERMS_VERSION, acceptedAt },
+      };
+      wellnessOnboardingService.saveDraft(next);
+      return next;
+    });
+    setStage(existingAccount ? "objective" : "password");
+  };
+
+  const submitPassword = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      await wellnessOnboardingService.createAccount(
+        email.trim().toLowerCase(),
+        password,
+      );
+      setStage("objective");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : t("No pudimos crear tu cuenta."),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const changeDraft = (patch: Partial<ObjectiveDraft>) => {
+    setDraft((prev) => {
+      const next = { ...prev, ...patch, email: prev.email || email };
+      wellnessOnboardingService.saveDraft(next);
+      return next;
+    });
+    if (gate) setGate(null);
+  };
+
+  const generatePlan = async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      // Términos del paso 3 + términos del wizard (paso 7) son el mismo aviso.
+      const withTerms: ObjectiveDraft = {
+        ...draft,
+        email: draft.email || email,
+        terms:
+          draft.terms ??
+          (termsAccepted
+            ? {
+                version: WELLNESS_TERMS_VERSION,
+                acceptedAt: new Date().toISOString(),
+              }
+            : null),
+      };
+      const localGate = evaluateGate(withTerms);
+      if (!localGate.ok) {
+        setGate(localGate);
+        setDraft(withTerms);
+        showToast(t("Revisa lo que falta para generar tu plan."), "warn");
         return;
       }
-      setStep(3);
-      return;
-    }
-    if (step === 3) {
-      if (checkingConsent) return;
-      setCheckingConsent(true);
-      try {
-        await requireLegalConsent("program", lang);
-        setProgramAccepted(true); setStep(4);
-      } catch (error) { setProgramAccepted(false); showToast(t(legalConsentMessage(error)), "warn"); }
-      finally { setCheckingConsent(false); }
-      return;
-    }
-    if (step === 4) {
-      if (!pwdOk || pwd !== pwd2) {
-        showToast(t("La contraseña no cumple los requisitos"), "err");
-        return;
+      const result = await wellnessOnboardingService.generatePlan(withTerms);
+      setGate(result.status);
+      setDraft(withTerms);
+      if (result.status.ok && result.plan) {
+        setPlan(result.plan);
+        wellnessOnboardingService.clearDraft();
+        setStage("ready");
       }
-      setDone(true);
+    } catch {
+      showToast(t("No pudimos generar tu plan. Intenta de nuevo."), "err");
+    } finally {
+      setGenerating(false);
     }
   };
 
-  const back = () => {
-    if (step === 1) {
-      backToLogin();
-      return;
-    }
-    setStep((s) => s - 1);
+  const enterApp = () => {
+    finishWellnessOnboarding({
+      ...baseProfile(draft, email),
+      fam1Nombre: primaryContact.name,
+      fam1Parentesco: primaryContact.relationship,
+      fam1Cel: primaryContact.phone,
+      fam1Email: primaryContact.email,
+      fam2Nombre: secondaryContact.name,
+      fam2Parentesco: secondaryContact.relationship,
+      fam2Cel: secondaryContact.phone,
+      fam2Email: secondaryContact.email,
+    });
   };
 
-  const meta = STEPS[step - 1];
-  const cta = done
-    ? t("Entrar")
-    : step === 4
-      ? t("Crear cuenta")
-      : t("Continuar");
+  const goBack = () => {
+    setError(null);
+    switch (stage) {
+      case "email":
+        backToLogin();
+        return;
+      case "emergency":
+        setStage("email");
+        return;
+      case "terms":
+        setStage("emergency");
+        return;
+      case "password":
+        setStage("terms");
+        return;
+      case "objective":
+        setStage(existingAccount ? "terms" : "password");
+        return;
+      default:
+        return;
+    }
+  };
 
   return (
     <div className="screen onb-page" style={{ background: "var(--g0)" }}>
       <header className="onb-head">
         <div className="onb-head-top">
           <div className="onb-head-brand">Copp Adresd</div>
-          {!done && (
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--mu)" }}>
-              {step} / {TOTAL_STEPS}
-            </span>
-          )}
         </div>
-        {!done && (
-          <div
-            className="onb-stepper"
-            aria-label={t("Paso {step} de {total}", { step: String(step), total: String(TOTAL_STEPS) })}
-          >
-            {STEPS.map((s, i) => {
-              const n = i + 1;
-              return (
-                <span key={s.name} style={{ display: "contents" }}>
-                  {i > 0 && (
-                    <span
-                      className={`onb-stepper-line ${n <= step ? "done" : ""}`}
-                    />
-                  )}
-                  <span
-                    className={`onb-stepper-dot ${n < step ? "done" : n === step ? "now" : ""}`}
-                  >
-                    {n < step ? <IonIcon icon={checkmark} /> : n}
-                  </span>
-                </span>
-              );
-            })}
-          </div>
+        {stage !== "ready" && (
+          <WellnessStepper current={stepIndex + 1} total={STEP_LABELS.length} />
         )}
-        <h1 className="onb-head-title">
-          {done ? t("Cuenta lista") : meta.title}
-        </h1>
-        <p className="onb-head-sub">
-          {done
-            ? t("Bienvenida al programa, {name}.", {
-                name: form.nombre.split(" ")[0],
-              })
-            : meta.sub}
-        </p>
+        <h1 className="onb-head-title">{title}</h1>
+        <p className="onb-head-sub">{subtitle}</p>
       </header>
 
       <div className="screen-scroll no-nav onb-body" ref={scrollRef}>
-        <div className="onb-stack" key={done ? "done" : `${step}`}>
-          {done ? (
-            <div className="onb-done">
-              <Mascot pose="success" className="mascot-onb" />
-              <div className="onb-done-badge" aria-hidden="true">
-                <IonIcon icon={checkmarkCircle} />
-              </div>
-              <div
-                className="display"
-                style={{ fontSize: 22, fontWeight: 700 }}
-              >
-                {t("Registro completado")}
-              </div>
-              <p
-                style={{
-                  fontSize: 14,
-                  color: "var(--mu)",
-                  lineHeight: 1.55,
-                  margin: "8px 16px 0",
-                }}
-              >
-                {t("Tu perfil COPP-ADRESD está listo. Continúa con tus evaluaciones iniciales.")}
-              </p>
-              <div className="onb-done-list">
-                {[
-                  t("Identidad confirmada"),
-                  t("Emergencia: {name}", { name: form.fam1Nombre }),
-                  ...(programAccepted ? [t("Autorización del programa confirmada")] : []),
-                  t("Contraseña segura"),
-                ].map((item) => (
-                  <div key={item}>
-                    <IonIcon icon={checkmarkCircle} />
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <IonButton
-                expand="block"
-                className="bt bt-primary"
-                disabled={saving}
-                onClick={() => void persistOnboarding()}
-              >
-                {saving ? t("Guardando…") : t("Entrar a Copp Adresd")}
-              </IonButton>
-            </div>
-          ) : (
-            <>
-              {step === 1 && (
-                <>
-                  <section className="onb-card tone-teal">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-teal">
-                        <IonIcon icon={personOutline} />
-                      </span>
-                      <div>
-                        <strong>{t("Datos personales")}</strong>
-                        <span>{t("Como aparecen en tu documento")}</span>
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label htmlFor="onb-nombre">{t("Nombre completo")}</label>
-                      <IonInput
-                        id="onb-nombre"
-                        className="fld"
-                        value={form.nombre}
-                        autocomplete="name"
-                        enterkeyhint="next"
-                        onIonInput={(e) => set("nombre", e.detail.value ?? "")}
-                      />
-                    </div>
-                    <div className="onb-grid-2">
-                      <div className="field">
-                        <label htmlFor="onb-cedula">{t("Cédula / ID")}</label>
-                        <IonInput
-                          id="onb-cedula"
-                          className="fld"
-                          value={form.cedula}
-                          inputmode="numeric"
-                          enterkeyhint="next"
-                          onIonInput={(e) =>
-                            set("cedula", e.detail.value ?? "")
-                          }
-                        />
-                      </div>
-                      <div className="field">
-                        <label htmlFor="onb-dob">
-                          {t("Fecha de nacimiento")}
-                        </label>
-                        <IonInput
-                          id="onb-dob"
-                          className="fld"
-                          value={formatDateForDisplay(form.dob)}
-                          readonly
-                          onClick={() => setDateOpen(true)}
-                        />
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="onb-card tone-ice">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-ice">
-                        <IonIcon icon={walletOutline} />
-                      </span>
-                      <div>
-                        <strong>{t("Seguro médico")}</strong>
-                        <span>{t("Para copagos y autorizaciones")}</span>
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label>{t("Aseguradora")}</label>
-                      <IonSelect
-                        className="fld"
-                        interface="popover"
-                        value={form.seguro}
-                        onIonChange={(e) =>
-                          setForm(f => ({ ...f, seguro: String(e.detail.value ?? ""), ...(e.detail.value ? {} : { poliza: "", grupo: "" }) }))
-                        }
-                      >
-                        <IonSelectOption value="">{t("Sin seguro médico")}</IonSelectOption>
-                        {form.seguro && !insurers.some(insurer => insurer.id === form.seguro) && <IonSelectOption value={form.seguro}>{t("Seguro registrado")}</IonSelectOption>}
-                        {insurers.map(insurer => <IonSelectOption key={insurer.id} value={insurer.id}>{insurer.name}</IonSelectOption>)}
-                      </IonSelect>
-                    </div>
-                    <div className="onb-grid-2">
-                      <div className="field" style={{ marginBottom: 0 }}>
-                        <label htmlFor="onb-poliza">{t("N.º de póliza")}</label>
-                        <IonInput
-                          id="onb-poliza"
-                          disabled={!form.seguro}
-                          className="fld"
-                          value={form.poliza}
-                          enterkeyhint="next"
-                          onIonInput={(e) =>
-                            set("poliza", e.detail.value ?? "")
-                          }
-                        />
-                      </div>
-                      <div className="field" style={{ marginBottom: 0 }}>
-                        <label htmlFor="onb-grupo">{t("Grupo")}</label>
-                        <IonInput
-                          id="onb-grupo"
-                          disabled={!form.seguro}
-                          className="fld"
-                          value={form.grupo}
-                          enterkeyhint="next"
-                          onIonInput={(e) => set("grupo", e.detail.value ?? "")}
-                        />
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="onb-card tone-teal">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-teal">
-                        <IonIcon icon={callOutline} />
-                      </span>
-                      <div>
-                        <strong>{t("Cómo te contactamos")}</strong>
-                        <span>{t("Correo y celular de la cuenta")}</span>
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label htmlFor="onb-email">
-                        {t("Correo electrónico")}
-                      </label>
-                      <IonInput
-                        id="onb-email"
-                        className="fld"
-                        type="email"
-                        inputmode="email"
-                        autocomplete="email"
-                        enterkeyhint="next"
-                        value={form.email}
-                        onIonInput={(e) => set("email", e.detail.value ?? "")}
-                      />
-                    </div>
-                    <div className="field" style={{ marginBottom: 0 }}>
-                      <label htmlFor="onb-cel">{t("Celular / WhatsApp")}</label>
-                      <IonInput
-                        id="onb-cel"
-                        className="fld"
-                        type="tel"
-                        inputmode="tel"
-                        autocomplete="tel"
-                        enterkeyhint="done"
-                        value={form.celular}
-                        onIonInput={(e) => set("celular", e.detail.value ?? "")}
-                      />
-                    </div>
-                  </section>
-
-                  <div className="onb-trust onb-trust-safe">
-                    <IonIcon icon={shieldCheckmarkOutline} />
-                    <span>
-                      {t(
-                        "Puedes revisar tus autorizaciones desde tu perfil.",
-                      )}
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {step === 2 && (
-                <>
-                  <EmergencyContactsForm prefix="onb-fam" primary={contactFromProfile(form, 1)} secondary={contactFromProfile(form, 2)}
-                    onPrimaryChange={contact => setForm(f => ({ ...f, fam1Nombre: contact.name, fam1Parentesco: contact.relationship, fam1Cel: contact.phone, fam1Email: contact.email }))}
-                    onSecondaryChange={contact => setForm(f => ({ ...f, fam2Nombre: contact.name, fam2Parentesco: contact.relationship, fam2Cel: contact.phone, fam2Email: contact.email }))} disabled={saving} />
-
-                  <section
-                    className="onb-card"
-                    style={{
-                      background: "linear-gradient(145deg,#102a50,#173c73)",
-                      color: "#fff",
-                      border: "none",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: 1.2,
-                        textTransform: "uppercase",
-                        color: "var(--ice)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      {t("Vista previa SOS")}
-                    </div>
-                    <div
-                      style={{ fontSize: 14, lineHeight: 1.5, opacity: 0.92 }}
-                    >
-                      {t(
-                        "“{name} ({relation}) recibirá una alerta en {cell} si activas pánico.”",
-                        {
-                          name: form.fam1Nombre || t("Tu familiar"),
-                          relation: form.fam1Parentesco ? t(form.fam1Parentesco) : t("Sin especificar"),
-                          cell: form.fam1Cel || t("su celular"),
-                        },
-                      )}
-                    </div>
-                  </section>
-                </>
-              )}
-
-              {step === 3 && <section className="onb-card tone-teal">
-                <h2>{t("Consentimiento informado")}</h2>
-                <p>{t("Consulta el documento aprobado antes de autorizar tu participación en el programa.")}</p>
-                <IonButton expand="block" className="bt bt-primary" disabled={checkingConsent} onClick={() => void next()}>
-                  {t(checkingConsent ? "Comprobando autorización…" : "Revisar autorización del programa")}
-                </IonButton>
-              </section>}
-
-              {step === 4 && (
-                <>
-                  <section className="onb-card tone-org">
-                    <div className="onb-card-head">
-                      <span className="onb-card-ico tone-org">
-                        <IonIcon icon={lockClosedOutline} />
-                      </span>
-                      <div>
-                        <strong>{t("Contraseña de la cuenta")}</strong>
-                        <span>
-                          {t("Úsala para entrar desde cualquier dispositivo")}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="field onb-pwd">
-                      <label htmlFor="onb-pwd">{t("Nueva contraseña")}</label>
-                      <IonInput
-                        id="onb-pwd"
-                        className="fld"
-                        type={showPwd ? "text" : "password"}
-                        value={pwd}
-                        autocomplete="new-password"
-                        enterkeyhint="next"
-                        style={{ "--padding-end": "48px" } as CSSProperties}
-                        onIonInput={(e) => setPwd(e.detail.value ?? "")}
-                      />
-                      <IonButton
-                        type="button"
-                        fill="clear"
-                        className="fld-eye"
-                        aria-label={
-                          showPwd
-                            ? t("Ocultar contraseña")
-                            : t("Mostrar contraseña")
-                        }
-                        onClick={() => setShowPwd((v) => !v)}
-                      >
-                        <IonIcon icon={showPwd ? eyeOff : eye} />
-                      </IonButton>
-                      <div className="onb-strength">
-                        <span>{t("Seguridad")}</span>
-                        <span style={{ color: strengthColor }}>
-                          {pwd ? t(strengthLbl) : "—"}
-                        </span>
-                      </div>
-                      <IonProgressBar
-                        className="pb"
-                        style={
-                          {
-                            marginTop: 6,
-                            "--progress-background": strengthColor,
-                          } as CSSProperties
-                        }
-                        value={strength / 100}
-                      />
-                    </div>
-                    <div className="field" style={{ marginBottom: 0 }}>
-                      <label htmlFor="onb-pwd2">
-                        {t("Confirmar contraseña")}
-                      </label>
-                      <IonInput
-                        id="onb-pwd2"
-                        className="fld"
-                        type={showPwd ? "text" : "password"}
-                        value={pwd2}
-                        autocomplete="new-password"
-                        enterkeyhint="done"
-                        onIonInput={(e) => setPwd2(e.detail.value ?? "")}
-                      />
-                      {pwd2.length > 0 && (
-                        <div
-                          style={{
-                            fontSize: 12,
-                            marginTop: 6,
-                            color:
-                              pwd === pwd2 ? "var(--teal-d)" : "var(--red)",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {pwd === pwd2
-                            ? t("Las contraseñas coinciden")
-                            : t("Las contraseñas no coinciden")}
-                        </div>
-                      )}
-                    </div>
-                  </section>
-
-                  <section className="onb-card tone-teal">
-                    <div className="onb-req">
-                      {[
-                        [pwd.length >= 8, t("Mínimo 8 caracteres")],
-                        [/[A-Z]/.test(pwd), t("Una letra mayúscula")],
-                        [/\d/.test(pwd), t("Un número")],
-                        [/[^A-Za-z0-9]/.test(pwd), t("Un carácter especial")],
-                      ].map(([ok, label]) => (
-                        <div
-                          key={String(label)}
-                          className={`onb-req-item ${ok ? "on" : ""}`}
-                        >
-                          <span className="onb-req-dot">{ok ? "✓" : ""}</span>
-                          {label}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                </>
-              )}
-            </>
+        <div className="onb-stack" key={stage}>
+          {stage === "email" && (
+            <EmailStep
+              email={email}
+              onEmailChange={setEmail}
+              existingAccount={existingAccount}
+              password={password}
+              onPasswordChange={setPassword}
+              onSubmit={() => void submitEmail()}
+              onBackToLogin={backToLogin}
+              busy={busy}
+              error={error}
+            />
           )}
-        </div>
-      </div>
 
-      {!done && (
-        <div className="onb-foot">
-          <div className="onb-foot-row">
-            <IonButton expand="block" className="bt bt-ghost" onClick={back}>
-              {step === 1 ? t("Cancelar") : t("Volver")}
-            </IonButton>
-            <IonButton expand="block" className="bt bt-primary" disabled={checkingConsent} onClick={() => void next()}>
-              {cta}
-            </IonButton>
+          {stage === "emergency" && (
+            <EmergencyStep
+              primary={primaryContact}
+              secondary={secondaryContact}
+              onPrimaryChange={setPrimaryContact}
+              onSecondaryChange={setSecondaryContact}
+              onContinue={continueFromEmergency}
+              onBack={goBack}
+              disabled={busy}
+            />
+          )}
+
+          {stage === "terms" && (
+            <TermsStep
+              accepted={termsAccepted}
+              onAcceptedChange={(value) => {
+                setTermsAccepted(value);
+                setError(null);
+              }}
+              onContinue={continueFromTerms}
+              onBack={goBack}
+              disabled={busy}
+            />
+          )}
+
+          {stage === "password" && (
+            <PasswordStep
+              password={password}
+              confirm={confirmPassword}
+              onPasswordChange={setPassword}
+              onConfirmChange={setConfirmPassword}
+              onSubmit={() => void submitPassword()}
+              onBack={goBack}
+              busy={busy}
+              error={error}
+            />
+          )}
+
+          {stage === "objective" && (
+            <ObjectiveWizard
+              draft={draft}
+              onChange={changeDraft}
+              gate={gate}
+              generating={generating}
+              onGenerate={() => void generatePlan()}
+              onExit={goBack}
+            />
+          )}
+
+          {stage === "ready" && plan && (
+            <PlanReady
+              plan={plan}
+              firstName={draft.name.trim().split(/\s+/)[0] || ""}
+              onEnter={enterApp}
+            />
+          )}
+
+          {error && stage !== "email" && stage !== "password" && (
+            <p
+              role="alert"
+              className="wl-note wl-note-danger"
+              style={{ marginTop: 12 }}
+            >
+              {error}
+            </p>
+          )}
+
+          <div className="wl-note wl-note-info" style={{ marginTop: 16 }}>
+            <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
+            <span>
+              {t(
+                "Información general de bienestar. No es consejo médico. En una emergencia llama al 911.",
+              )}
+            </span>
           </div>
         </div>
-      )}
-
-      <IonModal
-        isOpen={dateOpen}
-        onDidDismiss={() => setDateOpen(false)}
-        className="date-modal"
-      >
-        <div
-          style={{
-            padding: "12px 16px 0",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontWeight: 700,
-          }}
-        >
-          <IonIcon icon={calendarOutline} />
-          {t("Fecha de nacimiento")}
-        </div>
-        <IonDatetime
-          presentation="date"
-          locale={lang === "en" ? "en-US" : "es-ES"}
-          value={form.dob}
-          onIonChange={(e) => set("dob", String(e.detail.value).split("T")[0])}
-        />
-        <div style={{ padding: "0 16px 16px" }}>
-          <IonButton
-            expand="block"
-            className="bt bt-primary"
-            onClick={() => setDateOpen(false)}
-          >
-            {t("Listo")}
-          </IonButton>
-        </div>
-      </IonModal>
+      </div>
     </div>
   );
 }

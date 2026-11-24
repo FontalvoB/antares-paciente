@@ -137,6 +137,11 @@ interface AppState {
   backToLogin: () => void;
   finishOnboarding: (user: UserProfile) => void;
   /**
+   * Cierra el onboarding de Agentic Wellness (KAN-136): guarda el perfil y
+   * entra directo al Home nuevo, sin la bateria de tests del programa viejo.
+   */
+  finishWellnessOnboarding: (user: UserProfile) => void;
+  /**
    * Re-hidrata el user del contexto desde `/me/patient-profile`
    * (best-effort): lo usa el editor de contacto de emergencia tras guardar.
    */
@@ -1239,6 +1244,11 @@ export function AppProvider({
         setVitaWelcomePending(true);
         setUser(u);
         setFlow("tests");
+      },
+      finishWellnessOnboarding: (u) => {
+        setUser(u);
+        setFlow("app");
+        setScreen("home");
       },
       refreshPatientProfile: () => hydratePatientProfile(() => true),
       finishTests: () => setFlow("app"),

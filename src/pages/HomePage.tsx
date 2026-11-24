@@ -112,7 +112,7 @@ export function HomePage() {
   // datos" en modo real; en demo se conservan las cifras de demostración.
   const { today: deviceToday } = useWearable();
   const intake = useMemo(() => deriveIntakeTotals(snapshot), [snapshot]);
-  const stepSeries = metricsHistory?.metrics.find(
+  const stepSeries = metricsHistory?.metrics?.find(
     (m) => m.code.toLowerCase() === "step_count",
   );
   const persistedSteps = stepSeries?.points.at(-1)?.value ?? null;
