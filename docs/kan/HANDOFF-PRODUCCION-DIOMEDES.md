@@ -1,6 +1,20 @@
 # Agentic Wellness IA — handoff de producción para Diomedes
 
-**Corte inicial:** 24/11/2026, hora de Bogotá (UTC−05:00). **Base revisada:** `origin/dev` en `d045955`, rama de documentación `docs/handoff-produccion-diomedes`. Los PR #28–#33 están integrados. La generación en segundo plano de KAN-136/142 sigue **EN VUELO** en `feat/KAN-136-142-generacion` al corte del código. Este handoff propone el contrato que Diomedes debe publicar en KAN-130. Los criterios de Jira provienen del encargo y del handoff, sin consulta directa a Jira.
+**Corte final del carril móvil:** 24/11/2026, hora de Bogotá (UTC−05:00). **Base revisada:** `origin/dev` en `e472af7`, incluida la primera versión de este handoff ([PR #38](https://github.com/FontalvoB/antares-paciente/pull/38)). La generación en segundo plano ya está mergeada en `62889ff` ([PR #37](https://github.com/FontalvoB/antares-paciente/pull/37)). El recorrido móvil usa un generador local y queda listo para cierre móvil en Jira cuando el run TestFlight de ese SHA esté verde. Diomedes debe publicar e integrar el contrato real en KAN-130.
+
+| Merge | Commit en `dev` | PR |
+| --- | --- | --- |
+| KAN-136 onboarding | `d696242` | #28 |
+| KAN-142 Home | `7191040` | #29 |
+| KAN-143 protocolo y cofre | `b1f43de` | #30 |
+| KAN-139 ejercicio | `b1bcdd8` | #31 |
+| KAN-144 cambiar objetivo | `cc441ec` | #32 |
+| KAN-145 dieta | `d045955` | #33 |
+| KAN-141 cierre del día | `eca5ec4` | #34 |
+| KAN-137 SOS global | `f591ce3` | #35 |
+| KAN-146 navegación y Perfil | `d055936` | #36 |
+| KAN-136/142 generación en segundo plano | `62889ff` | #37 |
+| Documentación inicial | `e472af7` | #38 |
 
 ## Producto y recorrido oficial
 
@@ -13,158 +27,84 @@ Agentic Wellness IA guía a la persona durante 365 días según su objetivo (baj
 | 3. Ingreso | Abre el enlace y retoma el paso de incorporación que corresponda. | Canjea la invitación y vincula identidad, persona y membresía. | Entrada manual por login/onboarding. El acceso por correo dentro de Wellness es mock. |
 | 4. Términos y contactos | Acepta términos y registra contacto principal, familiar y de emergencia. | Registra aceptación versionada y fecha de auditoría, y guarda contactos según roles acordados. | La app captura emergencia principal y respaldo en el paso anterior a términos. Acordar el mapeo de los tres contactos del PDF y su persistencia. |
 | 5. Contraseña | Crea la contraseña tras completar el paso anterior. | Auth crea o activa la cuenta y emite sesión de la app. | Alta mock para correo nuevo. La cuenta mock existente usa su contraseña al ingresar y omite crear una nueva. |
-| 6. Objetivo y cuestionario | Elige objetivo, contesta y confirma. El siguiente paso visible es Home. | Al confirmar respuestas válidas se asegura un único envío y se generan ejercicio, nutrición y bandeja en segundo plano. | Hoy se espera una vista previa local y se muestra «Tu plan está listo» con CTA «Entrar». Reapertura KAN-136/142 en vuelo. |
-| 7. Home | Consulta sus planes y la bandeja. | Sirve artefactos por versión y publica estados hasta completar. | El PDF marca «todo listo» como experiencia esperada. Si el motor tarda o falla, KAN-142 cubre la llegada inmediata con progreso, recuperación y bandeja visible. |
+| 6. Objetivo y cuestionario | Elige objetivo, contesta y confirma. El siguiente paso visible es Home. | Al confirmar respuestas válidas se asegura un único envío y se generan ejercicio, nutrición y bandeja en segundo plano. | La app guarda respuestas y snapshot, solicita una sola generación local y abre Home en la misma interacción. |
+| 7. Home | Consulta sus planes y la bandeja. | Sirve artefactos por versión y publica estados hasta completar. | La app ya muestra progreso, fallo con recuperación y plan listo. La bandeja ocupa su propia sección y presenta carga, mensajes o un texto de estado vacío. |
 
 **Enlace de bienvenida, propuesta de integración.** Usar un enlace HTTPS del dominio de bienvenida aprobado, por ejemplo `https://<dominio>/bienvenida?token=<opaco>`. Backend emite token de un uso, expirable, ligado a invitación/persona/membresía, y lo canjea por una sesión limitada al onboarding. Persistir solo el hash del token en servidor, excluirlo de telemetría y retirar el token de la URL tras el canje. Móvil configura Associated Domains/AASA y App Links/assetlinks, procesa arranque en frío y app abierta, y retoma el paso pendiente. Web ofrece continuidad o instalación si no está la app. Validar expiración, reenvío, enlace ya utilizado, cuenta activa y apertura desde clientes de correo. Acordar dominio, vigencia, rutas y responsables con Auth/Producto.
 
 ## Inventario móvil en dev
 
-Las rutas de esta tabla son valores de `flow` y `screen` registrados en `src/App.tsx` / `src/types.ts`. Los caminos abreviados de módulo parten de `src/features/wellness/`. Las claves actuales son locales al navegador/WebView y globales al origen. Antes de ofrecer datos de producción, aislar cuentas, rehidratar datos desde backend y definir tratamiento de datos demo en dispositivos actualizados. El mock guarda contraseñas de prueba en claro dentro de su clave de cuentas. Usar exclusivamente credenciales sintéticas.
+Las rutas de esta tabla son valores de `flow` y `screen` registrados en `src/App.tsx` / `src/types.ts`. Los caminos abreviados de módulo parten de `src/features/wellness/`. Las claves son locales al navegador/WebView. El cierre del día agrega un sufijo por dueño; las demás claves Wellness del inventario son globales al origen. Para producción, aislar cuentas, rehidratar desde backend y definir el tratamiento de datos demo en actualizaciones. El mock guarda contraseñas de prueba en claro; usar exclusivamente credenciales sintéticas.
 
 | Jira y ruta | Archivos clave y persistencia actual | Mock / integración necesaria |
 | --- | --- | --- |
-| **KAN-136** · `flow=onboarding`, correo → emergencia → términos → contraseña → objetivo (8 pasos) → vista previa → `home` | `src/pages/OnboardingPage.tsx`, `src/context/AppContext.tsx` (`finishWellnessOnboarding`), `components/onboarding/`, `components/objective/`, `services/wellness-onboarding-service.ts`, `domain/{types,draft,questions,gate,plan-preview}.ts`. Escribe `wellness.mock.accounts.v1`, `wellness.onboarding.draft.v1` y `wellness.plan.v1`; borra el borrador cuando guarda la vista previa. | Lookup, alta y login Wellness locales. Vista previa local y compuerta antes de generar. Backend requiere Auth real, consentimiento/contactos, envío durable del cuestionario y generación asincrónica. Compuerta de servidor con términos, campos completos, mayoría de edad, IMC para déficit y confirmaciones PAR-Q/NQS según corresponda. |
-| **KAN-142** · `screen=home` → protocolo, dieta, ejercicio, vitales, Vita y baterías | `home/WellnessHome.tsx`, `state/wellness-home-store.ts`. Lee `wellness.plan.v1`, `wellness.protocol.v1`, `wellness.batteries.v1`. | Día X/365, adherencia, puntos, racha, nivel y n/7 con estado local. Falta lectura de planes/progreso/bandeja y datos agregados persistentes. |
+| **KAN-136** · `flow=onboarding`, correo → emergencia → términos → contraseña → objetivo (8 pasos) → `home` | `src/pages/OnboardingPage.tsx`, `src/context/AppContext.tsx` (`finishWellnessOnboarding`), `components/onboarding/`, `components/objective/`, `services/wellness-onboarding-service.ts`, `domain/{types,draft,questions,gate,plan-preview}.ts`. Escribe `wellness.mock.accounts.v1`, `wellness.onboarding.draft.v1` y `wellness.plan.v1`. Retiene las respuestas para recuperación. | Lookup, alta y login Wellness locales. La compuerta y el resumen inicial se calculan localmente. Backend requiere Auth real, consentimiento/contactos, envío durable y validación en servidor. |
+| **KAN-142** · `screen=home` → protocolo, dieta, ejercicio, cierre, Vita y baterías | `home/WellnessHome.tsx`, `state/wellness-home-store.ts`. Lee `wellness.plan.v1`, `wellness.protocol.v1`, `wellness.batteries.v1`, `wellness.generation.v1` y el check-in del dueño/día. | Día X/365 y métricas con estado local. Integrar planes, progreso, bandeja y datos agregados persistentes. Vitales permanece en el protocolo y su módulo dedicado queda para KAN-138. |
 | **KAN-143** · `screen=protocol` desde Home | `protocol/WellnessProtocol.tsx`, `state/wellness-home-store.ts`. Lee plan; escribe `wellness.protocol.v1`. | Secuencia ejercicio, dieta, vitales, emocional y cofre. Cofre exige pasos 1–4, una apertura por día local. Backend debe registrar completados/recompensa con deduplicación, zona IANA del paciente, cambio de día, y rehidratación en otro dispositivo. Coordinar cierre de día con KAN-141 y vitales con KAN-138. |
 | **KAN-139** · `screen=wellness-exercise` desde Home/protocolo | `exercise/WellnessExercise.tsx`, `exercise/{exercise-plan,exercise-catalog}.ts`. Lee plan y escribe `wellness.exercise.checkin.v1`, `wellness.exercise.session.v1`, `wellness.exercise.pending.v1`, `wellness.protocol.v1`. | Rutina determinista local por día/objetivo con patrón semanal, fases, descarga, desbloqueos, adaptación por check-in y sesión guiada reanudable. `pending` registra una finalización local. Integrar rutina del motor, procedencia del check-in y sincronización idempotente de sesiones/completados. |
 | **KAN-144** · `prof` → Mi plan → Objetivo → `wellness-goal` → `home` | `goal/WellnessGoalPage.tsx`, `state/goal-change.ts`, `state/wellness-home-store.ts`. Escribe `wellness.plan.v1` y `wellness.plan.versions.v1`. Conserva fecha de inicio, `wellness.protocol.v1` y `wellness.batteries.v1`. | Reutiliza wizard precargado, solicita de nuevo PAR-Q/NQS y términos, calcula diferencias de objetivo/kcal/macros y archiva la versión anterior localmente. Backend debe guardar versiones, conservar historial y publicar el nuevo plan sin interrumpir el vigente si falla la regeneración. |
 | **KAN-145** · `screen=wellness-diet` desde Home/protocolo | `nutrition/WellnessDiet.tsx`, `nutrition/{diet-plan,diet-store,meal-catalog}.ts`, `src/utils/foodAiApi.ts`. Lee plan y escribe `wellness.diet.v1` (plato elegido, comidas, agua, modo simplificado y borrador numérico por foto), y `wellness.protocol.v1` al registrar una comida. | Menú de cuatro comidas, objetivos de macros/agua, alternativas y registros locales. La foto ya invoca Food AI real por `POST /api/v1/foodai/analyze` autenticado, con edición y entrada manual si falla la estimación. Backend debe entregar menú generado y persistir registros por día, versión, comida y persona. Verificar sesión real y permisos de cámara. |
-| **KAN-136/142 EN VUELO** · confirmación de cuestionario → `home` inmediato | Puntos de unión en `OnboardingPage.tsx`, servicio, Home y estado. La base auditada carece de claves publicadas para job, id de envío, progreso o inbox. Confirmarlas en la revisión del PR de la otra rama. | El cliente debe conservar las respuestas y el identificador de envío ante errores o reinicios. La UI debe refrescar y reintentar. La generación durable y deduplicada requiere endpoint, outbox y motor de Diomedes. |
+| **KAN-141** · `wellness-checkin` desde Home/protocolo | `checkin/WellnessCloseDay.tsx`, `checkin/{close-day,checkin-store}.ts` y `src/App.tsx`. Check-in local de la cuenta por fecha; ejercicio y dieta leen los efectos del día anterior. | Guardado offline, reanudación de pendientes al volver online y confirmación de sync simulada. Backend requiere persistencia idempotente y reglas versionadas para recalcular el día siguiente. |
+| **KAN-137** · SOS global, overlay sin ruta propia | `src/App.tsx`, `src/components/{SosLayer,SosQuickAccess,PanicOverlay,BottomNav}.tsx`, `sos/sos-store.ts`, `src/services/sos/sos-service.ts`. Escribe `wellness.sos.audit.v1` y `wellness.sos.notices.v1`. | Aviso a contactos desde la cuenta regresiva es local y auditado. El flujo real existente envía al backend solo después de la doble confirmación. |
+| **KAN-146** · barra `home` / `wellness-diet` / SOS / `wellness-exercise` / `prof` | `src/{App.tsx,types.ts}`, `context/AppContext.tsx`, `components/BottomNav.tsx`, `pages/ProfilePage.tsx`. No introduce claves locales de navegación. | Mantener el mapeo de pushes y enlaces a rutas habilitadas. Los destinos retirados se resuelven en Home. |
+| **KAN-136/142 generación** · confirmación de cuestionario → `home` inmediato | `OnboardingPage.tsx`, `generation/{generation-store,useGeneration}.ts` y `home/WellnessHome.tsx`. `wellness.generation.v1` persiste trabajo, timestamps, intentos y estados; `wellness.onboarding.draft.v1` conserva las respuestas. | Generador y bandeja locales, refresco de 400 ms y reintento parcial. Sustituir mock por HTTP, outbox y motor, manteniendo el estado al reiniciar. |
 
-## Contrato propuesto para KAN-130
+## Navegación v5.1, cierre del día y SOS
 
-Base lógica `/v1` bajo el gateway. Confirmar prefijo público y documentarlo en OpenAPI antes de integrar. Las cuatro operaciones requieren JWT de app y autorización sobre `{id}` (id interno de persona, obtenido de la sesión). El servidor valida membresía, versión del formulario y consentimiento. Usar tiempos UTC y zona IANA para calcular la fecha local del programa. Los ejemplos usan datos sintéticos. Normalizar errores en el cliente por código estable para ES/EN.
+**KAN-146.** Los flujos siguen siendo `login`, `onboarding`, `tests` y `app`. Pantallas activas: `home`, `protocol`, `wellness-diet`, `wellness-exercise`, `wellness-goal`, `wellness-checkin` y `prof`. SOS y Vita son overlays. Perfil reúne avatar/datos, evaluaciones, planes de nutrición/ejercicio y cambio de objetivo. Los destinos legados `book`, `hc`, `nut`, `edu`, `infinito`, `bt`, `health-accessory`, `chat`, `medical-sources`, `medications`, `avatar`, `prog`, `program-*`, `com`, `room` y `body` se resuelven en Inicio. Se retiran Chat IA, Historia Clínica, Citas, Academia, INFINITO, Podcast, Marketplace, Avatar independiente y Programa anterior. Comunidad y Medicamentos esperan KAN-135, Apple Health KAN-160, reloj BLE KAN-158 y Citas KAN-174. En pushes y enlaces, usar destinos habilitados.
 
-### Enviar cuestionario y encolar generación
+**KAN-141.** `wellness.checkins.v1.<dueño codificado>` guarda un registro por fecha local con `idempotencyKey`, `input` y `pending` o `synced`. El dueño se deriva de id, cédula o correo, con fallback local. Campos: adherencia, horas de sueño, energía, dolor, síntomas, peso/cintura opcionales y ejercicio realizado. Doble cierre recupera el registro existente y las fechas futuras se rechazan. El shell reintenta al entrar y en el evento `online`. Hoy `synced` refleja la confirmación del transporte mock. Dieta y ejercicio ya aplican efectos locales del cierre, incluidos menú simplificado y adaptación de sesión.
 
-`POST /v1/people/{id}/plans/generate` con `Idempotency-Key: sub-qa-001` igual a `submissionId`. Crear ese id al confirmar un borrador válido y reutilizarlo para reenvíos de las mismas respuestas. El payload lleva la instantánea de respuestas y la versión del cuestionario. La confirmación de un cambio de objetivo genera un nuevo id, con `reason: "goal_change"` y `expectedPlanVersion` del vigente para proteger contra ediciones concurrentes.
+Para KAN-130 se propone `POST /v1/wellness/daily-checkins` con clave opaca estable. Acordar zona IANA y restricción única por paciente, membresía y día local. Para un replay idéntico, devolver el cierre original. Usar `409` si difiere el contenido registrado y `422` para valores o fechas inválidos. Un fallo temporal mantiene el cierre pendiente. Devolver id durable y efectos versionados del siguiente día para reconciliar la UI sin duplicar efectos ni recompensas.
 
 ```json
 {
-  "submissionId": "sub-qa-001",
-  "questionnaireVersion": "v1",
-  "reason": "onboarding",
-  "expectedPlanVersion": null,
+  "localDate": "2026-11-24",
   "timezone": "America/Bogota",
-  "answers": {
-    "goal": "bajar", "sex": "F", "age": 35, "heightCm": 165, "weightKg": 74,
-    "waistCm": 88, "targetWeightKg": 68, "activity": 2, "pace": "m",
-    "vegetarian": false, "dairyFree": false,
-    "parq": [0, 0, 0, 0, 0, 0, 0], "nqs": [0, 0, 0, 0, 0, 0],
-    "doctorConfirmed": false, "nutritionistConfirmed": false
-  },
-  "terms": {"version": "wellness-v1-2026-11", "acceptedAt": "2026-11-24T19:00:00Z"}
+  "input": {
+    "adherence": 75, "sleepHours": 7, "energy": 4, "pain": 0, "symptoms": [],
+    "weightKg": null, "waistCm": null, "exercised": true
+  }
 }
 ```
 
-`202 Accepted` tras registrar el envío y el trabajo de forma durable. Devolver `Location: /v1/people/{id}/generation?jobId=job-qa-001`. Un reenvío idéntico devuelve el mismo job y sus estados vigentes, incluso si ya terminó. La sesión local abre Home al confirmar y registrar el envío pendiente, en paralelo a la llamada de red. Home conserva el estado de envío si aún espera la aceptación del servidor. Si el servidor devuelve validación, Home ofrece volver al formulario con respuestas conservadas.
+**KAN-137.** Cuenta regresiva de cinco segundos con opciones para llamar a emergencias, llamar al contacto o cancelar. `wellness:sos` enlaza voz/Vita con el overlay. En onboarding requiere un teléfono de emergencia. Cancelar registra el resultado y no envía avisos. Elegir emergencias o agotar la cuenta abre el marcador con el número del país (123 en Colombia; 911 en EE. UU. y como fallback). La auditoría local guarda fecha/hora, resultado y pantalla, hasta 50 entradas. `called_911` es una etiqueta histórica: registra la apertura del marcador y no acredita el número marcado ni una llamada completada. El aviso de contactos de ese camino es simulado.
 
-```json
-{
-  "jobId": "job-qa-001", "submissionId": "sub-qa-001", "candidatePlanVersion": 1,
-  "activePlanVersion": null, "attempt": 1, "status": "queued", "retryable": false,
-  "artifacts": {
-    "exercise": {"status": "queued", "progress": 0},
-    "nutrition": {"status": "queued", "progress": 0},
-    "inbox": {"status": "queued", "progress": 0}
-  },
-  "error": null, "pollAfterSeconds": 3
-}
-```
+Mantener **REQ-SOS-07**. Solo orbe → confirmación afirmativa activa la alerta real mediante `POST /api/v1/sos/alerts` con `Idempotency-Key`. La cuenta regresiva puede abrir el marcador y registrar un aviso local. Acordar con Diomedes y Legal la entrega automática a contactos y su auditoría antes de habilitarla. Usar dobles de prueba para validar marcador y ausencia de POST al cancelar o al agotar la cuenta. Verificar teclado, sesión guiada y salida de vídeo nativo a pantalla completa en KAN-173.
 
-### Consultar estado
+## Contrato de generación para Diomedes
 
-`GET /v1/people/{id}/generation` devuelve `200` para el último trabajo, con `?jobId=` opcional para reconciliar el envío conocido. Antes del primer envío, devolver `200` con `status: "not_started"`, `jobId: null` y `artifacts: {}`. Cada artefacto usa `queued | generating | ready | failed`, progreso entero de 0–100 y error propio cuando corresponda. El job usa los mismos estados, más `not_started` en lectura. `ready` requiere que los tres resultados finales existan y sean consultables. Para cambio de objetivo, el candidato pasa a vigente atómicamente cuando los tres estén listos. En primera generación se puede abrir un artefacto ya persistido como vista del candidato, siempre identificado por su versión.
+La referencia para KAN-130 es el [Handoff de generación KAN-136/142](KAN-136-142-handoff-diomedes.md), con ejemplos JSON, polling, errores y requisitos de datos. Adopta la familia `/v1/wellness` del PR #37. Las operaciones requieren sesión de app y autorización sobre la generación del paciente.
 
-```json
-{
-  "jobId": "job-qa-001", "submissionId": "sub-qa-001", "candidatePlanVersion": 1,
-  "activePlanVersion": null, "attempt": 1, "status": "failed", "retryable": true,
-  "artifacts": {
-    "exercise": {"status": "ready", "progress": 100, "artifactId": "ex-qa-001"},
-    "nutrition": {
-      "status": "failed", "progress": 62,
-      "error": {"code": "ENGINE_TEMPORARILY_UNAVAILABLE", "retryable": true}
-    },
-    "inbox": {"status": "ready", "progress": 100, "artifactId": "in-qa-001"}
-  },
-  "error": {"code": "ARTIFACT_GENERATION_FAILED", "retryable": true},
-  "updatedAt": "2026-11-24T19:00:32Z", "pollAfterSeconds": null
-}
-```
-
-Publicar también los esquemas y rutas de lectura de los artefactos de ejercicio/nutrición en el mismo OpenAPI. Un estado exitoso incluye referencias autorizadas y versión, para que Home pueda abrir el contenido. Progreso por artefacto y por intento. Se admite reiniciar el indicador de la pieza fallida en el siguiente intento.
-
-### Reintentar el mismo trabajo
-
-`POST /v1/people/{id}/generation/retry` con `Idempotency-Key: retry-job-qa-001-1` (id estable para un reenvío del mismo reintento) y el cuerpo siguiente. `expectedAttempt` protege de duplicados cuando dos clientes reintentan el mismo fallo. Aceptar solo un fallo reintentable y repetir piezas incompletas. Respuesta `202` con el esquema anterior, el mismo job y la misma versión candidata, `attempt: 2`, artefacto fallido en cola y artefactos listos preservados. Una pulsación repetida con la misma clave recupera ese intento.
-
-```json
-{"jobId": "job-qa-001", "expectedAttempt": 1}
-```
-
-### Leer bandeja
-
-`GET /v1/people/{id}/inbox` devuelve `200`, orden estable por fecha/id, cursor opaco si hay más y mensajes con clave ES/EN y parámetros. La bandeja visible tiene al menos una entrada. Insertar bienvenida desde la activación de la membresía y actualizar o complementar el contenido generado mediante claves de negocio únicas. Si la primera consulta falla o un servidor antiguo entrega una lista vacía, Home muestra una bienvenida local de respaldo y feedback de conexión cuando aplique.
-
-```json
-{
-  "items": [{
-    "id": "msg-qa-001", "type": "welcome", "titleKey": "wellness.inbox.welcome.title",
-    "bodyKey": "wellness.inbox.welcome.body", "params": {},
-    "createdAt": "2026-11-24T18:55:00Z", "readAt": null
-  }],
-  "nextCursor": null
-}
-```
-
-| HTTP | Cuándo y respuesta del cliente |
+| Operación propuesta | Comportamiento |
 | --- | --- |
-| `202` | Encolado o replay de generación/reintento. Asociar el job al id del envío y refrescar Home en segundo plano. |
-| `409` | Misma clave con otro payload, versión vigente cambió, intento obsoleto o trabajo incompatible activo. Recuperar el estado si la respuesta trae un job autorizado. Para una edición bloqueada por versión, recargar y pedir confirmación conservando las respuestas. |
-| `422` | Datos incompletos o compuerta rechazada, con `issues[]` que incluya código/campo/paso (0–7). También reintento no permitido por un fallo definitivo. Mantener borrador y ofrecer corrección o soporte según el código. |
-| `503` | Servicio temporalmente indisponible. Respetar `Retry-After` cuando exista; reemitir la misma operación con la misma clave, sin pedir volver a responder. |
-| `401/403/404` | Renovar sesión para `401`; para acceso denegado o recurso inexistente, respetar el contrato de Auth y evitar filtrar datos de otra persona. |
+| `POST /v1/wellness/generate` | Clave estable por envío y cuerpo `{"submissionId":"sub_123"}`. El envío referencia cuestionario y términos inmutables. `202` con `Location`; replay finalizado puede devolver `200` con la misma generación. |
+| `GET /v1/wellness/generation/{generationId}` | `200` con intentos, estado, errores y progreso por artefacto de 0 a 100. Estados `pending`, `running`, `ready` y `failed`. Usar `resultId` para leer el plan publicado. |
+| `POST /v1/wellness/generation/{generationId}/retry` | Clave estable por reintento lógico y `{"expectedAttempts":1}`. `202` con el mismo id, conservando piezas listas; `200` si ya quedó todo listo. |
+| `GET /v1/wellness/inbox?generationId=gen_123` | `200` con estado, mensajes localizados y fechados, y cursor opcional. `items: []` es válido para carga y ausencia de mensajes. La sección de Home siempre tiene un estado visible. |
 
-```json
-{
-  "code": "QUESTIONNAIRE_GATE_REJECTED", "retryable": false,
-  "issues": [{"code": "unanswered", "field": "parq[2]", "step": 4}],
-  "traceId": "trace-qa-001"
-}
-```
+`409` indica conflicto de clave o revisión. Reconciliar con el estado existente. `422` entrega `issues` con código/campo/paso y conserva las respuestas para corregir. Para `503`, respetar `Retry-After` y repetir con la misma clave. Acordar cómo persistir el envío autenticado previo a generate y cómo leer cada plan por `resultId`.
 
-### Datos y garantías de entrega
+| Entidad / garantía | Tarea |
+| --- | --- |
+| Envío versionado, paciente, membresía, términos, zona, respuestas. Generación única por paciente y envío, clave y hash; intentos, progreso, artefactos, bandeja y outbox. | KAN-134, modelo y migraciones |
+| Motor .NET, planes versionados y conservación del vigente e historial hasta activar el candidato. | KAN-110, Motor 365 |
+| OpenAPI, autorización, errores, cadencia de consulta e idempotencia. | KAN-130 |
+| Pago web confirmado, bienvenida y activación por enlace. | KAN-116 |
 
-| Entidad propuesta | Campos e invariantes | Cruce de trabajo con Diomedes |
+Registrar generación y evento lógico `WellnessGenerationRequested` en una transacción de outbox. Una reentrega puede repetir el evento físico. El consumidor deduplica su efecto con el eventId y restricciones únicas por generación, artefacto y versión. Los mensajes iniciales son únicos por generación y tipo. Un reintento agrega un intento sin cambiar de generación, respuestas ni versión candidata, y recalcula las piezas fallidas. Mantener ids y códigos en trazas y excluir respuestas, contactos y credenciales.
+
+El mock usa una huella del snapshot (`startDate|goal|createdAt`) y restaura el trabajo con `startedAt`. Si falla el almacenamiento, recupera el intento en memoria durante la sesión. Para producción, usar el identificador durable del envío y su `generationId`. Validar concurrencia, timeout tras aceptación, reinicio, reentrega y fallo parcial entre dispositivos.
+
+## Estados de Home
+
+| Caso | UX en el merge móvil | Integración real |
 | --- | --- | --- |
-| Envíos de cuestionario | Persona/membresía, `submissionId`, versión de esquema y respuestas, aceptación y zona. Único por persona y envío. Guardar una copia protegida para reintentos. | KAN-110 para base de datos e identidad de dominio, KAN-130 para validar/recibir. |
-| Jobs e intentos | Job único por envío. Versión candidata, estado, intento, error, reintentabilidad y timestamps. Un trabajo activo por persona/programa; intento y cambio de estado protegidos contra carreras. | KAN-134 para ejecución y reintentos, KAN-130 para HTTP y estados. |
-| Artefactos y versiones | `artifacts` con estado, progreso, error y contenido/referencia. Único por persona, versión y tipo `exercise/nutrition/inbox`. `plan_versions` único por persona/programa y versión, con versión activa, snapshot y fecha de inicio del programa. Historial de protocolo, comidas y sesiones vinculado a la fecha y versión correspondiente. | KAN-110 para entidades/migración y KAN-134 para persistencia/publicación del motor; KAN-130 para representación y consulta. |
-| Inbox | Entradas por persona, tipo, fecha, contenido traducible, `readAt` y clave de negocio única. Bienvenida por membresía y contenidos generados por versión/tipo. | KAN-116 para coordinar bienvenida/entrada inicial, KAN-134 para bandeja materializada y KAN-130 para lectura. |
-| Idempotencia, outbox y deduplicación del consumidor | Entrada única por persona, operación y clave, con hash canónico y referencia al resultado. Outbox con eventId, job, intento y estado de publicación. Registro de eventos procesados y restricción única de artefactos. | KAN-110 para restricciones, KAN-134 para worker/outbox y KAN-130 para la semántica de claves y errores. |
-
-El cruce KAN-110/134/116 asigna puntos de coordinación propuestos. Confirmar el alcance de esos tres issues en Jira antes de asignar cambios. KAN-130 figura en el ADR como contrato publicado por Diomedes.
-
-1. Para el primer envío válido, confirmar en una transacción respuestas, clave de idempotencia, job, versión candidata y evento `PlanGenerationRequested` único para el job. Responder `202` solo tras la confirmación. Si se pierde la respuesta HTTP, el cliente vuelve con el mismo id y recupera ese job.
-2. El publicador de outbox puede entregar más de una vez. El consumidor deduplica por eventId y adquiere el trabajo con exclusión o lease recuperable. Persistir el resultado y su marcador de deduplicación de forma transaccional, con restricciones por artefacto. Una caída entre el cálculo y la confirmación puede repetir el cálculo. La garantía es un solo evento lógico inicial y una sola publicación efectiva de cada artefacto/versión.
-3. Reintentar dentro del mismo job y versión. Confirmar en una transacción la aceptación del reintento, el incremento del intento y un evento único para ese intento. Reanudar desde los artefactos ya confirmados. Publicar la nueva versión una vez y conservar la anterior y la fecha de inicio. Registrar `traceId`, `jobId`, tiempos por artefacto y conteos agregados de error/reintento sin respuestas del cuestionario ni credenciales en logs.
-
-## Home y recuperación
-
-| Caso | Qué ve la persona | Comportamiento |
-| --- | --- | --- |
-| Sin envío previo | Bienvenida y acceso al cuestionario pendiente, sin planes habilitados. | Recuperar el paso de onboarding de la cuenta. Evitar presentar datos de ejemplo como propios. |
-| Envío aún sin confirmación o job en cola | Home inmediato, «Estamos preparando tu plan», tarjetas pendientes y bienvenida visible. | Conservar respuestas y clave. Enviar/reconciliar en segundo plano. |
-| Generando | Progreso independiente de ejercicio y nutrición; bandeja visible con bienvenida y estado de preparación si corresponde. | Refrescar siguiendo `pollAfterSeconds` en primer plano, con backoff ante red/503 y consulta al volver a primer plano. |
-| Listo parcial | Tarjeta lista habilitada para consultar el contenido de su versión. La otra indica progreso o fallo. En un cambio de objetivo sigue visible el plan vigente hasta activar el nuevo. | Consultar los artefactos listos una sola vez por versión/cambio relevante y seguir refrescando los pendientes. |
-| Todo listo | Plan diario de ejercicio, plan de nutrición y bandeja con contenido. Día, protocolo y baterías visibles. | Parar el polling frecuente y refrescar datos afectados al retomar sesión. |
-| Fallo reintentable | Mensaje claro en cada pieza afectada y CTA «Reintentar». Se mantienen las piezas listas y la bandeja. | La acción llama a retry con el mismo job; si nunca hubo `202`, reenvía generate con la misma clave inicial. |
-| Fallo definitivo / validación | Explicación y acción para corregir respuestas o contactar soporte según el código. Bandeja visible. | Conservar datos. Una confirmación con respuestas corregidas usa un id nuevo. |
-| Offline / refresco fallido | Estado de conexión y último contenido válido. Si falta caché, bienvenida local y tarjetas pendientes. | Reconciliar al reconectar; distinguir un fallo de red de un fallo del motor. |
-
-El trabajo continúa en backend cuando se cierra la app. Probar también doble toque, dos dispositivos, timeout tras COMMIT, cierre entre envío y respuesta, retorno desde segundo plano, cambio de meta fallido y reentrega del outbox. Acordar con Diomedes el objetivo de latencia del primer Home listo y medirlo con percentiles por artefacto.
+| Sin generación local | Bandeja con su estado visible. Sin snapshot, el plan puede aparecer como vista previa. | Resolver el onboarding pendiente desde la cuenta. |
+| En cola o generando | Home inmediato, tarjeta de preparación y progreso de ejercicio, nutrición y bandeja. Refresco local cada 400 ms. | Usar progreso y cadencia del servidor, recuperar el trabajo al volver a primer plano. |
+| Listo parcial | Las piezas cambian de estado por separado. Las listas se conservan durante el reintento. | Consumir por `resultId` y mantener coherencia de versión. |
+| Fallo | Mensaje de respuestas guardadas, CTA «Reintentar» y bandeja visible. Recupera piezas fallidas. | Distinguir red y motor; conservar borrador y clave. Para `422`, volver al formulario conservando campos. |
+| Listo | Se retira el panel de progreso; quedan planes y mensajes fechados. Ante bandeja vacía se muestra «No tienes mensajes nuevos». | Actualizar al cambiar de versión y consultar estados/artefactos reales. |
 
 ## Verificación reproducible
 
@@ -185,11 +125,15 @@ $env:COP_E2E_APP_URL = 'https://<entorno-de-qa>'
 $env:COP_E2E_OUTPUT = Join-Path (Resolve-Path '../../../.ai/operations') 'wellness-qa'
 New-Item -ItemType Directory -Force -Path $env:COP_E2E_OUTPUT | Out-Null
 node e2e/wellness-onboarding.mjs
+$env:COP_E2E_SHOTS = Join-Path $env:COP_E2E_OUTPUT 'sos'
+node e2e/wellness-sos.mjs
 node e2e/wellness-diet.mjs | Tee-Object -FilePath (Join-Path $env:COP_E2E_OUTPUT 'dieta-results.txt')
 ```
 
 - **Caso válido sintético.** Alta `ana.qa@example.invalid` con contraseña de prueba, contactos sintéticos, 35 años, 165 cm, 74 kg, objetivo bajar, PAR-Q/NQS completos con «No» y aceptación vigente. Cuenta mock existente `demo@wellness.test` / `Demo1234!`, solo para probar la rama de correo existente. El script de onboarding usa su propia cuenta sintética por ancho, API simulada y comprueba 320/390 px.
-- **Onboarding, Home, ejercicio y protocolo actual.** El E2E conserva la expectativa histórica «plan listo» → «Entrar» y verifica Home 1/365, 0/5, 0/7, cuatro ejercicios, temporizador, finalización, cofre y regreso a Home 5/5. Actualizar esa expectativa al integrar KAN-136/142 y cubrir todas las filas de la matriz de Home con respuestas controladas. Registrar solicitudes, correlación de job y recuento de artefactos para comprobar la idempotencia.
+- **Onboarding, generación y Home.** `e2e/wellness-onboarding.mjs` comprueba la transición inmediata a Home, tarjeta de generación, retiro automático en hasta 3 s y cuatro mensajes fechados. `.ai/operations/2026-11-24-kan136-142-gen/kan136-results.json` registra `generationMs` de **1683 ms (390 px)** y **1676 ms (320 px)**. El JSON de navegación en la misma carpeta registra 1722/1739 ms. Son tiempos del mock. Para integración, guardar correlación del job y recuento de artefactos tras replay.
+- **Protocolo, ejercicio, cierre y navegación.** El E2E verifica sesión guiada, cofre, guardado del cierre offline, sincronización al reconectar y navegación del Perfil. Consultar `.ai/operations/2026-11-24-kan146/kan146-results.json` y las capturas `20-cierre-formulario-*`, `21-cierre-pendiente-*`, `22-cierre-sincronizado-*` y `20-nav-*` a `25-nav-*`. En backend, repetir con cuenta real, fecha local, reconexión, doble cierre y otro dispositivo.
+- **SOS global.** `e2e/wellness-sos.mjs` cubre 320 y 390 px según PR #35. Ejecutarlo contra QA con marcador interceptado y sin avisos reales. Pruebas `wellness-sos.test.tsx` y `sos-store.test.ts` cubren overlay y auditoría.
 - **Cambio de objetivo.** En Perfil, partir de un plan con varios días y actividad registrada, elegir otra meta, volver a contestar compuerta/términos, verificar diferencia y versión incrementada, día N y registros previos. Repetir con fallo en el candidato y verificar que el vigente sigue consultable. Hoy hay pruebas de componente/store; falta E2E dedicado.
 - **Dieta.** El script usa auth y Food AI simulados, cubre 320/390 px, alternativa, borrador editable de foto, registro de comida, agua y cofre. En integración repetir con sesión real, cámara, permiso denegado, error de Food AI, entrada manual y persistencia tras reinstalar o entrar desde otro dispositivo.
 - **Evidencia histórica consultada.** `.ai/operations/2026-11-24-kan136/` contiene capturas del wizard y de la llegada al Home anterior. `2026-11-24-kan142/` contiene las capturas del nuevo Home y baterías. `2026-11-24-kan143/` y `2026-11-24-kan139/` contienen capturas hasta protocolo/cofre/Home 5/5. Cada carpeta tiene `kan136-results.json` con ambos anchos en `passed` y registros de consola `401 (Unauthorized)` de la corrida sintética. PR #32 documenta las pruebas de cambio de objetivo. PR #33 registra los dos PASS del E2E de dieta. No se encontró carpeta individual de evidencia para KAN-144 ni KAN-145 en las operaciones de ese día.
@@ -197,46 +141,33 @@ node e2e/wellness-diet.mjs | Tee-Object -FilePath (Join-Path $env:COP_E2E_OUTPUT
 
 ## Producción y gates observados
 
-Fecha de todas las comprobaciones: **24/11/2026**. Horas en Bogotá. `npm run build` produjo un bundle local de producción, sin publicarlo.
+Fecha: **24/11/2026**. Horas en Bogotá. Base de código `e472af7`; el merge al worktree conserva el mismo árbol de aplicación.
 
-| Comando local | Ventana | Resultado |
+| Comando | Ventana | Resultado |
 | --- | --- | --- |
-| `npm run build` | 14:36:56–14:38:31 | Exit 0; TypeScript + Vite 8.2.1, 1.872 módulos. `dist/assets/index-DDh9XiTo.js` contiene `erp.coppadresd.com`. Advertencia literal `Some chunks are larger than 1300 kB after minification.` El JS principal pesa 2.929,87 kB, 889,43 kB gzip. |
-| `npx vitest run` | 14:36:56–14:38:43 | Exit 1; 248/249 archivos y 2127/2128 pruebas. Falló `src/pages/__tests__/ChatPage.nutritionFlag.test.tsx:11:29`, caso `VITE_CHAT_NUTRITION_ENABLED=true controla chip y acción tipada`. Error literal debajo. |
-| `npx vitest run` (repetición tras terminar el build) | 14:39:28–14:40:20 | Exit 0; **249/249 archivos, 2128/2128 pruebas**. Ambas corridas emitieron `connect ECONNREFUSED ::1:3000` y `connect ECONNREFUSED 127.0.0.1:3000`. Los mensajes también aparecieron en la corrida exitosa; causa del timeout inicial sin confirmar. |
-| `npm run i18n:check` | 14:36:55–14:37:14 (ventana junto a oxlint) | Exit 0; 2.311 llamadas `t()`, 4.864 claves EN, **0 faltantes** y 2.553 huérfanas según el escáner. |
-| `npx oxlint src` | 14:36:55–14:37:14 (ventana junto a i18n) | Exit 0; advertencias `react(only-export-components)` y `react-hooks(exhaustive-deps)`. |
-
-```text
-Error: Test timed out in 20000ms.
-If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
-```
+| `npx vitest run` | 15:14:18–15:14:55 | Exit 0, **254/254 archivos, 2185/2185 pruebas**. Hubo mensajes no fatales `connect ECONNREFUSED ::1:3000` y `connect ECONNREFUSED 127.0.0.1:3000`. |
+| `npm run build` | 15:17:24–15:17:42 | Exit 0, TypeScript + Vite 8.2.1, 1501 módulos. Advertencia `Some chunks are larger than 1300 kB after minification.` JS principal 2262,99 kB, 712,05 kB gzip. El bundle se generó localmente. |
+| `npm run i18n:check` | 15:18:13–15:18:14 | Exit 0, **0 faltantes**, 2308 llamadas, 4933 claves EN y 2625 huérfanas según el escáner. |
+| `npx oxlint src` | 15:17:24–15:17:25 | Exit 0, advertencias `react(only-export-components)` y `react-hooks(exhaustive-deps)`. |
 
 ### TestFlight
 
-`gh run list --branch dev` y consulta con `--json` a las 14:38, exit 0. `gh run view <id> --json status,conclusion,jobs,updatedAt,url` confirma estados por job. El workflow activo publica desde `dev` y admite `workflow_dispatch`.
+El candidato final es el [run 45478408297](https://github.com/FontalvoB/antares-paciente/actions/runs/45478408297), `workflow_dispatch` sobre `e472af7`. La consulta `gh run view 45478408297 --json status,conclusion,headSha,jobs,event,url,updatedAt` confirmó SHA y evento. Pasó de cola a `in_progress`. A las **15:19:58** el job de validaciones seguía en curso y aún no figuraban conclusión ni número de build.
 
-| Run | SHA y evento | Resultado observado |
-| --- | --- | --- |
-| [45470320286](https://github.com/FontalvoB/antares-paciente/actions/runs/45470320286) | `d045955`, manual | Pasó lint, Vitest, i18n, guardas y build web. Estaba en cola a las 14:38. A las 14:41:48 y en la última consulta de las 14:44:47, Fastlane seguía en curso y el paso de IPA estaba pendiente. |
-| [45452702062](https://github.com/FontalvoB/antares-paciente/actions/runs/45452702062) / [45452234954](https://github.com/FontalvoB/antares-paciente/actions/runs/45452234954) | `d045955` / `cc441ec`, push | Cancelados. |
-| [45451786275](https://github.com/FontalvoB/antares-paciente/actions/runs/45451786275) | `b1bcdd8`, push | Success a las 13:02:04. Jobs de validación y de iOS, paso Fastlane y artefacto IPA/dSYMs exitosos. |
-| [45447644274](https://github.com/FontalvoB/antares-paciente/actions/runs/45447644274) / [45445624773](https://github.com/FontalvoB/antares-paciente/actions/runs/45445624773) | `b1f43de` / `7191040`, push | Cancelados; sus commits forman parte del run exitoso de `b1bcdd8`. |
-| [45444106260](https://github.com/FontalvoB/antares-paciente/actions/runs/45444106260) | `d696242`, push | Success. |
-
-Validar en App Store Connect el número de compilación procesado y el grupo destinatario. La evidencia de disponibilidad en el grupo y la instalación en un iPhone siguen pendientes de verificación.
+El [run 45475062145](https://github.com/FontalvoB/antares-paciente/actions/runs/45475062145) de KAN-141 (`eca5ec4`) y el [manual 45470320286](https://github.com/FontalvoB/antares-paciente/actions/runs/45470320286) de `d045955` concluyeron en `success`. Verificar build procesado, grupo de testers y smoke nativo del SHA final para la evidencia de producción.
 
 ### ECS/AWS
 
-`aws ecs describe-services --cluster cooppadresd-cluster --services cooppadresd-api cooppadresd-auth cooppadresd-ai --region us-east-2` terminó a las **14:38:35**, exit 0. Reconsulta filtrada a las **14:38:54**, exit 0 y `failures: []`.
+`aws ecs describe-services --cluster cooppadresd-cluster --services cooppadresd-api cooppadresd-auth cooppadresd-ai cooppadresd-frontend --region us-east-2` a las **15:13:48**, exit 0 y `failures: []`.
 
-| Servicio | Revisión | Estado | Deseadas / corriendo / pendientes | Última actualización del despliegue |
-| --- | --- | --- | --- | --- |
-| `cooppadresd-api` | `:154` | `ACTIVE`, `PRIMARY/COMPLETED` | 1 / 1 / 0 | 23/11 10:46:02 |
-| `cooppadresd-auth` | `:142` | `ACTIVE`, `PRIMARY/COMPLETED` | 1 / 1 / 0 | 23/11 10:41:03 |
-| `cooppadresd-ai` | `:89` | `ACTIVE`, `PRIMARY/COMPLETED` | 1 / 1 / 0 | 20/11 15:57:05 |
+| Servicio | Revisión ECS | Estado | Deseadas / corriendo / pendientes |
+| --- | --- | --- | --- |
+| `cooppadresd-api` | `:154` | `ACTIVE / COMPLETED` | 1 / 1 / 0 |
+| `cooppadresd-auth` | `:142` | `ACTIVE / COMPLETED` | 1 / 1 / 0 |
+| `cooppadresd-ai` | `:89` | `ACTIVE / COMPLETED` | 1 / 1 / 0 |
+| `cooppadresd-frontend` | `:118` | `ACTIVE / COMPLETED` | 1 / 1 / 0 |
 
-La consulta confirma estado de los servicios y réplicas. Pendiente un smoke autorizado del contrato de Wellness y revisar los 5xx en la ventana del smoke para confirmar salud funcional.
+**0 5xx registrados en seis horas**, ventana **09:14:41–15:14:41**. `aws cloudwatch get-metric-statistics` en `AWS/ApplicationELB`, dimensiones `LoadBalancer` de `cooppadresd-alb` y `cooppadresd-alb-internal`, métricas `HTTPCode_ELB_5XX_Count` y `HTTPCode_Target_5XX_Count`, `Sum` con período 3600. Las cuatro series de errores devolvieron cero puntos. `RequestCount` registró 53 solicitudes en el ALB público y 4796 en el interno. Queda por ejecutar el smoke autenticado del contrato de Wellness cuando se publique.
 
 ## Riesgos y dependencias
 
@@ -244,21 +175,22 @@ La consulta confirma estado de los servicios y réplicas. Pendiente un smoke aut
 | --- | --- |
 | KAN-130, motor y persistencia | OpenAPI publicado, paridad .NET con v5.2, migraciones aplicadas, auth por persona, idempotencia y tres artefactos validados con respuestas reales del entorno de QA. |
 | Pago, correo, autenticación y deep link | Pago fuera de la app, pasarela real pendiente. Probar activación y reenvío, universal/app link y cuenta con sesión real. Retirar credenciales Wellness de ejemplo del recorrido de producción. Acordar las tres clases de contacto y su auditoría. |
-| Apple Health y reloj BLE | KAN-160 valida permisos, sincronización y deduplicación con origen `apple` en iPhone. `b0a90ff` restauró HealthKit en la app y tiene run verde. KAN-158 valida reloj físico y origen `reloj`; cubrir reconexión y permisos. El ADR deja Health Connect fuera de Wellness v1. |
+| Módulos fuera de la navegación | Comunidad y Medicamentos vuelven con KAN-135, Apple Health con KAN-160, BLE con KAN-158 y Citas con KAN-174. `b0a90ff` restauró HealthKit anteriormente; su entrada permanece retirada en v5.1. Validar origen y deduplicación de `apple` y `reloj` cuando se habiliten. El ADR deja Health Connect fuera de Wellness v1. |
 | Notificaciones | KAN-176 cubre protocolo, cofre, racha y mensajes de IA, preferencias y quiet hours. Probar permiso y entrega con credenciales/APNs y FCM configurados para cada build. Alertas automáticas de FC/presión quedan fuera de v1. |
 | Matriz nativa KAN-173 | Adjuntar resultados iOS/Android, ES/EN, zonas horarias (incluye medianoche y cambio de zona), offline/reconexión, reanudación, cámara, sesión guiada con bloqueo, deep links y regresiones de comunidad, medicamentos y reloj. KAN-147 cubre validación de accesibilidad y unidades US. |
-| Cierre del día e historial | Validar con KAN-141 las transiciones y recompensas al cierre, especialmente al cambiar de fecha o de versión. Revisar historial de protocolo, sesiones, comidas y lectura del ERP para KAN-144. |
+| Cierre del día e historial | KAN-141 móvil ya está integrado. Sustituir el transporte simulado y validar transiciones, efectos y recompensas con cambio de fecha o versión. Revisar historial de protocolo, sesiones, comidas y lectura del ERP para KAN-144. |
+| SOS | Mantener doble confirmación de la alerta real, diferenciar auditoría local de entrega confirmada y validar 123/911, permisos y vídeo nativo. Acordar aviso automático con backend y Legal. |
 
 ## Checklist de Diomedes y Definition of Done en producción
 
-1. [ ] En su checkout limpio, ejecutar `git switch dev`, `git pull --ff-only origin dev`, `git rev-parse --short HEAD`. Verificar que integra los seis merges de la tabla y anotar el SHA exacto que se desplegará. Para validar KAN-136/142 reabiertas, comprobar que incluye su PR de generación.
+1. [ ] En su checkout limpio, ejecutar `git switch dev`, `git pull --ff-only origin dev`, `git rev-parse --short HEAD`. Verificar que incluye `e472af7` y todos los merges de la tabla, y anotar el SHA exacto del build.
 2. [ ] Repetir los cuatro gates y el E2E de la versión, guardar salidas con timestamp. Criterio: todos los gates en exit 0, sin claves faltantes, evidencia 320/390 y revisión ES/EN, accesibilidad y estados de carga, vacío y error.
 3. [ ] Publicar OpenAPI y migraciones con Diomedes. Ejecutar el caso válido y casos `409`, `422` y `503` en QA. Repetir el mismo POST en paralelo, simular timeout tras aceptación y reentrega del outbox. Criterio: un envío, un job inicial, una versión candidata y un resultado por tipo; reintento en el mismo job con las respuestas y piezas listas conservadas.
 4. [ ] Verificar el flujo desde la confirmación de pago de prueba hasta Home. Criterio: un correo por activación, enlace válido con manejo de expiración, consentimientos/contactos auditados y sesión de app real. Al confirmar el cuestionario aparece Home de inmediato. Verificar todas las filas de la matriz y bandeja visible en cada transición.
-5. [ ] Probar el recorrido diario, versión y persistencia en dos dispositivos. Criterio: cofre se abre una sola vez tras pasos 1–4, sesión guiada recuperable, dieta vinculada al protocolo, cambio de meta mantiene día N e historial, cuenta distinta aislada.
+5. [ ] Probar protocolo, versión y persistencia en dos dispositivos. Criterio: cofre una vez tras pasos 1–4, sesión recuperable, dieta vinculada al protocolo, cierre offline sincronizado una vez por fecha y cambio de meta conserva día N e historial. Verificar Perfil y fallback de destinos retirados, más los dos caminos de SOS con dobles de prueba.
 6. [ ] Verificar KAN-173, Food AI, HealthKit/BLE y notificaciones según lo habilitado en el release. Criterio: evidencia nativa con versión, dispositivo, idioma, zona y resultado, y regresiones de los módulos que se mantienen.
 7. [ ] Verificar el run TestFlight del SHA candidato, IPA y build procesado/accesible al grupo. Instalar y ejecutar smoke. Verificar ECS estable y correlacionar smoke autenticado con logs/métricas sin 5xx inesperados. Guardar evidencia de deploy y pruebas sin información personal, credenciales ni tokens.
-8. [ ] Pegar el bloque correspondiente del [resumen Jira](JIRA-RESUMENES-FINALIZADO.md), adjuntar evidencias, commit, PR, build y responsables. Pasar cada tarea a **Finalizado** cuando cumpla los criterios aplicables. KAN-136/142 reabiertas requieren el trabajo en vuelo, estados reales y cobertura de generación/reintento.
+8. [ ] Con el run TestFlight de `e472af7` en verde, pegar los bloques del [resumen Jira](JIRA-RESUMENES-FINALIZADO.md) y pasar a **Finalizado** el alcance móvil, incluyendo generación KAN-136/142. Adjuntar PR, evidencia y build. Mantener el seguimiento de backend y las pruebas nativas pendientes en sus tareas. Los puntos 3–7 son los criterios de verificación de la integración productiva completa.
 
 ### Referencias del workspace
 
