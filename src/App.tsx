@@ -53,6 +53,8 @@ import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol"
 import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
+import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
+import { checkinOwner, syncCheckins } from "./features/wellness/checkin/checkin-store";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { BodyProfilePage } from "./pages/BodyProfilePage";
@@ -113,6 +115,9 @@ function Router() {
         break;
       case "wellness-exercise":
         content = <WellnessExercise />;
+        break;
+      case "wellness-checkin":
+        content = <WellnessCloseDay />;
         break;
       case "book":
         content = APPOINTMENTS_ENABLED ? (
@@ -216,6 +221,15 @@ function Shell() {
   } = useApp();
   const { t, lang } = useI18n();
   const pushStarted = useRef(false);
+  const wellnessOwner = checkinOwner(user);
+
+  useEffect(() => {
+    if (flow !== "app") return;
+    const sync = () => { void syncCheckins(wellnessOwner); };
+    sync();
+    window.addEventListener("online", sync);
+    return () => window.removeEventListener("online", sync);
+  }, [flow, wellnessOwner]);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();

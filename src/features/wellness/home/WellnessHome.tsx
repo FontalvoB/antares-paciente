@@ -19,9 +19,11 @@ import type { Screen } from "../../../types";
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { LanguageToggle } from "../../../components/LanguageToggle";
+import { checkinOwner, loadCheckins } from "../checkin/checkin-store";
 import { Screen as AppScreen, Scroll } from "../../../components/Screen";
 import {
   getWellnessHomeData,
+  localISODate,
   type ProtocolStepId,
 } from "../state/wellness-home-store";
 import "../wellness.css";
@@ -57,6 +59,7 @@ export function WellnessHome() {
   const { user, navigate, openVoice, openTests } = useApp();
   const { t, lang } = useI18n();
   const data = getWellnessHomeData(user?.nombre ?? "");
+  const closed = loadCheckins(checkinOwner(user))[localISODate(new Date())];
   const number = new Intl.NumberFormat(lang === "en" ? "en-US" : "es-ES", {
     maximumFractionDigits: 0,
   });
@@ -185,6 +188,14 @@ export function WellnessHome() {
               : data.protocolDone >= data.protocol.length
                 ? t("Día completo")
                 : t("Continuar mi día")}
+          </IonButton>
+          <IonButton
+            expand="block"
+            fill="outline"
+            className="wh-secondary"
+            onClick={() => navigate("wellness-checkin")}
+          >
+            {closed ? t("Ver cierre del día") : t("Cerrar el día")}
           </IonButton>
         </section>
 

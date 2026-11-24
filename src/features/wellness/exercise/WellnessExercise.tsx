@@ -31,6 +31,14 @@ import {
 } from "./exercise-plan";
 import "../wellness.css";
 import "./wellness-exercise.css";
+import { checkinHistory, checkinOwner } from "../checkin/checkin-store";
+import { dailyEffects, EFFECT_COPY } from "../checkin/close-day";
+
+const EXERCISE_MESSAGES = new Set<string>([
+  EFFECT_COPY.gentleSleep, EFFECT_COPY.gentleFatigue, EFFECT_COPY.lowImpact,
+  EFFECT_COPY.pausePain, EFFECT_COPY.continuingPause, EFFECT_COPY.dizziness,
+  EFFECT_COPY.progressOne, EFFECT_COPY.progressTwo, EFFECT_COPY.brokenStreak,
+]);
 
 const CHECKIN_KEY = "wellness.exercise.checkin.v1";
 const SESSION_KEY = "wellness.exercise.session.v1";
@@ -91,9 +99,13 @@ function sessionRemaining(session: StoredSession): number {
 export function WellnessExercise() {
   const { user, navigate, showToast } = useApp();
   const { t, lang } = useI18n();
-  const home = useMemo(
-    () => getWellnessHomeData(user?.nombre ?? ""),
-    [user?.nombre],
+  const today = new Date();
+  const date = localISODate(today);
+  const owner = checkinOwner(user);
+  const home = getWellnessHomeData(user?.nombre ?? "", today);
+  const effects = useMemo(
+    () => dailyEffects(date, checkinHistory(owner), home.day),
+    [date, owner, home.day],
   );
   const [checkin, setCheckin] = useState<StoredCheckin>(() => {
     const stored = read<StoredCheckin | null>(CHECKIN_KEY, null);
@@ -111,13 +123,14 @@ export function WellnessExercise() {
       buildExerciseDay({
         goal: home.plan.goal,
         day: home.day,
-        checkin: {
+        dailyEffects: effects,
+        checkin: checkin.date === date ? {
           pain: checkin.pain,
           fatigue: checkin.fatigue,
           dizziness: checkin.dizziness,
-        },
+        } : undefined,
       }),
-    [home.plan.goal, home.day, checkin],
+    [home.plan.goal, home.day, checkin, effects, date],
   );
   const [session, setSession] = useState<StoredSession | null>(() => {
     const stored = read<StoredSession | null>(SESSION_KEY, null);
@@ -395,6 +408,9 @@ export function WellnessExercise() {
           </div>
         </section>
 
+        {effects.messages.filter((message) => EXERCISE_MESSAGES.has(message)).map((message) => (
+          <p className="wx-note" key={message}>{t(message)}</p>
+        ))}
         {plan.adaptationNote && (
           <p
             className={`wx-note${plan.adaptation === "rest" ? " wx-note-stop" : ""}`}

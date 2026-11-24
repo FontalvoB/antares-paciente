@@ -15,13 +15,14 @@ assert(out, "COP_E2E_OUTPUT is required");
 
 const browser = await chromium.launch();
 const results = [];
+const tokenLifetimeSeconds = 2 * 24 * 60 * 60;
 
 const token =
   "x." +
   Buffer.from(
     JSON.stringify({
       sub: "11111111-1111-4111-8111-111111111111",
-      exp: Math.floor(Date.now() / 1000) + 3600,
+      exp: Math.floor(Date.now() / 1000) + tokenLifetimeSeconds,
     }),
   ).toString("base64url") +
   ".x";
@@ -34,7 +35,7 @@ async function mockApi(context) {
     const reply = (json) => route.fulfill({ json });
     if (p === "/api/auth/refresh") {
       return verified
-        ? reply({ accessToken: token, expiresIn: 3600 })
+        ? reply({ accessToken: token, expiresIn: tokenLifetimeSeconds })
         : route.fulfill({ status: 401, json: {} });
     }
     if (p === "/api/auth/id-lookup") {
@@ -54,7 +55,7 @@ async function mockApi(context) {
       return reply({
         accessToken: token,
         tokenType: "Bearer",
-        expiresIn: 3600,
+        expiresIn: tokenLifetimeSeconds,
       });
     }
     if (p === "/api/v1/me/patient-profile") {
@@ -294,16 +295,59 @@ async function runFlow(page, baseUrl, width) {
   await page.getByRole("button", { name: "Seguir", exact: true }).click();
   await expect(page.getByText("5 de 5 pasos", { exact: true })).toBeVisible();
   await shot(page, `18-protocolo-completo-${width}`);
+  await page.getByRole("button", { name: "Cerrar el día", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Cerrar el día", exact: true })).toBeVisible();
+  await expect(page.locator(".app-toast").getByText(/\+10 puntos/)).toBeHidden();
+  await shot(page, `20-cierre-formulario-${width}`);
+  await page.getByRole("button", { name: "Cerrar el día", exact: true }).click();
+  await expect(page.locator(".wc-error")).toBeFocused();
+  await expect(page.locator('ion-input[name="adherence"] input')).toHaveAttribute("aria-invalid", "true");
+  for (const [name, value] of [
+    ["adherence", "75"], ["sleepHours", "5"], ["energy", "3"], ["pain", "0"],
+  ]) {
+    await page.locator(`ion-input[name="${name}"] input`).fill(value);
+  }
+  await page.getByRole("checkbox", { name: "Hambre", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Insomnio", exact: true }).click();
+  await page.getByRole("radio", { name: "Sí", exact: true }).click();
+  await page.context().setOffline(true);
+  await page.getByRole("button", { name: "Cerrar el día", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tu plan para mañana" })).toBeVisible();
+  await expect(page.getByText(/guardado en este dispositivo/i)).toBeVisible();
+  await expect(page.getByText(/ejercicio será más suave/i)).toBeVisible();
+  await expect(page.getByText(/hambre que registraste/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Día cerrado", exact: true })).toBeFocused();
+  await shot(page, `21-cierre-pendiente-${width}`);
+  await page.context().setOffline(false);
+  await expect(page.getByText("Cierre sincronizado.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Conexión restablecida", { exact: true })).toBeHidden();
+  await shot(page, `22-cierre-sincronizado-${width}`);
   await page
     .getByRole("button", { name: "Volver al inicio", exact: true })
     .click();
   await expect(page.getByText("5/5", { exact: true })).toBeVisible();
   await shot(page, `19-home-completo-${width}`);
+  await page.getByRole("button", { name: "Ver cierre del día", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Día cerrado", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cerrar el día", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Volver al inicio", exact: true }).click();
+  const tomorrow = await page.evaluate(() => {
+    const now = new Date();
+    now.setDate(now.getDate() + 1);
+    return now.getTime();
+  });
+  await page.clock.setFixedTime(tomorrow);
+  await page.getByRole("button", { name: "Ejercicio", exact: true }).click();
+  await expect(page.getByText(/ejercicio será más suave/i)).toBeVisible();
+  await page.getByRole("button", { name: "Volver al protocolo", exact: true }).click();
+  await page.getByRole("button", { name: "Volver al inicio", exact: true }).click();
+  await page.getByLabel("Accesos rápidos").getByRole("button", { name: "Nutrición", exact: true }).click();
+  await expect(page.getByText(/cena más temprana y ligera/i)).toBeVisible();
 
   return afterEnter;
 }
 
-const baseUrl = process.env.COP_E2E_APP_URL ?? "http://127.0.0.1:5173";
+const baseUrl = process.env.COP_E2E_APP_URL ?? "http://127.0.0.1:5177";
 
 try {
   for (const width of process.env.COP_E2E_WIDTH

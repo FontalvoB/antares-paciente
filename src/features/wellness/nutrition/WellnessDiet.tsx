@@ -8,6 +8,8 @@ import { useI18n } from "../../../i18n/I18nContext";
 import { analyzeFoodImage } from "../../../utils/foodAiApi";
 import type { FoodAnalysisResult } from "../../../utils/foodAiApi";
 import { getWellnessHomeData, localISODate } from "../state/wellness-home-store";
+import { checkinHistory, checkinOwner } from "../checkin/checkin-store";
+import { dailyEffects, EFFECT_COPY } from "../checkin/close-day";
 import { buildDietDay, nextDish, sumMacros } from "./diet-plan";
 import type { DietMacros } from "./diet-plan";
 import {
@@ -107,7 +109,9 @@ function WellnessDietDay({ today }: { today: Date }) {
     if (phase !== "capture") modalTitle.current?.focus();
   }, [phase]);
 
-  const simplified = log.manualSimple || log.autoSimple;
+  const { nutrition, messages } = dailyEffects(localISODate(today), checkinHistory(checkinOwner(user)), home.day);
+  const autoSimple = log.autoSimple || nutrition.simpleMenu;
+  const simplified = log.manualSimple || autoSimple;
   const plan = buildDietDay({ ...home.plan, weightKg: prefs.weightKg }, home.day, prefs, log.choices, simplified);
   const eaten = Object.values(log.eaten);
   const consumed = sumMacros(eaten.map((meal) => meal.values));
@@ -233,20 +237,23 @@ function WellnessDietDay({ today }: { today: Date }) {
               type="button"
               className={`wl-chip${simplified ? " is-selected" : ""}`}
               aria-pressed={simplified}
-              disabled={log.autoSimple}
+              disabled={autoSimple}
               onClick={() => update(() => setDietSimplified(!log.manualSimple))}
             >
               {t("Modo simplificado")}
             </button>
             {simplified && (
               <p role="status">
-                {log.autoSimple
+                {nutrition.simpleMenu ? t(EFFECT_COPY.simpleMenu) : log.autoSimple
                   ? t("El menú tiene menos opciones porque registraste menos del 60 % de las comidas en cada uno de los dos días anteriores.")
                   : t("El menú tiene menos opciones para que sea más fácil elegir.")}
               </p>
             )}
           </section>
 
+          {nutrition.blockCuts && (
+            <p className="wp-card">{t(messages.includes(EFFECT_COPY.dizziness) ? EFFECT_COPY.dizziness : EFFECT_COPY.hunger)}</p>
+          )}
           {saveError && !activeMeal && <p role="alert">{t("No se pudo guardar el registro. Inténtalo de nuevo.")}</p>}
 
           {plan.meals.map((meal) => {
@@ -261,6 +268,7 @@ function WellnessDietDay({ today }: { today: Date }) {
                   <h2>{name}</h2>
                   {entry && <span className="wp-done"><IonIcon icon={checkmarkCircle} aria-hidden="true" /> {t("Registrada")}</span>}
                 </div>
+                {meal.id === "dinner" && nutrition.earlierDinner && <p>{t(EFFECT_COPY.dinner)}</p>}
                 {confirmedPhoto ? (
                   <p>{t("Registro confirmado")}{confirmedPhoto.grams !== null && <> · {grams(confirmedPhoto.grams)}</>}</p>
                 ) : (
