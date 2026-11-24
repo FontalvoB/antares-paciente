@@ -6,17 +6,10 @@ import {
   MotionConfig,
   useReducedMotion,
 } from "framer-motion";
-import {
-  useEffect,
-  useRef,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./utils/queryClient";
-import {
-  registerForPush,
-  syncPushLanguage,
-} from "./utils/pushNotifications";
+import { registerForPush, syncPushLanguage } from "./utils/pushNotifications";
 import { AppProvider, useApp } from "./context/AppContext";
 import { LegalConsentProvider } from "./context/LegalConsentContext";
 import { AiDisclosureProvider } from "./context/AiDisclosureContext";
@@ -26,6 +19,8 @@ import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { useStatusBarContrast } from "./hooks/useStatusBarContrast";
 import { useTabletLayout } from "./hooks/useTabletLayout";
 import { PanicOverlay } from "./components/PanicOverlay";
+import { SosQuickAccess } from "./components/SosQuickAccess";
+import { SosLayer } from "./components/SosLayer";
 import { VoiceOverlay } from "./components/VoiceOverlay";
 import { VitaWelcome } from "./components/VitaWelcome";
 import { ToastHost } from "./components/ToastHost";
@@ -40,6 +35,11 @@ import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol"
 import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
+import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
+import {
+  checkinOwner,
+  syncCheckins,
+} from "./features/wellness/checkin/checkin-store";
 import { ProfilePage } from "./pages/ProfilePage";
 import logoLetras from "./assets/LogoConLetras.png";
 
@@ -86,6 +86,9 @@ function Router() {
       case "wellness-exercise":
         content = <WellnessExercise />;
         break;
+      case "wellness-checkin":
+        content = <WellnessCloseDay />;
+        break;
       case "prof":
         content = <ProfilePage />;
         break;
@@ -117,6 +120,17 @@ function Shell() {
   const { user, flow, navigate } = useApp();
   const { lang } = useI18n();
   const pushStarted = useRef(false);
+  const wellnessOwner = checkinOwner(user);
+
+  useEffect(() => {
+    if (flow !== "app") return;
+    const sync = () => {
+      void syncCheckins(wellnessOwner);
+    };
+    sync();
+    window.addEventListener("online", sync);
+    return () => window.removeEventListener("online", sync);
+  }, [flow, wellnessOwner]);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();
@@ -127,7 +141,10 @@ function Shell() {
   useEffect(() => {
     if (flow !== "app" || pushStarted.current) return;
     pushStarted.current = true;
-    void registerForPush({ language: lang, onOpenHome: () => navigate("home") });
+    void registerForPush({
+      language: lang,
+      onOpenHome: () => navigate("home"),
+    });
   }, [flow, lang, navigate]);
 
   // Actualiza el token ya conocido al cambiar idioma/cuenta sin pedir permisos de nuevo.
@@ -139,12 +156,16 @@ function Shell() {
     <div className="app-stage">
       <div className="app-shell">
         <Router />
-        <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />
         <VitaWelcome />
         <OfflineBanner />
         {flow === "app" && <DailyProtocolReminder />}
+        {/* KAN-137: SOS global por encima de modales, teclado, video y sesión. */}
+        <SosLayer>
+          <SosQuickAccess />
+          <PanicOverlay />
+        </SosLayer>
       </div>
     </div>
   );

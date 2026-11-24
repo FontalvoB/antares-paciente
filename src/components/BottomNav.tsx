@@ -25,14 +25,27 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
     iconOn: string;
   }[] = [
     { id: "home", label: t("Inicio"), icon: homeOutline, iconOn: home },
-    { id: "wellness-diet", label: t("Nutrición"), icon: nutritionOutline, iconOn: nutrition },
+    {
+      id: "wellness-diet",
+      label: t("Nutrición"),
+      icon: nutritionOutline,
+      iconOn: nutrition,
+    },
     { id: "sos", label: t("SOS"), icon: medkit, iconOn: medkit },
-    { id: "wellness-exercise", label: t("Ejercicio"), icon: barbellOutline, iconOn: barbell },
+    {
+      id: "wellness-exercise",
+      label: t("Ejercicio"),
+      icon: barbellOutline,
+      iconOn: barbell,
+    },
     { id: "prof", label: t("Perfil"), icon: personOutline, iconOn: person },
   ];
 
   return (
-    <nav className={`bnav premium-nav ${dark ? "bnav-dark" : ""}`} aria-label={t('Navegación principal')}>
+    <nav
+      className={`bnav premium-nav ${dark ? "bnav-dark" : ""}`}
+      aria-label={t("Navegación principal")}
+    >
       {items.map((it) => {
         if (it.id === "sos") {
           return (
@@ -42,12 +55,14 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
               className="ni ni-center"
               fill="clear"
               onClick={openPanic}
-              aria-label={t("Botón de pánico")}
+              aria-label={t("Abrir SOS de emergencia")}
             >
-              <span className="premium-nav-content"><span className="ni-ico">
-                <IonIcon icon={medkit} aria-hidden="true" />
+              <span className="premium-nav-content">
+                <span className="ni-ico">
+                  <IonIcon icon={medkit} aria-hidden="true" />
+                </span>
+                <span>{it.label}</span>
               </span>
-              <span>{it.label}</span></span>
             </IonButton>
           );
         }
@@ -62,10 +77,12 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
             onClick={() => navigate(target)}
             aria-current={on ? "page" : undefined}
           >
-            <span className="premium-nav-content"><span className="ni-ico">
-              <IonIcon icon={on ? it.iconOn : it.icon} aria-hidden="true" />
+            <span className="premium-nav-content">
+              <span className="ni-ico">
+                <IonIcon icon={on ? it.iconOn : it.icon} aria-hidden="true" />
+              </span>
+              <span>{it.label}</span>
             </span>
-            <span>{it.label}</span></span>
           </IonButton>
         );
       })}

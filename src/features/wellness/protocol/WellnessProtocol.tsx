@@ -20,8 +20,10 @@ import {
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { Screen, Scroll } from "../../../components/Screen";
+import { checkinOwner, loadCheckins } from "../checkin/checkin-store";
 import {
   completeProtocolStep,
+  localISODate,
   getWellnessHomeData,
   type ProtocolStepId,
 } from "../state/wellness-home-store";
@@ -112,6 +114,7 @@ export function WellnessProtocol() {
     return getWellnessHomeData(user?.nombre ?? "");
   }, [revision, user?.nombre]);
   const chestUnlocked = data.protocolDone >= 4;
+  const closed = loadCheckins(checkinOwner(user))[localISODate(new Date())];
   const chestDone =
     data.protocol.find((step) => step.id === "chest")?.done ?? false;
   const missing = useMemo(
@@ -303,6 +306,12 @@ export function WellnessProtocol() {
               </p>
             </div>
           </section>
+        )}
+
+        {(chestDone || closed) && (
+          <IonButton expand="block" className="wp-primary" onClick={() => navigate("wellness-checkin")}>
+            {closed ? t("Ver cierre del día") : t("Cerrar el día")}
+          </IonButton>
         )}
 
         <p className="wp-legal">

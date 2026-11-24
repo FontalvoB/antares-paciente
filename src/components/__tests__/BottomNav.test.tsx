@@ -36,23 +36,34 @@ describe("BottomNav v5.1", () => {
   it("muestra cinco acciones en orden y navega a las cuatro pantallas", () => {
     render(<BottomNav />);
 
-    const nav = screen.getByRole("navigation", { name: "Navegaci\u00f3n principal" });
+    const nav = screen.getByRole("navigation", {
+      name: "Navegaci\u00f3n principal",
+    });
     const buttons = within(nav).getAllByRole("button");
     expect(buttons.map((button) => button.textContent)).toEqual([
-      "Inicio", "Nutrici\u00f3n", "SOS", "Ejercicio", "Perfil",
+      "Inicio",
+      "Nutrici\u00f3n",
+      "SOS",
+      "Ejercicio",
+      "Perfil",
     ]);
     for (const name of ["Inicio", "Nutrici\u00f3n", "Ejercicio", "Perfil"]) {
       fireEvent.click(within(nav).getByRole("button", { name }));
     }
     expect(app.navigate.mock.calls).toEqual([
-      ["home"], ["wellness-diet"], ["wellness-exercise"], ["prof"],
+      ["home"],
+      ["wellness-diet"],
+      ["wellness-exercise"],
+      ["prof"],
     ]);
   });
 
   it("conserva el SOS central y su nombre accesible", () => {
     render(<BottomNav />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Bot\u00f3n de p\u00e1nico" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Abrir SOS de emergencia" }),
+    );
     expect(app.openPanic).toHaveBeenCalledOnce();
     expect(app.navigate).not.toHaveBeenCalled();
   });
@@ -61,6 +72,8 @@ describe("BottomNav v5.1", () => {
     app.screen = "wellness-exercise";
     render(<BottomNav />);
 
-    expect(screen.getByRole("button", { current: "page" }).textContent).toBe("Ejercicio");
+    expect(screen.getByRole("button", { current: "page" }).textContent).toBe(
+      "Ejercicio",
+    );
   });
 });

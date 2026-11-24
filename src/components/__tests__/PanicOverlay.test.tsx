@@ -85,6 +85,11 @@ vi.mock("../../utils/emergencyCityRouting", async (importOriginal) => ({
 
 const context = vi.hoisted(() => ({
   panicOpen: true,
+  /** Sin valor: protocolo directo (tests previos a KAN-137). */
+  panicEntry: undefined as undefined | "countdown" | "protocol",
+  flow: "app",
+  screen: "wellness-exercise",
+  openPanic: vi.fn(),
   sosActive: false,
   activateSos: vi.fn(),
   closePanic: vi.fn(),
@@ -160,6 +165,10 @@ const flush = async () => {
 beforeEach(() => {
   languageMock.lang = "es";
   context.panicOpen = true;
+  context.panicEntry = undefined;
+  context.flow = "app";
+  context.screen = "wellness-exercise";
+  context.openPanic.mockClear();
   context.sosActive = false;
   context.activateSos.mockClear();
   context.closePanic.mockClear();
@@ -384,13 +393,13 @@ describe("SOS — REQ-SOS-07: sin auto-activación y doble confirmación", () =>
     sosMock.locate.mockResolvedValue({ country: null, coordinates: null, status: "unavailable" });
     const { container } = render(<PanicOverlay />);
     await screen.findByText("Turn on location to find the emergency line for your area.");
-    expect(screen.getByText("Your medical team and contacts")).toBeTruthy();
+    expect(screen.getByText("Your emergency contacts")).toBeTruthy();
     expect(screen.getByRole("tab", { name: "My team" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Emergency services" })).toBeTruthy();
     expect(screen.getByText("Retry location")).toBeTruthy();
     expect(screen.getByLabelText("Call: Police")).toBeTruthy();
     expect(container.textContent).not.toContain("Reintentar ubicación");
-    expect(container.textContent).not.toContain("Tu equipo médico y contactos");
+    expect(container.textContent).not.toContain("Tus contactos de emergencia");
   });
 
   it("la llamada al familiar abre el marcador nativo sin activar SOS", () => {
@@ -1035,5 +1044,130 @@ describe("BUG-01 — copy honesto según el estado real de la alerta", () => {
       ),
     ).toBeTruthy();
     expect(screen.queryByText("Llamada realizada · +573001234567")).toBeNull();
+  });
+});
+
+describe("KAN-137 — cuenta regresiva de 5 s y auditoría", () => {
+  const AUDIT_KEY = "wellness.sos.audit.v1";
+  const NOTICE_KEY = "wellness.sos.notices.v1";
+  const audit = () => JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]") as Array<Record<string, string>>;
+  const notices = () => JSON.parse(window.localStorage.getItem(NOTICE_KEY) ?? "[]") as Array<Record<string, unknown>>;
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.useFakeTimers();
+    context.panicEntry = "countdown";
+    context.user = { fam1Nombre: "Contacto de prueba", fam1Parentesco: "Familiar", fam1Cel: "+573001234567" };
+    // Sin país detectado: la regla del ticket llama al 911.
+    sosMock.locate.mockReset().mockResolvedValue({ country: null, coordinates: null, status: "unavailable" });
+    sosMock.activate.mockReset();
+  });
+
+  const tick = async (ms: number) => {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ms);
+    });
+  };
+
+  it("muestra el aviso accesible y descuenta cada segundo sin llamar todavía", async () => {
+    render(<PanicOverlay />);
+    const alert = screen.getByRole("alert");
+    expect(alert.getAttribute("aria-live")).toBe("assertive");
+    expect(alert.textContent).toMatch(/Llamaremos a emergencias en 5\ss/);
+    await tick(1000);
+    expect(screen.getByTestId("sos-countdown-seconds").textContent).toBe("4");
+    await tick(3000);
+    expect(screen.getByRole("alert").textContent).toMatch(/en 1\ss/);
+    expect(dialMock).not.toHaveBeenCalled();
+    expect(audit()).toHaveLength(0);
+    expect(screen.queryByRole("tab", { name: "Mi equipo" })).toBeNull();
+  });
+
+  it("a los 5 s llama al 911, registra el aviso a contactos y audita called_911", async () => {
+    render(<PanicOverlay />);
+    await tick(5000);
+    expect(dialMock).toHaveBeenCalledWith("911");
+    expect(dialMock).toHaveBeenCalledTimes(1);
+    expect(notices()).toEqual([expect.objectContaining({ contacts: 1 })]);
+    const [entry] = audit();
+    expect(entry).toEqual({ date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), time: expect.stringMatching(/^\d{2}:\d{2}:\d{2}$/), result: "called_911", screen: "wellness-exercise" });
+    // Sin backend ni IA: el SOS real solo se envía con la doble confirmación.
+    expect(sosMock.activate).not.toHaveBeenCalled();
+    expect(context.showToast).toHaveBeenCalledWith("Registramos el aviso a tus contactos de emergencia.", "ok");
+    expect(screen.getByRole("tab", { name: "Mi equipo" })).toBeTruthy();
+    await tick(10_000);
+    expect(dialMock).toHaveBeenCalledTimes(1);
+    expect(audit()).toHaveLength(1);
+  });
+
+  it("cancelar no envía alerta, no llama y audita cancelled", async () => {
+    render(<PanicOverlay />);
+    await tick(2000);
+    fireEvent.click(screen.getByLabelText("Cancelar SOS", { selector: "footer button" }));
+    expect(context.closePanic).toHaveBeenCalledOnce();
+    await tick(10_000);
+    expect(dialMock).not.toHaveBeenCalled();
+    expect(notices()).toHaveLength(0);
+    expect(sosMock.activate).not.toHaveBeenCalled();
+    expect(audit().map(entry => entry.result)).toEqual(["cancelled"]);
+    expect(context.showToast).toHaveBeenCalledWith("SOS cancelado. No se envió ningún aviso.", "ok");
+  });
+
+  it("Llamar a emergencias corta la espera y llama al momento", async () => {
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Llamar a emergencias (911)"));
+    expect(dialMock).toHaveBeenCalledWith("911");
+    expect(audit().map(entry => entry.result)).toEqual(["called_911"]);
+    await tick(6000);
+    expect(dialMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("con país detectado usa la línea local (Colombia 123)", async () => {
+    sosMock.locate.mockReset().mockResolvedValue({ country: "CO", coordinates: { latitude: 4.6, longitude: -74.1 }, status: "located" });
+    render(<PanicOverlay />);
+    // El GPS responde antes de terminar la cuenta regresiva.
+    await tick(100);
+    await tick(4900);
+    expect(dialMock).toHaveBeenCalledWith("123");
+  });
+
+  it("Llamar a mi contacto abre su marcador, audita called_contact y no registra aviso", async () => {
+    render(<PanicOverlay />);
+    fireEvent.click(screen.getByLabelText("Llamar a mi contacto"));
+    expect(dialMock).toHaveBeenCalledWith("+573001234567");
+    expect(audit().map(entry => entry.result)).toEqual(["called_contact"]);
+    expect(notices()).toHaveLength(0);
+    await tick(6000);
+    expect(dialMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("sin contactos deshabilita Llamar a mi contacto y no inventa un aviso", async () => {
+    context.user = { fam1Nombre: "", fam1Parentesco: "", fam1Cel: "" };
+    render(<PanicOverlay />);
+    expect(screen.getByLabelText("Llamar a mi contacto").hasAttribute("disabled")).toBe(true);
+    await tick(5000);
+    expect(dialMock).toHaveBeenCalledWith("911");
+    expect(context.showToast).toHaveBeenCalledWith("No hay contactos de emergencia para avisar.", "err");
+  });
+
+  it("no muestra el texto de equipo médico en camino", () => {
+    const { container } = render(<PanicOverlay />);
+    expect(container.ownerDocument.body.textContent).not.toMatch(/en camino|on the way/i);
+  });
+
+  it("el evento global wellness:sos abre el SOS desde voz o IA", async () => {
+    context.panicOpen = false;
+    render(<PanicOverlay />);
+    window.dispatchEvent(new CustomEvent("wellness:sos", { detail: { source: "voice" } }));
+    expect(context.openPanic).toHaveBeenCalledOnce();
+  });
+
+  it("wellness:sos se ignora en el registro inicial sin contactos", async () => {
+    context.panicOpen = false;
+    context.flow = "onboarding";
+    context.user = { fam1Nombre: "", fam1Parentesco: "", fam1Cel: "" };
+    render(<PanicOverlay />);
+    window.dispatchEvent(new CustomEvent("wellness:sos"));
+    expect(context.openPanic).not.toHaveBeenCalled();
   });
 });
