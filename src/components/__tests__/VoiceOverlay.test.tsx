@@ -328,7 +328,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     const { rerender } = render(<VoiceOverlay />);
     await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledTimes(1));
     expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByLabelText("Volver al chat"));
+    fireEvent.click(screen.getByLabelText("Minimizar asistente de voz"));
     expect(mocks.app.minimizeVoice).toHaveBeenCalled();
     mocks.app.voiceMinimized = true; rerender(<VoiceOverlay />);
     expect(mocks.eleven.endSession).not.toHaveBeenCalled();

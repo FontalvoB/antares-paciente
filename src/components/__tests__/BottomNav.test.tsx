@@ -1,71 +1,66 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import type { ButtonHTMLAttributes } from 'react';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { ButtonHTMLAttributes } from "react";
 import { BottomNav } from "../BottomNav";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Estado mutable compartido con el mock de AppContext (vi.mock se hoistea).
-const mockCtx = vi.hoisted(() => ({
-  chatUnread: false as boolean,
-  openVoice: vi.fn(),
+const app = vi.hoisted(() => ({
+  screen: "home",
+  navigate: vi.fn(),
   openPanic: vi.fn(),
 }));
 
-vi.mock("../../context/AppContext", () => ({
-  useApp: () => ({
-    screen: "home",
-    navigate: vi.fn(),
-    openPanic: mockCtx.openPanic,
-    openVoice: mockCtx.openVoice,
-    chatUnread: mockCtx.chatUnread,
-  }),
+vi.mock("../../context/AppContext", () => ({ useApp: () => app }));
+vi.mock("../../i18n/I18nContext", () => ({ useT: () => (key: string) => key }));
+
+// Playwright comprueba los botones Ionic reales y el layout responsive.
+vi.mock("@ionic/react", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@ionic/react")>()),
+  IonButton: ({
+    children,
+    onClick,
+    "aria-label": label,
+    "aria-current": current,
+  }: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button onClick={onClick} aria-label={label} aria-current={current}>
+      {children}
+    </button>
+  ),
 }));
 
-// El botón Stencil se verifica en Playwright; aquí se comprueban los callbacks del shell.
-vi.mock('@ionic/react', async importOriginal => ({
-  ...await importOriginal<typeof import('@ionic/react')>(),
-  IonButton: ({children,onClick,'aria-label':label}:ButtonHTMLAttributes<HTMLButtonElement>) => <button onClick={onClick} aria-label={label}>{children}</button>,
-}));
-
-vi.mock("../../i18n/I18nContext", () => ({
-  useT: () => (key: string) => key,
-}));
-
-function renderNav() {
-  return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><BottomNav /></QueryClientProvider>);
-}
-
-describe("BottomNav — unread chat indicator", () => {
-  it('SOS central abre el pánico y la barra no muestra un SOS flotante aparte', () => {
-    const { container } = renderNav();
-    expect(screen.queryByRole('button',{name:'Hablar con Vita'})).toBeNull();
-    expect(screen.getAllByRole('button',{name:'Botón de pánico'})).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button',{name:'Botón de pánico'}));
-    expect(mockCtx.openPanic).toHaveBeenCalledOnce();
-    expect(container.querySelector('.premium-sos')).toBeNull();
-  });
+describe("BottomNav v5.1", () => {
   beforeEach(() => {
-    mockCtx.chatUnread = false;
+    app.screen = "home";
+    vi.clearAllMocks();
   });
 
-  it("hides the dot when chatUnread is false", () => {
-    renderNav();
-    expect(screen.queryByLabelText("Nuevos mensajes")).toBeNull();
+  it("muestra cinco acciones en orden y navega a las cuatro pantallas", () => {
+    render(<BottomNav />);
+
+    const nav = screen.getByRole("navigation", { name: "Navegaci\u00f3n principal" });
+    const buttons = within(nav).getAllByRole("button");
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      "Inicio", "Nutrici\u00f3n", "SOS", "Ejercicio", "Perfil",
+    ]);
+    for (const name of ["Inicio", "Nutrici\u00f3n", "Ejercicio", "Perfil"]) {
+      fireEvent.click(within(nav).getByRole("button", { name }));
+    }
+    expect(app.navigate.mock.calls).toEqual([
+      ["home"], ["wellness-diet"], ["wellness-exercise"], ["prof"],
+    ]);
   });
 
-  it("shows the dot with an accessible label when chatUnread is true", () => {
-    mockCtx.chatUnread = true;
-    renderNav();
-    const dot = screen.getByLabelText("Nuevos mensajes");
-    expect(dot).toBeTruthy();
+  it("conserva el SOS central y su nombre accesible", () => {
+    render(<BottomNav />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Bot\u00f3n de p\u00e1nico" }));
+    expect(app.openPanic).toHaveBeenCalledOnce();
+    expect(app.navigate).not.toHaveBeenCalled();
   });
 
-  it("only shows the dot on the Chat item, not on other tabs", () => {
-    mockCtx.chatUnread = true;
-    const { container } = renderNav();
-    const dots = container.querySelectorAll(".ni-dot");
-    expect(dots.length).toBe(1);
-    const chatItem = dots[0]?.closest("button");
-    expect(chatItem?.textContent).toContain("Chat");
+  it("marca la pesta\u00f1a activa", () => {
+    app.screen = "wellness-exercise";
+    render(<BottomNav />);
+
+    expect(screen.getByRole("button", { current: "page" }).textContent).toBe("Ejercicio");
   });
 });

@@ -4,6 +4,12 @@ export type Screen =
   | "wellness-diet"
   | "wellness-goal"
   | "wellness-exercise"
+  | "prof";
+
+// TODO KAN-146: los m?dulos legados todav?a emiten estos identificadores.
+// Son entradas compatibles para navigate() y se resuelven en Inicio.
+export type NavigationTarget =
+  | Screen
   | "book"
   | "hc"
   | "nut"
@@ -12,7 +18,6 @@ export type Screen =
   | "bt"
   | "health-accessory"
   | "chat"
-  | "prof"
   | "medical-sources"
   | "medications"
   | "avatar"
@@ -25,7 +30,7 @@ export type Screen =
 
 export type Flow = "login" | "onboarding" | "tests" | "app";
 
-export type TabId = "home" | "book" | "nut" | "chat" | "prof" | "medications";
+export type TabId = Exclude<Screen, "protocol" | "wellness-goal"> | "sos";
 
 export type ToastKind = "ok" | "warn" | "err" | "info";
 

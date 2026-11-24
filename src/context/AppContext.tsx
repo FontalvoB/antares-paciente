@@ -1,5 +1,4 @@
-import {APPOINTMENTS_ENABLED,visibleScreen} from "../utils/appointmentsVisibility";
-import { HEALTH_ENABLED } from "../utils/features";
+import { APPOINTMENTS_ENABLED } from "../utils/appointmentsVisibility";
 import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
 import { isConfirmedText, mergeChatHistory } from "../utils/chatHistory";
 import type { HistoryMessage } from "../utils/chatHistory";
@@ -74,6 +73,7 @@ import type {
   ProgramDay,
   ProgramTaskId,
   Screen,
+  NavigationTarget,
   ToastKind,
   ToastState,
   UserProfile,
@@ -126,8 +126,8 @@ interface AppState {
   weekCheckins: boolean[];
   pointsToday: number;
   pointsTotal: number;
-  navigate: (s: Screen, sourceSection?: MedicalSourceSectionId) => void;
-  /** Navega a Citas y auto-abre el asistente de solicitud (CTA del chat). */
+  navigate: (s: NavigationTarget, sourceSection?: MedicalSourceSectionId) => void;
+  /** Compatibilidad con Citas y Chat retirados en KAN-146. */
   openBookingWizard: () => void;
   /** Consumido por AppointmentsPage: true = abrir el wizard al montar. */
   bookingWizardAutoOpen: boolean;
@@ -306,11 +306,11 @@ function nowLabel(lang: "es" | "en" = "es") {
 
 export function AppProvider({
   children,
-  onResetCommunityClient,
+  onResetSessionCache,
 }: {
   children: ReactNode;
   /** Se invoca tras login/logout para recrear el cliente urql de la comunidad. */
-  onResetCommunityClient?: () => void;
+  onResetSessionCache?: () => void;
 }) {
   const [vitaWelcomePending, setVitaWelcomePending] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -324,10 +324,6 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
-  const [healthReturnTo, setHealthReturnTo] = useState<"home" | "prof">("home");
-  const [medicalSourcesEntry, setMedicalSourcesEntry] = useState<AppState["medicalSourcesEntry"]>(null);
-  // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
-  const [bookingWizardAutoOpen, setBookingWizardAutoOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = useCallback((message: string, kind: ToastKind = "ok") => {
     setToast({ id: Date.now(), message, kind });
@@ -408,16 +404,12 @@ export function AppProvider({
   const [appointmentsError, setAppointmentsError] = useState<string | null>(
     null,
   );
-  const [roomAppointment, setRoomAppointment] =
-    useState<ListedAppointment | null>(null);
   const realMode = hasRealSession();
 
   // ── Indicador de mensajes no leídos del chat ──
   const [chatUnread, setChatUnread] = useState(false);
   /** Último conteo remoto conocido (para persistir al marcar como leído). */
   const lastRemoteCountRef = useRef<number | null>(null);
-  /** Pantalla anterior: detecta la entrada a "chat" para auto-limpiar. */
-  const prevScreenRef = useRef<Screen>(screen);
 
   // Invalida también respuestas que terminaron después de cambiar de paciente.
   const sessionGeneration = useRef(0);
@@ -444,10 +436,8 @@ export function AppProvider({
     setRequests(null);
     setCatalog(null);
     setSpecialties(null);
-    setRoomAppointment(null);
     setAppointmentsLoading(false);
     setAppointmentsError(null);
-    setBookingWizardAutoOpen(false);
     setPanicOpen(false);
     setVoiceOpen(false);
     setSosActive(false);
@@ -532,15 +522,6 @@ export function AppProvider({
     if (flow !== "login" && realMode) void refreshAppointments();
   }, [lang, flow, realMode, refreshAppointments, user.nombre]);
 
-  // Con sesión real, refresca al entrar a Citas (design §3.2: refresco por
-  // visibilidad) y tras cada mutación (los handlers llaman a refresh).
-  // No en la sala (la cita activa vive en el contexto). QA-010.
-  useEffect(() => {
-    if (flow !== "login" && realMode && screen === "book") {
-      void refreshAppointments();
-    }
-  }, [flow, realMode, screen, refreshAppointments]);
-
   // Carga inicial una sola vez para los demás consumidores (equipo del
   // perfil, sala): sin esto el catálogo solo existiría tras visitar Citas.
   useEffect(() => {
@@ -548,15 +529,6 @@ export function AppProvider({
       void refreshAppointments();
     }
   }, [flow, realMode, appointments, appointmentsLoading, appointmentsError, refreshAppointments]);
-
-  useEffect(() => {
-    if (flow === "login" || !realMode) return;
-    const onFocus = () => {
-      if (screen === "book") void refreshAppointments();
-    };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [flow, realMode, screen, refreshAppointments]);
 
   // Hidrata el perfil REAL del paciente (contacto, aseguradora, emergencia)
   // en el user del contexto. Sin esto, un paciente sin teléfono en BD veía el
@@ -742,9 +714,9 @@ export function AppProvider({
       resetPatientSession();
       setVitaWelcomePending(false);
       setFlow("login");
-      onResetCommunityClient?.();
+      onResetSessionCache?.();
     });
-  }, [resetPatientSession, onResetCommunityClient]);
+  }, [resetPatientSession, onResetSessionCache]);
 
   // Vigilancia proactiva de expiración del access token: si venció, se
   // intenta renovar por la cookie de refresh (single-flight compartido con
@@ -814,7 +786,7 @@ export function AppProvider({
           void hydratePatientProfile(isCurrent);
 
           setFlow("app");
-          onResetCommunityClient?.();
+          onResetSessionCache?.();
         }
       } catch {
         /* sin sesión activa */
@@ -830,7 +802,7 @@ export function AppProvider({
     return () => {
       active = false;
     };
-  }, [onResetCommunityClient, hydratePatientProfile]);
+  }, [onResetSessionCache, hydratePatientProfile]);
 
   // Thread estable del paciente: `proactive-<id>`. Se prioriza el id (UUID real)
   // devuelto por el backend/JWT para que coincida con el checkpointer del AI Service.
@@ -1107,15 +1079,6 @@ export function AppProvider({
     };
   }, [checkChatUnread]);
 
-  // Al entrar a la pantalla de chat se marca como leído (una vez por entrada).
-  useEffect(() => {
-    const prev = prevScreenRef.current;
-    prevScreenRef.current = screen;
-    if (screen === "chat" && prev !== "chat") {
-      markChatRead();
-    }
-  }, [screen, markChatRead]);
-
   const builtReal =
     appointments && requests
       ? buildRealAppointments(appointments, requests, specialties ?? undefined)
@@ -1127,8 +1090,8 @@ export function AppProvider({
       authLoading,
       flow,
       screen,
-      medicalSourcesEntry,
-      healthReturnTo,
+      medicalSourcesEntry: null,
+      healthReturnTo: "home",
       toast,
       showToast,
       panicOpen,
@@ -1137,7 +1100,7 @@ export function AppProvider({
       chatGenerating,
       cancelChat: () => chatController.current?.abort(),
       retryChat: () => { const turn = retryTurn.current; if (turn) void runChatTurn(turn.text, turn.image, true, turn.attachments); },
-      minimizeVoice: () => { setVoiceMinimized(true); setScreen("chat"); },
+      minimizeVoice: () => setVoiceMinimized(true),
       upsertVoiceMessage: ((history: number) => (message: ChatMessage) => {
         if (history !== historyGeneration.current || clearingHistory.current || message.threadId !== currentThread.current) return;
         setChat(prev => mergeVoiceMessage(prev, { ...message, time: nowLabel(lang) }));
@@ -1168,27 +1131,23 @@ export function AppProvider({
       pointsToday,
       pointsTotal,
       dismissVitaWelcome: () => setVitaWelcomePending(false),
-      // Destino unificado: «Mi Avatar» abre Perfil corporal (screen='body').
-      // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
-      // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
-      // El protocolo nutricional abre el mismo módulo completo que la pestaña Nutrición.
-      navigate: (s, sourceSection) => {
-        if (s === "health-accessory" && !HEALTH_ENABLED) return;
-        if (s === "health-accessory" && screen !== "health-accessory") {
-          setHealthReturnTo(screen === "prof" ? "prof" : "home");
+      navigate: (target) => {
+        switch (target) {
+          case "home":
+          case "protocol":
+          case "wellness-diet":
+          case "wellness-exercise":
+          case "wellness-goal":
+          case "prof":
+            setScreen(target);
+            return;
+          default:
+            setScreen("home");
         }
-        if (s === "medical-sources" && screen !== "medical-sources") {
-          setMedicalSourcesEntry({ section: sourceSection, returnTo: screen });
-        }
-        setScreen(visibleScreen(s === "avatar" ? "body" : s === "program-nut" ? "nut" : s));
       },
-      openBookingWizard: () => {
-        if(!APPOINTMENTS_ENABLED){setScreen("nut");return;}
-        setBookingWizardAutoOpen(true);
-        setScreen("book");
-      },
-      bookingWizardAutoOpen,
-      clearBookingWizardAutoOpen: () => setBookingWizardAutoOpen(false),
+      openBookingWizard: () => setScreen("home"),
+      bookingWizardAutoOpen: false,
+      clearBookingWizardAutoOpen: () => {},
       finishLogin: (seed, next = "onboarding") => {
         resetPatientSession();
         const generation = sessionGeneration.current;
@@ -1231,7 +1190,7 @@ export function AppProvider({
         })();
         setFlow(next);
         // Recrea el cliente urql para usar la cache y el WS con el token nuevo.
-        onResetCommunityClient?.();
+        onResetSessionCache?.();
       },
       backToLogin: () => {
         resetPatientSession();
@@ -1357,7 +1316,7 @@ export function AppProvider({
         // logoutUser borra el token antes de esperar la red. Las caches se
         // limpian de inmediato aunque el servidor de logout no responda.
         void logoutUser();
-        onResetCommunityClient?.();
+        onResetSessionCache?.();
       },
       realMode,
       upcomingAppointments: builtReal?.upcoming ?? null,
@@ -1373,13 +1332,9 @@ export function AppProvider({
       submitAppointmentRequest,
       cancelAppointmentById,
       rescheduleAppointmentById,
-      openRoom: (appointment) => {
-        if(!APPOINTMENTS_ENABLED)return;
-        setRoomAppointment(appointment);
-        setScreen("room");
-      },
-      closeRoom: () => setRoomAppointment(null),
-      roomAppointment,
+      openRoom: () => setScreen("home"),
+      closeRoom: () => {},
+      roomAppointment: null,
     }),
     [
       vitaWelcomePending,
@@ -1387,9 +1342,6 @@ export function AppProvider({
       resetPatientSession,
       flow,
       screen,
-      medicalSourcesEntry,
-      healthReturnTo,
-      bookingWizardAutoOpen,
       toast,
       showToast,
       panicOpen,
@@ -1413,7 +1365,7 @@ export function AppProvider({
       threadId,
       chatUnread,
       markChatRead,
-      onResetCommunityClient,
+      onResetSessionCache,
       lang,
       runChatTurn,
       realMode,
@@ -1429,7 +1381,6 @@ export function AppProvider({
       submitAppointmentRequest,
       cancelAppointmentById,
       rescheduleAppointmentById,
-      roomAppointment,
       hydratePatientProfile,
     ],
   );

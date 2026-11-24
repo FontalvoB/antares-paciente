@@ -64,7 +64,7 @@ import logoIcon from "../assets/LogoIndividual.png";
 import coverComunidad from "../assets/modules/comunidad.webp";
 import coverMedicamentos from "../assets/modules/medicamentos.webp";
 import type { CSSProperties } from "react";
-import type { ProgramDay, Screen as ScreenId } from "../types";
+import type { ProgramDay, NavigationTarget as ScreenId } from "../types";
 
 export function HomePage() {
   const health = useHealth();
