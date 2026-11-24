@@ -35,5 +35,6 @@ public class MedicationLabelPlugin: CAPPlugin, CAPBridgedPlugin {
 class MedicationBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(MedicationLabelPlugin())
+        bridge?.registerPluginInstance(WellnessHealthPlugin())
     }
 }

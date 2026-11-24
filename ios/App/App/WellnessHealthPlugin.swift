@@ -6,9 +6,12 @@ import UIKit
 final class WellnessHealthPlugin: CAPPlugin, CAPBridgedPlugin {
     let identifier = "WellnessHealthPlugin"
     let jsName = "WellnessHealth"
-    let pluginMethods = ["status", "requestRead", "openSettings", "read"].map {
-        CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise)
-    }
+    let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "status", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestRead", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "read", returnType: CAPPluginReturnPromise)
+    ]
 
     private lazy var store = HKHealthStore()
     private let quantities: [String: (HKQuantityTypeIdentifier, HKUnit, HKStatisticsOptions)] = [
