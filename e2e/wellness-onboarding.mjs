@@ -252,13 +252,32 @@ async function runFlow(page, baseUrl, width) {
   await shot(page, `15-cuestionarios-${width}`);
 
   await page
-    .getByRole("button", { name: "Empezar mi día", exact: true })
+    .getByRole("button", { name: "Ejercicio", exact: true })
     .click();
+  await expect(
+    page.getByRole("heading", { name: "Antes de empezar", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".wx-list > li")).toHaveCount(4);
+  await page.getByRole("button", { name: "Empezar sesión", exact: true }).click();
+  await expect(page.getByRole("timer")).toBeVisible();
+  for (let exercise = 1; exercise <= 4; exercise += 1) {
+    await expect(page.getByText(`Ejercicio ${exercise} de 4`, { exact: true }))
+      .toBeVisible();
+    await page.getByRole("button", {
+      name: exercise === 4 ? "Terminar sesión" : "Siguiente",
+      exact: true,
+    }).click();
+  }
+  await expect(
+    page.getByRole("heading", { name: "Sesión completada", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Volver al protocolo", exact: true }).click();
   await expect(
     page.getByText("Tu día de bienestar", { exact: true }),
   ).toBeVisible();
+  await expect(page.getByText("1 de 5 pasos", { exact: true })).toBeVisible();
   await shot(page, `16-protocolo-${width}`);
-  for (let step = 0; step < 4; step += 1) {
+  for (let step = 0; step < 3; step += 1) {
     await page
       .getByRole("button", { name: "Marcar como hecho", exact: true })
       .first()

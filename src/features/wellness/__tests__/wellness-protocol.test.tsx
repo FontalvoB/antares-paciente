@@ -121,6 +121,12 @@ describe("WellnessProtocol (KAN-143)", () => {
     expect(screen.getByText("1 de 5 pasos")).toBeTruthy();
   });
 
+  it("abre la sesión de bienestar desde el paso de ejercicio", () => {
+    render(<WellnessProtocol />);
+    fireEvent.click(screen.getAllByText("Abrir módulo")[0]);
+    expect(state.navigate).toHaveBeenCalledWith("wellness-exercise");
+  });
+
   it("el chequeo emocional completa el paso con el estado elegido", () => {
     render(<WellnessProtocol />);
     fireEvent.click(screen.getByText("Bien"));

@@ -49,6 +49,7 @@ import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
+import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { BodyProfilePage } from "./pages/BodyProfilePage";
@@ -103,6 +104,9 @@ function Router() {
         break;
       case "wellness-goal":
         content = <WellnessGoalPage />;
+        break;
+      case "wellness-exercise":
+        content = <WellnessExercise />;
         break;
       case "book":
         content = APPOINTMENTS_ENABLED ? (

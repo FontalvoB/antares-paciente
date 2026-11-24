@@ -200,7 +200,7 @@ export function WellnessHome() {
           <button
             type="button"
             className="wh-quick-btn"
-            onClick={() => navigate("program-ejercicio")}
+            onClick={() => navigate("wellness-exercise")}
           >
             <IonIcon icon={barbellOutline} aria-hidden="true" />
             <span>{t("Ejercicio")}</span>
