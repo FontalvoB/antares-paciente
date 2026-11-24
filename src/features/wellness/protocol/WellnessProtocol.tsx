@@ -33,14 +33,14 @@ const STEP_META: Record<
   {
     icon: string;
     description: string;
-    module?: "wellness-diet" | "program-vitals" | "program-ejercicio";
+    module?: "wellness-diet" | "wellness-exercise" | "program-vitals";
   }
 > = {
   exercise: {
     icon: barbellOutline,
     description:
       "Muévete con la sesión de hoy. Si hoy toca una versión suave, también cuenta.",
-    module: "program-ejercicio",
+    module: "wellness-exercise",
   },
   diet: {
     icon: nutritionOutline,

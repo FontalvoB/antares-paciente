@@ -2,6 +2,8 @@ export type Screen =
   | "home"
   | "protocol"
   | "wellness-diet"
+  | "wellness-goal"
+  | "wellness-exercise"
   | "book"
   | "hc"
   | "nut"
@@ -110,7 +112,9 @@ export interface ChatMessage {
   cta?: ChatSuggestion | null;
   /** Imagen adjunta del remitente (solo burbujas user; vista local). */
   image?: { dataUrl: string } | null;
-  vitaAttachments?: (import("./services/chat/vita-attachments-service").PendingVitaAttachment & { readable?: boolean })[];
+  vitaAttachments?: (import("./services/chat/vita-attachments-service").PendingVitaAttachment & {
+    readable?: boolean;
+  })[];
   /** Marcador local de adjunto de laboratorio o aviso de indisponibilidad. */
   kind?: "lab-exam" | "lab-exam-pending" | "service-error";
 }
