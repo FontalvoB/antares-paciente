@@ -183,7 +183,9 @@ jobs:
           GH_TOKEN_READ: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          printf 'MATCH_GIT_BASIC_AUTHORIZATION=%s\n' "$(printf 'x-access-token:%s' "$GH_TOKEN_READ" | base64 | tr -d '\n')" >> "$GITHUB_ENV"
+          match_auth="$(printf 'x-access-token:%s' "$GH_TOKEN_READ" | base64 | tr -d '\n')"
+          echo "::add-mask::$match_auth"
+          printf 'MATCH_GIT_BASIC_AUTHORIZATION=%s\n' "$match_auth" >> "$GITHUB_ENV"
 
       - name: Fastlane (firma + archive + IPA + TestFlight)
         env:
