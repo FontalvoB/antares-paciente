@@ -21,6 +21,7 @@ import {
   bodyOutline,
   calendarOutline,
   clipboardOutline,
+  flagOutline,
   languageOutline,
   leafOutline,
   logOutOutline,
@@ -799,6 +800,13 @@ export function ProfilePage() {
                 </div>
                 <IonList className="pf-menu" lines="none">
                   {[
+                    {
+                      icon: flagOutline,
+                      title: "Objetivo",
+                      sub: "Cambia tu meta y actualiza tu plan",
+                      tone: "sky",
+                      action: () => go("wellness-goal"),
+                    },
                     ...(medication.enabled
                       ? [
                           {
@@ -1083,9 +1091,17 @@ export function ProfilePage() {
                   {t("Autorizaciones y privacidad")}
                 </IonButton>
                 {HEALTH_ENABLED && (
-                  <IonButton fill="clear" expand="block" className="bt bt-ghost"
-                    onClick={() => navigate("health-accessory")}>
-                    <IonIcon icon={bodyOutline} slot="start" aria-hidden="true" />
+                  <IonButton
+                    fill="clear"
+                    expand="block"
+                    className="bt bt-ghost"
+                    onClick={() => navigate("health-accessory")}
+                  >
+                    <IonIcon
+                      icon={bodyOutline}
+                      slot="start"
+                      aria-hidden="true"
+                    />
                     {t("Accesorio y datos de bienestar")}
                   </IonButton>
                 )}

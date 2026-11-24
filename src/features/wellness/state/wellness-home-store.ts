@@ -11,15 +11,39 @@
  * llegue el backend, este módulo pasa a ser un adaptador de lectura.
  */
 
-import type { WellnessGoal } from "../domain/types";
+import type {
+  WellnessActivity,
+  WellnessGoal,
+  WellnessPace,
+  WellnessSex,
+} from "../domain/types";
 
 export type ProtocolStepId =
   "exercise" | "diet" | "vitals" | "emotional" | "chest";
 
-export interface WellnessPlanSnapshot {
+/**
+ * Datos del objetivo con los que se generó el plan (KAN-144). Permiten
+ * precargar el formulario al cambiar de objetivo desde Perfil. Las respuestas
+ * de seguridad (PAR-Q/NQS) y los términos NO se guardan: se vuelven a pedir.
+ */
+export interface WellnessPlanObjective {
+  sex: WellnessSex | null;
+  age: number | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  waistCm: number | null;
+  targetWeightKg: number | null;
+  activity: WellnessActivity | null;
+  pace: WellnessPace;
+  vegetarian: boolean;
+  dairyFree: boolean;
+}
+
+/** Resumen del plan vigente (normalizado: siempre trae versión y objetivo). */
+export interface WellnessPlanSnapshot extends WellnessPlanObjective {
   name: string;
   goal: WellnessGoal;
-  /** Fecha local ISO (yyyy-mm-dd) del día 1. */
+  /** Fecha local ISO (yyyy-mm-dd) del día 1. No cambia al cambiar objetivo. */
   startDate: string;
   kcal: number;
   proteinG: number;
@@ -28,6 +52,26 @@ export interface WellnessPlanSnapshot {
   waterMl: number;
   totalDays: number;
   createdAt: string;
+  /** Versión del plan (1 = onboarding). El ERP la leerá del snapshot. */
+  version: number;
+}
+
+/**
+ * Entrada de `savePlanSnapshot`: los campos de objetivo y la versión son
+ * opcionales para aceptar el formato previo a KAN-144.
+ */
+export type WellnessPlanSnapshotInput = Omit<
+  WellnessPlanSnapshot,
+  keyof WellnessPlanObjective | "version"
+> &
+  Partial<WellnessPlanObjective> & { version?: number };
+
+/** Versión archivada del plan (historial de cambios de objetivo). */
+export interface WellnessPlanVersion {
+  version: number;
+  /** Momento en que esta versión dejó de ser la vigente. */
+  changedAt: string;
+  snapshot: WellnessPlanSnapshot;
 }
 
 export interface WellnessProtocolHistory {
@@ -76,6 +120,7 @@ const POINTS_DAY_COMPLETE = 20;
 const POINTS_PER_LEVEL = 500;
 
 const PLAN_KEY = "wellness.plan.v1";
+const PLAN_VERSIONS_KEY = "wellness.plan.versions.v1";
 const PROTOCOL_KEY = "wellness.protocol.v1";
 const BATTERIES_KEY = "wellness.batteries.v1";
 
@@ -101,24 +146,117 @@ function write(key: string, value: unknown): void {
   }
 }
 
-/** Guarda el resumen del plan al terminar el onboarding. */
-export function savePlanSnapshot(snapshot: WellnessPlanSnapshot): void {
-  write(PLAN_KEY, snapshot);
-}
+const EMPTY_OBJECTIVE: WellnessPlanObjective = {
+  sex: null,
+  age: null,
+  heightCm: null,
+  weightKg: null,
+  waistCm: null,
+  targetWeightKg: null,
+  activity: null,
+  pace: "m",
+  vegetarian: false,
+  dairyFree: false,
+};
 
-export function loadPlanSnapshot(): WellnessPlanSnapshot | null {
-  const stored = read<WellnessPlanSnapshot | null>(PLAN_KEY, null);
+const finiteOrNull = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+/**
+ * Normaliza un snapshot leído o recibido: rellena con valores por defecto los
+ * campos que no existían antes de KAN-144 para no romper KAN-142/143.
+ */
+export function normalizePlanSnapshot(
+  stored: Partial<WellnessPlanSnapshot> | null | undefined,
+): WellnessPlanSnapshot | null {
   if (!stored || typeof stored.startDate !== "string") return null;
+  const activity = finiteOrNull(stored.activity);
+  const version = finiteOrNull(stored.version);
   return {
-    ...stored,
-    totalDays: TOTAL_PLAN_DAYS,
-    goal: stored.goal ?? "bajar",
     name: stored.name ?? "",
+    goal: stored.goal ?? "bajar",
+    startDate: stored.startDate,
+    kcal: finiteOrNull(stored.kcal) ?? 0,
+    proteinG: finiteOrNull(stored.proteinG) ?? 0,
+    carbsG: finiteOrNull(stored.carbsG) ?? 0,
+    fatG: finiteOrNull(stored.fatG) ?? 0,
+    waterMl: finiteOrNull(stored.waterMl) ?? 0,
+    totalDays: TOTAL_PLAN_DAYS,
+    createdAt: stored.createdAt ?? "",
+    version: version && version >= 1 ? Math.round(version) : 1,
+    sex: stored.sex === "F" || stored.sex === "M" ? stored.sex : null,
+    age: finiteOrNull(stored.age),
+    heightCm: finiteOrNull(stored.heightCm),
+    weightKg: finiteOrNull(stored.weightKg),
+    waistCm: finiteOrNull(stored.waistCm),
+    targetWeightKg: finiteOrNull(stored.targetWeightKg),
+    activity:
+      activity !== null && [1, 2, 3, 4].includes(activity)
+        ? (activity as WellnessActivity)
+        : null,
+    pace:
+      stored.pace === "s" || stored.pace === "m" || stored.pace === "max"
+        ? stored.pace
+        : EMPTY_OBJECTIVE.pace,
+    vegetarian: Boolean(stored.vegetarian),
+    dairyFree: Boolean(stored.dairyFree),
   };
 }
 
+/**
+ * Guarda el plan vigente. Si ya había uno, lo archiva en el historial de
+ * versiones y la nueva versión es la anterior + 1. No toca protocolo ni
+ * baterías: puntos, racha y registros se conservan.
+ */
+export function savePlanSnapshot(
+  input: WellnessPlanSnapshotInput,
+  now = new Date(),
+): WellnessPlanSnapshot {
+  const previous = loadPlanSnapshot();
+  if (previous) {
+    write(PLAN_VERSIONS_KEY, [
+      ...loadPlanVersions(),
+      {
+        version: previous.version,
+        changedAt: now.toISOString(),
+        snapshot: previous,
+      } satisfies WellnessPlanVersion,
+    ]);
+  }
+  const snapshot = normalizePlanSnapshot({
+    ...EMPTY_OBJECTIVE,
+    ...input,
+    version: input.version ?? (previous ? previous.version + 1 : 1),
+  }) as WellnessPlanSnapshot;
+  write(PLAN_KEY, snapshot);
+  return snapshot;
+}
+
+export function loadPlanSnapshot(): WellnessPlanSnapshot | null {
+  return normalizePlanSnapshot(
+    read<Partial<WellnessPlanSnapshot> | null>(PLAN_KEY, null),
+  );
+}
+
+/** Versiones anteriores del plan, de la más antigua a la más reciente. */
+export function loadPlanVersions(): WellnessPlanVersion[] {
+  const stored = read<unknown>(PLAN_VERSIONS_KEY, []);
+  if (!Array.isArray(stored)) return [];
+  return stored.flatMap((entry: Partial<WellnessPlanVersion> | null) => {
+    const snapshot = normalizePlanSnapshot(entry?.snapshot);
+    if (!entry || !snapshot) return [];
+    return [
+      {
+        version: finiteOrNull(entry.version) ?? snapshot.version,
+        changedAt: typeof entry.changedAt === "string" ? entry.changedAt : "",
+        snapshot,
+      },
+    ];
+  });
+}
+
 export function clearWellnessState(): void {
-  for (const key of [PLAN_KEY, PROTOCOL_KEY, BATTERIES_KEY]) {
+  for (const key of [PLAN_KEY, PLAN_VERSIONS_KEY, PROTOCOL_KEY, BATTERIES_KEY]) {
     try {
       window.localStorage.removeItem(key);
     } catch {
@@ -256,6 +394,8 @@ function demoSplan(name: string, today: Date): WellnessPlanSnapshot {
     waterMl: 2500,
     totalDays: TOTAL_PLAN_DAYS,
     createdAt: new Date().toISOString(),
+    version: 1,
+    ...EMPTY_OBJECTIVE,
   };
 }
 

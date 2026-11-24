@@ -13,7 +13,7 @@ import {
   streakDays,
   toggleProtocolStep,
   type ProtocolStepId,
-  type WellnessPlanSnapshot,
+  type WellnessPlanSnapshotInput,
 } from "../state/wellness-home-store";
 
 const TODAY = new Date(2026, 10, 24, 12, 0, 0);
@@ -24,7 +24,7 @@ function isoDaysAgo(days: number): string {
   return localISODate(date);
 }
 
-const snapshot: WellnessPlanSnapshot = {
+const snapshot: WellnessPlanSnapshotInput = {
   name: "Ana",
   goal: "bajar",
   startDate: isoDaysAgo(9),

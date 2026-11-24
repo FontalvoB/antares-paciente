@@ -128,3 +128,18 @@ ritmo) → preferencias(3) → PAR-Q(4) → NQS(5) → términos(6) → generar(
   confirmación; sin confirmar no se genera.
 - Términos: versión y fecha-hora visibles.
 - ES/EN completo y unidades métricas (US queda para KAN-147).
+
+## KAN-144 — cambiar objetivo desde Perfil
+
+- Entrada: Perfil → "Mi plan" → fila **Objetivo** → pantalla `wellness-goal`
+  (`goal/WellnessGoalPage.tsx`): confirmación → `ObjectiveWizard` precargado →
+  resumen de cambios (objetivo, kcal, proteína, carbos, grasas) → Home.
+- `WellnessPlanSnapshot` incluye ahora `version` y los datos del objetivo
+  (`sex`, `age`, `heightCm`, `weightKg`, `waistCm`, `targetWeightKg`, `activity`,
+  `pace`, `vegetarian`, `dairyFree`). `normalizePlanSnapshot` rellena defaults
+  para snapshots anteriores (versión 1, datos `null`).
+- `savePlanSnapshot` archiva el plan vigente en `wellness.plan.versions.v1`
+  (`{ version, changedAt, snapshot }`) y sube la versión.
+- `changePlanObjective` (`state/goal-change.ts`) conserva `startDate`: el día N
+  continúa. No toca `wellness.protocol.v1` ni `wellness.batteries.v1`.
+- PAR-Q/NQS y términos NO se precargan: se vuelven a responder en cada cambio.

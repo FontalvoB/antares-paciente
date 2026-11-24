@@ -4752,5 +4752,20 @@
   "Sigue tu plan de comidas y registra el agua del día.": "Follow your meal plan and log your water for the day.",
   "Registra tus signos vitales de hoy, si te los tomaste.": "Log today’s vital signs if you measured them.",
   "Un chequeo corto de cómo te sientes. Sin juicios.": "A short check-in on how you feel. No judgment.",
-  "Se abre cuando completas los otros cuatro pasos del día.": "It opens when you complete the other four steps of the day."
+  "Se abre cuando completas los otros cuatro pasos del día.": "It opens when you complete the other four steps of the day.",
+  "Cambia tu meta y actualiza tu plan": "Change your goal and update your plan",
+  "Actualiza tu objetivo": "Update your goal",
+  "Antes de cambiar tu objetivo": "Before you change your goal",
+  "Antes: {value}": "Before: {value}",
+  "Cambiar objetivo": "Change goal",
+  "Esto cambió en tu plan": "Here’s what changed in your plan",
+  "Objetivo actual: {goal}": "Current goal: {goal}",
+  "Se genera un plan nuevo con tu objetivo actualizado.": "A new plan is created with your updated goal.",
+  "Sigues en el día {day} de {total}; el plan no vuelve a empezar.": "You stay on day {day} of {total}; the plan doesn’t start over.",
+  "Sigues en el día {day} de {total}.": "You’re on day {day} of {total}.",
+  "Sin cambios": "No change",
+  "Tu historial y tus puntos se conservaron. Los valores son estimados.": "Your history and points were kept. Values are estimates.",
+  "Tu historial, tus puntos y tu racha se conservan.": "Your history, points and streak are kept.",
+  "Tu plan se actualizó": "Your plan was updated",
+  "Tus datos actuales ya están cargados. Volverás a responder las preguntas de seguridad y a aceptar el aviso de bienestar.": "Your current details are already filled in. You’ll answer the safety questions and accept the wellness notice again."
 }

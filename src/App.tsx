@@ -48,6 +48,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
+import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { BodyProfilePage } from "./pages/BodyProfilePage";
@@ -99,6 +100,9 @@ function Router() {
     switch (screen) {
       case "protocol":
         content = <WellnessProtocol />;
+        break;
+      case "wellness-goal":
+        content = <WellnessGoalPage />;
         break;
       case "book":
         content = APPOINTMENTS_ENABLED ? (
@@ -275,7 +279,9 @@ function Shell() {
   return (
     <div className="app-stage">
       <div className="app-shell">
-        <HealthProvider><Router /></HealthProvider>
+        <HealthProvider>
+          <Router />
+        </HealthProvider>
         <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />
