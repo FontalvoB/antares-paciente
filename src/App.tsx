@@ -37,6 +37,8 @@ import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { useStatusBarContrast } from "./hooks/useStatusBarContrast";
 import { useTabletLayout } from "./hooks/useTabletLayout";
 import { PanicOverlay } from "./components/PanicOverlay";
+import { SosQuickAccess } from "./components/SosQuickAccess";
+import { SosLayer } from "./components/SosLayer";
 import { VoiceOverlay } from "./components/VoiceOverlay";
 import { VitaWelcome } from "./components/VitaWelcome";
 import { ToastHost } from "./components/ToastHost";
@@ -290,13 +292,17 @@ function Shell() {
         <HealthProvider>
           <Router />
         </HealthProvider>
-        <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />
         <VitaWelcome />
         <OfflineBanner />
         {flow === "app" && user.id && <AchievementCenter key={user.id} />}
         {flow === "app" && <DailyProtocolReminder />}
+        {/* KAN-137: SOS global por encima de modales, teclado, video y sesión. */}
+        <SosLayer>
+          <SosQuickAccess />
+          <PanicOverlay />
+        </SosLayer>
       </div>
     </div>
   );

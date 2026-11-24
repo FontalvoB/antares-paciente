@@ -39,8 +39,8 @@ describe("BottomNav — unread chat indicator", () => {
   it('SOS central abre el pánico y la barra no muestra un SOS flotante aparte', () => {
     const { container } = renderNav();
     expect(screen.queryByRole('button',{name:'Hablar con Vita'})).toBeNull();
-    expect(screen.getAllByRole('button',{name:'Botón de pánico'})).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button',{name:'Botón de pánico'}));
+    expect(screen.getAllByRole('button',{name:'Abrir SOS de emergencia'})).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button',{name:'Abrir SOS de emergencia'}));
     expect(mockCtx.openPanic).toHaveBeenCalledOnce();
     expect(container.querySelector('.premium-sos')).toBeNull();
   });
