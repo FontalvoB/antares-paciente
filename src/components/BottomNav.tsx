@@ -1,12 +1,9 @@
-import {APPOINTMENTS_ENABLED} from "../utils/appointmentsVisibility";
-import { IonBadge, IonButton, IonIcon } from "@ionic/react";
+import { IonButton, IonIcon } from "@ionic/react";
 import {
-  calendar,
-  calendarOutline,
+  barbell,
+  barbellOutline,
   nutrition,
   nutritionOutline,
-  chatbubbleEllipses,
-  chatbubbleEllipsesOutline,
   home,
   homeOutline,
   medkit,
@@ -15,38 +12,42 @@ import {
 } from "ionicons/icons";
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
-import type { Screen } from "../types";
+import type { TabId } from "../types";
 
 export function BottomNav({ dark = false }: { dark?: boolean }) {
-  const { screen, navigate, openPanic, chatUnread } = useApp();
+  const { screen, navigate, openPanic } = useApp();
   const t = useT();
 
   const items: {
-    id: Screen;
+    id: TabId;
     label: string;
     icon: string;
     iconOn: string;
-    sos?: boolean;
   }[] = [
     { id: "home", label: t("Inicio"), icon: homeOutline, iconOn: home },
-    APPOINTMENTS_ENABLED
-      ? { id: "book", label: t("Citas"), icon: calendarOutline, iconOn: calendar }
-      : { id: "nut", label: t("Nutrición"), icon: nutritionOutline, iconOn: nutrition },
-    //{ id: 'nut', label: t('Nutrición'), icon: leafOutline, iconOn: leaf },
-    { id: "home", label: t("SOS"), icon: medkit, iconOn: medkit, sos: true },
     {
-      id: "chat",
-      label: t("Chat"),
-      icon: chatbubbleEllipsesOutline,
-      iconOn: chatbubbleEllipses,
+      id: "wellness-diet",
+      label: t("Nutrición"),
+      icon: nutritionOutline,
+      iconOn: nutrition,
+    },
+    { id: "sos", label: t("SOS"), icon: medkit, iconOn: medkit },
+    {
+      id: "wellness-exercise",
+      label: t("Ejercicio"),
+      icon: barbellOutline,
+      iconOn: barbell,
     },
     { id: "prof", label: t("Perfil"), icon: personOutline, iconOn: person },
   ];
 
   return (
-    <nav className={`bnav premium-nav ${dark ? "bnav-dark" : ""}`} aria-label={t('Navegación principal')}>
-      {items.map((it, i) => {
-        if (it.sos) {
+    <nav
+      className={`bnav premium-nav ${dark ? "bnav-dark" : ""}`}
+      aria-label={t("Navegación principal")}
+    >
+      {items.map((it) => {
+        if (it.id === "sos") {
           return (
             <IonButton
               key="sos"
@@ -54,35 +55,34 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
               className="ni ni-center"
               fill="clear"
               onClick={openPanic}
-              aria-label={t("Botón de pánico")}
+              aria-label={t("Abrir SOS de emergencia")}
             >
-              <span className="premium-nav-content"><span className="ni-ico">
-                <IonIcon icon={medkit} aria-hidden="true" />
+              <span className="premium-nav-content">
+                <span className="ni-ico">
+                  <IonIcon icon={medkit} aria-hidden="true" />
+                </span>
+                <span>{it.label}</span>
               </span>
-              <span>SOS</span></span>
             </IonButton>
           );
         }
-        const on = screen === it.id;
+        const target = it.id;
+        const on = screen === target;
         return (
           <IonButton
-            key={`${it.id}-${i}`}
+            key={it.id}
             type="button"
             fill="clear"
             className={`ni ${on ? "on" : ""}`}
-            onClick={() => navigate(it.id)}
+            onClick={() => navigate(target)}
             aria-current={on ? "page" : undefined}
           >
-            <span className="premium-nav-content"><span className="ni-ico">
-              <IonIcon icon={on ? it.iconOn : it.icon} aria-hidden="true" />
-              {it.id === "chat" && Boolean(chatUnread) && (
-                <IonBadge
-                  className="ni-dot"
-                  aria-label={t("Nuevos mensajes")}
-                />
-              )}
+            <span className="premium-nav-content">
+              <span className="ni-ico">
+                <IonIcon icon={on ? it.iconOn : it.icon} aria-hidden="true" />
+              </span>
+              <span>{it.label}</span>
             </span>
-            <span>{it.label}</span></span>
           </IonButton>
         );
       })}

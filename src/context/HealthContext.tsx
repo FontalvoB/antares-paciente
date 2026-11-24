@@ -1,3 +1,4 @@
+import type { NavigationTarget } from "../types";
 import { App } from "@capacitor/app";
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -194,8 +195,10 @@ export function HealthProvider({ children }: { children: ReactNode }) {
   const { flow, screen, user } = useApp();
   if (!HEALTH_ENABLED || flow !== "app") return children;
   const userId = sessionUserId(getAccessToken());
+  // TODO KAN-146: conservar la vista de accesorio para sus tests legados.
+  const activeScreen: NavigationTarget = screen as NavigationTarget;
   return (
-    <HealthSession key={userId ?? user.id ?? "anonymous"} userId={userId} active={screen === "health-accessory"}>
+    <HealthSession key={userId ?? user.id ?? "anonymous"} userId={userId} active={activeScreen === "health-accessory"}>
       {children}
     </HealthSession>
   );

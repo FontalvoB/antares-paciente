@@ -1,4 +1,3 @@
-import {APPOINTMENTS_ENABLED,isAppointmentNotification} from "./appointmentsVisibility";
 import { Capacitor } from '@capacitor/core'
 import { PushNotifications, type RegistrationError, type Token } from '@capacitor/push-notifications'
 import { getAccessToken } from './authApi'
@@ -12,10 +11,7 @@ import { getApiBaseUrl } from './apiBaseUrl'
  *   (POST /api/v1/notifications/devices). El endpoint exige JWT: mientras el
  *   login demo no esté conectado el registro puede devolver 401 — se degrada
  *   con un log sin romper la app.
- * - Al tocar una notificación navega al chat para que el paciente vea el
- *   mensaje del bot inyectado en su thread estable.
- * - Si la carga pide la sala (data.screen === "room" o data.appointmentId),
- *   delega en onOpenRoom con el id de la cita.
+ * - Al tocar una notificación de un módulo retirado, la app abre Inicio.
  *
  * Configuración por plataforma:
  *   - Android: android/app/google-services.json (proyecto Firebase + FCM)
@@ -24,11 +20,7 @@ import { getApiBaseUrl } from './apiBaseUrl'
  */
 interface PushRegistrationOptions {
   language?: 'es' | 'en'
-  /** Se invoca al tocar una notificación (navegar al chat con el threadId si viene en la carga). */
-  onOpenChat?: (threadId?: string) => void
-  /** Se invoca al tocar una notificación de sala (quien navega resuelve la cita). */
-  onOpenRoom?: (appointmentId: string) => void
-  onOpenMedications?: () => void
+  onOpenHome?: () => void
 }
 
 // Los listeners del plugin se registran una sola vez por sesión; el guard evita
@@ -81,25 +73,6 @@ export function unregisterPushDevice(): Promise<void> {
 // listener en un arranque en frío), por lo que cada llamada los refresca.
 let currentOptions: PushRegistrationOptions = {}
 
-// ── Cola de arranque en frío ───────────────────────────────────────────────
-// Al abrir la app tocando una notificación, pushNotificationActionPerformed
-// puede llegar antes de que exista quién navegue. En ese caso el appointmentId
-// se guarda aquí y Shell lo consume una sola vez al montar el contexto
-// (si llegan varios taps fríos, el último gana: es la intención más reciente).
-let pendingRoomAppointmentId: string | null = null
-
-/** Encola la sala a abrir cuando todavía no hay contexto de navegación. */
-export function queuePendingRoomAppointmentId(appointmentId: string): void {
-  if(!APPOINTMENTS_ENABLED)return
-  pendingRoomAppointmentId = appointmentId
-}
-
-/** Devuelve y limpia la sala pendiente de abrir (null si no hay ninguna). */
-export function consumePendingRoomAppointmentId(): string | null {
-  const appointmentId = pendingRoomAppointmentId
-  pendingRoomAppointmentId = null
-  return appointmentId
-}
 
 export async function registerForPush(options: PushRegistrationOptions = {}): Promise<void> {
   const platform = Capacitor.getPlatform()
@@ -131,33 +104,8 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
     // El sistema ya muestra la notificación; solo se loguea en foreground.
     console.log('[push] Notificación recibida:', notification.title ?? '(sin título)')
   })
-  void PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-    const data = notification.notification?.data as Record<string, unknown> | undefined
-    if (data?.type === 'medication_reminder') {
-      if (getAccessToken()) currentOptions.onOpenMedications?.()
-      return
-    }
-    if(!APPOINTMENTS_ENABLED && (isAppointmentNotification(String(data?.type??"")) || ["appointment","book","room"].includes(String(data?.screen??""))))return
-    const rawAppointmentId = data?.appointmentId ?? data?.appointment_id
-    const appointmentId =
-      typeof rawAppointmentId === 'string' && rawAppointmentId ? rawAppointmentId : undefined
-    // Notificación de sala: screen === "room" (y/o appointmentId en la carga).
-    if (data?.screen === 'room' || appointmentId) {
-      if(!APPOINTMENTS_ENABLED)return
-      if (!appointmentId) {
-        console.warn('[push] Notificación de sala sin appointmentId; se ignora')
-        return
-      }
-      if (currentOptions.onOpenRoom) {
-        currentOptions.onOpenRoom(appointmentId)
-      } else {
-        // Sin contexto de navegación todavía (cold start): se encola.
-        queuePendingRoomAppointmentId(appointmentId)
-      }
-      return
-    }
-    const threadId = (data?.thread_id ?? data?.threadId) as string | undefined
-    currentOptions.onOpenChat?.(threadId)
+  void PushNotifications.addListener('pushNotificationActionPerformed', () => {
+    if (getAccessToken()) currentOptions.onOpenHome?.()
   })
 
   try {

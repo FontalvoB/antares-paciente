@@ -45,6 +45,7 @@ import { ChatRichText } from "../components/ChatRichText";
 import { ChatFeedbackAction } from "../components/chat/ChatFeedbackAction";
 import { ArchiveVitaAttachmentModal } from "../components/chat/ArchiveVitaAttachmentModal";
 import { useApp } from "../context/AppContext";
+import { isSosUtterance, requestSos } from "../features/wellness/sos/sos-store";
 import { useVitaAttachmentDraft } from "../hooks/useVitaAttachmentDraft";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { fetchThreadState, uploadLabExam } from "../utils/threadApi";
@@ -388,6 +389,8 @@ export function ChatPage() {
     if (composerBusy || chatGenerating || chatClearing) return;
     const v = msg.trim() || (draft.files.length ? t("Ayúdame a entender estos archivos.") : "");
     if (!v) return;
+    // KAN-137: "SOS" o ayuda urgente abre el SOS al instante, sin esperar a la IA.
+    if (isSosUtterance(v)) requestSos("chat");
     const files = draft.take();
     if (!files) return;
     nearEnd.current = true; setNewMessages(false);

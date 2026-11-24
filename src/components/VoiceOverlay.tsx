@@ -27,6 +27,7 @@ import { readAgentOutputLevel } from "../utils/agentLevel";
 import { VoiceOrb } from "./VoiceOrb";
 import type { VoicePhase } from "./VoiceOrb";
 import { useApp } from "../context/AppContext";
+import { isSosUtterance, requestSos } from "../features/wellness/sos/sos-store";
 import { useI18n, useT } from "../i18n/I18nContext";
 import { useSpeechAssistant } from "../hooks/useSpeechAssistant";
 import {
@@ -123,7 +124,7 @@ function VoiceShell({
   const t = useT();
   const { voiceOpen, voiceMinimized, minimizeVoice, openVoice, closeVoice } =
     useApp();
-  const dismissingToChat = useRef(false);
+  const dismissingToMinimize = useRef(false);
   const [modalClosing, setModalClosing] = useState(false);
   const [text, setText] = useState("");
   useEffect(() => {
@@ -171,8 +172,8 @@ function VoiceShell({
         className="voice-modal"
         onDidDismiss={() => {
           setModalClosing(false);
-          if (dismissingToChat.current) {
-            dismissingToChat.current = false;
+          if (dismissingToMinimize.current) {
+            dismissingToMinimize.current = false;
             return;
           }
           closeVoice();
@@ -184,9 +185,9 @@ function VoiceShell({
               <IonButton
                 fill="clear"
                 className="vc-back"
-                aria-label={t("Volver al chat")}
+                aria-label={t("Minimizar asistente de voz")}
                 onClick={() => {
-                  dismissingToChat.current = true;
+                  dismissingToMinimize.current = true;
                   setModalClosing(true);
                   minimizeVoice();
                 }}
@@ -400,6 +401,8 @@ export function VoiceOverlay() {
   // Estado del turno en curso en modo ElevenLabs.
   const [thinking, setThinking] = useState(false);
   const [userLine, setUserLine] = useState("");
+  /** Turnos de voz que ya abrieron el SOS (las revisiones no lo repiten). */
+  const sosVoiceTurns = useRef(new Set<string>());
   const [botLine, setBotLine] = useState("");
 
   const wasConnectedRef = useRef(false);
@@ -411,6 +414,8 @@ export function VoiceOverlay() {
     // soportado: el recognizer se relanza con el locale nuevo).
     lang,
     onFinalTranscript: (text) => {
+      // KAN-137: el SOS por voz no depende de la IA ni bloquea el turno.
+      if (isSosUtterance(text)) requestSos("voice");
       if (assistantBusyRef.current || !speechActive.current) return;
       assistantBusyRef.current = true;
       assistant.setProcessing();
@@ -571,7 +576,14 @@ export function VoiceOverlay() {
     if (previous?.delivery === "interrupted") message.delivery = "interrupted";
     sdkSession!.messages.set(message.id, message);
     upsertVoiceMessage(message);
-    if (message.role === "user") setUserLine(message.text);
+    if (message.role === "user") {
+      setUserLine(message.text);
+      // KAN-137: "SOS" o ayuda urgente por voz abre el SOS sin cortar la sesión.
+      if (!sosVoiceTurns.current.has(message.id) && isSosUtterance(message.text)) {
+        sosVoiceTurns.current.add(message.id);
+        requestSos("voice");
+      }
+    }
     else setBotLine(message.text);
   };
   const correctVoiceMessage = (correction: VoiceCorrection) => {

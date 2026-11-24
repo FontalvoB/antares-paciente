@@ -1,0 +1,117 @@
+/* KAN-137 — SOS como acceso rápido global.
+   Los overlays Ionic (modal, popover, alert, action sheet) usan z-index 20000+.
+   El SOS queda siempre por encima: nada puede taparlo. */
+:root {
+  --sos-layer: 100000;
+}
+
+/* Capa propia en <body> (portal): fuera del stacking context de la app, así
+   ni el teclado (que fija .app-stage) ni un modal Ionic pueden taparla. */
+.sos-layer {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--app-viewport-top, 0px);
+  height: var(--app-viewport-height, 100dvh);
+  z-index: var(--sos-layer);
+  pointer-events: none;
+}
+.sos-layer > * {
+  pointer-events: auto;
+}
+.sos-layer .overlay.overlay-panic {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Selector de contacto y avisos del SOS: encima del propio overlay. */
+ion-action-sheet.sos-contact-sheet {
+  z-index: calc(var(--sos-layer) + 10) !important;
+}
+ion-toast.app-toast {
+  z-index: calc(var(--sos-layer) + 20) !important;
+}
+
+/* Cuenta regresiva: reutiliza el orbe y la tarjeta del protocolo. */
+/* El orbe es un indicador (no un botón): mismo aspecto que el orbe del protocolo. */
+.sos-reference .sos-countdown .sos-countdown-orb {
+  inset: 13px;
+  width: 98px;
+  height: 98px;
+  cursor: default;
+  background: radial-gradient(
+    circle at 32% 20%,
+    color-mix(in srgb, var(--panic) 75%, var(--wh)),
+    var(--panic) 55%,
+    color-mix(in srgb, var(--panic) 78%, var(--brand-navy))
+  );
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--panic) 20%, var(--wh)),
+    inset 0 0 10px var(--wh);
+}
+.sos-reference .sos-countdown .sos-countdown-orb b {
+  font-size: 30px;
+  line-height: 1;
+  text-shadow: none;
+}
+.sos-reference .sos-countdown .sos-countdown-orb small {
+  font-size: 9px;
+}
+.sos-reference .sos-countdown .sos-orb-content {
+  gap: 2px;
+}
+.sos-countdown .sos-count-fill {
+  transition: stroke-dashoffset 1s linear;
+}
+.sos-countdown .sos-orb-content small {
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.sos-countdown .sos-action-dock .sos-actions ion-button {
+  white-space: normal;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sos-countdown .sos-count-fill {
+    transition: none;
+  }
+}
+
+/* Acceso rápido flotante: solo cuando el SOS de la barra inferior no se ve. */
+.sos-layer ion-button.sos-quick-access {
+  position: absolute;
+  right: 14px;
+  bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 88px);
+  z-index: 0;
+  width: 58px;
+  height: 58px;
+  margin: 0;
+  --border-radius: 50%;
+  --padding-start: 0;
+  --padding-end: 0;
+  --background: linear-gradient(
+    150deg,
+    var(--panic),
+    color-mix(in srgb, var(--panic) 70%, var(--cosmos))
+  );
+  --background-activated: color-mix(in srgb, var(--panic) 80%, var(--cosmos));
+  --color: var(--wh);
+  border-radius: 50%;
+  border: 3px solid var(--wh);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--panic) 38%, transparent);
+}
+.sos-quick-access-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.sos-quick-access-content ion-icon {
+  font-size: 20px;
+}
+.sos-layer ion-button.sos-quick-access:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 2px;
+}

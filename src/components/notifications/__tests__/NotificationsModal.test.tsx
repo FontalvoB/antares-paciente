@@ -89,15 +89,18 @@ function notif(
   };
 }
 
-describe("resolveNotificationTarget — deep-links clínicos", () => {
-  it("citas van a book, hidratación/nutrición a nut, chat a chat, comunidad/club a com", () => {
-    expect(resolveNotificationTarget("appointment_reminder")).toBe("book");
-    expect(resolveNotificationTarget("appointment_video_soon")).toBe("book");
-    expect(resolveNotificationTarget("hydration_nudge")).toBe("nut");
-    expect(resolveNotificationTarget("nutrition_plan")).toBe("nut");
-    expect(resolveNotificationTarget("chat_followup")).toBe("chat");
-    expect(resolveNotificationTarget("community_reply")).toBe("com");
-    expect(resolveNotificationTarget("club_event")).toBe("com");
+describe("resolveNotificationTarget - deep links del mapa v5.1", () => {
+  it.each([
+    ["appointment_reminder", "home"],
+    ["appointment_video_soon", "home"],
+    ["medication_reminder", "home"],
+    ["chat_followup", "home"],
+    ["community_reply", "home"],
+    ["club_event", "home"],
+    ["hydration_nudge", "wellness-diet"],
+    ["nutrition_plan", "wellness-diet"],
+  ])("resuelve %s en %s", (type, target) => {
+    expect(resolveNotificationTarget(type)).toBe(target);
   });
 
   it("tipos desconocidos no navegan", () => {
@@ -217,20 +220,20 @@ describe("NotificationsModal — agrupación y acciones", () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it("al tocar una cita la marca como leída y navega a book", () => {
+  it("al tocar una cita la marca como leída y navega a Inicio", () => {
     const onClose = vi.fn();
     render(<NotificationsModal isOpen onClose={onClose} />);
     fireEvent.click(screen.getByText("Cita hoy 3:00 PM"));
     expect(hookState.markAsRead).toHaveBeenCalledWith("n-today");
     expect(onClose).toHaveBeenCalled();
-    expect(navigateMock).toHaveBeenCalledWith("book");
+    expect(navigateMock).toHaveBeenCalledWith("home");
   });
 
-  it("al tocar hidratación navega a nut", () => {
+  it("al tocar hidratación navega a Nutrición", () => {
     render(<NotificationsModal isOpen onClose={() => {}} />);
     fireEvent.click(screen.getByText("Hidratación"));
     expect(hookState.markAsRead).toHaveBeenCalledWith("n-week");
-    expect(navigateMock).toHaveBeenCalledWith("nut");
+    expect(navigateMock).toHaveBeenCalledWith("wellness-diet");
   });
 
   it("translates canonical server labels once and preserves localized achievement copy", () => {

@@ -22,6 +22,7 @@ import {
   UNLOCK_WEEK,
 } from "./exercise-catalog";
 import type { WellnessGoal } from "../domain/types";
+import type { DailyEffects } from "../checkin/close-day";
 
 export type AdaptationMode = "normal" | "gentle" | "low-impact" | "rest";
 
@@ -215,20 +216,27 @@ export function buildExerciseDay(input: {
   goal: WellnessGoal;
   day: number;
   checkin?: ExerciseCheckin;
+  dailyEffects?: DailyEffects;
 }): ExerciseDayPlan {
   const day = Math.min(365, Math.max(1, Math.round(input.day)));
   const week = weekForDay(day);
-  const phase = phaseForWeek(week);
+  const effects = input.dailyEffects?.exercise;
+  const progressionWeek = Math.min(TOTAL_WEEKS, Math.max(1, week + (effects?.progressionWeeks ?? 0)));
+  const phase = phaseForWeek(progressionWeek);
   const deload = isDeloadWeek(week);
   const checkin = input.checkin ?? {
     pain: 0,
     fatigue: false,
     dizziness: false,
   };
-  const { mode, note } = adaptationFor(checkin);
-  const gentle = mode === "gentle";
-  const lowImpact = mode === "low-impact";
-  const minutes = minutesForDay(week, deload, gentle);
+  const local = adaptationFor(checkin);
+  const gentle = local.mode === "gentle" || Boolean(effects?.gentle);
+  const lowImpact = local.mode === "low-impact" || Boolean(effects?.lowImpact);
+  let mode: AdaptationMode = gentle ? "gentle" : "normal";
+  if (lowImpact) mode = "low-impact";
+  if (local.mode === "rest" || effects?.pauseDays) mode = "rest";
+  const note = local.note;
+  const minutes = minutesForDay(progressionWeek, deload, gentle);
   const typeCode = typeForDay(input.goal, day);
   const typeName = {
     es: DAY_NAMES[typeCode]?.[0] ?? typeCode,
@@ -246,7 +254,7 @@ export function buildExerciseDay(input: {
       typeCode,
       typeName,
       exercises: [],
-      nextUnlocks: nextUnlocks(week),
+      nextUnlocks: nextUnlocks(progressionWeek),
       adaptation: mode,
       adaptationNote: note,
     };
@@ -254,7 +262,7 @@ export function buildExerciseDay(input: {
 
   const slots = DAY_TYPES[typeCode] ?? DAY_TYPES.C;
   const exercises = slots.map((slot) => {
-    const id = pickForSlot(slot, week, day, lowImpact);
+    const id = pickForSlot(slot, progressionWeek, day, lowImpact);
     return {
       id,
       focus: slot,
@@ -262,10 +270,10 @@ export function buildExerciseDay(input: {
       guide: guideFor(id),
       dose: doseFor(
         slot,
-        phase.level,
+        Math.max(0, phase.level - (effects?.gentle ? 1 : 0)),
         input.goal,
         Math.round(minutes / 4),
-        gentle,
+        local.mode === "gentle" && !effects?.gentle,
       ),
       lowImpact: !HIGH_IMPACT.has(id),
     };
@@ -281,7 +289,7 @@ export function buildExerciseDay(input: {
     typeCode,
     typeName,
     exercises,
-    nextUnlocks: nextUnlocks(week),
+    nextUnlocks: nextUnlocks(progressionWeek),
     adaptation: mode,
     adaptationNote: note,
   };

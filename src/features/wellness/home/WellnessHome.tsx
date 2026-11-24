@@ -27,6 +27,7 @@ import type { Screen } from "../../../types";
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { LanguageToggle } from "../../../components/LanguageToggle";
+import { checkinOwner, loadCheckins } from "../checkin/checkin-store";
 import { Screen as AppScreen, Scroll } from "../../../components/Screen";
 import { formatDateForDisplay, toLocalISODate } from "../../../utils/dates";
 import {
@@ -36,6 +37,7 @@ import {
 import { useGeneration } from "../generation/useGeneration";
 import {
   getWellnessHomeData,
+  localISODate,
   type ProtocolStepId,
 } from "../state/wellness-home-store";
 import "../wellness.css";
@@ -92,8 +94,14 @@ const INBOX_COPY = {
     "Tu plan de nutrición está listo",
     "Abre Nutrición para consultar tus comidas.",
   ],
-  questionnaires: ["Tus cuestionarios", "Puedes completarlos a tu ritmo desde Inicio."],
-} as const satisfies Record<GenerationInboxItem["id"], readonly [string, string]>;
+  questionnaires: [
+    "Tus cuestionarios",
+    "Puedes completarlos a tu ritmo desde Inicio.",
+  ],
+} as const satisfies Record<
+  GenerationInboxItem["id"],
+  readonly [string, string]
+>;
 
 export function WellnessHome() {
   const { user, navigate, openVoice, openTests } = useApp();
@@ -104,7 +112,9 @@ export function WellnessHome() {
     ? GENERATION_ARTIFACTS.filter((id) => job.artifacts[id].status === "failed")
     : [];
   const isReady =
-    job && GENERATION_ARTIFACTS.every((id) => job.artifacts[id].status === "ready");
+    job &&
+    GENERATION_ARTIFACTS.every((id) => job.artifacts[id].status === "ready");
+  const closed = loadCheckins(checkinOwner(user))[localISODate(new Date())];
   const number = new Intl.NumberFormat(lang === "en" ? "en-US" : "es-ES", {
     maximumFractionDigits: 0,
   });
@@ -213,7 +223,11 @@ export function WellnessHome() {
                             </span>
                           </div>
                           <IonProgressBar
-                            color={artifact.status === "failed" ? "danger" : "primary"}
+                            color={
+                              artifact.status === "failed"
+                                ? "danger"
+                                : "primary"
+                            }
                             value={artifact.progress / 100}
                             aria-label={label}
                           />
@@ -303,6 +317,14 @@ export function WellnessHome() {
                 ? t("Día completo")
                 : t("Continuar mi día")}
           </IonButton>
+          <IonButton
+            expand="block"
+            fill="outline"
+            className="wh-secondary"
+            onClick={() => navigate("wellness-checkin")}
+          >
+            {closed ? t("Ver cierre del día") : t("Cerrar el día")}
+          </IonButton>
         </section>
 
         <section className="wh-quick" aria-label={t("Accesos rápidos")}>
@@ -344,7 +366,9 @@ export function WellnessHome() {
                     <IonLabel className="ion-text-wrap">
                       <h3>{t(title)}</h3>
                       <p>{t(body)}</p>
-                      <time dateTime={item.createdAt}>{formatDateForDisplay(date)}</time>
+                      <time dateTime={item.createdAt}>
+                        {formatDateForDisplay(date)}
+                      </time>
                     </IonLabel>
                   </IonItem>
                 );
