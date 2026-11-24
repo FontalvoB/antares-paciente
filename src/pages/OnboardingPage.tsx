@@ -8,7 +8,6 @@ import type {
   GateResult,
   ObjectiveDraft,
   OnboardingStage,
-  PlanPreview,
   WellnessEmergencyContact,
 } from "../features/wellness/domain";
 import {
@@ -19,6 +18,10 @@ import {
 } from "../features/wellness/domain";
 import { wellnessOnboardingService } from "../features/wellness/services/wellness-onboarding-service";
 import {
+  recordGenerationFailure,
+  requestGeneration,
+} from "../features/wellness/generation/generation-store";
+import {
   localISODate,
   savePlanSnapshot,
 } from "../features/wellness/state/wellness-home-store";
@@ -27,7 +30,6 @@ import {
   EmailStep,
   EmergencyStep,
   PasswordStep,
-  PlanReady,
   TermsStep,
   WellnessStepper,
 } from "../features/wellness/components/onboarding";
@@ -49,7 +51,6 @@ const STAGE_INDEX: Record<OnboardingStage, number> = {
   terms: 2,
   password: 3,
   objective: 4,
-  ready: 4,
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -95,11 +96,11 @@ export function OnboardingPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [draft, setDraft] = useState<ObjectiveDraft>(initialDraft);
   const [gate, setGate] = useState<GateResult | null>(null);
-  const [plan, setPlan] = useState<PlanPreview | null>(null);
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const generationSubmitted = useRef(false);
 
   useEffect(() => {
     // Cada paso arranca arriba: al cambiar de pantalla el scroll anterior se
@@ -110,7 +111,6 @@ export function OnboardingPage() {
   const stepIndex = STAGE_INDEX[stage];
 
   const title = useMemo(() => {
-    if (stage === "ready") return t("Tu plan está listo");
     if (stage === "objective") return t("Cuéntanos tu objetivo");
     return t(STEP_LABELS[stepIndex]);
   }, [stage, stepIndex, t]);
@@ -127,8 +127,6 @@ export function OnboardingPage() {
         return t("Protege tu cuenta con una contraseña segura.");
       case "objective":
         return t("8 pasos cortos para armar tu plan de 365 días.");
-      default:
-        return t("Revisa tu punto de partida y empieza el día 1.");
     }
   }, [stage, t]);
 
@@ -230,6 +228,9 @@ export function OnboardingPage() {
   };
 
   const generatePlan = async () => {
+    if (generationSubmitted.current) return;
+    generationSubmitted.current = true;
+    let completed = false;
     setGenerating(true);
     setError(null);
     try {
@@ -257,19 +258,19 @@ export function OnboardingPage() {
       setGate(result.status);
       setDraft(withTerms);
       if (result.status.ok && result.plan) {
-        setPlan(result.plan);
-        // KAN-142: el Home necesita día 1, meta y macros al entrar.
-        savePlanSnapshot({
+        const now = new Date();
+        wellnessOnboardingService.saveDraft(withTerms);
+        const snapshot = savePlanSnapshot({
           name: withTerms.name.trim(),
           goal: result.plan.goal,
-          startDate: localISODate(new Date()),
+          startDate: localISODate(now),
           kcal: result.plan.kcal,
           proteinG: result.plan.proteinG,
           carbsG: result.plan.carbsG,
           fatG: result.plan.fatG,
           waterMl: result.plan.waterMl,
           totalDays: result.plan.totalDays,
-          createdAt: new Date().toISOString(),
+          createdAt: now.toISOString(),
           // KAN-144: datos del objetivo para precargar el cambio desde Perfil.
           sex: withTerms.sex,
           age: withTerms.age,
@@ -281,29 +282,33 @@ export function OnboardingPage() {
           pace: withTerms.pace,
           vegetarian: withTerms.vegetarian,
           dairyFree: withTerms.dairyFree,
+        }, now);
+        try {
+          requestGeneration(snapshot);
+        } catch {
+          recordGenerationFailure(snapshot);
+        }
+        finishWellnessOnboarding({
+          ...baseProfile(withTerms, email),
+          fam1Nombre: primaryContact.name,
+          fam1Parentesco: primaryContact.relationship,
+          fam1Cel: primaryContact.phone,
+          fam1Email: primaryContact.email,
+          fam2Nombre: secondaryContact.name,
+          fam2Parentesco: secondaryContact.relationship,
+          fam2Cel: secondaryContact.phone,
+          fam2Email: secondaryContact.email,
         });
-        wellnessOnboardingService.clearDraft();
-        setStage("ready");
+        completed = true;
       }
     } catch {
       showToast(t("No pudimos generar tu plan. Intenta de nuevo."), "err");
     } finally {
-      setGenerating(false);
+      if (!completed) {
+        generationSubmitted.current = false;
+        setGenerating(false);
+      }
     }
-  };
-
-  const enterApp = () => {
-    finishWellnessOnboarding({
-      ...baseProfile(draft, email),
-      fam1Nombre: primaryContact.name,
-      fam1Parentesco: primaryContact.relationship,
-      fam1Cel: primaryContact.phone,
-      fam1Email: primaryContact.email,
-      fam2Nombre: secondaryContact.name,
-      fam2Parentesco: secondaryContact.relationship,
-      fam2Cel: secondaryContact.phone,
-      fam2Email: secondaryContact.email,
-    });
   };
 
   const goBack = () => {
@@ -335,9 +340,7 @@ export function OnboardingPage() {
         <div className="onb-head-top">
           <div className="onb-head-brand">Copp Adresd</div>
         </div>
-        {stage !== "ready" && (
-          <WellnessStepper current={stepIndex + 1} total={STEP_LABELS.length} />
-        )}
+        <WellnessStepper current={stepIndex + 1} total={STEP_LABELS.length} />
         <h1 className="onb-head-title">{title}</h1>
         <p className="onb-head-sub">{subtitle}</p>
       </header>
@@ -404,14 +407,6 @@ export function OnboardingPage() {
               generating={generating}
               onGenerate={() => void generatePlan()}
               onExit={goBack}
-            />
-          )}
-
-          {stage === "ready" && plan && (
-            <PlanReady
-              plan={plan}
-              firstName={draft.name.trim().split(/\s+/)[0] || ""}
-              onEnter={enterApp}
             />
           )}
 

@@ -258,6 +258,65 @@
   color: var(--mu);
 }
 
+.wh-generation-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wh-generation-list {
+  padding: 0;
+  background: transparent;
+}
+
+.wh-generation-list ion-item {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --border-color: var(--bd);
+}
+
+.wh-generation-row {
+  width: 100%;
+  padding: 6px 0;
+}
+
+.wh-generation-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wh-generation-row ion-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.wh-generation-error {
+  margin-bottom: 8px;
+  color: var(--wellness-error);
+  font-weight: 700;
+}
+
+.wh-inbox ion-label p {
+  color: var(--wellness-muted);
+}
+
+.wh-inbox time {
+  display: block;
+  margin-top: 4px;
+  color: var(--mu);
+  font-size: 12px;
+}
+
 .wh-progress {
   height: 8px;
   border-radius: 999px;

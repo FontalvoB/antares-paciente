@@ -123,6 +123,7 @@ const PLAN_KEY = "wellness.plan.v1";
 const PLAN_VERSIONS_KEY = "wellness.plan.versions.v1";
 const PROTOCOL_KEY = "wellness.protocol.v1";
 const BATTERIES_KEY = "wellness.batteries.v1";
+let unsavedPlan: WellnessPlanSnapshot | null = null;
 
 // ---------- almacenamiento ----------
 
@@ -136,13 +137,13 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 
-function write(key: string, value: unknown): void {
+function write(key: string, value: unknown): boolean {
   try {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    }
+    if (typeof window === "undefined") return false;
+    window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
-    /* almacenamiento no disponible */
+    return false;
   }
 }
 
@@ -228,13 +229,14 @@ export function savePlanSnapshot(
     ...input,
     version: input.version ?? (previous ? previous.version + 1 : 1),
   }) as WellnessPlanSnapshot;
-  write(PLAN_KEY, snapshot);
+  unsavedPlan = write(PLAN_KEY, snapshot) ? null : snapshot;
   return snapshot;
 }
 
 export function loadPlanSnapshot(): WellnessPlanSnapshot | null {
-  return normalizePlanSnapshot(
-    read<Partial<WellnessPlanSnapshot> | null>(PLAN_KEY, null),
+  return (
+    unsavedPlan ??
+    normalizePlanSnapshot(read<Partial<WellnessPlanSnapshot> | null>(PLAN_KEY, null))
   );
 }
 
@@ -256,6 +258,7 @@ export function loadPlanVersions(): WellnessPlanVersion[] {
 }
 
 export function clearWellnessState(): void {
+  unsavedPlan = null;
   for (const key of [PLAN_KEY, PLAN_VERSIONS_KEY, PROTOCOL_KEY, BATTERIES_KEY]) {
     try {
       window.localStorage.removeItem(key);

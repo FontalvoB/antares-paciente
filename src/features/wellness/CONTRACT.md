@@ -75,12 +75,6 @@ export function PasswordStep(props: {
   error?: string | null;
 }): JSX.Element;
 
-export function PlanReady(props: {
-  plan: PlanPreview;
-  firstName: string;
-  onEnter: () => void;
-}): JSX.Element;
-
 export function WellnessStepper(props: {
   current: number;
   total: number;
@@ -128,6 +122,15 @@ ritmo) → preferencias(3) → PAR-Q(4) → NQS(5) → términos(6) → generar(
   confirmación; sin confirmar no se genera.
 - Términos: versión y fecha-hora visibles.
 - ES/EN completo y unidades métricas (US queda para KAN-147).
+
+## KAN-136 y KAN-142 — generación en segundo plano
+
+- Después de validar el objetivo, el onboarding guarda las respuestas y el
+  snapshot, solicita el trabajo idempotente y abre Inicio.
+- Inicio consulta `generation/useGeneration.ts` para mostrar avance, bandeja y
+  reintento parcial. El mock persiste el trabajo en `wellness.generation.v1`.
+- El contrato de integración propuesto está en
+  [KAN-136-142-handoff-diomedes.md](../../../docs/kan/KAN-136-142-handoff-diomedes.md).
 
 ## KAN-144 — cambiar objetivo desde Perfil
 
