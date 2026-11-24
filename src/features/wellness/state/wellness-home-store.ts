@@ -301,7 +301,7 @@ function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function parseLocalDate(iso: string): Date | null {
+export function parseLocalDate(iso: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) return null;
   const date = new Date(
@@ -309,7 +309,7 @@ function parseLocalDate(iso: string): Date | null {
     Number(match[2]) - 1,
     Number(match[3]),
   );
-  return Number.isNaN(date.getTime()) ? null : date;
+  return localISODate(date) === iso ? date : null;
 }
 
 /** Día del plan, acotado a 1..365. */
