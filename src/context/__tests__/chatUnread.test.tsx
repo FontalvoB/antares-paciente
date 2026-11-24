@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AppProvider, useApp } from "../AppContext";
-import { BottomNav } from "../../components/BottomNav";
 import { I18nProvider } from "../../i18n/I18nContext";
 import { fetchThreadState } from "../../utils/threadApi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -39,14 +38,12 @@ vi.mock("../../utils/appointmentsApi", () => ({
   createRequest: vi.fn(),
 }));
 
-// Harness: BottomNav real + navegación programática + espejo del estado.
 function Harness() {
-  const { chatUnread, navigate } = useApp();
+  const { chatUnread, markChatRead } = useApp();
   return (
     <div>
-      <BottomNav />
-      <button type="button" onClick={() => navigate("chat")}>
-        go-chat
+      <button type="button" onClick={markChatRead}>
+        mark-read
       </button>
       <span data-testid="unread">{chatUnread ? "true" : "false"}</span>
     </div>
@@ -80,16 +77,16 @@ describe("AppContext — unread chat indicator", () => {
     vi.mocked(fetchThreadState).mockResolvedValue(threadState);
   });
 
-  it("shows the dot when the remote count exceeds the seen count", async () => {
+  it("sets the unread state when the remote count exceeds the seen count", async () => {
     localStorage.setItem("antares:chat-last-seen:10247381", "2");
     renderApp();
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Nuevos mensajes")).toBeTruthy();
+      expect(screen.getByTestId("unread").textContent).toBe("true");
     });
   });
 
-  it("does not show the dot on first load and persists the count as baseline", async () => {
+  it("starts in read state and persists the count as baseline", async () => {
     renderApp();
 
     await waitFor(() => {
@@ -102,40 +99,37 @@ describe("AppContext — unread chat indicator", () => {
       "10247381",
       { limit: 1 },
     );
-    expect(screen.queryByLabelText("Nuevos mensajes")).toBeNull();
     expect(screen.getByTestId("unread").textContent).toBe("false");
     expect(localStorage.getItem("antares:chat-last-seen:10247381")).toBe("5");
   });
 
-  it("keeps the dot hidden when the remote count matches the seen count", async () => {
+  it("keeps the state read when the remote count matches the seen count", async () => {
     localStorage.setItem("antares:chat-last-seen:10247381", "5");
     renderApp();
 
     await waitFor(() => {
       expect(vi.mocked(fetchThreadState)).toHaveBeenCalled();
     });
-    expect(screen.queryByLabelText("Nuevos mensajes")).toBeNull();
     expect(screen.getByTestId("unread").textContent).toBe("false");
   });
 
-  it("clears the unread state when entering the chat screen", async () => {
+  it("clears the unread state when explicitly marked as read", async () => {
     localStorage.setItem("antares:chat-last-seen:10247381", "2");
     renderApp();
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Nuevos mensajes")).toBeTruthy();
+      expect(screen.getByTestId("unread").textContent).toBe("true");
     });
 
-    fireEvent.click(screen.getByText("go-chat"));
+    fireEvent.click(screen.getByText("mark-read"));
 
     await waitFor(() => {
       expect(screen.getByTestId("unread").textContent).toBe("false");
-      expect(screen.queryByLabelText("Nuevos mensajes")).toBeNull();
       expect(localStorage.getItem("antares:chat-last-seen:10247381")).toBe("5");
     });
   });
 
-  it("keeps the dot hidden when fetching the thread state fails", async () => {
+  it("keeps the state read when fetching the thread state fails", async () => {
     vi.mocked(fetchThreadState).mockResolvedValue(null);
     renderApp();
 
@@ -143,6 +137,5 @@ describe("AppContext — unread chat indicator", () => {
       expect(vi.mocked(fetchThreadState)).toHaveBeenCalled();
     });
     expect(screen.getByTestId("unread").textContent).toBe("false");
-    expect(screen.queryByLabelText("Nuevos mensajes")).toBeNull();
   });
 });

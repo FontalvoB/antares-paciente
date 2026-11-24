@@ -1,0 +1,92 @@
+.screen-scroll.wc-scroll {
+  color: var(--wellness-navy);
+  padding-inline: max(12px, calc((100% - 540px) / 2));
+  scroll-padding-block: 88px 104px;
+}
+
+.app-shell:has(.ob-wrap) .wc-scroll {
+  padding-top: calc(96px + env(safe-area-inset-top, 0px));
+}
+
+.wc-scroll .wp-hero {
+  display: grid;
+  gap: 8px;
+}
+
+.wc-card {
+  display: grid;
+  gap: var(--wellness-space);
+  min-width: 0;
+  background: var(--wellness-surface);
+}
+
+.wc-card :is(h2, p) {
+  margin: 0;
+}
+
+form.wc-card {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+  padding-bottom: var(--wellness-space);
+}
+
+form.wc-card > :not(ion-input) {
+  grid-column: 1 / -1;
+}
+
+.wc-card fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wc-card legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+.wc-options {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--wellness-space);
+}
+
+.wc-card :is(ion-checkbox, ion-radio, ion-button, ion-input) {
+  min-height: 44px;
+}
+
+.wc-card ion-input {
+  min-width: 0;
+  --border-color: var(--wellness-muted);
+}
+
+.wc-card :is(ion-checkbox, ion-radio, ion-button, ion-input):focus-within {
+  outline: 2px solid var(--wellness-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.wc-card ion-button::part(native) {
+  white-space: normal;
+}
+
+.wc-card .ion-invalid {
+  --border-color: var(--wellness-error);
+  --highlight-color-invalid: var(--wellness-error);
+}
+
+.wc-effects {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-inline-start: 20px;
+}
+
+.wc-status {
+  color: var(--wellness-muted);
+}
+
+.wc-error {
+  color: var(--wellness-error);
+}

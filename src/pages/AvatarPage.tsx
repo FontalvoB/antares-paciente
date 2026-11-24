@@ -19,7 +19,7 @@ import type { AvatarState } from "../components/avatar/avatar-state";
 import { useAvatarConfiguration } from "../hooks/useAvatarConfiguration";
 import { getAccessToken, getMe } from "../utils/authApi";
 
-export function AvatarPage() {
+export function AvatarPage({ onClose }: { onClose?: () => void } = {}) {
   const t = useT(),
     { navigate, showToast, authLoading } = useApp();
   const [view, setView] = useState("appearance");
@@ -86,7 +86,7 @@ export function AvatarPage() {
     progress.refresh();
   };
   return (
-    <Screen className="avatar-experience">
+    <Screen hideNav={Boolean(onClose)} className="avatar-experience">
       <PageHeader
         title={view === "appearance" ? t("Mi Avatar") : t("Mi evolución")}
         sub={
@@ -95,7 +95,7 @@ export function AvatarPage() {
             : t("Representación visual de tu progreso registrado")
         }
         trailing={
-          <IonButton fill="clear" onClick={() => navigate("prof")}>
+          <IonButton fill="clear" onClick={onClose ?? (() => navigate("prof"))}>
             {t("Volver")}
           </IonButton>
         }
@@ -116,7 +116,7 @@ export function AvatarPage() {
           <IonLabel>{t("Mi evolución")}</IonLabel>
         </IonSegmentButton>
       </IonSegment>
-      <Scroll className="avatar-scroll">
+      <Scroll noNav={Boolean(onClose)} className="avatar-scroll">
         <div className="avatar-layout">
           <div className="avatar-preview">
             <AvatarStage

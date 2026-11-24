@@ -3,12 +3,15 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProfilePage } from "../ProfilePage";
-import type { MetricsHistoryDto } from "../../services/program/types";
-import type { TeamProfessional } from "../../data/appointments";
 
 vi.mock("../../components/Screen", () => ({
   Screen: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Scroll: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock("@ionic/react", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@ionic/react")>()),
+  IonModal: () => null,
 }));
 
 // framer-motion mockeado: las animaciones WAAPI en happy-dom generan
@@ -51,16 +54,10 @@ vi.mock("framer-motion", async () => {
 // Estado mutable compartido con los mocks (vi.mock se hoistea).
 const mockState = vi.hoisted(() => ({
   lang: "es" as "es" | "en",
-  pointsTotal: 4820,
-  teamProfessionals: null as unknown,
-  snapshot: null as unknown,
-  isMockFallback: false,
-  metrics: null as unknown,
-  clinicalHistory: "available" as "loading" | "available" | "empty" | "unknown",
-  professionalsEnabled: false,
 }));
 
 const navigateMock = vi.hoisted(() => vi.fn());
+const openTestsMock = vi.hoisted(() => vi.fn());
 
 // Mock del endpoint de perfil: el guardado del contacto de emergencia.
 const profileMock = vi.hoisted(() => ({
@@ -90,49 +87,9 @@ vi.mock("../../context/AppContext", () => ({
     navigate: navigateMock,
     openPanic: vi.fn(),
     showToast: vi.fn(),
-    pointsTotal: mockState.pointsTotal,
-    realMode: true,
     logout: vi.fn(),
-    openTests: vi.fn(),
-    teamProfessionals: mockState.teamProfessionals,
+    openTests: openTestsMock,
     refreshPatientProfile: profileMock.refresh,
-  }),
-}));
-
-vi.mock("../../utils/teamVisibility", () => ({
-  get TEAM_PROFESSIONALS_ENABLED() {
-    return mockState.professionalsEnabled;
-  },
-}));
-
-vi.mock("../../hooks/useLeague", () => ({
-  useLeague: () => ({
-    league: null,
-    isLoading: true,
-    isError: false,
-    refetch: vi.fn(),
-  }),
-}));
-
-vi.mock("../../hooks/useProgram", () => ({
-  useProgram: () => ({
-    snapshot: mockState.snapshot,
-    isMockFallback: mockState.isMockFallback,
-  }),
-}));
-
-vi.mock("../../hooks/useClinicalHistoryAvailability", () => ({
-  useClinicalHistoryAvailability: () => ({
-    availability: mockState.clinicalHistory,
-    visible: mockState.clinicalHistory !== "empty",
-  }),
-}));
-
-vi.mock("../../hooks/useMetricsHistory", () => ({
-  useMetricsHistory: () => ({
-    history: mockState.metrics,
-    isLoading: false,
-    isError: false,
   }),
 }));
 
@@ -156,55 +113,6 @@ vi.mock("../../i18n/I18nContext", async () => {
 });
 });
 
-/** Profesional real del catálogo mockeado (nombre viene de este fixture). */
-const realProfessionalFixture = {
-  id: "prof-1",
-  typeId: "medica",
-  name: "Dra. Sofía Vargas",
-  role: "Physician",
-  emoji: "🩺",
-  accent: "linear-gradient(90deg,#0C3D2C,var(--teal))",
-  color: "var(--teal)",
-  colorSoft: "var(--teal-l)",
-} as TeamProfessional;
-
-const metricsFixture = {
-  heightCm: 168,
-  metrics: [
-    {
-      code: "weight",
-      unit: "kg",
-      target: null,
-      favorableDirection: "down",
-      points: [
-        { date: "2026-07-01", value: 84 },
-        { date: "2026-08-15", value: 81.5 },
-      ],
-    },
-  ],
-} as MetricsHistoryDto;
-
-const snapshotFixture = {
-  xp: { balance: 365 },
-  template: { currentWeekNumber: 7, totalWeeks: 24 },
-};
-
-/** Cadenas que NUNCA deben aparecer: datos clínicos/staff fabricados. */
-const FABRICATED_TEXT = [
-  "COPP-2024-00142",
-  "Semana 12/24",
-  "−3.2 kg",
-  "Dr. Carlos Ramírez",
-  "Ana Torres",
-  "Luis Mora",
-  "Marco Reyes",
-];
-
-/** Escapa un literal para usarlo dentro de una RegExp. */
-function escapeRe(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
@@ -217,90 +125,57 @@ function renderPage() {
   );
 }
 
-describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
+describe("ProfilePage v5.1", () => {
   beforeEach(() => {
     mockState.lang = "es";
-    mockState.snapshot = snapshotFixture;
-    mockState.isMockFallback = false;
-    mockState.metrics = metricsFixture;
-    mockState.teamProfessionals = [realProfessionalFixture];
-    mockState.clinicalHistory = "available";
-    mockState.professionalsEnabled = false;
     navigateMock.mockClear();
+    openTestsMock.mockClear();
     profileMock.update.mockReset().mockResolvedValue({});
     profileMock.refresh.mockReset().mockResolvedValue(undefined);
   });
 
-  it("renderiza la semana real del programa en el header", () => {
+  it("muestra los datos y las secciones de bienestar del mapa", () => {
     renderPage();
 
-    expect(screen.getByText("Semana 7 de 24")).toBeTruthy();
+    expect(screen.getByText("Marta Ríos")).toBeTruthy();
+    expect(screen.getByText("10247381")).toBeTruthy();
+    expect(screen.getByLabelText("Mi Avatar")).toBeTruthy();
+    expect(screen.getByText("Cuenta y preferencias")).toBeTruthy();
+    fireEvent.click(screen.getByText("Evaluaciones de bienestar"));
+    expect(openTestsMock).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByText("Plan nutricional"));
+    fireEvent.click(screen.getByText("Plan de ejercicios"));
+    fireEvent.click(screen.getByText("Cambiar objetivo"));
+    expect(navigateMock.mock.calls).toEqual([
+      ["wellness-diet"],
+      ["wellness-exercise"],
+      ["wellness-goal"],
+    ]);
   });
 
-  it("abre Fuentes y referencias médicas desde la zona de cuenta", () => {
+  it("omite los accesos fuera del mapa", () => {
     renderPage();
 
-    fireEvent.click(screen.getByText("Fuentes y referencias médicas"));
-
-    expect(navigateMock).toHaveBeenCalledWith("medical-sources");
-  });
-
-  it("no renderiza ninguna cadena fabricada", () => {
-    renderPage();
-
-    for (const text of FABRICATED_TEXT) {
-      expect(screen.queryByText(new RegExp(escapeRe(text)))).toBeNull();
+    for (const title of [
+      "Mi historial de bienestar",
+      "Visualización del perfil",
+      "Calendario de citas",
+      "Fuentes y referencias médicas",
+      "Equipo Copp Adresd",
+      "Medicamentos y suplementos",
+      "Privacidad en la Liga",
+      "Accesorio y datos de bienestar",
+    ]) {
+      expect(screen.queryByText(title, { exact: true })).toBeNull();
     }
+    expect(screen.queryByLabelText("Hablar con Vita")).toBeNull();
   });
 
-  it("con vacío clínico confirmado oculta la entrada a Historia clínica (KAN-95)", () => {
-    mockState.clinicalHistory = "empty";
-
+  it("traduce las acciones del plan al inglés", () => {
+    mockState.lang = "en";
     renderPage();
-
-    expect(screen.queryByText("Mi historial de bienestar")).toBeNull();
-    // El resto del plan sigue disponible.
-    expect(screen.getByText("Visualización del perfil")).toBeTruthy();
-  });
-
-  it.each(["available", "loading", "unknown"] as const)(
-    "con disponibilidad %s mantiene visible la Historia clínica (no oculta por duda)",
-    (availability) => {
-      mockState.clinicalHistory = availability;
-
-      renderPage();
-
-      expect(screen.getByText("Mi historial de bienestar")).toBeTruthy();
-    },
-  );
-
-  it("muestra solo a Vita y oculta temporalmente a los profesionales (KAN-96)", () => {
-    renderPage();
-
-    expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
-    expect(screen.getByText("Vita")).toBeTruthy();
-    expect(screen.getByText("Asistente de salud")).toBeTruthy();
-    expect(screen.getByText("Vita te acompaña en tu día a día.")).toBeTruthy();
-    expect(screen.queryByText("Dra. Sofía Vargas")).toBeNull();
-    expect(screen.queryByText("Profesionales que te acompañan")).toBeNull();
-  });
-
-  it("con el flag activo renderiza el profesional real del catálogo", () => {
-    mockState.professionalsEnabled = true;
-
-    renderPage();
-
-    expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
-    expect(screen.getByText("Dra. Sofía Vargas")).toBeTruthy();
-    expect(screen.getByText("Physician")).toBeTruthy();
-    expect(screen.getByText("Profesionales que te acompañan")).toBeTruthy();
-  });
-
-  it("el CTA de Vita abre el chat", () => {
-    renderPage();
-
-    fireEvent.click(screen.getByLabelText("Hablar con Vita"));
-    expect(navigateMock).toHaveBeenCalledWith("chat");
+    expect(screen.getByText("Exercise plan")).toBeTruthy();
+    expect(screen.getByText("See today's routine")).toBeTruthy();
   });
 
   it("el banner Personaliza tu avatar usa el retrato de doctora existente (KAN-97)", () => {
@@ -312,87 +187,6 @@ describe("ProfilePage — datos reales (sin contenido fabricado)", () => {
     expect(doctor).toBeTruthy();
     expect(doctor?.getAttribute("src")).toContain("vita-coach");
     expect(container.querySelector(".mascot")).toBeNull();
-  });
-
-  it("traduce el cargo profesional en inglés y conserva el nombre real", () => {
-    mockState.lang = "en";
-    mockState.professionalsEnabled = true;
-    mockState.teamProfessionals = [{ ...realProfessionalFixture, role: "Médico COPP-ADRESD" }];
-    renderPage();
-    expect(screen.getByText("COPP-ADRESD physician")).toBeTruthy();
-    expect(screen.getByText("Dra. Sofía Vargas")).toBeTruthy();
-    expect(screen.queryByText("Médico COPP-ADRESD")).toBeNull();
-  });
-
-  it("con catálogo vacío muestra estado vacío honesto, sin nombres fabricados", () => {
-    mockState.professionalsEnabled = true;
-    mockState.teamProfessionals = [];
-
-    renderPage();
-
-    expect(
-      screen.getByText("Aún no hay profesionales asignados a tu equipo."),
-    ).toBeTruthy();
-    for (const name of [
-      "Dr. Carlos Ramírez",
-      "Ana Torres",
-      "Luis Mora",
-      "Marco Reyes",
-    ]) {
-      expect(screen.queryByText(new RegExp(escapeRe(name)))).toBeNull();
-    }
-  });
-
-  it("sin catálogo de profesionales mantiene a Vita y no inventa nombres", () => {
-    mockState.teamProfessionals = null;
-
-    renderPage();
-
-    expect(screen.getByText("Equipo Copp Adresd")).toBeTruthy();
-    expect(screen.getByText("Vita")).toBeTruthy();
-    expect(screen.queryByText("Dra. Sofía Vargas")).toBeNull();
-    expect(
-      screen.queryByText("Aún no hay profesionales asignados a tu equipo."),
-    ).toBeNull();
-  });
-
-  it("mantiene el valor real de puntos en el hero", () => {
-    renderPage();
-
-    expect(screen.getByText("365")).toBeTruthy();
-    expect(screen.queryByText("4820")).toBeNull();
-    expect(screen.getByText("Puntos")).toBeTruthy();
-  });
-
-  it("sin snapshot no sustituye el saldo persistido con puntos locales", () => {
-    mockState.snapshot = null;
-    renderPage();
-    expect(screen.queryByText("4820")).toBeNull();
-  });
-
-  it("renderiza el delta real de peso desde metrics-history", () => {
-    renderPage();
-
-    expect(screen.getByText("−2,5 kg")).toBeTruthy();
-    expect(screen.getByText("Peso")).toBeTruthy();
-  });
-
-  it("sin serie de peso real no hay tarjeta de Peso (no se inventa)", () => {
-    mockState.metrics = { heightCm: null, metrics: [] };
-
-    renderPage();
-
-    expect(screen.queryByText("Peso")).toBeNull();
-    expect(screen.getByText("Puntos")).toBeTruthy();
-  });
-
-  it("no pinta la semana como verdad cuando useProgram cae al fallback mock", () => {
-    mockState.isMockFallback = true;
-
-    renderPage();
-
-    expect(screen.queryByText(/Semana 7/)).toBeNull();
-    expect(screen.queryByText("Semanas")).toBeNull();
   });
 
   it("edita el contacto de emergencia y refresca el perfil tras guardar", async () => {

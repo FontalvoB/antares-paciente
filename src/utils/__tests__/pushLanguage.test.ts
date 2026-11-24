@@ -108,18 +108,22 @@ describe('push device language', () => {
   })
 })
 
-describe('medication reminders', () => {
-  it('opens medications instead of chat, and ignores the tap after logout', async () => {
+describe('retired push destinations', () => {
+  it.each([
+    { type: 'medication_reminder', screen: 'medications' },
+    { screen: 'room', appointmentId: 'old-appointment' },
+    { screen: 'book', type: 'appointment_reminder' },
+    { screen: 'chat', thread_id: 'old-thread' },
+    { screen: 'com' },
+  ])('opens Home for %j and ignores the tap after logout', async (data) => {
     const { registerForPush } = await import('../pushNotifications')
-    const onOpenMedications = vi.fn()
-    const onOpenChat = vi.fn()
-    await registerForPush({ onOpenMedications, onOpenChat })
+    const onOpenHome = vi.fn()
+    await registerForPush({ onOpenHome })
     const tap = native.listeners.get('pushNotificationActionPerformed')!
-    tap({ notification: { data: { type: 'medication_reminder', screen: 'medications' } } })
-    expect(onOpenMedications).toHaveBeenCalledTimes(1)
-    expect(onOpenChat).not.toHaveBeenCalled()
+    tap({ notification: { data } })
+    expect(onOpenHome).toHaveBeenCalledTimes(1)
     native.jwt = ''
-    tap({ notification: { data: { type: 'medication_reminder' } } })
-    expect(onOpenMedications).toHaveBeenCalledTimes(1)
+    tap({ notification: { data } })
+    expect(onOpenHome).toHaveBeenCalledTimes(1)
   })
 })

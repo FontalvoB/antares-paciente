@@ -29,25 +29,16 @@ vi.mock("../../context/AppContext", () => ({
   }),
 }));
 
-vi.mock("../../hooks/useLeague", () => ({
-  useLeague: () => ({
-    league: null,
-    isLoading: true,
-    isError: false,
-    refetch: vi.fn(),
-  }),
+vi.mock("../AvatarPage", () => ({
+  AvatarPage: ({ onClose }: { onClose: () => void }) => (
+    <button type="button" onClick={onClose}>Cerrar avatar</button>
+  ),
 }));
 
-vi.mock("../../hooks/useProgram", () => ({
-  useProgram: () => ({ snapshot: null, isMockFallback: true }),
-}));
-
-vi.mock("../../hooks/useMetricsHistory", () => ({
-  useMetricsHistory: () => ({
-    history: null,
-    isLoading: false,
-    isError: false,
-  }),
+vi.mock("@ionic/react", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@ionic/react")>()),
+  IonModal: ({ children, isOpen }: { children: ReactNode; isOpen: boolean }) =>
+    isOpen ? <div role="dialog">{children}</div> : null,
 }));
 
 vi.mock("../../i18n/I18nContext", () => ({
@@ -59,8 +50,8 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
 
-describe("ProfilePage — Mi Avatar abre Perfil corporal", () => {
-  it("navega a 'body' al pulsar Mi Avatar", () => {
+describe("ProfilePage - Mi Avatar", () => {
+  it("abre y cierra el avatar dentro del perfil", () => {
     navigateMock.mockClear();
     render(
       <QueryClientProvider client={queryClient}>
@@ -68,7 +59,9 @@ describe("ProfilePage — Mi Avatar abre Perfil corporal", () => {
       </QueryClientProvider>,
     );
     fireEvent.click(screen.getByLabelText("Mi Avatar"));
-    expect(navigateMock).toHaveBeenCalledWith("body");
-    expect(navigateMock).not.toHaveBeenCalledWith("avatar");
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar avatar" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });

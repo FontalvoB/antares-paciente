@@ -1,4 +1,12 @@
-import { IonBadge, IonButton, IonIcon, IonProgressBar } from "@ionic/react";
+import {
+  IonBadge,
+  IonButton,
+  IonIcon,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonProgressBar,
+} from "@ionic/react";
 import {
   barbellOutline,
   checkmarkCircle,
@@ -19,9 +27,17 @@ import type { Screen } from "../../../types";
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { LanguageToggle } from "../../../components/LanguageToggle";
+import { checkinOwner, loadCheckins } from "../checkin/checkin-store";
 import { Screen as AppScreen, Scroll } from "../../../components/Screen";
+import { formatDateForDisplay, toLocalISODate } from "../../../utils/dates";
+import {
+  GENERATION_ARTIFACTS,
+  type GenerationInboxItem,
+} from "../generation/generation-store";
+import { useGeneration } from "../generation/useGeneration";
 import {
   getWellnessHomeData,
+  localISODate,
   type ProtocolStepId,
 } from "../state/wellness-home-store";
 import "../wellness.css";
@@ -53,10 +69,52 @@ const GOAL_LABEL = {
   def: "Definir",
 } as const;
 
+const ARTIFACT_LABEL = {
+  exercise: "Ejercicio",
+  nutrition: "Nutrición",
+  inbox: "Bandeja",
+} as const;
+
+const ARTIFACT_ERROR = {
+  exercise: "No pudimos preparar tu plan de ejercicio",
+  nutrition: "No pudimos preparar tu plan de nutrición",
+  inbox: "No pudimos preparar tu bandeja",
+} as const;
+
+const INBOX_COPY = {
+  welcome: [
+    "Te damos la bienvenida",
+    "Aquí recibirás novedades sobre tu plan de bienestar.",
+  ],
+  exercise: [
+    "Tu plan de ejercicio está listo",
+    "Abre Ejercicio para ver tu primera sesión.",
+  ],
+  nutrition: [
+    "Tu plan de nutrición está listo",
+    "Abre Nutrición para consultar tus comidas.",
+  ],
+  questionnaires: [
+    "Tus cuestionarios",
+    "Puedes completarlos a tu ritmo desde Inicio.",
+  ],
+} as const satisfies Record<
+  GenerationInboxItem["id"],
+  readonly [string, string]
+>;
+
 export function WellnessHome() {
   const { user, navigate, openVoice, openTests } = useApp();
   const { t, lang } = useI18n();
   const data = getWellnessHomeData(user?.nombre ?? "");
+  const { job, isRunning, retry } = useGeneration();
+  const failed = job
+    ? GENERATION_ARTIFACTS.filter((id) => job.artifacts[id].status === "failed")
+    : [];
+  const isReady =
+    job &&
+    GENERATION_ARTIFACTS.every((id) => job.artifacts[id].status === "ready");
+  const closed = loadCheckins(checkinOwner(user))[localISODate(new Date())];
   const number = new Intl.NumberFormat(lang === "en" ? "en-US" : "es-ES", {
     maximumFractionDigits: 0,
   });
@@ -129,6 +187,79 @@ export function WellnessHome() {
           )}
         </header>
 
+        <div
+          className="wh-generation-status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {isReady && t("Tu plan y tu bandeja están listos")}
+        </div>
+        {job && (isRunning || failed.length > 0) && (
+          <section className="wh-card" aria-label={t("Preparación del plan")}>
+            {isRunning && (
+              <>
+                <div className="wh-card-head">
+                  <h2>{t("Estamos preparando tu plan")}</h2>
+                </div>
+                <IonList
+                  lines="none"
+                  className="wh-generation-list"
+                  aria-label={t("Progreso de la generación")}
+                >
+                  {GENERATION_ARTIFACTS.map((id) => {
+                    const artifact = job.artifacts[id];
+                    const label = t(ARTIFACT_LABEL[id]);
+                    return (
+                      <IonItem key={id}>
+                        <div className="wh-generation-row">
+                          <div className="wh-generation-label">
+                            <span>{label}</span>
+                            <span>
+                              {artifact.status === "failed"
+                                ? t("Falló")
+                                : t("{percent}%", {
+                                    percent: number.format(artifact.progress),
+                                  })}
+                            </span>
+                          </div>
+                          <IonProgressBar
+                            color={
+                              artifact.status === "failed"
+                                ? "danger"
+                                : "primary"
+                            }
+                            value={artifact.progress / 100}
+                            aria-label={label}
+                          />
+                        </div>
+                      </IonItem>
+                    );
+                  })}
+                </IonList>
+              </>
+            )}
+            {failed.length > 0 && (
+              <>
+                <div className="wh-generation-error" role="alert">
+                  {failed.map((id) => (
+                    <p key={id}>{t(ARTIFACT_ERROR[id])}</p>
+                  ))}
+                </div>
+                <p className="wh-body">{t("Tus respuestas están guardadas")}</p>
+                <IonButton
+                  fill="outline"
+                  expand="block"
+                  className="wh-secondary"
+                  disabled={isRunning}
+                  onClick={retry}
+                >
+                  {t("Reintentar")}
+                </IonButton>
+              </>
+            )}
+          </section>
+        )}
+
         <section className="wh-kpis" aria-label={t("Tu progreso")}>
           {kpis.map((kpi) => (
             <article className="wh-kpi" key={kpi.id}>
@@ -186,6 +317,14 @@ export function WellnessHome() {
                 ? t("Día completo")
                 : t("Continuar mi día")}
           </IonButton>
+          <IonButton
+            expand="block"
+            fill="outline"
+            className="wh-secondary"
+            onClick={() => navigate("wellness-checkin")}
+          >
+            {closed ? t("Ver cierre del día") : t("Cerrar el día")}
+          </IonButton>
         </section>
 
         <section className="wh-quick" aria-label={t("Accesos rápidos")}>
@@ -209,6 +348,35 @@ export function WellnessHome() {
             <IonIcon icon={micOutline} aria-hidden="true" />
             <span>{t("Vita")}</span>
           </button>
+        </section>
+
+        <section className="wh-card wh-inbox" aria-labelledby="wh-inbox-title">
+          <div className="wh-card-head">
+            <h2 id="wh-inbox-title">{t("Bandeja")}</h2>
+          </div>
+          {job?.artifacts.inbox.status === "running" ? (
+            <p className="wh-body">{t("Preparando tu bandeja")}</p>
+          ) : job?.inbox.length ? (
+            <IonList lines="full" className="wh-generation-list">
+              {job.inbox.map((item) => {
+                const [title, body] = INBOX_COPY[item.id];
+                const date = toLocalISODate(new Date(item.createdAt));
+                return (
+                  <IonItem key={item.id}>
+                    <IonLabel className="ion-text-wrap">
+                      <h3>{t(title)}</h3>
+                      <p>{t(body)}</p>
+                      <time dateTime={item.createdAt}>
+                        {formatDateForDisplay(date)}
+                      </time>
+                    </IonLabel>
+                  </IonItem>
+                );
+              })}
+            </IonList>
+          ) : (
+            <p className="wh-body">{t("No tienes mensajes nuevos")}</p>
+          )}
         </section>
 
         {data.batteriesCompleted < data.batteriesTotal && (
