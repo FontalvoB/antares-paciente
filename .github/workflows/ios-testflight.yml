@@ -29,9 +29,10 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          export APP_STORE_CONNECT_API_KEY_PATH="$RUNNER_TEMP/asc-signing.p8"
-          trap 'rm -f "$APP_STORE_CONNECT_API_KEY_PATH"' EXIT
-          printf '%s' "$ASC_KEY_B64" | base64 --decode > "$APP_STORE_CONNECT_API_KEY_PATH"
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          signing_key="$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+          trap 'rm -f "$signing_key"' EXIT
+          printf '%s' "$ASC_KEY_B64" | base64 --decode > "$signing_key"
           export MATCH_GIT_BASIC_AUTHORIZATION="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
           echo "::add-mask::$MATCH_GIT_BASIC_AUTHORIZATION"
           unset ASC_KEY_B64 GH_TOKEN
