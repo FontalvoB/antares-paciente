@@ -124,7 +124,7 @@ function VoiceShell({
   const t = useT();
   const { voiceOpen, voiceMinimized, minimizeVoice, openVoice, closeVoice } =
     useApp();
-  const dismissingToChat = useRef(false);
+  const dismissingToMinimize = useRef(false);
   const [modalClosing, setModalClosing] = useState(false);
   const [text, setText] = useState("");
   useEffect(() => {
@@ -172,8 +172,8 @@ function VoiceShell({
         className="voice-modal"
         onDidDismiss={() => {
           setModalClosing(false);
-          if (dismissingToChat.current) {
-            dismissingToChat.current = false;
+          if (dismissingToMinimize.current) {
+            dismissingToMinimize.current = false;
             return;
           }
           closeVoice();
@@ -185,9 +185,9 @@ function VoiceShell({
               <IonButton
                 fill="clear"
                 className="vc-back"
-                aria-label={t("Volver al chat")}
+                aria-label={t("Minimizar asistente de voz")}
                 onClick={() => {
-                  dismissingToChat.current = true;
+                  dismissingToMinimize.current = true;
                   setModalClosing(true);
                   minimizeVoice();
                 }}

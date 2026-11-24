@@ -1,10 +1,5 @@
-import { APPOINTMENTS_ENABLED } from "../utils/appointmentsVisibility";
-import { TEAM_PROFESSIONALS_ENABLED } from "../utils/teamVisibility";
-import { HEALTH_ENABLED } from "../utils/features";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  IonAccordion,
-  IonAccordionGroup,
   IonAlert,
   IonAvatar,
   IonButton,
@@ -13,38 +8,32 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonSkeletonText,
-  IonToggle,
+  IonModal,
 } from "@ionic/react";
 import { MotionConfig, motion, useReducedMotion } from "framer-motion";
 import {
+  barbellOutline,
   bodyOutline,
-  calendarOutline,
   clipboardOutline,
   flagOutline,
   languageOutline,
   leafOutline,
   logOutOutline,
   trashOutline,
-  medkit,
-  arrowForward,
   chevronForward,
   optionsOutline,
-  trophyOutline,
   shieldCheckmarkOutline,
   notificationsOutline,
   menuOutline,
   globeOutline,
-  scaleOutline,
-  star,
   locationOutline,
   openOutline,
   sparklesOutline,
 } from "ionicons/icons";
-import { useQueryClient } from "@tanstack/react-query";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
 import logoIcon from "../assets/LogoIndividual.png";
 import vitaPortrait from "../assets/vita-coach.png";
+import { AvatarPage } from "./AvatarPage";
 import { Screen, Scroll } from "../components/Screen";
 import { useApp } from "../context/AppContext";
 import { localizedError } from "../utils/localizedError";
@@ -52,28 +41,16 @@ import { useI18n } from "../i18n/I18nContext";
 import { useLegalConsents } from "../context/LegalConsentContext";
 import { useAiDisclosure } from "../context/AiDisclosureContext";
 import { aiDisclosureAccepted as aiDisclosureAcceptedForAccount } from "../utils/aiDisclosure";
-import type { Screen as ScreenId } from "../types";
-import { useLeague } from "../hooks/useLeague";
-import { useMetricsHistory } from "../hooks/useMetricsHistory";
-import { useProgram } from "../hooks/useProgram";
-import { useMedicationCapabilities } from "../hooks/useMedicationCapabilities";
-import { useClinicalHistoryAvailability } from "../hooks/useClinicalHistoryAvailability";
-import { formatMetricValue } from "../data/metrics";
 import { EmergencyContactsForm } from "../components/EmergencyContactsForm";
 import {
   contactFromProfile,
   emergencyContactsError,
   trimEmergencyContact,
 } from "../utils/emergencyContacts";
-import { updateLeaguePreferences } from "../services/program/league-service";
-import { programKeys } from "../hooks/queryKeys";
-import { ApiError } from "../utils/apiClient";
 import { getWebBaseUrl } from "../utils/apiBaseUrl";
 import { Browser } from "@capacitor/browser";
 import { createAccountDeletionHandoff, restoreSession } from "../utils/authApi";
 import { updateMyPatientProfile } from "../utils/patientProfileApi";
-import { isValidNickname } from "../utils/league";
-import type { LeagueResponseDto } from "../services/program/types";
 import { PRIVACY_POLICY_URL } from "../utils/legalLinks";
 
 /**
@@ -288,183 +265,8 @@ function EmergencyContactSection() {
  * cache de la liga (el cohorte no cambia). Errores 400 con mensajes reales
  * del backend (p.ej. token reservado) se muestran inline vía `errors`.
  */
-function LeagueSection() {
-  const { league, isLoading, isError, refetch } = useLeague();
-  const queryClient = useQueryClient();
-  const { showToast } = useApp();
-  const i18n = useI18n();
-  const { t } = i18n;
-  const [optedIn, setOptedIn] = useState(false);
-  const [nickname, setNickname] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [serverError, setServerError] = useState<ApiError | null>(null);
-  // Snapshot pre-guardado: si el PUT falla se REVIERTE toggle+input a estos
-  // valores (sin writes al cache, sin verdades a medias).
-  const preSaveRef = useRef<{ optedIn: boolean; nickname: string }>({
-    optedIn: false,
-    nickname: "",
-  });
-
-  // Sincroniza el borrador con la verdad del server cuando llega la liga.
-  useEffect(() => {
-    if (league) {
-      setOptedIn(league.me.optedIn);
-      setNickname(league.me.nickname ?? "");
-      setServerError(null);
-    }
-  }, [league]);
-
-  const trimmed = nickname.trim();
-  const nicknameValid = isValidNickname(trimmed);
-  const canSave = !saving && (!optedIn || nicknameValid);
-
-  async function save() {
-    if (!canSave) return;
-    preSaveRef.current = { optedIn, nickname };
-    setSaving(true);
-    setServerError(null);
-    try {
-      // Opt-out → nickname null SIEMPRE limpia lo almacenado (server).
-      const saved = await updateLeaguePreferences({
-        optIn: optedIn,
-        nickname: optedIn ? trimmed : null,
-      });
-      setOptedIn(saved.optedIn);
-      setNickname(saved.nickname ?? "");
-      // Patch local inmediato (feedback del toggle) + invalidación para que
-      // el refetch traiga entries/isMe/myRank frescos — un paciente recién
-      // opt-in debe aparecer en SU ranking sin esperar el staleTime.
-      queryClient.setQueryData<LeagueResponseDto>(programKeys.league, (old) =>
-        old
-          ? { ...old, me: { optedIn: saved.optedIn, nickname: saved.nickname } }
-          : old,
-      );
-      void queryClient.invalidateQueries({ queryKey: programKeys.league });
-      showToast(t("Preferencias guardadas"), "ok");
-    } catch (e) {
-      // Fallo → REVERT al snapshot pre-guardado (no mentir sobre el estado).
-      setOptedIn(preSaveRef.current.optedIn);
-      setNickname(preSaveRef.current.nickname);
-      if (e instanceof ApiError) {
-        // El 400 de validación trae el mensaje real en `errors` (RFC 7807);
-        // passthrough inline. El resto → toast.
-        const first = e.errors ? Object.values(e.errors).flat()[0] : undefined;
-        if (first) setServerError(e);
-        else
-          showToast(
-            localizedError(e, i18n, "No pudimos guardar tus preferencias."),
-            "err",
-          );
-      } else {
-        showToast(t("No pudimos guardar tus preferencias."), "err");
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="card league-prefs">
-        <IonSkeletonText animated style={{ width: "60%", height: 18 }} />
-        <IonSkeletonText animated style={{ width: "85%", height: 13 }} />
-      </div>
-    );
-  }
-
-  if (isError || !league) {
-    // Degradación honesta: sin datos, la sección queda deshabilitada con
-    // reintento — nunca un toggle "off-unknown" que parezca verdad.
-    return (
-      <div className="card league-prefs">
-        <strong>{t("No pudimos cargar tus preferencias de la Liga.")}</strong>
-        <IonButton fill="clear" size="small" onClick={() => void refetch()}>
-          {t("Reintentar")}
-        </IonButton>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card league-prefs">
-      <div className="league-prefs-row">
-        <div>
-          <strong>{t("Aparecer en la Liga")}</strong>
-          <small>
-            {t(
-              "Con tu apodo. Tus datos clínicos nunca se muestran con tu nombre.",
-            )}
-          </small>
-        </div>
-        <IonToggle
-          checked={optedIn}
-          disabled={saving}
-          onIonChange={(e) => setOptedIn(e.detail.checked)}
-          aria-label={t("Aparecer en la Liga")}
-        />
-      </div>
-      {serverError && (
-        <small className="league-prefs-err">
-          {localizedError(
-            serverError,
-            i18n,
-            "No pudimos guardar tus preferencias.",
-          )}
-        </small>
-      )}
-      {optedIn && (
-        <div className="league-prefs-nick">
-          <IonInput
-            value={nickname}
-            maxlength={32}
-            counter
-            disabled={saving}
-            label={t("Apodo")}
-            labelPlacement="stacked"
-            placeholder={t("Apodo")}
-            onIonInput={(e) => setNickname(String(e.detail.value ?? ""))}
-            className={nickname && !nicknameValid ? "ion-invalid" : undefined}
-          />
-          {nickname && !nicknameValid && (
-            <small className="league-prefs-err">
-              {t(
-                "El apodo debe tener entre 3 y 32 caracteres y solo letras, números, espacios, guiones o guiones bajos.",
-              )}
-            </small>
-          )}
-          <IonButton
-            expand="block"
-            className="bt bt-teal"
-            disabled={!canSave}
-            onClick={() => void save()}
-          >
-            {saving ? t("Guardando…") : t("Guardar")}
-          </IonButton>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function ProfilePage() {
-  const {
-    user,
-    navigate,
-    openPanic,
-    showToast,
-    pointsTotal,
-    realMode,
-    logout,
-    openTests,
-    teamProfessionals,
-  } = useApp();
-  const { snapshot, isMockFallback } = useProgram();
-  const { history: metricsHistory } = useMetricsHistory();
-  // KAN-95: la entrada a Historia clínica se oculta solo con vacío confirmado
-  // (sin exámenes/mediciones, documentos ni medicamentos). Carga y errores la
-  // conservan para no esconder contenido real por un fallo de red.
-  const clinicalHistory = useClinicalHistoryAvailability();
-  const medication = useMedicationCapabilities();
+  const { user, navigate, showToast, logout, openTests } = useApp();
   const { lang, toggleLang, t } = useI18n();
   const { openPrivacyChoices } = useLegalConsents();
   const { openAiDisclosure } = useAiDisclosure();
@@ -473,6 +275,7 @@ export function ProfilePage() {
   const reduce = useReducedMotion();
   const accountRef = useRef<HTMLElement>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const openPrivacyPolicy = async () => {
     try {
@@ -540,59 +343,6 @@ export function ProfilePage() {
     .map((part) => part[0])
     .join("")
     .toLocaleUpperCase(locale);
-
-  const go = (s: ScreenId) => navigate(s);
-
-  // Semana del programa SOLO desde el snapshot real; el fallback mock de
-  // useProgram (sin cache) no se pinta como verdad del servidor (patrón
-  // HistoryPage).
-  const programWeek = isMockFallback
-    ? undefined
-    : snapshot?.template?.currentWeekNumber;
-  const totalWeeks = isMockFallback
-    ? undefined
-    : snapshot?.template?.totalWeeks;
-  const weekSub =
-    programWeek != null && totalWeeks != null
-      ? t("Semana {cur} de {total}", {
-          cur: String(programWeek),
-          total: String(totalWeeks),
-        })
-      : undefined;
-
-  const programProgress =
-    programWeek != null && totalWeeks != null && totalWeeks > 0
-      ? Math.max(0, Math.min(1, programWeek / totalWeeks))
-      : null;
-
-  // Delta de peso real (metrics-history): primera → última medición. Sin dos
-  // puntos reales no hay tarjeta — nunca un delta inventado.
-  const weightDelta = useMemo(() => {
-    const series = metricsHistory?.metrics.find(
-      (m) => m.code.toLowerCase() === "weight",
-    );
-    const points = series?.points ?? [];
-    if (points.length < 2) return null;
-    const delta = points[points.length - 1].value - points[0].value;
-    const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
-    return `${sign}${formatMetricValue(Math.abs(delta), 1, locale)} ${
-      series?.unit ?? "kg"
-    }`;
-  }, [metricsHistory, locale]);
-
-  // Hero: solo tarjetas con verdad real (semana del snapshot, delta de peso,
-  // puntos del backend). Sin dato → la tarjeta no se renderiza.
-  const heroMetrics: Array<[string, string]> = [];
-  if (programWeek != null) heroMetrics.push([String(programWeek), "Semanas"]);
-  if (weightDelta) heroMetrics.push([weightDelta, "Peso"]);
-  heroMetrics.push([
-    snapshot?.xp?.balance != null && !isMockFallback
-      ? String(snapshot.xp.balance)
-      : realMode
-        ? "—"
-        : String(pointsTotal),
-    "Puntos",
-  ]);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -671,12 +421,6 @@ export function ProfilePage() {
                       />
                       {t("Mi perfil de salud")}
                     </p>
-                    {weekSub && (
-                      <div className="pf-membership">
-                        <IonIcon icon={calendarOutline} aria-hidden="true" />
-                        {weekSub}
-                      </div>
-                    )}
                     {user.cedula && (
                       <p className="pf-doc">
                         <span>{t("Documento")}</span>
@@ -689,38 +433,6 @@ export function ProfilePage() {
                         {user.ciudad}
                       </p>
                     )}
-                  </div>
-                  {/* Anillo de dominio: avance del programa real, no un score clínico inventado. */}
-                  <div
-                    className="pf-program-ring"
-                    aria-label={t("Avance del programa")}
-                  >
-                    <svg viewBox="0 0 100 100" aria-hidden="true">
-                      <circle
-                        className="pf-ring-track"
-                        cx="50"
-                        cy="50"
-                        r="42"
-                      />
-                      {programProgress !== null && (
-                        <circle
-                          className="pf-ring-value"
-                          cx="50"
-                          cy="50"
-                          r="42"
-                          pathLength="100"
-                          strokeDasharray={
-                            String(programProgress * 100) + " 100"
-                          }
-                        />
-                      )}
-                    </svg>
-                    <strong>
-                      {programProgress === null
-                        ? "—"
-                        : String(Math.round(programProgress * 100)) + "%"}
-                    </strong>
-                    <IonIcon icon={leafOutline} aria-hidden="true" />
                   </div>
                 </div>
               </motion.section>
@@ -738,7 +450,7 @@ export function ProfilePage() {
                   aria-label={t("Mi Avatar")}
                   fill="clear"
                   expand="block"
-                  onClick={() => go("body")}
+                  onClick={() => setAvatarOpen(true)}
                 >
                   <span className="pf-avatar-copy">
                     <strong>{t("Personaliza tu avatar")}</strong>
@@ -761,33 +473,6 @@ export function ProfilePage() {
                   </span>
                 </IonButton>
               </motion.div>
-              <div className="pf-metrics" aria-label={t("Tu recorrido")}>
-                {heroMetrics.map(([value, label]) => (
-                  <div
-                    className={
-                      "pf-metric pf-metric-" +
-                      (label === "Peso" ? "weight" : "program")
-                    }
-                    key={label}
-                  >
-                    <span className="pf-stat-icon">
-                      <IonIcon
-                        icon={
-                          label === "Semanas"
-                            ? calendarOutline
-                            : label === "Peso"
-                              ? scaleOutline
-                              : star
-                        }
-                        aria-hidden="true"
-                      />
-                    </span>
-                    <strong>{value}</strong>
-                    <span>{t(label)}</span>
-                    <span className="pf-stat-underline" aria-hidden="true" />
-                  </div>
-                ))}
-              </div>
             </div>
 
             <div className="pf-content">
@@ -801,65 +486,32 @@ export function ProfilePage() {
                 <IonList className="pf-menu" lines="none">
                   {[
                     {
-                      icon: flagOutline,
-                      title: "Objetivo",
-                      sub: "Cambia tu meta y actualiza tu plan",
-                      tone: "sky",
-                      action: () => go("wellness-goal"),
-                    },
-                    ...(medication.enabled
-                      ? [
-                          {
-                            icon: medkit,
-                            title: "Medicamentos y suplementos",
-                            sub: "Registro y recordatorios",
-                            tone: "mint",
-                            action: () => go("medications"),
-                          },
-                        ]
-                      : []),
-                    ...(clinicalHistory.visible
-                      ? [
-                          {
-                            icon: clipboardOutline,
-                            title: "Mi historial de bienestar",
-                            sub: "Antecedentes · Estudios · Medicamentos",
-                            tone: "sky",
-                            action: () => go("hc"),
-                          },
-                        ]
-                      : []),
-                    {
-                      icon: bodyOutline,
-                      title: "Visualización del perfil",
-                      sub: "Índices y mediciones corporales",
-                      tone: "mint",
-                      action: () => go("body"),
-                    },
-                    {
                       icon: clipboardOutline,
                       title: "Evaluaciones de bienestar",
                       sub: "Evaluaciones pendientes",
                       tone: "lilac",
-                      action: () => openTests(),
+                      action: openTests,
                     },
-                    ...(APPOINTMENTS_ENABLED
-                      ? [
-                          {
-                            icon: calendarOutline,
-                            title: "Calendario de citas",
-                            sub: "Agenda y consultas virtuales",
-                            tone: "sand",
-                            action: () => go("book"),
-                          },
-                        ]
-                      : []),
                     {
                       icon: leafOutline,
                       title: "Plan nutricional",
                       sub: "Alimentación que te acompaña",
                       tone: "mint",
-                      action: () => go("nut"),
+                      action: () => navigate("wellness-diet"),
+                    },
+                    {
+                      icon: barbellOutline,
+                      title: "Plan de ejercicios",
+                      sub: "Consulta tu rutina de hoy",
+                      tone: "mint",
+                      action: () => navigate("wellness-exercise"),
+                    },
+                    {
+                      icon: flagOutline,
+                      title: "Cambiar objetivo",
+                      sub: "Cambia tu meta y actualiza tu plan",
+                      tone: "sky",
+                      action: () => navigate("wellness-goal"),
                     },
                   ].map((item) => (
                     <IonItem
@@ -890,85 +542,6 @@ export function ProfilePage() {
                 </IonList>
               </section>
 
-              <section className="pf-team" aria-labelledby="pf-team-title">
-                <div className="pf-section-title">
-                  <div>
-                    <h2 id="pf-team-title">{t("Equipo Copp Adresd")}</h2>
-                    <p>
-                      {TEAM_PROFESSIONALS_ENABLED
-                        ? t("Profesionales que te acompañan")
-                        : t("Vita te acompaña en tu día a día.")}
-                    </p>
-                  </div>
-                </div>
-                <div className="pf-team-grid">
-                  {/* KAN-96: Vita permanece visible; los profesionales se
-                      ocultan tras TEAM_PROFESSIONALS_ENABLED sin borrar su
-                      implementación. */}
-                  <IonButton
-                    fill="clear"
-                    className="pf-team-card pf-team-vita"
-                    aria-label={t("Hablar con Vita")}
-                    onClick={() => navigate("chat")}
-                  >
-                    <span className="pf-team-inner pf-vita-inner">
-                      <IonAvatar
-                        className="pf-pro-avatar pf-vita-avatar"
-                        aria-hidden="true"
-                      >
-                        <img src={vitaPortrait} alt="" />
-                      </IonAvatar>
-                      <span className="pf-vita-copy">
-                        <strong>Vita</strong>
-                        <small>{t("Asistente de salud")}</small>
-                      </span>
-                      <IonIcon icon={arrowForward} aria-hidden="true" />
-                    </span>
-                  </IonButton>
-                  {TEAM_PROFESSIONALS_ENABLED &&
-                    teamProfessionals?.map((pro) => (
-                      <IonButton
-                        fill="clear"
-                        key={pro.id}
-                        className="pf-team-card"
-                        onClick={() =>
-                          showToast(
-                            t("Contactando a {name}…", { name: pro.name }),
-                            "info",
-                          )
-                        }
-                      >
-                        <span className="pf-team-inner">
-                          <span className="pf-team-top">
-                            <IonAvatar
-                              className="pf-pro-avatar"
-                              aria-hidden="true"
-                            >
-                              {pro.name
-                                .trim()
-                                .split(/\s+/)
-                                .filter(Boolean)
-                                .slice(0, 2)
-                                .map((part) => part[0])
-                                .join("")}
-                            </IonAvatar>
-                            <IonIcon icon={arrowForward} aria-hidden="true" />
-                          </span>
-                          <strong>{pro.name}</strong>
-                          <small>{t(pro.role)}</small>
-                        </span>
-                      </IonButton>
-                    ))}
-                </div>
-                {TEAM_PROFESSIONALS_ENABLED &&
-                  teamProfessionals !== null &&
-                  teamProfessionals.length === 0 && (
-                    <p className="pf-empty">
-                      {t("Aún no hay profesionales asignados a tu equipo.")}
-                    </p>
-                  )}
-              </section>
-
               <section
                 className="pf-account"
                 ref={accountRef}
@@ -988,22 +561,6 @@ export function ProfilePage() {
                 </div>
                 <ContactSection />
                 <EmergencyContactSection />
-                <IonAccordionGroup className="pf-league">
-                  <IonAccordion value="league">
-                    <IonItem slot="header" className="pf-menu-row" lines="none">
-                      <span slot="start" className="pf-menu-icon sand">
-                        <IonIcon icon={trophyOutline} aria-hidden="true" />
-                      </span>
-                      <IonLabel>
-                        <h3>{t("Privacidad en la Liga")}</h3>
-                        <p>{t("Elige cómo participas")}</p>
-                      </IonLabel>
-                    </IonItem>
-                    <div slot="content">
-                      <LeagueSection />
-                    </div>
-                  </IonAccordion>
-                </IonAccordionGroup>
                 <IonList className="pf-menu pf-account-menu" lines="none">
                   <IonItem
                     button
@@ -1023,40 +580,7 @@ export function ProfilePage() {
                       <IonIcon icon={chevronForward} aria-hidden="true" />
                     </span>
                   </IonItem>
-                  <IonItem
-                    button
-                    detail={false}
-                    className="pf-menu-row pf-sos-row"
-                    onClick={openPanic}
-                  >
-                    <span slot="start" className="pf-menu-icon alert">
-                      <IonIcon icon={medkit} aria-hidden="true" />
-                    </span>
-                    <IonLabel>
-                      <h3>{t("Botón de pánico SOS")}</h3>
-                      <p>{t("Acceso al protocolo de emergencia")}</p>
-                    </IonLabel>
-                    <IonIcon
-                      slot="end"
-                      className="pf-chevron"
-                      icon={chevronForward}
-                      aria-hidden="true"
-                    />
-                  </IonItem>
                 </IonList>
-                <IonButton
-                  fill="clear"
-                  expand="block"
-                  className="bt bt-ghost"
-                  onClick={() => navigate("medical-sources")}
-                >
-                  <IonIcon
-                    icon={clipboardOutline}
-                    slot="start"
-                    aria-hidden="true"
-                  />
-                  {t("Fuentes y referencias médicas")}
-                </IonButton>
                 <IonButton
                   fill="clear"
                   expand="block"
@@ -1090,21 +614,6 @@ export function ProfilePage() {
                   />
                   {t("Autorizaciones y privacidad")}
                 </IonButton>
-                {HEALTH_ENABLED && (
-                  <IonButton
-                    fill="clear"
-                    expand="block"
-                    className="bt bt-ghost"
-                    onClick={() => navigate("health-accessory")}
-                  >
-                    <IonIcon
-                      icon={bodyOutline}
-                      slot="start"
-                      aria-hidden="true"
-                    />
-                    {t("Accesorio y datos de bienestar")}
-                  </IonButton>
-                )}
                 <IonButton
                   fill="clear"
                   expand="block"
@@ -1153,6 +662,13 @@ export function ProfilePage() {
             </div>
           </div>
         </Scroll>
+        <IonModal
+          isOpen={avatarOpen}
+          aria-label={t("Mi Avatar")}
+          onDidDismiss={() => setAvatarOpen(false)}
+        >
+          <AvatarPage onClose={() => setAvatarOpen(false)} />
+        </IonModal>
         <IonAlert
           isOpen={deleteOpen}
           onDidDismiss={() => setDeleteOpen(false)}

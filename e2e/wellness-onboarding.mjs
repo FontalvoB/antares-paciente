@@ -1,5 +1,5 @@
 /**
- * KAN-136 — onboarding de 5 pasos + objetivo de 8 pasos.
+ * KAN-136 / KAN-146 — onboarding de 5 pasos + objetivo de 8 pasos.
  *
  * Recorre la app real en modo navegador con la API sintética (mismo patrón que
  * `onboarding-emergency-contacts.mjs`): login/activación → onboarding nuevo →
@@ -57,6 +57,28 @@ async function mockApi(context) {
         tokenType: "Bearer",
         expiresIn: tokenLifetimeSeconds,
       });
+    }
+    if (p === "/api/auth/me") {
+      return reply({
+        id: "11111111-1111-4111-8111-111111111111",
+        firstName: "Paciente",
+        lastName: "QA",
+        email: "qa@example.invalid",
+        roles: [],
+      });
+    }
+    if (p === "/api/auth/me/avatar") {
+      return reply({
+        version: 1,
+        skin: "skin-03",
+        gender: "female",
+        hair: "hair-02",
+        clothing: { shirt: "shirt-basic-01", pants: null, shoes: null },
+        accessories: { glasses: null, watch: null, bracelet: null },
+      });
+    }
+    if (p === "/api/v1/program/me/metrics-history") {
+      return reply({ heightCm: null, metrics: [] });
     }
     if (p === "/api/v1/me/patient-profile") {
       return reply({
@@ -123,6 +145,123 @@ async function answerAllNo(page, count) {
   for (let index = 0; index < count; index += 1) {
     const question = page.locator(".wl-question").nth(index);
     await question.getByRole("button", { name: "No", exact: true }).click();
+  }
+}
+
+async function verifyNavigation(page, baseUrl, width) {
+  const nav = page.getByRole("navigation", { name: "Navegación principal" });
+  const tab = (name) => nav.getByRole("button", { name, exact: true });
+  const assertDock = async (active) => {
+    await expect(nav.locator("ion-button")).toHaveText([
+      "Inicio",
+      "Nutrición",
+      "SOS",
+      "Ejercicio",
+      "Perfil",
+    ]);
+    await expect(tab(active)).toHaveAttribute("aria-current", "page");
+    await expect(tab("Abrir SOS de emergencia")).toBeInViewport({ ratio: 1 });
+  };
+  const openProfile = async () => {
+    await tab("Perfil").click();
+    await expect(
+      page.getByRole("heading", { name: "Perfil", exact: true }),
+    ).toBeVisible();
+    await assertDock("Perfil");
+  };
+
+  await tab("Inicio").click();
+  await assertDock("Inicio");
+  const quick = page.getByRole("region", { name: "Accesos rápidos" });
+  await quick.getByRole("button", { name: "Nutrición", exact: true }).click();
+  const diet = page.getByRole("heading", { name: "Dieta de hoy", exact: true });
+  await expect(diet).toBeVisible();
+  await assertDock("Nutrición");
+  await shot(page, `20-nav-nutricion-${width}`);
+  await tab("Ejercicio").click();
+  const exercise = page.getByRole("heading", {
+    name: "Antes de empezar",
+    exact: true,
+  });
+  // Tras una sesion completada, la vista del dia restaura el resumen.
+  const completed = page.getByRole("heading", {
+    name: "Sesión completada",
+    exact: true,
+  });
+  await expect(exercise.or(completed)).toBeVisible();
+  await assertDock("Ejercicio");
+  await shot(page, `21-nav-ejercicio-${width}`);
+
+  await openProfile();
+  const avatar = page.getByRole("button", { name: "Mi Avatar", exact: true });
+  const plan = page.getByRole("region", { name: "Mi plan" });
+  await expect(avatar).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Cuenta y preferencias" }),
+  ).toBeAttached();
+  await expect(plan.getByRole("heading", { level: 3 })).toHaveText([
+    "Evaluaciones de bienestar",
+    "Plan nutricional",
+    "Plan de ejercicios",
+    "Cambiar objetivo",
+  ]);
+  await expect(
+    page.getByText(
+      /^(Mi historial de bienestar|Calendario de citas|Fuentes y referencias médicas|Equipo Copp Adresd)$/,
+    ),
+  ).toHaveCount(0);
+  await shot(page, `22-nav-perfil-${width}`);
+  await plan.scrollIntoViewIfNeeded();
+  await shot(page, `23-nav-plan-${width}`);
+
+  await avatar.click();
+  const avatarDialog = page.locator('ion-modal[aria-label="Mi Avatar"]');
+  await expect(avatarDialog).toBeVisible();
+  await expect(
+    page.locator(".avatar-experience [data-avatar-configuration]"),
+  ).toBeAttached();
+  await shot(page, `24-nav-avatar-${width}`);
+  await page
+    .locator(".avatar-experience")
+    .getByText("Volver", { exact: true })
+    .click();
+  await expect(avatarDialog).toBeHidden();
+
+  await plan.getByText("Plan nutricional", { exact: true }).click();
+  await expect(diet).toBeVisible();
+  await assertDock("Nutrición");
+  await openProfile();
+  await plan.getByText("Plan de ejercicios", { exact: true }).click();
+  await expect(exercise.or(completed)).toBeVisible();
+  await assertDock("Ejercicio");
+  await openProfile();
+  await plan.getByText("Cambiar objetivo", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Antes de cambiar tu objetivo" }),
+  ).toBeVisible();
+  await shot(page, `25-nav-objetivo-${width}`);
+  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(plan).toBeVisible();
+  await plan.getByText("Evaluaciones de bienestar", { exact: true }).click();
+  await expect(
+    page.getByText("Tests de evaluación", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Volver", exact: true }).click();
+  await assertDock("Perfil");
+
+  for (const target of [
+    "/chat",
+    "/hc",
+    "/book",
+    "/program-podcast",
+    "/room",
+    "/marketplace",
+  ]) {
+    await page.goto(new URL(target, baseUrl).href);
+    await expect(
+      page.getByRole("heading", { name: "Protocolo de hoy" }),
+    ).toBeVisible();
+    await assertDock("Inicio");
   }
 }
 
@@ -253,26 +392,34 @@ async function runFlow(page, baseUrl, width) {
   await shot(page, `15-cuestionarios-${width}`);
 
   await page
+    .getByRole("region", { name: "Accesos rápidos" })
     .getByRole("button", { name: "Ejercicio", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Antes de empezar", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".wx-list > li")).toHaveCount(4);
-  await page.getByRole("button", { name: "Empezar sesión", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Empezar sesión", exact: true })
+    .click();
   await expect(page.getByRole("timer")).toBeVisible();
   for (let exercise = 1; exercise <= 4; exercise += 1) {
-    await expect(page.getByText(`Ejercicio ${exercise} de 4`, { exact: true }))
-      .toBeVisible();
-    await page.getByRole("button", {
-      name: exercise === 4 ? "Terminar sesión" : "Siguiente",
-      exact: true,
-    }).click();
+    await expect(
+      page.getByText(`Ejercicio ${exercise} de 4`, { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", {
+        name: exercise === 4 ? "Terminar sesión" : "Siguiente",
+        exact: true,
+      })
+      .click();
   }
   await expect(
     page.getByRole("heading", { name: "Sesión completada", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Volver al protocolo", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Volver al protocolo", exact: true })
+    .click();
   await expect(
     page.getByText("Tu día de bienestar", { exact: true }),
   ).toBeVisible();
@@ -295,15 +442,28 @@ async function runFlow(page, baseUrl, width) {
   await page.getByRole("button", { name: "Seguir", exact: true }).click();
   await expect(page.getByText("5 de 5 pasos", { exact: true })).toBeVisible();
   await shot(page, `18-protocolo-completo-${width}`);
-  await page.getByRole("button", { name: "Cerrar el día", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Cerrar el día", exact: true })).toBeVisible();
-  await expect(page.locator(".app-toast").getByText(/\+10 puntos/)).toBeHidden();
+  await page
+    .getByRole("button", { name: "Cerrar el día", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Cerrar el día", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator(".app-toast").getByText(/\+10 puntos/),
+  ).toBeHidden();
   await shot(page, `20-cierre-formulario-${width}`);
-  await page.getByRole("button", { name: "Cerrar el día", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Cerrar el día", exact: true })
+    .click();
   await expect(page.locator(".wc-error")).toBeFocused();
-  await expect(page.locator('ion-input[name="adherence"] input')).toHaveAttribute("aria-invalid", "true");
+  await expect(
+    page.locator('ion-input[name="adherence"] input'),
+  ).toHaveAttribute("aria-invalid", "true");
   for (const [name, value] of [
-    ["adherence", "75"], ["sleepHours", "5"], ["energy", "3"], ["pain", "0"],
+    ["adherence", "75"],
+    ["sleepHours", "5"],
+    ["energy", "3"],
+    ["pain", "0"],
   ]) {
     await page.locator(`ion-input[name="${name}"] input`).fill(value);
   }
@@ -311,26 +471,44 @@ async function runFlow(page, baseUrl, width) {
   await page.getByRole("checkbox", { name: "Insomnio", exact: true }).click();
   await page.getByRole("radio", { name: "Sí", exact: true }).click();
   await page.context().setOffline(true);
-  await page.getByRole("button", { name: "Cerrar el día", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Tu plan para mañana" })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Cerrar el día", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Tu plan para mañana" }),
+  ).toBeVisible();
   await expect(page.getByText(/guardado en este dispositivo/i)).toBeVisible();
   await expect(page.getByText(/ejercicio será más suave/i)).toBeVisible();
   await expect(page.getByText(/hambre que registraste/i)).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Día cerrado", exact: true })).toBeFocused();
+  await expect(
+    page.getByRole("heading", { name: "Día cerrado", exact: true }),
+  ).toBeFocused();
   await shot(page, `21-cierre-pendiente-${width}`);
   await page.context().setOffline(false);
-  await expect(page.getByText("Cierre sincronizado.", { exact: true })).toBeVisible();
-  await expect(page.getByText("Conexión restablecida", { exact: true })).toBeHidden();
+  await expect(
+    page.getByText("Cierre sincronizado.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Conexión restablecida", { exact: true }),
+  ).toBeHidden();
   await shot(page, `22-cierre-sincronizado-${width}`);
   await page
     .getByRole("button", { name: "Volver al inicio", exact: true })
     .click();
   await expect(page.getByText("5/5", { exact: true })).toBeVisible();
   await shot(page, `19-home-completo-${width}`);
-  await page.getByRole("button", { name: "Ver cierre del día", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Día cerrado", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Cerrar el día", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Volver al inicio", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Ver cierre del día", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Día cerrado", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Cerrar el día", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Volver al inicio", exact: true })
+    .click();
   const tomorrow = await page.evaluate(() => {
     const now = new Date();
     now.setDate(now.getDate() + 1);
@@ -339,15 +517,23 @@ async function runFlow(page, baseUrl, width) {
   await page.clock.setFixedTime(tomorrow);
   await page.getByRole("button", { name: "Ejercicio", exact: true }).click();
   await expect(page.getByText(/ejercicio será más suave/i)).toBeVisible();
-  await page.getByRole("button", { name: "Volver al protocolo", exact: true }).click();
-  await page.getByRole("button", { name: "Volver al inicio", exact: true }).click();
-  await page.getByLabel("Accesos rápidos").getByRole("button", { name: "Nutrición", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Volver al protocolo", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Volver al inicio", exact: true })
+    .click();
+  await page
+    .getByLabel("Accesos rápidos")
+    .getByRole("button", { name: "Nutrición", exact: true })
+    .click();
   await expect(page.getByText(/cena más temprana y ligera/i)).toBeVisible();
 
+  await verifyNavigation(page, baseUrl, width);
   return afterEnter;
 }
 
-const baseUrl = process.env.COP_E2E_APP_URL ?? "http://127.0.0.1:5177";
+const baseUrl = process.env.COP_E2E_APP_URL ?? "http://127.0.0.1:5173";
 
 try {
   for (const width of process.env.COP_E2E_WIDTH
@@ -398,7 +584,7 @@ try {
 }
 
 await writeFile(
-  path.join(out, "kan136-results.json"),
+  path.join(out, "kan146-results.json"),
   JSON.stringify(results, null, 2),
   "utf8",
 );

@@ -1,5 +1,4 @@
-import {APPOINTMENTS_ENABLED,visibleScreen} from "../utils/appointmentsVisibility";
-import { HEALTH_ENABLED } from "../utils/features";
+import { APPOINTMENTS_ENABLED } from "../utils/appointmentsVisibility";
 import { CHAT_UNAVAILABLE_MESSAGE } from "../services/chat/chat-service";
 import { isConfirmedText, mergeChatHistory } from "../utils/chatHistory";
 import type { HistoryMessage } from "../utils/chatHistory";
@@ -33,7 +32,12 @@ import {
   toUserProfile,
 } from "../utils/patientProfileApi";
 import { refreshAccessToken } from "../utils/apiClient";
-import { isLegalConsentError, legalConsentMessage, requireLegalConsent, resetLegalConsentSession } from "../utils/legalConsents";
+import {
+  isLegalConsentError,
+  legalConsentMessage,
+  requireLegalConsent,
+  resetLegalConsentSession,
+} from "../utils/legalConsents";
 import { unregisterPushDevice } from "../utils/pushNotifications";
 import {
   fetchThreadState,
@@ -74,12 +78,17 @@ import type {
   ProgramDay,
   ProgramTaskId,
   Screen,
+  NavigationTarget,
   ToastKind,
   ToastState,
   UserProfile,
 } from "../types";
 import { weekdayMondayIndex } from "../utils/dates";
-import { ACTIVE_PROGRAM_TASKS, DAY_BONUS_PTS, isComingSoonTask } from "../data/program";
+import {
+  ACTIVE_PROGRAM_TASKS,
+  DAY_BONUS_PTS,
+  isComingSoonTask,
+} from "../data/program";
 import type { MedicalSourceSectionId } from "../data/medicalSources";
 
 /** Baseline por usuario del conteo de mensajes ya vistos del chat. */
@@ -91,7 +100,10 @@ interface AppState {
   authLoading: boolean;
   flow: Flow;
   screen: Screen;
-  medicalSourcesEntry: { section?: MedicalSourceSectionId; returnTo: Screen } | null;
+  medicalSourcesEntry: {
+    section?: MedicalSourceSectionId;
+    returnTo: Screen;
+  } | null;
   healthReturnTo: "home" | "prof";
   toast: ToastState | null;
   panicOpen: boolean;
@@ -128,8 +140,11 @@ interface AppState {
   weekCheckins: boolean[];
   pointsToday: number;
   pointsTotal: number;
-  navigate: (s: Screen, sourceSection?: MedicalSourceSectionId) => void;
-  /** Navega a Citas y auto-abre el asistente de solicitud (CTA del chat). */
+  navigate: (
+    s: NavigationTarget,
+    sourceSection?: MedicalSourceSectionId,
+  ) => void;
+  /** Compatibilidad con Citas y Chat retirados en KAN-146. */
   openBookingWizard: () => void;
   /** Consumido por AppointmentsPage: true = abrir el wizard al montar. */
   bookingWizardAutoOpen: boolean;
@@ -158,7 +173,11 @@ interface AppState {
   activateSos: () => void;
   openVoice: () => void;
   closeVoice: () => void;
-  sendChat: (text: string, image?: ChatImageAttachment, attachments?: PendingVitaAttachment[]) => void;
+  sendChat: (
+    text: string,
+    image?: ChatImageAttachment,
+    attachments?: PendingVitaAttachment[],
+  ) => void;
   /**
    * Turno de chat para el agente de voz (agente-asistente-citas D4): mismo
    * pipeline que `sendChat` (streaming + fallbacks + persistencia en la
@@ -175,15 +194,16 @@ interface AppState {
   markChatRead: () => void;
   hydrateChat: (messages: HistoryMessage[]) => void;
   /** Captura IDs/propietario/hilo/generación ANTES del GET; devuelve false si ya quedó obsoleto. */
-  captureHistoryHydrator: () => (messages: HistoryMessage[], authoritativeText?: boolean) => boolean;
+  captureHistoryHydrator: () => (
+    messages: HistoryMessage[],
+    authoritativeText?: boolean,
+  ) => boolean;
   /**
    * Antepone una página de historial ANTERIOR sin deduplicar por texto: un
    * mensaje repetido entre tramos es legítimo (p. ej. dos quick-replies
    * iguales) y no debe perderse.
    */
-  prependChatMessages: (
-    messages: HistoryMessage[],
-  ) => void;
+  prependChatMessages: (messages: HistoryMessage[]) => void;
   appendChatMessages: (
     messages: Array<{
       role: "bot" | "user" | "alert";
@@ -277,12 +297,24 @@ interface AppState {
 
 // No sembrar una identidad ficticia mientras llega el perfil real.
 const defaultUser: UserProfile = {
-  nombre: "", cedula: "", dob: "", seguro: "", poliza: "", grupo: "",
-  email: "", celular: "", fam1Nombre: "", fam1Parentesco: "",
-  fam1Cel: "", fam1Email: "",
+  nombre: "",
+  cedula: "",
+  dob: "",
+  seguro: "",
+  poliza: "",
+  grupo: "",
+  email: "",
+  celular: "",
+  fam1Nombre: "",
+  fam1Parentesco: "",
+  fam1Cel: "",
+  fam1Email: "",
 };
 
-function createWelcomeMessage(name = "", lang: "es" | "en" = "es"): ChatMessage {
+function createWelcomeMessage(
+  name = "",
+  lang: "es" | "en" = "es",
+): ChatMessage {
   const firstName = name.trim().split(" ")[0];
   return {
     id: "welcome",
@@ -308,11 +340,11 @@ function nowLabel(lang: "es" | "en" = "es") {
 
 export function AppProvider({
   children,
-  onResetCommunityClient,
+  onResetSessionCache,
 }: {
   children: ReactNode;
   /** Se invoca tras login/logout para recrear el cliente urql de la comunidad. */
-  onResetCommunityClient?: () => void;
+  onResetSessionCache?: () => void;
 }) {
   const [vitaWelcomePending, setVitaWelcomePending] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -326,23 +358,27 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
-  const [healthReturnTo, setHealthReturnTo] = useState<"home" | "prof">("home");
-  const [medicalSourcesEntry, setMedicalSourcesEntry] = useState<AppState["medicalSourcesEntry"]>(null);
-  // Flag one-shot: el CTA del chat pide abrir Citas con el wizard ya abierto.
-  const [bookingWizardAutoOpen, setBookingWizardAutoOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = useCallback((message: string, kind: ToastKind = "ok") => {
     setToast({ id: Date.now(), message, kind });
     window.setTimeout(() => setToast(null), 2600);
   }, []);
   const [panicOpen, setPanicOpen] = useState(false);
-  const [panicEntry, setPanicEntry] = useState<"countdown" | "protocol">("countdown");
+  const [panicEntry, setPanicEntry] = useState<"countdown" | "protocol">(
+    "countdown",
+  );
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [voiceMinimized, setVoiceMinimized] = useState(false);
   const [chatGenerating, setChatGenerating] = useState(false);
   const chatController = useRef<AbortController | null>(null);
   const chatTurnGeneration = useRef(0);
-  const retryTurn = useRef<{ text: string; image?: ChatImageAttachment; attachments?: PendingVitaAttachment[]; userId: string; botId: string } | null>(null);
+  const retryTurn = useRef<{
+    text: string;
+    image?: ChatImageAttachment;
+    attachments?: PendingVitaAttachment[];
+    userId: string;
+    botId: string;
+  } | null>(null);
   const [chatHistoryRevision, setChatHistoryRevision] = useState(0);
   const [chatClearing, setChatClearing] = useState(false);
   const historyGeneration = useRef(0);
@@ -350,7 +386,9 @@ export function AppProvider({
   const clearController = useRef<AbortController | null>(null);
   const remoteHistoryRevisions = useRef(new Map<string, number>());
   const voiceStop = useRef<(() => Promise<void>) | null>(null);
-  const voiceSessions = useRef(new Map<string, { threadId: string; closed: boolean }>());
+  const voiceSessions = useRef(
+    new Map<string, { threadId: string; closed: boolean }>(),
+  );
   const [sosActive, setSosActive] = useState(false);
   const [user, setUser] = useState<UserProfile>(defaultUser);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -411,34 +449,37 @@ export function AppProvider({
   const [appointmentsError, setAppointmentsError] = useState<string | null>(
     null,
   );
-  const [roomAppointment, setRoomAppointment] =
-    useState<ListedAppointment | null>(null);
   const realMode = hasRealSession();
 
   // ── Indicador de mensajes no leídos del chat ──
   const [chatUnread, setChatUnread] = useState(false);
   /** Último conteo remoto conocido (para persistir al marcar como leído). */
   const lastRemoteCountRef = useRef<number | null>(null);
-  /** Pantalla anterior: detecta la entrada a "chat" para auto-limpiar. */
-  const prevScreenRef = useRef<Screen>(screen);
 
   // Invalida también respuestas que terminaron después de cambiar de paciente.
   const sessionGeneration = useRef(0);
   const resetPatientSession = useCallback(() => {
     sessionGeneration.current += 1;
-    chatController.current?.abort(); chatController.current = null;
-    retryTurn.current = null; setChatGenerating(false); setVoiceMinimized(false);
+    chatController.current?.abort();
+    chatController.current = null;
+    retryTurn.current = null;
+    setChatGenerating(false);
+    setVoiceMinimized(false);
     voiceSessions.current.clear();
     historyGeneration.current += 1;
-    clearingHistory.current = false; setChatClearing(false);
-    clearController.current?.abort(); clearController.current = null;
+    clearingHistory.current = false;
+    setChatClearing(false);
+    clearController.current?.abort();
+    clearController.current = null;
     remoteHistoryRevisions.current.clear();
     setChatHistoryRevision(0);
     resetLegalConsentSession();
     resetSessionQueryCache();
     setUser(defaultUser);
     setActiveThreadId(null);
-    setChat([createWelcomeMessage(defaultUser.nombre, currentLanguage.current)]);
+    setChat([
+      createWelcomeMessage(defaultUser.nombre, currentLanguage.current),
+    ]);
     setChatUnread(false);
     lastRemoteCountRef.current = null;
     setTestsDone([]);
@@ -447,10 +488,8 @@ export function AppProvider({
     setRequests(null);
     setCatalog(null);
     setSpecialties(null);
-    setRoomAppointment(null);
     setAppointmentsLoading(false);
     setAppointmentsError(null);
-    setBookingWizardAutoOpen(false);
     setPanicOpen(false);
     setVoiceOpen(false);
     setSosActive(false);
@@ -459,8 +498,14 @@ export function AppProvider({
     setWatchName("Copp Adresd Wearable");
     setPointsToday(0);
     setPointsTotal(0);
-    setProgram({ podcast: false, vitals: false, nut: false, ejercicio: false,
-      nutraceutico: false, emocional: false });
+    setProgram({
+      podcast: false,
+      vitals: false,
+      nut: false,
+      ejercicio: false,
+      nutraceutico: false,
+      emocional: false,
+    });
     setWeekCheckins([false, false, false, false, false, false, false]);
     setStreak(0);
     setScreen("home");
@@ -471,8 +516,10 @@ export function AppProvider({
     const generation = sessionGeneration.current;
     const request = ++appointmentRequest.current;
     const language = currentLanguage.current;
-    const isCurrent = () => generation === sessionGeneration.current
-      && request === appointmentRequest.current && language === currentLanguage.current;
+    const isCurrent = () =>
+      generation === sessionGeneration.current &&
+      request === appointmentRequest.current &&
+      language === currentLanguage.current;
     setAppointmentsLoading(true);
     setAppointmentsError(null);
     try {
@@ -483,11 +530,20 @@ export function AppProvider({
       // best-effort independientes para que su fallo no tumbe la vista
       // (QA-010): el wizard degrada a "cualquiera"/reintento en ese caso.
       if (!APPOINTMENTS_ENABLED) {
-        const [me, team] = await Promise.all([fetchMyContext(),fetchProfessionalsCatalog().catch(()=>null)]);
-        if(!isCurrent())return;
-        setPatientCtx({patientId:me.patient?.id??null,orgId:me.patient?.organizationId??"",clinicId:me.patient?.clinicId??null,locationId:me.patient?.locationId??null});
-        setCatalog(team?.data??null);
-        setAppointments([]);setRequests([]);
+        const [me, team] = await Promise.all([
+          fetchMyContext(),
+          fetchProfessionalsCatalog().catch(() => null),
+        ]);
+        if (!isCurrent()) return;
+        setPatientCtx({
+          patientId: me.patient?.id ?? null,
+          orgId: me.patient?.organizationId ?? "",
+          clinicId: me.patient?.clinicId ?? null,
+          locationId: me.patient?.locationId ?? null,
+        });
+        setCatalog(team?.data ?? null);
+        setAppointments([]);
+        setRequests([]);
         return;
       }
       const [me, appts, reqs] = await Promise.all([
@@ -530,36 +586,36 @@ export function AppProvider({
     appointmentRequest.current += 1;
     setCatalog(null);
     setSpecialties(null);
-    setChat(messages => messages.map(message => message.id === "welcome"
-      ? createWelcomeMessage(user.nombre, lang) : message));
+    setChat((messages) =>
+      messages.map((message) =>
+        message.id === "welcome"
+          ? createWelcomeMessage(user.nombre, lang)
+          : message,
+      ),
+    );
     if (flow !== "login" && realMode) void refreshAppointments();
   }, [lang, flow, realMode, refreshAppointments, user.nombre]);
-
-  // Con sesión real, refresca al entrar a Citas (design §3.2: refresco por
-  // visibilidad) y tras cada mutación (los handlers llaman a refresh).
-  // No en la sala (la cita activa vive en el contexto). QA-010.
-  useEffect(() => {
-    if (flow !== "login" && realMode && screen === "book") {
-      void refreshAppointments();
-    }
-  }, [flow, realMode, screen, refreshAppointments]);
 
   // Carga inicial una sola vez para los demás consumidores (equipo del
   // perfil, sala): sin esto el catálogo solo existiría tras visitar Citas.
   useEffect(() => {
-    if (flow !== "login" && realMode && appointments === null && !appointmentsLoading && !appointmentsError) {
+    if (
+      flow !== "login" &&
+      realMode &&
+      appointments === null &&
+      !appointmentsLoading &&
+      !appointmentsError
+    ) {
       void refreshAppointments();
     }
-  }, [flow, realMode, appointments, appointmentsLoading, appointmentsError, refreshAppointments]);
-
-  useEffect(() => {
-    if (flow === "login" || !realMode) return;
-    const onFocus = () => {
-      if (screen === "book") void refreshAppointments();
-    };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [flow, realMode, screen, refreshAppointments]);
+  }, [
+    flow,
+    realMode,
+    appointments,
+    appointmentsLoading,
+    appointmentsError,
+    refreshAppointments,
+  ]);
 
   // Hidrata el perfil REAL del paciente (contacto, aseguradora, emergencia)
   // en el user del contexto. Sin esto, un paciente sin teléfono en BD veía el
@@ -745,9 +801,9 @@ export function AppProvider({
       resetPatientSession();
       setVitaWelcomePending(false);
       setFlow("login");
-      onResetCommunityClient?.();
+      onResetSessionCache?.();
     });
-  }, [resetPatientSession, onResetCommunityClient]);
+  }, [resetPatientSession, onResetSessionCache]);
 
   // Vigilancia proactiva de expiración del access token: si venció, se
   // intenta renovar por la cookie de refresh (single-flight compartido con
@@ -791,7 +847,8 @@ export function AppProvider({
           // /me puede fallar sin red. El token restaurado conserva la clave
           // de cuenta necesaria para su wearable y su caché privada.
           const restoredUserId = sessionUserId(session.accessToken);
-          if (restoredUserId) setUser((prev) => ({ ...prev, id: restoredUserId }));
+          if (restoredUserId)
+            setUser((prev) => ({ ...prev, id: restoredUserId }));
           try {
             const me = await getMe();
             if (me && isCurrent()) {
@@ -817,7 +874,7 @@ export function AppProvider({
           void hydratePatientProfile(isCurrent);
 
           setFlow("app");
-          onResetCommunityClient?.();
+          onResetSessionCache?.();
         }
       } catch {
         /* sin sesión activa */
@@ -833,7 +890,7 @@ export function AppProvider({
     return () => {
       active = false;
     };
-  }, [onResetCommunityClient, hydratePatientProfile]);
+  }, [onResetSessionCache, hydratePatientProfile]);
 
   // Thread estable del paciente: `proactive-<id>`. Se prioriza el id (UUID real)
   // devuelto por el backend/JWT para que coincida con el checkpointer del AI Service.
@@ -844,7 +901,8 @@ export function AppProvider({
     [user.id, user.cedula, user.email],
   );
   const threadId = activeThreadId || computedThreadId;
-  const currentThread = useRef(threadId); currentThread.current = threadId;
+  const currentThread = useRef(threadId);
+  currentThread.current = threadId;
 
   /** Identificador estable del paciente para la clave de persistencia. */
   const chatUserId = useCallback(
@@ -857,61 +915,82 @@ export function AppProvider({
     const history = historyGeneration.current;
     const sourceThread = currentThread.current;
     const startedIdle = !clearingHistory.current;
-    return () => startedIdle && owner === sessionGeneration.current && history === historyGeneration.current
-      && sourceThread === currentThread.current && !clearingHistory.current;
+    return () =>
+      startedIdle &&
+      owner === sessionGeneration.current &&
+      history === historyGeneration.current &&
+      sourceThread === currentThread.current &&
+      !clearingHistory.current;
   }, []);
 
   // Invalida callbacks y reintentos aunque AbortController llegue tarde.
   const invalidateChatHistory = useCallback(() => {
     historyGeneration.current += 1;
     chatTurnGeneration.current += 1;
-    chatController.current?.abort(); chatController.current = null;
-    retryTurn.current = null; setChatGenerating(false);
+    chatController.current?.abort();
+    chatController.current = null;
+    retryTurn.current = null;
+    setChatGenerating(false);
     voiceSessions.current.clear();
-    setChatHistoryRevision(revision => revision + 1);
+    setChatHistoryRevision((revision) => revision + 1);
   }, []);
 
   const resetChatHistory = useCallback(() => {
     invalidateChatHistory();
-    setChat([]); setChatUnread(false); lastRemoteCountRef.current = 0;
+    setChat([]);
+    setChatUnread(false);
+    lastRemoteCountRef.current = 0;
     const uid = chatUserId();
     if (uid) localStorage.setItem(`${CHAT_LAST_SEEN_PREFIX}${uid}`, "0");
   }, [invalidateChatHistory, chatUserId]);
 
-  const observeChatHistory = useCallback((state: ThreadState): "current" | "reset" | "stale" => {
-    if (clearingHistory.current || state.threadId !== currentThread.current) return "stale";
-    const revision = state.historyRevision;
-    const seen = remoteHistoryRevisions.current.get(state.threadId) ?? 0;
-    if (revision == null) return seen > 0 ? "stale" : "current";
-    if (revision < seen) return "stale";
-    remoteHistoryRevisions.current.set(state.threadId, revision);
-    if (revision > seen) {
-      resetChatHistory();
-      void voiceStop.current?.().catch(() => {});
-      setVoiceOpen(false); setVoiceMinimized(false);
-      return "reset";
-    }
-    return "current";
-  }, [resetChatHistory]);
+  const observeChatHistory = useCallback(
+    (state: ThreadState): "current" | "reset" | "stale" => {
+      if (clearingHistory.current || state.threadId !== currentThread.current)
+        return "stale";
+      const revision = state.historyRevision;
+      const seen = remoteHistoryRevisions.current.get(state.threadId) ?? 0;
+      if (revision == null) return seen > 0 ? "stale" : "current";
+      if (revision < seen) return "stale";
+      remoteHistoryRevisions.current.set(state.threadId, revision);
+      if (revision > seen) {
+        resetChatHistory();
+        void voiceStop.current?.().catch(() => {});
+        setVoiceOpen(false);
+        setVoiceMinimized(false);
+        return "reset";
+      }
+      return "current";
+    },
+    [resetChatHistory],
+  );
 
   const registerVoiceStop = useCallback((stop: () => Promise<void>) => {
     voiceStop.current = stop;
-    return () => { if (voiceStop.current === stop) voiceStop.current = null; };
+    return () => {
+      if (voiceStop.current === stop) voiceStop.current = null;
+    };
   }, []);
 
   const clearChat = useCallback(async () => {
     if (clearingHistory.current) return;
     const owner = sessionGeneration.current;
     const sourceThread = threadId;
-    const controller = new AbortController(); clearController.current = controller;
-    clearingHistory.current = true; setChatClearing(true);
+    const controller = new AbortController();
+    clearController.current = controller;
+    clearingHistory.current = true;
+    setChatClearing(true);
     invalidateChatHistory();
-    const current = () => owner === sessionGeneration.current && sourceThread === currentThread.current;
+    const current = () =>
+      owner === sessionGeneration.current &&
+      sourceThread === currentThread.current;
     try {
-      if (voiceOpen && !voiceStop.current) throw new Error("Voice shutdown unavailable");
+      if (voiceOpen && !voiceStop.current)
+        throw new Error("Voice shutdown unavailable");
       await voiceStop.current?.();
       if (!current()) throw new Error("History owner changed");
-      setVoiceOpen(false); setVoiceMinimized(false);
+      setVoiceOpen(false);
+      setVoiceMinimized(false);
       const state = await clearThreadMessages(sourceThread, controller.signal);
       if (!current()) throw new Error("History owner changed");
       remoteHistoryRevisions.current.set(sourceThread, state.historyRevision);
@@ -919,8 +998,9 @@ export function AppProvider({
     } finally {
       if (clearController.current === controller) {
         clearController.current = null;
-        clearingHistory.current = false; setChatClearing(false);
-        setChatHistoryRevision(revision => revision + 1);
+        clearingHistory.current = false;
+        setChatClearing(false);
+        setChatHistoryRevision((revision) => revision + 1);
       }
     }
   }, [threadId, voiceOpen, invalidateChatHistory, resetChatHistory]);
@@ -937,14 +1017,24 @@ export function AppProvider({
    * (`sendVoiceMessage`), que necesita el mensaje final para vocalizarlo.
    */
   const runChatTurn = useCallback(
-    async (text: string, image?: ChatImageAttachment, retry = false, attachments?: PendingVitaAttachment[]): Promise<ChatMessage | null> => {
-      if (clearingHistory.current || chatController.current || !text.trim()) return null;
-        chatTurnGeneration.current += 1;
+    async (
+      text: string,
+      image?: ChatImageAttachment,
+      retry = false,
+      attachments?: PendingVitaAttachment[],
+    ): Promise<ChatMessage | null> => {
+      if (clearingHistory.current || chatController.current || !text.trim())
+        return null;
+      chatTurnGeneration.current += 1;
       let controller = new AbortController();
       chatController.current = controller;
       const generation = sessionGeneration.current;
       let history = historyGeneration.current;
-      const isCurrent = () => generation === sessionGeneration.current && history === historyGeneration.current && currentThread.current === threadId && !controller.signal.aborted;
+      const isCurrent = () =>
+        generation === sessionGeneration.current &&
+        history === historyGeneration.current &&
+        currentThread.current === threadId &&
+        !controller.signal.aborted;
       const previous = retry ? retryTurn.current : null;
       const userId = previous?.userId ?? crypto.randomUUID();
       const botId = previous?.botId ?? crypto.randomUUID();
@@ -955,71 +1045,174 @@ export function AppProvider({
         if (!isCurrent()) return null;
         // Un chat abierto durante el cambio de mes también debe observar el
         // corte antes del siguiente turno, aunque nunca haya salido de pantalla.
-        const state = await fetchThreadState(threadId, chatUserId(), { limit: 1, signal: controller.signal });
+        const state = await fetchThreadState(threadId, chatUserId(), {
+          limit: 1,
+          signal: controller.signal,
+        });
         if (!isCurrent()) return null;
         if (state) {
           const observation = observeChatHistory(state);
-          if (observation === "stale") { showToast(t(CHAT_UNAVAILABLE_MESSAGE), "err"); return null; }
+          if (observation === "stale") {
+            showToast(t(CHAT_UNAVAILABLE_MESSAGE), "err");
+            return null;
+          }
           if (observation === "reset") {
             if (voiceOpen || retry) return null; // Ni la llamada ni un reintento antiguo continúan.
-            controller = new AbortController(); chatController.current = controller;
-            history = historyGeneration.current; setChatGenerating(true);
+            controller = new AbortController();
+            chatController.current = controller;
+            history = historyGeneration.current;
+            setChatGenerating(true);
           }
         }
         retryTurn.current = { text, image, attachments, userId, botId };
-        const userMessage: ChatMessage = { id: userId, role: "user", text, time: nowLabel(lang), threadId, image: image ? { dataUrl: image.dataUrl } : undefined,
-          ...(attachments?.length ? { vitaAttachments: attachments } : {}) };
-        const live: ChatMessage = { id: botId, role: "bot", text: "", time: nowLabel(lang), threadId, delivery: "streaming" };
-        setChat(prev => [...prev.filter(m => m.id !== "welcome" && m.id !== botId), ...(!previous ? [userMessage] : []), live]);
+        const userMessage: ChatMessage = {
+          id: userId,
+          role: "user",
+          text,
+          time: nowLabel(lang),
+          threadId,
+          image: image ? { dataUrl: image.dataUrl } : undefined,
+          ...(attachments?.length ? { vitaAttachments: attachments } : {}),
+        };
+        const live: ChatMessage = {
+          id: botId,
+          role: "bot",
+          text: "",
+          time: nowLabel(lang),
+          threadId,
+          delivery: "streaming",
+        };
+        setChat((prev) => [
+          ...prev.filter((m) => m.id !== "welcome" && m.id !== botId),
+          ...(!previous ? [userMessage] : []),
+          live,
+        ]);
         const result = attachments?.length
-          ? await sendAttachmentChat(text, threadId, lang, attachments.map(attachment => attachment.attachmentId), controller.signal)
-          : await streamChatMessage(text, threadId, { onToken: piece => {
-            if (!isCurrent()) return;
-            painted += piece;
-            const snapshot = painted;
-            setChat(prev => prev.map(m => m.id === botId ? { ...m, text: snapshot } : m));
-          } }, image, lang, controller.signal);
+          ? await sendAttachmentChat(
+              text,
+              threadId,
+              lang,
+              attachments.map((attachment) => attachment.attachmentId),
+              controller.signal,
+            )
+          : await streamChatMessage(
+              text,
+              threadId,
+              {
+                onToken: (piece) => {
+                  if (!isCurrent()) return;
+                  painted += piece;
+                  const snapshot = painted;
+                  setChat((prev) =>
+                    prev.map((m) =>
+                      m.id === botId ? { ...m, text: snapshot } : m,
+                    ),
+                  );
+                },
+              },
+              image,
+              lang,
+              controller.signal,
+            );
         if (!isCurrent()) return null;
         const canonical = result.answer ?? result.reply;
         if (!canonical?.trim()) throw new Error("Empty chat response");
-        const final: ChatMessage = { ...live, text: canonical, delivery: "received", threadId: result.threadId || threadId,
-          cta: result.suggestions?.find(suggestion => suggestion.type === "appointment"), executionId: result.executionId, actions: result.actions,
-          ...(attachments?.length ? { vitaAttachments: attachments.map(attachment => ({
-            ...attachment,
-            readable: result.attachments?.find(item => item.attachmentId === attachment.attachmentId)?.readable,
-          })) } : {}) };
-        setChat(prev => prev.map(m => m.id === botId ? final : m));
+        const final: ChatMessage = {
+          ...live,
+          text: canonical,
+          delivery: "received",
+          threadId: result.threadId || threadId,
+          cta: result.suggestions?.find(
+            (suggestion) => suggestion.type === "appointment",
+          ),
+          executionId: result.executionId,
+          actions: result.actions,
+          ...(attachments?.length
+            ? {
+                vitaAttachments: attachments.map((attachment) => ({
+                  ...attachment,
+                  readable: result.attachments?.find(
+                    (item) => item.attachmentId === attachment.attachmentId,
+                  )?.readable,
+                })),
+              }
+            : {}),
+        };
+        setChat((prev) => prev.map((m) => (m.id === botId ? final : m)));
         retryTurn.current = null;
         return final;
       } catch (error) {
-        if (generation !== sessionGeneration.current || history !== historyGeneration.current || currentThread.current !== threadId) return null;
+        if (
+          generation !== sessionGeneration.current ||
+          history !== historyGeneration.current ||
+          currentThread.current !== threadId
+        )
+          return null;
         if (controller.signal.aborted) {
-          setChat(prev => prev.map(m => m.id === botId ? { ...m, text: painted || t("Respuesta detenida"), delivery: "interrupted" } : m));
+          setChat((prev) =>
+            prev.map((m) =>
+              m.id === botId
+                ? {
+                    ...m,
+                    text: painted || t("Respuesta detenida"),
+                    delivery: "interrupted",
+                  }
+                : m,
+            ),
+          );
           return null;
         }
         if (isLegalConsentError(error)) {
-          setChat(prev => prev.filter(m => m.id !== botId));
-          showToast(t(legalConsentMessage(error)), "warn"); return null;
+          setChat((prev) => prev.filter((m) => m.id !== botId));
+          showToast(t(legalConsentMessage(error)), "warn");
+          return null;
         }
-        const code = typeof error === "object" && error && "code" in error ? error.code : null;
-        const invalidAttachments = attachments?.length && (code === "vita_attachment_not_found" || code === "attachment_limit_exceeded");
+        const code =
+          typeof error === "object" && error && "code" in error
+            ? error.code
+            : null;
+        const invalidAttachments =
+          attachments?.length &&
+          (code === "vita_attachment_not_found" ||
+            code === "attachment_limit_exceeded");
         if (invalidAttachments) retryTurn.current = null;
         const failureText = invalidAttachments
-          ? code === "attachment_limit_exceeded" ? t("Vita no pudo usar tantos adjuntos. Envía menos archivos por mensaje.")
-            : t("Uno de los adjuntos ya no está disponible. Vuelve a adjuntarlo.")
+          ? code === "attachment_limit_exceeded"
+            ? t(
+                "Vita no pudo usar tantos adjuntos. Envía menos archivos por mensaje.",
+              )
+            : t(
+                "Uno de los adjuntos ya no está disponible. Vuelve a adjuntarlo.",
+              )
           : t(CHAT_UNAVAILABLE_MESSAGE);
-        const failed: ChatMessage = { id: botId, role: "bot", text: failureText, time: nowLabel(lang), threadId, kind: "service-error",
-          delivery: "failed", ...(invalidAttachments ? { retryUnavailable: true } : {}) };
-        setChat(prev => prev.map(m => m.id === botId ? failed : m));
+        const failed: ChatMessage = {
+          id: botId,
+          role: "bot",
+          text: failureText,
+          time: nowLabel(lang),
+          threadId,
+          kind: "service-error",
+          delivery: "failed",
+          ...(invalidAttachments ? { retryUnavailable: true } : {}),
+        };
+        setChat((prev) => prev.map((m) => (m.id === botId ? failed : m)));
         return failed;
       } finally {
-        if (chatController.current === controller) { chatController.current = null; setChatGenerating(false); }
+        if (chatController.current === controller) {
+          chatController.current = null;
+          setChatGenerating(false);
+        }
       }
-    }, [threadId, t, lang, showToast, chatUserId, observeChatHistory, voiceOpen],
+    },
+    [threadId, t, lang, showToast, chatUserId, observeChatHistory, voiceOpen],
   );
 
   useEffect(() => {
-    return () => { chatController.current?.abort(); clearController.current?.abort(); retryTurn.current = null; };
+    return () => {
+      chatController.current?.abort();
+      clearController.current?.abort();
+      retryTurn.current = null;
+    };
   }, [threadId]);
 
   /**
@@ -1110,15 +1303,6 @@ export function AppProvider({
     };
   }, [checkChatUnread]);
 
-  // Al entrar a la pantalla de chat se marca como leído (una vez por entrada).
-  useEffect(() => {
-    const prev = prevScreenRef.current;
-    prevScreenRef.current = screen;
-    if (screen === "chat" && prev !== "chat") {
-      markChatRead();
-    }
-  }, [screen, markChatRead]);
-
   const builtReal =
     appointments && requests
       ? buildRealAppointments(appointments, requests, specialties ?? undefined)
@@ -1130,8 +1314,8 @@ export function AppProvider({
       authLoading,
       flow,
       screen,
-      medicalSourcesEntry,
-      healthReturnTo,
+      medicalSourcesEntry: null,
+      healthReturnTo: "home",
       toast,
       showToast,
       panicOpen,
@@ -1140,20 +1324,53 @@ export function AppProvider({
       voiceMinimized,
       chatGenerating,
       cancelChat: () => chatController.current?.abort(),
-      retryChat: () => { const turn = retryTurn.current; if (turn) void runChatTurn(turn.text, turn.image, true, turn.attachments); },
-      minimizeVoice: () => { setVoiceMinimized(true); setScreen("chat"); },
+      retryChat: () => {
+        const turn = retryTurn.current;
+        if (turn)
+          void runChatTurn(turn.text, turn.image, true, turn.attachments);
+      },
+      minimizeVoice: () => setVoiceMinimized(true),
       upsertVoiceMessage: ((history: number) => (message: ChatMessage) => {
-        if (history !== historyGeneration.current || clearingHistory.current || message.threadId !== currentThread.current) return;
-        setChat(prev => mergeVoiceMessage(prev, { ...message, time: nowLabel(lang) }));
+        if (
+          history !== historyGeneration.current ||
+          clearingHistory.current ||
+          message.threadId !== currentThread.current
+        )
+          return;
+        setChat((prev) =>
+          mergeVoiceMessage(prev, { ...message, time: nowLabel(lang) }),
+        );
       })(historyGeneration.current),
       chatHistoryRevision,
       chatHistoryEpoch: historyGeneration.current,
-      chatClearing, clearChat, captureChatGuard, observeChatHistory, registerVoiceStop,
-      refreshChatHistory: sourceThreadId => { if (sourceThreadId === currentThread.current) setChatHistoryRevision(revision => revision + 1); },
-      registerVoiceSession: (sessionId, sourceThreadId) => { voiceSessions.current.set(sessionId, { threadId: sourceThreadId, closed: false }); },
+      chatClearing,
+      clearChat,
+      captureChatGuard,
+      observeChatHistory,
+      registerVoiceStop,
+      refreshChatHistory: (sourceThreadId) => {
+        if (sourceThreadId === currentThread.current)
+          setChatHistoryRevision((revision) => revision + 1);
+      },
+      registerVoiceSession: (sessionId, sourceThreadId) => {
+        voiceSessions.current.set(sessionId, {
+          threadId: sourceThreadId,
+          closed: false,
+        });
+      },
       markVoiceSessionClosed: (sessionId, sourceThreadId) => {
-        voiceSessions.current.set(sessionId, { threadId: sourceThreadId, closed: true });
-        setChat(prev => prev.map(message => message.voiceSessionId === sessionId && message.threadId === sourceThreadId ? { ...message, voiceSessionClosed: true } : message));
+        voiceSessions.current.set(sessionId, {
+          threadId: sourceThreadId,
+          closed: true,
+        });
+        setChat((prev) =>
+          prev.map((message) =>
+            message.voiceSessionId === sessionId &&
+            message.threadId === sourceThreadId
+              ? { ...message, voiceSessionClosed: true }
+              : message,
+          ),
+        );
       },
       sosActive,
       user,
@@ -1172,27 +1389,24 @@ export function AppProvider({
       pointsToday,
       pointsTotal,
       dismissVitaWelcome: () => setVitaWelcomePending(false),
-      // Destino unificado: «Mi Avatar» abre Perfil corporal (screen='body').
-      // Se conserva 'avatar' en el tipo por compatibilidad, pero toda
-      // navegación a 'avatar' se redirige a 'body' sin duplicar pantallas.
-      // El protocolo nutricional abre el mismo módulo completo que la pestaña Nutrición.
-      navigate: (s, sourceSection) => {
-        if (s === "health-accessory" && !HEALTH_ENABLED) return;
-        if (s === "health-accessory" && screen !== "health-accessory") {
-          setHealthReturnTo(screen === "prof" ? "prof" : "home");
+      navigate: (target) => {
+        switch (target) {
+          case "home":
+          case "protocol":
+          case "wellness-diet":
+          case "wellness-exercise":
+          case "wellness-goal":
+          case "wellness-checkin":
+          case "prof":
+            setScreen(target);
+            return;
+          default:
+            setScreen("home");
         }
-        if (s === "medical-sources" && screen !== "medical-sources") {
-          setMedicalSourcesEntry({ section: sourceSection, returnTo: screen });
-        }
-        setScreen(visibleScreen(s === "avatar" ? "body" : s === "program-nut" ? "nut" : s));
       },
-      openBookingWizard: () => {
-        if(!APPOINTMENTS_ENABLED){setScreen("nut");return;}
-        setBookingWizardAutoOpen(true);
-        setScreen("book");
-      },
-      bookingWizardAutoOpen,
-      clearBookingWizardAutoOpen: () => setBookingWizardAutoOpen(false),
+      openBookingWizard: () => setScreen("home"),
+      bookingWizardAutoOpen: false,
+      clearBookingWizardAutoOpen: () => {},
       finishLogin: (seed, next = "onboarding") => {
         resetPatientSession();
         const generation = sessionGeneration.current;
@@ -1231,11 +1445,13 @@ export function AppProvider({
           // Contacto/perfil real también tras el login directo: sin esto el
           // ContactSection prefillaba el mock del defaultUser (celular fake)
           // y "Guardar contacto" lo habría persistido como dato del paciente.
-          await hydratePatientProfile(() => generation === sessionGeneration.current);
+          await hydratePatientProfile(
+            () => generation === sessionGeneration.current,
+          );
         })();
         setFlow(next);
         // Recrea el cliente urql para usar la cache y el WS con el token nuevo.
-        onResetCommunityClient?.();
+        onResetSessionCache?.();
       },
       backToLogin: () => {
         resetPatientSession();
@@ -1273,14 +1489,34 @@ export function AppProvider({
         setSosActive(false);
       },
       activateSos: () => setSosActive(true),
-      openVoice: () => { if (!clearingHistory.current) { setVoiceMinimized(false); setVoiceOpen(true); } },
-      closeVoice: () => { setVoiceOpen(false); setVoiceMinimized(false); },
+      openVoice: () => {
+        if (!clearingHistory.current) {
+          setVoiceMinimized(false);
+          setVoiceOpen(true);
+        }
+      },
+      closeVoice: () => {
+        setVoiceOpen(false);
+        setVoiceMinimized(false);
+      },
       sendChat: (text, image, attachments) => {
         void runChatTurn(text, image, false, attachments);
       },
       sendVoiceMessage: (text, image) => runChatTurn(text, image),
-      hydrateChat: messages => {
-        if (messages.length) setChat(prev => mergeChatHistory(prev, messages, threadId, new Map([...voiceSessions.current].filter(([, session]) => session.threadId === threadId).map(([id, session]) => [id, session.closed]))));
+      hydrateChat: (messages) => {
+        if (messages.length)
+          setChat((prev) =>
+            mergeChatHistory(
+              prev,
+              messages,
+              threadId,
+              new Map(
+                [...voiceSessions.current]
+                  .filter(([, session]) => session.threadId === threadId)
+                  .map(([id, session]) => [id, session.closed]),
+              ),
+            ),
+          );
       },
       captureHistoryHydrator: () => {
         const validHistory = captureChatGuard();
@@ -1289,25 +1525,64 @@ export function AppProvider({
         const sourceThread = threadId;
         const startedIdle = !chatController.current;
         const retry = retryTurn.current;
-        const textIds = new Set(chat.filter(message => message.threadId === sourceThread && isConfirmedText(message)
-          && message.id !== retry?.userId && message.id !== retry?.botId).map(message => message.id));
-        const current = () => validHistory() && startedIdle && owner === sessionGeneration.current && turn === chatTurnGeneration.current
-          && sourceThread === currentThread.current && !chatController.current;
+        const textIds = new Set(
+          chat
+            .filter(
+              (message) =>
+                message.threadId === sourceThread &&
+                isConfirmedText(message) &&
+                message.id !== retry?.userId &&
+                message.id !== retry?.botId,
+            )
+            .map((message) => message.id),
+        );
+        const current = () =>
+          validHistory() &&
+          startedIdle &&
+          owner === sessionGeneration.current &&
+          turn === chatTurnGeneration.current &&
+          sourceThread === currentThread.current &&
+          !chatController.current;
         return (messages, authoritativeText = true) => {
           if (!messages.length || !current()) return false;
-          setChat(prev => {
+          setChat((prev) => {
             if (!current()) return prev;
             // Snapshot autoritativo de la página reciente: retirar solo el texto
             // confirmado capturado al iniciar. Las páginas viejas se recargan.
-            const remaining = authoritativeText ? prev.filter(message => !textIds.has(message.id) || !isConfirmedText(message)) : prev;
-            return mergeChatHistory(remaining, messages, sourceThread, new Map([...voiceSessions.current]
-              .filter(([, session]) => session.threadId === sourceThread).map(([id, session]) => [id, session.closed])));
+            const remaining = authoritativeText
+              ? prev.filter(
+                  (message) =>
+                    !textIds.has(message.id) || !isConfirmedText(message),
+                )
+              : prev;
+            return mergeChatHistory(
+              remaining,
+              messages,
+              sourceThread,
+              new Map(
+                [...voiceSessions.current]
+                  .filter(([, session]) => session.threadId === sourceThread)
+                  .map(([id, session]) => [id, session.closed]),
+              ),
+            );
           });
           return true;
         };
       },
-      prependChatMessages: messages => {
-        if (messages.length) setChat(prev => mergeChatHistory(prev, messages, threadId, new Map([...voiceSessions.current].filter(([, session]) => session.threadId === threadId).map(([id, session]) => [id, session.closed]))));
+      prependChatMessages: (messages) => {
+        if (messages.length)
+          setChat((prev) =>
+            mergeChatHistory(
+              prev,
+              messages,
+              threadId,
+              new Map(
+                [...voiceSessions.current]
+                  .filter(([, session]) => session.threadId === threadId)
+                  .map(([id, session]) => [id, session.closed]),
+              ),
+            ),
+          );
       },
       appendChatMessages: (msgs) => {
         if (!msgs.length) return;
@@ -1336,7 +1611,8 @@ export function AppProvider({
         setProgram((p) => {
           if (p[id]) return p;
           const next = { ...p, [id]: true };
-          const finished = !realMode && ACTIVE_PROGRAM_TASKS.every(task => next[task.id]);
+          const finished =
+            !realMode && ACTIVE_PROGRAM_TASKS.every((task) => next[task.id]);
           const gain = finished ? pts + DAY_BONUS_PTS : pts;
           if (finished) {
             setStreak((s) => s + 1);
@@ -1363,7 +1639,7 @@ export function AppProvider({
         // logoutUser borra el token antes de esperar la red. Las caches se
         // limpian de inmediato aunque el servidor de logout no responda.
         void logoutUser();
-        onResetCommunityClient?.();
+        onResetSessionCache?.();
       },
       realMode,
       upcomingAppointments: builtReal?.upcoming ?? null,
@@ -1379,13 +1655,9 @@ export function AppProvider({
       submitAppointmentRequest,
       cancelAppointmentById,
       rescheduleAppointmentById,
-      openRoom: (appointment) => {
-        if(!APPOINTMENTS_ENABLED)return;
-        setRoomAppointment(appointment);
-        setScreen("room");
-      },
-      closeRoom: () => setRoomAppointment(null),
-      roomAppointment,
+      openRoom: () => setScreen("home"),
+      closeRoom: () => {},
+      roomAppointment: null,
     }),
     [
       vitaWelcomePending,
@@ -1393,9 +1665,6 @@ export function AppProvider({
       resetPatientSession,
       flow,
       screen,
-      medicalSourcesEntry,
-      healthReturnTo,
-      bookingWizardAutoOpen,
       toast,
       showToast,
       panicOpen,
@@ -1404,7 +1673,11 @@ export function AppProvider({
       voiceMinimized,
       chatGenerating,
       chatHistoryRevision,
-      chatClearing, clearChat, captureChatGuard, observeChatHistory, registerVoiceStop,
+      chatClearing,
+      clearChat,
+      captureChatGuard,
+      observeChatHistory,
+      registerVoiceStop,
       sosActive,
       user,
       testsDone,
@@ -1420,7 +1693,7 @@ export function AppProvider({
       threadId,
       chatUnread,
       markChatRead,
-      onResetCommunityClient,
+      onResetSessionCache,
       lang,
       runChatTurn,
       realMode,
@@ -1436,7 +1709,6 @@ export function AppProvider({
       submitAppointmentRequest,
       cancelAppointmentById,
       rescheduleAppointmentById,
-      roomAppointment,
       hydratePatientProfile,
     ],
   );

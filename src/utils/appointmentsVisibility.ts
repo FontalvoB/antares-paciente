@@ -1,13 +1,6 @@
-import type { Screen } from "../types";
-
 /** Desactivado por defecto; conserva la implementación para una futura reactivación. */
 export const APPOINTMENTS_ENABLED =
   import.meta.env.VITE_APPOINTMENTS_ENABLED === "true";
-export function visibleScreen(screen: Screen): Screen {
-  return !APPOINTMENTS_ENABLED && (screen === "book" || screen === "room")
-    ? "nut"
-    : screen;
-}
 export function isAppointmentNotification(type: string): boolean {
   return /^(appointment|telemedicine|telemedicina)[_.-]/i.test(type);
 }
