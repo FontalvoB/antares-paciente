@@ -1,5 +1,6 @@
 export type Screen =
   | "home"
+  | "protocol"
   | "book"
   | "hc"
   | "nut"
