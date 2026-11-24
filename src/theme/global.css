@@ -19026,7 +19026,7 @@ ion-button.ht-cta[disabled] {
 ion-input.auth-input {
   --background: #f1f4f8;
   --color: var(--brand-navy);
-  --placeholder-color: #9aa8bd;
+  --placeholder-color: var(--mu);
   --placeholder-opacity: 1;
   --padding-start: 18px;
   --padding-end: 18px;

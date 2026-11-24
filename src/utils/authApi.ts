@@ -47,7 +47,7 @@ export class HttpStatusError extends Error {
  * del proxy de Vite (mismo origen → la cookie HttpOnly de refresh funciona
  * sin CORS). El application es el código de la app móvil: "app".
  */
-async function postJson<T>(path: string, body?: unknown): Promise<T> {
+async function post(path: string, body?: unknown): Promise<Response> {
   // Timeout defensivo (10 s): en WebView nativo una IP inalcanzable puede
   // dejar el fetch colgado para siempre y con él el splash de arranque.
   const res = await fetch(path, {
@@ -70,7 +70,21 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
     throw new HttpStatusError(message, res.status);
   }
 
-  return res.json() as Promise<T>;
+  return res;
+}
+
+async function postJson<T>(path: string, body?: unknown): Promise<T> {
+  return (await post(path, body)).json() as Promise<T>;
+}
+
+export async function requestPasswordReset(
+  email: string,
+  language: "es" | "en",
+): Promise<void> {
+  await post(`${getAuthBaseUrl()}/api/auth/account/password-reset/request`, {
+    email: email.trim(),
+    language,
+  });
 }
 
 export interface CurrentUser {
@@ -92,16 +106,16 @@ function clearAccessToken(): void {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
 }
 
-/** Login con contraseña por número de identificación (usuarios ya registrados). */
+/** Login de una cuenta existente con correo y contraseña. */
 export async function loginUser(
-  documentNumber: string,
+  email: string,
   password: string,
   rememberMe: boolean,
 ): Promise<LoginResult> {
   const result = await postJson<LoginResult>(
     `${getAuthBaseUrl()}/api/auth/login`,
     {
-      documentNumber,
+      email: email.trim(),
       password,
       application: getApplicationCode(),
       rememberMe,

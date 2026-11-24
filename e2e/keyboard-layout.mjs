@@ -90,7 +90,7 @@ for (const test of cases) {
     await page.goto(origin);
     let field, next, footer;
     if (screen === 'login') {
-      await expect(page.locator('label[for="login-id"]')).toHaveText('Número de identificación');
+      await expect(page.locator('label[for="login-email"]')).toHaveText('Correo electrónico');
       field = page.locator('#login-password input');
     } else if (['onboarding', 'contacts'].includes(screen)) {
       await page.getByRole('button', { name: 'Activa tu cuenta', exact: true }).click();
