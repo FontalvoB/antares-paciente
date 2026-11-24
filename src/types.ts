@@ -1,6 +1,7 @@
 export type Screen =
   | "home"
   | "protocol"
+  | "wellness-diet"
   | "wellness-goal"
   | "wellness-exercise"
   | "book"

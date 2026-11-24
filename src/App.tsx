@@ -48,6 +48,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
+import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
@@ -101,6 +102,9 @@ function Router() {
     switch (screen) {
       case "protocol":
         content = <WellnessProtocol />;
+        break;
+      case "wellness-diet":
+        content = <WellnessDiet />;
         break;
       case "wellness-goal":
         content = <WellnessGoalPage />;
