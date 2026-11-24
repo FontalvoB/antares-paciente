@@ -48,6 +48,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
+import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
@@ -100,6 +101,9 @@ function Router() {
     switch (screen) {
       case "protocol":
         content = <WellnessProtocol />;
+        break;
+      case "wellness-goal":
+        content = <WellnessGoalPage />;
         break;
       case "wellness-exercise":
         content = <WellnessExercise />;
@@ -279,7 +283,9 @@ function Shell() {
   return (
     <div className="app-stage">
       <div className="app-shell">
-        <HealthProvider><Router /></HealthProvider>
+        <HealthProvider>
+          <Router />
+        </HealthProvider>
         <PanicOverlay />
         <VoiceOverlay />
         <ToastHost />

@@ -18,7 +18,10 @@ import {
   evaluateGate,
 } from "../features/wellness/domain";
 import { wellnessOnboardingService } from "../features/wellness/services/wellness-onboarding-service";
-import { localISODate, savePlanSnapshot } from "../features/wellness/state/wellness-home-store";
+import {
+  localISODate,
+  savePlanSnapshot,
+} from "../features/wellness/state/wellness-home-store";
 import { emergencyContactsError } from "../utils/emergencyContacts";
 import {
   EmailStep,
@@ -267,6 +270,17 @@ export function OnboardingPage() {
           waterMl: result.plan.waterMl,
           totalDays: result.plan.totalDays,
           createdAt: new Date().toISOString(),
+          // KAN-144: datos del objetivo para precargar el cambio desde Perfil.
+          sex: withTerms.sex,
+          age: withTerms.age,
+          heightCm: withTerms.heightCm,
+          weightKg: withTerms.weightKg,
+          waistCm: withTerms.waistCm,
+          targetWeightKg: withTerms.targetWeightKg,
+          activity: withTerms.activity,
+          pace: withTerms.pace,
+          vegetarian: withTerms.vegetarian,
+          dairyFree: withTerms.dairyFree,
         });
         wellnessOnboardingService.clearDraft();
         setStage("ready");
