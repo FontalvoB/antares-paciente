@@ -9,6 +9,7 @@ export type Screen =
   | "wellness-goal"
   | "wellness-exercise"
   | "wellness-privacy"
+  | "wellness-year"
   | "prof";
 
 // TODO KAN-146: los m?dulos legados todav?a emiten estos identificadores.
@@ -38,7 +39,11 @@ export type Flow = "login" | "onboarding" | "tests" | "app";
 export type TabId =
   | Exclude<
       Screen,
-      "protocol" | "wellness-goal" | "wellness-privacy" | "wellness-vitals"
+      | "protocol"
+      | "wellness-goal"
+      | "wellness-privacy"
+      | "wellness-vitals"
+      | "wellness-year"
     >
   | "sos";
 

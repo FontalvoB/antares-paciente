@@ -1,0 +1,173 @@
+.wy-screen {
+  background: linear-gradient(180deg, var(--wellness-bg-start), var(--wellness-bg-end));
+  color: var(--wellness-navy);
+  font-family: var(--ion-font-family);
+}
+
+.wy-scroll {
+  padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+}
+
+.wy-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-block: calc(12px + env(safe-area-inset-top)) 12px;
+}
+
+.wy-header h1, .wy-card h2, .wy-month-title, .wy-metrics dd {
+  font-family: "Space Grotesk", var(--ion-font-family);
+}
+
+.wy-header h1 { margin: 0; font-size: 29px; font-weight: 700; }
+
+.wy-back, .wy-calendar-link {
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 50%;
+  --background: var(--wellness-surface);
+}
+.wy-calendar-link { margin-inline-start: auto; }
+
+.wy-content { display: grid; gap: 12px; }
+.wy-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--wellness-border);
+  border-radius: var(--wellness-radius);
+  background: var(--wellness-surface);
+  box-shadow: var(--wellness-shadow);
+}
+
+.wy-card h2 { margin: 0 0 10px; font-size: 19px; font-weight: 700; }
+.wy-card p { margin: 10px 0 0; font-size: 13px; color: var(--wellness-muted); }
+.wy-card.wy-empty { margin-top: 0; }
+
+.wy-month-select {
+  width: 100%;
+  min-height: 48px;
+  padding-inline: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--wellness-bg-start);
+  font-size: 13px;
+  color: var(--wellness-navy);
+  font-weight: 650;
+}
+
+.wy-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.wy-metrics > div { padding: 8px; background: var(--wellness-bg-start); border-radius: var(--radius-sm); }
+.wy-metrics dt { color: var(--wellness-muted); font-size: 12px; }
+.wy-metrics dd { margin: 2px 0 0; font-size: 18px; font-weight: 750; }
+.wy-card .wy-note { font-size: 12px; }
+
+.wy-period {
+  --background: var(--wellness-bg-start);
+  --padding-top: 0;
+  --padding-bottom: 0;
+  width: 100%;
+}
+
+.wy-period ion-segment-button {
+  min-width: 44px;
+  min-height: 44px;
+  --padding-start: 4px;
+  --padding-end: 4px;
+  --color: var(--wellness-muted);
+  --color-checked: var(--wellness-navy);
+  --indicator-color: var(--wellness-surface);
+}
+
+.wy-curve {
+  margin: 12px 0 0;
+  padding: 10px;
+  min-width: 0;
+  background: var(--wellness-bg-start);
+  border: 1px solid var(--wellness-border);
+  border-radius: var(--radius-md);
+}
+.wy-curve figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; font-size: 14px; font-weight: 650; }
+.wy-curve strong { color: var(--wellness-primary); }
+.wy-chart { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 1fr 1fr auto; column-gap: 6px; margin-top: 6px; }
+.wy-chart svg { width: 100%; display: block; grid-row: 1 / 3; }
+.wy-plot-max, .wy-plot-min { font-size: 11px; color: var(--wellness-muted); }
+.wy-plot-max { align-self: start; padding-top: 2px; }
+.wy-plot-max:last-of-type { grid-row: 1 / 3; align-self: center; }
+.wy-plot-min { align-self: end; }
+.wy-guide { stroke: var(--wellness-border); }
+.wy-marker line { stroke: var(--pur); stroke-width: 2; stroke-dasharray: 4 3; }
+.wy-marker circle { fill: var(--pur); stroke: var(--wellness-surface); stroke-width: 1.5; }
+.wy-weightKg { --wy-series: var(--wellness-primary); }
+.wy-waistCm { --wy-series: var(--teal); }
+.wy-line { fill: none; stroke: var(--wy-series); stroke-width: 2.5; stroke-linejoin: round; }
+.wy-point { fill: var(--wy-series); }
+.wy-axis { grid-column: 1; grid-row: 3; display: flex; justify-content: space-between; gap: 4px; padding-top: 4px; color: var(--wellness-muted); font-size: 11px; }
+.wy-axis time:only-child { margin-inline: auto; }
+.wy-curve-empty { display: flex; align-items: center; gap: 8px; min-height: 48px; }
+.wy-curve-empty ion-icon { flex: 0 0 20px; font-size: 20px; color: var(--wellness-primary); }
+.wy-card .wy-curve-empty p { margin: 0; }
+
+.wy-milestones, .wy-legend { list-style: none; padding: 0; margin: 10px 0; font-size: 12px; }
+.wy-milestones li, .wy-legend li { display: flex; align-items: center; gap: 6px; }
+.wy-milestones li + li { margin-top: 4px; }
+.wy-milestones li > span { width: 13px; border-top: 2px dashed var(--pur); }
+
+.wy-legend { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.wy-swatch { display: grid; place-items: center; width: 14px; height: 14px; border-radius: 4px; border: 1px solid; }
+.wy-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+.wy-weekdays { padding-block: 6px; color: var(--wellness-muted); font-size: 11px; font-weight: 650; }
+.wy-month {
+  margin-top: 8px;
+  padding: 7px;
+  background: var(--wellness-bg-start);
+  border: 1px solid var(--wellness-border);
+  border-radius: var(--radius-sm);
+}
+.wy-month-title { margin-bottom: 6px; font-size: 14px; font-weight: 750; }
+.wy-month-title::first-letter { text-transform: uppercase; }
+.wy-week + .wy-week { margin-top: 3px; }
+.wy-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 30px;
+  border: 1px solid;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wy-card [data-status="complete"]::after,
+.wy-card [data-status="partial"]::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.wy-card .wy-day::after { position: absolute; right: 2px; bottom: 2px; }
+.wy-card [data-status="complete"]::after { background: currentColor; }
+.wy-card [data-status="complete"] { color: var(--wh); background: var(--teal); border-color: var(--teal); }
+.wy-card [data-status="partial"] { color: var(--org-d); background: var(--wellness-warning-bg); }
+.wy-card [data-status="missing"] { color: var(--wellness-muted); background: var(--wellness-surface); border-color: var(--ice-d); }
+.wy-card [data-status="future"] { color: var(--wellness-muted); background: var(--g0); border-color: var(--wellness-muted); border-style: dashed; }
+.wy-day[aria-current="date"] { text-decoration: underline; text-underline-offset: 3px; }
+.wy-day:focus-visible, .wy-month-select:focus-within, .wy-period ion-segment-button:focus-within, .wy-back:focus-within, .wy-calendar-link:focus-within {
+  outline: 2px solid var(--wellness-primary);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wy-period ion-segment-button::part(indicator),
+  .wy-period ion-segment-button::part(indicator-background) {
+    transition: none;
+  }
+}
