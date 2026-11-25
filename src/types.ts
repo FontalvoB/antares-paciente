@@ -1,10 +1,14 @@
 export type Screen =
   | "home"
+  | "wellness-plan"
   | "protocol"
   | "wellness-diet"
+  | "wellness-vitals"
   | "wellness-checkin"
+  | "wellness-notifications"
   | "wellness-goal"
   | "wellness-exercise"
+  | "wellness-privacy"
   | "prof";
 
 // TODO KAN-146: los m?dulos legados todav?a emiten estos identificadores.
@@ -31,7 +35,12 @@ export type NavigationTarget =
 
 export type Flow = "login" | "onboarding" | "tests" | "app";
 
-export type TabId = Exclude<Screen, "protocol" | "wellness-goal"> | "sos";
+export type TabId =
+  | Exclude<
+      Screen,
+      "protocol" | "wellness-goal" | "wellness-privacy" | "wellness-vitals"
+    >
+  | "sos";
 
 export type ToastKind = "ok" | "warn" | "err" | "info";
 

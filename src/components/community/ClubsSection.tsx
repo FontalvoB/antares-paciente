@@ -731,7 +731,7 @@ export function ClubsSection({ me, onToast }: ClubsSectionProps) {
                       <span className="club-live-kicker">
                         {live.status === "ACTIVO"
                           ? t("EN VIVO")
-                          : t("LIVE COPP ADRESD")}
+                          : t("LIVE Agentic Wellness IA")}
                       </span>
                     </div>
                     <p className="club-live-title">{live.title}</p>

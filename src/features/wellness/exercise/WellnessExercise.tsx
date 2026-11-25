@@ -1,3 +1,4 @@
+import { WellnessGuidance } from "../WellnessGuidance";
 import { useEffect, useMemo, useState } from "react";
 import {
   IonBadge,
@@ -249,6 +250,7 @@ export function WellnessExercise() {
     return (
       <Screen>
         <Scroll className="wx-scroll">
+          <WellnessGuidance kind="exercise" className="ion-padding-horizontal ion-padding-vertical" />
           <div className="wx-done">
             <IonIcon icon={checkmarkCircle} aria-hidden="true" />
             <h1>{t("Sesión completada")}</h1>
@@ -273,6 +275,7 @@ export function WellnessExercise() {
     return (
       <Screen>
         <Scroll className="wx-scroll">
+          <WellnessGuidance kind="exercise" className="ion-padding-horizontal ion-padding-vertical" />
           <header className="wx-session-head">
             <IonButton
               className="wx-back"
@@ -333,6 +336,7 @@ export function WellnessExercise() {
   return (
     <Screen>
       <Scroll className="wx-scroll">
+          <WellnessGuidance kind="exercise" className="ion-padding-horizontal ion-padding-vertical" />
         <header className="wx-hero">
           <div className="wx-hero-top">
             <IonButton
@@ -467,7 +471,7 @@ export function WellnessExercise() {
         )}
 
         <p className="wx-legal">
-          {t("Contenido orientativo de bienestar. No es consejo médico.")}
+          {t("Contenido orientativo de bienestar. Complementa las indicaciones de tu profesional de la salud.")}
         </p>
       </Scroll>
     </Screen>

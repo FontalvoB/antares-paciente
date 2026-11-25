@@ -22,6 +22,7 @@ import {
   trashOutline,
   chevronForward,
   optionsOutline,
+  pulseOutline,
   shieldCheckmarkOutline,
   notificationsOutline,
   menuOutline,
@@ -31,7 +32,8 @@ import {
   sparklesOutline,
 } from "ionicons/icons";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
-import logoIcon from "../assets/LogoIndividual.png";
+import { BrandWordmark } from "../components/BrandWordmark";
+import { BRAND_NAME } from "../utils/brand";
 import vitaPortrait from "../assets/vita-coach.png";
 import { AvatarPage } from "./AvatarPage";
 import { Screen, Scroll } from "../components/Screen";
@@ -352,19 +354,7 @@ export function ProfilePage() {
             <div className="pf-overview">
               <header className="pf-heading">
                 <div className="pf-topbar">
-                  <div className="hm-wordmark" aria-label="COPP-ADRESD">
-                    <img src={logoIcon} alt="" />
-                    <span>
-                      <strong>
-                        COPP-ADRESD<sup>®</sup>
-                      </strong>
-                      <small>
-                        COMPREHENSIVE OBESITY
-                        <br />
-                        PREVENTION PROGRAM
-                      </small>
-                    </span>
-                  </div>
+                  <BrandWordmark className="hm-wordmark" />
                   <div className="pf-header-actions">
                     <IonButton
                       fill="clear"
@@ -513,6 +503,13 @@ export function ProfilePage() {
                       tone: "sky",
                       action: () => navigate("wellness-goal"),
                     },
+                    {
+                      icon: pulseOutline,
+                      title: "Signos vitales",
+                      sub: "Registra y consulta tus mediciones",
+                      tone: "sky",
+                      action: () => navigate("wellness-vitals"),
+                    },
                   ].map((item) => (
                     <IonItem
                       button
@@ -566,6 +563,21 @@ export function ProfilePage() {
                     button
                     detail={false}
                     className="pf-menu-row"
+                    onClick={() => navigate("wellness-notifications")}
+                  >
+                    <span slot="start" className="pf-menu-icon neutral">
+                      <IonIcon icon={notificationsOutline} aria-hidden="true" />
+                    </span>
+                    <IonLabel className="ion-text-wrap">
+                      <h3>{t("Preferencias de notificaciones")}</h3>
+                      <p>{t("Elige qué avisos recibir y cuándo")}</p>
+                    </IonLabel>
+                    <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                  </IonItem>
+                  <IonItem
+                    button
+                    detail={false}
+                    className="pf-menu-row"
                     onClick={toggleLang}
                   >
                     <span slot="start" className="pf-menu-icon neutral">
@@ -579,6 +591,18 @@ export function ProfilePage() {
                       {lang === "es" ? "ES" : "EN"}
                       <IonIcon icon={chevronForward} aria-hidden="true" />
                     </span>
+                  </IonItem>
+                  <IonItem
+                    button
+                    detail={false}
+                    className="pf-menu-row"
+                    onClick={() => navigate("wellness-privacy")}
+                  >
+                    <span slot="start" className="pf-menu-icon neutral">
+                      <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
+                    </span>
+                    <IonLabel><h3>{t("Privacidad y datos")}</h3></IonLabel>
+                    <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
                   </IonItem>
                 </IonList>
                 <IonButton
@@ -652,7 +676,7 @@ export function ProfilePage() {
                 </IonButton>
                 <div className="pf-signature">
                   <span aria-hidden="true" />
-                  <span>COPP ADRESD</span>
+                  <span>{BRAND_NAME}</span>
                   <span aria-hidden="true" />
                 </div>
                 <p className="pf-closing">

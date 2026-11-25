@@ -27,6 +27,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock("../../context/AppContext", () => ({
   useApp: () => ({
+    user: {},
     finishWellnessOnboarding: state.finish,
     backToLogin: state.back,
     showToast: state.toast,
@@ -180,6 +181,13 @@ describe("onboarding Agentic Wellness (KAN-136)", () => {
     ionInput("new-password", "Segura123!");
     ionInput("confirm-password", "Segura123!");
     submitForm();
+    const sensitive = await screen.findByText("I agree to the use of my sensitive data for my wellness plan.");
+    expect(screen.queryByText("Your goal")).toBeNull();
+    fireEvent(sensitive.closest("ion-checkbox")!, new CustomEvent("ionChange", {
+      detail: { checked: true },
+      bubbles: true,
+    }));
+    fireEvent.click(screen.getByText("Continue"));
     await screen.findByText("Your goal");
     expect(screen.getByText("Step 5 of 5")).toBeTruthy();
 
@@ -224,7 +232,7 @@ describe("onboarding Agentic Wellness (KAN-136)", () => {
     render(<OnboardingPage />);
     expect(
       screen.getByText(
-        /General wellness information\. Not medical advice\. In an emergency, call 911\./,
+        /General wellness information\. Consult a health professional for individual guidance\. In an emergency, call 911\./,
       ),
     ).toBeTruthy();
   });

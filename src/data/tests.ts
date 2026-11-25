@@ -80,8 +80,8 @@ export const TESTS: DemoTest[] = [
     questions: [
       {
         id: "dx",
-        section: "Diagnósticos actuales",
-        text: "¿Cuál de estos diagnósticos tienes actualmente?",
+        section: "Condiciones actuales",
+        text: "¿Cuál de estas condiciones tienes actualmente?",
         hint: "Marca todos los que aplican.",
         type: "multi",
         options: multi([
@@ -507,7 +507,7 @@ export const TESTS: DemoTest[] = [
       {
         id: "adh_constancia",
         section: "Compromiso · Constancia",
-        text: "Cuando empiezo un programa o tratamiento, lo termino aunque sea duro.",
+        text: "Cuando empiezo un programa o plan, lo termino aunque sea duro.",
         type: "scale",
         minLabel: "Nunca",
         maxLabel: "Siempre",
@@ -655,7 +655,7 @@ export const TESTS: DemoTest[] = [
     id: 9,
     emoji: "🌱",
     title: "¿Cuál es tu propósito?",
-    tag: "Propósito · Copp Adresd",
+    tag: "Propósito · Agentic Wellness IA",
     sub: "Las respuestas más importantes del programa. Sé completamente honesto/a.",
     pts: 50,
     bg: "#FDF6DC",
@@ -706,7 +706,7 @@ export const TESTS: DemoTest[] = [
       {
         id: "prop_nota",
         section: "Nota personal · Para tu equipo médico",
-        text: "Cuéntanos con tus propias palabras: ¿qué te trajo al programa Copp Adresd?",
+        text: "Cuéntanos con tus propias palabras: ¿qué te trajo al programa Agentic Wellness IA?",
         type: "open",
       },
     ],

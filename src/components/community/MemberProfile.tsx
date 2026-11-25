@@ -99,7 +99,7 @@ export function MemberProfile({
           </div>
         </div>
         <p className="compf-bio">{profile.bio?.trim() || t('Comparte lo que hace con la comunidad.')}</p>
-        <div className="compf-secondary-meta"><span className="compf-brand-badge"><img src={coppMark} alt="" />COPP-ADRESD</span></div>
+        <div className="compf-secondary-meta"><span className="compf-brand-badge"><img src={coppMark} alt="" />Agentic Wellness IA</span></div>
         <div className="compf-stat-buttons">
           <div><b>{formatCount(profile.posts.length)}</b><span>{t('publicaciones')}</span></div>
           <button type="button" onClick={() => onShowList('followers')}><b>{formatCount(followersCount)}</b><span>{t('seguidores')}</span></button>

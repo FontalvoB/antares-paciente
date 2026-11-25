@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { IonInput } from "@ionic/react";
+import { IonIcon, IonInput } from "@ionic/react";
+import { bodyOutline, calendarOutline, femaleOutline, flagOutline, informationCircleOutline, maleOutline, personOutline, resizeOutline, scaleOutline } from "ionicons/icons";
 import { useI18n } from "../../../../../i18n/I18nContext";
+import type { MetricUnit } from "../../../../../utils/units";
 import { formatWellnessMeasurement, parseWellnessMeasurement } from "../../../vitals/unit-prefs";
 import type { UnitPrefs } from "../../../vitals/unit-prefs";
 import {
@@ -13,13 +15,42 @@ import type { GateIssue, ObjectiveDraft } from "../../../domain";
 
 // oxlint-disable-next-line react/only-export-components -- Shared with the summary within the objective module.
 export const SEX_OPTIONS = { F: "Femenino", M: "Masculino" } as const;
-const NUMERIC_FIELDS = [
-  { field: "age", label: "Edad (años)", unit: null, usLabel: null },
-  { field: "heightCm", label: "Estatura (cm)", unit: "centimeter", usLabel: "Estatura (in)" },
-  { field: "weightKg", label: "Peso actual (kg)", unit: "kilogram", usLabel: "Peso actual (lb)" },
-  { field: "waistCm", label: "Cintura (cm)", unit: "centimeter", usLabel: "Cintura (in)" },
-  { field: "targetWeightKg", label: "Peso meta (kg)", unit: "kilogram", usLabel: "Peso meta (lb)" },
-] as const;
+const NUMERIC_FIELDS: readonly {
+  field: keyof typeof RANGES;
+  label: string;
+  /** Etiqueta cuando la persona prefiere unidades US (lb/in); null si el campo no tiene unidad. */
+  usLabel: string | null;
+  /** Unidad métrica canónica del draft; null para valores adimensionales (edad). */
+  unit: MetricUnit | null;
+  /** Ayuda expresada en unidades métricas: se oculta si el campo se muestra en US. */
+  hint?: string;
+  icon: string;
+}[] = [
+  { field: "age", label: "Edad (años)", usLabel: null, unit: null, hint: "En años completos.", icon: calendarOutline },
+  { field: "heightCm", label: "Estatura (cm)", usLabel: "Estatura (in)", unit: "centimeter", hint: "1,65 m = 165 cm", icon: resizeOutline },
+  { field: "weightKg", label: "Peso actual (kg)", usLabel: "Peso actual (lb)", unit: "kilogram", icon: scaleOutline },
+  { field: "waistCm", label: "Cintura (cm)", usLabel: "Cintura (in)", unit: "centimeter", icon: bodyOutline },
+  { field: "targetWeightKg", label: "Peso meta (kg)", usLabel: "Peso meta (lb)", unit: "kilogram", icon: flagOutline },
+];
+
+/** Convierte el texto del control a valor métrico según las preferencias de unidades. */
+function parseMeasurement(raw: string, unit: MetricUnit | null, prefs: UnitPrefs) {
+  const normalized = raw.trim();
+  const value = /^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(normalized) ? parseNumberInput(normalized) : null;
+  return value !== null && unit ? parseWellnessMeasurement(value, unit, prefs) : value;
+}
+
+// oxlint-disable-next-line react/only-export-components -- Reads Ionic controls before validating the step.
+export function readMeasurements(root: HTMLElement, draft: ObjectiveDraft, prefs: UnitPrefs) {
+  const patch: Partial<ObjectiveDraft> = {};
+  for (const { field, unit } of NUMERIC_FIELDS) {
+    const input = root.querySelector<HTMLInputElement>(`ion-input[data-wl-field="${field}"] input`);
+    if (!input) continue;
+    const value = parseMeasurement(input.value, unit, prefs);
+    if (value !== draft[field]) patch[field] = value;
+  }
+  return patch;
+}
 
 // oxlint-disable-next-line react/only-export-components -- Keeps numeric validation next to the fields it validates.
 export function dataIssues(
@@ -98,7 +129,7 @@ export function DataStep({
   >({});
 
   return (
-    <div className="onb-stack">
+    <div className="onb-stack wl-data-step">
       <div className="field" style={{ minWidth: 0 }}>
         <IonInput
           type="text"
@@ -106,14 +137,15 @@ export function DataStep({
           labelPlacement="stacked"
           className="fld"
           autocomplete="given-name"
-          style={{ minHeight: 48 }}
           data-wl-field="name"
           value={draft.name}
           onIonInput={(event) => onChange({ name: event.detail.value ?? "" })}
-        />
+        >
+          <IonIcon slot="start" icon={personOutline} aria-hidden="true" />
+        </IonInput>
       </div>
       <fieldset
-        style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        className="wl-fieldset wl-sex"
         aria-describedby={invalidField === "sex" ? errorId : undefined}
       >
         <legend className="wl-sub">
@@ -129,16 +161,18 @@ export function DataStep({
               aria-pressed={draft.sex === sex}
               onClick={() => onChange({ sex })}
             >
-              {t(SEX_OPTIONS[sex])}
+              <IonIcon icon={sex === "F" ? femaleOutline : maleOutline} aria-hidden="true" />
+              <span>{t(SEX_OPTIONS[sex])}</span>
             </button>
           ))}
         </div>
       </fieldset>
 
       <div className="wl-field-grid">
-        {NUMERIC_FIELDS.map(({ field, label, unit, usLabel }) => {
+        {NUMERIC_FIELDS.map(({ field, label, usLabel, unit, hint, icon }) => {
           const input = inputs[field];
           const metric = draft[field];
+          // El texto tecleado solo se reutiliza si se escribió con el sistema de unidades vigente.
           const value = input && (!unit || input.us === us)
             ? input.raw
             : metric === null ? "" : unit
@@ -151,6 +185,7 @@ export function DataStep({
                 inputmode={field === "age" ? "numeric" : "decimal"}
                 label={t(us && usLabel ? usLabel : label)}
                 labelPlacement="stacked"
+                helperText={hint && !(us && unit) ? t(hint) : undefined}
                 required
                 className={
                   invalidField === field ? "fld ion-invalid ion-touched" : "fld"
@@ -162,18 +197,17 @@ export function DataStep({
                 onIonInput={(event) => {
                   const raw = event.detail.value ?? "";
                   setInputs((previous) => ({ ...previous, [field]: { raw, us } }));
-                  const normalized = raw.trim();
-                  const value = /^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(normalized)
-                    ? parseNumberInput(normalized)
-                    : null;
-                  onChange({ [field]: value !== null && unit ? parseWellnessMeasurement(value, unit, prefs) : value });
+                  onChange({ [field]: parseMeasurement(raw, unit, prefs) });
                 }}
-              />
+              >
+                <IonIcon slot="start" icon={icon} aria-hidden="true" />
+              </IonInput>
             </div>
           );
         })}
       </div>
-      <p className="wl-sub">
+      <p className="wl-note wl-note-info wl-adult-note">
+        <IonIcon icon={informationCircleOutline} aria-hidden="true" />
         {t("Este plan está disponible a partir de los {age} años.", {
           age: String(MIN_AGE),
         })}

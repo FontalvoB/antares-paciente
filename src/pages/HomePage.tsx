@@ -60,7 +60,7 @@ import { useHealth } from "../context/HealthContext";
 import { deriveIntakeTotals } from "../utils/nutritionIntake";
 import { programDayNumber } from "../utils/programDayNumber";
 import { requiredProtocolTasks } from "../utils/dailyProtocol";
-import logoIcon from "../assets/LogoIndividual.png";
+import { BrandWordmark } from "../components/BrandWordmark";
 import coverComunidad from "../assets/modules/comunidad.webp";
 import coverMedicamentos from "../assets/modules/medicamentos.webp";
 import type { CSSProperties } from "react";
@@ -149,7 +149,7 @@ export function HomePage() {
     {
       id: "com",
       title: t("Comunidad"),
-      sub: t("Diagnóstico, grupos y apoyo"),
+      sub: t("Evaluación, grupos y apoyo"),
       accent: "var(--home-card-mid)",
       cover: coverComunidad,
       cta: t("Entrar"),
@@ -162,7 +162,7 @@ export function HomePage() {
           ? t("Próxima toma · {time}", { time: nextMedicationTime }) +
             " · " +
             upcomingMedication.name
-          : t("Tomas, tratamientos e historial"),
+          : t("Tomas, planes e historial"),
       accent: "var(--home-card-mid)",
       cover: coverMedicamentos,
       cta: t("Ver medicamentos"),
@@ -342,19 +342,7 @@ export function HomePage() {
             <i className="hm-leaf hm-leaf-three" />
           </div>
           <div className="hm-head-top">
-            <div className="hm-wordmark" aria-label="COPP-ADRESD">
-              <img src={logoIcon} alt="" />
-              <span>
-                <strong>
-                  COPP-ADRESD<sup>®</sup>
-                </strong>
-                <small>
-                  COMPREHENSIVE OBESITY
-                  <br />
-                  PREVENTION PROGRAM
-                </small>
-              </span>
-            </div>
+            <BrandWordmark className="hm-wordmark" />
             <div className="hm-head-actions">
               <IonButton
                 fill="clear"

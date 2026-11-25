@@ -108,6 +108,16 @@
   background: var(--teal-l);
   color: var(--teal-d);
 }
+.wl-sex .wl-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.wl-sex .wl-chip ion-icon {
+  flex: none;
+  font-size: 17px;
+}
 .wl-chip:focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 2px;
@@ -288,6 +298,202 @@
   background: linear-gradient(90deg, var(--teal), var(--gold));
   transition: width 0.25s ease;
 }
+
+.wl-wizard {
+  --step-ink: var(--teal-d);
+  --step-color: var(--teal);
+  --step-tint: var(--teal-l);
+  min-width: 0;
+}
+.wl-wizard[data-tone="blue"] {
+  --step-ink: var(--blue);
+  --step-color: var(--wellness-primary);
+  --step-tint: var(--blue-l);
+}
+.wl-wizard[data-tone="violet"] {
+  --step-ink: var(--pur-d);
+  --step-color: var(--pur);
+  --step-tint: var(--pur-l);
+}
+.wl-wizard[data-tone="green"] {
+  --step-ink: var(--teal-d);
+  --step-color: var(--wellness-success);
+  --step-tint: var(--wellness-success-bg);
+}
+.wl-wizard[data-tone="amber"] {
+  --step-ink: var(--org-d);
+  --step-color: var(--org-d);
+  --step-tint: var(--org-l);
+}
+.wl-wizard .wl-step-head {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 0;
+  border-radius: 17px 17px 0 0;
+  background: var(--step-tint);
+}
+.wl-step-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: white;
+  color: var(--step-ink);
+  font-size: 23px;
+}
+.wl-wizard .wl-step-count { color: var(--step-ink); font-size: 11px; letter-spacing: .055em; }
+.wl-wizard .wl-title {
+  color: var(--wellness-navy);
+  font-size: clamp(18px, 5vw, 23px);
+  overflow-wrap: anywhere;
+}
+.wl-wizard .wl-progress {
+  height: 5px;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--step-color) 16%, white);
+  border-radius: 0 0 8px 8px;
+}
+.wl-wizard .wl-progress > i { background: var(--step-color); }
+.wl-wizard .wl-sub { color: var(--wellness-muted); font-size: 14px; }
+.wl-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.wl-wizard fieldset > legend { margin-bottom: 8px; font-weight: 650; }
+.wl-wizard .wl-field-grid { grid-template-columns: repeat(auto-fit, minmax(min(147px, 100%), 1fr)); }
+/* La etiqueta y la ayuda quedan fuera del borde, con la asociación de Ionic. */
+.screen .wl-wizard ion-input.fld {
+  --background: transparent;
+  --color: var(--wellness-navy);
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wellness-navy);
+}
+.wl-wizard ion-input.fld.input-label-placement-stacked .input-wrapper {
+  gap: 7px;
+}
+.wl-wizard ion-input.fld.input-label-placement-stacked .label-text-wrapper {
+  margin: 0;
+  transform: none;
+  color: var(--wellness-navy);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.wl-wizard ion-input.fld .native-wrapper {
+  box-sizing: border-box;
+  min-height: 48px;
+  gap: 8px;
+  padding-inline: 12px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 10px;
+  background: var(--wellness-surface);
+}
+.wl-wizard ion-input.fld.has-focus .native-wrapper {
+  border-color: var(--step-color);
+  box-shadow: 0 0 0 3px var(--step-tint);
+}
+.wl-wizard ion-input.fld.ion-invalid.ion-touched .native-wrapper {
+  border-color: var(--wellness-error);
+}
+.wl-wizard ion-input.fld .input-bottom {
+  margin-block-start: 6px;
+  padding: 0;
+  border: 0;
+  color: var(--wellness-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.wl-wizard ion-input.fld ion-icon {
+  flex: none;
+  color: var(--step-ink);
+  font-size: 16px;
+}
+.wl-wizard .wl-option-ico { background: var(--step-tint); color: var(--step-ink); }
+.wl-wizard .wl-option.is-selected,
+.wl-wizard .wl-chip.is-selected {
+  border-color: var(--step-color);
+  background: var(--step-tint);
+  color: var(--step-ink);
+}
+.wl-option-selected { margin-inline-start: auto; font-size: 22px; }
+.wl-wizard .wl-options { margin-block-start: 4px; }
+.wl-wizard .wl-option-body span { font-size: 13px; }
+.wl-wizard .wl-chips { gap: 10px; }
+.wl-wizard .wl-chip { border-radius: 13px; }
+.wl-wizard .wl-question {
+  min-width: 0;
+  margin: 0 0 13px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 16px;
+}
+.wl-wizard .wl-question legend {
+  max-width: 100%;
+  padding-inline: 5px;
+  color: var(--wellness-navy);
+  white-space: normal;
+}
+.wl-question-number {
+  display: inline-grid;
+  place-items: center;
+  min-width: 25px;
+  height: 25px;
+  margin-inline-end: 6px;
+  border-radius: 8px;
+  background: var(--step-tint);
+  color: var(--step-ink);
+  font-size: 12px;
+  font-weight: 750;
+  vertical-align: middle;
+}
+.wl-wizard .wl-answer.is-yes { border-color: var(--org-d); background: var(--org-l); color: var(--org-d); }
+.wl-preference,
+.wl-accept {
+  --checkbox-background-checked: var(--step-color);
+  --border-color-checked: var(--step-color);
+  display: flex;
+  min-height: 52px;
+  padding: 10px 12px;
+  margin: 0 0 9px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 14px;
+  color: var(--wellness-navy);
+  background: var(--wellness-surface);
+}
+.wl-labeled-icon { display: inline-flex; align-items: center; gap: 8px; }
+.wl-labeled-icon ion-icon, .wl-note ion-icon { flex: none; font-size: 18px; }
+.wl-labeled-icon ion-icon { color: var(--step-ink); }
+.wl-terms-card {
+  display: flex;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--step-tint);
+  color: var(--step-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.wl-terms-card ion-icon { flex: none; font-size: 21px; margin-top: 2px; }
+.wl-terms-card p { margin: 0 0 7px; }
+.wl-terms-card small { font-size: 12px; }
+.wl-wizard .wl-kpi {
+  color: var(--wellness-navy);
+  background: var(--wellness-surface);
+  border-color: var(--wellness-border);
+  border-inline-start: 3px solid var(--step-color);
+  overflow-wrap: anywhere;
+}
+.wl-wizard .wl-kpi dd { color: var(--wellness-navy); font-weight: 700; }
+.wl-wizard .wl-footer ion-button { min-height: 48px; }
+.wl-wizard .cta-pill { --background: var(--step-color); --color: white; }
 
 @media (max-width: 360px) {
   .wl-field-grid,

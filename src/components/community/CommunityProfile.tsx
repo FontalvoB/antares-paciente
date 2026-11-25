@@ -158,7 +158,7 @@ export function CommunityProfile({
 
   async function shareProfile() {
     try {
-      const result = await shareCommunityContent(t('Comunidad Copp Adresd'), `${me?.displayName ?? handle} · COPP-ADRESD\n${me?.bio ?? ''}`)
+      const result = await shareCommunityContent(t('Comunidad Agentic Wellness IA'), `${me?.displayName ?? handle} · Agentic Wellness IA\n${me?.bio ?? ''}`)
       if (result === 'copied') onToast(t('Contenido copiado para compartir'), 'ok')
     } catch { onToast(t('No se pudo compartir. Inténtalo de nuevo.'), 'err') }
   }
@@ -284,7 +284,7 @@ export function CommunityProfile({
       </div>
       <p className="compf-bio">{me?.bio?.trim() || t('Comparte lo que haces con la comunidad.')}</p>
       <div className="compf-secondary-meta">
-        <span className="compf-brand-badge"><img src={coppMark} alt="" />COPP-ADRESD</span>
+        <span className="compf-brand-badge"><img src={coppMark} alt="" />Agentic Wellness IA</span>
         <span className="compf-points-badge"><IonIcon icon={sparklesOutline} /><b>{formatCount(pointsTotal, lang)}</b><span>pts</span></span>
       </div>
       {meLoading && !me ? <div className="compf-skel" /> : <div className="compf-stat-buttons">

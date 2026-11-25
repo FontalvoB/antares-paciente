@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../utils/brand";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IonIcon } from "@ionic/react";
 import { shieldCheckmarkOutline } from "ionicons/icons";
@@ -34,6 +35,8 @@ import {
   WellnessStepper,
 } from "../features/wellness/components/onboarding";
 import { ObjectiveWizard } from "../features/wellness/components/objective";
+import { SensitiveDataGate } from "../features/wellness/privacy/WellnessPrivacy";
+import { wellnessPrivacyActor } from "../features/wellness/privacy/privacy-consent-store";
 import "../features/wellness/wellness.css";
 
 /** Pasos visibles del onboarding de 5 pasos (el objetivo es el quinto). */
@@ -56,7 +59,7 @@ const STAGE_INDEX: Record<OnboardingStage, number> = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function baseProfile(draft: ObjectiveDraft, email: string): UserProfile {
-  const fallbackName = email.split("@")[0] || "Paciente";
+  const fallbackName = email.split("@")[0] || "Persona";
   return {
     nombre: draft.name.trim() || fallbackName,
     cedula: "",
@@ -78,7 +81,7 @@ function baseProfile(draft: ObjectiveDraft, email: string): UserProfile {
 }
 
 export function OnboardingPage() {
-  const { finishWellnessOnboarding, backToLogin, showToast } = useApp();
+  const { user, finishWellnessOnboarding, backToLogin, showToast } = useApp();
   const { t } = useI18n();
 
   const [stage, setStage] = useState<OnboardingStage>("email");
@@ -338,7 +341,7 @@ export function OnboardingPage() {
     <div className="screen onb-page" style={{ background: "var(--g0)" }}>
       <header className="onb-head">
         <div className="onb-head-top">
-          <div className="onb-head-brand">Copp Adresd</div>
+          <div className="onb-head-brand">{BRAND_NAME}</div>
         </div>
         <WellnessStepper current={stepIndex + 1} total={STEP_LABELS.length} />
         <h1 className="onb-head-title">{title}</h1>
@@ -400,14 +403,16 @@ export function OnboardingPage() {
           )}
 
           {stage === "objective" && (
-            <ObjectiveWizard
-              draft={draft}
-              onChange={changeDraft}
-              gate={gate}
-              generating={generating}
-              onGenerate={() => void generatePlan()}
-              onExit={goBack}
-            />
+            <SensitiveDataGate actor={wellnessPrivacyActor({ id: user.id, email })} onBack={goBack}>
+              <ObjectiveWizard
+                draft={draft}
+                onChange={changeDraft}
+                gate={gate}
+                generating={generating}
+                onGenerate={() => void generatePlan()}
+                onExit={goBack}
+              />
+            </SensitiveDataGate>
           )}
 
           {error && stage !== "email" && stage !== "password" && (
@@ -424,7 +429,7 @@ export function OnboardingPage() {
             <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
             <span>
               {t(
-                "Información general de bienestar. No es consejo médico. En una emergencia llama al 911.",
+                "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal. En una emergencia llama al 911.",
               )}
             </span>
           </div>

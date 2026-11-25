@@ -40,7 +40,7 @@ import {
   waterOutline,
 } from "ionicons/icons";
 import { WatchIcon3D } from "../components/icons3d";
-import logoIcon from "../assets/LogoIndividual.png";
+import { BrandWordmark } from "../components/BrandWordmark";
 import { EcgTrace } from "../components/EcgTrace";
 import {
   MeasureFocusOverlay,
@@ -766,7 +766,7 @@ export function WearablePage() {
           <IonIcon icon={pulseOutline} />
         </span>
         <IonLabel>
-          <h3>{t("Modo diagnóstico")}</h3>
+          <h3>{t("Modo avanzado")}</h3>
           <p>
             {accessoryDiscoverySupported
               ? t("Muestra el detalle BLE de los accesorios autorizados.")
@@ -775,7 +775,7 @@ export function WearablePage() {
         </IonLabel>
         <IonToggle
           slot="end"
-          aria-label={t("Modo diagnóstico")}
+          aria-label={t("Modo avanzado")}
           checked={diagnostics}
           onIonChange={(event) => setDiagnostics(event.detail.checked)}
         />
@@ -811,19 +811,7 @@ export function WearablePage() {
   return (
     <Screen className="wearable-reference">
       <Scroll className="wearable-scroll">
-        <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD">
-          <img src={logoIcon} alt="" />
-          <div>
-            <strong>
-              COPP-ADRESD<sup>®</sup>
-            </strong>
-            <small>
-              COMPREHENSIVE OBESITY
-              <br />
-              PREVENTION PROGRAM
-            </small>
-          </div>
-        </div>
+        <BrandWordmark className="wearable-brand hm-wordmark" />
         <PageHeader
           kicker={t("Bienestar en vivo")}
           title={t("Accesorio de bienestar")}
@@ -853,7 +841,7 @@ export function WearablePage() {
         <p className="wearable-wellness-note" role="note">
           <IonIcon icon={informationCircleOutline} aria-hidden="true" />
           {t(
-            "Este anillo o banda es un dispositivo de bienestar de consumo, no un dispositivo médico. Sus lecturas son estimaciones y no sirven para diagnosticar, tratar ni prevenir enfermedades.",
+            "Este anillo o banda es un dispositivo de bienestar de consumo. Sus lecturas son estimaciones de bienestar general.",
           )}
         </p>
 
@@ -1399,7 +1387,7 @@ export function WearablePage() {
                 <IonAccordion value="diagnostics">
                   <IonItem slot="header" lines="none">
                     <IonLabel>
-                      <h3>{t("Modo diagnóstico")}</h3>
+                      <h3>{t("Modo avanzado")}</h3>
                       <p>
                         {accessoryDiscoverySupported
                           ? t(
@@ -1414,7 +1402,7 @@ export function WearablePage() {
                   <div slot="content">
                     <IonList className="group-list" lines="none">
                       <IonItem className="group-item">
-                        <IonLabel>{t("Activar diagnóstico")}</IonLabel>
+                        <IonLabel>{t("Activar modo avanzado")}</IonLabel>
                         <IonToggle
                           slot="end"
                           checked={diagnostics}

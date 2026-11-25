@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../../../utils/brand";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IonBadge, IonButton, IonIcon } from "@ionic/react";
 import {
@@ -134,7 +135,7 @@ export function WellnessGoalPage() {
     <Screen hideNav className="onb-page">
       <header className="onb-head">
         <div className="onb-head-top">
-          <div className="onb-head-brand">{t("Copp Adresd")}</div>
+          <div className="onb-head-brand">{BRAND_NAME}</div>
         </div>
         <h1 className="onb-head-title" ref={titleRef} tabIndex={-1}>
           {title}
@@ -296,7 +297,7 @@ export function WellnessGoalPage() {
             <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
             <span>
               {t(
-                "Información general de bienestar. No es consejo médico. En una emergencia llama al 911.",
+                "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal. En una emergencia llama al 911.",
               )}
             </span>
           </div>

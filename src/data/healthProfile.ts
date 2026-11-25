@@ -66,7 +66,7 @@ export const HEALTH_PROFILE: HealthProfile = {
   ],
   banner: {
     title: "Prediabetes activa",
-    text: "Tienes una ventana terapéutica óptima. El programa ADRED puede revertirla con nutrición y ejercicio desde la semana 1.",
+    text: "Tienes una ventana de bienestar óptima. El programa ADRED puede revertirla con nutrición y ejercicio desde la semana 1.",
   },
   indicators: [
     {
@@ -97,7 +97,7 @@ export const HEALTH_PROFILE: HealthProfile = {
   ai: {
     label: "IA · Análisis integral",
     message:
-      "Tu AHS de 59/100 indica un perfil adecuado. Tu IMC es 27.5 (Sobrepeso) con un % de grasa corporal estimado de 26% (Sobrepeso graso). La glucosa estimada está en rango 82–99 mg/dL — Normal. Con temperamento Sanguíneo–Melancólico, tienes un perfil social que se potencia con la comunidad Copp Adresd. Tu capacidad de movimiento es funcional (AMAF FLUJO), con adherencia declarada Moderada (IAC A2). En cuanto a nutrición, tienes conducta alimentaria con áreas de trabajo. Tu entorno personal muestra estrés relacional que puede boicotear el programa. Tu sueño es prioritario, lo que impacta directamente tu metabolismo y glucosa. El riesgo cardiometabólico es BAJO.",
+      "Tu AHS de 59/100 indica un perfil adecuado. Tu IMC es 27.5 (Sobrepeso) con un % de grasa corporal estimado de 26% (Sobrepeso graso). La glucosa estimada está en rango 82–99 mg/dL — Normal. Con temperamento Sanguíneo–Melancólico, tienes un perfil social que se potencia con la comunidad Agentic Wellness IA. Tu capacidad de movimiento es funcional (AMAF FLUJO), con adherencia declarada Moderada (IAC A2). En cuanto a nutrición, tienes conducta alimentaria con áreas de trabajo. Tu entorno personal muestra estrés relacional que puede boicotear el programa. Tu sueño es prioritario, lo que impacta directamente tu metabolismo y glucosa. El riesgo cardiometabólico es BAJO.",
   },
   dims: [
     {
@@ -153,8 +153,8 @@ export const HEALTH_PROFILE: HealthProfile = {
   dofa: {
     f: [
       "Glucosa en rango normal — base metabólica estable",
-      "Temperamento social — la comunidad Copp Adresd te potencia",
-      "Ventana terapéutica abierta — la prediabetes es reversible",
+      "Temperamento social — la comunidad Agentic Wellness IA te potencia",
+      "Ventana de bienestar abierta — la prediabetes es reversible",
     ],
     d: [
       "Sueño deficiente — impacta glucosa y peso",
@@ -163,7 +163,7 @@ export const HEALTH_PROFILE: HealthProfile = {
     o: [
       "IMC 27.5 (sobrepeso leve) — reversible con el programa",
       "Nivel funcional con margen de mejora rápida",
-      "Temperamento social — comunidad Copp Adresd es clave",
+      "Temperamento social — comunidad Agentic Wellness IA es clave",
     ],
     a: ["Estrés relacional — barrera activa al cambio"],
   },
@@ -210,7 +210,7 @@ export const HEALTH_PROFILE: HealthProfile = {
     },
     {
       specialty: "Comunidad",
-      title: "Activar perfil Copp Adresd + unirse al grupo según diagnóstico",
+      title: "Activar perfil Agentic Wellness IA + unirse al grupo según tu condición",
       prof: "",
       week: "",
       color: "#5581A2",
@@ -218,5 +218,5 @@ export const HEALTH_PROFILE: HealthProfile = {
     },
   ],
   footnote:
-    "* El % de grasa y la glucosa son estimados calculados con fórmulas validadas científicamente. No reemplazan una medición clínica. Tu equipo médico validará estos valores en tu primera consulta.",
+    "* El % de grasa y la glucosa son estimados calculados con fórmulas validadas científicamente. No reemplazan una medición hecha por un profesional. Tu equipo de salud validará estos valores en tu primera consulta.",
 };

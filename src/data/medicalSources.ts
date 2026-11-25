@@ -24,12 +24,12 @@ export const medicalSources = [
     id: "hba1c",
     title: "HbA1c y prediabetes",
     summary:
-      "Una HbA1c inferior al 5,7 % está por debajo del umbral de prediabetes (5,7–6,4 %). Si tienes diabetes, tu equipo de salud define tu objetivo de tratamiento.",
+      "Una HbA1c inferior al 5,7 % está por debajo del umbral de prediabetes (5,7–6,4 %). Si tienes diabetes, tu equipo de salud define tu objetivo.",
     sources: [
       {
         organization: "Asociación Americana de Diabetes (ADA)",
         title:
-          "Diagnóstico y clasificación de la diabetes. Estándares de atención en diabetes",
+          "Clasificación de la diabetes. Estándares de atención en diabetes",
         year: 2026,
         url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12690183/",
       },
@@ -131,8 +131,8 @@ export const medicalSources = [
       "La adherencia registra el seguimiento semanal y los puntos (XP) reconocen el avance. Son métricas internas del programa y carecen de validación como cálculos clínicos.",
     sources: [
       {
-        organization: "Programa COPP-ADRESD",
-        title: "Programa COPP-ADRESD. Adherencia y puntos",
+        organization: "Programa Agentic Wellness IA",
+        title: "Programa Agentic Wellness IA. Adherencia y puntos",
         year: 2026,
         url: "https://www.coppadresd.com/",
       },
@@ -140,9 +140,9 @@ export const medicalSources = [
   },
   {
     id: "wearable",
-    title: "Accesorio de bienestar (no dispositivo médico)",
+    title: "Accesorio de bienestar",
     summary:
-      "El anillo o la banda es un accesorio de bienestar de consumo. No es un dispositivo médico y sus lecturas son estimaciones, no mediciones clínicas.",
+      "El anillo o la banda es un accesorio de bienestar de consumo. Sus lecturas son estimaciones, no mediciones hechas por un profesional.",
     sources: [
       {
         organization:
@@ -166,8 +166,8 @@ export const medicalSources = [
         url: "https://www.who.int/publications/i/item/9789240029200",
       },
       {
-        organization: "Copp Adresd",
-        title: "Política de privacidad de Copp Adresd",
+        organization: "Agentic Wellness IA",
+        title: "Política de privacidad de Agentic Wellness IA",
         year: 2026,
         url: "https://diomedescerda.github.io/coppadresd-privacy/",
       },

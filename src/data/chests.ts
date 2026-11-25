@@ -131,7 +131,7 @@ export const CLINICAL_CHESTS: ClinicalChest[] = [
     kind: 'clinical',
     xp: 700,
     title: 'Completar 12 semanas de protocolo',
-    hint: 'Un trimestre de COPP-ADRESD cerrado',
+    hint: 'Un trimestre de Agentic Wellness IA cerrado',
     tone: 'pur',
     progress: 12,
     goal: 12,

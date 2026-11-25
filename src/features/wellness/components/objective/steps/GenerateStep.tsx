@@ -1,4 +1,5 @@
-import { IonButton, IonSpinner } from "@ionic/react";
+import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
+import { sparklesOutline } from "ionicons/icons";
 import { useI18n } from "../../../../../i18n/I18nContext";
 import type { MetricUnit } from "../../../../../utils/units";
 import { formatWellnessMeasurement } from "../../../vitals/unit-prefs";
@@ -9,11 +10,27 @@ import { SEX_OPTIONS } from "./DataStep";
 import { GOAL_OPTIONS } from "./GoalStep";
 import { PREFERENCE_OPTIONS } from "./PreferencesStep";
 
-export function GenerateStep({ draft, generating, blocked, onGenerate, prefs }: {
-  draft: ObjectiveDraft;
+interface GenerateActionProps {
   generating: boolean;
   blocked: boolean;
   onGenerate: () => void;
+}
+
+export function GenerateAction({ generating, blocked, onGenerate, block }: GenerateActionProps & { block?: boolean }) {
+  const { t } = useI18n();
+  return (
+    <IonButton className="cta-pill" type="button" expand={block ? "block" : undefined}
+      disabled={blocked || generating} onClick={onGenerate}>
+      {generating ? <IonSpinner slot="start" name="crescent" aria-hidden="true" />
+        : <IonIcon slot="start" icon={sparklesOutline} aria-hidden="true" />}
+      {t("Generar mi plan")}
+    </IonButton>
+  );
+}
+
+export function GenerateStep({ draft, generating, blocked, onGenerate, hideAction = false, prefs }: GenerateActionProps & {
+  draft: ObjectiveDraft;
+  hideAction?: boolean;
   prefs: UnitPrefs;
 }) {
   const { lang, t } = useI18n();
@@ -48,16 +65,7 @@ export function GenerateStep({ draft, generating, blocked, onGenerate, prefs }: 
           </div>
         ))}
       </dl>
-      <IonButton
-        className="cta-pill"
-        type="button"
-        expand="block"
-        disabled={blocked || generating}
-        onClick={onGenerate}
-      >
-        {generating && <IonSpinner slot="start" name="crescent" aria-hidden="true" />}
-        {t("Generar mi plan")}
-      </IonButton>
+      {!hideAction && <GenerateAction generating={generating} blocked={blocked} onGenerate={onGenerate} block />}
       {generating && <div className="wl-sub" role="status">{t("Generando tu plan…")}</div>}
     </div>
   );

@@ -1,3 +1,4 @@
+import english from "../../../i18n/en.json";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,11 +10,12 @@ import { analyzeFoodImage } from "../../../utils/foodAiApi";
 vi.mock("../../../context/AppContext", () => ({
   useApp: () => ({ user: { nombre: "Ana" }, navigate: vi.fn() }),
 }));
+const locale = vi.hoisted(() => ({ lang: "es" }));
 vi.mock("../../../i18n/I18nContext", () => ({
   useI18n: () => ({
-    lang: "es",
+    lang: locale.lang,
     t: (key: string, params: Record<string, string> = {}) =>
-      key.replace(/\{(\w+)\}/g, (_, name) => params[name] ?? name),
+      (locale.lang === "en" ? (english as Record<string, string>)[key] ?? key : key).replace(/\{(\w+)\}/g, (_, name) => params[name] ?? name),
   }),
 }));
 vi.mock("../../../components/Screen", () => ({
@@ -37,6 +39,7 @@ const date = localISODate(today);
 const breakfast = () => within(screen.getByRole("region", { name: "Desayuno" }));
 
 beforeEach(() => {
+  locale.lang = "es";
   cleanup();
   vi.resetAllMocks();
   localStorage.clear();
@@ -47,6 +50,14 @@ beforeEach(() => {
 });
 
 describe("WellnessDiet", () => {
+  it.each([["es", "Plan general de alimentación, solo informativo. Antes de cambiar tu alimentación, consulta a un profesional de la salud."], ["en", "General eating plan, for information only. Before changing how you eat, check with a health professional."]] as const)(
+    "muestra el aviso permanente en %s",
+    (lang, expected) => {
+    locale.lang = lang;
+    render(<WellnessDiet />);
+      expect(screen.getByRole("note").textContent).toBe(expected);
+    },
+  );
   it("muestra cuatro comidas y registra adherencia en el protocolo", () => {
     render(<WellnessDiet />);
     expect(screen.getAllByText("Lo comí")).toHaveLength(4);

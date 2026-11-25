@@ -9,6 +9,7 @@ export interface QuestionStepProps {
   onChange: (patch: Partial<ObjectiveDraft>) => void;
   invalidField?: string;
   errorId: string;
+  showAnswerCount?: boolean;
 }
 
 export function SafetyQuestions({
@@ -16,6 +17,7 @@ export function SafetyQuestions({
   onChange,
   invalidField,
   errorId,
+  showAnswerCount,
   questions,
   field,
   confirmationField,
@@ -28,6 +30,7 @@ export function SafetyQuestions({
   const confirmationId = useId();
   const answers = draft[field];
   const hasPositive = questions.some((_, index) => answers[index] === 1);
+  const answered = questions.filter((_, index) => answers[index] === 0 || answers[index] === 1).length;
 
   const selectAnswer = (index: number, value: YesNo) => {
     if (answers.length === questions.length && answers[index] === value) return;
@@ -39,6 +42,11 @@ export function SafetyQuestions({
 
   return (
     <div data-wl-field={field}>
+      {showAnswerCount && (
+        <p className="wl-safety-count" role="status">{t("{count} de {total} respondidas", {
+          count: String(answered), total: String(questions.length),
+        })}</p>
+      )}
       {questions.map((question, index) => {
         const answerField = `${field}.${index}`;
         return (
@@ -48,7 +56,7 @@ export function SafetyQuestions({
             style={{ minWidth: 0, marginInline: 0 }}
             aria-describedby={invalidField === answerField ? errorId : undefined}
           >
-            <legend className="wl-sub" style={{ maxWidth: "100%" }}>{t(question.es)}</legend>
+            <legend className="wl-sub"><span className="wl-question-number" aria-hidden="true">{index + 1}</span>{t(question.es)}</legend>
             <div className="wl-answer-row">
               <button
                 type="button"
@@ -74,7 +82,7 @@ export function SafetyQuestions({
 
       {hasPositive && (
         <div className="wl-note wl-note-warn" style={{ flexDirection: "column" }}>
-          <strong id={confirmationId} role="status">{t("Consulta primero a tu médico")}</strong>
+          <strong id={confirmationId} role="status">{t("Consulta primero a tu profesional de la salud")}</strong>
           <IonCheckbox
             checked={draft[confirmationField]}
             required

@@ -1,18 +1,19 @@
-import { IonButton } from "@ionic/react";
+import { IonButton, IonIcon, IonProgressBar } from "@ionic/react";
+import { arrowBackOutline, arrowForwardOutline, clipboardOutline, compassOutline, fitnessOutline, heartOutline, leafOutline, personOutline, restaurantOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { useEffect, useId, useRef, useState } from "react";
 import { useI18n } from "../../../../i18n/I18nContext";
 import { OBJECTIVE_STEP, evaluateGate } from "../../domain";
-import type { GateIssue, GateResult, ObjectiveDraft } from "../../domain";
+import type { GateIssue, GateResult, ObjectiveDraft, WellnessGoal } from "../../domain";
 import { loadUnitPrefs } from "../../vitals/unit-prefs";
 import { GateNotice } from "./GateNotice";
 import { ActivityStep } from "./steps/ActivityStep";
-import { DataStep, dataIssues, issueParams } from "./steps/DataStep";
-import { GenerateStep } from "./steps/GenerateStep";
+import { DataStep, dataIssues, issueParams, readMeasurements } from "./steps/DataStep";
+import { GenerateAction, GenerateStep } from "./steps/GenerateStep";
 import { GoalStep } from "./steps/GoalStep";
 import { NqsStep } from "./steps/NqsStep";
 import { ParqStep } from "./steps/ParqStep";
 import { PreferencesStep } from "./steps/PreferencesStep";
-import { TermsStep, currentAcceptance } from "./steps/TermsStep";
+import { TermsStep, currentAcceptance, readTerms } from "./steps/TermsStep";
 import "../../wellness.css";
 
 const STEP_TITLES = {
@@ -27,6 +28,19 @@ const STEP_TITLES = {
 } as const;
 
 const TOTAL_STEPS = OBJECTIVE_STEP.generate + 1;
+const STEP_ICONS = [compassOutline, personOutline, fitnessOutline, leafOutline,
+  heartOutline, restaurantOutline, shieldCheckmarkOutline, clipboardOutline];
+const STEP_TONES = ["teal", "blue", "violet", "green", "violet", "green", "amber", "blue"];
+const PAID_STEP_INTRO = [
+  "Empieza por la meta que quieres trabajar con tu plan de bienestar.",
+  "Usamos tus medidas para ajustar el plan a tu punto de partida.",
+  "Tu actividad habitual nos ayuda a elegir un punto de partida.",
+  "Puedes marcar varias preferencias o continuar sin elegir ninguna.",
+  "Estas preguntas ayudan a saber si necesitas orientación antes de hacer ejercicio.",
+  "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.",
+  "Revisa el aviso y confirma si estás de acuerdo antes de continuar.",
+  "Comprueba los datos que usaremos para preparar tus planes.",
+] as const;
 
 function getLocalGate(draft: ObjectiveDraft): GateResult {
   const { issues } = evaluateGate({
@@ -57,14 +71,17 @@ function getLocalGate(draft: ObjectiveDraft): GateResult {
   return { ok: validated.length === 0, issues: validated };
 }
 
-export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, unitOwner }: {
+export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, unitOwner, allowedGoals, presentation }: {
   draft: ObjectiveDraft;
   onChange: (patch: Partial<ObjectiveDraft>) => void;
   gate: GateResult | null;
   generating: boolean;
   onGenerate: () => void;
-  onExit: () => void;
+  onExit?: () => void;
+  /** Propietario de las preferencias de unidades; por defecto el email del draft. */
   unitOwner?: string;
+  allowedGoals?: readonly WellnessGoal[];
+  presentation?: "paid";
 }) {
   const { t, lang } = useI18n();
   const prefs = loadUnitPrefs(unitOwner ?? (draft.email || "local"), lang);
@@ -77,6 +94,7 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   });
   const [error, setError] = useState<GateIssue | null>(null);
   const [dismissedGate, setDismissedGate] = useState<GateResult | null>(null);
+  const paid = presentation === "paid";
   const { step } = navigation;
   const localGate = getLocalGate(draft);
   const reportedGate = gate && !gate.ok && gate !== dismissedGate ? gate : null;
@@ -117,10 +135,14 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
         ? control
         : control.querySelector<HTMLElement>("button");
       (target ?? heading.current)?.focus();
+    } else if (paid) {
+      const scroller = heading.current?.closest<HTMLElement>(".screen-scroll");
+      if (scroller) scroller.scrollTop = 0;
+      heading.current?.focus({ preventScroll: true });
     } else {
       heading.current?.focus();
     }
-  }, [navigation, error]);
+  }, [navigation, error, paid]);
 
   const goToStep = (nextStep: number, field?: string) => {
     if (generating || !Number.isInteger(nextStep) || nextStep < 0 || nextStep > OBJECTIVE_STEP.generate) return;
@@ -135,7 +157,17 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   };
 
   const goForward = () => {
-    const issue = localGate.issues.find((item) => item.step === step);
+    // Ionic puede actualizar el control antes de entregar su evento a React.
+    const patch = step === OBJECTIVE_STEP.data && content.current
+      ? readMeasurements(content.current, draft, prefs)
+      : {};
+    const terms = content.current?.querySelector<HTMLIonCheckboxElement>('ion-checkbox[data-wl-field="terms"]');
+    if (terms && typeof terms.checked === "boolean") {
+      const acceptance = readTerms(terms.checked, draft.terms);
+      if (acceptance !== draft.terms) patch.terms = acceptance;
+    }
+    if (Object.keys(patch).length) changeDraft(patch);
+    const issue = getLocalGate({ ...draft, ...patch }).issues.find((item) => item.step === step);
     if (issue) {
       setError({ ...issue });
       return;
@@ -155,25 +187,41 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   });
   const stepProps = { draft, onChange: changeDraft, invalidField: visibleError?.field, errorId };
 
+  const title = t(STEP_TITLES[step as keyof typeof STEP_TITLES]);
+  const icon = <span className="wl-step-icon"><IonIcon icon={STEP_ICONS[step]} aria-hidden="true" /></span>;
+  const progress = {
+    role: "progressbar", "aria-label": t("Progreso del objetivo"), "aria-valuemin": 1,
+    "aria-valuemax": TOTAL_STEPS, "aria-valuenow": step + 1, "aria-valuetext": count,
+  };
+
   return (
-    <section aria-labelledby={headingId}>
-      <div className="wl-step-head">
-        <span className="wl-step-count" aria-hidden="true">{count}</span>
-        <h2 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>
-          {t(STEP_TITLES[step as keyof typeof STEP_TITLES])}
-        </h2>
-      </div>
-      <div
-        className="wl-progress"
-        role="progressbar"
-        aria-label={t("Progreso del objetivo")}
-        aria-valuemin={1}
-        aria-valuemax={TOTAL_STEPS}
-        aria-valuenow={step + 1}
-        aria-valuetext={count}
-      >
-        <i style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }} />
-      </div>
+    <section className={`wl-wizard${paid ? " wl-wizard--paid" : ""}`} data-tone={STEP_TONES[step]} aria-labelledby={headingId}>
+      {paid ? (
+        <>
+          <div className="wl-paid-progress" {...progress}>
+            <span className="wl-step-count" aria-hidden="true">{count}</span>
+            <IonProgressBar value={(step + 1) / TOTAL_STEPS} aria-hidden="true" />
+          </div>
+          <div className="wl-paid-heading">
+            {icon}
+            <h1 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>{title}</h1>
+            <p>{t(PAID_STEP_INTRO[step])}</p>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="wl-step-head">
+            {icon}
+            <div>
+              <span className="wl-step-count" aria-hidden="true">{count}</span>
+              <h2 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>{title}</h2>
+            </div>
+          </div>
+          <div className="wl-progress" {...progress}>
+            <i style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }} />
+          </div>
+        </>
+      )}
 
       {visibleError && (
         <p id={errorId} className="wl-note wl-note-danger" role="alert">
@@ -181,13 +229,13 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
         </p>
       )}
 
-      <div ref={content}>
-        {step === OBJECTIVE_STEP.goal && <GoalStep {...stepProps} />}
+      <div ref={content} className="wl-content">
+        {step === OBJECTIVE_STEP.goal && <GoalStep {...stepProps} allowedGoals={allowedGoals} />}
         {step === OBJECTIVE_STEP.data && <DataStep {...stepProps} prefs={prefs} />}
         {step === OBJECTIVE_STEP.activity && <ActivityStep {...stepProps} />}
         {step === OBJECTIVE_STEP.preferences && <PreferencesStep {...stepProps} />}
-        {step === OBJECTIVE_STEP.parq && <ParqStep {...stepProps} />}
-        {step === OBJECTIVE_STEP.nqs && <NqsStep {...stepProps} />}
+        {step === OBJECTIVE_STEP.parq && <ParqStep {...stepProps} showAnswerCount={paid} />}
+        {step === OBJECTIVE_STEP.nqs && <NqsStep {...stepProps} showAnswerCount={paid} />}
         {step === OBJECTIVE_STEP.terms && <TermsStep {...stepProps} />}
         {step === OBJECTIVE_STEP.generate && (
           <>
@@ -199,7 +247,7 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
                 goToStep(target, field);
               }}
             />
-            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} prefs={prefs} />
+            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} hideAction={paid} prefs={prefs} />
           </>
         )}
       </div>
@@ -208,19 +256,27 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
       )}
 
       <div className="wl-footer">
-        <IonButton
-          type="button"
-          fill="clear"
-          style={{ minHeight: 48, "--color": "var(--teal-d)", "--background-focused": "var(--teal-l)" }}
-          disabled={generating}
-          onClick={step === OBJECTIVE_STEP.goal ? onExit : () => goToStep(step - 1)}
-        >
-          {t("Volver")}
-        </IonButton>
+        {(step !== OBJECTIVE_STEP.goal || onExit) && (
+          <IonButton
+            type="button"
+            fill="clear"
+            className={paid ? "wl-back" : undefined}
+            style={paid ? undefined : { minHeight: 48, "--color": "var(--teal-d)", "--background-focused": "var(--teal-l)" }}
+            disabled={generating}
+            onClick={step === OBJECTIVE_STEP.goal ? onExit : () => goToStep(step - 1)}
+          >
+            <IonIcon slot="start" icon={arrowBackOutline} aria-hidden="true" />
+            {t("Volver")}
+          </IonButton>
+        )}
         {step !== OBJECTIVE_STEP.generate && (
           <IonButton type="button" className="cta-pill" onClick={goForward}>
             {t("Continuar")}
+            <IonIcon slot="end" icon={arrowForwardOutline} aria-hidden="true" />
           </IonButton>
+        )}
+        {paid && step === OBJECTIVE_STEP.generate && (
+          <GenerateAction generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} />
         )}
       </div>
     </section>

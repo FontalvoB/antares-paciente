@@ -12,11 +12,24 @@
         <scene sceneID="EHf-IW-A2E">
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
-                    <imageView key="view" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Splash" id="snD-IY-ifK">
+                    <view key="view" contentMode="scaleToFill" id="snD-IY-ifK">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" image="LaunchBrand" translatesAutoresizingMaskIntoConstraints="NO" id="N3x-PL-rYz">
+                                <rect key="frame" x="131.5" y="277.5" width="112" height="112"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="112" id="L2j-Eq-Q6o"/>
+                                    <constraint firstAttribute="height" constant="112" id="UOz-vr-gdn"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                    </imageView>
+                        <constraints>
+                            <constraint firstItem="N3x-PL-rYz" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="He4-sc-nJH"/>
+                            <constraint firstItem="N3x-PL-rYz" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" id="j4Y-ya-3bQ"/>
+                        </constraints>
+                    </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -24,7 +37,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Splash" width="1366" height="1366"/>
+        <image name="LaunchBrand" width="197" height="197"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

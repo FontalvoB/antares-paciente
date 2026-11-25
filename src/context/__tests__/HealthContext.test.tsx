@@ -5,14 +5,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HealthProvider, useHealth } from "../HealthContext";
 import { HealthError } from "../../services/health/health-service";
 import { toLocalISODate } from "../../utils/dates";
+import { saveWellnessConsent } from "../../features/wellness/privacy/privacy-consent-store";
 
 const state = vi.hoisted(() => ({
   status: vi.fn(), read: vi.fn(), request: vi.fn(), persist: vi.fn(),
-  listener: vi.fn(), remove: vi.fn(), platform: "health-connect", token: "account-1",
+  listener: vi.fn(), remove: vi.fn(), navigate: vi.fn(), platform: "health-connect", token: "account-1",
 }));
 vi.mock("@capacitor/app", () => ({ App: { addListener: state.listener } }));
 vi.mock("../AppContext", () => ({
-  useApp: () => ({ user: { id: state.token }, flow: "app", screen: "health-accessory" }),
+  useApp: () => ({ user: { id: state.token }, flow: "app", screen: "health-accessory", navigate: state.navigate }),
 }));
 vi.mock("../../utils/features", () => ({ HEALTH_ENABLED: true }));
 vi.mock("../../utils/authApi", () => ({
@@ -61,6 +62,10 @@ describe("Sincronización en primer plano", () => {
     await waitFor(() => expect(result.current?.availability).toBe("available"));
     expect(state.read).not.toHaveBeenCalled();
     expect(result.current?.permission).toBe("not-requested");
+    await act(async () => { await result.current?.sync("request"); });
+    expect(state.navigate).toHaveBeenCalledWith("wellness-privacy");
+    expect(state.request).not.toHaveBeenCalled();
+    saveWellnessConsent("apple-health", state.token, true);
     await act(async () => { await result.current?.sync("request"); });
     expect(result.current?.permission).toBe("unknown");
     expect(result.current?.error).toBe("no-data");

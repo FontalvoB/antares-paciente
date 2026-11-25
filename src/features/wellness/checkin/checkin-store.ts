@@ -78,9 +78,13 @@ export function syncCheckins(owner: string, send: SendCheckin = sendMock): Promi
     const queue = Object.values(loadCheckins(owner)).filter(({ status }) => status === "pending");
     for (const record of queue) {
       if (!navigator.onLine) break;
+      if (loadCheckins(owner)[record.date]?.idempotencyKey !== record.idempotencyKey) continue;
       try {
         await send(record);
-        writeCheckin(owner, { ...record, status: "synced" });
+        const current = loadCheckins(owner)[record.date];
+        if (current?.idempotencyKey === record.idempotencyKey) {
+          writeCheckin(owner, { ...current, status: "synced" });
+        }
       } catch {
         // El registro sigue pendiente y se vuelve a intentar al reconectar.
       }
