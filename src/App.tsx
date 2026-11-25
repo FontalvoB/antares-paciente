@@ -6,10 +6,10 @@ import {
   MotionConfig,
   useReducedMotion,
 } from "framer-motion";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./utils/queryClient";
-import { registerForPush, syncPushLanguage } from "./utils/pushNotifications";
+import { registerForPush } from "./utils/pushNotifications";
 import { AppProvider, useApp } from "./context/AppContext";
 import { LegalConsentProvider } from "./context/LegalConsentContext";
 import { AiDisclosureProvider } from "./context/AiDisclosureContext";
@@ -39,6 +39,14 @@ import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
+import {
+  SensitiveDataScreen,
+  WellnessPrivacy,
+} from "./features/wellness/privacy/WellnessPrivacy";
+import {
+  readWellnessConsent,
+  wellnessPrivacyActor,
+} from "./features/wellness/privacy/privacy-consent-store";
 import { WellnessNotifications } from "./features/wellness/notifications/WellnessNotifications";
 import { WellnessReminderHost } from "./features/wellness/notifications/WellnessReminderHost";
 import { WellnessVitals } from "./features/wellness/vitals/WellnessVitals";
@@ -91,19 +99,38 @@ function Router() {
         content = <WellnessDiet />;
         break;
       case "wellness-goal":
-        content = <WellnessGoalPage />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessGoalPage />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-exercise":
-        content = <WellnessExercise />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessExercise />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-checkin":
-        content = <WellnessCloseDay />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessCloseDay />
+          </SensitiveDataScreen>
+        );
+        break;
+      case "wellness-privacy":
+        content = <WellnessPrivacy />;
         break;
       case "wellness-notifications":
         content = <WellnessNotifications />;
         break;
       case "wellness-vitals":
-        content = <WellnessVitals />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessVitals />
+          </SensitiveDataScreen>
+        );
         break;
       case "prof":
         content = <ProfilePage />;
@@ -151,18 +178,19 @@ function Router() {
 function Shell() {
   const { user, flow, navigate, authLoading } = useApp();
   const { lang } = useI18n();
-  const pushStarted = useRef(false);
   const wellnessOwner = checkinOwner(user);
+  const privacyActor = wellnessPrivacyActor(user);
 
   useEffect(() => {
     if (flow !== "app") return;
     const sync = () => {
-      void syncCheckins(wellnessOwner);
+      if (readWellnessConsent("sensitive-data", privacyActor))
+        void syncCheckins(wellnessOwner);
     };
     sync();
     window.addEventListener("online", sync);
     return () => window.removeEventListener("online", sync);
-  }, [flow, wellnessOwner]);
+  }, [flow, wellnessOwner, privacyActor]);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();
@@ -171,18 +199,13 @@ function Shell() {
   useTabletLayout();
 
   useEffect(() => {
-    if (flow !== "app" || pushStarted.current) return;
-    pushStarted.current = true;
+    if (flow !== "app" || !readWellnessConsent("notifications", privacyActor))
+      return;
     void registerForPush({
       language: lang,
       onOpenHome: () => navigate("home"),
     });
-  }, [flow, lang, navigate]);
-
-  // Actualiza el token ya conocido al cambiar idioma/cuenta sin pedir permisos de nuevo.
-  useEffect(() => {
-    if (flow === "app") void syncPushLanguage(lang);
-  }, [flow, lang, user.id]);
+  }, [flow, lang, navigate, privacyActor]);
 
   return (
     <div className="app-stage">

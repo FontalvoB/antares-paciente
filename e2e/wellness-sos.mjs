@@ -73,6 +73,8 @@ try {
     await page.goto(origin);
     // 1) Sesión de ejercicio: el SOS fijo de la barra sigue visible y sin tapar.
     await page.locator(".wh-quick").getByRole("button", { name: "Ejercicio", exact: true }).click();
+    await page.getByRole("checkbox", { name: /Acepto el uso de mis datos sensibles/ }).click();
+    await page.getByRole("button", { name: "Continuar", exact: true }).click();
     await page.getByRole("button", { name: "Empezar sesión" }).click();
     await expect(page.getByText("Ejercicio 1 de 4")).toBeVisible();
     const navSos = page.locator(".bnav .ni-center");

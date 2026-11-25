@@ -451,6 +451,8 @@ async function runFlow(page, baseUrl, width) {
     .locator('ion-input[name="confirm-password"] input')
     .fill("Segura123!");
   await page.getByRole("button", { name: "Crear cuenta", exact: true }).click();
+  await page.getByRole("checkbox", { name: /Acepto el uso de mis datos sensibles/ }).click();
+  await (await continueButton(page)).click();
 
   await expect(
     page.getByRole("heading", { name: "Tu objetivo", exact: true }),

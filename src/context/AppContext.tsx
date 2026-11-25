@@ -359,7 +359,9 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
-  const [vitalsReturnTo, setVitalsReturnTo] = useState<"protocol" | "prof">("protocol");
+  const [vitalsReturnTo, setVitalsReturnTo] = useState<"protocol" | "prof">(
+    "protocol",
+  );
   const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = useCallback((message: string, kind: ToastKind = "ok") => {
     setToast({ id: Date.now(), message, kind });
@@ -1395,7 +1397,8 @@ export function AppProvider({
       navigate: (target) => {
         switch (target) {
           case "wellness-vitals":
-            if (screen !== target) setVitalsReturnTo(screen === "prof" ? "prof" : "protocol");
+            if (screen !== target)
+              setVitalsReturnTo(screen === "prof" ? "prof" : "protocol");
             setScreen(target);
             return;
           case "home":
@@ -1404,6 +1407,7 @@ export function AppProvider({
           case "wellness-exercise":
           case "wellness-goal":
           case "wellness-checkin":
+          case "wellness-privacy":
           case "wellness-notifications":
           case "prof":
             setScreen(target);
@@ -1474,7 +1478,7 @@ export function AppProvider({
         setFlow("tests");
       },
       finishWellnessOnboarding: (u) => {
-        setUser(u);
+        setUser({ ...u, id: sessionUserId(getAccessToken()) ?? u.id });
         setFlow("app");
         setScreen("home");
       },

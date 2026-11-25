@@ -603,6 +603,18 @@ export function ProfilePage() {
                       <IonIcon icon={chevronForward} aria-hidden="true" />
                     </span>
                   </IonItem>
+                  <IonItem
+                    button
+                    detail={false}
+                    className="pf-menu-row"
+                    onClick={() => navigate("wellness-privacy")}
+                  >
+                    <span slot="start" className="pf-menu-icon neutral">
+                      <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
+                    </span>
+                    <IonLabel><h3>{t("Privacidad y datos")}</h3></IonLabel>
+                    <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                  </IonItem>
                 </IonList>
                 <IonButton
                   fill="clear"

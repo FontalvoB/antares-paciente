@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const native = vi.hoisted(() => ({
   platform: 'ios', jwt: 'patient-jwt',
   listeners: new Map<string, (value: unknown) => void>(),
-  addListener: vi.fn(), requestPermissions: vi.fn(), register: vi.fn(), fetch: vi.fn(),
+  addListener: vi.fn(), checkPermissions: vi.fn(), requestPermissions: vi.fn(), register: vi.fn(), fetch: vi.fn(),
 }))
 vi.mock('@capacitor/core', () => ({ Capacitor: { getPlatform: () => native.platform } }))
 vi.mock('@capacitor/push-notifications', () => ({ PushNotifications: native }))
@@ -21,6 +21,7 @@ beforeEach(() => {
     return Promise.resolve({ remove: vi.fn() })
   })
   native.requestPermissions.mockResolvedValue({ receive: 'granted' })
+  native.checkPermissions.mockResolvedValue({ receive: 'prompt' })
   native.register.mockResolvedValue(undefined)
   native.fetch.mockResolvedValue({ ok: true })
   vi.stubGlobal('fetch', native.fetch)
@@ -31,9 +32,20 @@ function body(index: number) {
 }
 
 describe('push device language', () => {
+  it('does not request the system permission until the user activates it', async () => {
+    const { registerForPush } = await import('../pushNotifications')
+    await registerForPush()
+    expect(native.checkPermissions).toHaveBeenCalledOnce()
+    expect(native.requestPermissions).not.toHaveBeenCalled()
+    expect(native.register).not.toHaveBeenCalled()
+    await registerForPush({ canPrompt: () => true })
+    expect(native.requestPermissions).toHaveBeenCalledOnce()
+    expect(native.register).toHaveBeenCalledOnce()
+  })
+
   it('registers current English and refreshes Spanish using the latest JWT without new native setup', async () => {
     const { registerForPush, syncPushLanguage } = await import('../pushNotifications')
-    await registerForPush({ language: 'en' })
+    await registerForPush({ language: 'en', canPrompt: () => true })
     native.listeners.get('registration')!({ value: 'opaque-device-token' })
     await vi.waitFor(() => expect(native.fetch).toHaveBeenCalledTimes(1))
     expect(body(0)).toEqual({ token: 'opaque-device-token', platform: 'ios', language: 'en' })
@@ -50,7 +62,7 @@ describe('push device language', () => {
     const { registerForPush, syncPushLanguage } = await import('../pushNotifications')
     await syncPushLanguage('en')
     expect(native.fetch).not.toHaveBeenCalled()
-    await registerForPush()
+    await registerForPush({ canPrompt: () => true })
     native.jwt = ''
     native.listeners.get('registration')!({ value: 'token' })
     await syncPushLanguage('en')
@@ -62,7 +74,7 @@ describe('push device language', () => {
 
   it('serializes updates so an older in-flight preference cannot win', async () => {
     const { registerForPush, syncPushLanguage } = await import('../pushNotifications')
-    await registerForPush({ language: 'es' })
+    await registerForPush({ language: 'es', canPrompt: () => true })
     let release!: (value: { ok: boolean }) => void
     native.fetch.mockImplementationOnce(() => new Promise((resolve) => { release = resolve }))
     native.listeners.get('registration')!({ value: 'token' })
@@ -77,7 +89,7 @@ describe('push device language', () => {
 
   it('captures logout credentials and suspends late token events until the next account sync', async () => {
     const { registerForPush, syncPushLanguage, unregisterPushDevice } = await import('../pushNotifications')
-    await registerForPush({ language: 'en' })
+    await registerForPush({ language: 'en', canPrompt: () => true })
     native.listeners.get('registration')!({ value: 'token/to-encode' })
     await vi.waitFor(() => expect(native.fetch).toHaveBeenCalledTimes(1))
     const cleanup = unregisterPushDevice()
@@ -118,7 +130,7 @@ describe('retired push destinations', () => {
   ])('opens Home for %j and ignores the tap after logout', async (data) => {
     const { registerForPush } = await import('../pushNotifications')
     const onOpenHome = vi.fn()
-    await registerForPush({ onOpenHome })
+    await registerForPush({ onOpenHome, canPrompt: () => true })
     const tap = native.listeners.get('pushNotificationActionPerformed')!
     tap({ notification: { data } })
     expect(onOpenHome).toHaveBeenCalledTimes(1)
