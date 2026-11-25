@@ -22,6 +22,7 @@ import {
   trashOutline,
   chevronForward,
   optionsOutline,
+  pulseOutline,
   shieldCheckmarkOutline,
   notificationsOutline,
   menuOutline,
@@ -513,6 +514,13 @@ export function ProfilePage() {
                       tone: "sky",
                       action: () => navigate("wellness-goal"),
                     },
+                    {
+                      icon: pulseOutline,
+                      title: "Signos vitales",
+                      sub: "Registra y consulta tus mediciones",
+                      tone: "sky",
+                      action: () => navigate("wellness-vitals"),
+                    },
                   ].map((item) => (
                     <IonItem
                       button
@@ -562,6 +570,21 @@ export function ProfilePage() {
                 <ContactSection />
                 <EmergencyContactSection />
                 <IonList className="pf-menu pf-account-menu" lines="none">
+                  <IonItem
+                    button
+                    detail={false}
+                    className="pf-menu-row"
+                    onClick={() => navigate("wellness-notifications")}
+                  >
+                    <span slot="start" className="pf-menu-icon neutral">
+                      <IonIcon icon={notificationsOutline} aria-hidden="true" />
+                    </span>
+                    <IonLabel className="ion-text-wrap">
+                      <h3>{t("Preferencias de notificaciones")}</h3>
+                      <p>{t("Elige qué avisos recibir y cuándo")}</p>
+                    </IonLabel>
+                    <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                  </IonItem>
                   <IonItem
                     button
                     detail={false}

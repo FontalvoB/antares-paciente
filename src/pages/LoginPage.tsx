@@ -20,7 +20,6 @@ import {
   lockClosedOutline,
   mailOutline,
   personAddOutline,
-  personOutline,
   phonePortraitOutline,
   shieldCheckmarkOutline,
 } from "ionicons/icons";
@@ -29,6 +28,7 @@ import { useI18n } from "../i18n/I18nContext";
 import { localizedError } from "../utils/localizedError";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { AuthSubmitButton } from "../components/AuthSubmitButton";
+import { EmailRecoveryForm } from "../components/EmailRecoveryForm";
 import {
   loginUser,
   lookupId,
@@ -42,7 +42,7 @@ import {
 import logoLetras from "../assets/LogoConLetras.png";
 import type { UserProfile } from "../types";
 
-type LoginMode = "login" | "first" | "recovery";
+type LoginMode = "login" | "first" | "recovery" | "email-recovery";
 type FirstStep = "id" | "contacts" | "otp";
 
 /** Transición compartida por los paneles de modo/paso del acceso. */
@@ -60,8 +60,8 @@ export function LoginPage() {
   const [mode, setMode] = useState<LoginMode>("login");
   const [firstStep, setFirstStep] = useState<FirstStep>("id");
 
-  // Login por ID + contraseña
-  const [documentNumber, setDocumentNumber] = useState("");
+  // Login por correo y contraseña
+  const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [showNewPwd, setShowNewPwd] = useState(false);
@@ -99,17 +99,18 @@ export function LoginPage() {
   };
 
   const submit = async () => {
-    const doc = documentNumber.trim();
+    if (busy) return;
+    const loginEmail = email.trim();
     setLoginError(null);
-    if (!doc || !pwd) {
-      showToast(t("Ingresa tu número de identificación y contraseña"), "warn");
+    if (!loginEmail || !pwd) {
+      showToast(t("Ingresa tu correo electrónico y contraseña"), "warn");
       return;
     }
     setBusy(true);
     try {
-      await loginUser(doc, pwd, remember);
+      await loginUser(loginEmail, pwd, remember);
       setBusy(false);
-      finishLogin({ cedula: doc }, "app");
+      finishLogin({ email: loginEmail }, "app");
     } catch (e) {
       setBusy(false);
       const message = localizedError(e, i18n, "Error al iniciar sesión");
@@ -204,7 +205,6 @@ export function LoginPage() {
         setBusy(false);
         setMode("login");
         setPwd("");
-        setDocumentNumber(idInput.trim());
         setNewPassword("");
         setConfirmPassword("");
         setFormError(null);
@@ -269,7 +269,7 @@ export function LoginPage() {
 
   const backFromFirst = () => {
     if (firstStep === "id") {
-      setMode("login");
+      setMode(mode === "recovery" ? "email-recovery" : "login");
       return;
     }
     if (firstStep === "otp") {
@@ -372,28 +372,28 @@ export function LoginPage() {
                 }}
               >
                 <div className="auth-field">
-                  <label htmlFor="login-id">
-                    {t("Número de identificación")}
+                  <label htmlFor="login-email">
+                    {t("Correo electrónico")}
                   </label>
                   <IonInput
-                    id="login-id"
+                    id="login-email"
                     className="auth-input auth-input-icon"
-                    type="text"
-                    inputmode="numeric"
+                    type="email"
+                    inputmode="email"
                     autocomplete="username"
+                    placeholder={t("nombre@example.com")}
+                    autocapitalize="off"
+                    spellcheck={false}
                     enterkeyhint="next"
-                    value={documentNumber}
-                    placeholder={t("Ej. 32534534")}
+                    value={email}
                     onIonInput={(e) => {
-                      setDocumentNumber(
-                        (e.detail.value ?? "").replace(/\s/g, ""),
-                      );
+                      setEmail(e.detail.value ?? "");
                       setLoginError(null);
                     }}
                   >
                     <IonIcon
                       slot="start"
-                      icon={personOutline}
+                      icon={mailOutline}
                       className="auth-input-ico"
                       aria-hidden="true"
                     />
@@ -409,7 +409,7 @@ export function LoginPage() {
                     autocomplete="current-password"
                     enterkeyhint="done"
                     value={pwd}
-                    placeholder={t("••••••••")}
+                    placeholder={t("Tu contraseña actual")}
                     style={{ "--padding-end": "48px" } as CSSProperties}
                     onIonInput={(e) => {
                       setPwd(e.detail.value ?? "");
@@ -458,7 +458,7 @@ export function LoginPage() {
                     type="button"
                     fill="clear"
                     className="auth-link-btn"
-                    onClick={() => goFirst(true)}
+                    onClick={() => setMode("email-recovery")}
                   >
                     {t("¿Olvidaste tu contraseña?")}
                   </IonButton>
@@ -509,6 +509,14 @@ export function LoginPage() {
                 <i aria-hidden="true">·</i>
                 <span>{t("Salud")}</span>
               </p>
+            </motion.div>
+          ) : mode === "email-recovery" ? (
+            <motion.div key="email-recovery" className="auth-body" {...panelMotion}>
+              <EmailRecoveryForm
+                initialEmail={email}
+                onBack={() => setMode("login")}
+                onUseLegacyRecovery={() => goFirst(true)}
+              />
             </motion.div>
           ) : (
             <motion.div key="first" className="auth-body" {...panelMotion}>

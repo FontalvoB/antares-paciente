@@ -140,6 +140,7 @@ interface AppState {
   weekCheckins: boolean[];
   pointsToday: number;
   pointsTotal: number;
+  vitalsReturnTo: "protocol" | "prof";
   navigate: (
     s: NavigationTarget,
     sourceSection?: MedicalSourceSectionId,
@@ -358,6 +359,9 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
+  const [vitalsReturnTo, setVitalsReturnTo] = useState<"protocol" | "prof">(
+    "protocol",
+  );
   const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = useCallback((message: string, kind: ToastKind = "ok") => {
     setToast({ id: Date.now(), message, kind });
@@ -1308,23 +1312,6 @@ export function AppProvider({
       ? buildRealAppointments(appointments, requests, specialties ?? undefined)
       : null;
 
-  const navigate = useCallback<AppState["navigate"]>((target) => {
-    switch (target) {
-      case "home":
-      case "protocol":
-      case "wellness-diet":
-      case "wellness-exercise":
-      case "wellness-goal":
-      case "wellness-checkin":
-      case "wellness-privacy":
-      case "prof":
-        setScreen(target);
-        return;
-      default:
-        setScreen("home");
-    }
-  }, []);
-
   const value = useMemo<AppState>(
     () => ({
       vitaWelcomePending,
@@ -1405,8 +1392,30 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      vitalsReturnTo,
       dismissVitaWelcome: () => setVitaWelcomePending(false),
-      navigate,
+      navigate: (target) => {
+        switch (target) {
+          case "wellness-vitals":
+            if (screen !== target)
+              setVitalsReturnTo(screen === "prof" ? "prof" : "protocol");
+            setScreen(target);
+            return;
+          case "home":
+          case "protocol":
+          case "wellness-diet":
+          case "wellness-exercise":
+          case "wellness-goal":
+          case "wellness-checkin":
+          case "wellness-privacy":
+          case "wellness-notifications":
+          case "prof":
+            setScreen(target);
+            return;
+          default:
+            setScreen("home");
+        }
+      },
       openBookingWizard: () => setScreen("home"),
       bookingWizardAutoOpen: false,
       clearBookingWizardAutoOpen: () => {},
@@ -1668,8 +1677,8 @@ export function AppProvider({
       resetPatientSession,
       flow,
       screen,
-      navigate,
       toast,
+      vitalsReturnTo,
       showToast,
       panicOpen,
       panicEntry,

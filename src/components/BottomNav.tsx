@@ -67,7 +67,11 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
           );
         }
         const target = it.id;
-        const on = screen === target || (target === "prof" && screen === "wellness-privacy");
+        const on =
+          screen === target ||
+          (target === "prof" &&
+            (screen === "wellness-privacy" ||
+              screen === "wellness-notifications"));
         return (
           <IonButton
             key={it.id}
@@ -75,7 +79,9 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
             fill="clear"
             className={`ni ${on ? "on" : ""}`}
             onClick={() => navigate(target)}
-            aria-current={screen === target ? "page" : on ? "location" : undefined}
+            aria-current={
+              screen === target ? "page" : on ? "location" : undefined
+            }
           >
             <span className="premium-nav-content">
               <span className="ni-ico">

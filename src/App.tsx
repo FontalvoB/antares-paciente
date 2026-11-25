@@ -25,10 +25,13 @@ import { VoiceOverlay } from "./components/VoiceOverlay";
 import { VitaWelcome } from "./components/VitaWelcome";
 import { ToastHost } from "./components/ToastHost";
 import { OfflineBanner } from "./components/common/OfflineBanner";
-import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
 import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { getAccessToken } from "./utils/authApi";
+import { sessionUserId } from "./utils/sessionIdentity";
+import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
+import type { PaidGeneration } from "./features/wellness/generation/wellness-journey-api";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
@@ -36,8 +39,17 @@ import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
-import { SensitiveDataScreen, WellnessPrivacy } from "./features/wellness/privacy/WellnessPrivacy";
-import { readWellnessConsent, wellnessPrivacyActor } from "./features/wellness/privacy/privacy-consent-store";
+import {
+  SensitiveDataScreen,
+  WellnessPrivacy,
+} from "./features/wellness/privacy/WellnessPrivacy";
+import {
+  readWellnessConsent,
+  wellnessPrivacyActor,
+} from "./features/wellness/privacy/privacy-consent-store";
+import { WellnessNotifications } from "./features/wellness/notifications/WellnessNotifications";
+import { WellnessReminderHost } from "./features/wellness/notifications/WellnessReminderHost";
+import { WellnessVitals } from "./features/wellness/vitals/WellnessVitals";
 import {
   checkinOwner,
   syncCheckins,
@@ -50,8 +62,12 @@ setupIonicReact({ mode: "ios" });
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
 function Router() {
-  const { flow, screen, authLoading } = useApp();
+  const { flow, screen, authLoading, user } = useApp();
   const reducedMotion = useReducedMotion();
+  const paidJourney =
+    import.meta.env.DEV &&
+    import.meta.env.VITE_WELLNESS_JOURNEY_DEMO === "true" &&
+    new URLSearchParams(window.location.search).get("wellnessJourney") === "1";
 
   if (authLoading) {
     return (
@@ -68,7 +84,7 @@ function Router() {
 
   let content: ReactNode;
 
-  if (flow === "login") {
+  if (flow === "login" || (paidJourney && flow === "onboarding")) {
     content = <LoginPage />;
   } else if (flow === "onboarding") {
     content = <OnboardingPage />;
@@ -83,16 +99,38 @@ function Router() {
         content = <WellnessDiet />;
         break;
       case "wellness-goal":
-        content = <SensitiveDataScreen><WellnessGoalPage /></SensitiveDataScreen>;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessGoalPage />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-exercise":
-        content = <SensitiveDataScreen><WellnessExercise /></SensitiveDataScreen>;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessExercise />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-checkin":
-        content = <SensitiveDataScreen><WellnessCloseDay /></SensitiveDataScreen>;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessCloseDay />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-privacy":
         content = <WellnessPrivacy />;
+        break;
+      case "wellness-notifications":
+        content = <WellnessNotifications />;
+        break;
+      case "wellness-vitals":
+        content = (
+          <SensitiveDataScreen>
+            <WellnessVitals />
+          </SensitiveDataScreen>
+        );
         break;
       case "prof":
         content = <ProfilePage />;
@@ -103,7 +141,7 @@ function Router() {
     }
   }
 
-  return (
+  const renderScreen = (generation?: PaidGeneration) => (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={flow === "app" ? `app-${screen}` : flow}
@@ -115,14 +153,30 @@ function Router() {
         }
         transition={reducedMotion ? { duration: 0 } : TRANSITION}
       >
-        {content}
+        {generation && screen === "home" ? (
+          <WellnessHome paidGeneration={generation} />
+        ) : (
+          content
+        )}
       </motion.div>
     </AnimatePresence>
   );
+  if (paidJourney && flow === "app") {
+    const accountId = sessionUserId(getAccessToken()) ?? user.id;
+    return accountId ? (
+      <WellnessJourneyPage key={accountId} userId={accountId}>
+        {renderScreen}
+      </WellnessJourneyPage>
+    ) : (
+      <LoginPage />
+    );
+  }
+
+  return renderScreen();
 }
 
 function Shell() {
-  const { user, flow, navigate } = useApp();
+  const { user, flow, navigate, authLoading } = useApp();
   const { lang } = useI18n();
   const wellnessOwner = checkinOwner(user);
   const privacyActor = wellnessPrivacyActor(user);
@@ -130,7 +184,8 @@ function Shell() {
   useEffect(() => {
     if (flow !== "app") return;
     const sync = () => {
-      if (readWellnessConsent("sensitive-data", privacyActor)) void syncCheckins(wellnessOwner);
+      if (readWellnessConsent("sensitive-data", privacyActor))
+        void syncCheckins(wellnessOwner);
     };
     sync();
     window.addEventListener("online", sync);
@@ -144,7 +199,8 @@ function Shell() {
   useTabletLayout();
 
   useEffect(() => {
-    if (flow !== "app" || !readWellnessConsent("notifications", privacyActor)) return;
+    if (flow !== "app" || !readWellnessConsent("notifications", privacyActor))
+      return;
     void registerForPush({
       language: lang,
       onOpenHome: () => navigate("home"),
@@ -159,7 +215,9 @@ function Shell() {
         <ToastHost />
         <VitaWelcome />
         <OfflineBanner />
-        {flow === "app" && <DailyProtocolReminder />}
+        {!authLoading && flow === "app" && (
+          <WellnessReminderHost key={wellnessOwner} />
+        )}
         {/* KAN-137: SOS global por encima de modales, teclado, video y sesión. */}
         <SosLayer>
           <SosQuickAccess />

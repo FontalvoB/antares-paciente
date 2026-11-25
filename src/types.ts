@@ -2,7 +2,9 @@ export type Screen =
   | "home"
   | "protocol"
   | "wellness-diet"
+  | "wellness-vitals"
   | "wellness-checkin"
+  | "wellness-notifications"
   | "wellness-goal"
   | "wellness-exercise"
   | "wellness-privacy"
@@ -32,7 +34,12 @@ export type NavigationTarget =
 
 export type Flow = "login" | "onboarding" | "tests" | "app";
 
-export type TabId = Exclude<Screen, "protocol" | "wellness-goal" | "wellness-privacy"> | "sos";
+export type TabId =
+  | Exclude<
+      Screen,
+      "protocol" | "wellness-goal" | "wellness-privacy" | "wellness-vitals"
+    >
+  | "sos";
 
 export type ToastKind = "ok" | "warn" | "err" | "info";
 
