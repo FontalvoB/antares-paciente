@@ -88,7 +88,7 @@ export function PatientMedicationHistory({ owner, today, date, timeZone, locale,
           {t(finished ? "Finalizado" : treatment.status === "paused" ? "Pausado" : "Activo")}
         </IonBadge>
       </div>
-      {progress !== null && <IonProgressBar value={progress} aria-label={t("Vigencia del tratamiento")} />}
+      {progress !== null && <IonProgressBar value={progress} aria-label={t("Vigencia del plan")} />}
       <p><IonIcon icon={calendarOutline} aria-hidden="true" />{treatment.endDate
         ? `${formatDateForDisplay(treatment.startDate)} – ${formatDateForDisplay(treatment.endDate)}`
         : t("Desde {date}", { date: formatDateForDisplay(treatment.startDate) })}</p>
@@ -146,7 +146,7 @@ export function PatientMedicationHistory({ owner, today, date, timeZone, locale,
         <span><IonIcon icon={medicalOutline} aria-hidden="true" /></span>{t("En curso")}
       </h2>
       {inProgress.length ? inProgress.map(treatment => renderTreatment(treatment, false))
-        : <p className="medications-history-empty">{t("Sin tratamientos en curso")}</p>}
+        : <p className="medications-history-empty">{t("Sin planes en curso")}</p>}
     </section>
 
     <section>
@@ -154,7 +154,7 @@ export function PatientMedicationHistory({ owner, today, date, timeZone, locale,
         <span><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" /></span>{t("Finalizados")}
       </h2>
       {completed.length ? completed.map(treatment => renderTreatment(treatment, true))
-        : <p className="medications-history-empty">{t("Aún no hay tratamientos finalizados.")}</p>}
+        : <p className="medications-history-empty">{t("Aún no hay planes finalizados.")}</p>}
     </section>
 
     <section aria-label={t("Historial de tomas")}>

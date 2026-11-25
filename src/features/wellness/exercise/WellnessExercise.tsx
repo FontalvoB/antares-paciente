@@ -472,7 +472,7 @@ export function WellnessExercise() {
         )}
 
         <p className="wx-legal">
-          {t("Contenido orientativo de bienestar. No es consejo médico.")}
+          {t("Contenido orientativo de bienestar. Complementa las indicaciones de tu profesional de la salud.")}
         </p>
       </Scroll>
     </Screen>

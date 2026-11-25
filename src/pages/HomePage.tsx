@@ -149,7 +149,7 @@ export function HomePage() {
     {
       id: "com",
       title: t("Comunidad"),
-      sub: t("Diagnóstico, grupos y apoyo"),
+      sub: t("Evaluación, grupos y apoyo"),
       accent: "var(--home-card-mid)",
       cover: coverComunidad,
       cta: t("Entrar"),
@@ -162,7 +162,7 @@ export function HomePage() {
           ? t("Próxima toma · {time}", { time: nextMedicationTime }) +
             " · " +
             upcomingMedication.name
-          : t("Tomas, tratamientos e historial"),
+          : t("Tomas, planes e historial"),
       accent: "var(--home-card-mid)",
       cover: coverMedicamentos,
       cta: t("Ver medicamentos"),

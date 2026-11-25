@@ -66,7 +66,7 @@ export const HEALTH_PROFILE: HealthProfile = {
   ],
   banner: {
     title: "Prediabetes activa",
-    text: "Tienes una ventana terapéutica óptima. El programa ADRED puede revertirla con nutrición y ejercicio desde la semana 1.",
+    text: "Tienes una ventana de bienestar óptima. El programa ADRED puede revertirla con nutrición y ejercicio desde la semana 1.",
   },
   indicators: [
     {
@@ -154,7 +154,7 @@ export const HEALTH_PROFILE: HealthProfile = {
     f: [
       "Glucosa en rango normal — base metabólica estable",
       "Temperamento social — la comunidad Copp Adresd te potencia",
-      "Ventana terapéutica abierta — la prediabetes es reversible",
+      "Ventana de bienestar abierta — la prediabetes es reversible",
     ],
     d: [
       "Sueño deficiente — impacta glucosa y peso",
@@ -210,7 +210,7 @@ export const HEALTH_PROFILE: HealthProfile = {
     },
     {
       specialty: "Comunidad",
-      title: "Activar perfil Copp Adresd + unirse al grupo según diagnóstico",
+      title: "Activar perfil Copp Adresd + unirse al grupo según tu condición",
       prof: "",
       week: "",
       color: "#5581A2",
@@ -218,5 +218,5 @@ export const HEALTH_PROFILE: HealthProfile = {
     },
   ],
   footnote:
-    "* El % de grasa y la glucosa son estimados calculados con fórmulas validadas científicamente. No reemplazan una medición clínica. Tu equipo médico validará estos valores en tu primera consulta.",
+    "* El % de grasa y la glucosa son estimados calculados con fórmulas validadas científicamente. No reemplazan una medición hecha por un profesional. Tu equipo de salud validará estos valores en tu primera consulta.",
 };

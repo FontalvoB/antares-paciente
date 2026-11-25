@@ -395,7 +395,7 @@ function StepView({
         <div className="ht-section">{t(step.title)}</div>
         {clinic && (
           <h3 className="ht-q-text display">
-            {t("¿Cuáles de estas condiciones te han diagnosticado?")}
+            {t("¿Cuáles de estas condiciones te ha confirmado un profesional?")}
           </h3>
         )}
         <p className="ht-hint">
@@ -442,7 +442,7 @@ function StepView({
                       ? t("Ninguna de las anteriores")
                       : on
                         ? t("Lo tengo")
-                        : t("Toca si te lo diagnosticaron")}
+                        : t("Toca si un profesional te lo confirmó")}
                   </span>
                 </motion.button>
               );

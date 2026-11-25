@@ -506,7 +506,7 @@ export function ChatPage() {
           />
           <span>
             {t(
-              "Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.",
+              "Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No cambia las indicaciones de tu equipo de salud.",
             )}
           </span>
         </div>

@@ -751,7 +751,7 @@ export function PanicOverlay() {
                 <img src={logoIcon} alt="" />
                 <div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div>
               </div>
-              <div className="sos-greeting"><h1>{t('Hola, {nombre} 👋', { nombre: user.nombre || t('Paciente') })}</h1><p>{t('Tu salud es nuestra prioridad')}</p></div>
+              <div className="sos-greeting"><h1>{t('Hola, {nombre} 👋', { nombre: user.nombre || t('Persona') })}</h1><p>{t('Tu salud es nuestra prioridad')}</p></div>
               <IonButton
                 fill="clear"
                 className="sos-top-close"

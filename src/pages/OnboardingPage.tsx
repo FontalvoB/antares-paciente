@@ -58,7 +58,7 @@ const STAGE_INDEX: Record<OnboardingStage, number> = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function baseProfile(draft: ObjectiveDraft, email: string): UserProfile {
-  const fallbackName = email.split("@")[0] || "Paciente";
+  const fallbackName = email.split("@")[0] || "Persona";
   return {
     nombre: draft.name.trim() || fallbackName,
     cedula: "",

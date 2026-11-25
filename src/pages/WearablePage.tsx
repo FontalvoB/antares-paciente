@@ -766,7 +766,7 @@ export function WearablePage() {
           <IonIcon icon={pulseOutline} />
         </span>
         <IonLabel>
-          <h3>{t("Modo diagnóstico")}</h3>
+          <h3>{t("Modo avanzado")}</h3>
           <p>
             {accessoryDiscoverySupported
               ? t("Muestra el detalle BLE de los accesorios autorizados.")
@@ -775,7 +775,7 @@ export function WearablePage() {
         </IonLabel>
         <IonToggle
           slot="end"
-          aria-label={t("Modo diagnóstico")}
+          aria-label={t("Modo avanzado")}
           checked={diagnostics}
           onIonChange={(event) => setDiagnostics(event.detail.checked)}
         />
@@ -853,7 +853,7 @@ export function WearablePage() {
         <p className="wearable-wellness-note" role="note">
           <IonIcon icon={informationCircleOutline} aria-hidden="true" />
           {t(
-            "Este anillo o banda es un dispositivo de bienestar de consumo, no un dispositivo médico. Sus lecturas son estimaciones y no sirven para diagnosticar, tratar ni prevenir enfermedades.",
+            "Este anillo o banda es un dispositivo de bienestar de consumo. Sus lecturas son estimaciones de bienestar general.",
           )}
         </p>
 
@@ -1399,7 +1399,7 @@ export function WearablePage() {
                 <IonAccordion value="diagnostics">
                   <IonItem slot="header" lines="none">
                     <IonLabel>
-                      <h3>{t("Modo diagnóstico")}</h3>
+                      <h3>{t("Modo avanzado")}</h3>
                       <p>
                         {accessoryDiscoverySupported
                           ? t(
@@ -1414,7 +1414,7 @@ export function WearablePage() {
                   <div slot="content">
                     <IonList className="group-list" lines="none">
                       <IonItem className="group-item">
-                        <IonLabel>{t("Activar diagnóstico")}</IonLabel>
+                        <IonLabel>{t("Activar modo avanzado")}</IonLabel>
                         <IonToggle
                           slot="end"
                           checked={diagnostics}

@@ -145,7 +145,7 @@ export function AssessmentProfileAnalysis({ results }: { results: MeResult[] }) 
           {checking || loading ? <><IonSpinner slot="start" name="crescent" />{t(checking ? 'Buscando tu análisis guardado…' : 'Vita está leyendo tus evaluaciones…')}</> : <><IonIcon slot="start" icon={sparklesOutline} aria-hidden="true" />{t('Analizar mis resultados con Vita')}</>}
         </IonButton>
       </div>}
-      <p className="apa-note"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" /><span>{t('Es una orientación de Vita basada en tus evaluaciones, no un diagnóstico. Tu equipo valida las decisiones clínicas y tu plan.')}</span></p>
+      <p className="apa-note"><IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" /><span>{t('Es una orientación de Vita basada en tus evaluaciones. Tu equipo valida tus decisiones de salud y tu plan.')}</span></p>
     </section>
   );
 }

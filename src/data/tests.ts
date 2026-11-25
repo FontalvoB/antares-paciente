@@ -80,8 +80,8 @@ export const TESTS: DemoTest[] = [
     questions: [
       {
         id: "dx",
-        section: "Diagnósticos actuales",
-        text: "¿Cuál de estos diagnósticos tienes actualmente?",
+        section: "Condiciones actuales",
+        text: "¿Cuál de estas condiciones tienes actualmente?",
         hint: "Marca todos los que aplican.",
         type: "multi",
         options: multi([
@@ -507,7 +507,7 @@ export const TESTS: DemoTest[] = [
       {
         id: "adh_constancia",
         section: "Compromiso · Constancia",
-        text: "Cuando empiezo un programa o tratamiento, lo termino aunque sea duro.",
+        text: "Cuando empiezo un programa o plan, lo termino aunque sea duro.",
         type: "scale",
         minLabel: "Nunca",
         maxLabel: "Siempre",
