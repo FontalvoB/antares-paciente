@@ -23,7 +23,7 @@ const english = {
   "Sin mediciones en este período.": "No measurements in this period.",
   "Aún no hay cierres registrados en este mes.": "No daily check-ins have been recorded this month yet.",
   "Ver calendario": "View calendar", "2 días": "2 days", "Volver a Inicio": "Return to Home",
-  "Perfil": "Profile",
+  "Perfil": "Profile", "Accesos rápidos": "Quick actions", "Más opciones": "More options",
 };
 try {
   for (const [width, lang] of [320, 390, 768].flatMap((width) => [[width, "es"], [width, "en"]])) {
@@ -175,11 +175,38 @@ try {
     await expect(today).toBeFocused();
     await page.screenshot({ path: join(evidence, `kan140-calendar-${lang}-${width}.png`) });
 
+    // Home rediseñado (KAN-121): sin barra inferior. La pestaña Perfil se sustituye por el menú de
+    // opciones de WellnessFrame, que abren "Más opciones" (cabecera) y "Accesos rápidos" (.wh-add).
     await page.getByRole("button", { name: label("Volver a Inicio") }).click();
     await expect(page.getByRole("button", { name: label("Abrir Año 365") })).toBeVisible();
-    await page.getByRole("button", { name: label("Perfil"), exact: true }).click();
-    await page.getByRole("button", { name: new RegExp(label("Año 365")) }).click();
+    await expect(page.locator(".wh-task-list")).toBeVisible();
+    const menu = page.locator("ion-popover:not(.overlay-hidden)");
+    const profile = menu.getByRole("button", { name: label("Perfil"), exact: true });
+    // .wh-add abre el mismo menú; su área táctil (38 px en CSS de KAN-121) se registra, no se usa como ruta.
+    const quick = page.getByRole("button", { name: label("Accesos rápidos"), exact: true });
+    const quickBox = await quick.boundingBox();
+    await quick.click();
+    await expect(profile).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
+    console.log(`INFO .wh-add ${width}px ${lang}: ${quickBox?.width}x${quickBox?.height}`);
+    const more = page.getByRole("button", { name: label("Más opciones"), exact: true });
+    await more.click();
+    await expect(profile).toBeVisible();
+    const menuTargets = [await more.boundingBox(), await profile.boundingBox()];
+    assert(menuTargets.every((box) => box && box.height >= 44 && box.width >= 44), JSON.stringify(menuTargets));
+    await profile.click();
+    await expect(menu).toHaveCount(0);
+    const yearRow = page.getByRole("button", { name: new RegExp(label("Año 365")) });
+    await expect(yearRow).toBeVisible();
+    const rowBox = await yearRow.boundingBox();
+    assert(rowBox && rowBox.height >= 44, JSON.stringify(rowBox));
+    await yearRow.click();
     await expect(heading).toBeVisible();
+    assert.equal(await page.evaluate(() => {
+      const html = document.documentElement;
+      return html.scrollWidth > html.clientWidth + 1;
+    }), false);
     assert.deepEqual(errors, []);
     await context.close();
     console.log(`PASS Año 365 ${width}px ${lang.toUpperCase()}`);
