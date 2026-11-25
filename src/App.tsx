@@ -43,6 +43,7 @@ import {
   SensitiveDataScreen,
   WellnessPrivacy,
 } from "./features/wellness/privacy/WellnessPrivacy";
+import { AccountLegalPrompt, AccountLegalStatusContext, useAccountLegalAccess } from "./features/wellness/privacy/AccountLegalGate";
 import {
   readWellnessConsent,
   wellnessPrivacyActor,
@@ -178,11 +179,12 @@ function Router() {
 function Shell() {
   const { user, flow, navigate, authLoading } = useApp();
   const { lang } = useI18n();
+  const legalAccess = useAccountLegalAccess(flow === "app" && !authLoading);
   const wellnessOwner = checkinOwner(user);
   const privacyActor = wellnessPrivacyActor(user);
 
   useEffect(() => {
-    if (flow !== "app") return;
+    if (flow !== "app" || !legalAccess.canEnter) return;
     const sync = () => {
       if (readWellnessConsent("sensitive-data", privacyActor))
         void syncCheckins(wellnessOwner);
@@ -190,7 +192,7 @@ function Shell() {
     sync();
     window.addEventListener("online", sync);
     return () => window.removeEventListener("online", sync);
-  }, [flow, wellnessOwner, privacyActor]);
+  }, [flow, legalAccess.canEnter, wellnessOwner, privacyActor]);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();
@@ -199,23 +201,27 @@ function Shell() {
   useTabletLayout();
 
   useEffect(() => {
-    if (flow !== "app" || !readWellnessConsent("notifications", privacyActor))
+    if (flow !== "app" || !legalAccess.canEnter || !readWellnessConsent("notifications", privacyActor))
       return;
     void registerForPush({
       language: lang,
       onOpenHome: () => navigate("home"),
     });
-  }, [flow, lang, navigate, privacyActor]);
+  }, [flow, legalAccess.canEnter, lang, navigate, privacyActor]);
 
   return (
     <div className="app-stage">
       <div className="app-shell">
-        <Router />
-        <VoiceOverlay />
+        {legalAccess.canEnter ? (
+          <AccountLegalStatusContext.Provider value={legalAccess.status}>
+            <Router />
+          </AccountLegalStatusContext.Provider>
+        ) : <AccountLegalPrompt access={legalAccess} />}
+        {legalAccess.canEnter && <VoiceOverlay />}
         <ToastHost />
-        <VitaWelcome />
+        {legalAccess.canEnter && <VitaWelcome />}
         <OfflineBanner />
-        {!authLoading && flow === "app" && (
+        {!authLoading && flow === "app" && legalAccess.canEnter && (
           <WellnessReminderHost key={wellnessOwner} />
         )}
         {/* KAN-137: SOS global por encima de modales, teclado, video y sesión. */}
