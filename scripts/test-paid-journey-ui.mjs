@@ -101,16 +101,36 @@ async function runJourney(browser, url, width) {
     await expect(field("name")).toHaveValue("Ana Prueba");
     await expect(field("heightCm")).toHaveValue("");
     await expect(field("age")).toHaveAccessibleDescription("En años completos.");
-    await expect(field("heightCm")).toHaveAccessibleDescription("1,65 m equivale a 165 cm.");
+    await expect(field("heightCm")).toHaveAccessibleDescription("1,65 m = 165 cm");
+    for (const name of ["name", "age", "heightCm", "weightKg", "waistCm", "targetWeightKg"]) {
+      const spacing = await field(name).evaluate((input) => {
+        const host = input.closest("ion-input");
+        const label = host.querySelector(".label-text-wrapper").getBoundingClientRect();
+        const box = input.closest(".native-wrapper").getBoundingClientRect();
+        const hint = host.querySelector(".input-bottom");
+        return {
+          labelGap: Math.round(box.top - label.bottom),
+          height: Math.round(box.height),
+          hintGap: hint ? Math.round(hint.getBoundingClientRect().top - box.bottom) : null,
+          hintBorder: hint ? getComputedStyle(hint).borderTopWidth : null,
+        };
+      });
+      assert.equal(spacing.labelGap, 7);
+      assert.equal(spacing.height, 48);
+      if (spacing.hintGap !== null) {
+        assert.equal(spacing.hintGap, 6);
+        assert.equal(spacing.hintBorder, "0px");
+      }
+    }
     await button("Cambiar idioma a English").click();
     await heading("Your data");
-    await expect(field("heightCm")).toHaveAccessibleDescription("1.65 m equals 165 cm.");
+    await expect(field("heightCm")).toHaveAccessibleDescription("1.65 m = 165 cm");
     await button("Switch language to Español").click();
     await button("Femenino").click();
     for (const [name, value] of Object.entries({ age: 35, heightCm: 165, weightKg: 74, waistCm: 88 })) {
       await field(name).fill(String(value));
     }
-    await expect(field("heightCm")).toHaveAccessibleDescription("1,65 m equivale a 165 cm.");
+    await expect(field("heightCm")).toHaveAccessibleDescription("1,65 m = 165 cm");
     await assertLayout();
     // Simula «Continuar» después de que cambió el control, antes de que llegue el evento de Ionic.
     await field("targetWeightKg").evaluate((input) => {

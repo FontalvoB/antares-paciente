@@ -145,21 +145,13 @@
   color: var(--step-ink);
 }
 
-.wl-wizard--paid .wl-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-.wl-wizard--paid .wl-field-grid > :last-child { grid-column: 1 / -1; }
-.journey-setup .wl-wizard--paid ion-input.fld {
-  --background: var(--paid-soft);
-  --padding-start: 10px;
-  --padding-end: 10px;
-  min-height: 61px;
-  border-color: var(--paid-border);
-  border-radius: 12px;
-  background: var(--paid-soft);
+.wl-wizard--paid .wl-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 12px;
 }
-.journey-setup .wl-wizard--paid ion-input.fld.has-focus { border-color: var(--step-ink); }
-.journey-setup .wl-wizard--paid ion-input.ion-invalid.ion-touched { border-color: var(--wellness-error); }
-.wl-wizard--paid ion-input.fld .label-text { color: var(--wellness-muted); font-weight: 650; }
-.wl-wizard--paid ion-input.fld .label-text-wrapper { margin-bottom: 3px; }
+.wl-wizard--paid .wl-field-grid > :last-child { grid-column: 1 / -1; }
+.wl-wizard--paid .wl-content > .wl-data-step { gap: 18px; }
+.wl-wizard--paid ion-input.fld .native-wrapper { border-color: var(--paid-border); }
 .wl-wizard--paid .wl-adult-note { margin: 0; }
 
 .wl-wizard--paid .wl-preference,

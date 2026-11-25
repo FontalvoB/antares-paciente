@@ -19,7 +19,7 @@ const NUMERIC_FIELDS: readonly {
   icon: string;
 }[] = [
   { field: "age", label: "Edad (años)", hint: "En años completos.", icon: calendarOutline },
-  { field: "heightCm", label: "Estatura (cm)", hint: "1,65 m equivale a 165 cm.", icon: resizeOutline },
+  { field: "heightCm", label: "Estatura (cm)", hint: "1,65 m = 165 cm", icon: resizeOutline },
   { field: "weightKg", label: "Peso actual (kg)", icon: scaleOutline },
   { field: "waistCm", label: "Cintura (cm)", icon: bodyOutline },
   { field: "targetWeightKg", label: "Peso meta (kg)", icon: flagOutline },
@@ -113,7 +113,7 @@ export function DataStep({
   >({});
 
   return (
-    <div className="onb-stack">
+    <div className="onb-stack wl-data-step">
       <div className="field" style={{ minWidth: 0 }}>
         <IonInput
           type="text"

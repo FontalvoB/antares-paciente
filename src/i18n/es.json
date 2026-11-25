@@ -4628,7 +4628,7 @@
   "Este plan está disponible a partir de los {age} años.": "Este plan está disponible a partir de los {age} años.",
   "Ingresa un valor de {min} a {max}.": "Ingresa un valor de {min} a {max}.",
   "En años completos.": "En años completos.",
-  "1,65 m equivale a 165 cm.": "1,65 m equivale a 165 cm.",
+  "1,65 m = 165 cm": "1,65 m = 165 cm",
   "Ingresa tu edad en años completos.": "Ingresa tu edad en años completos.",
   "Nivel de actividad habitual": "Nivel de actividad habitual",
   "Sedentario": "Sedentario",

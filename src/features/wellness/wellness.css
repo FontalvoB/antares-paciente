@@ -352,27 +352,60 @@
 .wl-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .wl-wizard fieldset > legend { margin-bottom: 8px; font-weight: 650; }
 .wl-wizard .wl-field-grid { grid-template-columns: repeat(auto-fit, minmax(min(147px, 100%), 1fr)); }
+/* La etiqueta y la ayuda quedan fuera del borde, con la asociación de Ionic. */
 .screen .wl-wizard ion-input.fld {
-  --background: var(--wellness-surface);
+  --background: transparent;
   --color: var(--wellness-navy);
-  --highlight-color-focused: var(--step-color);
-  min-height: 68px;
-  background: var(--wellness-surface);
-  border: 1px solid var(--wellness-border);
-  border-radius: 15px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   color: var(--wellness-navy);
 }
-.screen .wl-wizard ion-input.fld.has-focus {
+.wl-wizard ion-input.fld.input-label-placement-stacked .input-wrapper {
+  gap: 7px;
+}
+.wl-wizard ion-input.fld.input-label-placement-stacked .label-text-wrapper {
+  margin: 0;
+  transform: none;
+  color: var(--wellness-navy);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.wl-wizard ion-input.fld .native-wrapper {
+  box-sizing: border-box;
+  min-height: 48px;
+  gap: 8px;
+  padding-inline: 12px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 10px;
+  background: var(--wellness-surface);
+}
+.wl-wizard ion-input.fld.has-focus .native-wrapper {
   border-color: var(--step-color);
   box-shadow: 0 0 0 3px var(--step-tint);
 }
-.screen .wl-wizard ion-input.ion-invalid.ion-touched { border-color: var(--wellness-error); }
-.wl-wizard ion-input.fld .helper-text {
+.wl-wizard ion-input.fld.ion-invalid.ion-touched .native-wrapper {
+  border-color: var(--wellness-error);
+}
+.wl-wizard ion-input.fld .input-bottom {
+  margin-block-start: 6px;
+  padding: 0;
+  border: 0;
   color: var(--wellness-muted);
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.4;
 }
-.wl-wizard ion-input ion-icon { color: var(--step-ink); font-size: 18px; }
+.wl-wizard ion-input.fld ion-icon {
+  flex: none;
+  color: var(--step-ink);
+  font-size: 16px;
+}
 .wl-wizard .wl-option-ico { background: var(--step-tint); color: var(--step-ink); }
 .wl-wizard .wl-option.is-selected,
 .wl-wizard .wl-chip.is-selected {

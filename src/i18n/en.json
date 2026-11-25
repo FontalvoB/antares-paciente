@@ -4628,7 +4628,7 @@
   "Este plan está disponible a partir de los {age} años.": "This plan is available to people aged {age} and over.",
   "Ingresa un valor de {min} a {max}.": "Enter a value between {min} and {max}.",
   "En años completos.": "Enter your age in whole years.",
-  "1,65 m equivale a 165 cm.": "1.65 m equals 165 cm.",
+  "1,65 m = 165 cm": "1.65 m = 165 cm",
   "Ingresa tu edad en años completos.": "Enter your age in whole years.",
   "Nivel de actividad habitual": "Usual activity level",
   "Sedentario": "Sedentary",
