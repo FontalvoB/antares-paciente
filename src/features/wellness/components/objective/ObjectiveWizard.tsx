@@ -1,4 +1,4 @@
-import { IonButton, IonIcon } from "@ionic/react";
+import { IonButton, IonIcon, IonProgressBar } from "@ionic/react";
 import { arrowBackOutline, arrowForwardOutline, clipboardOutline, compassOutline, fitnessOutline, heartOutline, leafOutline, personOutline, restaurantOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { useEffect, useId, useRef, useState } from "react";
 import { useT } from "../../../../i18n/I18nContext";
@@ -7,7 +7,7 @@ import type { GateIssue, GateResult, ObjectiveDraft, WellnessGoal } from "../../
 import { GateNotice } from "./GateNotice";
 import { ActivityStep } from "./steps/ActivityStep";
 import { DataStep, dataIssues, issueParams, readMeasurements } from "./steps/DataStep";
-import { GenerateStep } from "./steps/GenerateStep";
+import { GenerateAction, GenerateStep } from "./steps/GenerateStep";
 import { GoalStep } from "./steps/GoalStep";
 import { NqsStep } from "./steps/NqsStep";
 import { ParqStep } from "./steps/ParqStep";
@@ -30,6 +30,16 @@ const TOTAL_STEPS = OBJECTIVE_STEP.generate + 1;
 const STEP_ICONS = [compassOutline, personOutline, fitnessOutline, leafOutline,
   heartOutline, restaurantOutline, shieldCheckmarkOutline, clipboardOutline];
 const STEP_TONES = ["teal", "blue", "violet", "green", "violet", "green", "amber", "blue"];
+const PAID_STEP_INTRO = [
+  "Empieza por la meta que quieres trabajar con tu plan de bienestar.",
+  "Usamos tus medidas para ajustar el plan a tu punto de partida.",
+  "Tu actividad habitual nos ayuda a elegir un punto de partida.",
+  "Puedes marcar varias preferencias o continuar sin elegir ninguna.",
+  "Estas preguntas ayudan a saber si necesitas orientación antes de hacer ejercicio.",
+  "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.",
+  "Revisa el aviso y confirma si estás de acuerdo antes de continuar.",
+  "Comprueba los datos que usaremos para preparar tus planes.",
+] as const;
 
 function getLocalGate(draft: ObjectiveDraft): GateResult {
   const { issues } = evaluateGate({
@@ -60,7 +70,7 @@ function getLocalGate(draft: ObjectiveDraft): GateResult {
   return { ok: validated.length === 0, issues: validated };
 }
 
-export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, allowedGoals }: {
+export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, allowedGoals, presentation }: {
   draft: ObjectiveDraft;
   onChange: (patch: Partial<ObjectiveDraft>) => void;
   gate: GateResult | null;
@@ -68,6 +78,7 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   onGenerate: () => void;
   onExit?: () => void;
   allowedGoals?: readonly WellnessGoal[];
+  presentation?: "paid";
 }) {
   const t = useT();
   const headingId = useId();
@@ -79,6 +90,7 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   });
   const [error, setError] = useState<GateIssue | null>(null);
   const [dismissedGate, setDismissedGate] = useState<GateResult | null>(null);
+  const paid = presentation === "paid";
   const { step } = navigation;
   const localGate = getLocalGate(draft);
   const reportedGate = gate && !gate.ok && gate !== dismissedGate ? gate : null;
@@ -119,10 +131,14 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
         ? control
         : control.querySelector<HTMLElement>("button");
       (target ?? heading.current)?.focus();
+    } else if (paid) {
+      const scroller = heading.current?.closest<HTMLElement>(".screen-scroll");
+      if (scroller) scroller.scrollTop = 0;
+      heading.current?.focus({ preventScroll: true });
     } else {
       heading.current?.focus();
     }
-  }, [navigation, error]);
+  }, [navigation, error, paid]);
 
   const goToStep = (nextStep: number, field?: string) => {
     if (generating || !Number.isInteger(nextStep) || nextStep < 0 || nextStep > OBJECTIVE_STEP.generate) return;
@@ -167,28 +183,41 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   });
   const stepProps = { draft, onChange: changeDraft, invalidField: visibleError?.field, errorId };
 
+  const title = t(STEP_TITLES[step as keyof typeof STEP_TITLES]);
+  const icon = <span className="wl-step-icon"><IonIcon icon={STEP_ICONS[step]} aria-hidden="true" /></span>;
+  const progress = {
+    role: "progressbar", "aria-label": t("Progreso del objetivo"), "aria-valuemin": 1,
+    "aria-valuemax": TOTAL_STEPS, "aria-valuenow": step + 1, "aria-valuetext": count,
+  };
+
   return (
-    <section className="wl-wizard" data-tone={STEP_TONES[step]} aria-labelledby={headingId}>
-      <div className="wl-step-head">
-        <span className="wl-step-icon"><IonIcon icon={STEP_ICONS[step]} aria-hidden="true" /></span>
-        <div>
-          <span className="wl-step-count" aria-hidden="true">{count}</span>
-          <h2 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>
-            {t(STEP_TITLES[step as keyof typeof STEP_TITLES])}
-          </h2>
-        </div>
-      </div>
-      <div
-        className="wl-progress"
-        role="progressbar"
-        aria-label={t("Progreso del objetivo")}
-        aria-valuemin={1}
-        aria-valuemax={TOTAL_STEPS}
-        aria-valuenow={step + 1}
-        aria-valuetext={count}
-      >
-        <i style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }} />
-      </div>
+    <section className={`wl-wizard${paid ? " wl-wizard--paid" : ""}`} data-tone={STEP_TONES[step]} aria-labelledby={headingId}>
+      {paid ? (
+        <>
+          <div className="wl-paid-progress" {...progress}>
+            <span className="wl-step-count" aria-hidden="true">{count}</span>
+            <IonProgressBar value={(step + 1) / TOTAL_STEPS} aria-hidden="true" />
+          </div>
+          <div className="wl-paid-heading">
+            {icon}
+            <h1 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>{title}</h1>
+            <p>{t(PAID_STEP_INTRO[step])}</p>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="wl-step-head">
+            {icon}
+            <div>
+              <span className="wl-step-count" aria-hidden="true">{count}</span>
+              <h2 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>{title}</h2>
+            </div>
+          </div>
+          <div className="wl-progress" {...progress}>
+            <i style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }} />
+          </div>
+        </>
+      )}
 
       {visibleError && (
         <p id={errorId} className="wl-note wl-note-danger" role="alert">
@@ -196,13 +225,13 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
         </p>
       )}
 
-      <div ref={content}>
+      <div ref={content} className="wl-content">
         {step === OBJECTIVE_STEP.goal && <GoalStep {...stepProps} allowedGoals={allowedGoals} />}
         {step === OBJECTIVE_STEP.data && <DataStep {...stepProps} />}
         {step === OBJECTIVE_STEP.activity && <ActivityStep {...stepProps} />}
         {step === OBJECTIVE_STEP.preferences && <PreferencesStep {...stepProps} />}
-        {step === OBJECTIVE_STEP.parq && <ParqStep {...stepProps} />}
-        {step === OBJECTIVE_STEP.nqs && <NqsStep {...stepProps} />}
+        {step === OBJECTIVE_STEP.parq && <ParqStep {...stepProps} showAnswerCount={paid} />}
+        {step === OBJECTIVE_STEP.nqs && <NqsStep {...stepProps} showAnswerCount={paid} />}
         {step === OBJECTIVE_STEP.terms && <TermsStep {...stepProps} />}
         {step === OBJECTIVE_STEP.generate && (
           <>
@@ -213,7 +242,7 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
                 goToStep(target, field);
               }}
             />
-            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} />
+            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} hideAction={paid} />
           </>
         )}
       </div>
@@ -226,7 +255,8 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
           <IonButton
             type="button"
             fill="clear"
-            style={{ minHeight: 48, "--color": "var(--teal-d)", "--background-focused": "var(--teal-l)" }}
+            className={paid ? "wl-back" : undefined}
+            style={paid ? undefined : { minHeight: 48, "--color": "var(--teal-d)", "--background-focused": "var(--teal-l)" }}
             disabled={generating}
             onClick={step === OBJECTIVE_STEP.goal ? onExit : () => goToStep(step - 1)}
           >
@@ -239,6 +269,9 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
             {t("Continuar")}
             <IonIcon slot="end" icon={arrowForwardOutline} aria-hidden="true" />
           </IonButton>
+        )}
+        {paid && step === OBJECTIVE_STEP.generate && (
+          <GenerateAction generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} />
         )}
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { IonButton, IonIcon, IonItem, IonLabel, IonList, IonProgressBar, IonSpinner } from "@ionic/react";
-import { alertCircleOutline, barbellOutline, checkmarkCircleOutline, chevronForwardOutline, compassOutline, leafOutline, mailOpenOutline, refreshOutline, sparklesOutline, timeOutline } from "ionicons/icons";
+import { alertCircleOutline, barbellOutline, checkmarkCircleOutline, chevronForwardOutline, leafOutline, mailOpenOutline, refreshOutline, sparklesOutline, timeOutline } from "ionicons/icons";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 import { LanguageToggle } from "../components/LanguageToggle";
@@ -20,6 +20,7 @@ import { useI18n, useT } from "../i18n/I18nContext";
 import { ApiError } from "../utils/apiClient";
 import "../features/wellness/wellness.css";
 import "../features/wellness/paid-journey.css";
+import "../features/wellness/paid-journey-setup.css";
 
 const PAID_TEST_GOALS = ["bajar"] as const;
 
@@ -154,16 +155,18 @@ export function WellnessJourneyPage({ userId }: { userId: string }) {
 
   if (job === null && !generation.isError) {
     return (
-      <Screen className="journey-page" hideNav>
+      <Screen className="journey-page journey-setup" hideNav>
         <Scroll className="journey-scroll" noNav>
-          <header className="journey-hero">
-            <div className="journey-hero-top"><span>Copp Adresd</span><LanguageToggle /></div>
-            <IonIcon className="journey-hero-art" icon={compassOutline} aria-hidden="true" />
-            <h1>{t("Cuéntanos tu objetivo")}</h1>
-            <p>{t("Flujo de prueba")}</p>
+          <header className="journey-masthead">
+            <div className="journey-brand">
+              <img src={`${import.meta.env.BASE_URL}LogoIndividual.png`} alt="" width={25} height={25} />
+              <div><strong>Copp Adresd</strong><small>{t("Flujo de prueba")}</small></div>
+            </div>
+            <LanguageToggle />
           </header>
           <div className="onb-stack">
             <ObjectiveWizard
+              presentation="paid"
               allowedGoals={PAID_TEST_GOALS}
               draft={draft}
               onChange={changeDraft}

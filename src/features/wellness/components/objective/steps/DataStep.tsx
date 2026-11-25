@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { IonIcon, IonInput } from "@ionic/react";
-import { bodyOutline, calendarOutline, flagOutline, personOutline, resizeOutline, scaleOutline } from "ionicons/icons";
+import { bodyOutline, calendarOutline, flagOutline, informationCircleOutline, personOutline, resizeOutline, scaleOutline } from "ionicons/icons";
 import { useT } from "../../../../../i18n/I18nContext";
 import {
   MIN_AGE,
@@ -177,7 +177,8 @@ export function DataStep({
           </div>
         ))}
       </div>
-      <p className="wl-sub">
+      <p className="wl-note wl-note-info wl-adult-note">
+        <IonIcon icon={informationCircleOutline} aria-hidden="true" />
         {t("Este plan está disponible a partir de los {age} años.", {
           age: String(MIN_AGE),
         })}

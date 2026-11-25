@@ -1,5 +1,5 @@
 import { IonIcon } from "@ionic/react";
-import { desktopOutline, flashOutline, speedometerOutline, walkOutline } from "ionicons/icons";
+import { checkmarkCircleOutline, desktopOutline, flashOutline, speedometerOutline, walkOutline } from "ionicons/icons";
 import { useT } from "../../../../../i18n/I18nContext";
 import type { ObjectiveDraft, WellnessActivity } from "../../../domain";
 
@@ -39,6 +39,7 @@ export function ActivityStep({ draft, onChange }: {
                 <b>{t(label)}</b>
                 <span>{t(description)}</span>
               </span>
+              {draft.activity === value && <IonIcon className="wl-option-selected" icon={checkmarkCircleOutline} aria-hidden="true" />}
             </button>
           ))}
         </div>
