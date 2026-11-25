@@ -35,7 +35,7 @@ const STEP_META: Record<
   {
     icon: string;
     description: string;
-    module?: "wellness-diet" | "wellness-exercise" | "program-vitals";
+    module?: "wellness-diet" | "wellness-exercise" | "wellness-vitals";
   }
 > = {
   exercise: {
@@ -52,7 +52,7 @@ const STEP_META: Record<
   vitals: {
     icon: pulseOutline,
     description: "Registra tus signos vitales de hoy, si te los tomaste.",
-    module: "program-vitals",
+    module: "wellness-vitals",
   },
   emotional: {
     icon: happyOutline,
@@ -271,15 +271,16 @@ export function WellnessProtocol() {
                       {t("Hice la versión reducida")}
                     </IonButton>
                   )}
-                  {meta.module && (!step.done || step.id === "diet") && (
+                  {meta.module && (!step.done || step.id === "diet" || step.id === "vitals") && (
                     <IonButton
                       fill="clear"
                       color="primary"
                       expand="block"
                       className="wp-secondary"
+                      style={step.id === "vitals" ? { minHeight: 44 } : undefined}
                       onClick={() => navigate(meta.module!)}
                     >
-                      {t("Abrir módulo")}
+                      {t(step.id === "vitals" ? "Abrir signos vitales" : "Abrir módulo")}
                     </IonButton>
                   )}
                   {isChest && chestDone && (

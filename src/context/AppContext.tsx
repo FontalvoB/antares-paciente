@@ -140,6 +140,7 @@ interface AppState {
   weekCheckins: boolean[];
   pointsToday: number;
   pointsTotal: number;
+  vitalsReturnTo: "protocol" | "prof";
   navigate: (
     s: NavigationTarget,
     sourceSection?: MedicalSourceSectionId,
@@ -358,6 +359,7 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
+  const [vitalsReturnTo, setVitalsReturnTo] = useState<"protocol" | "prof">("protocol");
   const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = useCallback((message: string, kind: ToastKind = "ok") => {
     setToast({ id: Date.now(), message, kind });
@@ -1388,9 +1390,14 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      vitalsReturnTo,
       dismissVitaWelcome: () => setVitaWelcomePending(false),
       navigate: (target) => {
         switch (target) {
+          case "wellness-vitals":
+            if (screen !== target) setVitalsReturnTo(screen === "prof" ? "prof" : "protocol");
+            setScreen(target);
+            return;
           case "home":
           case "protocol":
           case "wellness-diet":
@@ -1666,6 +1673,7 @@ export function AppProvider({
       flow,
       screen,
       toast,
+      vitalsReturnTo,
       showToast,
       panicOpen,
       panicEntry,

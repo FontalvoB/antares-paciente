@@ -148,6 +148,56 @@ async function answerAllNo(page, count) {
   }
 }
 
+async function verifyVitals(page, width) {
+  await page.getByRole("button", { name: "Ir a Vitales", exact: true }).click();
+  await page.getByRole("button", { name: "Abrir signos vitales", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Signos vitales", exact: true })).toBeFocused();
+  const metrics = page.getByRole("region", { name: "Mediciones", exact: true });
+  const history = page.getByRole("region", { name: "Historial", exact: true });
+  await expect(metrics.getByRole("button")).toHaveCount(8);
+  const value = page.locator('ion-input[name="vital-value"] input');
+  const save = page.getByRole("button", { name: "Guardar medición", exact: true });
+  await save.click();
+  await expect(value).toBeFocused();
+  await expect(value).toHaveAttribute("aria-invalid", "true");
+  await value.fill("72");
+  await save.click();
+  await expect(history.getByText("72 lpm", { exact: true })).toBeVisible();
+  await page.locator(".wv-form ion-select").click();
+  await page.getByRole("radio", { name: "Apple", exact: true }).click();
+  await page.getByRole("button", { name: "Aceptar", exact: true }).click();
+  await value.fill("76");
+  await save.click();
+  await expect(history.getByText("Apple", { exact: true })).toBeVisible();
+  await expect(history.getByText("Manual", { exact: true })).toBeVisible();
+  await expect(history.getByText("Cambios del día", { exact: true })).toBeVisible();
+  await expect(history.locator("time")).toHaveCount(2);
+  await history.locator('ion-segment-button[value="30"]').click();
+  await expect(history.getByRole("img", { name: /máximo 76 lpm/ })).toBeVisible();
+  await expect(history.getByText(/Tendencia:/)).toHaveCount(0);
+  await history.scrollIntoViewIfNeeded();
+  await shot(page, `26-vitales-historial-${width}`);
+
+  await metrics.getByRole("button", { name: /^Peso/ }).click();
+  await expect(page.getByRole("heading", { name: "Peso", exact: true })).toBeFocused();
+  await value.fill("72");
+  await save.click();
+  await expect(history.getByText("72 kg", { exact: true })).toBeVisible();
+  await history.locator("ion-select").click();
+  await page.getByRole("radio", { name: "lb", exact: true }).click();
+  await expect(history.getByText(/158[,.]73 lb/)).toBeVisible();
+  await expect(page.locator("ion-popover")).toHaveCount(0);
+  await page.locator(".wv-scroll").evaluate((element) => {
+    element.scrollTo({ top: 0, behavior: "instant" });
+  });
+  await expect(page.getByRole("heading", { name: "Mediciones", exact: true })).toBeInViewport();
+  await shot(page, `27-vitales-mediciones-${width}`);
+  await page.getByRole("button", { name: "Volver al protocolo", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tu día de bienestar" })).toBeVisible();
+  await page.getByRole("button", { name: "Volver al inicio", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Protocolo de hoy" })).toBeVisible();
+}
+
 async function verifyNavigation(page, baseUrl, width) {
   const nav = page.getByRole("navigation", { name: "Navegación principal" });
   const tab = (name) => nav.getByRole("button", { name, exact: true });
@@ -204,6 +254,7 @@ async function verifyNavigation(page, baseUrl, width) {
     "Plan nutricional",
     "Plan de ejercicios",
     "Cambiar objetivo",
+    "Signos vitales",
   ]);
   await expect(
     page.getByText(
@@ -213,6 +264,12 @@ async function verifyNavigation(page, baseUrl, width) {
   await shot(page, `22-nav-perfil-${width}`);
   await plan.scrollIntoViewIfNeeded();
   await shot(page, `23-nav-plan-${width}`);
+
+  await plan.getByText("Signos vitales", { exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Signos vitales", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Mediciones", exact: true }).getByText(/158[,.]73 lb/)).toBeVisible();
+  await page.getByRole("button", { name: "Volver al perfil", exact: true }).click();
+  await assertDock("Perfil");
 
   await avatar.click();
   const avatarDialog = page.locator('ion-modal[aria-label="Mi Avatar"]');
@@ -414,6 +471,7 @@ async function runFlow(page, baseUrl, width) {
   await shot(page, `14-bandeja-${width}`);
   await page.locator(".wh-batteries").scrollIntoViewIfNeeded();
   await shot(page, `15-cuestionarios-${width}`);
+  await verifyVitals(page, width);
 
   await page
     .getByRole("region", { name: "Accesos rápidos" })
@@ -557,7 +615,7 @@ async function runFlow(page, baseUrl, width) {
   return { ...afterEnter, generationMs };
 }
 
-const baseUrl = process.env.COP_E2E_APP_URL ?? "http://127.0.0.1:5173";
+const baseUrl = process.env.COP_E2E_APP_URL ?? "http://127.0.0.1:5182";
 
 try {
   for (const width of process.env.COP_E2E_WIDTH
@@ -608,7 +666,7 @@ try {
 }
 
 await writeFile(
-  path.join(out, "kan146-results.json"),
+  path.join(out, "kan138-results.json"),
   JSON.stringify(results, null, 2),
   "utf8",
 );
