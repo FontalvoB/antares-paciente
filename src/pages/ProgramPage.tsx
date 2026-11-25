@@ -19,7 +19,7 @@ import {
   PROGRAM_TASKS,
   PROGRAM_WEEKS,
 } from "../data/program";
-import type { ProgramDay, ProgramTaskId } from "../types";
+import type { NavigationTarget, ProgramDay, ProgramTaskId } from "../types";
 import { weekdayMondayIndex } from "../utils/dates";
 import { buildMonthCells } from "../utils/monthCells";
 import {
@@ -83,7 +83,7 @@ const CONF_COLORS = [
 export function ProgramPage() {
   const reducedMotion = useReducedMotion();
   const {
-    screen,
+    screen: currentScreen,
     program: appProgram,
     completeStep,
     pointsToday: appPointsToday,
@@ -97,6 +97,8 @@ export function ProgramPage() {
     wearableConnected,
   } = useApp();
 
+  // TODO KAN-146: destino legado conservado para los tests del programa.
+  const screen = currentScreen as NavigationTarget;
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "es-ES";
   const [tab, setTab] = useState<ProgramTab>(screen === "program-racha" ? "racha" : "hoy");

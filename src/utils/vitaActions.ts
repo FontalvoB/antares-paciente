@@ -1,5 +1,5 @@
 import { canShowChatAction } from "./chatNutritionVisibility";
-import type { Screen } from "../types";
+import type { NavigationTarget } from "../types";
 
 export type VitaDestination = "program" | "nutrition" | "assessments" | "podcast" | "exercise" | "progress";
 export interface VitaAction {
@@ -19,7 +19,7 @@ export interface VitaEnvelope<T = unknown> {
   sources: Array<{ capability: string; caseUse: string }>;
 }
 
-export const vitaDestinations: Record<VitaDestination, { screen?: Screen; label: string }> = {
+export const vitaDestinations: Record<VitaDestination, { screen?: NavigationTarget; label: string }> = {
   program: { screen: "prog", label: "Mi programa" },
   nutrition: { screen: "nut", label: "Nutrición" },
   assessments: { label: "Evaluaciones" },

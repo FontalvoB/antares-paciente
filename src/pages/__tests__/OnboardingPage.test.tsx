@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -7,7 +8,16 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { OnboardingPage } from "../OnboardingPage";
-import { MOCK_ACCOUNT } from "../../features/wellness/services/wellness-onboarding-service";
+import { EMPTY_OBJECTIVE_DRAFT } from "../../features/wellness/domain";
+import * as generation from "../../features/wellness/generation/generation-store";
+import {
+  MOCK_ACCOUNT,
+  wellnessOnboardingService,
+} from "../../features/wellness/services/wellness-onboarding-service";
+import {
+  clearWellnessState,
+  loadPlanSnapshot,
+} from "../../features/wellness/state/wellness-home-store";
 
 const state = vi.hoisted(() => ({
   finish: vi.fn(),
@@ -56,6 +66,12 @@ beforeEach(() => {
   window.localStorage.clear();
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+  clearWellnessState();
+  wellnessOnboardingService.clearDraft();
+});
+
 describe("onboarding Agentic Wellness (KAN-136)", () => {
   it("empieza por el correo y explica el cambio sin cédula", () => {
     render(<OnboardingPage />);
@@ -90,7 +106,25 @@ describe("onboarding Agentic Wellness (KAN-136)", () => {
     await screen.findByText("Emergency contacts");
   });
 
-  it("recorre correo, emergencia, términos y contraseña hasta el objetivo", async () => {
+  it.each(["normal", "error de solicitud", "error de almacenamiento"])("termina directo en Inicio y guarda las respuestas (%s)", async (scenario) => {
+    const request = vi.spyOn(generation, "requestGeneration");
+    if (scenario === "error de solicitud") {
+      request.mockImplementationOnce(() => { throw new Error("unavailable"); });
+    }
+    wellnessOnboardingService.saveDraft({
+      ...EMPTY_OBJECTIVE_DRAFT,
+      name: "Ana",
+      goal: "bajar",
+      sex: "F",
+      age: 34,
+      heightCm: 165,
+      weightKg: 72,
+      waistCm: 82,
+      targetWeightKg: 65,
+      activity: 2,
+      parq: [0, 0, 0, 0, 0, 0, 0],
+      nqs: [0, 0, 0, 0, 0, 0],
+    });
     render(<OnboardingPage />);
     ionInput("email", "ana@example.com");
     submitForm();
@@ -148,6 +182,42 @@ describe("onboarding Agentic Wellness (KAN-136)", () => {
     submitForm();
     await screen.findByText("Your goal");
     expect(screen.getByText("Step 5 of 5")).toBeTruthy();
+
+    for (let step = 0; step < 7; step += 1) {
+      fireEvent.click(screen.getByText("Continue"));
+    }
+    const generate = screen.getByText("Generate my plan");
+    const storage = scenario === "error de almacenamiento"
+      ? vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+          throw new Error("storage unavailable");
+        })
+      : null;
+    await act(async () => {
+      fireEvent.click(generate);
+      fireEvent.click(generate);
+    });
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith(loadPlanSnapshot());
+    expect(state.finish).toHaveBeenCalledTimes(1);
+    expect(state.finish).toHaveBeenCalledWith(expect.objectContaining({
+      nombre: "Ana",
+      email: "ana@example.com",
+      fam1Nombre: "Ana Torres",
+    }));
+    expect(request.mock.invocationCallOrder[0]).toBeLessThan(state.finish.mock.invocationCallOrder[0]);
+    expect(screen.queryByText(/your (wellness )?plan is ready/i)).toBeNull();
+    expect(generation.getGenerationState()?.artifacts.exercise.status).toBe(
+      scenario === "normal" ? "running" : "failed",
+    );
+    expect(wellnessOnboardingService.loadDraft()).toMatchObject({
+      parq: [0, 0, 0, 0, 0, 0, 0],
+      nqs: [0, 0, 0, 0, 0, 0],
+    });
+    if (storage) {
+      storage.mockRestore();
+      expect(generation.retryGeneration()?.attempts).toBe(2);
+    }
   });
 
   it("mantiene el aviso de bienestar y emergencia visible", () => {

@@ -1,4 +1,3 @@
-import {APPOINTMENTS_ENABLED} from "../../utils/appointmentsVisibility";
 import { useMemo } from "react";
 import {
   IonBadge,
@@ -51,12 +50,12 @@ import type { Screen } from "../../types";
 
 /** Destino clínico por prefijo del código de aviso. null = sin navegación. */
 export function resolveNotificationTarget(type: string): Screen | null {
-  if (type === "medication_reminder") return "medications";
-  if (type.startsWith("appointment_")) return APPOINTMENTS_ENABLED ? "book" : null;
+  if (type === "medication_reminder") return "home";
+  if (type.startsWith("appointment_")) return "home";
   if (type.startsWith("hydration_") || type.startsWith("nutrition_"))
-    return "nut";
-  if (type.startsWith("chat_")) return "chat";
-  if (type.startsWith("community_") || type.startsWith("club_")) return "com";
+    return "wellness-diet";
+  if (type.startsWith("chat_")) return "home";
+  if (type.startsWith("community_") || type.startsWith("club_")) return "home";
   return null;
 }
 
@@ -165,7 +164,6 @@ export function NotificationsModal({
     const target = resolveNotificationTarget(item.type);
     onClose();
     if (item.type === "health_test_reminder") openTests();
-    else if (item.type.startsWith("achievement_")) window.dispatchEvent(new CustomEvent("achievements:open", { detail: { id: item.id.replace(/^local-achievement:/, "") } }));
     else if (target) navigate(target);
   };
 

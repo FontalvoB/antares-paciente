@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { IonButton, IonIcon, IonModal } from '@ionic/react';
-import { close, chatbubbleEllipsesOutline } from 'ionicons/icons';
+import { close, micOutline } from 'ionicons/icons';
 import { useApp } from '../context/AppContext';
 import { useT } from '../i18n/I18nContext';
 import { getAccessToken } from '../utils/authApi';
@@ -12,7 +12,7 @@ import vitaPortrait from '../assets/vita-coach.png';
 
 /** Bienvenida inicial: espera la batería requerida y no se reactiva al consultar resultados antiguos. */
 export function VitaWelcome() {
-  const { flow, user, vitaWelcomePending, dismissVitaWelcome, navigate, panicOpen, voiceOpen } = useApp();
+  const { flow, user, vitaWelcomePending, dismissVitaWelcome, openVoice, panicOpen, voiceOpen } = useApp();
   const t = useT();
   const accountId = sessionUserId(getAccessToken());
   const [verifiedFor, setVerifiedFor] = useState<string | null>(null);
@@ -68,8 +68,8 @@ export function VitaWelcome() {
           <h2 id="vita-welcome-title">{t('Bienvenido {nombre} al programa Copp Adresd.', { nombre: user.nombre.trim().split(/\s+/)[0] || t('Participante') })}</h2>
           <p>{t('Soy Vita, tu coach asignada.')}</p>
           <p className="vita-description">{t('Te acompañaré a descubrir tu programa y a construir tus hábitos, un día a la vez.')}</p>
-          <IonButton expand="block" className="bt bt-teal" onClick={() => { dismiss(); navigate('chat'); }}>
-            <IonIcon slot="start" icon={chatbubbleEllipsesOutline} />{t('Conocer a Vita')}
+          <IonButton expand="block" className="bt bt-teal" onClick={() => { dismiss(); openVoice(); }}>
+            <IonIcon slot="start" icon={micOutline} />{t('Conocer a Vita')}
           </IonButton>
           <IonButton expand="block" fill="clear" onClick={dismiss}>{t('Explorar mi programa')}</IonButton>
         </div>
