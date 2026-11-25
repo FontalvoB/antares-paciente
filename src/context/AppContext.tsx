@@ -466,10 +466,10 @@ export function AppProvider({
   // Carga inicial una sola vez para los demás consumidores (equipo del
   // perfil, sala): sin esto el catálogo solo existiría tras visitar Citas.
   useEffect(() => {
-    if (realMode && appointments === null && !appointmentsLoading) {
+    if (realMode && appointments === null && !appointmentsLoading && !appointmentsError) {
       void refreshAppointments();
     }
-  }, [realMode, appointments, appointmentsLoading, refreshAppointments]);
+  }, [realMode, appointments, appointmentsLoading, appointmentsError, refreshAppointments]);
 
   useEffect(() => {
     if (!realMode) return;
