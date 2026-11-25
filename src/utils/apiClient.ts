@@ -138,7 +138,8 @@ function parseApiError(
       : `HTTP ${status}`;
 
   const code = typeof body === "object" && body !== null && "code" in body && typeof body.code === "string"
-    ? body.code : extractCodeFromDetail(message);
+    ? body.code : typeof body === "object" && body !== null && "error" in body && typeof body.error === "string"
+      ? body.error : extractCodeFromDetail(message);
   return new ApiError({ message, status, errorType, code });
 }
 

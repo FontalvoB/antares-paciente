@@ -20,7 +20,8 @@ import {
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { Screen, Scroll } from "../../../components/Screen";
-import { checkinOwner, loadCheckins } from "../checkin/checkin-store";
+import { useMotorDay } from "../calendar/useMotorDay";
+import { checkinKey, checkinOwner, loadCheckins } from "../checkin/checkin-store";
 import {
   completeProtocolStep,
   localISODate,
@@ -115,7 +116,11 @@ export function WellnessProtocol() {
     return getWellnessHomeData(user?.nombre ?? "");
   }, [revision, user?.nombre]);
   const chestUnlocked = data.protocolDone >= 4;
-  const closed = loadCheckins(checkinOwner(user))[localISODate(new Date())];
+  const motor = useMotorDay();
+  const remote = motor.kind === "ready" ? motor.day : undefined;
+  const day = remote?.today ?? (motor.kind === "legacy" ? data.day : null);
+  const closed = remote?.logStatus === "recorded" ||
+    loadCheckins(checkinOwner(user))[checkinKey(remote?.todayLocalDate ?? localISODate(new Date()), remote?.today)];
   const chestDone =
     data.protocol.find((step) => step.id === "chest")?.done ?? false;
   const missing = useMemo(
@@ -164,7 +169,7 @@ export function WellnessProtocol() {
               <h1 className="wp-title">{t("Tu día de bienestar")}</h1>
             </div>
             <IonBadge className="wp-day" color="light">
-              {t("Día {day}", { day: String(data.day) })}
+              {day === null ? t("Día del plan no disponible") : t("Día {day}", { day: String(day) })}
             </IonBadge>
           </div>
           <div className="wp-progress-row">

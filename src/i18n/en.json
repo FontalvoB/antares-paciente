@@ -5602,5 +5602,11 @@
   "No pudimos preparar esta descarga. Tu solicitud sigue pendiente.": "We could not prepare this download. Your request is still pending.",
   "Tu copia completa está lista. Disponible hasta el {date}.": "Your complete copy is ready. Available until {date}.",
   "Descargar mi copia completa": "Download my complete copy",
-  "No pudimos completar la descarga. Intenta de nuevo.": "We could not complete the download. Please try again."
+  "No pudimos completar la descarga. Intenta de nuevo.": "We could not complete the download. Please try again.",
+  "Plan activo": "Active plan",
+  "Plan en pausa": "Plan paused",
+  "Plan en mantenimiento": "Maintenance plan",
+  "Plan bloqueado": "Plan locked",
+  "Consultando el plan…": "Loading the plan…",
+  "Día del plan no disponible": "Plan day unavailable"
 }

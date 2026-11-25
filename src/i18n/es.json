@@ -5602,5 +5602,11 @@
   "No pudimos preparar esta descarga. Tu solicitud sigue pendiente.": "No pudimos preparar esta descarga. Tu solicitud sigue pendiente.",
   "Tu copia completa está lista. Disponible hasta el {date}.": "Tu copia completa está lista. Disponible hasta el {date}.",
   "Descargar mi copia completa": "Descargar mi copia completa",
-  "No pudimos completar la descarga. Intenta de nuevo.": "No pudimos completar la descarga. Intenta de nuevo."
+  "No pudimos completar la descarga. Intenta de nuevo.": "No pudimos completar la descarga. Intenta de nuevo.",
+  "Plan activo": "Plan activo",
+  "Plan en pausa": "Plan en pausa",
+  "Plan en mantenimiento": "Plan en mantenimiento",
+  "Plan bloqueado": "Plan bloqueado",
+  "Consultando el plan…": "Consultando el plan…",
+  "Día del plan no disponible": "Día del plan no disponible"
 }
