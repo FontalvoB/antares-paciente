@@ -108,6 +108,16 @@
   background: var(--teal-l);
   color: var(--teal-d);
 }
+.wl-sex .wl-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.wl-sex .wl-chip ion-icon {
+  flex: none;
+  font-size: 17px;
+}
 .wl-chip:focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 2px;

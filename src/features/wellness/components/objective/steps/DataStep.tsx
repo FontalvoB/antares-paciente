@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { IonIcon, IonInput } from "@ionic/react";
-import { bodyOutline, calendarOutline, flagOutline, informationCircleOutline, personOutline, resizeOutline, scaleOutline } from "ionicons/icons";
+import { bodyOutline, calendarOutline, femaleOutline, flagOutline, informationCircleOutline, maleOutline, personOutline, resizeOutline, scaleOutline } from "ionicons/icons";
 import { useT } from "../../../../../i18n/I18nContext";
 import {
   MIN_AGE,
@@ -145,7 +145,8 @@ export function DataStep({
               aria-pressed={draft.sex === sex}
               onClick={() => onChange({ sex })}
             >
-              {t(SEX_OPTIONS[sex])}
+              <IonIcon icon={sex === "F" ? femaleOutline : maleOutline} aria-hidden="true" />
+              <span>{t(SEX_OPTIONS[sex])}</span>
             </button>
           ))}
         </div>
