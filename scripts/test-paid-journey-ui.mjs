@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium, expect, webkit } from "playwright/test";
@@ -9,6 +9,7 @@ const userId = "11111111-1111-4111-8111-111111111111";
 const submissionId = "22222222-2222-4222-8222-222222222222";
 const generationId = "33333333-3333-4333-8333-333333333333";
 const journey = "/api/v1/wellness/journey";
+const screenshots = process.env.COP_E2E_JOURNEY_SCREENSHOTS;
 const pending = {
   submissionId, generationId, status: "pending", attempts: 1,
   exercise: { status: "pending" }, nutrition: { status: "pending" },
@@ -75,13 +76,26 @@ async function runJourney(browser, url, width) {
       }));
       assert.deepEqual(size, { pageFits: true, containerFits: true });
     };
+    const step = async (number, title) => {
+      const main = page.getByRole("heading", { level: 1, name: title, exact: true });
+      await expect(main).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+      await expect(page.getByRole("progressbar", { name: "Progreso del objetivo" }))
+        .toHaveAttribute("aria-valuenow", String(number));
+      await expect(page.getByText(`Paso ${number} de 8`, { exact: true })).toBeVisible();
+      await expect(main).toHaveCSS("outline-style", "none");
+      await assertLayout();
+      if (screenshots) {
+        await page.screenshot({ path: join(screenshots, `${browser.browserType().name()}-${width}-step-${number}.png`), animations: "disabled" });
+      }
+    };
 
     await page.goto(url);
-    await expect(page.getByRole("heading", { name: "Cuéntanos tu objetivo" })).toBeVisible({ timeout: 15_000 });
+    await step(1, "Tu objetivo");
     await expect(button("Subir masa muscular")).toHaveCount(0);
     await button("Bajar de peso").click();
     await next();
-    await heading("Tus datos");
+    await step(2, "Tus datos");
     await expect(field("name")).toHaveAttribute("placeholder", "Tu nombre");
     await expect(field("targetWeightKg")).toHaveAttribute("placeholder", "Ej. 68");
     await button("Femenino").click();
@@ -94,19 +108,20 @@ async function runJourney(browser, url, width) {
       input.value = "68";
       [...document.querySelectorAll("ion-button")].find((node) => node.textContent.trim() === "Continuar").click();
     });
-    await heading("Actividad y ritmo");
+    await step(3, "Actividad y ritmo");
     await page.locator(".wl-option").filter({ hasText: "Ligero" }).click();
     await next();
-    await heading("Preferencias de alimentación");
+    await step(4, "Preferencias de alimentación");
     await next();
-    for (const [title, count] of [["Seguridad del ejercicio", 7], ["Seguridad de la nutrición", 6]]) {
-      await heading(title);
+    for (const [number, title, count] of [[5, "Seguridad del ejercicio", 7], [6, "Seguridad de la nutrición", 6]]) {
+      await step(number, title);
       for (let index = 0; index < count; index++) {
         await page.locator(".wl-question").nth(index).getByRole("button", { name: "No", exact: true }).click();
       }
+      await expect(page.getByText(`${count} de ${count} respondidas`, { exact: true })).toBeVisible();
       await next();
     }
-    await heading("Términos y aviso de bienestar");
+    await step(7, "Términos y aviso de bienestar");
     await next();
     await heading("Términos y aviso de bienestar");
     assert.equal(submissions.length, 0);
@@ -114,7 +129,7 @@ async function runJourney(browser, url, width) {
       checkbox.checked = true;
       [...document.querySelectorAll("ion-button")].find((node) => node.textContent.trim() === "Continuar").click();
     });
-    await heading("Revisa tus elecciones");
+    await step(8, "Revisa tus elecciones");
 
     await button("Generar mi plan").click();
     await heading("Inicio");
@@ -155,6 +170,7 @@ async function runJourney(browser, url, width) {
 
 // El servidor sirve la app real. Todas las peticiones a la API están simuladas.
 Object.assign(process.env, { VITE_WELLNESS_JOURNEY_DEMO: "true", VITE_GATEWAY_BASE_URL: "http://127.0.0.1:1" });
+if (screenshots) await mkdir(screenshots, { recursive: true });
 const cacheDir = await mkdtemp(join(tmpdir(), "antares-journey-e2e-"));
 let server;
 try {
