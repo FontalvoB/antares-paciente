@@ -1,0 +1,463 @@
+/* =====================================================================
+   Agentic Wellness IA — onboarding (KAN-136)
+   Estilos del flujo nuevo. Solo tokens de variables.css; no introduce
+   colores sueltos ni cambia el design system existente.
+   ===================================================================== */
+
+.wl-step-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 14px;
+}
+.wl-step-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mu);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.wl-title {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 2px 0 0;
+  line-height: 1.25;
+}
+.wl-sub {
+  font-size: 13.5px;
+  color: var(--mu);
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+.wl-options {
+  display: grid;
+  gap: 10px;
+}
+.wl-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border: 1.5px solid var(--bd);
+  border-radius: 14px;
+  background: var(--wh);
+  color: var(--ink);
+  min-height: 64px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.wl-option:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.wl-option.is-selected {
+  border-color: var(--teal);
+  background: var(--teal-l);
+}
+.wl-option-ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--g1);
+  font-size: 19px;
+  flex: none;
+}
+.wl-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.wl-option-body b {
+  font-size: 15px;
+  line-height: 1.3;
+}
+.wl-option-body span {
+  font-size: 12.5px;
+  color: var(--mu);
+  line-height: 1.45;
+}
+
+.wl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wl-chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--bd);
+  border-radius: 999px;
+  background: var(--wh);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wl-chip.is-selected {
+  border-color: var(--teal);
+  background: var(--teal-l);
+  color: var(--teal-d);
+}
+.wl-chip:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.wl-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+.wl-field-grid .field {
+  margin-bottom: 0;
+}
+
+.wl-question {
+  padding: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  background: var(--wh);
+  margin-bottom: 8px;
+}
+.wl-question p {
+  font-size: 13.5px;
+  line-height: 1.45;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.wl-answer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.wl-answer {
+  min-height: 44px;
+  border: 1.5px solid var(--bd);
+  border-radius: 11px;
+  background: var(--wh);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.wl-answer.is-yes,
+.wl-answer.is-no {
+  border-color: var(--teal);
+  background: var(--teal-l);
+  color: var(--teal-d);
+}
+.wl-answer:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.wl-note {
+  display: flex;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: var(--g1);
+  color: var(--mu);
+}
+.wl-note-warn {
+  background: var(--org-l);
+  color: var(--org-d);
+}
+.wl-note-info {
+  background: var(--blue-l);
+  color: var(--blue);
+}
+.wl-note-danger {
+  background: var(--red-l);
+  color: var(--red-d);
+}
+
+.wl-gate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.wl-gate-issue {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--org-l);
+  color: var(--org-d);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.wl-gate-issue button {
+  margin-top: 6px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--teal-d);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.wl-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.wl-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.wl-kpi {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--g0);
+  border: 1px solid var(--bd);
+}
+.wl-kpi strong {
+  display: block;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.wl-kpi span {
+  font-size: 12px;
+  color: var(--mu);
+}
+
+.wl-footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 0 calc(14px + env(safe-area-inset-bottom));
+}
+.wl-footer ion-button {
+  flex: 1;
+}
+.wl-back {
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--bd);
+  background: var(--wh);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wl-back:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.wl-footer-stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+.wl-footer-stack .wl-back {
+  width: 100%;
+}
+
+.wl-progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--g1);
+  overflow: hidden;
+  margin: 0 0 16px;
+}
+.wl-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+  transition: width 0.25s ease;
+}
+
+.wl-wizard {
+  --step-ink: var(--teal-d);
+  --step-color: var(--teal);
+  --step-tint: var(--teal-l);
+  min-width: 0;
+}
+.wl-wizard[data-tone="blue"] {
+  --step-ink: var(--blue);
+  --step-color: var(--wellness-primary);
+  --step-tint: var(--blue-l);
+}
+.wl-wizard[data-tone="violet"] {
+  --step-ink: var(--pur-d);
+  --step-color: var(--pur);
+  --step-tint: var(--pur-l);
+}
+.wl-wizard[data-tone="green"] {
+  --step-ink: var(--teal-d);
+  --step-color: var(--wellness-success);
+  --step-tint: var(--wellness-success-bg);
+}
+.wl-wizard[data-tone="amber"] {
+  --step-ink: var(--org-d);
+  --step-color: var(--org-d);
+  --step-tint: var(--org-l);
+}
+.wl-wizard .wl-step-head {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 0;
+  border-radius: 17px 17px 0 0;
+  background: var(--step-tint);
+}
+.wl-step-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: white;
+  color: var(--step-ink);
+  font-size: 23px;
+}
+.wl-wizard .wl-step-count { color: var(--step-ink); font-size: 11px; letter-spacing: .055em; }
+.wl-wizard .wl-title {
+  color: var(--wellness-navy);
+  font-size: clamp(18px, 5vw, 23px);
+  overflow-wrap: anywhere;
+}
+.wl-wizard .wl-progress {
+  height: 5px;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--step-color) 16%, white);
+  border-radius: 0 0 8px 8px;
+}
+.wl-wizard .wl-progress > i { background: var(--step-color); }
+.wl-wizard .wl-sub { color: var(--wellness-muted); font-size: 14px; }
+.wl-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.wl-wizard fieldset > legend { margin-bottom: 8px; font-weight: 650; }
+.wl-wizard .wl-field-grid { grid-template-columns: repeat(auto-fit, minmax(min(147px, 100%), 1fr)); }
+.screen .wl-wizard ion-input.fld {
+  --background: var(--wellness-surface);
+  --color: var(--wellness-navy);
+  --placeholder-color: var(--wellness-muted);
+  --highlight-color-focused: var(--step-color);
+  min-height: 68px;
+  background: var(--wellness-surface);
+  border: 1px solid var(--wellness-border);
+  border-radius: 15px;
+  color: var(--wellness-navy);
+}
+.screen .wl-wizard ion-input.fld.has-focus {
+  border-color: var(--step-color);
+  box-shadow: 0 0 0 3px var(--step-tint);
+}
+.screen .wl-wizard ion-input.ion-invalid.ion-touched { border-color: var(--wellness-error); }
+.wl-wizard ion-input ion-icon { color: var(--step-ink); font-size: 18px; }
+.wl-wizard .wl-option-ico { background: var(--step-tint); color: var(--step-ink); }
+.wl-wizard .wl-option.is-selected,
+.wl-wizard .wl-chip.is-selected {
+  border-color: var(--step-color);
+  background: var(--step-tint);
+  color: var(--step-ink);
+}
+.wl-option-selected { margin-inline-start: auto; font-size: 22px; }
+.wl-wizard .wl-options { margin-block-start: 4px; }
+.wl-wizard .wl-option-body span { font-size: 13px; }
+.wl-wizard .wl-chips { gap: 10px; }
+.wl-wizard .wl-chip { border-radius: 13px; }
+.wl-wizard .wl-question {
+  min-width: 0;
+  margin: 0 0 13px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 16px;
+}
+.wl-wizard .wl-question legend {
+  max-width: 100%;
+  padding-inline: 5px;
+  color: var(--wellness-navy);
+  white-space: normal;
+}
+.wl-question-number {
+  display: inline-grid;
+  place-items: center;
+  min-width: 25px;
+  height: 25px;
+  margin-inline-end: 6px;
+  border-radius: 8px;
+  background: var(--step-tint);
+  color: var(--step-ink);
+  font-size: 12px;
+  font-weight: 750;
+  vertical-align: middle;
+}
+.wl-wizard .wl-answer.is-yes { border-color: var(--org-d); background: var(--org-l); color: var(--org-d); }
+.wl-preference,
+.wl-accept {
+  --checkbox-background-checked: var(--step-color);
+  --border-color-checked: var(--step-color);
+  display: flex;
+  min-height: 52px;
+  padding: 10px 12px;
+  margin: 0 0 9px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 14px;
+  color: var(--wellness-navy);
+  background: var(--wellness-surface);
+}
+.wl-labeled-icon { display: inline-flex; align-items: center; gap: 8px; }
+.wl-labeled-icon ion-icon, .wl-note ion-icon { flex: none; font-size: 18px; }
+.wl-labeled-icon ion-icon { color: var(--step-ink); }
+.wl-terms-card {
+  display: flex;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--step-tint);
+  color: var(--step-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.wl-terms-card ion-icon { flex: none; font-size: 21px; margin-top: 2px; }
+.wl-terms-card p { margin: 0 0 7px; }
+.wl-terms-card small { font-size: 12px; }
+.wl-wizard .wl-kpi {
+  color: var(--wellness-navy);
+  background: var(--wellness-surface);
+  border-color: var(--wellness-border);
+  border-inline-start: 3px solid var(--step-color);
+  overflow-wrap: anywhere;
+}
+.wl-wizard .wl-kpi dd { color: var(--wellness-navy); font-weight: 700; }
+.wl-wizard .wl-footer ion-button { min-height: 48px; }
+.wl-wizard .cta-pill { --background: var(--step-color); --color: white; }
+
+@media (max-width: 360px) {
+  .wl-field-grid,
+  .wl-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-progress > i,
+  .wl-option {
+    transition: none;
+  }
+}

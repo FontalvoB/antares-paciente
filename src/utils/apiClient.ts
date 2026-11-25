@@ -1,3 +1,4 @@
+import { sessionUserId } from "./sessionIdentity";
 /**
  * Authenticated fetch wrapper for backend API calls.
  *
@@ -135,7 +136,8 @@ function parseApiError(
       ? String((body as { message: unknown }).message)
       : `HTTP ${status}`;
 
-  return new ApiError({ message, status, errorType });
+  const code = typeof body === "object" && body !== null && "code" in body && typeof body.code === "string" ? body.code : undefined;
+  return new ApiError({ message, status, errorType, code });
 }
 
 // --- Main fetch wrapper ---
@@ -143,6 +145,7 @@ function parseApiError(
 export interface ApiFetchOptions extends Omit<RequestInit, "method" | "body"> {
   method?: string;
   body?: unknown;
+  expectedUserId?: string;
   /** Override timeout (default 15s) */
   timeoutMs?: number;
 }
@@ -171,7 +174,13 @@ export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { timeoutMs = 15_000, body, headers: customHeaders, ...rest } = options;
+  const { timeoutMs = 15_000, body, headers: customHeaders, expectedUserId, ...rest } = options;
+  const assertAccount = () => {
+    if (expectedUserId !== undefined && sessionUserId(getAccessToken()) !== expectedUserId) {
+      throw new ApiError({ status: 401, code: "SESSION_CHANGED", message: "Session changed", errorType: "business" });
+    }
+  };
+  assertAccount();
   const url = resolveUrl(path);
 
   const headers = new Headers(customHeaders);
@@ -222,6 +231,7 @@ export async function apiFetch<T>(
       }
     }
 
+    assertAccount();
     // 401 → attempt single-flight refresh + retry once
     if (res.status === 401) {
       // El refresh usa cookie HttpOnly: sin Bearer, no tiene sentido reintentar.
@@ -230,6 +240,7 @@ export async function apiFetch<T>(
       }
 
       const refreshed = await doRefresh();
+      assertAccount();
       if (!refreshed) {
         // Refresh failed — session bridge will handle redirect
         throw parseApiError(401, parsed);
@@ -261,6 +272,7 @@ export async function apiFetch<T>(
       });
 
       clearTimeout(retryTimeout);
+      assertAccount();
 
       if (retryRes.status === 204) return undefined as T;
       if (!retryRes.ok) {
