@@ -1,0 +1,160 @@
+.journey-page {
+  background: linear-gradient(165deg, var(--wellness-bg-start), var(--wellness-bg-end));
+}
+.journey-scroll {
+  padding: calc(10px + env(safe-area-inset-top, 0px)) clamp(12px, 4vw, 24px) calc(24px + env(safe-area-inset-bottom, 0px));
+  scrollbar-gutter: stable;
+}
+.journey-scroll > * {
+  max-width: 660px;
+  margin-inline: auto;
+}
+.journey-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  margin-bottom: 16px;
+  padding: 14px 20px 22px;
+  border-radius: 24px;
+  background: linear-gradient(125deg, var(--brand-navy) 10%, var(--brand-blue-mid) 57%, var(--brand-green) 100%);
+  color: white;
+  box-shadow: var(--wellness-shadow);
+}
+.journey-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.journey-hero-top ion-button {
+  --color: white;
+  --background: var(--wellness-dark-glass);
+  --border-radius: 999px;
+  min-height: 44px;
+  margin: 0;
+}
+.journey-hero-art {
+  position: absolute;
+  z-index: -1;
+  right: 13px;
+  bottom: -14px;
+  font-size: 116px;
+  color: white;
+  opacity: .14;
+  transform: rotate(-12deg);
+}
+.journey-hero h1 {
+  margin: 12px 0 5px;
+  color: white;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: clamp(26px, 7vw, 34px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.035em;
+}
+.journey-hero p {
+  margin: 0;
+  color: var(--wellness-on-dark-muted);
+  font-size: 13px;
+}
+.journey-card,
+.journey-status {
+  --panel-ink: var(--blue);
+  --panel-tint: var(--blue-l);
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 20px;
+  background: var(--wellness-surface);
+  box-shadow: var(--wellness-shadow);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.journey-card--exercise {
+  --panel-ink: var(--pur-d);
+  --panel-tint: var(--pur-l);
+}
+.journey-card--nutrition,
+.journey-status[data-status="ready"] {
+  --panel-ink: var(--teal-d);
+  --panel-tint: var(--teal-l);
+}
+.journey-status[data-status="failed"] {
+  --panel-ink: var(--org-d);
+  --panel-tint: var(--org-l);
+}
+.journey-card-head,
+.journey-status-main {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.journey-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  color: var(--panel-ink);
+  background: var(--panel-tint);
+  font-size: 22px;
+}
+.journey-card h2,
+.journey-card h3,
+.journey-status-main p {
+  margin: 0;
+  color: var(--wellness-navy);
+  font-weight: 750;
+}
+.journey-card h2 { font-size: 16px; }
+.journey-card h3 { margin-top: 10px; font-size: 14px; }
+.journey-card p,
+.journey-status p {
+  margin-block: 8px 0;
+  color: var(--wellness-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.journey-status {
+  border-color: color-mix(in srgb, var(--panel-ink) 22%, var(--panel-tint));
+  background: var(--panel-tint);
+  color: var(--panel-ink);
+}
+.journey-status-main > ion-icon { flex: none; font-size: 23px; }
+.journey-status-main p { margin: 0; color: var(--panel-ink); }
+.journey-status ion-button { --color: var(--panel-ink); --border-color: var(--panel-ink); min-height: 44px; }
+.journey-card ion-progress-bar { --progress-background: var(--panel-ink); margin-top: 10px; }
+.journey-plan-items {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.journey-plan-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel-tint) 55%, white);
+  color: var(--wellness-navy);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.journey-plan-items ion-icon { flex: none; margin-top: 3px; color: var(--panel-ink); }
+.journey-inbox { margin-top: 8px; padding: 0; background: transparent; }
+.journey-inbox ion-item {
+  --background: var(--panel-tint);
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  --border-radius: 11px;
+  margin-top: 6px;
+}
+.journey-inbox h3 { margin-top: 0; }
+.journey-inbox time { display: block; margin-top: 5px; color: var(--panel-ink); font-size: 12px; }

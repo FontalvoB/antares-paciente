@@ -1,3 +1,5 @@
+import { IonIcon } from "@ionic/react";
+import { desktopOutline, flashOutline, speedometerOutline, walkOutline } from "ionicons/icons";
 import { useT } from "../../../../../i18n/I18nContext";
 import type { ObjectiveDraft, WellnessActivity } from "../../../domain";
 
@@ -10,6 +12,7 @@ export const ACTIVITY_OPTIONS = [
 
 // oxlint-disable-next-line react/only-export-components -- Shared with the summary within the objective module.
 export const PACE_OPTIONS = { s: "Suave", m: "Moderado" } as const;
+const ACTIVITY_ICONS = [desktopOutline, walkOutline, speedometerOutline, flashOutline];
 
 export function ActivityStep({ draft, onChange }: {
   draft: ObjectiveDraft;
@@ -20,7 +23,7 @@ export function ActivityStep({ draft, onChange }: {
   return (
     <div className="onb-stack">
       <fieldset style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-        <legend className="wl-sub">{t("Nivel de actividad habitual")}</legend>
+        <legend className="wl-sub">{t("¿Cuánto te mueves habitualmente?")}</legend>
         <div className="wl-options">
           {ACTIVITY_OPTIONS.map(({ value, label, description }) => (
             <button
@@ -31,6 +34,7 @@ export function ActivityStep({ draft, onChange }: {
               aria-pressed={draft.activity === value}
               onClick={() => onChange({ activity: value })}
             >
+              <span className="wl-option-ico"><IonIcon icon={ACTIVITY_ICONS[value - 1]} aria-hidden="true" /></span>
               <span className="wl-option-body">
                 <b>{t(label)}</b>
                 <span>{t(description)}</span>

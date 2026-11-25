@@ -1,4 +1,5 @@
-import { IonButton, IonSpinner } from "@ionic/react";
+import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
+import { sparklesOutline } from "ionicons/icons";
 import { useI18n } from "../../../../../i18n/I18nContext";
 import type { ObjectiveDraft } from "../../../domain";
 import { ACTIVITY_OPTIONS, PACE_OPTIONS } from "./ActivityStep";
@@ -50,7 +51,8 @@ export function GenerateStep({ draft, generating, blocked, onGenerate }: {
         disabled={blocked || generating}
         onClick={onGenerate}
       >
-        {generating && <IonSpinner slot="start" name="crescent" aria-hidden="true" />}
+        {generating ? <IonSpinner slot="start" name="crescent" aria-hidden="true" />
+          : <IonIcon slot="start" icon={sparklesOutline} aria-hidden="true" />}
         {t("Generar mi plan")}
       </IonButton>
       {generating && <div className="wl-sub" role="status">{t("Generando tu plan…")}</div>}

@@ -48,7 +48,7 @@ export function SafetyQuestions({
             style={{ minWidth: 0, marginInline: 0 }}
             aria-describedby={invalidField === answerField ? errorId : undefined}
           >
-            <legend className="wl-sub" style={{ maxWidth: "100%" }}>{t(question.es)}</legend>
+            <legend className="wl-sub"><span className="wl-question-number" aria-hidden="true">{index + 1}</span>{t(question.es)}</legend>
             <div className="wl-answer-row">
               <button
                 type="button"

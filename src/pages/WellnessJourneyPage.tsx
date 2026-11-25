@@ -1,4 +1,5 @@
-import { IonButton, IonItem, IonLabel, IonList, IonProgressBar, IonSpinner } from "@ionic/react";
+import { IonButton, IonIcon, IonItem, IonLabel, IonList, IonProgressBar, IonSpinner } from "@ionic/react";
+import { alertCircleOutline, barbellOutline, checkmarkCircleOutline, chevronForwardOutline, compassOutline, leafOutline, mailOpenOutline, refreshOutline, sparklesOutline, timeOutline } from "ionicons/icons";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 import { LanguageToggle } from "../components/LanguageToggle";
@@ -18,7 +19,7 @@ import {
 import { useI18n, useT } from "../i18n/I18nContext";
 import { ApiError } from "../utils/apiClient";
 import "../features/wellness/wellness.css";
-import "../features/wellness/home/wellness-home.css";
+import "../features/wellness/paid-journey.css";
 
 const PAID_TEST_GOALS = ["bajar"] as const;
 
@@ -26,24 +27,32 @@ function isPreparing(status: JourneyStatus | undefined) {
   return status === "pending" || status === "running";
 }
 
-function JourneyPlanCard({ title, plan }: { title: string; plan: JourneyPlan }) {
+function JourneyPlanCard({ kind, plan }: { kind: "exercise" | "nutrition"; plan: JourneyPlan }) {
   const t = useT();
   const heading = useId();
+  const exercise = kind === "exercise";
+  const title = exercise ? t("Plan de ejercicio") : t("Plan de nutrición");
+  const demoTitle = exercise ? t("Plan de ejercicio de demostración") : t("Plan de nutrición de demostración");
   return (
-    <section className="wh-card" aria-labelledby={heading}>
-      <div className="wh-card-head"><h2 id={heading}>{title}</h2></div>
+    <section className={`journey-card journey-card--${kind}`} aria-labelledby={heading}>
+      <div className="journey-card-head">
+        <span className="journey-icon"><IonIcon icon={exercise ? barbellOutline : leafOutline} aria-hidden="true" /></span>
+        <h2 id={heading}>{title}</h2>
+      </div>
       {isPreparing(plan.status) && (
         <>
-          <p className="wh-body">{t("En preparación")}</p>
+          <p>{t("En preparación")}</p>
           <IonProgressBar type="indeterminate" aria-labelledby={heading} />
         </>
       )}
-      {plan.status === "failed" && <p className="wh-body">{t("No pudimos preparar este plan.")}</p>}
+      {plan.status === "failed" && <p>{t("No pudimos preparar este plan.")}</p>}
       {plan.status === "ready" && plan.result && (
         <>
-          <h3 className="wh-body"><strong>{plan.result.title}</strong></h3>
+          {plan.result.title !== demoTitle && plan.result.title !== title && <h3>{plan.result.title}</h3>}
           <ul className="journey-plan-items">
-            {plan.result.items.map((item, index) => <li key={index}>{item}</li>)}
+            {plan.result.items.map((item, index) => (
+              <li key={index}><IonIcon icon={chevronForwardOutline} aria-hidden="true" /><span>{item}</span></li>
+            ))}
           </ul>
         </>
       )}
@@ -56,12 +65,15 @@ function JourneyInbox({ inbox }: { inbox: JourneyGeneration["inbox"] }) {
   const heading = useId();
   const date = new Intl.DateTimeFormat(lang, { dateStyle: "medium" });
   return (
-    <section className="wh-card" aria-labelledby={heading}>
-      <div className="wh-card-head"><h2 id={heading}>{t("Bandeja de entrada")}</h2></div>
-      {isPreparing(inbox.status) && <p className="wh-body">{t("Preparando tu bandeja")}</p>}
-      {inbox.status === "failed" && <p className="wh-body">{t("No pudimos preparar tu bandeja")}</p>}
+    <section className="journey-card journey-card--inbox" aria-labelledby={heading}>
+      <div className="journey-card-head">
+        <span className="journey-icon"><IonIcon icon={mailOpenOutline} aria-hidden="true" /></span>
+        <h2 id={heading}>{t("Bandeja de entrada")}</h2>
+      </div>
+      {isPreparing(inbox.status) && <p>{t("Preparando tu bandeja")}</p>}
+      {inbox.status === "failed" && <p>{t("No pudimos preparar tu bandeja")}</p>}
       {inbox.status === "ready" && (inbox.items.length ? (
-        <IonList lines="full">
+        <IonList lines="none" className="journey-inbox">
           {inbox.items.map((item) => (
             <IonItem key={item.id}>
               <IonLabel className="ion-text-wrap">
@@ -72,7 +84,7 @@ function JourneyInbox({ inbox }: { inbox: JourneyGeneration["inbox"] }) {
             </IonItem>
           ))}
         </IonList>
-      ) : <p className="wh-body">{t("No tienes mensajes nuevos")}</p>)}
+      ) : <p>{t("No tienes mensajes nuevos")}</p>)}
     </section>
   );
 }
@@ -142,16 +154,14 @@ export function WellnessJourneyPage({ userId }: { userId: string }) {
 
   if (job === null && !generation.isError) {
     return (
-      <Screen className="onb-page" hideNav>
-        <header className="onb-head">
-          <div className="onb-head-top">
-            <div className="onb-head-brand">Copp Adresd</div>
-            <LanguageToggle />
-          </div>
-          <h1 className="onb-head-title">{t("Cuéntanos tu objetivo")}</h1>
-          <p className="onb-head-sub">{t("Flujo de prueba")}</p>
-        </header>
-        <Scroll className="onb-body" noNav>
+      <Screen className="journey-page" hideNav>
+        <Scroll className="journey-scroll" noNav>
+          <header className="journey-hero">
+            <div className="journey-hero-top"><span>Copp Adresd</span><LanguageToggle /></div>
+            <IonIcon className="journey-hero-art" icon={compassOutline} aria-hidden="true" />
+            <h1>{t("Cuéntanos tu objetivo")}</h1>
+            <p>{t("Flujo de prueba")}</p>
+          </header>
           <div className="onb-stack">
             <ObjectiveWizard
               allowedGoals={PAID_TEST_GOALS}
@@ -171,23 +181,22 @@ export function WellnessJourneyPage({ userId }: { userId: string }) {
   }
 
   return (
-    <Screen hideNav>
-      <Scroll className="wh-scroll journey-scroll" noNav>
-        <header className="wh-hero">
-          <div className="wh-hero-top">
-            <span className="wh-brand">Copp Adresd</span>
-            <LanguageToggle />
-          </div>
-          <h1 className="wh-day" ref={homeHeading} tabIndex={-1}>{t("Inicio")}</h1>
-          <p className="wh-demo-note">{t("Flujo de prueba")}</p>
+    <Screen className="journey-page" hideNav>
+      <Scroll className="journey-scroll" noNav>
+        <header className="journey-hero">
+          <div className="journey-hero-top"><span>Copp Adresd</span><LanguageToggle /></div>
+          <IonIcon className="journey-hero-art" icon={sparklesOutline} aria-hidden="true" />
+          <h1 ref={homeHeading} tabIndex={-1}>{t("Inicio")}</h1>
+          <p>{t("Flujo de prueba")}</p>
         </header>
         {generation.isPending && (
-          <div className="wh-card" role="status"><IonSpinner name="crescent" aria-hidden="true" /> {t("Consultando tu plan…")}</div>
+          <div className="journey-status" role="status"><IonSpinner name="crescent" aria-hidden="true" /> {t("Consultando tu plan…")}</div>
         )}
         {generation.isError && (
-          <div className="wh-card">
-            <p className="wh-body" role="alert">
-              {t(generation.error instanceof ApiError && generation.error.code === "journey_unavailable"
+          <div className="journey-status" data-status="failed">
+            <p role="alert">
+              {t(generation.error instanceof ApiError &&
+                (generation.error.code === "journey_unavailable" || generation.error.code === "consent_required")
                 ? "Confirma tu membresía y acepta la versión vigente de los documentos para continuar."
                 : "No pudimos consultar tu plan. Intenta de nuevo.")}
             </p>
@@ -197,21 +206,28 @@ export function WellnessJourneyPage({ userId }: { userId: string }) {
         )}
         {job && (
           <>
-            <div className="wh-card">
-              <p className="wh-body" role="status">
+            <section className="journey-status" data-status={job.status}>
+              <div className="journey-status-main">
+                <IonIcon icon={job.status === "ready" ? checkmarkCircleOutline : job.status === "failed" ? alertCircleOutline : timeOutline} aria-hidden="true" />
+                <p role="status">
                 {job.status === "ready" ? t("Tu plan y tu bandeja están listos")
                   : job.status === "failed" ? t("Tus respuestas están guardadas")
                     : t("Estamos preparando tu plan")}
-              </p>
+                </p>
+              </div>
               {job.status === "failed" && (
-                <IonButton fill="outline" className="wh-secondary" disabled={saving} onClick={() => void updateGeneration("retry")}>
-                  {t("Reintentar generación")}
-                </IonButton>
+                <>
+                  <p>{t("Vuelve a intentarlo sin repetir el cuestionario.")}</p>
+                  <IonButton fill="outline" disabled={saving} onClick={() => void updateGeneration("retry")}>
+                    <IonIcon slot="start" icon={refreshOutline} aria-hidden="true" />
+                    {t("Reintentar generación")}
+                  </IonButton>
+                </>
               )}
-              {actionError === "retry" && <p className="wh-body" role="alert">{t("No pudimos reintentar la generación.")}</p>}
-            </div>
-            <JourneyPlanCard title={t("Plan de ejercicio")} plan={job.exercise} />
-            <JourneyPlanCard title={t("Plan de nutrición")} plan={job.nutrition} />
+              {actionError === "retry" && <p role="alert">{t("No pudimos reintentar la generación.")}</p>}
+            </section>
+            <JourneyPlanCard kind="exercise" plan={job.exercise} />
+            <JourneyPlanCard kind="nutrition" plan={job.nutrition} />
             <JourneyInbox inbox={job.inbox} />
           </>
         )}

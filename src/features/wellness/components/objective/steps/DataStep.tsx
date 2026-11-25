@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { IonInput } from "@ionic/react";
+import { IonIcon, IonInput } from "@ionic/react";
+import { bodyOutline, calendarOutline, flagOutline, personOutline, resizeOutline, scaleOutline } from "ionicons/icons";
 import { useT } from "../../../../../i18n/I18nContext";
 import {
   MIN_AGE,
@@ -12,12 +13,29 @@ import type { GateIssue, ObjectiveDraft } from "../../../domain";
 // oxlint-disable-next-line react/only-export-components -- Shared with the summary within the objective module.
 export const SEX_OPTIONS = { F: "Femenino", M: "Masculino" } as const;
 const NUMERIC_FIELDS = [
-  { field: "age", label: "Edad (años)", example: "35" },
-  { field: "heightCm", label: "Estatura (cm)", example: "165" },
-  { field: "weightKg", label: "Peso actual (kg)", example: "74" },
-  { field: "waistCm", label: "Cintura (cm)", example: "88" },
-  { field: "targetWeightKg", label: "Peso meta (kg)", example: "68" },
+  { field: "age", label: "Edad (años)", example: "35", icon: calendarOutline },
+  { field: "heightCm", label: "Estatura (cm)", example: "165", icon: resizeOutline },
+  { field: "weightKg", label: "Peso actual (kg)", example: "74", icon: scaleOutline },
+  { field: "waistCm", label: "Cintura (cm)", example: "88", icon: bodyOutline },
+  { field: "targetWeightKg", label: "Peso meta (kg)", example: "68", icon: flagOutline },
 ] as const;
+
+function parseMeasurement(raw: string) {
+  const normalized = raw.trim();
+  return /^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(normalized) ? parseNumberInput(normalized) : null;
+}
+
+// oxlint-disable-next-line react/only-export-components -- Reads Ionic controls before validating the step.
+export function readMeasurements(root: HTMLElement, draft: ObjectiveDraft) {
+  const patch: Partial<ObjectiveDraft> = {};
+  for (const { field } of NUMERIC_FIELDS) {
+    const input = root.querySelector<HTMLInputElement>(`ion-input[data-wl-field="${field}"] input`);
+    if (!input) continue;
+    const value = parseMeasurement(input.value);
+    if (value !== draft[field]) patch[field] = value;
+  }
+  return patch;
+}
 
 // oxlint-disable-next-line react/only-export-components -- Keeps numeric validation next to the fields it validates.
 export function dataIssues(
@@ -98,14 +116,16 @@ export function DataStep({
           labelPlacement="stacked"
           className="fld"
           autocomplete="given-name"
-          style={{ minHeight: 48 }}
+          placeholder={t("Tu nombre")}
           data-wl-field="name"
           value={draft.name}
           onIonInput={(event) => onChange({ name: event.detail.value ?? "" })}
-        />
+        >
+          <IonIcon slot="start" icon={personOutline} aria-hidden="true" />
+        </IonInput>
       </div>
       <fieldset
-        style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        className="wl-fieldset wl-sex"
         aria-describedby={invalidField === "sex" ? errorId : undefined}
       >
         <legend className="wl-sub">
@@ -128,7 +148,7 @@ export function DataStep({
       </fieldset>
 
       <div className="wl-field-grid">
-        {NUMERIC_FIELDS.map(({ field, label, example }) => (
+        {NUMERIC_FIELDS.map(({ field, label, example, icon }) => (
           <div className="field" key={field} style={{ minWidth: 0 }}>
             <IonInput
               type="text"
@@ -140,7 +160,6 @@ export function DataStep({
               className={
                 invalidField === field ? "fld ion-invalid ion-touched" : "fld"
               }
-              style={{ minHeight: 48 }}
               data-wl-field={field}
               aria-describedby={invalidField === field ? errorId : undefined}
               value={
@@ -150,13 +169,11 @@ export function DataStep({
               onIonInput={(event) => {
                 const raw = event.detail.value ?? "";
                 setInputs((previous) => ({ ...previous, [field]: raw }));
-                const normalized = raw.trim();
-                const value = /^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(normalized)
-                  ? parseNumberInput(normalized)
-                  : null;
-                onChange({ [field]: value });
+                onChange({ [field]: parseMeasurement(raw) });
               }}
-            />
+            >
+              <IonIcon slot="start" icon={icon} aria-hidden="true" />
+            </IonInput>
           </div>
         ))}
       </div>

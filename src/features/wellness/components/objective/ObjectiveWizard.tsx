@@ -1,17 +1,18 @@
-import { IonButton } from "@ionic/react";
+import { IonButton, IonIcon } from "@ionic/react";
+import { arrowBackOutline, arrowForwardOutline, clipboardOutline, compassOutline, fitnessOutline, heartOutline, leafOutline, personOutline, restaurantOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { useEffect, useId, useRef, useState } from "react";
 import { useT } from "../../../../i18n/I18nContext";
 import { OBJECTIVE_STEP, evaluateGate } from "../../domain";
 import type { GateIssue, GateResult, ObjectiveDraft, WellnessGoal } from "../../domain";
 import { GateNotice } from "./GateNotice";
 import { ActivityStep } from "./steps/ActivityStep";
-import { DataStep, dataIssues, issueParams } from "./steps/DataStep";
+import { DataStep, dataIssues, issueParams, readMeasurements } from "./steps/DataStep";
 import { GenerateStep } from "./steps/GenerateStep";
 import { GoalStep } from "./steps/GoalStep";
 import { NqsStep } from "./steps/NqsStep";
 import { ParqStep } from "./steps/ParqStep";
 import { PreferencesStep } from "./steps/PreferencesStep";
-import { TermsStep, currentAcceptance } from "./steps/TermsStep";
+import { TermsStep, currentAcceptance, readTerms } from "./steps/TermsStep";
 import "../../wellness.css";
 
 const STEP_TITLES = {
@@ -26,6 +27,9 @@ const STEP_TITLES = {
 } as const;
 
 const TOTAL_STEPS = OBJECTIVE_STEP.generate + 1;
+const STEP_ICONS = [compassOutline, personOutline, fitnessOutline, leafOutline,
+  heartOutline, restaurantOutline, shieldCheckmarkOutline, clipboardOutline];
+const STEP_TONES = ["teal", "blue", "violet", "green", "violet", "green", "amber", "blue"];
 
 function getLocalGate(draft: ObjectiveDraft): GateResult {
   const { issues } = evaluateGate({
@@ -133,7 +137,17 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   };
 
   const goForward = () => {
-    const issue = localGate.issues.find((item) => item.step === step);
+    // Ionic puede actualizar el control antes de entregar su evento a React.
+    const patch = step === OBJECTIVE_STEP.data && content.current
+      ? readMeasurements(content.current, draft)
+      : {};
+    const terms = content.current?.querySelector<HTMLIonCheckboxElement>('ion-checkbox[data-wl-field="terms"]');
+    if (terms && typeof terms.checked === "boolean") {
+      const acceptance = readTerms(terms.checked, draft.terms);
+      if (acceptance !== draft.terms) patch.terms = acceptance;
+    }
+    if (Object.keys(patch).length) changeDraft(patch);
+    const issue = getLocalGate({ ...draft, ...patch }).issues.find((item) => item.step === step);
     if (issue) {
       setError({ ...issue });
       return;
@@ -154,12 +168,15 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   const stepProps = { draft, onChange: changeDraft, invalidField: visibleError?.field, errorId };
 
   return (
-    <section aria-labelledby={headingId}>
+    <section className="wl-wizard" data-tone={STEP_TONES[step]} aria-labelledby={headingId}>
       <div className="wl-step-head">
-        <span className="wl-step-count" aria-hidden="true">{count}</span>
-        <h2 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>
-          {t(STEP_TITLES[step as keyof typeof STEP_TITLES])}
-        </h2>
+        <span className="wl-step-icon"><IonIcon icon={STEP_ICONS[step]} aria-hidden="true" /></span>
+        <div>
+          <span className="wl-step-count" aria-hidden="true">{count}</span>
+          <h2 ref={heading} id={headingId} className="wl-title" tabIndex={-1}>
+            {t(STEP_TITLES[step as keyof typeof STEP_TITLES])}
+          </h2>
+        </div>
       </div>
       <div
         className="wl-progress"
@@ -213,12 +230,14 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
             disabled={generating}
             onClick={step === OBJECTIVE_STEP.goal ? onExit : () => goToStep(step - 1)}
           >
+            <IonIcon slot="start" icon={arrowBackOutline} aria-hidden="true" />
             {t("Volver")}
           </IonButton>
         )}
         {step !== OBJECTIVE_STEP.generate && (
           <IonButton type="button" className="cta-pill" onClick={goForward}>
             {t("Continuar")}
+            <IonIcon slot="end" icon={arrowForwardOutline} aria-hidden="true" />
           </IonButton>
         )}
       </div>

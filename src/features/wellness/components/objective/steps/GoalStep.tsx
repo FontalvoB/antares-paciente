@@ -1,5 +1,5 @@
 import { IonIcon } from "@ionic/react";
-import { barbellOutline, fitnessOutline, trendingDownOutline } from "ionicons/icons";
+import { barbellOutline, checkmarkCircleOutline, fitnessOutline, trendingDownOutline } from "ionicons/icons";
 import { useT } from "../../../../../i18n/I18nContext";
 import type { ObjectiveDraft, WellnessGoal } from "../../../domain";
 
@@ -48,6 +48,7 @@ export function GoalStep({ draft, onChange, allowedGoals = Object.keys(GOAL_OPTI
               <span className="wl-option-body">
                 <b>{t(label)}</b>
               </span>
+              {selected && <IonIcon className="wl-option-selected" icon={checkmarkCircleOutline} aria-hidden="true" />}
             </button>
           );
         })}
