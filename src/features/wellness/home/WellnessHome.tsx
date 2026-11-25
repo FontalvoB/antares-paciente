@@ -29,7 +29,7 @@ import { useI18n } from "../../../i18n/I18nContext";
 import { LanguageToggle } from "../../../components/LanguageToggle";
 import { checkinOwner, loadCheckins } from "../checkin/checkin-store";
 import { Screen as AppScreen, Scroll } from "../../../components/Screen";
-import { formatDateForDisplay, toLocalISODate } from "../../../utils/dates";
+import { formatLocalizedDate, toLocalISODate } from "../../../utils/dates";
 import {
   GENERATION_ARTIFACTS,
   type GenerationInboxItem,
@@ -157,12 +157,12 @@ export function WellnessHome() {
       <Scroll className="wh-scroll">
         <header className="wh-hero">
           <div className="wh-hero-top">
-            <span className="wh-brand">Copp Adresd</span>
+            <span className="wh-brand">{t("Copp Adresd")}</span>
             <LanguageToggle />
           </div>
-          <p className="wh-greeting">
+          <h1 className="wh-greeting">
             {firstName ? t("Hola, {name}", { name: firstName }) : t("Hola")}
-          </p>
+          </h1>
           <div className="wh-day-row">
             <p className="wh-day">
               {t("Día")} <strong>{number.format(data.day)}</strong>{" "}
@@ -290,11 +290,7 @@ export function WellnessHome() {
                   type="button"
                   className={`wh-step${step.done ? " is-done" : ""}`}
                   onClick={() => navigate(STEP_SCREEN[step.id])}
-                  aria-label={
-                    step.done
-                      ? t("{step}, completado", { step: t(step.label) })
-                      : t("Ir a {step}", { step: t(step.label) })
-                  }
+                  aria-describedby={step.done ? `wh-step-status-${step.id}` : undefined}
                 >
                   <span className="wh-step-ico" aria-hidden="true">
                     <IonIcon
@@ -303,6 +299,7 @@ export function WellnessHome() {
                   </span>
                   <span>{t(step.label)}</span>
                 </button>
+                {step.done && <span hidden id={`wh-step-status-${step.id}`}>{t("Hecho")}</span>}
               </li>
             ))}
           </ul>
@@ -367,7 +364,7 @@ export function WellnessHome() {
                       <h3>{t(title)}</h3>
                       <p>{t(body)}</p>
                       <time dateTime={item.createdAt}>
-                        {formatDateForDisplay(date)}
+                        {formatLocalizedDate(date, lang)}
                       </time>
                     </IonLabel>
                   </IonItem>

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ObjectiveWizard } from "../components/objective/ObjectiveWizard";
 import { EMPTY_OBJECTIVE_DRAFT, WELLNESS_TERMS_VERSION } from "../domain/draft";
 import type { ObjectiveDraft } from "../domain/types";
+import { DEFAULT_UNITS, saveUnitPrefs } from "../vitals/unit-prefs";
 
 vi.mock("../../../i18n/I18nContext", async () => {
   const { default: english } = await import("../../../i18n/en.json");
@@ -113,7 +114,10 @@ function walkToGenerate() {
   for (let step = 0; step < 7; step += 1) next();
 }
 
-beforeEach(() => cleanup());
+beforeEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 describe("ObjectiveWizard (KAN-136)", () => {
   it("muestra los 8 pasos con progreso accesible", () => {
@@ -134,6 +138,54 @@ describe("ObjectiveWizard (KAN-136)", () => {
       "1",
     );
     expect(screen.getByText("Step 1 of 8")).toBeTruthy();
+  });
+
+  it("expone qué meta está seleccionada sin duplicar el nombre accesible", () => {
+    const onChange = vi.fn();
+    render(
+      <ObjectiveWizard
+        draft={complete}
+        onChange={onChange}
+        gate={null}
+        generating={false}
+        onGenerate={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    );
+    const selected = screen.getByRole("button", { name: "Lose weight", pressed: true });
+    expect(selected.hasAttribute("aria-label")).toBe(false);
+    const other = screen.getByRole("button", { name: "Build muscle", pressed: false });
+    fireEvent.click(other);
+    expect(onChange).toHaveBeenCalledWith({ goal: "masa" });
+  });
+
+  it("edita en pulgadas y libras con un borrador métrico", () => {
+    const onChange = vi.fn();
+    render(
+      <ObjectiveWizard draft={complete} onChange={onChange} gate={null}
+        generating={false} onGenerate={vi.fn()} onExit={vi.fn()} />,
+    );
+    next();
+    const weight = screen.getByRole<HTMLInputElement>("textbox", { name: "Current weight (lb)" });
+    const height = screen.getByRole<HTMLInputElement>("textbox", { name: "Height (in)" });
+    expect(weight.value).toBe("158.73");
+    expect(height.value).toBe("64.96");
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.change(weight, { target: { value: "160" } });
+    fireEvent.change(height, { target: { value: "65" } });
+    expect(onChange.mock.calls[0][0].weightKg).toBeCloseTo(72.5747792, 10);
+    expect(onChange.mock.calls[1][0].heightCm).toBeCloseTo(165.1, 10);
+  });
+
+  it("respeta la preferencia métrica de Signos Vitales en inglés", () => {
+    saveUnitPrefs("patient-id", DEFAULT_UNITS);
+    render(
+      <ObjectiveWizard draft={complete} onChange={vi.fn()} gate={null}
+        generating={false} onGenerate={vi.fn()} onExit={vi.fn()} unitOwner="patient-id" />,
+    );
+    next();
+    const height = screen.getByRole<HTMLInputElement>("textbox", { name: "Height (cm)" });
+    expect(height.value).toBe("165");
   });
 
   it("recorre los 8 pasos y permite generar con la compuerta aprobada", () => {

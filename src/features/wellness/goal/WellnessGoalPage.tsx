@@ -9,6 +9,7 @@ import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { Screen } from "../../../components/Screen";
 import { ObjectiveWizard } from "../components/objective";
+import { checkinOwner } from "../checkin/checkin-store";
 import { buildPlanPreview, evaluateGate } from "../domain";
 import type { GateResult, ObjectiveDraft, WellnessGoal } from "../domain";
 import {
@@ -63,6 +64,7 @@ export function WellnessGoalPage() {
   const [gate, setGate] = useState<GateResult | null>(null);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<GoalChangeResult | null>(null);
+  const [generateError, setGenerateError] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -88,6 +90,7 @@ export function WellnessGoalPage() {
   };
 
   const generate = () => {
+    setGenerateError(false);
     setGenerating(true);
     try {
       const localGate = evaluateGate(draft);
@@ -98,14 +101,14 @@ export function WellnessGoalPage() {
       }
       const preview = buildPlanPreview(draft);
       if (!preview) {
-        showToast(t("No pudimos generar tu plan. Intenta de nuevo."), "err");
+        setGenerateError(true);
         return;
       }
       setGate(localGate);
       setResult(changePlanObjective(draft, preview));
       setStage("done");
     } catch {
-      showToast(t("No pudimos generar tu plan. Intenta de nuevo."), "err");
+      setGenerateError(true);
     } finally {
       setGenerating(false);
     }
@@ -131,7 +134,7 @@ export function WellnessGoalPage() {
     <Screen hideNav className="onb-page">
       <header className="onb-head">
         <div className="onb-head-top">
-          <div className="onb-head-brand">Copp Adresd</div>
+          <div className="onb-head-brand">{t("Copp Adresd")}</div>
         </div>
         <h1 className="onb-head-title" ref={titleRef} tabIndex={-1}>
           {title}
@@ -212,14 +215,23 @@ export function WellnessGoalPage() {
           )}
 
           {stage === "form" && (
-            <ObjectiveWizard
-              draft={draft}
-              onChange={changeDraft}
-              gate={gate}
-              generating={generating}
-              onGenerate={generate}
-              onExit={() => setStage("confirm")}
-            />
+            <>
+              <ObjectiveWizard
+                unitOwner={checkinOwner(user)}
+                draft={draft}
+                onChange={changeDraft}
+                gate={gate}
+                generating={generating}
+                onGenerate={generate}
+                onExit={() => {
+                  setGenerateError(false);
+                  setStage("confirm");
+                }}
+              />
+              {generateError && <p role="alert" className="wl-note wl-note-danger">
+                {t("No pudimos generar tu plan. Intenta de nuevo.")}
+              </p>}
+            </>
           )}
 
           {stage === "done" && result && (

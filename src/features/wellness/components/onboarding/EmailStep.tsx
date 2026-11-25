@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { IonButton, IonInput } from "@ionic/react";
 import { arrowForwardOutline } from "ionicons/icons";
 import { AuthSubmitButton } from "../../../../components/AuthSubmitButton";
@@ -26,9 +26,11 @@ export function EmailStep({
   error?: string | null;
 }) {
   const t = useT();
+  const errorId = useId();
   const [submitted, setSubmitted] = useState(false);
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const invalidEmail = submitted && !validEmail;
+  const issue = invalidEmail ? "Ingresa un correo electrónico válido." : error;
   const disabled = busy || !email.trim() || (existingAccount && !password);
 
   return (
@@ -59,7 +61,7 @@ export function EmailStep({
         enterkeyhint={existingAccount ? "next" : "go"}
         required
         disabled={busy}
-        errorText={t("Ingresa un correo electrónico válido.")}
+        aria-describedby={invalidEmail ? errorId : undefined}
         value={email}
         onIonInput={(event) => onEmailChange(event.detail.value ?? "")}
       />
@@ -78,9 +80,9 @@ export function EmailStep({
           onIonInput={(event) => onPasswordChange(event.detail.value ?? "")}
         />
       )}
-      {error && (
-        <p className="wl-note wl-note-danger" role="alert">
-          {t(error)}
+      {issue && (
+        <p id={errorId} className="wl-note wl-note-danger" role="alert">
+          {t(issue)}
         </p>
       )}
       <div className="wl-footer wl-footer-stack">

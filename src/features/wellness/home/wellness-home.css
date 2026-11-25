@@ -37,6 +37,7 @@
 .wh-greeting {
   margin: 6px 0 0;
   font-size: 15px;
+  font-weight: 600;
   color: var(--wellness-on-dark-muted);
 }
 

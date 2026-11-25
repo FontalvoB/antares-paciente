@@ -1,8 +1,9 @@
 import { IonButton } from "@ionic/react";
 import { useEffect, useId, useRef, useState } from "react";
-import { useT } from "../../../../i18n/I18nContext";
+import { useI18n } from "../../../../i18n/I18nContext";
 import { OBJECTIVE_STEP, evaluateGate } from "../../domain";
 import type { GateIssue, GateResult, ObjectiveDraft } from "../../domain";
+import { loadUnitPrefs } from "../../vitals/unit-prefs";
 import { GateNotice } from "./GateNotice";
 import { ActivityStep } from "./steps/ActivityStep";
 import { DataStep, dataIssues, issueParams } from "./steps/DataStep";
@@ -56,15 +57,17 @@ function getLocalGate(draft: ObjectiveDraft): GateResult {
   return { ok: validated.length === 0, issues: validated };
 }
 
-export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit }: {
+export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, unitOwner }: {
   draft: ObjectiveDraft;
   onChange: (patch: Partial<ObjectiveDraft>) => void;
   gate: GateResult | null;
   generating: boolean;
   onGenerate: () => void;
   onExit: () => void;
+  unitOwner?: string;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
+  const prefs = loadUnitPrefs(unitOwner ?? (draft.email || "local"), lang);
   const headingId = useId();
   const errorId = useId();
   const content = useRef<HTMLDivElement>(null);
@@ -174,13 +177,13 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
 
       {visibleError && (
         <p id={errorId} className="wl-note wl-note-danger" role="alert">
-          {t(visibleError.messageKey, issueParams(visibleError))}
+          {t(visibleError.messageKey, issueParams(visibleError, lang, prefs))}
         </p>
       )}
 
       <div ref={content}>
         {step === OBJECTIVE_STEP.goal && <GoalStep {...stepProps} />}
-        {step === OBJECTIVE_STEP.data && <DataStep {...stepProps} />}
+        {step === OBJECTIVE_STEP.data && <DataStep {...stepProps} prefs={prefs} />}
         {step === OBJECTIVE_STEP.activity && <ActivityStep {...stepProps} />}
         {step === OBJECTIVE_STEP.preferences && <PreferencesStep {...stepProps} />}
         {step === OBJECTIVE_STEP.parq && <ParqStep {...stepProps} />}
@@ -189,18 +192,19 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
         {step === OBJECTIVE_STEP.generate && (
           <>
             <GateNotice
+              prefs={prefs}
               gate={finalGate}
               onGoToStep={(target) => {
                 const field = finalGate.issues.find((issue) => issue.step === target)?.field;
                 goToStep(target, field);
               }}
             />
-            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} />
+            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} prefs={prefs} />
           </>
         )}
       </div>
       {bmiIssue && (
-        <GateNotice gate={{ ok: false, issues: [bmiIssue] }} onGoToStep={(target) => goToStep(target, bmiIssue.field)} />
+        <GateNotice gate={{ ok: false, issues: [bmiIssue] }} onGoToStep={(target) => goToStep(target, bmiIssue.field)} prefs={prefs} />
       )}
 
       <div className="wl-footer">
