@@ -1308,6 +1308,23 @@ export function AppProvider({
       ? buildRealAppointments(appointments, requests, specialties ?? undefined)
       : null;
 
+  const navigate = useCallback<AppState["navigate"]>((target) => {
+    switch (target) {
+      case "home":
+      case "protocol":
+      case "wellness-diet":
+      case "wellness-exercise":
+      case "wellness-goal":
+      case "wellness-checkin":
+      case "wellness-privacy":
+      case "prof":
+        setScreen(target);
+        return;
+      default:
+        setScreen("home");
+    }
+  }, []);
+
   const value = useMemo<AppState>(
     () => ({
       vitaWelcomePending,
@@ -1389,21 +1406,7 @@ export function AppProvider({
       pointsToday,
       pointsTotal,
       dismissVitaWelcome: () => setVitaWelcomePending(false),
-      navigate: (target) => {
-        switch (target) {
-          case "home":
-          case "protocol":
-          case "wellness-diet":
-          case "wellness-exercise":
-          case "wellness-goal":
-          case "wellness-checkin":
-          case "prof":
-            setScreen(target);
-            return;
-          default:
-            setScreen("home");
-        }
-      },
+      navigate,
       openBookingWizard: () => setScreen("home"),
       bookingWizardAutoOpen: false,
       clearBookingWizardAutoOpen: () => {},
@@ -1466,7 +1469,7 @@ export function AppProvider({
         setFlow("tests");
       },
       finishWellnessOnboarding: (u) => {
-        setUser(u);
+        setUser({ ...u, id: sessionUserId(getAccessToken()) ?? u.id });
         setFlow("app");
         setScreen("home");
       },
@@ -1665,6 +1668,7 @@ export function AppProvider({
       resetPatientSession,
       flow,
       screen,
+      navigate,
       toast,
       showToast,
       panicOpen,

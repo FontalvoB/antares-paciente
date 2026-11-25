@@ -1,0 +1,123 @@
+.screen-scroll.wellness-privacy-scroll {
+  background: var(--wellness-bg-start);
+  padding: max(16px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
+    calc(92px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  scroll-padding-block: 16px calc(92px + env(safe-area-inset-bottom));
+}
+
+.wellness-privacy {
+  max-inline-size: 42rem;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--wellness-space);
+}
+
+.wellness-privacy-card {
+  display: grid;
+  gap: 8px;
+  min-inline-size: 0;
+  padding: var(--wellness-space);
+  color: var(--wellness-navy);
+  background: var(--wellness-surface);
+  border: 1px solid var(--wellness-border);
+  border-radius: var(--wellness-radius);
+}
+
+.wellness-privacy h1, .wellness-privacy-card h1 {
+  margin: 8px 0;
+  font-size: 1.65rem;
+  line-height: 1.2;
+  color: var(--wellness-navy);
+}
+
+.wellness-privacy-card h2, .wellness-privacy-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.wellness-privacy-card p, .wellness-privacy-draft {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--wellness-muted);
+}
+
+.wellness-privacy-draft {
+  color: var(--wellness-navy);
+  font-weight: 700;
+}
+
+.wellness-privacy-card p + h2 {
+  margin-block-start: 8px;
+}
+
+.wellness-privacy-scope {
+  border-block-start: 1px solid var(--wellness-border);
+  padding-block-start: 12px;
+  margin-block-start: 4px;
+}
+
+.wellness-privacy-choice {
+  display: grid;
+  gap: 8px;
+  margin-block-start: 4px;
+}
+
+.wellness-privacy-choice .wellness-privacy-meta {
+  margin-block-start: 6px;
+  font-size: 0.82rem;
+}
+
+.wellness-privacy-choice ion-checkbox {
+  display: flex;
+  min-block-size: 44px;
+  max-inline-size: 100%;
+  white-space: normal;
+  line-height: 1.4;
+  --border-color: var(--wellness-muted);
+}
+
+.wellness-privacy-choice ion-checkbox::part(label) {
+  white-space: normal;
+}
+
+.wellness-privacy ion-button, .wellness-privacy-card ion-button {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  margin-inline: 0;
+  white-space: normal;
+}
+
+.wellness-privacy ion-button::part(native), .wellness-privacy-card ion-button::part(native) {
+  min-block-size: 44px;
+}
+
+.wellness-privacy-actions {
+  display: grid;
+  gap: 4px;
+}
+
+.wellness-privacy-delete {
+  --border-color: var(--wellness-error);
+  --color: var(--wellness-error);
+}
+
+.wellness-privacy-card .wellness-privacy-error,
+.wellness-privacy-alert button.alert-button-role-destructive {
+  color: var(--wellness-error);
+}
+
+.wellness-privacy ion-button.ion-focused,
+.wellness-privacy-card ion-button.ion-focused,
+.wellness-privacy-choice ion-checkbox:focus-visible,
+.wellness-privacy-choice ion-checkbox.ion-focused,
+.wellness-privacy-alert button:focus-visible {
+  outline: 2px solid var(--wellness-navy);
+  outline-offset: 2px;
+}
+
+.wellness-privacy-alert button.alert-button {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+}

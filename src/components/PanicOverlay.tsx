@@ -214,14 +214,14 @@ export function PanicOverlay() {
     let expiry: number | undefined;
     setDetectedCountry(null);
     setEmergencyCoordinates(null);
-    const detect = () => {
+    const detect = (allowPrompt = false) => {
       if (cancelled || pending || !nativeActive || document.visibilityState === "hidden") return;
       pending = true;
       lastAttempt = Date.now();
       setDetectedCountry(null);
       setEmergencyCoordinates(null);
       setLocationStatus("locating");
-      void getEmergencyLocation().then((result) => {
+      void getEmergencyLocation(allowPrompt).then((result) => {
         if (cancelled) return;
         setDetectedCountry(result.country);
         setEmergencyCoordinates(result.coordinates);
@@ -239,7 +239,7 @@ export function PanicOverlay() {
       window.clearTimeout(expiry);
       detect();
     };
-    detect();
+    detect(locationAttempt > 0);
     document.addEventListener("visibilitychange", resume);
     window.addEventListener("pageshow", resume);
     const handle = Capacitor.isNativePlatform()
@@ -255,6 +255,7 @@ export function PanicOverlay() {
 
   useEffect(() => {
     if (!panicOpen) {
+      setLocationAttempt(0);
       setView("protocol");
       setHelpView("medical");
       setAlertId(null);
@@ -439,7 +440,7 @@ export function PanicOverlay() {
     if (activating || sosActive || rateLimitSecs > 0) return;
     setActivating(true);
     try {
-      const coords = await getCoordinatesBestEffort();
+      const coords = await getCoordinatesBestEffort({ allowPrompt: false });
       const current = wearableRef.current;
       const vitals = current.info.wearing !== false
         ? recentVitals(current.samples, Date.now()) : null;
@@ -1260,6 +1261,13 @@ export function PanicOverlay() {
                     </section>
                     <IonNote className="sos-location-disclosure">
                       <p>{t("Si compartes tu ubicación, enviaremos el punto GPS a Amazon Location para obtener una dirección aproximada y avisar a tus contactos. Si no se puede obtener la dirección, se compartirá el mapa.")}</p>
+                      <IonButton
+                        fill="outline"
+                        disabled={locationStatus === "locating"}
+                        onClick={() => setLocationAttempt(attempt => attempt + 1)}
+                      >
+                        {t("Usar ubicación en esta alerta")}
+                      </IonButton>
                       <IonButton
                         fill="clear"
                         className="sos-location-sources"

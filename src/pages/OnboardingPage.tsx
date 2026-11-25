@@ -34,6 +34,8 @@ import {
   WellnessStepper,
 } from "../features/wellness/components/onboarding";
 import { ObjectiveWizard } from "../features/wellness/components/objective";
+import { SensitiveDataGate } from "../features/wellness/privacy/WellnessPrivacy";
+import { wellnessPrivacyActor } from "../features/wellness/privacy/privacy-consent-store";
 import "../features/wellness/wellness.css";
 
 /** Pasos visibles del onboarding de 5 pasos (el objetivo es el quinto). */
@@ -78,7 +80,7 @@ function baseProfile(draft: ObjectiveDraft, email: string): UserProfile {
 }
 
 export function OnboardingPage() {
-  const { finishWellnessOnboarding, backToLogin, showToast } = useApp();
+  const { user, finishWellnessOnboarding, backToLogin, showToast } = useApp();
   const { t } = useI18n();
 
   const [stage, setStage] = useState<OnboardingStage>("email");
@@ -400,14 +402,16 @@ export function OnboardingPage() {
           )}
 
           {stage === "objective" && (
-            <ObjectiveWizard
-              draft={draft}
-              onChange={changeDraft}
-              gate={gate}
-              generating={generating}
-              onGenerate={() => void generatePlan()}
-              onExit={goBack}
-            />
+            <SensitiveDataGate actor={wellnessPrivacyActor({ id: user.id, email })} onBack={goBack}>
+              <ObjectiveWizard
+                draft={draft}
+                onChange={changeDraft}
+                gate={gate}
+                generating={generating}
+                onGenerate={() => void generatePlan()}
+                onExit={goBack}
+              />
+            </SensitiveDataGate>
           )}
 
           {error && stage !== "email" && stage !== "password" && (
