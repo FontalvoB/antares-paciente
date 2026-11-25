@@ -33,6 +33,7 @@ import { sessionUserId } from "./utils/sessionIdentity";
 import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
 import type { PaidGeneration } from "./features/wellness/generation/wellness-journey-api";
 import { TestsPage } from "./pages/TestsPage";
+import { WellnessPlan } from "./features/wellness/home/WellnessPlan";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
 import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
@@ -92,6 +93,9 @@ function Router() {
     content = <TestsPage />;
   } else {
     switch (screen) {
+      case "wellness-plan":
+        content = <WellnessPlan />;
+        break;
       case "protocol":
         content = <WellnessProtocol />;
         break;
