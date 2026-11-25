@@ -1397,6 +1397,7 @@ export function AppProvider({
           case "wellness-exercise":
           case "wellness-goal":
           case "wellness-checkin":
+          case "wellness-year":
           case "prof":
             setScreen(target);
             return;

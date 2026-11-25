@@ -9,6 +9,7 @@ import {
 } from "@ionic/react";
 import {
   barbellOutline,
+  calendarOutline,
   checkmarkCircle,
   clipboardOutline,
   flameOutline,
@@ -348,6 +349,22 @@ export function WellnessHome() {
             <IonIcon icon={micOutline} aria-hidden="true" />
             <span>{t("Vita")}</span>
           </button>
+        </section>
+
+        <section className="wh-card" aria-labelledby="wh-year-title">
+          <div className="wh-card-head">
+            <h2 id="wh-year-title">{t("Año 365")}</h2>
+          </div>
+          <p className="wh-body">{t("Tu calendario, resumen mensual y curvas")}</p>
+          <IonButton
+            expand="block"
+            fill="outline"
+            className="wh-secondary"
+            onClick={() => navigate("wellness-year")}
+          >
+            <IonIcon slot="start" icon={calendarOutline} aria-hidden="true" />
+            {t("Abrir Año 365")}
+          </IonButton>
         </section>
 
         <section className="wh-card wh-inbox" aria-labelledby="wh-inbox-title">

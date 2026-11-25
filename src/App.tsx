@@ -36,6 +36,7 @@ import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
+import { WellnessYearPage } from "./features/wellness/year/WellnessYearPage";
 import {
   checkinOwner,
   syncCheckins,
@@ -88,6 +89,9 @@ function Router() {
         break;
       case "wellness-checkin":
         content = <WellnessCloseDay />;
+        break;
+      case "wellness-year":
+        content = <WellnessYearPage />;
         break;
       case "prof":
         content = <ProfilePage />;
