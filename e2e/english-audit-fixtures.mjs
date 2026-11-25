@@ -44,7 +44,7 @@ export function installEnglishAudit(){
   if(p==='/api/auth/refresh')return session?reply({accessToken:token,expiresIn:86400}):reply({},401);
   if(p==='/api/auth/me/avatar')return reply(method==='PUT'?body:{version:1,gender:'male',skin:'skin-03',hair:'hair-02',clothing:{shirt:'shirt-basic-01',pants:'pants-male-01',shoes:null},accessories:{glasses:null,watch:null,bracelet:null}});
   if(p==='/api/auth/me')return reply({id,firstName:profile.firstName,lastName:profile.lastName,roles:['Patient'],permissions:[]});
-  if(p==='/api/auth/login'||p==='/api/auth/verify-otp'){if(body.documentNumber==='QA-ERROR')return reply({message:'Credenciales inválidas'},401);session=true;return reply({accessToken:token,tokenType:'Bearer',expiresIn:86400})}
+  if(p==='/api/auth/login'||p==='/api/auth/verify-otp'){if(body.email==='qa-error@example.invalid'||body.documentNumber==='QA-ERROR')return reply({message:'Credenciales inválidas'},401);session=true;return reply({accessToken:token,tokenType:'Bearer',expiresIn:86400})}
   if(p==='/api/auth/id-lookup')return reply({...profile,contacts:[{id:'qa-contact',type:'Email',label:'qa@example.invalid'},{id:'qa-phone',type:'Phone',label:'+1•••0101'}]});
   if(p==='/api/auth/send-otp'||p==='/api/auth/recovery-code')return reply({expiresInSeconds:300,devCode:'123456'});
   if(p==='/api/auth/recover-password'||p==='/api/auth/set-first-password')return reply({message:'Contraseña actualizada.'});

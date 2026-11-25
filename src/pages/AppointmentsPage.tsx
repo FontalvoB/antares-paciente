@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { IonAlert, IonButton, IonIcon, IonModal } from "@ionic/react";
 import { calendarOutline } from "ionicons/icons";
-import logoIcon from "../assets/LogoIndividual.png";
+import { BrandWordmark } from "../components/BrandWordmark";
 import { PageHeader } from "../components/PageHeader";
 import { PreVisitIntakeSheet } from "../components/PreVisitIntakeSheet";
 import { RequestAppointmentWizard } from "../components/RequestAppointmentWizard";
@@ -82,7 +82,7 @@ export function AppointmentsPage() {
 
   return (
     <Screen className="appointments-reference">
-      <div className="appointments-brand hm-wordmark"><img src={logoIcon} alt="" /><div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div></div>
+      <BrandWordmark className="appointments-brand hm-wordmark" />
       <PageHeader
         title={t("Mis citas")}
         sub={t("Tu acompañamiento, paso a paso")}

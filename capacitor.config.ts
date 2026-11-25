@@ -3,7 +3,7 @@ import manifest from "./package.json";
 
 const config: CapacitorConfig = {
   appId: "com.coppadresd.app",
-  appName: "Copp Adresd",
+  appName: "Agentic Wellness IA",
   webDir: "dist",
   server: {
     // Dev: sin server.url → Capacitor carga el bundle local (webDir). En

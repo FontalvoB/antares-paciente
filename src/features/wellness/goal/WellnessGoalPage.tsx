@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../../../utils/brand";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IonBadge, IonButton, IonIcon } from "@ionic/react";
 import {
@@ -132,7 +133,7 @@ export function WellnessGoalPage() {
     <Screen hideNav className="onb-page">
       <header className="onb-head">
         <div className="onb-head-top">
-          <div className="onb-head-brand">Copp Adresd</div>
+          <div className="onb-head-brand">{BRAND_NAME}</div>
         </div>
         <h1 className="onb-head-title" ref={titleRef} tabIndex={-1}>
           {title}

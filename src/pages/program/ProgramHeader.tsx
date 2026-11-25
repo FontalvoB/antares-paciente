@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { IonButton, IonIcon, IonItem, IonList, IonPopover, IonSegment, IonSegmentButton } from '@ionic/react'
 import { motion } from 'framer-motion'
 import { calendarOutline, chevronForward, flame, gift, menuOutline, notificationsOutline, star, trophyOutline, locateOutline } from 'ionicons/icons'
-import logoIcon from '../../assets/LogoIndividual.png'
+import { BrandWordmark } from '../../components/BrandWordmark'
 import { NotificationsModal } from '../../components/notifications/NotificationsModal'
 import { RingProgress } from '../../components/RingProgress'
 import { useT } from '../../i18n/I18nContext'
@@ -45,10 +45,7 @@ export function ProgramHeader({
   return (
     <header className="pgh">
       <div className="pgh-topbar">
-        <div className="hm-wordmark" aria-label="COPP-ADRESD">
-          <img src={logoIcon} alt="" />
-          <div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div>
-        </div>
+        <BrandWordmark className="hm-wordmark" />
         <div className="pgh-actions">
           <IonButton fill="clear" aria-label={t('Notificaciones')} onClick={() => setNotificationsOpen(true)}><IonIcon slot="icon-only" icon={notificationsOutline} /></IonButton>
           <IonButton fill="clear" aria-label={t('Menú')} onClick={(event) => setMenuEvent(event.nativeEvent)}><IonIcon slot="icon-only" icon={menuOutline} /></IonButton>

@@ -439,7 +439,7 @@ export function TestsPage() {
               <IonIcon slot="icon-only" icon={arrowBackOutline} />
             </IonButton>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="kicker">{t("COPP ADRESD · PERFIL DE SALUD")}</div>
+              <div className="kicker">{t("Agentic Wellness IA · PERFIL DE SALUD")}</div>
               <div className="h2">
                 {openId !== null
                   ? t(displayedTitle || theme.kicker)

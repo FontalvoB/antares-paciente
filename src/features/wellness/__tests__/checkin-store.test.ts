@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadCheckins, saveCheckin, syncCheckins } from "../checkin/checkin-store";
 import type { DailyCheckin } from "../checkin/close-day";
+import { deleteWellnessData } from "../privacy/privacy-consent-store";
 
 const owner = "test-patient";
 const date = "2026-11-24";
@@ -53,6 +54,15 @@ describe("check-in por fecha local", () => {
     await syncCheckins(owner, send);
     expect(send.mock.calls).toEqual([[record], [record]]);
     expect(loadCheckins(owner)[date].status).toBe("synced");
+  });
+
+  it("no recupera ni envía los cierres borrados durante una sincronización", async () => {
+    await saveCheckin(owner, date, input, beforeMidnight);
+    await saveCheckin(owner, "2026-11-25", input, afterMidnight);
+    const send = vi.fn(async () => { deleteWellnessData(owner); });
+    await syncCheckins(owner, send);
+    expect(send).toHaveBeenCalledOnce();
+    expect(loadCheckins(owner)).toEqual({});
   });
 
   it("rechaza fechas futuras y fechas inexistentes", async () => {

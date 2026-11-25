@@ -65,7 +65,7 @@ export function VitaWelcome() {
         <img src={vitaPortrait} alt={t('Vita, tu coach de bienestar')} />
         <div className="vita-welcome-copy">
           <span className="kicker">{t('Tu camino empieza aquí')}</span>
-          <h2 id="vita-welcome-title">{t('Bienvenido {nombre} al programa Copp Adresd.', { nombre: user.nombre.trim().split(/\s+/)[0] || t('Participante') })}</h2>
+          <h2 id="vita-welcome-title">{t('Bienvenido {nombre} al programa Agentic Wellness IA.', { nombre: user.nombre.trim().split(/\s+/)[0] || t('Participante') })}</h2>
           <p>{t('Soy Vita, tu coach asignada.')}</p>
           <p className="vita-description">{t('Te acompañaré a descubrir tu programa y a construir tus hábitos, un día a la vez.')}</p>
           <IonButton expand="block" className="bt bt-teal" onClick={() => { dismiss(); openVoice(); }}>
