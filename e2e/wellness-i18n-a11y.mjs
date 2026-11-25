@@ -1,4 +1,10 @@
-/** Cierre del día en Chromium con Vite en 127.0.0.1:5181. */
+/**
+ * KAN-147 · i18n y accesibilidad del bienestar sobre el Home rediseñado (KAN-121), en Chromium
+ * con Vite en 127.0.0.1:5181. Recorrido por idioma (es/en) y viewport (320/390/768):
+ * Inicio → Ejercicio → protocolo → Inicio → Nutrición → protocolo → Inicio → anillo del día →
+ * plan de bienestar → etapa «Bienestar» → cierre del día (formulario, errores, unidades, resumen).
+ * Canal del navegador: KAN147_CHROMIUM_CHANNEL o COP_E2E_BROWSER_CHANNEL (p. ej. "chrome").
+ */
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -13,6 +19,10 @@ const token = "x." + Buffer.from(JSON.stringify({
 })).toString("base64url") + ".x";
 const scenarios = {
   es: {
+    ring: "Ver mi plan de bienestar", tasks: "Actividades del día", exerciseTask: "Ejercicio",
+    dietTask: "Nutrición", backProtocol: "Volver al protocolo", backHome: "Volver al inicio",
+    backPlanHome: "Volver a Inicio", diet: "Dieta de hoy", plan: "Tu Plan de Bienestar",
+    wellnessStage: "Bienestar",
     close: "Cerrar el día", closed: "Día cerrado", form: "Registro de hoy",
     fields: ["Adherencia (%)", "Horas de sueño", "Energía (1–5)", "Dolor (0–10)"],
     weight: "Peso (kg, opcional)", waist: "Cintura (cm, opcional)",
@@ -21,6 +31,10 @@ const scenarios = {
     error: "Revisa los valores e indica si hiciste ejercicio.", summary: "Tu plan para mañana",
   },
   en: {
+    ring: "View my wellness plan", tasks: "Daily activities", exerciseTask: "Exercise",
+    dietTask: "Nutrition", backProtocol: "Back to protocol", backHome: "Back to home",
+    backPlanHome: "Return to Home", diet: "Today’s diet", plan: "Your Wellness Plan",
+    wellnessStage: "Wellness",
     close: "Close the day", closed: "Day closed", form: "Today's check-in",
     fields: ["Adherence (%)", "Hours of sleep", "Energy (1–5)", "Pain (0–10)"],
     weight: "Weight (lb, optional)", waist: "Waist (in, optional)",
@@ -30,18 +44,50 @@ const scenarios = {
   },
 };
 
+/** Pantallas actuales: Home/plan (.wh-scroll), protocolo (.wp-scroll), ejercicio (.wx-scroll), cierre (.wc-scroll). */
+const SCROLLS = ".wh-scroll, .wp-scroll, .wx-scroll, .wc-scroll";
+
 async function assertNoOverflow(page) {
-  const overflow = await page.evaluate(() => {
-    const labels = document.querySelectorAll(".wc-scroll :is(h1,h2,.label-text-wrapper)");
-    return [document.documentElement, document.querySelector(".app-shell"), document.querySelector(".wc-scroll"), ...labels]
+  const overflow = await page.evaluate((scrolls) => {
+    const labels = document.querySelectorAll(`:is(${scrolls}) :is(h1,h2,.label-text-wrapper)`);
+    return [document.documentElement, document.querySelector(".app-shell"), ...document.querySelectorAll(scrolls), ...labels]
       .filter((node) => node && node.clientWidth && node.scrollWidth > node.clientWidth + 1)
       .map((node) => node.className);
-  });
+  }, SCROLLS);
   assert.deepEqual(overflow, []);
 }
 
+/** Área táctil mínima de 44×44 px (WCAG 2.5.8 / iOS HIG). */
+async function assertTarget(name, locator) {
+  const box = await locator.boundingBox();
+  assert.ok(box && box.width >= 44 && box.height >= 44, `${name}: ${JSON.stringify(box)}`);
+}
+
+/**
+ * Foco visible por teclado: contorno sólido ≥2 px en el control enfocado o en su host Ionic.
+ * En IonButton el foco cae en el <button> nativo del shadow DOM, que es quien pinta el contorno.
+ */
+async function assertFocusRing(page, name, locator, shot) {
+  await locator.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await expect(locator).toBeFocused();
+  const visible = await locator.evaluate((node) => {
+    const root = node.getRootNode();
+    const host = root instanceof ShadowRoot ? root.host : node;
+    return [node, host].some((element) => {
+      const { outlineStyle, outlineWidth } = getComputedStyle(element);
+      return outlineStyle === "solid" && parseFloat(outlineWidth) >= 2;
+    });
+  });
+  assert.ok(visible, `Contorno de foco: ${name}`);
+  await locator.screenshot({ path: join(output, shot) });
+}
+
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ channel: process.env.KAN147_CHROMIUM_CHANNEL });
+const browser = await chromium.launch({
+  channel: process.env.KAN147_CHROMIUM_CHANNEL ?? process.env.COP_E2E_BROWSER_CHANNEL,
+});
 let browserPid;
 try {
   const cdp = await browser.newBrowserCDPSession();
@@ -80,6 +126,12 @@ try {
           localStorage.setItem("copp.ai-disclosure." + id, JSON.stringify({
             version: "2026-11-21-health", acceptedAt: now.toISOString(),
           }));
+          // Consentimiento de datos sensibles (KAN-121): ejercicio y cierre del día van tras SensitiveDataScreen.
+          // Debe coincidir con WELLNESS_CONSENT_VERSIONS["sensitive-data"] (privacy-consent-store.ts).
+          const at = now.toISOString();
+          localStorage.setItem(`copp.wellness-privacy.audit.v1.${at}.00000000.e2e`, JSON.stringify({
+            action: "accepted", actor: id, scope: "sensitive-data", version: "2026-11-25-draft.1", acceptedAt: at, at,
+          }));
         }, { id, lang, token });
         await page.route("**/api/**", (route) => {
           const { pathname } = new URL(route.request().url());
@@ -99,7 +151,55 @@ try {
 
         await page.goto(origin, { waitUntil: "domcontentloaded" });
         await expect(page.locator("html")).toHaveAttribute("lang", lang);
-        await page.locator(".wh-protocol").getByRole("button", { name: copy.close, exact: true }).click();
+
+        // Inicio rediseñado: anillo del día y lista de actividades (wh-task).
+        const home = async () => {
+          const ring = page.locator(".wh-ring-button").getByRole("button", { name: copy.ring, exact: true });
+          await expect(ring).toBeVisible();
+          return ring;
+        };
+        const ring = await home();
+        const tasks = page.getByRole("region", { name: copy.tasks });
+        const exerciseTask = tasks.locator(".wh-task").filter({ hasText: copy.exerciseTask }).getByRole("button");
+        const dietTask = tasks.locator(".wh-task").filter({ hasText: copy.dietTask }).getByRole("button");
+        await assertTarget(copy.ring, ring);
+        await assertTarget(copy.exerciseTask, exerciseTask);
+        await assertTarget(copy.dietTask, dietTask);
+        await assertFocusRing(page, copy.exerciseTask, exerciseTask, `kan147-focus-task-${lang}-${width}.png`);
+        await assertNoOverflow(page);
+        await page.screenshot({ path: join(output, `kan147-home-${lang}-${width}.png`) });
+
+        // Ejercicio y dieta: se entra desde la lista del Inicio y se sale por el protocolo.
+        const backToHome = async () => {
+          const backProtocol = page.getByRole("button", { name: copy.backProtocol, exact: true });
+          await assertTarget(copy.backProtocol, backProtocol);
+          await backProtocol.click();
+          const backHome = page.getByRole("button", { name: copy.backHome, exact: true });
+          await assertTarget(copy.backHome, backHome);
+          await backHome.click();
+          await home();
+        };
+        await exerciseTask.click();
+        await expect(page.locator(".wx-scroll").getByRole("heading", { level: 1 })).toBeVisible();
+        await expect(page.locator(".wx-eyebrow")).toHaveText(copy.exerciseTask);
+        await assertNoOverflow(page);
+        await page.screenshot({ path: join(output, `kan147-exercise-${lang}-${width}.png`) });
+        await backToHome();
+
+        await dietTask.click();
+        await expect(page.getByRole("heading", { name: copy.diet, level: 1 })).toBeVisible();
+        await assertNoOverflow(page);
+        await page.screenshot({ path: join(output, `kan147-diet-${lang}-${width}.png`) });
+        await backToHome();
+
+        // Cierre del día: anillo → plan de bienestar → etapa «Bienestar».
+        await (await home()).click();
+        await expect(page.getByRole("heading", { name: copy.plan, level: 2 })).toBeVisible();
+        await assertTarget(copy.backPlanHome, page.getByRole("button", { name: copy.backPlanHome, exact: true }));
+        const stage = page.locator(".wh-plan-stages").getByRole("button", { name: copy.wellnessStage, exact: true });
+        await assertTarget(copy.wellnessStage, stage);
+        await assertNoOverflow(page);
+        await stage.click();
         await expect(page.getByRole("heading", { name: copy.close, level: 1 })).toBeVisible();
         const form = page.getByRole("form", { name: copy.form });
         await expect(form.getByRole("heading", { name: copy.form, level: 2 })).toBeVisible();
@@ -142,8 +242,7 @@ try {
         await page.keyboard.press("Space");
         await expect(exerciseYes).toBeChecked();
         for (const [name, target] of [[copy.weight, weight], [copy.symptom, symptom], [copy.yes, exerciseYes], [copy.close, submit]]) {
-          const box = await target.boundingBox();
-          assert.ok(box && box.width >= 44 && box.height >= 44, `${name}: ${JSON.stringify(box)}`);
+          await assertTarget(name, target);
         }
         await assertNoOverflow(page);
         await page.locator(".wc-scroll").evaluate((node) => { node.scrollTop = 0; });
@@ -160,7 +259,7 @@ try {
         assert.ok(Math.abs(input.waistCm - copy.metric[1]) < 1e-10);
         assert.deepEqual(errors, []);
         assert.deepEqual(consoleErrors, []);
-        console.log(`PASS cierre ${lang} ${width}px`);
+        console.log(`PASS inicio/ejercicio/dieta/plan/cierre ${lang} ${width}px`);
       } finally {
         await context.close();
       }

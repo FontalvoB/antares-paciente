@@ -14,6 +14,7 @@ import { MotionConfig, motion, useReducedMotion } from "framer-motion";
 import {
   barbellOutline,
   bodyOutline,
+  calendarOutline,
   clipboardOutline,
   flagOutline,
   languageOutline,
@@ -502,6 +503,13 @@ export function ProfilePage() {
                       sub: "Cambia tu meta y actualiza tu plan",
                       tone: "sky",
                       action: () => navigate("wellness-goal"),
+                    },
+                    {
+                      icon: calendarOutline,
+                      title: "Año 365",
+                      sub: "Tu calendario, resumen mensual y curvas",
+                      tone: "sky",
+                      action: () => navigate("wellness-year"),
                     },
                     {
                       icon: pulseOutline,

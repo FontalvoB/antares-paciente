@@ -1410,6 +1410,7 @@ export function AppProvider({
           case "wellness-checkin":
           case "wellness-privacy":
           case "wellness-notifications":
+          case "wellness-year":
           case "prof":
             setScreen(target);
             return;

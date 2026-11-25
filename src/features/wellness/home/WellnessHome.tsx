@@ -172,6 +172,21 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
           </span>
         </IonButton>)}
       </section>
+      <section className="wh-card" aria-labelledby="wh-year-title">
+        <div className="wh-card-head">
+          <h2 id="wh-year-title">{t("Año 365")}</h2>
+        </div>
+        <p className="wh-body">{t("Tu calendario, resumen mensual y curvas")}</p>
+        <IonButton
+          expand="block"
+          fill="outline"
+          className="wh-secondary"
+          onClick={() => navigate("wellness-year")}
+        >
+          <IonIcon slot="start" icon={calendarOutline} aria-hidden="true" />
+          {t("Abrir Año 365")}
+        </IonButton>
+      </section>
         <div
           className="wh-generation-status"
           aria-live="polite"

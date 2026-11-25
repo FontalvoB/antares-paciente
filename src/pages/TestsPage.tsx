@@ -92,9 +92,7 @@ export function TestsPage() {
   const [assignmentsLanguage, setAssignmentsLanguage] = useState(lang);
   const [resultsLanguage, setResultsLanguage] = useState(lang);
   const [questionsLanguage, setQuestionsLanguage] = useState(lang);
-  const questionsRef = useRef(openQuestions);
-  questionsRef.current = openQuestions;
-  const [questionsError, setQuestionsError] = useState<unknown>(null);
+  const [questionsError, setQuestionsError] = useState<AssessmentReadError | null>(null);
   const [questionsRetry, setQuestionsRetry] = useState(0);
   const [resultsError, setResultsError] = useState<AssessmentReadError | null>(null);
   const [questionsLoading, setQuestionsLoading] = useState(false);
@@ -125,6 +123,7 @@ export function TestsPage() {
 
   const currentAssignmentsError = assignmentsError?.language === lang ? assignmentsError : null;
   const currentResultsError = resultsError?.language === lang ? resultsError : null;
+  const currentQuestionsError = questionsError?.language === lang ? questionsError : null;
   const visibleAssignments = assignmentsLanguage === lang ? assignments : null;
   const visibleResults = resultsLanguage === lang ? backendResults : null;
   const listedAssignments = visibleAssignments?.filter(isListedAssignment) ?? null;
@@ -239,7 +238,6 @@ export function TestsPage() {
   useEffect(() => {
     if (!openAssignmentId) return;
     let cancelled = false;
-    const hadQuestions = questionsRef.current !== null;
     setQuestionsLoading(true);
     setQuestionsError(null);
     void fetchMyTest(openAssignmentId).then(detail => {
@@ -249,15 +247,18 @@ export function TestsPage() {
       setQuestionsLanguage(lang);
       if (detail.name?.trim()) setOpenTitle({ text: detail.name, language: lang });
     }).catch(error => {
-      if (cancelled) return;
-      if (hadQuestions) setQuestionsError(error || new Error("Questions unavailable"));
-      else { setOpenId(null); setOpenAssignmentId(null); setOpenQuestions(null); }
-      showToast(t("No se pudieron cargar las preguntas. Intenta nuevamente."), "err");
+      if (!cancelled) setQuestionsError({ language: lang, error });
     }).finally(() => { if (!cancelled) setQuestionsLoading(false); });
     return () => { cancelled = true; };
     // Solo cambia la copia de presentación; conserva respuestas y la posición del wizard.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openAssignmentId, lang, questionsRetry]);
+
+  const retryQuestions = () => {
+    setQuestionsError(null);
+    setQuestionsLoading(true);
+    setQuestionsRetry(value => value + 1);
+  };
 
   const closeTest = () => {
     setOpenId(null);
@@ -265,6 +266,8 @@ export function TestsPage() {
     setOpenQuestions(null);
     setOpenCode(null);
     setQuestionsError(null);
+    setQuestionsLoading(false);
+    setOpenDraftKey(null);
   };
 
   const saveTest = async () => {
@@ -605,17 +608,18 @@ export function TestsPage() {
         </div>
       ) : (
         <>
-          {questionsError ? <div role="alert" className="ht-loading">
-            <p>{readErrorText(questionsError, "No se pudieron cargar las preguntas. Intenta nuevamente.")}</p>
-            <IonButton onClick={() => setQuestionsRetry(value => value + 1)}>{t("Reintentar")}</IonButton>
-          </div> : (questionsLoading || questionsLanguage !== lang) && <div className="ht-loading">
-            <IonSpinner name="crescent" /><p>{t("Preparando tu evaluación…")}</p>
+          {currentQuestionsError ? <div className="ht-loading ht-question-feedback">
+            <p role="alert">{readErrorText(currentQuestionsError.error, "No se pudieron cargar las preguntas. Intenta nuevamente.")}</p>
+            <IonButton className="ht-cta" onClick={retryQuestions}>{t("Reintentar")}</IonButton>
+          </div> : (questionsLoading || questionsLanguage !== lang) && <div role="status" className="ht-loading ht-question-feedback">
+            <IonSpinner name="crescent" aria-hidden="true" />
+            <p>{t("Preparando tu evaluación…")}</p>
           </div>}
           {openQuestions && <TestWizard
           reviewing={reviewing}
           initialStep={resumeStep}
           onStepChange={setResumeStep}
-          hidden={questionsLoading || questionsLanguage !== lang || Boolean(questionsError)}
+          hidden={questionsLoading || questionsLanguage !== lang || Boolean(currentQuestionsError)}
           theme={theme}
           steps={steps}
           answers={currentAnswers}
