@@ -15,6 +15,7 @@ import {
 } from "./privacy-consent-store";
 import type { WellnessConsentScope } from "./privacy-consent-store";
 import { downloadWellnessExport } from "./wellness-export";
+import { ServerPrivacyRequests } from "./ServerPrivacyRequests";
 import "./wellness-privacy.css";
 
 const DRAFT = "Borrador para revisión legal";
@@ -227,6 +228,7 @@ export function WellnessPrivacy() {
             <p role="status" aria-atomic="true">{status}</p>
             {error && <p role="alert" className="wellness-privacy-error">{error}</p>}
           </section>
+          <ServerPrivacyRequests key={actor} />
         </main>
       </Scroll>
       <IonAlert
