@@ -17,6 +17,7 @@ import {
 } from "../features/wellness/generation/wellness-journey-api";
 import { useI18n } from "../i18n/I18nContext";
 import { ApiError } from "../utils/apiClient";
+import { BRAND_NAME } from "../utils/brand";
 import "../features/wellness/wellness.css";
 import "../features/wellness/paid-journey.css";
 import "../features/wellness/paid-journey-setup.css";
@@ -94,7 +95,7 @@ export function WellnessJourneyPage({ userId, children }: {
           <header className="journey-masthead">
             <div className="journey-brand">
               <img src={`${import.meta.env.BASE_URL}LogoIndividual.png`} alt="" width={25} height={25} />
-              <div><strong>Copp Adresd</strong><small>{t("Flujo de prueba")}</small></div>
+              <div><strong>{BRAND_NAME}</strong><small>{t("Flujo de prueba")}</small></div>
             </div>
             <LanguageToggle />
           </header>
