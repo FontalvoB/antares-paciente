@@ -88,4 +88,39 @@ describe("documentos legales de cuenta", () => {
     await waitFor(() => expect(state.apiFetch).toHaveBeenLastCalledWith("/api/v1/me/account-legal-consents?locale=en",
       expect.objectContaining({ expectedUserId: "account-b" })));
   });
+
+  it("comprueba la sesión al restaurar y vuelve a pedir la versión si cambia mientras se lee", async () => {
+    const changed = Object.assign(new Error("Version changed"), { code: "ACCOUNT_LEGAL_VERSION_CHANGED" });
+    const next = status(false, "new-terms");
+    const privacy = { ...next.documents[0], scope: "account-privacy", document: {
+      ...next.documents[0].document, versionId: "current-privacy", title: "Privacidad publicada", content: "Texto privado",
+    } };
+    state.apiFetch.mockResolvedValueOnce(status(false)).mockRejectedValueOnce(changed)
+      .mockResolvedValueOnce({ ...next, documents: [...next.documents, privacy] })
+      .mockResolvedValueOnce({ id: "terms-receipt" }).mockResolvedValueOnce({ ...next, documents: [privacy] })
+      .mockResolvedValueOnce({ id: "privacy-receipt" }).mockResolvedValueOnce(status(true));
+    const queryClient = new QueryClient();
+    const app = (active: boolean) => <QueryClientProvider client={queryClient}><Application active={active} /></QueryClientProvider>;
+    const view = render(app(false));
+    expect(state.apiFetch).not.toHaveBeenCalled();
+    view.rerender(app(true));
+    expect(await screen.findByText("Texto exacto")).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Documentos de la cuenta" }));
+
+    const accept = () => {
+      fireEvent.click(screen.getByRole("checkbox"));
+      fireEvent.click(screen.getByRole("button", { name: "Aceptar y continuar" }));
+    };
+    accept();
+    await waitFor(() => expect(state.apiFetch).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false));
+    accept();
+    expect(await screen.findByText("Texto privado")).toBeTruthy();
+    accept();
+    expect(await screen.findByText("Inicio de prueba")).toBeTruthy();
+    expect(state.apiFetch).toHaveBeenNthCalledWith(4, expect.stringContaining("/acceptances"),
+      expect.objectContaining({ body: expect.objectContaining({ versionId: "new-terms" }) }));
+    expect(state.apiFetch).toHaveBeenNthCalledWith(6, expect.stringContaining("/acceptances"),
+      expect.objectContaining({ body: expect.objectContaining({ versionId: "current-privacy" }) }));
+  });
 });

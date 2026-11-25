@@ -56,8 +56,9 @@ export function AccountLegalPrompt({ access }: { access: Access }) {
   const { logout } = useApp();
   const { t } = useI18n();
   const title = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { title.current?.focus(); }, []);
   const pending = access.status?.documents.find(item => !item.receiptId);
+  const pendingVersion = pending?.document.versionId;
+  useEffect(() => { title.current?.focus(); }, [pendingVersion]);
 
   return (
     <Screen hideNav>
