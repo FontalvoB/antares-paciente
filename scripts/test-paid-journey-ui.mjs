@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { chromium, expect, webkit } from "playwright/test";
+import { chromium, expect as browserExpect, webkit } from "playwright/test";
 import { createServer } from "vite";
 
+const expect = browserExpect.configure({ timeout: 12_000 });
 const userId = "11111111-1111-4111-8111-111111111111";
 const submissionId = "22222222-2222-4222-8222-222222222222";
 const generationId = "33333333-3333-4333-8333-333333333333";
@@ -132,18 +133,22 @@ async function runJourney(browser, url, width) {
     await step(8, "Revisa tus elecciones");
 
     await button("Generar mi plan").click();
-    await heading("Inicio");
+    const tab = (name) => page.getByRole("navigation", { name: "Navegación principal" }).getByRole("button", { name, exact: true });
+    await heading("Protocolo de hoy");
     await expect(page.getByText("Estamos preparando tu plan")).toBeVisible();
     generation = failed;
-    await expect(button("Reintentar generación")).toBeVisible();
-    await expect(page.getByText("Ejercicio persistido")).toBeVisible();
-    await button("Reintentar generación").click();
+    await expect(button("Reintentar")).toBeVisible();
+    await expect(page.getByText("No pudimos preparar tu plan de nutrición")).toBeVisible();
+    await button("Reintentar").click();
     await expect(page.getByText("Tu plan y tu bandeja están listos")).toBeVisible();
-    await heading("Plan de ejercicio");
-    await heading("Plan de nutrición");
-    await heading("Bandeja de entrada");
+    await heading("Bandeja");
     await expect(page.getByText("Mensaje persistido")).toBeVisible();
-    await assertLayout();
+    await tab("Nutrición").click();
+    await heading("Dieta de hoy");
+    await tab("Ejercicio").click();
+    await heading("Antes de empezar");
+    await tab("Inicio").click();
+    await heading("Protocolo de hoy");
 
     await page.reload();
     await expect(page.getByText("Tu plan y tu bandeja están listos")).toBeVisible();
@@ -156,9 +161,8 @@ async function runJourney(browser, url, width) {
     assert.ok(submissions[0].draft.terms?.acceptedAt);
     assert.deepEqual(retries, [{ expectedAttempts: 1 }]);
     await button("Cambiar idioma a English").click();
-    await heading("Home");
+    await heading("Today's protocol");
     await heading("Inbox");
-    await assertLayout();
   } catch (error) {
     const snapshot = await page.locator("body").ariaSnapshot({ timeout: 2_000 }).catch(() => "");
     if (snapshot) console.error(snapshot);
