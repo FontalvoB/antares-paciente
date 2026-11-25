@@ -23,10 +23,24 @@ describe("adjuntos Vita en el gateway", () => {
     expect(request.method).toBe("POST");
     expect(request.headers.has("Content-Type")).toBe(false);
     expect(request.body).toBeInstanceOf(FormData);
-    expect(request.body.get("file")).toEqual(file);
+    // KAN-167: mismo contenido y tipo, con nombre neutro (el original puede tener datos personales).
+    const sent = request.body.get("file") as File;
+    expect(sent.name).toBe("adjunto.pdf");
+    expect(sent.type).toBe("application/pdf");
+    expect(sent.size).toBe(file.size);
+    expect(await sent.text()).toBe("fake pdf");
     expect(request.body.get("threadId")).toBe("thread-1");
     expect(request.body.get("language")).toBe("en");
     expect(requireLegalConsent).toHaveBeenCalledWith("chat", "en", undefined);
+  });
+
+  it("sin hilo no envía threadId y neutraliza el nombre de una foto", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ attachmentId: "file-2" }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await uploadVitaAttachment(new File(["png"], "Ana Torres cédula.png", { type: "image/png" }), "", "es");
+    const body = fetchMock.mock.calls[0][1].body as FormData;
+    expect(body.has("threadId")).toBe(false);
+    expect((body.get("file") as File).name).toBe("adjunto.png");
   });
 
   it("conserva el estado y código de un rechazo de archivo", async () => {

@@ -81,7 +81,8 @@ function toFriendlyChatError(error: unknown): unknown {
  *
  * `options.moduleContext` (KAN-167): módulo de origen + resumen acotado del
  * estado visible, ya saneado por el llamador. Campo aditivo: un backend que
- * no lo conozca lo ignora.
+ * no lo conozca lo ignora. `options.omitThreadId` no envía `threadId` y deja
+ * que el backend derive el hilo del JWT.
  *
  * @throws ApiError — 401 sesión inválida, 502/503 con mensaje amigable,
  *   resto propagado. Nunca retorna null: el llamador muestra error + reintento.
@@ -96,7 +97,8 @@ export async function sendChatMessage(
 ): Promise<ChatResult> {
   const text = message.trim();
   if (!text) throw new Error("El mensaje no puede estar vacío.");
-  if (!threadId.trim()) throw new Error("El threadId no puede estar vacío.");
+  const omitThread = options?.omitThreadId === true;
+  if (!omitThread && !threadId.trim()) throw new Error("El threadId no puede estar vacío.");
   const expectedUserId = legalConsentOwner();
   await requireLegalConsent("chat", language, signal);
   try {
@@ -106,7 +108,7 @@ export async function sendChatMessage(
       ...(signal ? { signal } : {}),
       body: {
         message: text,
-        threadId,
+        ...(omitThread ? {} : { threadId }),
         supportsVita: true,
         ...(attachmentIds?.length ? { attachmentIds } : {}),
         ...(language ? { language } : {}),

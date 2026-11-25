@@ -5,6 +5,8 @@ import { SensitiveDataGate, WellnessPrivacy } from "../privacy/WellnessPrivacy";
 import { exportWellnessPrivacyAudit, readWellnessConsent } from "../privacy/privacy-consent-store";
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn(), download: vi.fn() }));
+// KAN-167: el orbe de Vita tiene sus propias pruebas (vita-entry.test.tsx).
+vi.mock("../vita", () => ({ VitaEntry: () => null }));
 vi.mock("../../../context/AppContext", () => ({
   useApp: () => ({ user: { id: "patient" }, navigate: mocks.navigate }),
 }));

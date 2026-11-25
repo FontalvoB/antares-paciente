@@ -5145,5 +5145,14 @@
   "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.": "These questions help identify whether you need guidance before changing how you eat.",
   "Revisa el aviso y confirma si estás de acuerdo antes de continuar.": "Review the notice and confirm that you agree before continuing.",
   "Comprueba los datos que usaremos para preparar tus planes.": "Check the details we’ll use to prepare your plans.",
-  "{count} de {total} respondidas": "{count} of {total} answered"
+  "{count} de {total} respondidas": "{count} of {total} answered",
+  "Privacidad": "Privacy",
+  "¿Qué datos uso en la app y para qué?": "What data do I use in the app and why?",
+  "¿Cómo exporto o borro mis datos?": "How do I export or delete my data?",
+  "¿Qué recordatorios me conviene activar?": "Which reminders should I turn on?",
+  "¿Cómo ajusto mis horarios de aviso?": "How do I adjust my reminder times?",
+  "¿Cómo registro mis signos vitales?": "How do I log my vital signs?",
+  "¿Cómo leo la tendencia de mis registros?": "How do I read the trend of my records?",
+  "Mensaje enviado. Tu texto no se guarda en este dispositivo.": "Message sent. Your text is not stored on this device.",
+  "Respuesta no guardada en este dispositivo.": "Reply not stored on this device."
 }

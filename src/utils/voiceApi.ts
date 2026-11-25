@@ -18,6 +18,7 @@
 
 import { getAccessToken } from "./authApi";
 import { getApiBaseUrl } from "./apiBaseUrl";
+import type { ChatModuleContext } from "../services/chat/types";
 import {
   cancelAppointment,
   createRequest,
@@ -91,6 +92,7 @@ export async function requestVoiceSession(
   language?: "es" | "en",
   threadId?: string,
   signal?: AbortSignal,
+  options?: { moduleContext?: ChatModuleContext },
 ): Promise<VoiceSession | null> {
   const owner = legalConsentOwner();
   try {
@@ -106,7 +108,13 @@ export async function requestVoiceSession(
       },
       // Selección de una versión verificada para el idioma de la app.
       // Vita solo replica el idioma; no modifica prompt/tools/identidad.
-      body: JSON.stringify({ supportsVitaVoice: true, ...(language ? { language } : {}), ...(threadId ? { threadId } : {}) }),
+      // KAN-167: `moduleContext` (aditivo) lleva el módulo de origen saneado.
+      body: JSON.stringify({
+        supportsVitaVoice: true,
+        ...(language ? { language } : {}),
+        ...(threadId ? { threadId } : {}),
+        ...(options?.moduleContext ? { moduleContext: options.moduleContext } : {}),
+      }),
       signal,
     });
     if (!res.ok) {

@@ -9,6 +9,7 @@ import { WellnessCloseDay } from "../checkin/WellnessCloseDay";
 import { localISODate, savePlanSnapshot } from "../state/wellness-home-store";
 import { sendChatMessage } from "../../../services/chat/chat-service";
 import { VITA_DOCK_KEY } from "../vita/dock";
+import { readVitaVoiceOrigin } from "../../../services/chat/vita-origin";
 
 // Datos personales sintéticos: ninguno debe aparecer en el payload.
 const PERSONAL = {
@@ -50,6 +51,11 @@ vi.mock("framer-motion", async (original) => ({
   },
 }));
 vi.mock("../../../components/LanguageToggle", () => ({ LanguageToggle: () => null }));
+// Sesión sintética: el `sub` del JWT define el espacio opaco del historial.
+const ACCOUNT = "0f8fad5b-d9cb-469f-a165-70867728950e";
+vi.mock("../../../utils/authApi", () => ({
+  getAccessToken: () => "x." + btoa(JSON.stringify({ sub: "0f8fad5b-d9cb-469f-a165-70867728950e" })) + ".x",
+}));
 vi.mock("../../../services/chat/chat-service", () => ({
   CHAT_UNAVAILABLE_MESSAGE: "El asistente no está disponible en este momento. Inténtalo de nuevo en unos minutos.",
   sendChatMessage: vi.fn(),
@@ -88,7 +94,7 @@ const orb = (module: string) => document.querySelector(`[data-vita-module="${mod
 
 function sentPayload() {
   const [message, threadId, language, attachments, , options] = vi.mocked(sendChatMessage).mock.calls.at(-1)!;
-  return { message, threadId, language, attachments, moduleContext: options?.moduleContext };
+  return { message, threadId, language, attachments, options, moduleContext: options?.moduleContext };
 }
 
 function expectNoPersonalData(value: unknown) {
@@ -135,7 +141,11 @@ describe("VitaEntry — orbe en módulos", () => {
     fireEvent.change(within(dialog).getByLabelText("Escribe un mensaje…"), { target: { value: "¿Qué hago ahora?" } });
     await act(async () => { fireEvent.click(within(dialog).getByLabelText("Enviar")); });
     const payload = sentPayload();
-    expect(payload.threadId).toBe("proactive-thread");
+    // Sin hilo del cliente: el backend lo deriva del JWT.
+    expect(payload.threadId).toBe("");
+    expect(payload.options?.omitThreadId).toBe(true);
+    expectNoPersonalData(vi.mocked(sendChatMessage).mock.calls.at(-1));
+    expect(JSON.stringify(vi.mocked(sendChatMessage).mock.calls.at(-1))).not.toContain(ACCOUNT);
     expect(payload.moduleContext?.module).toBe(module);
     expect(payload.moduleContext?.summary).toHaveProperty(key);
     expectNoPersonalData(payload.moduleContext);
@@ -170,6 +180,34 @@ describe("VitaEntry — panel", () => {
     fireEvent.click(orb("profile")!);
     await act(async () => { fireEvent.click(screen.getByText("¿Cómo uso mejor la app?")); });
     expect(sentPayload().moduleContext).toEqual({ module: "profile", summary: { language: "es" } });
+  });
+
+  it("la voz recibe el mismo contexto acotado del módulo de origen", () => {
+    render(<VitaEntry module="diet" summary={{ mealsLogged: 2, mealsTotal: 4, nombre: PERSONAL.nombre }} />);
+    fireEvent.click(orb("diet")!);
+    fireEvent.click(screen.getByLabelText("Hablar con Vita"));
+    expect(state.openVoice).toHaveBeenCalledTimes(1);
+    expect(readVitaVoiceOrigin()).toEqual({ module: "diet", summary: { mealsLogged: 2, mealsTotal: 4 } });
+  });
+
+  it("al reabrir, el texto libre del usuario no se restaura desde el almacenamiento", async () => {
+    const first = render(<VitaEntry module="home" />);
+    fireEvent.click(orb("home")!);
+    fireEvent.change(screen.getByLabelText("Escribe un mensaje…"), { target: { value: "Me llamo Ana Torres" } });
+    await act(async () => { fireEvent.click(screen.getByLabelText("Enviar")); });
+    expect(screen.getByText("Me llamo Ana Torres")).toBeTruthy();
+    first.unmount();
+    render(<VitaEntry module="home" />);
+    fireEvent.click(orb("home")!);
+    expect(screen.queryByText("Me llamo Ana Torres")).toBeNull();
+    expect(screen.getByText("Mensaje enviado. Tu texto no se guarda en este dispositivo.")).toBeTruthy();
+    // La respuesta a un texto libre tampoco se restaura.
+    expect(screen.queryByText("Prueba un paso pequeño hoy.")).toBeNull();
+    expect(screen.getByText("Respuesta no guardada en este dispositivo.")).toBeTruthy();
+    const raw = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i)!)
+      .filter((key) => key.startsWith("wellness.vita."))
+      .map((key) => localStorage.getItem(key)).join(" ");
+    expect(raw).not.toMatch(/Ana|Torres/);
   });
 
   it("adjunta una imagen y la envía como adjunto del turno", async () => {

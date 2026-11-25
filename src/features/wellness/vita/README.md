@@ -11,53 +11,54 @@ import { VitaEntry } from "../vita";
 <VitaEntry module="diet" summary={{ mealsLogged: 2, mealsTotal: 4 }} />
 ```
 
-| Prop      | Tipo                                                                                   | Uso                                                                     |
-| --------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `module`  | `"home" \| "protocol" \| "diet" \| "exercise" \| "close-day" \| "goal" \| "profile"` | Pantalla de origen: historial local, sugerencias rápidas y contexto.    |
-| `summary` | `Record<string, string \| number \| boolean \| null \| undefined>` (opcional)          | Resumen corto del estado visible. **Nunca** datos personales.           |
+| Prop      | Tipo                                                                 | Uso                                                                  |
+| --------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `module`  | `VitaModuleId` (`home`, `protocol`, `diet`, `exercise`, `close-day`, `goal`, `profile`, `privacy`, `notifications`, `vitals`) | Pantalla de origen: historial, sugerencias rápidas y contexto. |
+| `summary` | `Record<string, string \| number \| boolean \| null \| undefined>` (opcional) | Resumen del estado visible. Solo pasan claves de la lista permitida. |
 
-Se monta una vez por pantalla, como último hijo de `<Screen>`. `VitaOrb`,
-`useVitaConversation`, `context`, `history` y `dock` son internos.
+Se monta una vez por pantalla, como último hijo de `<Screen>`. También aparece en la
+pantalla de consentimiento de datos sensibles (`module="privacy"`, sin resumen).
+
+## Identidad y privacidad en las solicitudes
+
+- **Sin `threadId` del cliente.** El chat (`omitThreadId`), la subida de adjuntos y la
+  sesión de voz no envían el hilo `proactive-<id>`. El backend lo deriva del JWT
+  (`ChatController.ResolvePatientThread`, `VoiceSessionCommandHandler`), y el AI Service
+  acepta adjuntos sin hilo (`row.thread_id in (None, thread_id)`).
+- **`moduleContext`** (`{ module, summary }`) viaja en `POST /api/v1/chat` y en
+  `POST /api/v1/chat/voice/session`. Es un campo aditivo, y hoy el backend lo ignora (ver
+  handoff en `.ai-coord/KAN167.md`).
+- **Lista permitida** (`context.ts`): solo claves de dominio conocidas, con validación de
+  valor (números acotados, banderas y vocabularios cerrados). Lo demás se descarta.
+- **Feedback de respuestas**: no se muestra en el panel, porque
+  `POST /api/v1/chat/feedback` exige el `threadId` en el cuerpo.
 
 ## Comportamiento
 
-- **Orbe**: botón nativo (excepción Ionic-first documentada: `ion-button` no
-  refleja `aria-expanded` dinámico) con `aria-haspopup="dialog"`,
-  `aria-expanded` y etiqueta "Preguntar a Vita sobre {módulo}". Sube por
-  encima del SOS flotante cuando este aparece, se oculta con el teclado abierto
-  y respeta `--nav-h` y safe areas.
-- **Minimizado**: pestaña compacta en el borde derecho; al tocarla vuelve el
-  orbe. Preferencia en `wellness.vita.dock.v1`.
+- **Orbe**: `<button>` nativo (excepción Ionic-first: `ion-button` no refleja
+  `aria-expanded` dinámico). Sube por encima del SOS flotante, se oculta con el teclado,
+  respeta `--nav-h` y las safe areas, y añade espacio al final del scroll.
+- **Minimizado**: pestaña compacta en el borde. Se guarda en `wellness.vita.dock.v1`.
 - **Aviso proactivo**: como máximo uno por día local y por cuenta
-  (`wellness.vita.nudge.v1:<hash>`), descartable, se retira solo a los 8 s.
-- **Panel**: `IonModal` (foco atrapado, Escape, botón y fondo cierran; el foco
-  vuelve al disparador). Voz con `openVoice` global; texto e imagen con
-  `sendChatMessage` (mismo hilo `threadId`, mismo agente Vita, mismo formato
-  `ChatResult`), adjuntos con `useVitaAttachmentDraft`.
-- Frase de SOS en el texto → `requestSos("chat")` al instante (KAN-137).
+  (`wellness.vita.nudge.v2:<espacio opaco>`). Se puede descartar y se retira solo a los 8 s.
+- **Panel**: `IonModal` con foco atrapado. Escape, el botón y el fondo lo cierran, y el
+  foco vuelve al disparador. Anillo de foco en el compositor. Con el panel abierto, los
+  recordatorios superiores (KAN-176) bajan bajo su cabecera.
+- **Voz**: `setVitaVoiceOrigin` antes de `openVoice`. `VoiceOverlay` lo lee en cada
+  solicitud de sesión, incluidos los reintentos, y lo borra al cerrarse la voz.
 
-## Contexto en el payload
+## Historial local — retención (v2)
 
-`POST /api/v1/chat` añade `moduleContext: { module, summary }` (campo aditivo
-y opcional). `context.ts` lo sanea siempre:
+| Regla           | Valor                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------ |
+| Clave           | `wellness.vita.history.v2:<hash 64 bits de sal del dispositivo + id de cuenta del JWT>:<módulo>` |
+| Sin cuenta      | No se persiste nada (no existe fallback compartido)                                        |
+| Máximo          | 30 mensajes por módulo                                                                     |
+| Caducidad       | 7 días por mensaje. La purga global recorre todas las cuentas y módulos y borra las claves v1 |
+| Usuario         | Nunca se guarda su texto libre: solo la clave de una sugerencia o un marcador              |
+| Vita            | Texto redactado: identificadores del perfil, correos, números de 7+ dígitos, UUID, direcciones y nombres propios que el usuario escribió en ese turno |
+| Nunca se guarda | Imágenes, nombres de fichero, `executionId`, acciones, `resourceId`, hilo                  |
+| Borrado         | Botón de papelera del panel (por módulo)                                                   |
 
-- máximo 8 claves, claves `[a-zA-Z][a-zA-Z0-9_]*` de ≤32 caracteres;
-- descarta claves que contengan nombre, correo, teléfono, documento,
-  dirección, ciudad, ubicación, paciente, usuario, id, token o nacimiento;
-- descarta valores con correo, 7+ dígitos seguidos (teléfono/documento) o UUID;
-- recorta textos a 60 caracteres y números a 2 decimales.
-
-## Historial local — retención
-
-| Regla          | Valor                                                                 |
-| -------------- | --------------------------------------------------------------------- |
-| Clave          | `wellness.vita.history.v1:<hash FNV-1a del propietario>:<módulo>`     |
-| Máximo         | 30 mensajes por módulo (los más recientes)                            |
-| Caducidad      | 7 días por mensaje; se purga al leer y al escribir                    |
-| Campos         | `id`, `role`, `text`, `at` (ISO), `attachments` (número), `failed`    |
-| Nunca se guarda | nombres de fichero, imágenes, `executionId`, acciones, `resourceId`  |
-| Saneado        | correos, números de 7+ dígitos y UUID se sustituyen por `•••`         |
-| Borrado        | botón de papelera del panel (por módulo)                              |
-
-El historial es una comodidad del dispositivo; la memoria de Vita vive en el
-hilo del backend.
+La redacción es heurística. Por eso el texto libre del usuario, que es la fuente
+principal de datos personales, no se persiste nunca.

@@ -22,6 +22,7 @@ import { calendarDays, TREND_LABELS, VITAL_WINDOWS, vitalHistory, vitalSeries, v
 import type { VitalWindow } from "./vitals-trend";
 import "../protocol/wellness-protocol.css";
 import "./wellness-vitals.css";
+import { VitaEntry } from "../vita";
 
 function latestDay(vitals: Vitals, metric: VitalMetric) {
   const days = vitals[metric] ?? {};
@@ -50,6 +51,7 @@ export function WellnessVitals() {
         </header>
         <VitalsContent key={owner} owner={owner} />
       </Scroll>
+      <VitaEntry module="vitals" />
     </Screen>
   );
 }

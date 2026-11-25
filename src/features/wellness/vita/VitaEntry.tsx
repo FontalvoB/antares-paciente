@@ -45,14 +45,14 @@ import {
 import vitaPortrait from "../../../assets/vita-coach.png";
 import { ChatRichText } from "../../../components/ChatRichText";
 import { VitaActions } from "../../../components/chat/VitaActions";
-import { ChatFeedbackAction } from "../../../components/chat/ChatFeedbackAction";
 import { useApp } from "../../../context/AppContext";
 import { useVitaAttachmentDraft } from "../../../hooks/useVitaAttachmentDraft";
 import { useI18n } from "../../../i18n/I18nContext";
 import { captureChatImage, dataUrlToBlob } from "../../../services/media/camera-service";
 import { VITA_ATTACHMENT_LIMIT, VITA_FILE_ACCEPT } from "../../../services/chat/vita-attachments-service";
+import { setVitaVoiceOrigin } from "../../../services/chat/vita-origin";
 import { chatTextForDisplay } from "../../../utils/chatNutritionVisibility";
-import { checkinOwner } from "../checkin/checkin-store";
+import { buildVitaModuleContext } from "./context";
 import type { VitaModuleId, VitaModuleSummary } from "./context";
 import { markVitaNudgeShown, readVitaMinimized, shouldShowVitaNudge, writeVitaMinimized } from "./dock";
 import { useVitaConversation } from "./useVitaConversation";
@@ -75,6 +75,9 @@ const MODULE_LABEL: Record<VitaModuleId, string> = {
   "close-day": "Cerrar el día",
   goal: "Objetivo",
   profile: "Perfil",
+  privacy: "Privacidad",
+  notifications: "Notificaciones",
+  vitals: "Signos vitales",
 };
 
 /** Sugerencias rápidas por módulo (claves i18n en español). */
@@ -86,6 +89,9 @@ const MODULE_PROMPTS: Record<VitaModuleId, readonly string[]> = {
   "close-day": ["¿Cómo cierro mi día con buenos hábitos?", "¿Qué puedo mejorar mañana?"],
   goal: ["¿Cómo elijo un objetivo realista?", "¿Qué cambia si ajusto mi objetivo?"],
   profile: ["¿Qué puedo ajustar en mi plan?", "¿Cómo uso mejor la app?"],
+  privacy: ["¿Qué datos uso en la app y para qué?", "¿Cómo exporto o borro mis datos?"],
+  notifications: ["¿Qué recordatorios me conviene activar?", "¿Cómo ajusto mis horarios de aviso?"],
+  vitals: ["¿Cómo registro mis signos vitales?", "¿Cómo leo la tendencia de mis registros?"],
 };
 
 /** Retraso del aviso proactivo para no competir con la entrada de la pantalla. */
@@ -94,11 +100,12 @@ const NUDGE_DELAY_MS = 900;
 const NUDGE_VISIBLE_MS = 8000;
 
 export function VitaEntry({ module, summary }: VitaEntryProps) {
-  const { openVoice, user } = useApp();
+  const { openVoice } = useApp();
   const { t, lang } = useI18n();
-  const owner = checkinOwner(user);
   const conversation = useVitaConversation(module, summary);
-  const draft = useVitaAttachmentDraft(conversation.threadId ?? "", conversation.scope);
+  const namespace = conversation.namespace;
+  // Sin hilo: el adjunto queda sin atar y el backend deriva el hilo del JWT.
+  const draft = useVitaAttachmentDraft("", conversation.scope);
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(readVitaMinimized);
   const [nudge, setNudge] = useState(false);
@@ -117,14 +124,34 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
   // Aviso proactivo: como máximo una vez por día local y por cuenta. Se marca
   // al mostrarse para no insistir aunque no se descarte.
   useEffect(() => {
-    if (minimized || !shouldShowVitaNudge(owner)) return;
+    if (minimized || !shouldShowVitaNudge(namespace)) return;
     const timer = window.setTimeout(() => {
-      if (!shouldShowVitaNudge(owner)) return;
-      markVitaNudgeShown(owner);
+      if (!shouldShowVitaNudge(namespace)) return;
+      markVitaNudgeShown(namespace);
       setNudge(true);
     }, NUDGE_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [owner, minimized]);
+  }, [namespace, minimized]);
+
+  // Con el panel abierto, los recordatorios superiores (KAN-176) se colocan
+  // bajo la cabecera y la nota del panel: se mide su borde real (cambia con el
+  // ancho, el idioma y la safe area) y se expone como variable CSS.
+  const note = useRef<HTMLParagraphElement>(null);
+  const placeOverlays = () => {
+    const bottom = note.current?.getBoundingClientRect().bottom;
+    // ion-toast suma 10 px a `--ion-safe-area-top`; se deja 8 px de aire.
+    if (bottom) document.body.style.setProperty("--vita-overlay-top", `${Math.ceil(bottom) - 2}px`);
+  };
+  useEffect(() => {
+    if (!open) return;
+    document.body.classList.add("vita-panel-open");
+    window.addEventListener("resize", placeOverlays);
+    return () => {
+      window.removeEventListener("resize", placeOverlays);
+      document.body.classList.remove("vita-panel-open");
+      document.body.style.removeProperty("--vita-overlay-top");
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!nudge) return;
@@ -149,7 +176,7 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
 
   const focusTrigger = () => requestAnimationFrame(() => (trigger.current ?? tab.current)?.focus());
 
-  const submit = async (value = text) => {
+  const submit = async (value = text, promptKey?: string) => {
     if (busy) return;
     const message = value.trim() || (draft.files.length ? t("Ayúdame a entender estos archivos.") : "");
     if (!message) return;
@@ -158,7 +185,7 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
     setText("");
     // El foco vuelve al campo: el botón de enviar queda deshabilitado tras enviar.
     void input.current?.setFocus?.();
-    await conversation.send(message, files);
+    await conversation.send({ text: message, attachments: files, promptKey: value === text ? undefined : promptKey });
   };
 
   const attachFromCamera = (source: CameraSource) => {
@@ -212,7 +239,10 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
         isOpen={open}
         className="vita-panel-modal"
         aria-labelledby={titleId}
-        onDidPresent={() => { void input.current?.setFocus(); }}
+        onDidPresent={() => {
+          placeOverlays();
+          void input.current?.setFocus();
+        }}
         onDidDismiss={() => {
           setOpen(false);
           setSheetOpen(false);
@@ -267,7 +297,7 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
             </IonButton>
           </header>
 
-          <p className="vita-panel-note" role="note">
+          <p ref={note} className="vita-panel-note" role="note">
             <IonIcon icon={informationCircle} aria-hidden="true" />
             <span>{t("Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.")}</span>
           </p>
@@ -278,7 +308,7 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
                 <p>{t("Pregúntame sobre lo que ves en esta pantalla.")}</p>
                 <div className="vita-panel-prompts">
                   {MODULE_PROMPTS[module].map((prompt) => (
-                    <IonButton key={prompt} fill="outline" size="small" disabled={busy} onClick={() => void submit(t(prompt))}>
+                    <IonButton key={prompt} fill="outline" size="small" disabled={busy} onClick={() => void submit(t(prompt), prompt)}>
                       {t(prompt)}
                     </IonButton>
                   ))}
@@ -296,11 +326,14 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
                         <span>{message.attachments === 1 ? t("1 adjunto") : t("{count} adjuntos", { count: String(message.attachments) })}</span>
                       </IonChip>
                     ) : null}
-                    {isUser ? <p>{message.text}</p> : <ChatRichText text={chatTextForDisplay(message.text)} />}
+                    {isUser
+                      ? <p className={message.text || message.promptKey ? undefined : "vita-msg-private"}>
+                          {message.text || (message.promptKey ? t(message.promptKey) : t("Mensaje enviado. Tu texto no se guarda en este dispositivo."))}
+                        </p>
+                      : message.text
+                        ? <ChatRichText text={chatTextForDisplay(message.text)} />
+                        : <p className="vita-msg-private">{t("Respuesta no guardada en este dispositivo.")}</p>}
                     {message.actions?.length ? <VitaActions actions={message.actions} /> : null}
-                    {!isUser && message.executionId && conversation.threadId ? (
-                      <ChatFeedbackAction executionId={message.executionId} threadId={message.threadId ?? conversation.threadId} />
-                    ) : null}
                   </div>
                   <span className="vita-msg-time">{time(message.at)}</span>
                 </div>
@@ -371,7 +404,16 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
             >
               <IonIcon slot="icon-only" icon={attachOutline} aria-hidden="true" />
             </IonButton>
-            <IonButton fill="clear" className="vita-panel-tool" aria-label={t("Hablar con Vita")} onClick={openVoice}>
+            <IonButton
+              fill="clear"
+              className="vita-panel-tool"
+              aria-label={t("Hablar con Vita")}
+              onClick={() => {
+                // La sesión de voz recibe el mismo contexto acotado del módulo.
+                setVitaVoiceOrigin(buildVitaModuleContext(module, summary));
+                openVoice();
+              }}
+            >
               <IonIcon slot="icon-only" icon={mic} aria-hidden="true" />
             </IonButton>
             <IonTextarea

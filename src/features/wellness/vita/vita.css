@@ -481,3 +481,23 @@ ion-modal.vita-panel-modal {
   background: transparent;
   color: var(--mu);
 }
+
+/* Foco visible del campo de texto: el compositor entero muestra el anillo
+   (contraste ≥3:1 del teal sobre blanco) cuando el textarea tiene foco. */
+.vita-panel-composer:has(.vita-panel-input.has-focus),
+.vita-panel-composer:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px var(--teal), var(--shadow-md);
+}
+
+/* Texto del usuario no persistido (historial restaurado). */
+.vita-msg-user .vita-msg-private {
+  font-style: italic;
+  opacity: 0.92;
+}
+
+/* Recordatorios (KAN-176) con el panel abierto: se colocan bajo la cabecera
+   y la nota del panel (`--vita-overlay-top` lo mide VitaEntry al presentarse). */
+body.vita-panel-open ion-toast.wellness-reminder-toast {
+  --ion-safe-area-top: var(--vita-overlay-top, calc(env(safe-area-inset-top, 0px) + 150px));
+}

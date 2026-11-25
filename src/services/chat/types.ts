@@ -89,4 +89,9 @@ export interface ChatModuleContext {
 /** Opciones adicionales y opcionales de un turno de chat. */
 export interface ChatSendOptions {
   moduleContext?: ChatModuleContext;
+  /**
+   * `true` omite `threadId` del cuerpo: el backend deriva el hilo estable del
+   * JWT (`supportsVita` + `aud=app`), así el cliente no envía el id del paciente.
+   */
+  omitThreadId?: boolean;
 }

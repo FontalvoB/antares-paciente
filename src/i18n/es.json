@@ -5145,5 +5145,14 @@
   "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.": "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.",
   "Revisa el aviso y confirma si estás de acuerdo antes de continuar.": "Revisa el aviso y confirma si estás de acuerdo antes de continuar.",
   "Comprueba los datos que usaremos para preparar tus planes.": "Comprueba los datos que usaremos para preparar tus planes.",
-  "{count} de {total} respondidas": "{count} de {total} respondidas"
+  "{count} de {total} respondidas": "{count} de {total} respondidas",
+  "Privacidad": "Privacidad",
+  "¿Qué datos uso en la app y para qué?": "¿Qué datos uso en la app y para qué?",
+  "¿Cómo exporto o borro mis datos?": "¿Cómo exporto o borro mis datos?",
+  "¿Qué recordatorios me conviene activar?": "¿Qué recordatorios me conviene activar?",
+  "¿Cómo ajusto mis horarios de aviso?": "¿Cómo ajusto mis horarios de aviso?",
+  "¿Cómo registro mis signos vitales?": "¿Cómo registro mis signos vitales?",
+  "¿Cómo leo la tendencia de mis registros?": "¿Cómo leo la tendencia de mis registros?",
+  "Mensaje enviado. Tu texto no se guarda en este dispositivo.": "Mensaje enviado. Tu texto no se guarda en este dispositivo.",
+  "Respuesta no guardada en este dispositivo.": "Respuesta no guardada en este dispositivo."
 }

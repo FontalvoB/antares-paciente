@@ -19,8 +19,8 @@ const token = "x." + Buffer.from(JSON.stringify({
 })).toString("base64url") + ".x";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR2kAAAAASUVORK5CYII=", "base64");
 const COPY = {
-  es: { home: "Nutrición", ask: "Preguntar a Vita sobre", input: "Escribe un mensaje…", send: "Enviar", nudge: "Estoy aquí si quieres repasar tu día conmigo.", dismiss: "Descartar aviso de Vita", profile: "Perfil", exercise: "Ejercicio", image: "Imagen adjunta" },
-  en: { home: "Nutrition", ask: "Ask Vita about", input: "Type a message…", send: "Send", nudge: "I am here if you want to go over your day with me.", dismiss: "Dismiss Vita notice", profile: "Profile", exercise: "Exercise", image: "Attached image" },
+  es: { consent: "Acepto el uso de mis datos sensibles para mi plan de bienestar.", cont: "Continuar", voice: "Hablar con Vita", home: "Nutrición", ask: "Preguntar a Vita sobre", input: "Escribe un mensaje…", send: "Enviar", nudge: "Estoy aquí si quieres repasar tu día conmigo.", dismiss: "Descartar aviso de Vita", profile: "Perfil", exercise: "Ejercicio", image: "Imagen adjunta" },
+  en: { consent: "I agree to the use of my sensitive data for my wellness plan.", cont: "Continue", voice: "Talk to Vita", home: "Nutrition", ask: "Ask Vita about", input: "Type a message…", send: "Send", nudge: "I am here if you want to go over your day with me.", dismiss: "Dismiss Vita notice", profile: "Profile", exercise: "Exercise", image: "Attached image" },
 };
 
 async function noOverflow(page, label) {
@@ -56,6 +56,13 @@ async function orbVisible(page, module, label) {
 }
 
 // COP_E2E_CHANNEL=chrome usa el Chrome del sistema si faltan los navegadores de Playwright.
+const ALLOWED_CHAT_KEYS = new Set(["message", "supportsVita", "language", "moduleContext", "attachmentIds"]);
+const SECRETS = ["11111111-1111-4111-8111-111111111111", "Paciente", "QA", "qa@example.test", "9988776655", "2025550101", "proactive-"];
+function assertCleanBody(raw, label) {
+  for (const secret of SECRETS) assert.ok(!raw.includes(secret), `${label} contiene dato personal o hilo: ${secret}`);
+}
+const voiceBodies = [];
+const uploadBodies = [];
 const browser = await chromium.launch(process.env.COP_E2E_CHANNEL ? { channel: process.env.COP_E2E_CHANNEL } : {});
 const chatBodies = [];
 try {
@@ -103,18 +110,28 @@ try {
         }
         if (url.pathname === "/api/v1/me/context") return reply({ patient: { id, organizationId: id }, clinics: [] });
         if (url.pathname === "/api/v1/me/legal-consents") {
-          return reply({ locale: lang, scopes: ["chat", "food"].map((scope) => ({
+          return reply({ locale: lang, scopes: ["chat", "food", "voice"].map((scope) => ({
             scope, available: true, accepted: true, disclosureId: "qa", receiptId: "qa",
             documents: [{ locale: lang, versionId: "qa", content: "Consentimiento de prueba" }],
           })) });
         }
+        if (url.pathname === "/api/v1/chat/voice/session" && request.method() === "POST") {
+          voiceBodies.push(request.postData() ?? "");
+          // Sesión sin credencial: el cliente la trata como voz no disponible.
+          return reply({});
+        }
         if (url.pathname === "/api/v1/vita/attachments" && request.method() === "POST") {
+          uploadBodies.push(request.postDataBuffer()?.toString("latin1") ?? "");
           return reply({ attachmentId: "att-qa", kind: "image", contentType: "image/png", sizeBytes: PNG.length,
             pageCount: null, expiresAt: new Date(Date.now() + 600_000).toISOString() });
         }
         if (url.pathname === "/api/v1/chat" && request.method() === "POST") {
-          const body = request.postDataJSON();
+          const raw = request.postData() ?? "";
+          const body = JSON.parse(raw);
           chatBodies.push(body);
+          // Todas las propiedades del cuerpo: sin hilo ni identificadores.
+          for (const key of Object.keys(body)) assert.ok(ALLOWED_CHAT_KEYS.has(key), `propiedad no permitida en /chat: ${key}`);
+          assertCleanBody(raw, "cuerpo de /api/v1/chat");
           return reply({ reply: lang === "en" ? "Try one small step today." : "Prueba un paso pequeño hoy.", threadId: body.threadId, executionId: `exec-${chatBodies.length}` });
         }
         if (/^\/api\/v1\/threads\//.test(url.pathname)) return reply({ threadId: "t", messageCount: 0, lastMessage: null, messages: [] });
@@ -142,6 +159,28 @@ try {
       await page.waitForTimeout(400);
       await page.screenshot({ path: join(shots, `kan167-panel-home-${tag}.png`) });
       await noOverflow(page, `panel home ${tag}`);
+      // Foco visible del campo de texto (anillo en el compositor).
+      await expect.poll(() => page.evaluate(() => {
+        const composer = document.querySelector(".vita-panel-composer");
+        return composer ? getComputedStyle(composer).boxShadow : "";
+      })).toMatch(/rgb\(3, 93, 77\) 0px 0px 0px 2px/);
+      // Recordatorio superior con el panel abierto: queda bajo la cabecera.
+      const toastTop = await page.evaluate(async () => {
+        const toast = document.createElement("ion-toast");
+        toast.className = "app-toast wellness-reminder-toast";
+        toast.message = "Recordatorio QA";
+        toast.position = "top";
+        toast.duration = 0;
+        document.body.appendChild(toast);
+        await toast.present();
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        const wrapper = toast.shadowRoot.querySelector(".toast-wrapper").getBoundingClientRect();
+        const head = document.querySelector(".vita-panel-note").getBoundingClientRect();
+        await toast.dismiss();
+        toast.remove();
+        return { toast: wrapper.top, head: head.bottom };
+      });
+      assert.ok(toastTop.toast >= toastTop.head - 1, `recordatorio tapa la cabecera o la nota del panel ${JSON.stringify(toastTop)}`);
       // Foco atrapado: Tab nunca sale del panel.
       for (let index = 0; index < 12; index += 1) {
         await page.keyboard.press("Tab");
@@ -175,6 +214,25 @@ try {
       const dietBody = chatBodies.at(-1);
       assert.equal(dietBody.moduleContext.module, "diet");
       assert.deepEqual(dietBody.attachmentIds, ["att-qa"]);
+      const upload = uploadBodies.at(-1);
+      assert.ok(upload && !upload.includes('name="threadId"'), "la subida no debe enviar threadId");
+      assert.ok(upload.includes('filename="adjunto.png"') && !upload.includes("plato.png"), "la subida debe usar un nombre neutro");
+      // El fichero es binario: se comprueban solo identificadores inequívocos.
+      for (const secret of ["11111111-1111-4111-8111-111111111111", "qa@example.test", "9988776655", "proactive-"]) {
+        assert.ok(!upload.includes(secret), `subida de adjunto contiene ${secret}`);
+      }
+      // Voz desde Dieta: la sesión recibe el origen del módulo y ningún hilo.
+      await dialog.getByRole("button", { name: c.voice }).click();
+      await expect.poll(() => voiceBodies.length).toBeGreaterThan(0);
+      const voiceBody = JSON.parse(voiceBodies.at(-1));
+      assert.equal(voiceBody.moduleContext?.module, "diet");
+      assert.equal("threadId" in voiceBody, false);
+      assertCleanBody(voiceBodies.at(-1), "cuerpo de voz");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+      if (await page.locator("ion-modal.vita-panel-modal.show-modal").count()) {
+        await page.keyboard.press("Escape");
+      }
       const sendState = await dialog.locator("ion-button.vita-panel-send").evaluate((el) => ({
         disabled: el.classList.contains("button-disabled"),
         background: getComputedStyle(el.shadowRoot.querySelector(".button-native")).backgroundColor,
@@ -184,11 +242,20 @@ try {
       await page.waitForTimeout(200);
       await page.screenshot({ path: join(shots, `kan167-panel-diet-${tag}.png`) });
       await noOverflow(page, `panel diet ${tag}`);
-      await page.keyboard.press("Escape");
-      await expect(page.locator("ion-modal.vita-panel-modal.show-modal")).toHaveCount(0);
 
-      // Tercera y cuarta pantalla: ejercicio y perfil.
+      // Cerrar cualquier capa restante (voz o panel) antes de navegar.
+      for (let index = 0; index < 3 && await page.locator("ion-modal.show-modal").count(); index += 1) {
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(350);
+      }
+      await expect(page.locator("ion-modal.show-modal")).toHaveCount(0);
+
+      // Ejercicio pasa por el consentimiento real de datos sensibles (KAN-157).
       await page.locator("nav.bnav").getByRole("button", { name: c.exercise }).click();
+      await orbVisible(page, "privacy", `consentimiento ${tag}`);
+      await noOverflow(page, `consentimiento ${tag}`);
+      await page.getByRole("checkbox", { name: c.consent }).click();
+      await page.getByRole("button", { name: c.cont, exact: true }).click();
       await orbVisible(page, "exercise", `exercise ${tag}`);
       await noOverflow(page, `exercise ${tag}`);
       await page.locator("nav.bnav").getByRole("button", { name: c.profile }).click();
@@ -212,6 +279,7 @@ try {
 
       // Ningún payload lleva datos personales.
       for (const body of chatBodies) {
+        assert.equal("threadId" in body, false, "el chat no debe enviar threadId");
         const context = JSON.stringify(body.moduleContext);
         for (const secret of [id, "Paciente", "QA", "qa@example.test", "9988776655", "2025550101"]) {
           assert.ok(!context.includes(secret), `moduleContext con dato personal: ${secret}`);
