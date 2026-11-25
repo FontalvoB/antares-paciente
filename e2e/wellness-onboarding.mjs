@@ -227,6 +227,37 @@ async function verifyNavigation(page, baseUrl, width) {
     .click();
   await expect(avatarDialog).toBeHidden();
 
+  const openNotifications = () =>
+    page.getByRole("button", { name: /Preferencias de notificaciones/ }).click();
+  const preferences = page.getByRole("heading", { name: "Preferencias de notificaciones", exact: true });
+  const protocolReminder = page.getByRole("switch", { name: "Recordatorio del protocolo" });
+  await openNotifications();
+  await expect(preferences).toBeVisible();
+  await expect(protocolReminder).toHaveAttribute("aria-checked", "true");
+  await protocolReminder.click();
+  await expect(protocolReminder).toHaveAttribute("aria-checked", "false");
+  await page.locator(".wn-scroll").evaluate((element) => { element.scrollTop = 0; });
+  await shot(page, `26-notificaciones-${width}`);
+  await page.getByRole("button", { name: "Volver al perfil" }).click();
+  await assertDock("Perfil");
+  await openNotifications();
+  await expect(protocolReminder).toHaveAttribute("aria-checked", "false");
+  const chestTime = page.getByRole("button", { name: "Hora del aviso de Cofre listo, 00:00" });
+  await chestTime.click();
+  const timePicker = page.locator("ion-popover").filter({ has: page.locator("ion-datetime") });
+  await expect(timePicker).toBeVisible();
+  await timePicker.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(timePicker).toBeHidden();
+  await chestTime.click();
+  await timePicker.locator('ion-picker-column[aria-label="Select an hour"]')
+    .locator("ion-picker-column-option").nth(1).click();
+  await timePicker.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Hora del aviso de Cofre listo, 01:00" })).toBeVisible();
+  await page.getByRole("button", { name: "Probar aviso en la app" }).click();
+  await expect(page.locator(".app-toast").getByText(/Aviso de prueba en la app/)).toBeVisible();
+  await page.getByRole("button", { name: "Volver al perfil" }).click();
+  await assertDock("Perfil");
+
   await plan.getByText("Plan nutricional", { exact: true }).click();
   await expect(diet).toBeVisible();
   await assertDock("Nutrición");
@@ -539,7 +570,8 @@ async function runFlow(page, baseUrl, width) {
     return now.getTime();
   });
   await page.clock.setFixedTime(tomorrow);
-  await page.getByRole("button", { name: "Ejercicio", exact: true }).click();
+  await page.getByRole("navigation", { name: "Navegación principal" })
+    .getByRole("button", { name: "Ejercicio", exact: true }).click();
   await expect(page.getByText(/ejercicio será más suave/i)).toBeVisible();
   await page
     .getByRole("button", { name: "Volver al protocolo", exact: true })
@@ -608,7 +640,7 @@ try {
 }
 
 await writeFile(
-  path.join(out, "kan146-results.json"),
+  path.join(out, process.env.COP_E2E_RESULTS ?? "kan146-results.json"),
   JSON.stringify(results, null, 2),
   "utf8",
 );

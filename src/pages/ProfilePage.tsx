@@ -566,6 +566,21 @@ export function ProfilePage() {
                     button
                     detail={false}
                     className="pf-menu-row"
+                    onClick={() => navigate("wellness-notifications")}
+                  >
+                    <span slot="start" className="pf-menu-icon neutral">
+                      <IonIcon icon={notificationsOutline} aria-hidden="true" />
+                    </span>
+                    <IonLabel className="ion-text-wrap">
+                      <h3>{t("Preferencias de notificaciones")}</h3>
+                      <p>{t("Elige qué avisos recibir y cuándo")}</p>
+                    </IonLabel>
+                    <IonIcon slot="end" className="pf-chevron" icon={chevronForward} aria-hidden="true" />
+                  </IonItem>
+                  <IonItem
+                    button
+                    detail={false}
+                    className="pf-menu-row"
                     onClick={toggleLang}
                   >
                     <span slot="start" className="pf-menu-icon neutral">

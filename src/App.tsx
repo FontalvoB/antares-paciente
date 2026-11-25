@@ -25,7 +25,6 @@ import { VoiceOverlay } from "./components/VoiceOverlay";
 import { VitaWelcome } from "./components/VitaWelcome";
 import { ToastHost } from "./components/ToastHost";
 import { OfflineBanner } from "./components/common/OfflineBanner";
-import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
 import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
@@ -36,6 +35,8 @@ import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
+import { WellnessNotifications } from "./features/wellness/notifications/WellnessNotifications";
+import { WellnessReminderHost } from "./features/wellness/notifications/WellnessReminderHost";
 import {
   checkinOwner,
   syncCheckins,
@@ -89,6 +90,9 @@ function Router() {
       case "wellness-checkin":
         content = <WellnessCloseDay />;
         break;
+      case "wellness-notifications":
+        content = <WellnessNotifications />;
+        break;
       case "prof":
         content = <ProfilePage />;
         break;
@@ -117,7 +121,7 @@ function Router() {
 }
 
 function Shell() {
-  const { user, flow, navigate } = useApp();
+  const { user, flow, navigate, authLoading } = useApp();
   const { lang } = useI18n();
   const pushStarted = useRef(false);
   const wellnessOwner = checkinOwner(user);
@@ -160,7 +164,7 @@ function Shell() {
         <ToastHost />
         <VitaWelcome />
         <OfflineBanner />
-        {flow === "app" && <DailyProtocolReminder />}
+        {!authLoading && flow === "app" && <WellnessReminderHost key={wellnessOwner} />}
         {/* KAN-137: SOS global por encima de modales, teclado, video y sesión. */}
         <SosLayer>
           <SosQuickAccess />

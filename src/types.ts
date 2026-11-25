@@ -3,6 +3,7 @@ export type Screen =
   | "protocol"
   | "wellness-diet"
   | "wellness-checkin"
+  | "wellness-notifications"
   | "wellness-goal"
   | "wellness-exercise"
   | "prof";
