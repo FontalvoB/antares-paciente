@@ -18,7 +18,7 @@ describe('Aviso nutricional premium', () => {
   beforeEach(() => { localStorage.clear(); account('patient-a'); });
   it('se muestra una vez por cuenta y permite releerlo sin perder el contenido legal', () => {
     const view = render(<NutritionDisclaimer/>);
-    expect(screen.getByRole('dialog').textContent).toContain('no es consejo médico, diagnóstico ni tratamiento');
+    expect(screen.getByRole('dialog').textContent).toContain('Es solo informativo y de bienestar general, y no reemplaza');
     fireEvent.click(screen.getByText('Entendido'));
     expect(screen.queryByRole('dialog')).toBeNull();
     view.unmount();

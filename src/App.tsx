@@ -33,12 +33,14 @@ import { sessionUserId } from "./utils/sessionIdentity";
 import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
 import type { PaidGeneration } from "./features/wellness/generation/wellness-journey-api";
 import { TestsPage } from "./pages/TestsPage";
+import { WellnessPlan } from "./features/wellness/home/WellnessPlan";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
 import { WellnessDiet } from "./features/wellness/nutrition/WellnessDiet";
 import { WellnessGoalPage } from "./features/wellness/goal/WellnessGoalPage";
 import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise";
 import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
+import { WellnessYearPage } from "./features/wellness/year/WellnessYearPage";
 import {
   SensitiveDataScreen,
   WellnessPrivacy,
@@ -92,6 +94,9 @@ function Router() {
     content = <TestsPage />;
   } else {
     switch (screen) {
+      case "wellness-plan":
+        content = <WellnessPlan />;
+        break;
       case "protocol":
         content = <WellnessProtocol />;
         break;
@@ -131,6 +136,9 @@ function Router() {
             <WellnessVitals />
           </SensitiveDataScreen>
         );
+        break;
+      case "wellness-year":
+        content = <WellnessYearPage />;
         break;
       case "prof":
         content = <ProfilePage />;

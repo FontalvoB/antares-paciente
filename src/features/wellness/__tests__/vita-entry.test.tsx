@@ -6,6 +6,7 @@ import { WellnessHome } from "../home/WellnessHome";
 import { WellnessProtocol } from "../protocol/WellnessProtocol";
 import { WellnessDiet } from "../nutrition/WellnessDiet";
 import { WellnessCloseDay } from "../checkin/WellnessCloseDay";
+import { WellnessExercise } from "../exercise/WellnessExercise";
 import { localISODate, savePlanSnapshot } from "../state/wellness-home-store";
 import { sendChatMessage } from "../../../services/chat/chat-service";
 import { VITA_DOCK_KEY } from "../vita/dock";
@@ -91,6 +92,9 @@ vi.mock("@ionic/react", async (original) => ({
 }));
 
 const orb = (module: string) => document.querySelector(`[data-vita-module="${module}"] .vita-entry-trigger`) as HTMLButtonElement | null;
+/** Abre el panel: en Home la entrada es el orbe de WellnessFrame (KAN-121). */
+const openPanelFrom = (module: string) =>
+  fireEvent.click(module === "home" ? document.querySelector<HTMLElement>("button.wh-orb-button")! : orb(module)!);
 
 function sentPayload() {
   const [message, threadId, language, attachments, , options] = vi.mocked(sendChatMessage).mock.calls.at(-1)!;
@@ -117,7 +121,7 @@ afterEach(() => vi.useRealTimers());
 
 describe("VitaEntry — orbe en módulos", () => {
   it.each([
-    ["home", () => <WellnessHome />],
+    ["exercise", () => <WellnessExercise />],
     ["protocol", () => <WellnessProtocol />],
     ["diet", () => <WellnessDiet />],
     ["close-day", () => <WellnessCloseDay />],
@@ -136,7 +140,7 @@ describe("VitaEntry — orbe en módulos", () => {
     ["diet", () => <WellnessDiet />, "mealsTotal"],
   ])("desde %s envía el contexto del módulo sin datos personales", async (module, View, key) => {
     render(<View />);
-    fireEvent.click(orb(module)!);
+    openPanelFrom(module);
     const dialog = screen.getByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText("Escribe un mensaje…"), { target: { value: "¿Qué hago ahora?" } });
     await act(async () => { fireEvent.click(within(dialog).getByLabelText("Enviar")); });
@@ -150,6 +154,30 @@ describe("VitaEntry — orbe en módulos", () => {
     expect(payload.moduleContext?.summary).toHaveProperty(key);
     expectNoPersonalData(payload.moduleContext);
     expect(await within(dialog).findByText("Prueba un paso pequeño hoy.")).toBeTruthy();
+  });
+});
+
+describe("VitaEntry — entrada única en Home (WellnessFrame)", () => {
+  it("el orbe de la cabecera abre el panel, refleja aria-expanded y no hay orbe flotante", () => {
+    render(<WellnessHome />);
+    expect(document.querySelectorAll(".vita-entry-trigger")).toHaveLength(0);
+    const frameOrb = document.querySelector<HTMLElement>("button.wh-orb-button")!;
+    expect(frameOrb.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(frameOrb.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(frameOrb);
+    expect(frameOrb.getAttribute("aria-expanded")).toBe("true");
+    expect(document.querySelector('[data-vita-panel="home"]')).toBeTruthy();
+    expect(state.openVoice).not.toHaveBeenCalled();
+    // Escape cierra y aria-expanded vuelve a false.
+    fireEvent.keyDown(screen.getByLabelText("Escribe un mensaje…"), { key: "Escape" });
+    expect(document.querySelector('[data-vita-panel="home"]')).toBeNull();
+    expect(frameOrb.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("el compositor de la cabecera abre el mismo panel", () => {
+    render(<WellnessHome />);
+    fireEvent.click(screen.getByText("Pregúntame o cuéntame cómo te sientes..."));
+    expect(document.querySelectorAll('[data-vita-panel="home"]')).toHaveLength(1);
   });
 });
 

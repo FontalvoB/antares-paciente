@@ -1,3 +1,4 @@
+import { WellnessGuidance } from "../WellnessGuidance";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
@@ -39,7 +40,7 @@ export function WellnessVitals() {
   return (
     <Screen>
       <div className="wv-notice">
-        {t("Estos datos son informativos y no reemplazan la atención médica.")}
+        <WellnessGuidance kind="vitals" />
       </div>
       <Scroll className="wp-scroll wv-scroll">
         <header className="wp-hero wp-hero-top wv-hero">

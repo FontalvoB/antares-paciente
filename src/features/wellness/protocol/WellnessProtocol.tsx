@@ -317,7 +317,7 @@ export function WellnessProtocol() {
         )}
 
         <p className="wp-legal">
-          {t("Información general de bienestar. No es consejo médico.")}
+          {t("Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal.")}
         </p>
       </Scroll>
 

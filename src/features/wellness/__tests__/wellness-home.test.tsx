@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { WellnessPlan } from "../home/WellnessPlan";
 import { WellnessHome } from "../home/WellnessHome";
 import { getGenerationState, requestGeneration, setNextFailure } from "../generation/generation-store";
 import {
@@ -50,6 +51,14 @@ vi.mock("../../../components/LanguageToggle", () => ({
   LanguageToggle: () => <span>lang</span>,
 }));
 
+// Ionic overlays need a DOM portal in the browser; emulate their open lifecycle here.
+vi.mock("@ionic/react", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  IonModal: ({ isOpen, children }: { isOpen: boolean; children: ReactNode }) => isOpen ? <div role="dialog">{children}</div> : null,
+  IonPopover: ({ isOpen, children }: { isOpen: boolean; children: ReactNode }) => isOpen ? <div role="dialog">{children}</div> : null,
+}));
+const openInbox = () => fireEvent.click(document.querySelector('ion-button[aria-label="Bandeja"]')!);
+
 const ALL: ProtocolStepId[] = [
   "exercise",
   "diet",
@@ -94,8 +103,8 @@ describe("WellnessHome (KAN-142)", () => {
     expect(document.querySelector(".wh-day")?.textContent).toMatch(
       /Día\s*10\s*de\s*365/,
     );
-    expect(document.querySelector(".wh-day-progress")).toBeTruthy();
-    expect(screen.getByText("0/5")).toBeTruthy();
+    expect(screen.getByText("0 de 5")).toBeTruthy();
+    openInbox();
     expect(screen.getByText("0 de 7")).toBeTruthy();
     for (const removed of ["IMC", "HbA1c", "% de grasa"]) {
       expect(screen.queryByText(new RegExp(removed))).toBeNull();
@@ -111,35 +120,46 @@ describe("WellnessHome (KAN-142)", () => {
     expect(document.querySelector(".wh-day")?.textContent).not.toMatch(/366/);
   });
 
-  it("abre el primer paso pendiente desde el CTA", () => {
+  it("abre el resumen del plan al pulsar el círculo", () => {
     seedPlan(0);
     render(<WellnessHome />);
-    fireEvent.click(screen.getByText("Empezar mi día"));
-    expect(state.navigate).toHaveBeenCalledWith("protocol");
+    fireEvent.click(screen.getByLabelText("Ver mi plan de bienestar"));
+    expect(state.navigate).toHaveBeenCalledWith("wellness-plan");
   });
 
   it("refleja el estado real de los 5 pasos y los puntos", () => {
     seedPlan(0);
     saveProtocolHistory({ [localISODate(new Date())]: ALL });
     render(<WellnessHome />);
-    expect(screen.getByText("5/5")).toBeTruthy();
-    expect(screen.getByText("Día completo")).toBeTruthy();
-    expect(screen.getByText("70")).toBeTruthy();
+    expect(screen.getByText("5 de 5")).toBeTruthy();
+    expect(screen.getByText("70 XP")).toBeTruthy();
+    expect(document.querySelector(".wh-ring-copy > strong")?.textContent).toBe("100%");
   });
 
   it("oculta la tarjeta de cuestionarios al llegar a 7/7", () => {
     seedPlan(0);
     saveBatteriesCompleted(7);
     render(<WellnessHome />);
+    openInbox();
     expect(screen.queryByText("Cuestionarios de bienestar")).toBeNull();
   });
 
   it("lleva a los cuestionarios y a Vita", () => {
     seedPlan(0);
     render(<WellnessHome />);
+    openInbox();
     fireEvent.click(screen.getByText("Continuar cuestionarios"));
     expect(state.openTests).toHaveBeenCalled();
-    fireEvent.click(screen.getByText("Vita"));
+    // KAN-167: el orbe de la cabecera es la entrada única de Vita; abre su
+    // panel (voz, texto e imagen) y la llamada de voz sigue disponible dentro.
+    const orb = screen.getByLabelText("Hablar con Vita");
+    expect(orb.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(orb);
+    expect(orb.getAttribute("aria-expanded")).toBe("true");
+    expect(state.openVoice).not.toHaveBeenCalled();
+    const panel = document.querySelector<HTMLElement>('[data-vita-panel="home"]')!;
+    expect(document.querySelectorAll(".vita-entry-trigger")).toHaveLength(0);
+    fireEvent.click(within(panel).getByLabelText("Hablar con Vita"));
     expect(state.openVoice).toHaveBeenCalled();
   });
 
@@ -148,7 +168,8 @@ describe("WellnessHome (KAN-142)", () => {
     seedPlan(0);
     render(<WellnessHome />);
     expect(screen.getByText("Today's protocol")).toBeTruthy();
-    expect(screen.getByText("Start my day")).toBeTruthy();
+    expect(screen.getByLabelText("View my wellness plan")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Inbox"));
     expect(screen.getByText("Wellness questionnaires")).toBeTruthy();
   });
 
@@ -162,6 +183,7 @@ describe("WellnessHome (KAN-142)", () => {
     for (const label of ["Ejercicio", "Nutrición", "Bandeja"]) {
       expect(generation.querySelector(`ion-progress-bar[aria-label="${label}"]`)).toBeTruthy();
     }
+    openInbox();
     const inbox = within(screen.getByRole("region", { name: "Bandeja" }));
     expect(inbox.getByText("Preparando tu bandeja")).toBeTruthy();
     expect(screen.getByText("Protocolo de hoy")).toBeTruthy();
@@ -187,6 +209,7 @@ describe("WellnessHome (KAN-142)", () => {
 
     expect(screen.getByRole("alert").textContent).toBe("No pudimos preparar tu plan de nutrición");
     expect(screen.getByText("Tus respuestas están guardadas")).toBeTruthy();
+    openInbox();
     expect(screen.getByText("Tu plan de ejercicio está listo")).toBeTruthy();
     expect(screen.queryByText("Tu plan de nutrición está listo")).toBeNull();
     fireEvent.click(screen.getByText("Reintentar"));
@@ -201,7 +224,32 @@ describe("WellnessHome (KAN-142)", () => {
   it("muestra el estado vacío de la bandeja cuando no hay mensajes", () => {
     seedPlan(0);
     render(<WellnessHome />);
+    openInbox();
     const inbox = within(screen.getByRole("region", { name: "Bandeja" }));
     expect(inbox.getByText("No tienes mensajes nuevos")).toBeTruthy();
+  });
+});
+
+describe("Resumen del plan", () => {
+  it("conserva los destinos de protocolo, nutrición, actividad y evaluación", () => {
+    seedPlan(0);
+    render(<WellnessPlan />);
+    fireEvent.click(screen.getByText("Continuar mi plan"));
+    expect(state.navigate).toHaveBeenLastCalledWith("protocol");
+    fireEvent.click(screen.getByText("Actividad"));
+    expect(state.navigate).toHaveBeenLastCalledWith("wellness-exercise");
+    fireEvent.click(screen.getByText("Evaluación"));
+    expect(state.openTests).toHaveBeenCalled();
+    fireEvent.click(screen.getAllByText("Nutrición")[0]);
+    expect(state.navigate).toHaveBeenLastCalledWith("wellness-diet");
+    fireEvent.click(screen.getByLabelText("Volver a Inicio"));
+    expect(state.navigate).toHaveBeenLastCalledWith("home");
+  });
+  it("muestra los módulos pendientes sin navegar a rutas retiradas", () => {
+    seedPlan(0);
+    render(<WellnessPlan />);
+    fireEvent.click(screen.getByText("Medicamentos"));
+    expect(screen.getByText("Próximamente")).toBeTruthy();
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 });

@@ -82,7 +82,7 @@ export function SafetyQuestions({
 
       {hasPositive && (
         <div className="wl-note wl-note-warn" style={{ flexDirection: "column" }}>
-          <strong id={confirmationId} role="status">{t("Consulta primero a tu médico")}</strong>
+          <strong id={confirmationId} role="status">{t("Consulta primero a tu profesional de la salud")}</strong>
           <IonCheckbox
             checked={draft[confirmationField]}
             required

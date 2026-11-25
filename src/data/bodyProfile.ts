@@ -323,4 +323,4 @@ export const BODY_DERIVED = [
 ]
 
 export const BODY_FOOTNOTE =
-  'Mediciones tomadas en consulta el 05/08/2026. El % de grasa es un estimado calculado con fórmulas validadas y no reemplaza una bioimpedancia clínica.'
+  'Mediciones tomadas en consulta el 05/08/2026. El % de grasa es un estimado calculado con fórmulas validadas y no reemplaza una bioimpedancia hecha por un profesional.'

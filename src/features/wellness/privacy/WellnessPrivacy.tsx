@@ -22,7 +22,7 @@ const DRAFT = "Borrador para revisión legal";
 const SAVE_ERROR = "No pudimos guardar tu decisión. Intenta de nuevo.";
 const PURPOSE = "Usamos estos datos para adaptar tu plan, guardar tus registros y mostrar tu progreso.";
 const SHARING = "Esta versión guarda el plan y los registros de bienestar en el dispositivo. Si una función sincroniza datos, los recibe el servidor de COPP-ADRESD (ERP) y puede verlos el profesional autorizado que te acompaña. No vendemos tus datos de bienestar.";
-const SENSITIVE = "Registramos tu edad, peso, cintura, síntomas, respuestas a los cuestionarios PAR-Q y NQS, signos vitales y planes de bienestar.";
+const SENSITIVE = "Registramos tu edad, peso, cintura, las molestias o los cambios que notas en tu cuerpo, las respuestas a los cuestionarios PAR-Q y NQS, tus signos vitales y tus planes de bienestar.";
 const SCOPES: Record<WellnessConsentScope, { title: string; label: string; description: string }> = {
   "sensitive-data": {
     title: "Datos sensibles",

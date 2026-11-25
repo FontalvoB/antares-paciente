@@ -77,7 +77,7 @@ describe('real assessment flow', () => {
     api.fetchMyTest.mockRejectedValue(new Error('offline'));
     render(<TestsPage />);
     fireEvent.click(await screen.findByText(/Real assigned test/));
-    await waitFor(() => expect(toast).toHaveBeenCalledWith('No se pudieron cargar las preguntas. Intenta nuevamente.', 'err'));
+    expect((await screen.findByRole('alert')).textContent).toBe('No se pudieron cargar las preguntas. Intenta nuevamente.');
     expect(screen.queryByText('Submit real assessment')).toBeNull();
   });
   it('keeps answers open and reports failure when the server rejects submission', async () => {

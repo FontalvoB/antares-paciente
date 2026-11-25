@@ -192,7 +192,7 @@ export function evaluateGate(draft: ObjectiveDraft): GateResult {
       code: "doctor",
       step: OBJECTIVE_STEP.parq,
       messageKey:
-        "Marcaste una respuesta de seguridad del ejercicio. Consulta primero a tu médico y confírmalo para continuar.",
+        "Marcaste una respuesta de seguridad del ejercicio. Consulta primero a tu profesional de la salud y confírmalo para continuar.",
       field: "doctorConfirmed",
     });
   }

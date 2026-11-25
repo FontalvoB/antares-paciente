@@ -12,7 +12,7 @@ import type { ChatModuleContext } from "../../../services/chat/types";
 /** Módulos desde los que se puede abrir Vita. */
 export const VITA_MODULES = [
   "home", "protocol", "diet", "exercise", "close-day", "goal", "profile",
-  "privacy", "notifications", "vitals",
+  "privacy", "notifications", "vitals", "plan", "year",
 ] as const;
 export type VitaModuleId = (typeof VITA_MODULES)[number];
 

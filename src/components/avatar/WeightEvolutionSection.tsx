@@ -138,7 +138,7 @@ export function WeightEvolutionSection({
           {status === "unavailable" && (
             <p role="status">
               {t(
-                "El historial no está disponible: se requiere perfil de paciente e inscripción activa en el programa.",
+                "El historial no está disponible: se requiere perfil de persona e inscripción activa en el programa.",
               )}
             </p>
           )}
@@ -226,7 +226,7 @@ export function WeightEvolutionSection({
               </div>
               <p className="evo-sub">
                 {t(
-                  "Vista relativa a tu primer registro válido de los últimos 365 días. No es una simulación médica ni reproduce tu anatomía.",
+                  "Vista relativa a tu primer registro válido de los últimos 365 días. No es una simulación ni reproduce tu anatomía.",
                 )}
               </p>
               {deltaKg != null && deltaPct != null && (

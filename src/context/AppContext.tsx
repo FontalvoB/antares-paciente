@@ -1402,6 +1402,7 @@ export function AppProvider({
             setScreen(target);
             return;
           case "home":
+          case "wellness-plan":
           case "protocol":
           case "wellness-diet":
           case "wellness-exercise":
@@ -1409,6 +1410,7 @@ export function AppProvider({
           case "wellness-checkin":
           case "wellness-privacy":
           case "wellness-notifications":
+          case "wellness-year":
           case "prof":
             setScreen(target);
             return;

@@ -286,7 +286,7 @@ export function WellnessGoalPage() {
             <IonIcon icon={shieldCheckmarkOutline} aria-hidden="true" />
             <span>
               {t(
-                "Información general de bienestar. No es consejo médico. En una emergencia llama al 911.",
+                "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal. En una emergencia llama al 911.",
               )}
             </span>
           </div>

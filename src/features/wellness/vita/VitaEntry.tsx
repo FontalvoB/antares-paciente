@@ -57,6 +57,7 @@ import type { VitaModuleId, VitaModuleSummary } from "./context";
 import { markVitaNudgeShown, readVitaMinimized, shouldShowVitaNudge, writeVitaMinimized } from "./dock";
 import { useVitaConversation } from "./useVitaConversation";
 import { VitaOrb } from "./VitaOrb";
+import { onVitaPanelRequest, setVitaPanelExpanded } from "./panel-store";
 import "./vita.css";
 
 export interface VitaEntryProps {
@@ -64,6 +65,12 @@ export interface VitaEntryProps {
   module: VitaModuleId;
   /** Resumen corto del estado visible (sin datos personales). */
   summary?: VitaModuleSummary;
+  /**
+   * `true` (por defecto): orbe flotante propio. `false`: sin orbe ni aviso; el
+   * panel lo abren disparadores de la propia pantalla con `useVitaPanel()`
+   * (cabeceras con orbe de Vita, como `WellnessFrame`).
+   */
+  docked?: boolean;
 }
 
 /** Nombre visible del módulo (clave i18n en español). */
@@ -78,6 +85,8 @@ const MODULE_LABEL: Record<VitaModuleId, string> = {
   privacy: "Privacidad",
   notifications: "Notificaciones",
   vitals: "Signos vitales",
+  plan: "Tu Plan de Bienestar",
+  year: "Año 365",
 };
 
 /** Sugerencias rápidas por módulo (claves i18n en español). */
@@ -92,6 +101,8 @@ const MODULE_PROMPTS: Record<VitaModuleId, readonly string[]> = {
   privacy: ["¿Qué datos uso en la app y para qué?", "¿Cómo exporto o borro mis datos?"],
   notifications: ["¿Qué recordatorios me conviene activar?", "¿Cómo ajusto mis horarios de aviso?"],
   vitals: ["¿Cómo registro mis signos vitales?", "¿Cómo leo la tendencia de mis registros?"],
+  plan: ["¿Qué incluye mi plan de bienestar?", "¿Por dónde empiezo esta semana?"],
+  year: ["¿Cómo leo mi calendario del año?", "¿Qué me dice mi resumen del mes?"],
 };
 
 /** Retraso del aviso proactivo para no competir con la entrada de la pantalla. */
@@ -99,7 +110,7 @@ const NUDGE_DELAY_MS = 900;
 /** El aviso se retira solo para no tapar contenido de forma prolongada. */
 const NUDGE_VISIBLE_MS = 8000;
 
-export function VitaEntry({ module, summary }: VitaEntryProps) {
+export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
   const { openVoice } = useApp();
   const { t, lang } = useI18n();
   const conversation = useVitaConversation(module, summary);
@@ -124,14 +135,14 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
   // Aviso proactivo: como máximo una vez por día local y por cuenta. Se marca
   // al mostrarse para no insistir aunque no se descarte.
   useEffect(() => {
-    if (minimized || !shouldShowVitaNudge(namespace)) return;
+    if (!docked || minimized || !shouldShowVitaNudge(namespace)) return;
     const timer = window.setTimeout(() => {
       if (!shouldShowVitaNudge(namespace)) return;
       markVitaNudgeShown(namespace);
       setNudge(true);
     }, NUDGE_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [namespace, minimized]);
+  }, [docked, namespace, minimized]);
 
   // Con el panel abierto, los recordatorios superiores (KAN-176) se colocan
   // bajo la cabecera y la nota del panel: se mide su borde real (cambia con el
@@ -174,7 +185,23 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
     setNudge(false);
   };
 
-  const focusTrigger = () => requestAnimationFrame(() => (trigger.current ?? tab.current)?.focus());
+  // Disparador externo que abrió el panel (modo `docked={false}`): recibe el foco al cerrar.
+  const opener = useRef<HTMLElement | null>(null);
+  const focusTrigger = () => requestAnimationFrame(() => (trigger.current ?? tab.current ?? opener.current)?.focus());
+
+  useEffect(() => {
+    if (docked) return;
+    return onVitaPanelRequest(() => {
+      opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setOpen(true);
+    });
+  }, [docked]);
+
+  useEffect(() => {
+    if (docked) return;
+    setVitaPanelExpanded(open);
+  }, [docked, open]);
+  useEffect(() => () => { if (!docked) setVitaPanelExpanded(false); }, [docked]);
 
   const submit = async (value = text, promptKey?: string) => {
     if (busy) return;
@@ -216,7 +243,7 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
 
   return (
     <>
-      <VitaOrb
+      {docked && <VitaOrb
         module={module}
         label={t("Preguntar a Vita sobre {modulo}", { modulo: moduleName })}
         open={open}
@@ -233,7 +260,7 @@ export function VitaEntry({ module, summary }: VitaEntryProps) {
           setNudge(false);
           focusTrigger();
         }}
-      />
+      />}
 
       <IonModal
         isOpen={open}

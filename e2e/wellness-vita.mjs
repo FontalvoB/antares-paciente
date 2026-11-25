@@ -26,7 +26,11 @@ const COPY = {
 async function noOverflow(page, label) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
-    const scrollers = [...document.querySelectorAll(".screen-scroll, .vita-panel-log, .app-shell")];
+    // Solo cuenta lo que el usuario puede desplazar: la raíz y los contenedores
+    // con scroll. Un contenedor que recorta (overflow-x hidden/clip, como
+    // .app-shell con la órbita decorativa de KAN-121) no genera scroll visible.
+    const scrollers = [...document.querySelectorAll(".screen-scroll, .vita-panel-log, .app-shell")]
+      .filter((el) => !["hidden", "clip"].includes(getComputedStyle(el).overflowX));
     return root.scrollWidth > root.clientWidth + 1
       || scrollers.some((el) => el.scrollWidth > el.clientWidth + 1);
   });
@@ -55,7 +59,6 @@ async function orbVisible(page, module, label) {
   return orb;
 }
 
-// COP_E2E_CHANNEL=chrome usa el Chrome del sistema si faltan los navegadores de Playwright.
 const ALLOWED_CHAT_KEYS = new Set(["message", "supportsVita", "language", "moduleContext", "attachmentIds"]);
 const SECRETS = ["11111111-1111-4111-8111-111111111111", "Paciente", "QA", "qa@example.test", "9988776655", "2025550101", "proactive-"];
 function assertCleanBody(raw, label) {
@@ -63,11 +66,14 @@ function assertCleanBody(raw, label) {
 }
 const voiceBodies = [];
 const uploadBodies = [];
-const browser = await chromium.launch(process.env.COP_E2E_CHANNEL ? { channel: process.env.COP_E2E_CHANNEL } : {});
+// COP_E2E_BROWSER_CHANNEL (o COP_E2E_CHANNEL) = chrome usa el Chrome del sistema
+// si faltan los navegadores de Playwright.
+const channel = process.env.COP_E2E_BROWSER_CHANNEL ?? process.env.COP_E2E_CHANNEL;
+const browser = await chromium.launch(channel ? { channel } : {});
 const chatBodies = [];
 try {
   for (const lang of ["es", "en"]) {
-    for (const width of lang === "es" ? [320, 390, 768] : [390]) {
+    for (const width of [320, 390, 768]) {
       const c = COPY[lang];
       const tag = `${lang}-${width}`;
       const context = await browser.newContext({ viewport: { width, height: 820 } });
@@ -139,22 +145,24 @@ try {
       });
 
       await page.goto(origin);
-      // Home: orbe visible y aviso proactivo una vez.
-      const homeOrb = await orbVisible(page, "home", `home ${tag}`);
+      // Home (rediseño KAN-121): la entrada única de Vita es el orbe de la
+      // cabecera de WellnessFrame; no hay orbe flotante ni aviso en Home.
+      const homeOrb = page.locator("button.wh-orb-button");
+      await expect(homeOrb).toBeVisible();
       await expect(homeOrb).toHaveAttribute("aria-expanded", "false");
-      await expect(homeOrb).toHaveAttribute("aria-label", new RegExp(`^${c.ask}`));
-      const nudge = page.getByText(c.nudge);
-      await expect(nudge).toBeVisible();
-      await page.waitForTimeout(600);
-      await page.screenshot({ path: join(shots, `kan167-home-nudge-${tag}.png`) });
-      await page.getByRole("button", { name: c.dismiss }).click();
-      await expect(nudge).toHaveCount(0);
+      await expect(homeOrb).toHaveAttribute("aria-haspopup", "dialog");
+      await expect(homeOrb).toHaveAttribute("aria-label", c.voice);
+      await page.waitForTimeout(1200);
+      assert.equal(await page.locator(".vita-entry-trigger, .vita-dock").count(), 0, `entrada duplicada de Vita en Home ${tag}`);
+      assert.equal(await page.getByText(c.nudge).count(), 0);
+      await page.screenshot({ path: join(shots, `kan167-home-${tag}.png`) });
       await noOverflow(page, `home ${tag}`);
 
       // Teclado: el orbe se activa con Enter, Escape cierra y el foco vuelve.
       await homeOrb.focus();
       await page.keyboard.press("Enter");
       const dialog = page.locator("ion-modal.vita-panel-modal");
+      await expect(homeOrb).toHaveAttribute("aria-expanded", "true");
       await expect(dialog.locator("h2", { hasText: "Vita" })).toBeVisible();
       await page.waitForTimeout(400);
       await page.screenshot({ path: join(shots, `kan167-panel-home-${tag}.png`) });
@@ -188,7 +196,15 @@ try {
       }
       await page.keyboard.press("Escape");
       await expect(page.locator("ion-modal.vita-panel-modal.show-modal")).toHaveCount(0);
-      await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest(".vita-entry-trigger")))).toBe(true);
+      await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest("button.wh-orb-button")))).toBe(true);
+      await expect(homeOrb).toHaveAttribute("aria-expanded", "false");
+
+      // El compositor de la cabecera abre el mismo panel (una sola entrada).
+      await page.locator("ion-button.wh-ask").click();
+      await expect(dialog.locator("h2", { hasText: "Vita" })).toBeVisible();
+      assert.equal(await page.locator("ion-modal.vita-panel-modal.show-modal").count(), 1);
+      await page.keyboard.press("Escape");
+      await expect(page.locator("ion-modal.vita-panel-modal.show-modal")).toHaveCount(0);
 
       // Home: enviar texto.
       await homeOrb.click();
@@ -202,8 +218,15 @@ try {
       await expect(page.locator("ion-modal.vita-panel-modal.show-modal")).toHaveCount(0);
 
       // Dieta: orbe, texto + imagen simulada.
-      await page.locator(".wh-quick").getByRole("button", { name: c.home, exact: true }).click();
+      await page.locator(".wh-task-list").getByRole("button", { name: new RegExp(c.home) }).click();
       const dietOrb = await orbVisible(page, "diet", `diet ${tag}`);
+      // Aviso proactivo (una vez al día) en la primera pantalla con orbe.
+      const nudge = page.getByText(c.nudge);
+      await expect(nudge).toBeVisible();
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: join(shots, `kan167-diet-nudge-${tag}.png`) });
+      await page.getByRole("button", { name: c.dismiss }).click();
+      await expect(nudge).toHaveCount(0);
       await noOverflow(page, `diet ${tag}`);
       await dietOrb.click();
       await dialog.locator("input[data-vita-file-input]").setInputFiles({ name: "plato.png", mimeType: "image/png", buffer: PNG });
