@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../utils/brand";
 import { useState } from "react";
 import { IonButton } from "@ionic/react";
 import { InformedConsentSection } from "../components/InformedConsentSection";
@@ -13,7 +14,7 @@ export function ConsentPreviewPage({ longText = false }: { longText?: boolean })
   const [complete, setComplete] = useState(false);
   return <div className="screen onb-page consent-preview">
     <header className="onb-head">
-      <div className="onb-head-top"><span className="onb-head-brand">Copp Adresd</span><LanguageToggle /></div>
+      <div className="onb-head-top"><span className="onb-head-brand">{BRAND_NAME}</span><LanguageToggle /></div>
       <h1>{t("Prueba de consentimiento")}</h1>
       <p>{t("Desliza dentro del texto hasta llegar al final.")}</p>
     </header>

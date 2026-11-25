@@ -195,7 +195,7 @@ function VoiceShell({
                 <IonIcon icon={chevronBack} />
               </IonButton>
               <span className="vc-brand">
-                COPP-ADRESD<span>{t("Asistente de voz")}</span>
+                Agentic Wellness IA<span>{t("Asistente de voz")}</span>
               </span>
             </div>
             <div className="vc-center">

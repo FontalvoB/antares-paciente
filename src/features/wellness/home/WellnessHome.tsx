@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../../../utils/brand";
 import {
   IonBadge,
   IonButton,
@@ -164,7 +165,7 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
       <Scroll className="wh-scroll">
         <header className="wh-hero">
           <div className="wh-hero-top">
-            <span className="wh-brand">Copp Adresd</span>
+            <span className="wh-brand">{BRAND_NAME}</span>
             <LanguageToggle />
           </div>
           <p className="wh-greeting">

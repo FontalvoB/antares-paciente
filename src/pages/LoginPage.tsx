@@ -39,7 +39,7 @@ import {
   type ContactMethod,
   type IdLookupResult,
 } from "../utils/authApi";
-import logoLetras from "../assets/LogoConLetras.png";
+import { BrandWordmark } from "../components/BrandWordmark";
 import type { UserProfile } from "../types";
 
 type LoginMode = "login" | "first" | "recovery" | "email-recovery";
@@ -339,7 +339,7 @@ export function LoginPage() {
       </div>
 
       <div className="auth-scroll">
-        <img className="auth-logo" src={logoLetras} alt="COPP-ADRESD" />
+        <BrandWordmark className="auth-logo" />
 
         <AnimatePresence mode="wait" initial={false}>
           {mode === "login" ? (

@@ -131,8 +131,8 @@ export const medicalSources = [
       "La adherencia registra el seguimiento semanal y los puntos (XP) reconocen el avance. Son métricas internas del programa y carecen de validación como cálculos clínicos.",
     sources: [
       {
-        organization: "Programa COPP-ADRESD",
-        title: "Programa COPP-ADRESD. Adherencia y puntos",
+        organization: "Programa Agentic Wellness IA",
+        title: "Programa Agentic Wellness IA. Adherencia y puntos",
         year: 2026,
         url: "https://www.coppadresd.com/",
       },
@@ -166,8 +166,8 @@ export const medicalSources = [
         url: "https://www.who.int/publications/i/item/9789240029200",
       },
       {
-        organization: "Copp Adresd",
-        title: "Política de privacidad de Copp Adresd",
+        organization: "Agentic Wellness IA",
+        title: "Política de privacidad de Agentic Wellness IA",
         year: 2026,
         url: "https://diomedescerda.github.io/coppadresd-privacy/",
       },

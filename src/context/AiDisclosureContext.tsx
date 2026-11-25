@@ -212,7 +212,7 @@ export function AiDisclosureProvider({ children }: { children: ReactNode }) {
           <h2>{t("A quién se envían")}</h2>
           <p>
             {t(
-              "A proveedores de servicios de IA que procesan los datos por cuenta de Copp Adresd:",
+              "A proveedores de servicios de IA que procesan los datos por cuenta de Agentic Wellness IA:",
             )}
           </p>
           <IonList>
