@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   // Única entrada pública: el API Gateway (YARP, 5080). Todos los servicios
   // (Auth, Api, Telemedicina, Comunidad, Storage) se enrutan por prefijo.
   const gatewayTarget = (
-    env.VITE_GATEWAY_BASE_URL || "http://localhost:5080"
+    env.VITE_DEV_PROXY_TARGET || env.VITE_GATEWAY_BASE_URL || "http://localhost:5080"
   ).replace(/\/+$/, "");
   const gatewayWsTarget = gatewayTarget.replace(/^http/, "ws");
 

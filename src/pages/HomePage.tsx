@@ -68,10 +68,10 @@ import coverHistoria from "../assets/modules/historia.png";
 import coverNutricion from "../assets/modules/nutricion.png";
 import coverPerfil from "../assets/modules/perfil.png";
 import doctorAvatar from "../assets/home/doctor-avatar.png";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { ProgramDay, Screen as ScreenId } from "../types";
 
-export function HomePage() {
+export function HomePage({ children }: { children?: ReactNode }) {
   const {
     user,
     navigate,
@@ -731,6 +731,7 @@ export function HomePage() {
             </div>
           </>
         )}
+        {children}
       </Scroll>
       <MetricHistoryModal
         card={metricId ? cards[metricId] : null}

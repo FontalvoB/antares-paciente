@@ -29,6 +29,9 @@ import { OfflineBanner } from "./components/common/OfflineBanner";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TestsPage } from "./pages/TestsPage";
+import { sessionUserId } from "./utils/sessionIdentity";
+import { getAccessToken } from "./utils/authApi";
+import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
 import { HomePage } from "./pages/HomePage";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { HistoryPage } from "./pages/HistoryPage";
@@ -61,8 +64,10 @@ const queryClient = new QueryClient({
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
 function Router() {
-  const { flow, screen, authLoading } = useApp();
+  const { flow, screen, authLoading, user } = useApp();
 
+  const paidJourney = import.meta.env.DEV && import.meta.env.VITE_WELLNESS_JOURNEY_DEMO === "true"
+    && new URLSearchParams(window.location.search).get("wellnessJourney") === "1";
   if (authLoading) {
     return (
       <div className="screen auth auth-splash">
@@ -78,8 +83,8 @@ function Router() {
 
   let content: ReactNode;
 
-  if (flow === "login") {
-    content = <LoginPage />;
+  if (flow === "login" || (paidJourney && flow === "onboarding")) {
+    content = <LoginPage emailFirst={paidJourney} />;
   } else if (flow === "onboarding") {
     content = <OnboardingPage />;
   } else if (flow === "tests") {
@@ -135,6 +140,13 @@ function Router() {
       default:
         content = <HomePage />;
     }
+  }
+
+  if (paidJourney && flow === "app") {
+    const accountId = sessionUserId(getAccessToken()) ?? user.id;
+    content = accountId
+      ? <WellnessJourneyPage key={accountId} userId={accountId}>{content}</WellnessJourneyPage>
+      : <LoginPage emailFirst />;
   }
 
   return (
@@ -249,6 +261,7 @@ export default function App() {
   // nuevo con el token del usuario actual). Se crea dentro del updater para no
   // recrearlo en cada render.
   const resetCommunityClient = useCallback(() => {
+    queryClient.removeQueries({ queryKey: ["wellness-journey"] });
     setCommunityClientState(createCommunityClient());
   }, []);
 
