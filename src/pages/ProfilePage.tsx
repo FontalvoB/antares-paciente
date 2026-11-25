@@ -52,6 +52,7 @@ import { Browser } from "@capacitor/browser";
 import { createAccountDeletionHandoff, restoreSession } from "../utils/authApi";
 import { updateMyPatientProfile } from "../utils/patientProfileApi";
 import { PRIVACY_POLICY_URL } from "../utils/legalLinks";
+import { VitaEntry } from "../features/wellness/vita";
 
 /**
  * Tarjeta de contacto editable del paciente (FASE 2): email + celular con
@@ -691,6 +692,7 @@ export function ProfilePage() {
             onClose={() => setNotificationsOpen(false)}
           />
         )}
+        <VitaEntry module="profile" summary={{ language: lang }} />
       </Screen>
     </MotionConfig>
   );

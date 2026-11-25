@@ -35,6 +35,8 @@ const store = vi.hoisted(() => {
 
 const actions = vi.hoisted(() => ({ navigate: vi.fn(), showToast: vi.fn(), activateSos: vi.fn() }));
 
+// KAN-167: el orbe de Vita tiene sus propias pruebas (vita-entry.test.tsx).
+vi.mock("../vita", () => ({ VitaEntry: () => null }));
 vi.mock("../../../context/AppContext", async () => {
   const React = await import("react");
   return {

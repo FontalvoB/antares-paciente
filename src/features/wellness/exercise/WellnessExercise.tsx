@@ -31,6 +31,7 @@ import {
 } from "./exercise-plan";
 import "../wellness.css";
 import "./wellness-exercise.css";
+import { VitaEntry } from "../vita";
 import { checkinHistory, checkinOwner } from "../checkin/checkin-store";
 import { dailyEffects, EFFECT_COPY } from "../checkin/close-day";
 
@@ -471,6 +472,15 @@ export function WellnessExercise() {
           {t("Contenido orientativo de bienestar. No es consejo médico.")}
         </p>
       </Scroll>
+      <VitaEntry
+        module="exercise"
+        summary={{
+          day: home.day,
+          goal: home.plan.goal,
+          exercisesTotal: plan.exercises.length,
+          sessionActive: Boolean(session),
+        }}
+      />
     </Screen>
   );
 }

@@ -28,6 +28,7 @@ import {
 import type { ChatLanguage } from "../../utils/threadApi";
 import type {
   ChatResult,
+  ChatSendOptions,
   FeedbackRequest,
   FeedbackResult,
   ThreadState,
@@ -78,6 +79,10 @@ function toFriendlyChatError(error: unknown): unknown {
  * este campo la ejecución cae en `agentTypeId=base` con `tools_used=[]` y
  * `rag_sources=[]`. Enviarlo no concede acceso por sí mismo.
  *
+ * `options.moduleContext` (KAN-167): módulo de origen + resumen acotado del
+ * estado visible, ya saneado por el llamador. Campo aditivo: un backend que
+ * no lo conozca lo ignora.
+ *
  * @throws ApiError — 401 sesión inválida, 502/503 con mensaje amigable,
  *   resto propagado. Nunca retorna null: el llamador muestra error + reintento.
  */
@@ -87,6 +92,7 @@ export async function sendChatMessage(
   language?: ChatLanguage,
   attachmentIds?: string[],
   signal?: AbortSignal,
+  options?: ChatSendOptions,
 ): Promise<ChatResult> {
   const text = message.trim();
   if (!text) throw new Error("El mensaje no puede estar vacío.");
@@ -104,6 +110,7 @@ export async function sendChatMessage(
         supportsVita: true,
         ...(attachmentIds?.length ? { attachmentIds } : {}),
         ...(language ? { language } : {}),
+        ...(options?.moduleContext ? { moduleContext: options.moduleContext } : {}),
       },
     });
   } catch (error) {

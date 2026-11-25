@@ -71,3 +71,22 @@ export interface ThreadState extends ThreadHistoryMetadata {
    */
   messages?: ChatMessage[] | null;
 }
+
+/**
+ * Contexto acotado del módulo desde el que se abre Vita (KAN-167).
+ *
+ * Solo viaja un identificador de módulo y un resumen corto del estado visible
+ * (números, banderas y etiquetas). Nunca datos personales: nombre, correo,
+ * teléfono, documento, dirección ni identificadores de paciente. El saneado
+ * vive en `features/wellness/vita/context.ts`; el backend puede ignorar el
+ * campo sin romper el contrato (propiedad opcional y aditiva).
+ */
+export interface ChatModuleContext {
+  module: string;
+  summary: Record<string, string | number | boolean>;
+}
+
+/** Opciones adicionales y opcionales de un turno de chat. */
+export interface ChatSendOptions {
+  moduleContext?: ChatModuleContext;
+}

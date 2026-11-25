@@ -42,6 +42,7 @@ import {
 } from "../state/wellness-home-store";
 import "../wellness.css";
 import "./wellness-home.css";
+import { VitaEntry } from "../vita";
 
 const STEP_ICON: Record<ProtocolStepId, string> = {
   exercise: barbellOutline,
@@ -426,6 +427,19 @@ export function WellnessHome() {
           {t("Información general de bienestar. No es consejo médico.")}
         </p>
       </Scroll>
+      <VitaEntry
+        module="home"
+        summary={{
+          day: data.day,
+          totalDays: data.totalDays,
+          adherencePct: data.adherencePct,
+          streakDays: data.streakDays,
+          level: data.level,
+          protocolDone: data.protocolDone,
+          protocolTotal: data.protocol.length,
+          closedToday: Boolean(closed),
+        }}
+      />
     </AppScreen>
   );
 }

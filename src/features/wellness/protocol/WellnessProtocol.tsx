@@ -29,6 +29,7 @@ import {
 } from "../state/wellness-home-store";
 import "../wellness.css";
 import "./wellness-protocol.css";
+import { VitaEntry } from "../vita";
 
 const STEP_META: Record<
   ProtocolStepId,
@@ -330,6 +331,17 @@ export function WellnessProtocol() {
             handler: () => setChestOpen(false),
           },
         ]}
+      />
+      <VitaEntry
+        module="protocol"
+        summary={{
+          day: data.day,
+          protocolDone: data.protocolDone,
+          protocolTotal: data.protocol.length,
+          pendingSteps: missing.join(","),
+          chestUnlocked,
+          closedToday: Boolean(closed),
+        }}
       />
     </Screen>
   );

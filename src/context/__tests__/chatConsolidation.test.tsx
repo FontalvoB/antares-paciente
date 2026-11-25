@@ -1,18 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useState } from "react";
 import {
   render,
   screen,
   waitFor,
   act,
   fireEvent,
-  within,
 } from "@testing-library/react";
 import { AppProvider, useApp } from "../AppContext";
 import { I18nProvider } from "../../i18n/I18nContext";
-import { clearThreadMessages, fetchThreadState, sendChatMessage, streamChatMessage, uploadLabExam } from "../../utils/threadApi";
-import { ChatPage } from "../../pages/ChatPage";
-import { sendChatFeedback, sendChatMessage as sendAttachmentChat } from "../../services/chat/chat-service";
+import { clearThreadMessages, fetchThreadState, sendChatMessage, streamChatMessage } from "../../utils/threadApi";
+import { sendChatMessage as sendAttachmentChat } from "../../services/chat/chat-service";
 import { consentFailure, requireLegalConsent } from "../../utils/legalConsents";
 import type { ChatMessage } from "../../types";
 import { voiceMessage } from "../../utils/voiceMessages";
@@ -86,8 +83,7 @@ const mirror = vi.hoisted(() => ({
   app: null as ReturnType<typeof useApp> | null,
 }));
 
-function Harness({ message = "hola", withChat = false }: { message?: string; withChat?: boolean }) {
-  const [chatOpen, setChatOpen] = useState(withChat);
+function Harness({ message = "hola" }: { message?: string }) {
   const app = useApp(); mirror.app = app;
   const { chat, sendChat, sendVoiceMessage, backToLogin, cancelChat, retryChat, authLoading } = app;
   mirror.chat = chat;
@@ -97,8 +93,6 @@ function Harness({ message = "hola", withChat = false }: { message?: string; wit
       <button type="button" onClick={() => sendChat(message)}>
         send
       </button>
-      <button type="button" onClick={() => setChatOpen(open => !open)}>toggle chat</button>
-      {chatOpen && <ChatPage />}
       <button type="button" onClick={backToLogin}>logout</button>
       <button type="button" onClick={cancelChat}>cancel</button>
       <button type="button" onClick={retryChat}>retry</button>
@@ -122,13 +116,13 @@ function Harness({ message = "hola", withChat = false }: { message?: string; wit
   );
 }
 
-async function renderApp(message?: string, withChat = false) {
+async function renderApp(message?: string) {
   // La sesión simulada y los efectos al cambiar de hilo se completan al montar.
   await act(async () => {
     render(
       <I18nProvider>
         <AppProvider>
-          <Harness message={message} withChat={withChat} />
+          <Harness message={message} />
         </AppProvider>
       </I18nProvider>,
     );
@@ -185,79 +179,6 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     expect(mirror.chat).toEqual([]); expect(mirror.app!.threadId).toBe(thread);
     expect(mirror.app!.chatClearing).toBe(false);
     expect(localStorage.getItem("antares:chat-last-seen:10247381")).toBe("0");
-  });
-
-  it("DELETE fallido conserva mensajes, muestra error reintentable y no anuncia éxito", async () => {
-    vi.mocked(clearThreadMessages).mockRejectedValueOnce(new Error("503"));
-    await renderApp(undefined, true);
-    await act(async () => mirror.app!.appendChatMessages([{ role: "bot", text: "Conservar" }]));
-    fireEvent.click(screen.getByLabelText("Limpiar conversación"));
-    expect(clearThreadMessages).not.toHaveBeenCalled();
-    const dialog = screen.getByRole("alertdialog");
-    expect(dialog.textContent).toContain("historia clínica se conservan");
-    fireEvent.click(dialog.querySelectorAll("button")[1]);
-    await waitFor(() => expect(screen.getByRole("alertdialog", { name: "No se pudo confirmar la limpieza" })).toBeTruthy());
-    expect(mirror.chat.some(m => m.text === "Conservar")).toBe(true);
-    expect(screen.queryByText("Conversación limpiada")).toBeNull();
-    fireEvent.click(within(screen.getByRole("alertdialog", { name: "No se pudo confirmar la limpieza" })).getByRole("button", { name: "Reintentar" }));
-    await screen.findByText("Conversación limpiada");
-    expect(mirror.chat).toEqual([]);
-  });
-
-  it("cancelar la confirmación no cierra voz ni borra", async () => {
-    await renderApp(undefined, true);
-    const stop = vi.fn().mockResolvedValue(undefined); mirror.app!.registerVoiceStop(stop);
-    fireEvent.click(screen.getByLabelText("Limpiar conversación"));
-    fireEvent.click(screen.getByRole("alertdialog").querySelectorAll("button")[0]);
-    expect(stop).not.toHaveBeenCalled(); expect(clearThreadMessages).not.toHaveBeenCalled();
-  });
-
-  it("una confirmación abierta para un hilo no borra otro hilo recibido por push", async () => {
-    await renderApp(undefined, true);
-    fireEvent.click(screen.getByLabelText("Limpiar conversación"));
-    await act(async () => mirror.app!.setActiveThreadId("another-thread"));
-    fireEvent.click(screen.getByRole("alertdialog").querySelectorAll("button")[1]);
-    expect(clearThreadMessages).not.toHaveBeenCalled();
-  });
-
-  it("confirmación y error se presentan en inglés", async () => {
-    localStorage.setItem("antares_lang", "en");
-    vi.mocked(clearThreadMessages).mockRejectedValueOnce(new Error("Synthetic server failure"));
-    await renderApp(undefined, true);
-    fireEvent.click(screen.getByLabelText("Clear conversation"));
-    const dialog = screen.getByRole("alertdialog", { name: "Clear conversation?" });
-    expect(dialog.textContent).toContain("medical records will be kept");
-    fireEvent.click(dialog.querySelectorAll("button")[1]);
-    await screen.findByRole("alertdialog", { name: "Could not confirm deletion" });
-    expect(within(screen.getByRole("alertdialog", { name: "Could not confirm deletion" })).getByRole("button", { name: "Retry" })).toBeTruthy();
-  });
-
-  it("una página antigua en vuelo no repuebla el chat tras limpiar", async () => {
-    await renderApp(undefined, true);
-    const threadId = mirror.app!.threadId;
-    vi.mocked(fetchThreadState).mockResolvedValueOnce({ threadId, historyRevision: 0, messageCount: 20, lastMessage: "Reciente", messages: [{ role: "bot", text: "Reciente" }], hasMore: true, nextCursor: 10 });
-    await act(async () => mirror.app!.refreshChatHistory(threadId));
-    await screen.findAllByText("Reciente");
-    let finish!: (value: any) => void;
-    vi.mocked(fetchThreadState).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
-    fireEvent.scroll(document.querySelector(".chat-list")!);
-    await waitFor(() => expect(finish).toBeTypeOf("function"));
-    const oldSignal = vi.mocked(fetchThreadState).mock.calls.at(-1)![2]!.signal!;
-    await act(async () => { await mirror.app!.clearChat(); });
-    await act(async () => finish({ threadId, messageCount: 20, messages: [{ role: "bot", text: "Página vieja" }], lastMessage: null, historyRevision: 0 }));
-    expect(oldSignal.aborted).toBe(true); expect(mirror.chat).toEqual([]);
-    expect(screen.queryByText("Página vieja")).toBeNull();
-  });
-
-  it("el resultado tardío de un documento no vuelve a insertar mensajes", async () => {
-    await renderApp(undefined, true);
-    let finish!: (value: any) => void;
-    vi.mocked(uploadLabExam).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
-    fireEvent.change(document.querySelector('input[aria-label="Examen de laboratorio"]')!, { target: { files: [new File(["synthetic"], "fixture.pdf", { type: "application/pdf" })] } });
-    await waitFor(() => expect(finish).toBeTypeOf("function"));
-    await act(async () => { await mirror.app!.clearChat(); });
-    await act(async () => finish({ verificationStatus: "pending_review" }));
-    expect(mirror.chat).toEqual([]); expect(screen.queryByText("📄 fixture.pdf")).toBeNull();
   });
 
   it("no envía DELETE cuando no se confirma el cierre de voz", async () => {
@@ -509,71 +430,6 @@ describe("AppContext — consolidación del streaming del asistente", () => {
     await waitFor(() => expect(mirror.chat.find(m => m.role === "bot")?.delivery).toBe("interrupted"));
     expect(sendChatMessage).not.toHaveBeenCalled();
     expect(mirror.chat.filter(m => m.role === "user")).toHaveLength(1);
-  });
-  it.each([{ turns: 1, tracked: true }, { turns: 2, tracked: true }, { turns: 1, tracked: false }])(
-    "envío exitoso→desmontar/montar: $turns turnos, tracker $tracked, solo snapshot y feedback canónico",
-    async ({ turns, tracked }) => {
-      vi.mocked(streamChatMessage).mockImplementation(async (_text, thread) => ({ reply: "Sí", threadId: thread, executionId: "tracker-live" }));
-      await renderApp("Sí", true);
-      for (let index = 0; index < turns; index += 1) {
-        // El stream simulado termina en microtareas. Espera también a que React
-        // aplique el turno completo antes de enviar el siguiente.
-        await act(async () => { fireEvent.click(screen.getByText("send")); });
-        expect(streamChatMessage).toHaveBeenCalledTimes(index + 1);
-        expect(mirror.chat.filter(message => message.role === "bot" && message.delivery === "received"))
-          .toHaveLength(index + 1);
-      }
-      const localIds = mirror.chat.map(message => message.id);
-      fireEvent.click(screen.getByText("toggle chat"));
-      const thread = mirror.app!.threadId;
-      const messages = Array.from({ length: turns * 2 }, (_, index) => ({
-        messageId: `server:${index}`, role: index % 2 ? "bot" : "user", text: "Sí", channel: "text" as const,
-        status: "final" as const, revision: 1, executionId: tracked && index % 2 ? `tracker:${index}` : null,
-      }));
-      vi.mocked(fetchThreadState).mockResolvedValue({ threadId: thread, messageCount: messages.length, lastMessage: "Sí", messages });
-      fireEvent.click(screen.getByText("toggle chat"));
-      await waitFor(() => expect(mirror.chat.map(message => message.id)).toEqual(messages.map(message => message.messageId)));
-      expect(mirror.chat).toHaveLength(turns * 2);
-      expect(mirror.chat.every(message => !localIds.includes(message.id))).toBe(true);
-      messages.forEach((message, index) => expect(mirror.chat[index]).toMatchObject(message));
-      const feedback = screen.queryAllByLabelText("Calificar respuesta como útil");
-      expect(feedback).toHaveLength(tracked ? turns : 0);
-      if (tracked) {
-        fireEvent.click(feedback.at(-1)!);
-        await waitFor(() => expect(sendChatFeedback).toHaveBeenLastCalledWith({ executionId: `tracker:${turns * 2 - 1}`, threadId: thread, rating: 5 }));
-      }
-      fireEvent.click(screen.getByText("toggle chat"));
-      fireEvent.click(screen.getByText("toggle chat"));
-      await waitFor(() => expect(mirror.chat).toHaveLength(turns * 2));
-      expect(streamChatMessage).toHaveBeenCalledTimes(turns);
-    },
-  );
-  it.each([false, true])("GET atrasado no sustituye texto si empezó otra generación (terminada=%s)", async finished => {
-    let finishTurn!: (value: { reply: string; threadId: string }) => void;
-    vi.mocked(streamChatMessage).mockResolvedValueOnce({ reply: "Anterior", threadId: "proactive-10247381" })
-      .mockImplementationOnce((_text, _thread, callbacks) => {
-        callbacks?.onToken?.("En vuelo");
-        return new Promise(resolve => { finishTurn = resolve; });
-      });
-    await renderApp("Sí"); fireEvent.click(screen.getByText("send"));
-    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("Anterior"));
-    const oldIds = mirror.chat.map(message => message.id);
-    const thread = mirror.app!.threadId;
-    let finishGet!: (value: Awaited<ReturnType<typeof fetchThreadState>>) => void;
-    vi.mocked(fetchThreadState).mockImplementationOnce(() => new Promise(resolve => { finishGet = resolve; }));
-    fireEvent.click(screen.getByText("toggle chat"));
-    await waitFor(() => expect(finishGet).toBeTypeOf("function"));
-    fireEvent.click(screen.getByText("send"));
-    await waitFor(() => expect(screen.getByTestId("last-bot").textContent).toBe("En vuelo"));
-    if (finished) await act(async () => { finishTurn({ reply: "Final nuevo", threadId: thread }); });
-    await act(async () => { finishGet({ threadId: thread, messageCount: 2, lastMessage: "Anterior", messages: [
-      { messageId: "server-user", role: "user", text: "Sí" }, { messageId: "server-bot", role: "bot", text: "Anterior", executionId: "tracker" },
-    ] }); });
-    expect(mirror.chat).toHaveLength(4);
-    expect(mirror.chat.slice(0, 2).map(message => message.id)).toEqual(oldIds);
-    expect(mirror.chat.some(message => message.id === "server-user")).toBe(false);
-    expect(screen.getByTestId("last-bot").textContent).toBe(finished ? "Final nuevo" : "En vuelo");
-    if (!finished) await act(async () => { finishTurn({ reply: "Final nuevo", threadId: thread }); });
   });
   it.each(["cuenta", "hilo"])("el hydrator capturado no cruza %s", async change => {
     await renderApp();

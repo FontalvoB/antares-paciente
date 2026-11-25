@@ -22,6 +22,7 @@ import type { MealId } from "./meal-catalog";
 import "../wellness.css";
 import "../protocol/wellness-protocol.css";
 import "./wellness-diet.css";
+import { VitaEntry } from "../vita";
 
 const PHOTO_FIELDS = {
   grams: "Porción (g)",
@@ -372,6 +373,18 @@ function WellnessDietDay({ today }: { today: Date }) {
           </div>
         )}
       </IonModal>
+      <VitaEntry
+        module="diet"
+        summary={{
+          day: home.day,
+          kcalGoal: Math.round(plan.total.kcal),
+          kcalLogged: Math.round(consumed.kcal),
+          mealsLogged: eaten.length,
+          mealsTotal: plan.meals.length,
+          simplified,
+          vegetarian: prefs.vegetarian,
+        }}
+      />
     </Screen>
   );
 }

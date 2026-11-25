@@ -11,6 +11,7 @@ import { dailyEffects, shiftLocalDate, SYMPTOMS } from "./close-day";
 import type { DailyCheckin } from "./close-day";
 import "../protocol/wellness-protocol.css";
 import "./wellness-close-day.css";
+import { VitaEntry } from "../vita";
 
 const FIELDS = [
   { name: "adherence", label: "Adherencia (%)", min: 0, max: 100, step: "any", optional: false },
@@ -194,6 +195,7 @@ export function WellnessCloseDay() {
           </form>
         )}
       </Scroll>
+      <VitaEntry module="close-day" summary={{ closedToday: saved }} />
     </Screen>
   );
 }
