@@ -67,7 +67,7 @@ export function BottomNav({ dark = false }: { dark?: boolean }) {
           );
         }
         const target = it.id;
-        const on = screen === target;
+        const on = screen === target || (screen === "wellness-notifications" && target === "prof");
         return (
           <IonButton
             key={it.id}

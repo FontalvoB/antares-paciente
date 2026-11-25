@@ -4,6 +4,7 @@ export type Screen =
   | "wellness-diet"
   | "wellness-vitals"
   | "wellness-checkin"
+  | "wellness-notifications"
   | "wellness-goal"
   | "wellness-exercise"
   | "prof";

@@ -150,13 +150,20 @@ async function answerAllNo(page, count) {
 
 async function verifyVitals(page, width) {
   await page.getByRole("button", { name: "Ir a Vitales", exact: true }).click();
-  await page.getByRole("button", { name: "Abrir signos vitales", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Signos vitales", exact: true })).toBeFocused();
+  await page
+    .getByRole("button", { name: "Abrir signos vitales", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Signos vitales", exact: true }),
+  ).toBeFocused();
   const metrics = page.getByRole("region", { name: "Mediciones", exact: true });
   const history = page.getByRole("region", { name: "Historial", exact: true });
   await expect(metrics.getByRole("button")).toHaveCount(8);
   const value = page.locator('ion-input[name="vital-value"] input');
-  const save = page.getByRole("button", { name: "Guardar medición", exact: true });
+  const save = page.getByRole("button", {
+    name: "Guardar medición",
+    exact: true,
+  });
   await save.click();
   await expect(value).toBeFocused();
   await expect(value).toHaveAttribute("aria-invalid", "true");
@@ -170,16 +177,22 @@ async function verifyVitals(page, width) {
   await save.click();
   await expect(history.getByText("Apple", { exact: true })).toBeVisible();
   await expect(history.getByText("Manual", { exact: true })).toBeVisible();
-  await expect(history.getByText("Cambios del día", { exact: true })).toBeVisible();
+  await expect(
+    history.getByText("Cambios del día", { exact: true }),
+  ).toBeVisible();
   await expect(history.locator("time")).toHaveCount(2);
   await history.locator('ion-segment-button[value="30"]').click();
-  await expect(history.getByRole("img", { name: /máximo 76 lpm/ })).toBeVisible();
+  await expect(
+    history.getByRole("img", { name: /máximo 76 lpm/ }),
+  ).toBeVisible();
   await expect(history.getByText(/Tendencia:/)).toHaveCount(0);
   await history.scrollIntoViewIfNeeded();
   await shot(page, `26-vitales-historial-${width}`);
 
   await metrics.getByRole("button", { name: /^Peso/ }).click();
-  await expect(page.getByRole("heading", { name: "Peso", exact: true })).toBeFocused();
+  await expect(
+    page.getByRole("heading", { name: "Peso", exact: true }),
+  ).toBeFocused();
   await value.fill("72");
   await save.click();
   await expect(history.getByText("72 kg", { exact: true })).toBeVisible();
@@ -190,12 +203,22 @@ async function verifyVitals(page, width) {
   await page.locator(".wv-scroll").evaluate((element) => {
     element.scrollTo({ top: 0, behavior: "instant" });
   });
-  await expect(page.getByRole("heading", { name: "Mediciones", exact: true })).toBeInViewport();
+  await expect(
+    page.getByRole("heading", { name: "Mediciones", exact: true }),
+  ).toBeInViewport();
   await shot(page, `27-vitales-mediciones-${width}`);
-  await page.getByRole("button", { name: "Volver al protocolo", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Tu día de bienestar" })).toBeVisible();
-  await page.getByRole("button", { name: "Volver al inicio", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Protocolo de hoy" })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Volver al protocolo", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Tu día de bienestar" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Volver al inicio", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Protocolo de hoy" }),
+  ).toBeVisible();
 }
 
 async function verifyNavigation(page, baseUrl, width) {
@@ -266,9 +289,17 @@ async function verifyNavigation(page, baseUrl, width) {
   await shot(page, `23-nav-plan-${width}`);
 
   await plan.getByText("Signos vitales", { exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Signos vitales", exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Mediciones", exact: true }).getByText(/158[,.]73 lb/)).toBeVisible();
-  await page.getByRole("button", { name: "Volver al perfil", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Signos vitales", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: "Mediciones", exact: true })
+      .getByText(/158[,.]73 lb/),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Volver al perfil", exact: true })
+    .click();
   await assertDock("Perfil");
 
   await avatar.click();
@@ -283,6 +314,61 @@ async function verifyNavigation(page, baseUrl, width) {
     .getByText("Volver", { exact: true })
     .click();
   await expect(avatarDialog).toBeHidden();
+
+  const openNotifications = () =>
+    page
+      .getByRole("button", { name: /Preferencias de notificaciones/ })
+      .click();
+  const preferences = page.getByRole("heading", {
+    name: "Preferencias de notificaciones",
+    exact: true,
+  });
+  const protocolReminder = page.getByRole("switch", {
+    name: "Recordatorio del protocolo",
+  });
+  await openNotifications();
+  await expect(preferences).toBeVisible();
+  await expect(protocolReminder).toHaveAttribute("aria-checked", "true");
+  await protocolReminder.click();
+  await expect(protocolReminder).toHaveAttribute("aria-checked", "false");
+  await page.locator(".wn-scroll").evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await shot(page, `26-notificaciones-${width}`);
+  await page.getByRole("button", { name: "Volver al perfil" }).click();
+  await assertDock("Perfil");
+  await openNotifications();
+  await expect(protocolReminder).toHaveAttribute("aria-checked", "false");
+  const chestTime = page.getByRole("button", {
+    name: "Hora del aviso de Cofre listo, 00:00",
+  });
+  await chestTime.click();
+  const timePicker = page
+    .locator("ion-popover")
+    .filter({ has: page.locator("ion-datetime") });
+  await expect(timePicker).toBeVisible();
+  await timePicker
+    .getByRole("button", { name: "Cancelar", exact: true })
+    .click();
+  await expect(timePicker).toBeHidden();
+  await chestTime.click();
+  await timePicker
+    .locator('ion-picker-column[aria-label="Select an hour"]')
+    .locator("ion-picker-column-option")
+    .nth(1)
+    .click();
+  await timePicker
+    .getByRole("button", { name: "Guardar", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Hora del aviso de Cofre listo, 01:00" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Probar aviso en la app" }).click();
+  await expect(
+    page.locator(".app-toast").getByText(/Aviso de prueba en la app/),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Volver al perfil" }).click();
+  await assertDock("Perfil");
 
   await plan.getByText("Plan nutricional", { exact: true }).click();
   await expect(diet).toBeVisible();
@@ -597,7 +683,10 @@ async function runFlow(page, baseUrl, width) {
     return now.getTime();
   });
   await page.clock.setFixedTime(tomorrow);
-  await page.getByRole("button", { name: "Ejercicio", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Navegación principal" })
+    .getByRole("button", { name: "Ejercicio", exact: true })
+    .click();
   await expect(page.getByText(/ejercicio será más suave/i)).toBeVisible();
   await page
     .getByRole("button", { name: "Volver al protocolo", exact: true })
@@ -666,7 +755,7 @@ try {
 }
 
 await writeFile(
-  path.join(out, "kan138-results.json"),
+  path.join(out, process.env.COP_E2E_RESULTS ?? "wellness-results.json"),
   JSON.stringify(results, null, 2),
   "utf8",
 );
