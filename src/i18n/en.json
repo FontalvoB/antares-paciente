@@ -4705,7 +4705,6 @@
   "No pudimos generar tu plan. Intenta de nuevo.": "We couldn't generate your plan. Try again.",
   "Paso {step} de 5": "Step {step} of 5",
   "Paso 5 de 5": "Step 5 of 5",
-  "Información general de bienestar. No es consejo médico. En una emergencia llama al 911.": "General wellness information. Not medical advice. In an emergency, call 911.",
   "Hola": "Hi",
   "Emergencia": "Emergency",
   "Términos": "Terms",
@@ -4724,7 +4723,6 @@
   "Cuestionarios de bienestar": "Wellness questionnaires",
   "Complétalos a tu ritmo para personalizar mejor tu plan. No bloquean tu día.": "Complete them at your pace to better personalize your plan. They don't block your day.",
   "Continuar cuestionarios": "Continue questionnaires",
-  "Información general de bienestar. No es consejo médico.": "General wellness information. Not medical advice.",
   "Vita": "Vita",
   "Dieta": "Diet",
   "Vitales": "Vitals",
@@ -5000,7 +4998,6 @@
   "Ver protocolo": "View protocol",
   "Abrir signos vitales": "Open vital signs",
   "Registra y consulta tus mediciones": "Log and view your measurements",
-  "Estos datos son informativos y no reemplazan la atención médica.": "This information is for reference and does not replace medical care.",
   "No se pudo leer el historial de signos vitales.": "Could not load your vital signs history.",
   "Sin registros": "No records",
   "Registrar medición": "Log a measurement",
@@ -5065,5 +5062,10 @@
   "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.": "These questions help identify whether you need guidance before changing how you eat.",
   "Revisa el aviso y confirma si estás de acuerdo antes de continuar.": "Review the notice and confirm that you agree before continuing.",
   "Comprueba los datos que usaremos para preparar tus planes.": "Check the details we’ll use to prepare your plans.",
-  "{count} de {total} respondidas": "{count} of {total} answered"
+  "{count} de {total} respondidas": "{count} of {total} answered",
+  "Contenido general de bienestar. Antes de empezar o cambiar tu rutina de ejercicio, consulta a un profesional de la salud. Si sientes dolor intenso o mareo, detén la actividad.": "General wellness content. Before starting or changing your exercise routine, check with a health professional. If you feel intense pain or dizziness, stop the activity.",
+  "Plan general de alimentación, solo informativo. Antes de cambiar tu alimentación, consulta a un profesional de la salud.": "General eating plan, for information only. Before changing how you eat, check with a health professional.",
+  "Tus registros son informativos y no reemplazan la orientación de un profesional de la salud. Consúltalo ante cualquier duda.": "Your records are informational and do not replace a health professional's guidance. Check with one if you have any doubt.",
+  "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal.": "General wellness information. Consult a health professional for individual guidance.",
+  "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal. En una emergencia llama al 911.": "General wellness information. Consult a health professional for individual guidance. In an emergency, call 911."
 }

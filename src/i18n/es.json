@@ -4705,7 +4705,6 @@
   "No pudimos generar tu plan. Intenta de nuevo.": "No pudimos generar tu plan. Intenta de nuevo.",
   "Paso {step} de 5": "Paso {step} de 5",
   "Paso 5 de 5": "Paso 5 de 5",
-  "Información general de bienestar. No es consejo médico. En una emergencia llama al 911.": "Información general de bienestar. No es consejo médico. En una emergencia llama al 911.",
   "Hola": "Hola",
   "Emergencia": "Emergencia",
   "Términos": "Términos",
@@ -4724,7 +4723,6 @@
   "Cuestionarios de bienestar": "Cuestionarios de bienestar",
   "Complétalos a tu ritmo para personalizar mejor tu plan. No bloquean tu día.": "Complétalos a tu ritmo para personalizar mejor tu plan. No bloquean tu día.",
   "Continuar cuestionarios": "Continuar cuestionarios",
-  "Información general de bienestar. No es consejo médico.": "Información general de bienestar. No es consejo médico.",
   "Vita": "Vita",
   "Dieta": "Dieta",
   "Vitales": "Vitales",
@@ -5000,7 +4998,6 @@
   "Ver protocolo": "Ver protocolo",
   "Abrir signos vitales": "Abrir signos vitales",
   "Registra y consulta tus mediciones": "Registra y consulta tus mediciones",
-  "Estos datos son informativos y no reemplazan la atención médica.": "Estos datos son informativos y no reemplazan la atención médica.",
   "No se pudo leer el historial de signos vitales.": "No se pudo leer el historial de signos vitales.",
   "Sin registros": "Sin registros",
   "Registrar medición": "Registrar medición",
@@ -5065,5 +5062,10 @@
   "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.": "Estas preguntas ayudan a saber si necesitas orientación antes de cambiar tu alimentación.",
   "Revisa el aviso y confirma si estás de acuerdo antes de continuar.": "Revisa el aviso y confirma si estás de acuerdo antes de continuar.",
   "Comprueba los datos que usaremos para preparar tus planes.": "Comprueba los datos que usaremos para preparar tus planes.",
-  "{count} de {total} respondidas": "{count} de {total} respondidas"
+  "{count} de {total} respondidas": "{count} de {total} respondidas",
+  "Contenido general de bienestar. Antes de empezar o cambiar tu rutina de ejercicio, consulta a un profesional de la salud. Si sientes dolor intenso o mareo, detén la actividad.": "Contenido general de bienestar. Antes de empezar o cambiar tu rutina de ejercicio, consulta a un profesional de la salud. Si sientes dolor intenso o mareo, detén la actividad.",
+  "Plan general de alimentación, solo informativo. Antes de cambiar tu alimentación, consulta a un profesional de la salud.": "Plan general de alimentación, solo informativo. Antes de cambiar tu alimentación, consulta a un profesional de la salud.",
+  "Tus registros son informativos y no reemplazan la orientación de un profesional de la salud. Consúltalo ante cualquier duda.": "Tus registros son informativos y no reemplazan la orientación de un profesional de la salud. Consúltalo ante cualquier duda.",
+  "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal.": "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal.",
+  "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal. En una emergencia llama al 911.": "Información general de bienestar. Consulta a un profesional de la salud para recibir orientación personal. En una emergencia llama al 911."
 }
