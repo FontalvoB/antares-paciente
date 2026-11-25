@@ -22,8 +22,15 @@ const COVERING_SELECTOR = [
 function navSosHidden(): boolean {
   if (document.documentElement.classList.contains("kb-open")) return true;
   if (document.querySelector(COVERING_SELECTOR)) return true;
-  // Las pantallas con `hideNav` (registro, comunidad, lecciones…) no montan la barra.
-  return !document.querySelector(".app-shell .bnav .ni-center");
+  if (document.querySelector(".app-shell .bnav .ni-center")) return false;
+  // El Home nuevo lleva SOS en la cabecera: al desplazarla fuera del viewport,
+  // el acceso flotante vuelve a aparecer, igual que al abrir un overlay.
+  const inline = document.querySelector(".app-shell [data-sos-access]");
+  const scroller = inline?.closest(".screen-scroll");
+  if (!inline || !scroller) return true;
+  const rect = inline.getBoundingClientRect();
+  const viewport = scroller.getBoundingClientRect();
+  return rect.top < viewport.top || rect.bottom > viewport.bottom;
 }
 
 /** Observa el DOM (solo cambios de clase y nodos) y recalcula en el siguiente frame. */
@@ -37,6 +44,8 @@ function useNavSosHidden(enabled: boolean): boolean {
       frame = requestAnimationFrame(() => setHidden(navSosHidden()));
     };
     update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
     const observer = new MutationObserver(update);
     observer.observe(document.documentElement, {
       attributes: true,
@@ -46,6 +55,8 @@ function useNavSosHidden(enabled: boolean): boolean {
     });
     return () => {
       cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
       observer.disconnect();
     };
   }, [enabled]);

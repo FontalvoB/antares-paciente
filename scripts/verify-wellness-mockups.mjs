@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+import { createServer } from 'vite';
+import { mkdir } from 'node:fs/promises';
+const server = await createServer({server:{host:'127.0.0.1',port:0}});
+await server.listen();
+const browser = await chromium.launch({channel:'chrome',headless:true});
+try {
+const context = await browser.newContext({viewport:{width:390,height:844}, reducedMotion:'reduce'});
+const page = await context.newPage();
+const token = `x.${Buffer.from(JSON.stringify({sub:'11111111-1111-4111-8111-111111111111', exp: Date.now()/1000+3600})).toString('base64url')}.x`;
+await context.route('**/api/**', route => {const path = new URL(route.request().url()).pathname; let json=[];
+if(path==='/api/auth/refresh')json={accessToken:token,tokenType:'Bearer',expiresIn:3600};
+if(path==='/api/auth/me')json={id:'11111111-1111-4111-8111-111111111111',firstName:'Ángel',lastName:'Prueba',email:'preview@example.invalid',roles:[],permissions:[]};
+if(path==='/api/v1/me/patient-profile')json={patientId:'11111111-1111-4111-8111-111111111111',firstName:'Ángel',lastName:'Prueba'};
+return route.fulfill({json});});
+await context.addInitScript(()=>{localStorage.setItem('antares_lang','es'); const d=new Date();const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; localStorage.setItem('wellness.protocol.v1',JSON.stringify({[key]:['exercise','diet','vitals']}));});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto(server.resolvedUrls.local[0]); await page.locator('.wh-daily').waitFor(); await page.waitForTimeout(1000);
+await mkdir('artifacts/wellness-mockups',{recursive:true});
+await page.screenshot({path:'artifacts/wellness-mockups/home-mobile.png'});
+await page.getByRole('button',{name:'Ver mi plan de bienestar',exact:true}).click(); await page.locator('.wh-plan-card').waitFor();await page.waitForTimeout(400);
+await page.screenshot({path:'artifacts/wellness-mockups/plan-mobile.png'});
+console.log(JSON.stringify({errors,overflow: await page.locator('.wh-scroll').evaluate(e=>({scroll:e.scrollWidth,client:e.clientWidth}))}));
+await page.getByRole('button',{name:'Continuar mi plan',exact:true}).click();
+await page.locator('.wp-scroll').waitFor();
+await page.getByRole('button',{name:'Inicio',exact:true}).click();
+await page.locator('.wh-daily').waitFor();
+await page.getByRole('button',{name:'Bandeja',exact:true}).click();
+await page.getByRole('heading',{name:'Bandeja',exact:true}).waitFor();
+await page.getByRole('button',{name:'Cerrar',exact:true}).click();
+await page.locator('ion-modal.wh-detail-modal:not(.overlay-hidden)').waitFor({state:'hidden'});
+for(const width of [320,360,768,1280]) {
+  await page.setViewportSize({width,height:844});
+  await page.waitForTimeout(200);
+  await page.screenshot({path:`artifacts/wellness-mockups/home-${width}.png`});
+  await page.getByRole('button',{name:'Ver mi plan de bienestar',exact:true}).click();
+  await page.locator('.wh-plan-card').waitFor();
+  assert.equal(await page.locator('.wh-scroll').evaluate(e=>e.scrollWidth <= e.clientWidth),true);
+  await page.screenshot({path:`artifacts/wellness-mockups/plan-${width}.png`});
+  await page.getByRole('button',{name:'Medicamentos'}).click();
+  await page.getByRole('heading',{name:'Medicamentos',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Volver',exact:true}).click();
+  await page.getByRole('button',{name:'Volver a Inicio',exact:true}).click();
+  await page.locator('.wh-daily').waitFor();
+}
+await page.setViewportSize({width:375,height:667});
+await page.locator('.wh-scroll').evaluate(e=>{e.scrollTop=e.scrollHeight;});
+const fits = await page.locator('.wh-task').last().evaluate(e=>e.getBoundingClientRect().bottom <= document.querySelector('.wh-composer').getBoundingClientRect().top);
+assert.equal(fits,true,'Last task remains reachable above the composer on short screens');
+await page.locator('.wh-scroll').evaluate(e=>{e.scrollTop=0;});
+await page.getByRole('button',{name:'Más opciones',exact:true}).click();
+await page.getByRole('button',{name:'Cambiar idioma a English'}).click();
+await page.keyboard.press('Escape');
+await page.getByRole('button',{name:'View my wellness plan',exact:true}).waitFor();
+await page.screenshot({path:'artifacts/wellness-mockups/home-english.png'});
+assert.deepEqual(errors,[]);
+console.log('PASS: mobile, tablet, desktop, circle → plan → protocol, inbox, module preview and English.');
+} finally {
+await browser.close();
+await server.close();
+}

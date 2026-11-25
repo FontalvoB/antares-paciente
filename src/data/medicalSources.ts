@@ -24,12 +24,12 @@ export const medicalSources = [
     id: "hba1c",
     title: "HbA1c y prediabetes",
     summary:
-      "Una HbA1c inferior al 5,7 % está por debajo del umbral de prediabetes (5,7–6,4 %). Si tienes diabetes, tu equipo de salud define tu objetivo de tratamiento.",
+      "Una HbA1c inferior al 5,7 % está por debajo del umbral de prediabetes (5,7–6,4 %). Si tienes diabetes, tu equipo de salud define tu objetivo.",
     sources: [
       {
         organization: "Asociación Americana de Diabetes (ADA)",
         title:
-          "Diagnóstico y clasificación de la diabetes. Estándares de atención en diabetes",
+          "Clasificación de la diabetes. Estándares de atención en diabetes",
         year: 2026,
         url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12690183/",
       },
@@ -140,9 +140,9 @@ export const medicalSources = [
   },
   {
     id: "wearable",
-    title: "Accesorio de bienestar (no dispositivo médico)",
+    title: "Accesorio de bienestar",
     summary:
-      "El anillo o la banda es un accesorio de bienestar de consumo. No es un dispositivo médico y sus lecturas son estimaciones, no mediciones clínicas.",
+      "El anillo o la banda es un accesorio de bienestar de consumo. Sus lecturas son estimaciones, no mediciones hechas por un profesional.",
     sources: [
       {
         organization:

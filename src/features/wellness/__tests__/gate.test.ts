@@ -104,7 +104,7 @@ describe("evaluateGate", () => {
     const parq = [1, 0, 0, 0, 0, 0, 0] as ObjectiveDraft["parq"];
     const blocked = evaluateGate(completeDraft({ parq }));
     expect(blocked.code).toBe("doctor");
-    expect(blocked.issues[0].messageKey).toContain("médico");
+    expect(blocked.issues[0].messageKey).toContain("profesional de la salud");
 
     const confirmed = evaluateGate(
       completeDraft({ parq, doctorConfirmed: true }),

@@ -174,7 +174,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
     try {
       await setMyMedicationStatus(owner, treatment, status);
       if (!isCurrent()) return;
-      await refresh(); showToast(t("Tratamiento actualizado"), "ok");
+      await refresh(); showToast(t("Plan actualizado"), "ok");
     } catch (error) { failure(error); }
     finally { if (isCurrent()) setBusy(null); }
   };
@@ -376,7 +376,7 @@ function MedicationContent({ capabilities }: { capabilities: ReturnType<typeof u
               </div>
             </div>
             <div className="medications-metrics">
-              <div><IonIcon icon={cubeOutline} aria-hidden="true" /><strong>{workspace.summary.activeTreatments}</strong><span>{t("Tratamientos")}</span></div>
+              <div><IonIcon icon={cubeOutline} aria-hidden="true" /><strong>{workspace.summary.activeTreatments}</strong><span>{t("Planes")}</span></div>
               <div><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" /><strong>{adherence?.percent == null ? "—" : `${adherence.percent}%`}</strong><span>{t("Adherencia al plan")}</span></div>
               <div className="medications-metric-stock"><IonIcon icon={warningOutline} aria-hidden="true" /><strong>{lowStockCount}</strong><span>{t("Por agotarse")}</span></div>
             </div>
