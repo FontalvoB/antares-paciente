@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { IonBadge, IonButton, IonCheckbox } from "@ionic/react";
 import { useI18n } from "../../../../i18n/I18nContext";
-import { formatDateForDisplay, toLocalISODate } from "../../../../utils/dates";
+import { formatLocalizedDate, toLocalISODate } from "../../../../utils/dates";
 import { WELLNESS_TERMS_VERSION } from "../../domain";
 
 export function TermsStep({
@@ -19,7 +19,7 @@ export function TermsStep({
 }) {
   const { t, lang } = useI18n();
   const [displayDate, setDisplayDate] = useState(() => new Date());
-  const date = formatDateForDisplay(toLocalISODate(displayDate));
+  const date = formatLocalizedDate(toLocalISODate(displayDate), lang);
   const time = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "es-ES", {
     timeStyle: "short",
   }).format(displayDate);

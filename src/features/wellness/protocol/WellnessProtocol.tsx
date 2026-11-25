@@ -150,14 +150,14 @@ export function WellnessProtocol() {
       <Scroll className="wp-scroll">
         <header className="wp-hero">
           <div className="wp-hero-top">
-            <button
-              type="button"
+            <IonButton
               className="wp-back"
+              fill="outline"
               onClick={() => navigate("home")}
               aria-label={t("Volver al inicio")}
             >
-              <IonIcon icon={arrowBackOutline} aria-hidden="true" />
-            </button>
+              <IonIcon icon={arrowBackOutline} slot="icon-only" aria-hidden="true" />
+            </IonButton>
             <div>
               <p className="wp-eyebrow">{t("Protocolo diario")}</p>
               <h1 className="wp-title">{t("Tu día de bienestar")}</h1>
@@ -221,9 +221,9 @@ export function WellnessProtocol() {
                   <div
                     className="wp-moods"
                     role="group"
-                    aria-label={t("¿Cómo te sientes hoy?")}
+                    aria-labelledby="wp-moods-label"
                   >
-                    <span className="wp-moods-label">
+                    <span className="wp-moods-label" id="wp-moods-label">
                       {t("¿Cómo te sientes hoy?")}
                     </span>
                     <div className="wp-mood-row">

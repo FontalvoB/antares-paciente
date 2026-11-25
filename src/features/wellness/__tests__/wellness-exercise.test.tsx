@@ -58,7 +58,8 @@ describe("WellnessExercise", () => {
 
   it("muestra un aviso de descanso al indicar dolor 7", () => {
     renderExercise();
-    changeIonicControl(screen.getByLabelText("Dolor de 0 a 10"), { value: 7 });
+    const label = screen.getByText("Dolor de 0 a 10:");
+    changeIonicControl(label.closest("ion-range")!, { value: 7 });
 
     expect(screen.getByRole("status").textContent).toContain("Descansa dos días");
     expect(screen.getByText(restMessage)).toBeTruthy();

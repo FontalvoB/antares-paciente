@@ -40,7 +40,6 @@ export function GoalStep({ draft, onChange, allowedGoals = Object.keys(GOAL_OPTI
               className={`wl-option${selected ? " is-selected" : ""}`}
               style={{ alignItems: "center" }}
               data-wl-field={index === 0 ? "goal" : undefined}
-              aria-label={t(label)}
               aria-pressed={selected}
               onClick={() => onChange({ goal })}
             >

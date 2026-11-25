@@ -28,23 +28,19 @@
   margin-bottom: 10px;
 }
 
-.wx-back {
+ion-button.wx-back {
   width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--wellness-dark-glass);
-  background: var(--wellness-dark-glass);
-  color: var(--wh);
-  display: grid;
-  place-items: center;
+  min-height: 44px;
+  margin: 0;
+  --border-radius: 12px;
+  --border-width: 1px;
+  --border-color: var(--wellness-on-dark-muted);
+  --background: var(--wellness-dark-glass);
+  --color: var(--wh);
+  --padding-start: 0;
+  --padding-end: 0;
   font-size: 20px;
-  cursor: pointer;
   flex: none;
-}
-
-.wx-back:focus-visible {
-  outline: 2px solid var(--wh);
-  outline-offset: 2px;
 }
 
 .wx-eyebrow {
@@ -115,6 +111,11 @@
   margin-top: 6px;
 }
 
+.wx-scroll ion-range::part(label) {
+  transform: none;
+  max-width: 100%;
+}
+
 .wx-toggles {
   display: flex;
   flex-direction: column;
@@ -182,7 +183,7 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--blue);
-  min-height: 32px;
+  min-height: 44px;
   display: flex;
   align-items: center;
 }

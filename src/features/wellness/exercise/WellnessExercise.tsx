@@ -100,6 +100,7 @@ function sessionRemaining(session: StoredSession): number {
 export function WellnessExercise() {
   const { user, navigate, showToast } = useApp();
   const { t, lang } = useI18n();
+  const number = new Intl.NumberFormat(lang);
   const today = new Date();
   const date = localISODate(today);
   const owner = checkinOwner(user);
@@ -276,25 +277,23 @@ export function WellnessExercise() {
         <Scroll className="wx-scroll">
           <WellnessGuidance kind="exercise" className="ion-padding-horizontal ion-padding-vertical" />
           <header className="wx-session-head">
-            <button
-              type="button"
+            <IonButton
               className="wx-back"
+              fill="outline"
               onClick={closeSession}
               aria-label={t("Salir de la sesión")}
             >
-              <IonIcon icon={arrowBackOutline} aria-hidden="true" />
-            </button>
+              <IonIcon icon={arrowBackOutline} slot="icon-only" aria-hidden="true" />
+            </IonButton>
             <div>
               <p className="wx-eyebrow">
                 {t("Ejercicio {n} de {total}", {
-                  n: String(session.index + 1),
-                  total: String(plan.exercises.length),
+                  n: number.format(session.index + 1),
+                  total: number.format(plan.exercises.length),
                 })}
               </p>
               <h1>
-                {lang === "en"
-                  ? currentExercise.name.en
-                  : currentExercise.name.es}
+                {t(currentExercise.name.es)}
               </h1>
             </div>
           </header>
@@ -303,7 +302,7 @@ export function WellnessExercise() {
             className="wx-progress"
             aria-label={t("Progreso de la sesión")}
           />
-          <div className="wx-timer" role="timer" aria-live="polite">
+          <div className="wx-timer" role="timer">
             <IonIcon icon={timerOutline} aria-hidden="true" />
             <strong>{clock(remaining)}</strong>
             <span>{session.paused ? t("En pausa") : t("Tiempo restante")}</span>
@@ -340,27 +339,27 @@ export function WellnessExercise() {
           <WellnessGuidance kind="exercise" className="ion-padding-horizontal ion-padding-vertical" />
         <header className="wx-hero">
           <div className="wx-hero-top">
-            <button
-              type="button"
+            <IonButton
               className="wx-back"
+              fill="outline"
               onClick={() => navigate("protocol")}
               aria-label={t("Volver al protocolo")}
             >
-              <IonIcon icon={arrowBackOutline} aria-hidden="true" />
-            </button>
+              <IonIcon icon={arrowBackOutline} slot="icon-only" aria-hidden="true" />
+            </IonButton>
             <div>
               <p className="wx-eyebrow">{t("Ejercicio")}</p>
-              <h1>{lang === "en" ? plan.typeName.en : plan.typeName.es}</h1>
+              <h1>{t(plan.typeName.es)}</h1>
             </div>
             <IonBadge className="wx-badge" color="light">
-              {t("Semana {week}", { week: String(plan.week) })}
+              {t("Semana {week}", { week: number.format(plan.week) })}
             </IonBadge>
           </div>
           <p className="wx-meta">
             {t("Día {day} · {minutes} min · Fase {phase}", {
-              day: String(plan.day),
-              minutes: String(plan.minutes),
-              phase: lang === "en" ? plan.phaseName.en : plan.phaseName.es,
+              day: number.format(plan.day),
+              minutes: number.format(plan.minutes),
+              phase: t(plan.phaseName.es),
             })}
           </p>
           {plan.deload && (
@@ -375,23 +374,23 @@ export function WellnessExercise() {
           <p className="wx-body">
             {t("Ajustamos la sesión según cómo te sientes hoy.")}
           </p>
-          <label className="wx-range-label" htmlFor="wx-pain">
-            {t("Dolor de 0 a 10")}: <strong>{checkin.pain}</strong>
-          </label>
           <IonRange
-            id="wx-pain"
+            labelPlacement="stacked"
             min={0}
             max={10}
             step={1}
             value={checkin.pain}
-            aria-label={t("Dolor de 0 a 10")}
             onIonChange={(event) => {
               const value = event.detail.value;
               updateCheckin({
                 pain: typeof value === "number" ? value : value.lower,
               });
             }}
-          />
+          >
+            <span slot="label" className="wx-range-label">
+              {t("Dolor de 0 a 10")}: <strong aria-hidden="true">{checkin.pain}</strong>
+            </span>
+          </IonRange>
           <div className="wx-toggles">
             <IonToggle
               checked={checkin.fatigue}
@@ -439,7 +438,7 @@ export function WellnessExercise() {
                       {index + 1}
                     </span>
                     <h2>
-                      {lang === "en" ? exercise.name.en : exercise.name.es}
+                      {t(exercise.name.es)}
                     </h2>
                   </div>
                   <p className="wx-dose">{doseLabel(exercise, t)}</p>
@@ -461,7 +460,7 @@ export function WellnessExercise() {
             <ul className="wx-unlocks">
               {plan.nextUnlocks.map((unlock) => (
                 <li key={unlock.id}>
-                  <span>{lang === "en" ? unlock.name.en : unlock.name.es}</span>
+                  <span>{t(unlock.name.es)}</span>
                   <span>
                     {t("Semana {week}", { week: String(unlock.week) })}
                   </span>
@@ -502,29 +501,27 @@ function ExerciseTechnique({
 }) {
   const { t, lang } = useI18n();
   const guide = exercise.guide;
-  const pick = (value: { es: string; en: string }) =>
-    lang === "en" ? value.en : value.es;
   return (
     <details className={`wx-tech${compact ? " is-compact" : ""}`}>
       <summary>{t("Técnica y respiración")}</summary>
       <ol>
         {guide.steps.map((step, index) => (
-          <li key={index}>{pick(step)}</li>
+          <li key={index}>{t(step.es)}</li>
         ))}
       </ol>
       <p>
-        <strong>{t("Respiración")}:</strong> {pick(guide.breathing)}
+        <strong>{t("Respiración")}:</strong> {t(guide.breathing.es)}
       </p>
       {guide.mistakes.length > 0 && (
         <p>
-          <strong>{t("Evita")}:</strong> {guide.mistakes.map(pick).join(", ")}
+          <strong>{t("Evita")}:</strong> {new Intl.ListFormat(lang).format(guide.mistakes.map(({ es }) => t(es)))}
         </p>
       )}
       <p>
-        <strong>{t("Más fácil")}:</strong> {pick(guide.easier)}
+        <strong>{t("Más fácil")}:</strong> {t(guide.easier.es)}
       </p>
       <p>
-        <strong>{t("Más difícil")}:</strong> {pick(guide.harder)}
+        <strong>{t("Más difícil")}:</strong> {t(guide.harder.es)}
       </p>
     </details>
   );

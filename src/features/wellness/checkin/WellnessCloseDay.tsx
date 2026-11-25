@@ -1,9 +1,12 @@
-import { IonButton, IonCheckbox, IonInput, IonRadio, IonRadioGroup } from "@ionic/react";
+import { IonButton, IonCheckbox, IonInput, IonLabel, IonListHeader, IonRadio, IonRadioGroup } from "@ionic/react";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Screen, Scroll } from "../../../components/Screen";
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
+import { formatLocalizedDate } from "../../../utils/dates";
+import { formatWellnessMeasurement, loadUnitPrefs, parseWellnessMeasurement } from "../vitals/unit-prefs";
+import type { UnitPrefs } from "../vitals/unit-prefs";
 import { parseNumberInput, RANGES } from "../domain/draft";
 import { loadPlanSnapshot, localISODate, parseLocalDate, planDay } from "../state/wellness-home-store";
 import { checkinHistory, checkinOwner, loadCheckins, saveCheckin, subscribeCheckins, syncCheckins } from "./checkin-store";
@@ -17,8 +20,8 @@ const FIELDS = [
   { name: "sleepHours", label: "Horas de sueño", min: 0, max: 24, step: "any", optional: false },
   { name: "energy", label: "Energía (1–5)", min: 1, max: 5, step: "1", optional: false },
   { name: "pain", label: "Dolor (0–10)", min: 0, max: 10, step: "1", optional: false },
-  { name: "weightKg", label: "Peso (kg, opcional)", ...RANGES.weightKg, step: "any", optional: true },
-  { name: "waistCm", label: "Cintura (cm, opcional)", ...RANGES.waistCm, step: "any", optional: true },
+  { name: "weightKg", label: "Peso (kg, opcional)", usLabel: "Peso (lb, opcional)", unit: "kilogram", ...RANGES.weightKg, step: "any", optional: true },
+  { name: "waistCm", label: "Cintura (cm, opcional)", usLabel: "Cintura (in, opcional)", unit: "centimeter", ...RANGES.waistCm, step: "any", optional: true },
 ] as const;
 
 type Field = (typeof FIELDS)[number]["name"];
@@ -28,9 +31,10 @@ export function WellnessCloseDay() {
   const { user, navigate } = useApp();
   const { t, lang } = useI18n();
   const owner = checkinOwner(user);
+  const prefs = loadUnitPrefs(owner, lang);
   const [date] = useState(() => localISODate(new Date()));
   const [record, setRecord] = useState(() => loadCheckins(owner)[date]);
-  const [values, setValues] = useState<Partial<Record<Field, string>>>({});
+  const [values, setValues] = useState<Partial<Record<Field, { raw: string; prefs: UnitPrefs }>>>({});
   const [symptoms, setSymptoms] = useState<DailyCheckin["symptoms"]>([]);
   const [exercise, setExercise] = useState<"yes" | "no">();
   const [failedAttempts, setFailedAttempts] = useState(0);
@@ -56,9 +60,15 @@ export function WellnessCloseDay() {
     if (failedAttempts || saveError) issue.current?.focus();
   }, [failedAttempts, saveError]);
 
-  const parsed = FIELDS.map((field) => parseNumberInput(values[field.name]?.trim()));
+  const parsed = FIELDS.map((field) => {
+    const entry = values[field.name];
+    const raw = entry?.raw.trim();
+    if (!entry || !raw || !/^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(raw)) return null;
+    const value = parseNumberInput(raw);
+    return value !== null && "unit" in field ? parseWellnessMeasurement(value, field.unit, entry.prefs) : value;
+  });
   const invalid = FIELDS.map((field, index) => {
-    if (field.optional && !values[field.name]?.trim()) return false;
+    if (field.optional && !values[field.name]?.raw.trim()) return false;
     const value = parsed[index];
     return value === null || value < field.min || value > field.max ||
       (field.step === "1" && !Number.isInteger(value));
@@ -96,8 +106,7 @@ export function WellnessCloseDay() {
   const effects = record
     ? dailyEffects(tomorrow, checkinHistory(owner), planDay(startDate, parseLocalDate(tomorrow) ?? undefined))
     : null;
-  const formattedDate = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "es-CO", { dateStyle: "long" })
-    .format(parseLocalDate(date) ?? new Date());
+  const formattedDate = formatLocalizedDate(date, lang);
   const invalidForm = attempted && (invalid.some(Boolean) || !exercise);
 
   return (
@@ -127,33 +136,44 @@ export function WellnessCloseDay() {
             <IonButton expand="block" onClick={() => navigate("home")}>{t("Volver al inicio")}</IonButton>
           </section>
         ) : (
-          <form className="wp-card wc-card" noValidate onSubmit={submit}>
+          <form className="wp-card wc-card" aria-labelledby="wc-form-title" noValidate onSubmit={submit}>
+            <h2 id="wc-form-title">{t("Registro de hoy")}</h2>
             <p>{t("Completa adherencia, sueño, energía, dolor y ejercicio.")}</p>
-            {FIELDS.map((field, index) => (
-              <IonInput
-                key={field.name}
-                name={field.name}
-                type="number"
-                inputmode={field.step === "1" ? "numeric" : "decimal"}
-                label={t(field.label)}
-                labelPlacement="stacked"
-                fill="outline"
-                min={String(field.min)}
-                max={String(field.max)}
-                step={field.step}
-                required={!field.optional}
-                value={values[field.name] ?? ""}
-                className={attempted && invalid[index] ? "ion-invalid ion-touched" : undefined}
-                errorText={t(field.step === "1"
-                  ? "Ingresa un número entero entre {min} y {max}."
-                  : "Ingresa un valor entre {min} y {max}.", {
-                  min: String(field.min), max: String(field.max),
-                })}
-                onIonInput={(event) => setValues((current) => ({
-                  ...current, [field.name]: event.detail.value ?? "",
-                }))}
-              />
-            ))}
+            {FIELDS.map((field, index) => {
+              const entry = values[field.name];
+              const metric = parsed[index];
+              const unit = "unit" in field ? field.unit : null;
+              const value = entry && unit && entry.prefs.weight !== prefs.weight && metric !== null
+                ? formatWellnessMeasurement(metric, unit, lang, prefs, { withUnit: false })
+                : entry?.raw ?? "";
+              const min = unit ? formatWellnessMeasurement(field.min, unit, lang, prefs, { rounding: "ceil" }) : String(field.min);
+              const max = unit ? formatWellnessMeasurement(field.max, unit, lang, prefs, { rounding: "floor" }) : String(field.max);
+              return (
+                <IonInput
+                  key={field.name}
+                  name={field.name}
+                  type={unit ? "text" : "number"}
+                  inputmode={field.step === "1" ? "numeric" : "decimal"}
+                  label={t(prefs.weight === "lb" && "usLabel" in field ? field.usLabel : field.label)}
+                  labelPlacement="stacked"
+                  fill="outline"
+                  min={unit ? undefined : String(field.min)}
+                  max={unit ? undefined : String(field.max)}
+                  step={unit ? undefined : field.step}
+                  required={!field.optional}
+                  value={value}
+                  className={attempted && invalid[index] ? "ion-invalid ion-touched" : undefined}
+                  errorText={t(field.step === "1"
+                    ? "Ingresa un número entero entre {min} y {max}."
+                    : "Ingresa un valor entre {min} y {max}.", {
+                    min, max,
+                  })}
+                  onIonInput={(event) => setValues((current) => ({
+                    ...current, [field.name]: { raw: event.detail.value ?? "", prefs },
+                  }))}
+                />
+              );
+            })}
             <fieldset>
               <legend>{t("¿Cómo te sentiste? Marca lo que aplique.")}</legend>
               <div className="wc-options">
@@ -168,18 +188,20 @@ export function WellnessCloseDay() {
                 ))}
               </div>
             </fieldset>
-            <fieldset>
-              <legend id="wc-exercise-label">{t("¿Hiciste ejercicio hoy?")}</legend>
-              <IonRadioGroup className="wc-options" aria-labelledby="wc-exercise-label"
-                aria-required="true" aria-invalid={attempted && !exercise}
-                aria-describedby={attempted && !exercise ? "wc-error" : undefined}
-                value={exercise}
-                onIonChange={(event) => setExercise(event.detail.value)}
-              >
+            <IonRadioGroup className={attempted && !exercise ? "ion-invalid ion-touched" : undefined}
+              aria-required="true"
+              errorText={t("Indica si hiciste ejercicio.")}
+              value={exercise}
+              onIonChange={(event) => setExercise(event.detail.value)}
+            >
+              <IonListHeader className="wc-radio-label">
+                <IonLabel>{t("¿Hiciste ejercicio hoy?")}</IonLabel>
+              </IonListHeader>
+              <div className="wc-options">
                 <IonRadio value="yes">{t("Sí")}</IonRadio>
                 <IonRadio value="no">{t("No")}</IonRadio>
-              </IonRadioGroup>
-            </fieldset>
+              </div>
+            </IonRadioGroup>
             {(saveError || invalidForm) && (
               <p ref={issue} id="wc-error" tabIndex={-1} role="alert" className="wc-error">
                 {t(saveError ?? "Revisa los valores e indica si hiciste ejercicio.")}

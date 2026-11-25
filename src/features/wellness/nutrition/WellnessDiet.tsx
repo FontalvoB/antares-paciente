@@ -264,9 +264,9 @@ function WellnessDietDay({ today }: { today: Date }) {
             const values = entry?.values ?? meal;
             const confirmedPhoto = entry && "grams" in entry.values ? entry.values : null;
             return (
-              <section key={meal.id} className="wp-card wl-diet-meal" aria-label={name}>
+              <section key={meal.id} className="wp-card wl-diet-meal" aria-labelledby={`wl-meal-${meal.id}`}>
                 <div className="wl-diet-meal-head">
-                  <h2>{name}</h2>
+                  <h2 id={`wl-meal-${meal.id}`}>{name}</h2>
                   {entry && <span className="wp-done"><IonIcon icon={checkmarkCircle} aria-hidden="true" /> {t("Registrada")}</span>}
                 </div>
                 {meal.id === "dinner" && nutrition.earlierDinner && <p>{t(EFFECT_COPY.dinner)}</p>}
