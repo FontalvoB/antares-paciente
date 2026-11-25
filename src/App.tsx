@@ -29,6 +29,10 @@ import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
 import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { getAccessToken } from "./utils/authApi";
+import { sessionUserId } from "./utils/sessionIdentity";
+import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
+import type { PaidGeneration } from "./features/wellness/generation/wellness-journey-api";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
@@ -48,8 +52,10 @@ setupIonicReact({ mode: "ios" });
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
 function Router() {
-  const { flow, screen, authLoading } = useApp();
+  const { flow, screen, authLoading, user } = useApp();
   const reducedMotion = useReducedMotion();
+  const paidJourney = import.meta.env.DEV && import.meta.env.VITE_WELLNESS_JOURNEY_DEMO === "true"
+    && new URLSearchParams(window.location.search).get("wellnessJourney") === "1";
 
   if (authLoading) {
     return (
@@ -66,7 +72,7 @@ function Router() {
 
   let content: ReactNode;
 
-  if (flow === "login") {
+  if (flow === "login" || (paidJourney && flow === "onboarding")) {
     content = <LoginPage />;
   } else if (flow === "onboarding") {
     content = <OnboardingPage />;
@@ -98,7 +104,7 @@ function Router() {
     }
   }
 
-  return (
+  const renderScreen = (generation?: PaidGeneration) => (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={flow === "app" ? `app-${screen}` : flow}
@@ -110,10 +116,18 @@ function Router() {
         }
         transition={reducedMotion ? { duration: 0 } : TRANSITION}
       >
-        {content}
+        {generation && screen === "home" ? <WellnessHome paidGeneration={generation} /> : content}
       </motion.div>
     </AnimatePresence>
   );
+  if (paidJourney && flow === "app") {
+    const accountId = sessionUserId(getAccessToken()) ?? user.id;
+    return accountId ? (
+      <WellnessJourneyPage key={accountId} userId={accountId}>{renderScreen}</WellnessJourneyPage>
+    ) : <LoginPage />;
+  }
+
+  return renderScreen();
 }
 
 function Shell() {

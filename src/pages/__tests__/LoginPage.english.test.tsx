@@ -34,7 +34,7 @@ describe("English account access", () => {
   it("localizes a rejected backend login without exposing its Spanish response", async () => {
     api.loginUser.mockRejectedValue(new Error("Credenciales inválidas"));
     renderLogin();
-    fireEvent.change(screen.getByLabelText("ID number"), { target: { value: "QA-ID" } });
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "qa@example.invalid" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "Example123!" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await waitFor(() => expect(app.showToast).toHaveBeenCalledWith("Invalid credentials", "err"));
@@ -42,6 +42,7 @@ describe("English account access", () => {
   it("requests recovery email in the current English UI language", async () => {
     renderLogin();
     fireEvent.click(screen.getByRole("button", { name: "Forgot your password?" }));
+    fireEvent.click(screen.getByRole("button", { name: "Recover with your ID" }));
     fireEvent.change(screen.getByLabelText("ID number"), { target: { value: "QA-ID" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirm identity" }));
     await screen.findByText("We found 2 contact methods linked to your ID.");

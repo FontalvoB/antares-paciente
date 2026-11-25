@@ -5,10 +5,10 @@ import {
   retryGeneration,
 } from "./generation-store";
 
-export function useGeneration() {
-  const [job, setJob] = useState(() => getGenerationState());
+export function useGeneration(enabled = true) {
+  const [job, setJob] = useState(() => enabled ? getGenerationState() : null);
   const isRunning = Boolean(
-    job && GENERATION_ARTIFACTS.some((id) => job.artifacts[id].status === "running"),
+    enabled && job && GENERATION_ARTIFACTS.some((id) => job.artifacts[id].status === "running"),
   );
 
   useEffect(() => {

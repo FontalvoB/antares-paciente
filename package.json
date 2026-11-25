@@ -10,6 +10,7 @@
     "build:web:test": "node scripts/build-test-web.mjs",
     "lint": "oxlint",
     "test": "vitest run",
+    "test:e2e:journey": "node scripts/test-paid-journey-ui.mjs",
     "i18n:check": "node scripts/i18n-scan.mjs",
     "preview": "vite preview",
     "sync": "npm run build && npx cap sync && npm run protect:ios-spm",
