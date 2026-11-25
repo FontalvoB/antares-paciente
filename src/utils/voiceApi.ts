@@ -179,7 +179,7 @@ export async function toolGetUpcomingAppointments(): Promise<string> {
       citas: upcoming,
       nota: upcoming.length
         ? undefined
-        : "El paciente no tiene citas confirmadas futuras.",
+        : "La persona no tiene citas confirmadas futuras.",
     });
   } catch {
     return JSON.stringify({
@@ -208,7 +208,7 @@ export async function toolGetMyRequests(): Promise<string> {
       solicitudes: requests,
       nota: requests.length
         ? undefined
-        : "El paciente no tiene solicitudes activas.",
+        : "La persona no tiene solicitudes activas.",
     });
   } catch {
     return JSON.stringify({
@@ -314,7 +314,7 @@ export async function toolRequestAppointment(args: {
     if (!patientId || !organizationId) {
       return JSON.stringify({
         error:
-          "No se pudo resolver el perfil del paciente para crear la solicitud.",
+          "No se pudo resolver el perfil de la persona para crear la solicitud.",
       });
     }
     const request = await createRequest({

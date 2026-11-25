@@ -748,7 +748,7 @@ export function PanicOverlay() {
           >
             <header className="sos-topbar">
               <BrandWordmark className="sos-brand" />
-              <div className="sos-greeting"><h1>{t('Hola, {nombre} 👋', { nombre: user.nombre || t('Paciente') })}</h1><p>{t('Tu salud es nuestra prioridad')}</p></div>
+              <div className="sos-greeting"><h1>{t('Hola, {nombre} 👋', { nombre: user.nombre || t('Persona') })}</h1><p>{t('Tu salud es nuestra prioridad')}</p></div>
               <IonButton
                 fill="clear"
                 className="sos-top-close"

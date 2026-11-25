@@ -232,7 +232,7 @@ describe("onboarding Agentic Wellness (KAN-136)", () => {
     render(<OnboardingPage />);
     expect(
       screen.getByText(
-        /General wellness information\. Not medical advice\. In an emergency, call 911\./,
+        /General wellness information\. Consult a health professional for individual guidance\. In an emergency, call 911\./,
       ),
     ).toBeTruthy();
   });

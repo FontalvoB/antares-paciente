@@ -104,7 +104,7 @@ export function MedicalSourcesPage() {
                   </p>
                   <p>
                     {t(
-                      "Este accesorio no diagnostica, no trata y no sustituye una medición clínica ni la valoración de un profesional de la salud.",
+                      "Este accesorio ofrece información general de bienestar y no sustituye la valoración de un profesional de la salud.",
                     )}
                   </p>
                   <p>
