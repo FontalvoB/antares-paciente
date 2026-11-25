@@ -2,7 +2,7 @@ import { useState } from "react";
 import { IonButton, IonIcon, IonInput } from "@ionic/react";
 import { arrowForward, mailOutline } from "ionicons/icons";
 import { useI18n } from "../i18n/I18nContext";
-import { requestPasswordReset } from "../utils/authApi";
+import { HttpStatusError, requestPasswordReset } from "../utils/authApi";
 import { AuthSubmitButton } from "./AuthSubmitButton";
 
 interface Props {
@@ -24,7 +24,11 @@ export function EmailRecoveryForm({ initialEmail, onBack, onUseLegacyRecovery }:
     try {
       await requestPasswordReset(email, lang);
       setResult("accepted");
-    } catch {
+    } catch (error) {
+      if (error instanceof HttpStatusError && (error.status === 404 || error.status === 405)) {
+        onUseLegacyRecovery();
+        return;
+      }
       setResult("error");
     } finally {
       setBusy(false);
