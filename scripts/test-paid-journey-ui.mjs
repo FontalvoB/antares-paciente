@@ -169,18 +169,25 @@ async function runJourney(browser, url, width) {
     await expect(page.getByText("No pudimos preparar tu plan de nutrición")).toBeVisible();
     await button("Reintentar").click();
     await expect(page.getByText("Tu plan y tu bandeja están listos")).toBeVisible();
+    await button("Bandeja").click();
     await heading("Bandeja");
     await expect(page.getByText("Mensaje persistido")).toBeVisible();
-    await tab("Nutrición").click();
+    await button("Cerrar").click();
+    await page.locator(".wh-task").filter({hasText:"Nutrición"}).click();
     await heading("Dieta de hoy");
     await tab("Ejercicio").click();
+    // La sesión de prueba aún no ha aceptado el consentimiento del módulo.
+    await page.getByRole("checkbox", { name: "Acepto el uso de mis datos sensibles para mi plan de bienestar." }).click();
+    await button("Continuar").click();
     await heading("Antes de empezar");
     await tab("Inicio").click();
     await heading("Protocolo de hoy");
 
     await page.reload();
     await expect(page.getByText("Tu plan y tu bandeja están listos")).toBeVisible();
+    await button("Bandeja").click();
     await expect(page.getByText("Mensaje persistido")).toBeVisible();
+    await button("Cerrar").click();
     assert.equal(submissions.length, 1);
     assert.match(submissions[0].submissionId, /^[0-9a-f-]{36}$/i);
     assert.equal(submissions[0].draft.goal, "bajar");
@@ -188,8 +195,11 @@ async function runJourney(browser, url, width) {
     assert.deepEqual(submissions[0].draft.parq, Array(7).fill(0));
     assert.ok(submissions[0].draft.terms?.acceptedAt);
     assert.deepEqual(retries, [{ expectedAttempts: 1 }]);
+    await button("Más opciones").click();
     await button("Cambiar idioma a English").click();
+    await page.keyboard.press("Escape");
     await heading("Today's protocol");
+    await button("Inbox").click();
     await heading("Inbox");
   } catch (error) {
     const snapshot = await page.locator("body").ariaSnapshot({ timeout: 2_000 }).catch(() => "");
@@ -210,7 +220,7 @@ try {
   await server.listen();
   const url = new URL("/?wellnessJourney=1", server.resolvedUrls.local[0]).href;
   for (const type of process.argv.includes("--webkit") ? [webkit] : [chromium]) {
-    const browser = await type.launch();
+    const browser = await type.launch(process.argv.includes("--chrome") ? { channel: "chrome" } : {});
     try {
       for (const width of [320, 390]) {
         await runJourney(browser, url, width);
