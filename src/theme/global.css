@@ -17455,6 +17455,15 @@ ion-button.ht-skip {
   font-size: 13px;
 }
 
+.ht-question-feedback {
+  padding-inline: 24px;
+  text-align: center;
+}
+.ht-question-feedback p {
+  margin: 0;
+  max-inline-size: 28ch;
+}
+
 .ht-wizard {
   flex: 1;
   min-height: 0;
