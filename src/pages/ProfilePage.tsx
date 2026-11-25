@@ -22,6 +22,7 @@ import {
   trashOutline,
   chevronForward,
   optionsOutline,
+  pulseOutline,
   shieldCheckmarkOutline,
   notificationsOutline,
   menuOutline,
@@ -512,6 +513,13 @@ export function ProfilePage() {
                       sub: "Cambia tu meta y actualiza tu plan",
                       tone: "sky",
                       action: () => navigate("wellness-goal"),
+                    },
+                    {
+                      icon: pulseOutline,
+                      title: "Signos vitales",
+                      sub: "Registra y consulta tus mediciones",
+                      tone: "sky",
+                      action: () => navigate("wellness-vitals"),
                     },
                   ].map((item) => (
                     <IonItem
