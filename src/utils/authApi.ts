@@ -47,7 +47,7 @@ export class HttpStatusError extends Error {
  * del proxy de Vite (mismo origen → la cookie HttpOnly de refresh funciona
  * sin CORS). El application es el código de la app móvil: "app".
  */
-async function postJson<T>(path: string, body?: unknown): Promise<T> {
+async function post(path: string, body?: unknown): Promise<Response> {
   // Timeout defensivo (10 s): en WebView nativo una IP inalcanzable puede
   // dejar el fetch colgado para siempre y con él el splash de arranque.
   const res = await fetch(path, {
@@ -69,7 +69,17 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
     throw new HttpStatusError(message, res.status);
   }
 
-  return res.json() as Promise<T>;
+  return res;
+}
+
+async function postJson<T>(path: string, body?: unknown): Promise<T> {
+  return (await post(path, body)).json() as Promise<T>;
+}
+
+export async function requestPasswordReset(email: string, language: "es" | "en") {
+  await post(`${getAuthBaseUrl()}/api/auth/account/password-reset/request`, {
+    email: email.trim(), language,
+  });
 }
 
 export interface CurrentUser {
@@ -93,14 +103,15 @@ function clearAccessToken(): void {
 
 /** Login con contraseña por número de identificación (usuarios ya registrados). */
 export async function loginUser(
-  documentNumber: string,
+  identifier: string,
   password: string,
   rememberMe: boolean,
+  field: "email" | "documentNumber" = "documentNumber",
 ): Promise<LoginResult> {
   const result = await postJson<LoginResult>(
     `${getAuthBaseUrl()}/api/auth/login`,
     {
-      documentNumber,
+      [field]: identifier,
       password,
       application: getApplicationCode(),
       rememberMe,
@@ -252,7 +263,7 @@ export async function getMe(): Promise<CurrentUser | null> {
 export async function logoutUser(): Promise<void> {
   clearAccessToken();
   try {
-    await postJson<{ message: string }>(`${getAuthBaseUrl()}/api/auth/logout`);
+    await post(`${getAuthBaseUrl()}/api/auth/logout`, { application: getApplicationCode() });
   } catch {
     /* el logout es idempotente: sin cookie también responde 200 */
   }
@@ -347,7 +358,9 @@ let sharedRefreshPromise: Promise<SharedRefreshResult> | null = null;
 
 export function sharedRefresh(): Promise<SharedRefreshResult> {
   if (!sharedRefreshPromise) {
-    sharedRefreshPromise = performSharedRefresh().finally(() => {
+    sharedRefreshPromise = (typeof navigator !== "undefined" && navigator.locks
+      ? navigator.locks.request(`copp-refresh-${getApplicationCode()}`, performSharedRefresh)
+      : performSharedRefresh()).finally(() => {
       sharedRefreshPromise = null;
     });
   }
@@ -355,21 +368,30 @@ export function sharedRefresh(): Promise<SharedRefreshResult> {
 }
 
 async function performSharedRefresh(): Promise<SharedRefreshResult> {
+  const originalToken = getAccessToken();
   try {
     // Timeout defensivo (10 s), igual que postJson: en WebView nativo una
     // IP inalcanzable puede dejar el fetch colgado para siempre.
+    // `application` selecciona la cookie propia de la app (copp_refresh_token_app)
+    // y evita restaurar la sesión de otra aplicación que comparta el host
+    // (p. ej. el ERP en localhost durante el desarrollo).
     const res = await fetch(`${getAuthBaseUrl()}/api/auth/refresh`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
+      body: JSON.stringify({ application: getApplicationCode() }),
       signal: AbortSignal.timeout(10000),
     });
+    if (getAccessToken() !== originalToken) return { status: 409, result: null };
     if (!res.ok) return { status: res.status, result: null };
     const result = (await res.json()) as LoginResult;
+    if (getAccessToken() !== originalToken) return { status: 409, result: null };
     // Rotación: persistir el access token nuevo para los callers que solo
     // esperaban `true` (antes solo restoreSession lo persistía).
     persistAccessToken(result.accessToken);
     return { status: res.status, result };
   } catch {
+    if (getAccessToken() !== originalToken) return { status: 409, result: null };
     return { status: 0, result: null };
   }
 }

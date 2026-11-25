@@ -21,6 +21,7 @@ import {
 import { useApp } from "../context/AppContext";
 import { useT } from "../i18n/I18nContext";
 import { LanguageToggle } from "../components/LanguageToggle";
+import { EmailRecoveryForm } from "../components/EmailRecoveryForm";
 import { Mascot } from "../components/Mascot";
 import { SlideCtaButton } from "../components/SlideCtaButton";
 import {
@@ -34,7 +35,7 @@ import {
 import logoLetras from "../assets/LogoConLetras.png";
 import type { UserProfile } from "../types";
 
-type LoginMode = "login" | "first";
+type LoginMode = "login" | "first" | "recovery";
 type FirstStep = "id" | "contacts" | "otp";
 
 /** Transición compartida por los paneles de modo/paso del acceso. */
@@ -45,14 +46,14 @@ const panelMotion = {
   transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const },
 };
 
-export function LoginPage() {
+export function LoginPage({ emailFirst = false }: { emailFirst?: boolean }) {
   const { finishLogin, showToast } = useApp();
   const t = useT();
   const [mode, setMode] = useState<LoginMode>("login");
   const [firstStep, setFirstStep] = useState<FirstStep>("id");
 
-  // Login por ID + contraseña
-  const [documentNumber, setDocumentNumber] = useState("");
+  // La activación por correo conserva la misma pantalla de acceso.
+  const [identifier, setIdentifier] = useState("");
   const [pwd, setPwd] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(true);
@@ -84,16 +85,18 @@ export function LoginPage() {
   };
 
   const submit = async () => {
-    const doc = documentNumber.trim();
-    if (!doc || !pwd) {
-      showToast(t("Ingresa tu número de identificación y contraseña"), "warn");
+    if (busy) return;
+    const login = identifier.trim();
+    const usesEmail = emailFirst || login.includes("@");
+    if (!login || !pwd) {
+      showToast(emailFirst ? t("Ingresa tu correo electrónico y contraseña") : t("Ingresa tu número de identificación y contraseña"), "warn");
       return;
     }
     setBusy(true);
     try {
-      await loginUser(doc, pwd, remember);
+      await loginUser(login, pwd, remember, usesEmail ? "email" : "documentNumber");
       setBusy(false);
-      finishLogin({ cedula: doc }, "app");
+      finishLogin(usesEmail ? { email: login } : { cedula: login }, "app");
     } catch (e) {
       setBusy(false);
       showToast(
@@ -287,19 +290,19 @@ export function LoginPage() {
               >
                 <div className="auth-field">
                   <label htmlFor="login-id">
-                    1{t("Número de identificación")}
+                    {emailFirst ? t("Correo electrónico") : t("Correo electrónico o número de identificación")}
                   </label>
                   <IonInput
                     id="login-id"
                     className="auth-input"
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
+                    type={emailFirst ? "email" : "text"}
+                    inputmode="email"
+                    autocomplete="username"
                     enterkeyhint="next"
-                    value={documentNumber}
-                    placeholder={t("Ej. 32534534")}
+                    value={identifier}
+                    placeholder={emailFirst ? t("nombre@example.com") : t("Ej. 32534534")}
                     onIonInput={(e) =>
-                      setDocumentNumber(
+                      setIdentifier(
                         (e.detail.value ?? "").replace(/\s/g, ""),
                       )
                     }
@@ -346,12 +349,7 @@ export function LoginPage() {
                     type="button"
                     fill="clear"
                     className="auth-link-btn"
-                    onClick={() =>
-                      showToast(
-                        t("Demo: recuperación de contraseña no disponible"),
-                        "info",
-                      )
-                    }
+                    onClick={() => setMode("recovery")}
                   >
                     {t("¿Olvidaste tu contraseña?")}
                   </IonButton>
@@ -379,6 +377,10 @@ export function LoginPage() {
                   {t("Activa tu cuenta")}
                 </button>
               </div>
+            </motion.div>
+          ) : mode === "recovery" ? (
+            <motion.div key="recovery" className="auth-body" {...panelMotion}>
+              <EmailRecoveryForm initialEmail={identifier} onBack={() => setMode("login")} />
             </motion.div>
           ) : (
             <motion.div key="first" className="auth-body" {...panelMotion}>
