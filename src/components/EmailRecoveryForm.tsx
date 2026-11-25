@@ -25,7 +25,7 @@ export function EmailRecoveryForm({ initialEmail, onBack, onUseLegacyRecovery }:
       await requestPasswordReset(email, lang);
       setResult("accepted");
     } catch (error) {
-      if (error instanceof HttpStatusError && (error.status === 404 || error.status === 405)) {
+      if (error instanceof HttpStatusError && [404, 405, 503].includes(error.status)) {
         onUseLegacyRecovery();
         return;
       }

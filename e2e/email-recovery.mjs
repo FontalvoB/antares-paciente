@@ -80,12 +80,14 @@ try {
   await emailInput.waitFor();
 
   // Conserva la recuperación por identificación mientras se instala el endpoint de correo.
-  await page.route(`**${requestPath}`, (route) => route.fulfill({ status: 404 }), { times: 1 });
-  await emailInput.fill(absentEmail);
-  await recovery.getByRole("button", { name: "Enviar enlace" }).click();
-  await page.locator("#login-first-id input").waitFor();
-  await page.getByRole("button", { name: "Volver", exact: true }).click();
-  await recovery.waitFor();
+  for (const status of [404, 503]) {
+    await page.route(`**${requestPath}`, (route) => route.fulfill({ status }), { times: 1 });
+    await emailInput.fill(absentEmail);
+    await recovery.getByRole("button", { name: "Enviar enlace" }).click();
+    await page.locator("#login-first-id input").waitFor();
+    await page.getByRole("button", { name: "Volver", exact: true }).click();
+    await recovery.waitFor();
+  }
 
   const oldDevice = await browser.newPage(browserOptions);
   await oldDevice.goto(appUrl.href);
