@@ -1,3 +1,4 @@
+import { WellnessGuidance } from "../WellnessGuidance";
 import { useEffect, useRef, useState } from "react";
 import { IonButton, IonChip, IonIcon, IonInput, IonModal, IonProgressBar, IonSpinner } from "@ionic/react";
 import { arrowBackOutline, cameraOutline, checkmarkCircle, waterOutline } from "ionicons/icons";
@@ -188,7 +189,7 @@ function WellnessDietDay({ today }: { today: Date }) {
               <h1 className="wp-title">{t("Dieta de hoy")}</h1>
             </div>
           </div>
-          <p className="wl-diet-notice">{t("Información general de bienestar. No es consejo médico.")}</p>
+          <WellnessGuidance kind="diet" className="wl-diet-notice" />
         </header>
 
         <div className="wl-diet-body">

@@ -258,7 +258,7 @@ export function AiDisclosureProvider({ children }: { children: ReactNode }) {
           <p>
             <strong>
               {t(
-                "La IA no diagnostica, no prescribe ni sustituye a tu equipo de salud.",
+                "La IA ofrece orientación general y no sustituye a tu equipo de salud.",
               )}
             </strong>
           </p>

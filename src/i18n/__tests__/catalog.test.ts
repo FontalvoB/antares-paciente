@@ -44,7 +44,25 @@ function permissionStrings(source: string) {
 describe("Contrato de los catálogos i18n", () => {
   it("mantiene paridad de claves e identidad en español", () => {
     expect(Object.keys(english).sort()).toEqual(Object.keys(spanish).sort());
-    expect(Object.entries(spanish).filter(([source, value]) => source !== value)).toEqual([]);
+    const serverAliases = [
+      ["Physical Therapist (DPT)", "Fisioterapeuta (DPT)", "Physiotherapist (DPT)"],
+      ["Physical Therapy", "Rehabilitación física", "Physical rehabilitation"],
+      ["Occupational Therapy", "Autonomía en actividades diarias", "Independence in daily activities"],
+      ["Coordinador/a de atención al paciente.", "Coordinación de la atención de la persona.", "Coordination of the person's care."],
+      ["Enfermero/a de práctica avanzada con prescripción.", "Profesional de enfermería de práctica avanzada con facultad para emitir indicaciones.", "Advanced practice nursing professional qualified to issue guidance."],
+      ["Coordinación de cuidados y navegación del paciente.", "Coordinación de cuidados y orientación de la persona.", "Care coordination and guidance for the person."],
+      ["Fisiología del ejercicio y prescripción de actividad física.", "Fisiología del ejercicio y recomendaciones de actividad física.", "Exercise physiology and physical activity recommendations."],
+      ["Tratamiento integral de la obesidad (certificación ABOM).", "Acompañamiento integral en obesidad (certificación ABOM).", "Comprehensive support for obesity (ABOM certification)."],
+      ["Terapia ocupacional.", "Apoyo a la autonomía en actividades diarias.", "Support for independence in daily activities."],
+      ["Nutrición clínica y dietoterapia.", "Orientación nutricional y acompañamiento alimentario.", "Nutrition guidance and support with eating habits."],
+      ["Diagnósticos actuales", "Condiciones de salud actuales", "Current health conditions"],
+      ["¿Cuál de estos diagnósticos tienes actualmente?", "¿Cuáles de estas condiciones de salud confirmadas por un profesional tienes actualmente?", "Which of these health conditions confirmed by a professional do you currently have?"],
+      ["Cuando empiezo un programa o tratamiento, lo termino aunque sea duro.", "Cuando empiezo un programa o plan, lo termino aunque sea duro.", "When I start a program or plan, I finish it even when it is difficult."],
+    ];
+    expect(Object.fromEntries(Object.entries(spanish).filter(([source, value]) => source !== value))).toEqual(
+      Object.fromEntries(serverAliases.map(([source, label]) => [source, label])),
+    );
+    for (const [source, , label] of serverAliases) expect(english[source], source).toBe(label);
     expect(Object.entries(english).filter(([, value]) => !value.trim())).toEqual([]);
   });
 

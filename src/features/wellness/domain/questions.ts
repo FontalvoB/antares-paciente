@@ -65,13 +65,13 @@ export const NQS_QUESTIONS: readonly WellnessQuestion[] = [
   },
   {
     id: "nqs-eating",
-    es: "¿Un profesional te ha diagnosticado un trastorno de la conducta alimentaria, o la comida te genera mucha ansiedad o culpa?",
-    en: "Has a professional diagnosed an eating disorder, or does food cause you strong anxiety or guilt?",
+    es: "¿Un profesional te ha confirmado un trastorno de la conducta alimentaria, o la comida te genera mucha ansiedad o culpa?",
+    en: "Has a professional confirmed an eating disorder for you, or does food cause you strong anxiety or guilt?",
   },
   {
     id: "nqs-allergy",
-    es: "¿Tienes una alergia o intolerancia alimentaria diagnosticada?",
-    en: "Do you have a diagnosed food allergy or intolerance?",
+    es: "¿Tienes una alergia o intolerancia alimentaria confirmada por un profesional?",
+    en: "Do you have a food allergy or intolerance confirmed by a professional?",
   },
   {
     id: "nqs-sugar",
@@ -81,12 +81,12 @@ export const NQS_QUESTIONS: readonly WellnessQuestion[] = [
   {
     id: "nqs-organ",
     es: "¿Tienes enfermedad renal o hepática, o una dieta indicada por un médico?",
-    en: "Do you have kidney or liver disease, or a diet prescribed by a doctor?",
+    en: "Do you have kidney or liver disease, or a diet recommended by a doctor?",
   },
   {
     id: "nqs-surgery",
-    es: "¿Te han hecho una cirugía bariátrica o estás en tratamiento por otra condición que afecte tu alimentación?",
-    en: "Have you had bariatric surgery or are you in treatment for a condition that affects your eating?",
+    es: "¿Te han hecho una cirugía bariátrica o sigues indicaciones de un profesional por otra condición que afecte tu alimentación?",
+    en: "Have you had bariatric surgery or are you following a professional's guidance for a condition that affects your eating?",
   },
 ] as const;
 
