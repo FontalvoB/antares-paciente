@@ -32,7 +32,8 @@ import {
   sparklesOutline,
 } from "ionicons/icons";
 import { NotificationsModal } from "../components/notifications/NotificationsModal";
-import logoIcon from "../assets/LogoIndividual.png";
+import { BrandWordmark } from "../components/BrandWordmark";
+import { BRAND_NAME } from "../utils/brand";
 import vitaPortrait from "../assets/vita-coach.png";
 import { AvatarPage } from "./AvatarPage";
 import { Screen, Scroll } from "../components/Screen";
@@ -353,19 +354,7 @@ export function ProfilePage() {
             <div className="pf-overview">
               <header className="pf-heading">
                 <div className="pf-topbar">
-                  <div className="hm-wordmark" aria-label="COPP-ADRESD">
-                    <img src={logoIcon} alt="" />
-                    <span>
-                      <strong>
-                        COPP-ADRESD<sup>®</sup>
-                      </strong>
-                      <small>
-                        COMPREHENSIVE OBESITY
-                        <br />
-                        PREVENTION PROGRAM
-                      </small>
-                    </span>
-                  </div>
+                  <BrandWordmark className="hm-wordmark" />
                   <div className="pf-header-actions">
                     <IonButton
                       fill="clear"
@@ -687,7 +676,7 @@ export function ProfilePage() {
                 </IonButton>
                 <div className="pf-signature">
                   <span aria-hidden="true" />
-                  <span>COPP ADRESD</span>
+                  <span>{BRAND_NAME}</span>
                   <span aria-hidden="true" />
                 </div>
                 <p className="pf-closing">

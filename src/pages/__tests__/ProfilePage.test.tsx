@@ -161,7 +161,7 @@ describe("ProfilePage v5.1", () => {
       "Visualización del perfil",
       "Calendario de citas",
       "Fuentes y referencias médicas",
-      "Equipo Copp Adresd",
+      "Equipo Agentic Wellness IA",
       "Medicamentos y suplementos",
       "Privacidad en la Liga",
       "Accesorio y datos de bienestar",

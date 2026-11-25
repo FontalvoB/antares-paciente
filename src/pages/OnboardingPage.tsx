@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../utils/brand";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IonIcon } from "@ionic/react";
 import { shieldCheckmarkOutline } from "ionicons/icons";
@@ -340,7 +341,7 @@ export function OnboardingPage() {
     <div className="screen onb-page" style={{ background: "var(--g0)" }}>
       <header className="onb-head">
         <div className="onb-head-top">
-          <div className="onb-head-brand">Copp Adresd</div>
+          <div className="onb-head-brand">{BRAND_NAME}</div>
         </div>
         <WellnessStepper current={stepIndex + 1} total={STEP_LABELS.length} />
         <h1 className="onb-head-title">{title}</h1>

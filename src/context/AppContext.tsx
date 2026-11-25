@@ -324,8 +324,8 @@ function createWelcomeMessage(
     // que el paciente tiene seleccionado (consistencia con chat/voz).
     text:
       lang === "en"
-        ? `Hi${firstName ? ` ${firstName}` : ""} 👋 I'm your Copp Adresd health agent. How can I help you today?`
-        : `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
+        ? `Hi${firstName ? ` ${firstName}` : ""} 👋 I'm your Agentic Wellness IA health agent. How can I help you today?`
+        : `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Agentic Wellness IA. ¿En qué te puedo ayudar hoy?`,
     time: nowLabel(lang),
   };
 }
@@ -401,7 +401,7 @@ export function AppProvider({
     createWelcomeMessage(defaultUser.nombre, lang),
   ]);
   const [wearableConnected, setWatchConnected] = useState(false);
-  const [wearableName, setWatchName] = useState("Copp Adresd Wearable");
+  const [wearableName, setWatchName] = useState("Agentic Wellness IA Wearable");
   // TODO: Remove after full migration — legacy in-memory program state
   const [program, setProgram] = useState<ProgramDay>({
     podcast: false,
@@ -499,7 +499,7 @@ export function AppProvider({
     setSosActive(false);
     setToast(null);
     setWatchConnected(false);
-    setWatchName("Copp Adresd Wearable");
+    setWatchName("Agentic Wellness IA Wearable");
     setPointsToday(0);
     setPointsTotal(0);
     setProgram({

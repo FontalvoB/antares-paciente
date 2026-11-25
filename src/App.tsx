@@ -55,7 +55,7 @@ import {
   syncCheckins,
 } from "./features/wellness/checkin/checkin-store";
 import { ProfilePage } from "./pages/ProfilePage";
-import logoLetras from "./assets/LogoConLetras.png";
+import { BrandWordmark } from "./components/BrandWordmark";
 
 setupIonicReact({ mode: "ios" });
 
@@ -72,7 +72,7 @@ function Router() {
   if (authLoading) {
     return (
       <div className="screen auth auth-splash">
-        <img src={logoLetras} alt="COPP-ADRESD" className="auth-logo" />
+        <BrandWordmark className="auth-logo" />
         <IonSpinner
           name="crescent"
           color="primary"

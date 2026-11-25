@@ -18,7 +18,7 @@ import {
 import { VITAL_FIELDS } from "../../data/program";
 import { WatchIcon3D } from "../../components/icons3d";
 import { PageHeader } from "../../components/PageHeader";
-import logoIcon from "../../assets/LogoIndividual.png";
+import { BrandWordmark } from "../../components/BrandWordmark";
 import type { MetricKind } from "../../devices/types";
 import { useWearable } from "../../context/WearableContext";
 import { WEARABLE_ENABLED } from "../../utils/features";
@@ -281,19 +281,7 @@ export function VitalsLesson({
 
   return (
     <div className="vitals-workspace">
-      <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD">
-        <img src={logoIcon} alt="" />
-        <div>
-          <strong>
-            COPP-ADRESD<sup>®</sup>
-          </strong>
-          <small>
-            COMPREHENSIVE OBESITY
-            <br />
-            PREVENTION PROGRAM
-          </small>
-        </div>
-      </div>
+      <BrandWordmark className="wearable-brand hm-wordmark" />
       <PageHeader
         kicker={t("Bienestar")}
         title={t("Registrar datos de bienestar")}

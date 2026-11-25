@@ -171,7 +171,7 @@ export const THEMES_BY_ID: Record<number, TestTheme> = {
     hero: "hero-cosmos",
     mood: "cosmos",
     sub: "Las respuestas más importantes del programa. Sé completamente honesto/a.",
-    kicker: "Propósito · Copp Adresd",
+    kicker: "Propósito · Agentic Wellness IA",
     minutes: 2,
   },
 };

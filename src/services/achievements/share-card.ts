@@ -56,7 +56,7 @@ export async function renderAchievementCard(
     const image = new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('Brand logo unavailable'));image.src=coppLogo;
   });
   ctx.drawImage(logo,490,offset+88,100,100);
-  ctx.textAlign='center';ctx.fillStyle=green;ctx.font='700 24px Inter, sans-serif';ctx.fillText('COPP-ADRESD',540,offset+209);
+  ctx.textAlign='center';ctx.fillStyle=green;ctx.font='700 24px Inter, sans-serif';ctx.fillText('Agentic Wellness IA',540,offset+209);
   ctx.fillStyle='#6f7e73';ctx.font='500 17px Inter, sans-serif';ctx.fillText(eyebrow.toLocaleUpperCase(),540,offset+250);
   ctx.fillStyle=navy;ctx.font='400 54px "Certificate Serif", serif';ctx.fillText(certificate?.heading ?? eyebrow,540,offset+333);
   ctx.strokeStyle=gold;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(370,offset+365);ctx.lineTo(710,offset+365);ctx.stroke();

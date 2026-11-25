@@ -72,7 +72,7 @@ import {
   type SosAuditResult,
 } from "../features/wellness/sos/sos-store";
 
-import logoIcon from "../assets/LogoIndividual.png";
+import { BrandWordmark } from "./BrandWordmark";
 import "../features/wellness/sos/wellness-sos.css";
 
 type SosView = "protocol" | "confirm";
@@ -747,10 +747,7 @@ export function PanicOverlay() {
             transition={{ duration: 0.28 }}
           >
             <header className="sos-topbar">
-              <div className="sos-brand">
-                <img src={logoIcon} alt="" />
-                <div><strong>COPP-ADRESD<sup>®</sup></strong><small>COMPREHENSIVE OBESITY<br />PREVENTION PROGRAM</small></div>
-              </div>
+              <BrandWordmark className="sos-brand" />
               <div className="sos-greeting"><h1>{t('Hola, {nombre} 👋', { nombre: user.nombre || t('Paciente') })}</h1><p>{t('Tu salud es nuestra prioridad')}</p></div>
               <IonButton
                 fill="clear"

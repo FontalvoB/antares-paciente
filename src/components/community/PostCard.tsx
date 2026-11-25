@@ -245,7 +245,7 @@ export function PostCard({
 
   async function sharePost() {
     try {
-      const result = await shareCommunityContent(t('Comunidad Copp Adresd'), `${post.profile.displayName} · COPP-ADRESD\n\n${post.body || t('Publicación con imagen')}`)
+      const result = await shareCommunityContent(t('Comunidad Agentic Wellness IA'), `${post.profile.displayName} · Agentic Wellness IA\n\n${post.body || t('Publicación con imagen')}`)
       if (result === 'copied') onToast(t('Contenido copiado para compartir'), 'ok')
     } catch { onToast(t('No se pudo compartir. Inténtalo de nuevo.'), 'err') }
   }

@@ -551,7 +551,7 @@ export function RequestAppointmentWizard({
           priority: isUrgent ? ("Urgent" as const) : ("Normal" as const),
         };
         const summaryName =
-          selectedProfessional?.fullName ?? "Equipo COPP-ADRESD";
+          selectedProfessional?.fullName ?? "Equipo Agentic Wellness IA";
         const summaryRole =
           selectedProfessional?.professionalTypeDisplayName ?? selectedProfessional?.professionalTypeName ?? selectedCare.name;
         void submitAppointmentRequest(payload).then((ok) => {
@@ -692,7 +692,7 @@ export function RequestAppointmentWizard({
       "")
     : (consultType?.label ?? "");
   const summaryProName = useCatalogPath
-    ? (selectedProfessional?.fullName ?? "Equipo COPP-ADRESD")
+    ? (selectedProfessional?.fullName ?? "Equipo Agentic Wellness IA")
     : (professional?.name ?? "");
   const summaryProRole = useCatalogPath
     ? (selectedProfessional?.professionalTypeDisplayName ?? selectedProfessional?.professionalTypeName ?? selectedCare?.name ?? "")
@@ -1493,7 +1493,7 @@ export function RequestAppointmentWizard({
                           <span className="req-type-copy">
                             <span className="ct">{t("Presencial")}</span>
                             <span className="cs">
-                              {t("En la clínica COPP-ADRESD")}
+                              {t("En la clínica Agentic Wellness IA")}
                             </span>
                           </span>
                         </span>
