@@ -22,6 +22,13 @@ export interface JourneyGeneration {
   };
 }
 
+export interface PaidGeneration {
+  job: JourneyGeneration;
+  retry: () => void;
+  retrying: boolean;
+  retryError: boolean;
+}
+
 export async function latestJourneyGeneration(userId: string, signal: AbortSignal) {
   try {
     return await apiFetch<JourneyGeneration>(`${base}/latest`, { expectedUserId: userId, signal });

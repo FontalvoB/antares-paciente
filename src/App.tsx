@@ -29,7 +29,10 @@ import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
 import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { getAccessToken } from "./utils/authApi";
+import { sessionUserId } from "./utils/sessionIdentity";
 import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
+import type { PaidGeneration } from "./features/wellness/generation/wellness-journey-api";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
@@ -69,9 +72,7 @@ function Router() {
 
   let content: ReactNode;
 
-  if (paidJourney && flow === "app" && user.id) {
-    content = <WellnessJourneyPage key={user.id} userId={user.id} />;
-  } else if (flow === "login" || (paidJourney && flow === "onboarding")) {
+  if (flow === "login" || (paidJourney && flow === "onboarding")) {
     content = <LoginPage />;
   } else if (flow === "onboarding") {
     content = <OnboardingPage />;
@@ -103,7 +104,7 @@ function Router() {
     }
   }
 
-  return (
+  const renderScreen = (generation?: PaidGeneration) => (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={flow === "app" ? `app-${screen}` : flow}
@@ -115,10 +116,18 @@ function Router() {
         }
         transition={reducedMotion ? { duration: 0 } : TRANSITION}
       >
-        {content}
+        {generation && screen === "home" ? <WellnessHome paidGeneration={generation} /> : content}
       </motion.div>
     </AnimatePresence>
   );
+  if (paidJourney && flow === "app") {
+    const accountId = sessionUserId(getAccessToken()) ?? user.id;
+    return accountId ? (
+      <WellnessJourneyPage key={accountId} userId={accountId}>{renderScreen}</WellnessJourneyPage>
+    ) : <LoginPage />;
+  }
+
+  return renderScreen();
 }
 
 function Shell() {
