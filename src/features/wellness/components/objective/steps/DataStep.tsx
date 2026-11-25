@@ -12,13 +12,18 @@ import type { GateIssue, ObjectiveDraft } from "../../../domain";
 
 // oxlint-disable-next-line react/only-export-components -- Shared with the summary within the objective module.
 export const SEX_OPTIONS = { F: "Femenino", M: "Masculino" } as const;
-const NUMERIC_FIELDS = [
-  { field: "age", label: "Edad (años)", example: "35", icon: calendarOutline },
-  { field: "heightCm", label: "Estatura (cm)", example: "165", icon: resizeOutline },
-  { field: "weightKg", label: "Peso actual (kg)", example: "74", icon: scaleOutline },
-  { field: "waistCm", label: "Cintura (cm)", example: "88", icon: bodyOutline },
-  { field: "targetWeightKg", label: "Peso meta (kg)", example: "68", icon: flagOutline },
-] as const;
+const NUMERIC_FIELDS: readonly {
+  field: keyof typeof RANGES;
+  label: string;
+  hint?: string;
+  icon: string;
+}[] = [
+  { field: "age", label: "Edad (años)", hint: "En años completos.", icon: calendarOutline },
+  { field: "heightCm", label: "Estatura (cm)", hint: "1,65 m equivale a 165 cm.", icon: resizeOutline },
+  { field: "weightKg", label: "Peso actual (kg)", icon: scaleOutline },
+  { field: "waistCm", label: "Cintura (cm)", icon: bodyOutline },
+  { field: "targetWeightKg", label: "Peso meta (kg)", icon: flagOutline },
+];
 
 function parseMeasurement(raw: string) {
   const normalized = raw.trim();
@@ -116,7 +121,6 @@ export function DataStep({
           labelPlacement="stacked"
           className="fld"
           autocomplete="given-name"
-          placeholder={t("Tu nombre")}
           data-wl-field="name"
           value={draft.name}
           onIonInput={(event) => onChange({ name: event.detail.value ?? "" })}
@@ -148,14 +152,14 @@ export function DataStep({
       </fieldset>
 
       <div className="wl-field-grid">
-        {NUMERIC_FIELDS.map(({ field, label, example, icon }) => (
+        {NUMERIC_FIELDS.map(({ field, label, hint, icon }) => (
           <div className="field" key={field} style={{ minWidth: 0 }}>
             <IonInput
               type="text"
               inputmode={field === "age" ? "numeric" : "decimal"}
               label={t(label)}
               labelPlacement="stacked"
-              placeholder={t("Ej. {value}", { value: example })}
+              helperText={hint && t(hint)}
               required
               className={
                 invalidField === field ? "fld ion-invalid ion-touched" : "fld"

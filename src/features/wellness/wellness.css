@@ -355,7 +355,6 @@
 .screen .wl-wizard ion-input.fld {
   --background: var(--wellness-surface);
   --color: var(--wellness-navy);
-  --placeholder-color: var(--wellness-muted);
   --highlight-color-focused: var(--step-color);
   min-height: 68px;
   background: var(--wellness-surface);
@@ -368,6 +367,11 @@
   box-shadow: 0 0 0 3px var(--step-tint);
 }
 .screen .wl-wizard ion-input.ion-invalid.ion-touched { border-color: var(--wellness-error); }
+.wl-wizard ion-input.fld .helper-text {
+  color: var(--wellness-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
 .wl-wizard ion-input ion-icon { color: var(--step-ink); font-size: 18px; }
 .wl-wizard .wl-option-ico { background: var(--step-tint); color: var(--step-ink); }
 .wl-wizard .wl-option.is-selected,

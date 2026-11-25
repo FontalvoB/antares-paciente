@@ -97,12 +97,20 @@ async function runJourney(browser, url, width) {
     await button("Bajar de peso").click();
     await next();
     await step(2, "Tus datos");
-    await expect(field("name")).toHaveAttribute("placeholder", "Tu nombre");
-    await expect(field("targetWeightKg")).toHaveAttribute("placeholder", "Ej. 68");
+    await expect(page.locator(".wl-content input[placeholder]:not([placeholder=''])")).toHaveCount(0);
+    await expect(field("name")).toHaveValue("Ana Prueba");
+    await expect(field("heightCm")).toHaveValue("");
+    await expect(field("age")).toHaveAccessibleDescription("En años completos.");
+    await expect(field("heightCm")).toHaveAccessibleDescription("1,65 m equivale a 165 cm.");
+    await button("Cambiar idioma a English").click();
+    await heading("Your data");
+    await expect(field("heightCm")).toHaveAccessibleDescription("1.65 m equals 165 cm.");
+    await button("Switch language to Español").click();
     await button("Femenino").click();
     for (const [name, value] of Object.entries({ age: 35, heightCm: 165, weightKg: 74, waistCm: 88 })) {
       await field(name).fill(String(value));
     }
+    await expect(field("heightCm")).toHaveAccessibleDescription("1,65 m equivale a 165 cm.");
     await assertLayout();
     // Simula «Continuar» después de que cambió el control, antes de que llegue el evento de Ionic.
     await field("targetWeightKg").evaluate((input) => {
