@@ -121,3 +121,7 @@
   min-block-size: 44px;
   min-inline-size: 44px;
 }
+
+.wellness-privacy-receipt {
+  overflow-wrap: anywhere;
+}
