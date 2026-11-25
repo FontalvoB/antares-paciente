@@ -175,7 +175,7 @@ describe("ObjectiveWizard (KAN-136)", () => {
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
       "Exercise safety",
     );
-    expect(screen.getByText("Consult your doctor first")).toBeTruthy();
+    expect(screen.getByText("Consult your health professional first")).toBeTruthy();
 
     next();
     expect(screen.getByRole("alert").textContent).toContain(

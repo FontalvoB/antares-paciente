@@ -1,3 +1,4 @@
+import english from "../../../i18n/en.json";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,14 +13,16 @@ vi.mock("../../../components/Screen", () => ({
   Screen: ({ children }: { children: ReactNode }) => <main>{children}</main>,
   Scroll: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
+const locale = vi.hoisted(() => ({ lang: "es" }));
 vi.mock("../../../i18n/I18nContext", () => ({
   useI18n: () => ({
-    lang: "es",
+    lang: locale.lang,
     t: (text: string, variables: Record<string, string> = {}) =>
-      Object.entries(variables).reduce((message, [key, value]) => message.replace("{" + key + "}", value), text),
+      Object.entries(variables).reduce((message, [key, value]) => message.replace("{" + key + "}", value), (locale.lang === "en" ? (english as Record<string, string>)[text] ?? text : text)),
   }),
 }));
 vi.mock("@ionic/react", () => ({
+  IonNote: ({ children }: { children: ReactNode }) => <span role="note">{children}</span>,
   IonBadge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
   IonIcon: () => null,
   IonButton: ({ children, onClick, type = "button", disabled, ...props }: ComponentProps<"button">) =>
@@ -55,6 +58,7 @@ vi.mock("@ionic/react", () => ({
 }));
 
 beforeEach(() => {
+  locale.lang = "es";
   localStorage.clear();
   navigate.mockClear();
 });
@@ -69,12 +73,20 @@ function dayAgo(days: number) {
 }
 
 describe("WellnessVitals", () => {
+  it.each([["es", "Tus registros son informativos y no reemplazan la orientación de un profesional de la salud. Consúltalo ante cualquier duda."], ["en", "Your records are informational and do not replace a health professional's guidance. Check with one if you have any doubt."]] as const)(
+    "muestra el aviso permanente en %s",
+    (lang, expected) => {
+    locale.lang = lang;
+    render(<WellnessVitals />);
+      expect(screen.getByRole("note").textContent).toBe(expected);
+    },
+  );
   it("ofrece ocho mediciones, el aviso permanente y volver al protocolo", () => {
     render(<WellnessVitals />);
     const metrics = within(screen.getByRole("region", { name: "Mediciones" }));
     expect(metrics.getAllByRole("button")).toHaveLength(8);
     for (const metric of Object.values(VITAL_METRICS)) expect(metrics.getByText(metric.label)).toBeTruthy();
-    expect(screen.getByText(/no reemplazan la atención médica/)).toBeTruthy();
+    expect(screen.getByRole("note").textContent).toContain("orientación de un profesional de la salud");
     expect(history().getByText("Sin registros en este período.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Volver al protocolo" }));
     expect(navigate).toHaveBeenCalledWith("protocol");

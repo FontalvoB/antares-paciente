@@ -1,3 +1,4 @@
+import { persistRequestLanguage } from "../../../utils/requestLanguage";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -37,6 +38,14 @@ afterEach(() => {
 });
 
 describe("WellnessExercise", () => {
+  it.each([["es", "Contenido general de bienestar. Antes de empezar o cambiar tu rutina de ejercicio, consulta a un profesional de la salud. Si sientes dolor intenso o mareo, detén la actividad."], ["en", "General wellness content. Before starting or changing your exercise routine, check with a health professional. If you feel intense pain or dizziness, stop the activity."]] as const)(
+    "muestra el aviso permanente en %s",
+    (lang, expected) => {
+    persistRequestLanguage(lang);
+    renderExercise();
+      expect(screen.getByRole("note").textContent).toBe(expected);
+    },
+  );
   it("muestra las cuatro tarjetas del plan del día", () => {
     const { container } = renderExercise();
     const cards = container.querySelectorAll(".wx-list > li");
