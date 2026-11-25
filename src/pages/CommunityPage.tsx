@@ -234,13 +234,13 @@ const BRAND_ICONS = {
 const REDES: { icon: string; name: string; sub: string; bg: string }[] = [
   {
     icon: BRAND_ICONS.tiktok,
-    name: "TikTok Copp Adresd",
+    name: "TikTok Agentic Wellness IA",
     sub: "@antaresbiohacking · 48.2K",
     bg: "linear-gradient(135deg,#010101,#232028)",
   },
   {
     icon: BRAND_ICONS.instagram,
-    name: "Instagram Copp Adresd",
+    name: "Instagram Agentic Wellness IA",
     sub: "@antares.biohacking · 23.7K",
     bg: "linear-gradient(135deg,#F58529,#DD2A7B 52%,#8134AF 78%,#515BD4)",
   },
@@ -252,14 +252,14 @@ const REDES: { icon: string; name: string; sub: string; bg: string }[] = [
   },
   {
     icon: BRAND_ICONS.youtube,
-    name: "YouTube Copp Adresd",
+    name: "YouTube Agentic Wellness IA",
     sub: "SUMMITs · Clases · 8.1K",
     bg: "linear-gradient(135deg,#FF0000,#C4302B)",
   },
   {
     icon: BRAND_ICONS.whatsapp,
     name: "WhatsApp Miami",
-    sub: "Grupo COPP-ADRESD · 284",
+    sub: "Grupo Agentic Wellness IA · 284",
     bg: "linear-gradient(135deg,#25D366,#128C7E)",
   },
 ];
@@ -905,7 +905,7 @@ export function CommunityPage() {
                 {tab === "feed" && (
                   <>
                     <div className="com-feed-header" ref={heroRef}>
-                      <div className="com-feed-heading"><div className="com-brand-lockup"><span className="com-brand-mark"><img src={communityLogo} alt="COPP-ADRESD" /></span><div><span className="com-feed-eyebrow">COPP-ADRESD</span><h1>{t("Comunidad")}</h1></div></div><IonButton className="com-create-btn" onClick={() => setComposeOpen(true)}><IonIcon icon={createOutline} slot="start" />{t("Publicar")}</IonButton></div>
+                      <div className="com-feed-heading"><div className="com-brand-lockup"><span className="com-brand-mark"><img src={communityLogo} alt="Agentic Wellness IA" /></span><div><span className="com-feed-eyebrow">Agentic Wellness IA</span><h1>{t("Comunidad")}</h1></div></div><IonButton className="com-create-btn" onClick={() => setComposeOpen(true)}><IonIcon icon={createOutline} slot="start" />{t("Publicar")}</IonButton></div>
                       <IonButton fill="clear" onClick={() => { setBlockedUsersOpen(true); retryBlockedProfiles(); }} style={{ minHeight: 44, fontSize: 13 }}>
                         <IonIcon icon={banOutline} slot="start" />{t('Usuarios bloqueados')}
                       </IonButton>
@@ -993,7 +993,7 @@ export function CommunityPage() {
                           tone="pur"
                           title={t("La comunidad está en silencio por ahora")}
                           hint={t(
-                            "Sé la primera persona en compartir algo con Copp Adresd.",
+                            "Sé la primera persona en compartir algo con Agentic Wellness IA.",
                           )}
                         />
                       ) : (
@@ -1274,7 +1274,7 @@ export function CommunityPage() {
                       <div className="com-banner-main">
                         <div className="com-banner-title">
                           <IonIcon icon={chatbubblesOutline} />{" "}
-                          {t("Chat Copp Adresd")}
+                          {t("Chat Agentic Wellness IA")}
                         </div>
                         <div className="com-banner-sub">
                           <IonIcon icon={peopleOutline} />{" "}
@@ -1496,7 +1496,7 @@ export function CommunityPage() {
                     <div className="com-discover-header">
                       <div className="com-banner-main">
                         <div className="com-banner-title">
-                          <IonIcon icon={peopleOutline} /> {t("Amigos Copp Adresd")}
+                          <IonIcon icon={peopleOutline} /> {t("Amigos Agentic Wellness IA")}
                         </div>
                         <div className="com-banner-sub">
                           <IonIcon icon={sparklesOutline} />{" "}
@@ -1509,7 +1509,7 @@ export function CommunityPage() {
                         mode="md"
                         className="com-searchbar"
                         value={q}
-                        placeholder={t("Buscar amigos en Copp Adresd…")}
+                        placeholder={t("Buscar amigos en Agentic Wellness IA…")}
                         onIonInput={(e) => {
                           const v = e.detail.value ?? "";
                           setQ(v);
@@ -1756,7 +1756,7 @@ export function CommunityPage() {
                       <div className="com-banner-main">
                         <div className="com-banner-title">
                           <IonIcon icon={shareSocialOutline} />{" "}
-                          {t("Redes Copp Adresd")}
+                          {t("Redes Agentic Wellness IA")}
                         </div>
                         <div className="com-banner-sub">
                           <IonIcon icon={globeOutline} />{" "}
@@ -1806,7 +1806,7 @@ export function CommunityPage() {
           <div className={`com-topbar ${topbarOn ? "on" : ""}`} aria-hidden>
             <div className="com-topbar-title">
               <IonIcon icon={globeOutline} style={{ fontSize: 16 }} />
-              {t("Comunidad Copp Adresd")}
+              {t("Comunidad Agentic Wellness IA")}
             </div>
           </div>
 

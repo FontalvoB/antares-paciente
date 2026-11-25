@@ -40,7 +40,7 @@ import {
   waterOutline,
 } from "ionicons/icons";
 import { WatchIcon3D } from "../components/icons3d";
-import logoIcon from "../assets/LogoIndividual.png";
+import { BrandWordmark } from "../components/BrandWordmark";
 import { EcgTrace } from "../components/EcgTrace";
 import {
   MeasureFocusOverlay,
@@ -811,19 +811,7 @@ export function WearablePage() {
   return (
     <Screen className="wearable-reference">
       <Scroll className="wearable-scroll">
-        <div className="wearable-brand hm-wordmark" aria-label="COPP-ADRESD">
-          <img src={logoIcon} alt="" />
-          <div>
-            <strong>
-              COPP-ADRESD<sup>®</sup>
-            </strong>
-            <small>
-              COMPREHENSIVE OBESITY
-              <br />
-              PREVENTION PROGRAM
-            </small>
-          </div>
-        </div>
+        <BrandWordmark className="wearable-brand hm-wordmark" />
         <PageHeader
           kicker={t("Bienestar en vivo")}
           title={t("Accesorio de bienestar")}

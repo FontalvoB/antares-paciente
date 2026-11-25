@@ -40,6 +40,11 @@ let nextFailure: GenerationArtifact | null = null;
 // Permite mostrar el fallo y reintentar incluso si el dispositivo bloquea la escritura.
 let unsavedJob: GenerationJob | null = null;
 
+export function resetWellnessGeneration(): void {
+  unsavedJob = null;
+  nextFailure = null;
+}
+
 function readJob(): GenerationJob | null {
   if (unsavedJob) return unsavedJob;
   try {

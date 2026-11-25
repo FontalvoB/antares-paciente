@@ -14,6 +14,7 @@ import { useApp } from "./AppContext";
 import { getAccessToken, onSessionInvalid } from "../utils/authApi";
 import { sessionUserId } from "../utils/sessionIdentity";
 import { HEALTH_ENABLED } from "../utils/features";
+import { readWellnessConsent, requireWellnessConsent } from "../features/wellness/privacy/privacy-consent-store";
 
 const RESUME_THROTTLE_MS = 2_000;
 const saveErrorCodes = ["save-failed", "save-unavailable", "save-rejected"] as const;
@@ -26,6 +27,7 @@ function permissionRequestsFor(key: string | null) {
 
 function useHealthSession(userId: string | null, active: boolean) {
   const queryClient = useQueryClient();
+  const { navigate } = useApp();
   const source = healthSource();
   const key = userId && source ? `copp.health-read-v1.${source}.${userId}` : null;
   const [permissionRequests, setPermissionRequests] = useState(() => permissionRequestsFor(key));
@@ -58,6 +60,12 @@ function useHealthSession(userId: string | null, active: boolean) {
   const sync = useCallback(async (mode: "request" | "manual" | "open" | "resume" | "retry" = "manual") => {
     const now = new Date();
     if (pending.current || (mode === "resume" && now.getTime() - lastAttempt.current < RESUME_THROTTLE_MS)) return;
+    const hasConsent = () => source !== "apple-health" || Boolean(readWellnessConsent("apple-health", userId ?? ""));
+    if (source === "apple-health" && mode === "request" && !requireWellnessConsent(
+      "apple-health",
+      userId ?? "",
+      () => navigate("wellness-privacy"),
+    )) return;
     const abort = new AbortController();
     controller.current = abort;
     const current = () => !abort.signal.aborted;
@@ -71,6 +79,12 @@ function useHealthSession(userId: string | null, active: boolean) {
       if (!current()) return;
       setAvailability(status.availability);
       if (status.availability !== "available") throw new HealthError(status.availability);
+      if (!hasConsent()) {
+        setPermission("not-requested");
+        setSummary([]);
+        setLastSync(null);
+        return;
+      }
       if (mode === "request") {
         try {
           await requestHealthPermissions();
@@ -93,7 +107,7 @@ function useHealthSession(userId: string | null, active: boolean) {
       if (access === "denied") throw new HealthError("permission-denied");
       const from = recentHealthStart(now);
       const samples = await readHealthData(from, now, status);
-      if (!current()) return;
+      if (!current() || !hasConsent()) return;
       const days = summarizeHealthData(samples, from, now);
       if (!days.length) throw new HealthError("no-data");
       setSummary(days);
@@ -103,7 +117,7 @@ function useHealthSession(userId: string | null, active: boolean) {
         if (!days.some(day => day.date === date)) saveErrors.current.delete(date);
       }
       for (const day of days) {
-        if (!current()) return;
+        if (!current() || !hasConsent()) return;
         if (mode === "retry" && saveErrors.current.get(day.date) !== "save-failed") continue;
         const input = healthDeviceMetrics(day);
         if (!input) {
@@ -158,7 +172,7 @@ function useHealthSession(userId: string | null, active: boolean) {
         setSyncing(false);
       }
     }
-  }, [queryClient, key, source, userId]);
+  }, [queryClient, key, source, userId, navigate]);
 
   useEffect(() => {
     if (active) void sync("open");
@@ -177,6 +191,11 @@ function useHealthSession(userId: string | null, active: boolean) {
   }, [active, source, sync]);
 
   const openSettings = async () => {
+    if (source === "apple-health" && !requireWellnessConsent(
+      "apple-health",
+      userId ?? "",
+      () => navigate("wellness-privacy"),
+    )) return;
     try { await openHealthSettings(); }
     catch { setError("settings-failed"); }
   };

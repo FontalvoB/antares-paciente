@@ -16,6 +16,6 @@ export function achievementCopy(item: EarnedAchievement, t: T) {
   return {
     title,
     message,
-    caption: `${title} ✨\n${message}\n#CoppAdresd #MiConstancia`,
+    caption: `${title} ✨\n${message}\n#AgenticWellnessIA #MiConstancia`,
   };
 }

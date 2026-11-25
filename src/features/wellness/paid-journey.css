@@ -1,0 +1,22 @@
+.journey-page {
+  background: linear-gradient(165deg, var(--wellness-bg-start), var(--wellness-bg-end));
+}
+.journey-scroll {
+  padding: calc(10px + env(safe-area-inset-top, 0px)) clamp(12px, 4vw, 24px) calc(24px + env(safe-area-inset-bottom, 0px));
+  scrollbar-gutter: stable;
+}
+.journey-scroll > * {
+  max-width: 660px;
+  margin-inline: auto;
+}
+.journey-status {
+  padding: 14px;
+  border: 1px solid var(--wellness-border);
+  border-radius: 20px;
+  background: var(--wellness-surface);
+  color: var(--wellness-navy);
+}
+
+.journey-status ion-button {
+  min-height: 44px;
+}

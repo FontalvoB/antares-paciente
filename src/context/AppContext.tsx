@@ -140,6 +140,7 @@ interface AppState {
   weekCheckins: boolean[];
   pointsToday: number;
   pointsTotal: number;
+  vitalsReturnTo: "protocol" | "prof";
   navigate: (
     s: NavigationTarget,
     sourceSection?: MedicalSourceSectionId,
@@ -323,8 +324,8 @@ function createWelcomeMessage(
     // que el paciente tiene seleccionado (consistencia con chat/voz).
     text:
       lang === "en"
-        ? `Hi${firstName ? ` ${firstName}` : ""} 👋 I'm your Copp Adresd health agent. How can I help you today?`
-        : `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Copp Adresd. ¿En qué te puedo ayudar hoy?`,
+        ? `Hi${firstName ? ` ${firstName}` : ""} 👋 I'm your Agentic Wellness IA health agent. How can I help you today?`
+        : `Hola${firstName ? ` ${firstName}` : ""} 👋 Soy tu agente de salud Agentic Wellness IA. ¿En qué te puedo ayudar hoy?`,
     time: nowLabel(lang),
   };
 }
@@ -358,6 +359,9 @@ export function AppProvider({
   const catalogLanguage = useRef(lang);
   const [flow, setFlow] = useState<Flow>("login");
   const [screen, setScreen] = useState<Screen>("home");
+  const [vitalsReturnTo, setVitalsReturnTo] = useState<"protocol" | "prof">(
+    "protocol",
+  );
   const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = useCallback((message: string, kind: ToastKind = "ok") => {
     setToast({ id: Date.now(), message, kind });
@@ -397,7 +401,7 @@ export function AppProvider({
     createWelcomeMessage(defaultUser.nombre, lang),
   ]);
   const [wearableConnected, setWatchConnected] = useState(false);
-  const [wearableName, setWatchName] = useState("Copp Adresd Wearable");
+  const [wearableName, setWatchName] = useState("Agentic Wellness IA Wearable");
   // TODO: Remove after full migration — legacy in-memory program state
   const [program, setProgram] = useState<ProgramDay>({
     podcast: false,
@@ -495,7 +499,7 @@ export function AppProvider({
     setSosActive(false);
     setToast(null);
     setWatchConnected(false);
-    setWatchName("Copp Adresd Wearable");
+    setWatchName("Agentic Wellness IA Wearable");
     setPointsToday(0);
     setPointsTotal(0);
     setProgram({
@@ -1388,15 +1392,23 @@ export function AppProvider({
       weekCheckins,
       pointsToday,
       pointsTotal,
+      vitalsReturnTo,
       dismissVitaWelcome: () => setVitaWelcomePending(false),
       navigate: (target) => {
         switch (target) {
+          case "wellness-vitals":
+            if (screen !== target)
+              setVitalsReturnTo(screen === "prof" ? "prof" : "protocol");
+            setScreen(target);
+            return;
           case "home":
           case "protocol":
           case "wellness-diet":
           case "wellness-exercise":
           case "wellness-goal":
           case "wellness-checkin":
+          case "wellness-privacy":
+          case "wellness-notifications":
           case "wellness-year":
           case "prof":
             setScreen(target);
@@ -1467,7 +1479,7 @@ export function AppProvider({
         setFlow("tests");
       },
       finishWellnessOnboarding: (u) => {
-        setUser(u);
+        setUser({ ...u, id: sessionUserId(getAccessToken()) ?? u.id });
         setFlow("app");
         setScreen("home");
       },
@@ -1667,6 +1679,7 @@ export function AppProvider({
       flow,
       screen,
       toast,
+      vitalsReturnTo,
       showToast,
       panicOpen,
       panicEntry,

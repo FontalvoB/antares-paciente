@@ -6,10 +6,10 @@ import {
   MotionConfig,
   useReducedMotion,
 } from "framer-motion";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./utils/queryClient";
-import { registerForPush, syncPushLanguage } from "./utils/pushNotifications";
+import { registerForPush } from "./utils/pushNotifications";
 import { AppProvider, useApp } from "./context/AppContext";
 import { LegalConsentProvider } from "./context/LegalConsentContext";
 import { AiDisclosureProvider } from "./context/AiDisclosureContext";
@@ -25,10 +25,13 @@ import { VoiceOverlay } from "./components/VoiceOverlay";
 import { VitaWelcome } from "./components/VitaWelcome";
 import { ToastHost } from "./components/ToastHost";
 import { OfflineBanner } from "./components/common/OfflineBanner";
-import { DailyProtocolReminder } from "./components/DailyProtocolReminder";
 import { LoginPage } from "./pages/LoginPage";
 import { ConsentPreviewPage } from "./pages/ConsentPreviewPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { getAccessToken } from "./utils/authApi";
+import { sessionUserId } from "./utils/sessionIdentity";
+import { WellnessJourneyPage } from "./pages/WellnessJourneyPage";
+import type { PaidGeneration } from "./features/wellness/generation/wellness-journey-api";
 import { TestsPage } from "./pages/TestsPage";
 import { WellnessHome } from "./features/wellness/home/WellnessHome";
 import { WellnessProtocol } from "./features/wellness/protocol/WellnessProtocol";
@@ -38,24 +41,39 @@ import { WellnessExercise } from "./features/wellness/exercise/WellnessExercise"
 import { WellnessCloseDay } from "./features/wellness/checkin/WellnessCloseDay";
 import { WellnessYearPage } from "./features/wellness/year/WellnessYearPage";
 import {
+  SensitiveDataScreen,
+  WellnessPrivacy,
+} from "./features/wellness/privacy/WellnessPrivacy";
+import {
+  readWellnessConsent,
+  wellnessPrivacyActor,
+} from "./features/wellness/privacy/privacy-consent-store";
+import { WellnessNotifications } from "./features/wellness/notifications/WellnessNotifications";
+import { WellnessReminderHost } from "./features/wellness/notifications/WellnessReminderHost";
+import { WellnessVitals } from "./features/wellness/vitals/WellnessVitals";
+import {
   checkinOwner,
   syncCheckins,
 } from "./features/wellness/checkin/checkin-store";
 import { ProfilePage } from "./pages/ProfilePage";
-import logoLetras from "./assets/LogoConLetras.png";
+import { BrandWordmark } from "./components/BrandWordmark";
 
 setupIonicReact({ mode: "ios" });
 
 const TRANSITION = { duration: 0.26, ease: [0.22, 1, 0.36, 1] } as const;
 
 function Router() {
-  const { flow, screen, authLoading } = useApp();
+  const { flow, screen, authLoading, user } = useApp();
   const reducedMotion = useReducedMotion();
+  const paidJourney =
+    import.meta.env.DEV &&
+    import.meta.env.VITE_WELLNESS_JOURNEY_DEMO === "true" &&
+    new URLSearchParams(window.location.search).get("wellnessJourney") === "1";
 
   if (authLoading) {
     return (
       <div className="screen auth auth-splash">
-        <img src={logoLetras} alt="COPP-ADRESD" className="auth-logo" />
+        <BrandWordmark className="auth-logo" />
         <IonSpinner
           name="crescent"
           color="primary"
@@ -67,7 +85,7 @@ function Router() {
 
   let content: ReactNode;
 
-  if (flow === "login") {
+  if (flow === "login" || (paidJourney && flow === "onboarding")) {
     content = <LoginPage />;
   } else if (flow === "onboarding") {
     content = <OnboardingPage />;
@@ -82,13 +100,38 @@ function Router() {
         content = <WellnessDiet />;
         break;
       case "wellness-goal":
-        content = <WellnessGoalPage />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessGoalPage />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-exercise":
-        content = <WellnessExercise />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessExercise />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-checkin":
-        content = <WellnessCloseDay />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessCloseDay />
+          </SensitiveDataScreen>
+        );
+        break;
+      case "wellness-privacy":
+        content = <WellnessPrivacy />;
+        break;
+      case "wellness-notifications":
+        content = <WellnessNotifications />;
+        break;
+      case "wellness-vitals":
+        content = (
+          <SensitiveDataScreen>
+            <WellnessVitals />
+          </SensitiveDataScreen>
+        );
         break;
       case "wellness-year":
         content = <WellnessYearPage />;
@@ -102,7 +145,7 @@ function Router() {
     }
   }
 
-  return (
+  const renderScreen = (generation?: PaidGeneration) => (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={flow === "app" ? `app-${screen}` : flow}
@@ -114,27 +157,44 @@ function Router() {
         }
         transition={reducedMotion ? { duration: 0 } : TRANSITION}
       >
-        {content}
+        {generation && screen === "home" ? (
+          <WellnessHome paidGeneration={generation} />
+        ) : (
+          content
+        )}
       </motion.div>
     </AnimatePresence>
   );
+  if (paidJourney && flow === "app") {
+    const accountId = sessionUserId(getAccessToken()) ?? user.id;
+    return accountId ? (
+      <WellnessJourneyPage key={accountId} userId={accountId}>
+        {renderScreen}
+      </WellnessJourneyPage>
+    ) : (
+      <LoginPage />
+    );
+  }
+
+  return renderScreen();
 }
 
 function Shell() {
-  const { user, flow, navigate } = useApp();
+  const { user, flow, navigate, authLoading } = useApp();
   const { lang } = useI18n();
-  const pushStarted = useRef(false);
   const wellnessOwner = checkinOwner(user);
+  const privacyActor = wellnessPrivacyActor(user);
 
   useEffect(() => {
     if (flow !== "app") return;
     const sync = () => {
-      void syncCheckins(wellnessOwner);
+      if (readWellnessConsent("sensitive-data", privacyActor))
+        void syncCheckins(wellnessOwner);
     };
     sync();
     window.addEventListener("online", sync);
     return () => window.removeEventListener("online", sync);
-  }, [flow, wellnessOwner]);
+  }, [flow, wellnessOwner, privacyActor]);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();
@@ -143,18 +203,13 @@ function Shell() {
   useTabletLayout();
 
   useEffect(() => {
-    if (flow !== "app" || pushStarted.current) return;
-    pushStarted.current = true;
+    if (flow !== "app" || !readWellnessConsent("notifications", privacyActor))
+      return;
     void registerForPush({
       language: lang,
       onOpenHome: () => navigate("home"),
     });
-  }, [flow, lang, navigate]);
-
-  // Actualiza el token ya conocido al cambiar idioma/cuenta sin pedir permisos de nuevo.
-  useEffect(() => {
-    if (flow === "app") void syncPushLanguage(lang);
-  }, [flow, lang, user.id]);
+  }, [flow, lang, navigate, privacyActor]);
 
   return (
     <div className="app-stage">
@@ -164,7 +219,9 @@ function Shell() {
         <ToastHost />
         <VitaWelcome />
         <OfflineBanner />
-        {flow === "app" && <DailyProtocolReminder />}
+        {!authLoading && flow === "app" && (
+          <WellnessReminderHost key={wellnessOwner} />
+        )}
         {/* KAN-137: SOS global por encima de modales, teclado, video y sesión. */}
         <SosLayer>
           <SosQuickAccess />

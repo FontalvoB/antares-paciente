@@ -151,6 +151,23 @@ describe("getCoordinatesBestEffort — GPS best-effort (REQ-SOS-01/D6)", () => {
     expect(nativeLocation.request).toHaveBeenCalledWith({ permissions: ["location"] });
   });
 
+  it("la búsqueda al abrir SOS no muestra un permiso nativo o web", async () => {
+    nativeLocation.native = true;
+    nativeLocation.check.mockResolvedValue({ location: "prompt", coarseLocation: "prompt" });
+    expect((await getEmergencyLocation(false)).status).toBe("unavailable");
+    expect(nativeLocation.request).not.toHaveBeenCalled();
+    expect(nativeLocation.position).not.toHaveBeenCalled();
+
+    nativeLocation.native = false;
+    const getCurrentPosition = vi.fn();
+    vi.stubGlobal("navigator", {
+      geolocation: { getCurrentPosition },
+      permissions: { query: async () => ({ state: "prompt" }) },
+    });
+    expect((await getEmergencyLocation(false)).status).toBe("unavailable");
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+  });
+
   it("un fix fuera de CO/US queda disponible para el contacto, sin inventar país", async () => {
     nativeLocation.native = true;
     nativeLocation.check.mockResolvedValue({ location: "granted", coarseLocation: "granted" });

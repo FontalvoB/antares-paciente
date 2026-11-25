@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../../../utils/brand";
 import {
   IonBadge,
   IonButton,
@@ -35,6 +36,7 @@ import {
   GENERATION_ARTIFACTS,
   type GenerationInboxItem,
 } from "../generation/generation-store";
+import type { PaidGeneration } from "../generation/wellness-journey-api";
 import { useGeneration } from "../generation/useGeneration";
 import {
   getWellnessHomeData,
@@ -104,17 +106,23 @@ const INBOX_COPY = {
   readonly [string, string]
 >;
 
-export function WellnessHome() {
+export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGeneration }) {
   const { user, navigate, openVoice, openTests } = useApp();
   const { t, lang } = useI18n();
   const data = getWellnessHomeData(user?.nombre ?? "");
-  const { job, isRunning, retry } = useGeneration();
-  const failed = job
-    ? GENERATION_ARTIFACTS.filter((id) => job.artifacts[id].status === "failed")
-    : [];
-  const isReady =
-    job &&
-    GENERATION_ARTIFACTS.every((id) => job.artifacts[id].status === "ready");
+  const local = useGeneration(!paidGeneration);
+  const artifacts = paidGeneration?.job ?? local.job?.artifacts;
+  const failed = GENERATION_ARTIFACTS.filter((id) => artifacts?.[id].status === "failed");
+  const isRunning = GENERATION_ARTIFACTS.some((id) => {
+    const status = artifacts?.[id].status;
+    return status === "pending" || status === "running";
+  });
+  const isReady = GENERATION_ARTIFACTS.every((id) => artifacts?.[id].status === "ready");
+  const inbox = paidGeneration?.job.inbox.items ?? local.job?.inbox.map((item) => {
+    const [title, body] = INBOX_COPY[item.id];
+    return { ...item, title: t(title), body: t(body) };
+  });
+  const inboxStatus = artifacts?.inbox.status;
   const closed = loadCheckins(checkinOwner(user))[localISODate(new Date())];
   const number = new Intl.NumberFormat(lang === "en" ? "en-US" : "es-ES", {
     maximumFractionDigits: 0,
@@ -158,7 +166,7 @@ export function WellnessHome() {
       <Scroll className="wh-scroll">
         <header className="wh-hero">
           <div className="wh-hero-top">
-            <span className="wh-brand">Copp Adresd</span>
+            <span className="wh-brand">{BRAND_NAME}</span>
             <LanguageToggle />
           </div>
           <p className="wh-greeting">
@@ -195,7 +203,7 @@ export function WellnessHome() {
         >
           {isReady && t("Tu plan y tu bandeja están listos")}
         </div>
-        {job && (isRunning || failed.length > 0) && (
+        {artifacts && (isRunning || failed.length > 0) && (
           <section className="wh-card" aria-label={t("Preparación del plan")}>
             {isRunning && (
               <>
@@ -208,7 +216,10 @@ export function WellnessHome() {
                   aria-label={t("Progreso de la generación")}
                 >
                   {GENERATION_ARTIFACTS.map((id) => {
-                    const artifact = job.artifacts[id];
+                    const artifact = artifacts[id];
+                    const progress = "progress" in artifact ? artifact.progress : undefined;
+                    const ready = artifact.status === "ready";
+                    const failed = artifact.status === "failed";
                     const label = t(ARTIFACT_LABEL[id]);
                     return (
                       <IonItem key={id}>
@@ -216,11 +227,9 @@ export function WellnessHome() {
                           <div className="wh-generation-label">
                             <span>{label}</span>
                             <span>
-                              {artifact.status === "failed"
-                                ? t("Falló")
-                                : t("{percent}%", {
-                                    percent: number.format(artifact.progress),
-                                  })}
+                              {failed ? t("Falló") : ready ? t("Listo") : progress === undefined
+                                ? t("En preparación")
+                                : t("{percent}%", { percent: number.format(progress) })}
                             </span>
                           </div>
                           <IonProgressBar
@@ -229,7 +238,8 @@ export function WellnessHome() {
                                 ? "danger"
                                 : "primary"
                             }
-                            value={artifact.progress / 100}
+                            type={progress === undefined && !ready && !failed ? "indeterminate" : "determinate"}
+                            value={ready ? 1 : (progress ?? 0) / 100}
                             aria-label={label}
                           />
                         </div>
@@ -251,11 +261,12 @@ export function WellnessHome() {
                   fill="outline"
                   expand="block"
                   className="wh-secondary"
-                  disabled={isRunning}
-                  onClick={retry}
+                  disabled={isRunning || paidGeneration?.retrying}
+                  onClick={paidGeneration?.retry ?? local.retry}
                 >
                   {t("Reintentar")}
                 </IonButton>
+                {paidGeneration?.retryError && <p role="alert">{t("No pudimos reintentar la generación.")}</p>}
               </>
             )}
           </section>
@@ -371,18 +382,19 @@ export function WellnessHome() {
           <div className="wh-card-head">
             <h2 id="wh-inbox-title">{t("Bandeja")}</h2>
           </div>
-          {job?.artifacts.inbox.status === "running" ? (
+          {inboxStatus === "pending" || inboxStatus === "running" ? (
             <p className="wh-body">{t("Preparando tu bandeja")}</p>
-          ) : job?.inbox.length ? (
+          ) : inboxStatus === "failed" ? (
+            <p className="wh-body">{t("No pudimos preparar tu bandeja")}</p>
+          ) : inbox?.length ? (
             <IonList lines="full" className="wh-generation-list">
-              {job.inbox.map((item) => {
-                const [title, body] = INBOX_COPY[item.id];
+              {inbox.map((item) => {
                 const date = toLocalISODate(new Date(item.createdAt));
                 return (
                   <IonItem key={item.id}>
                     <IonLabel className="ion-text-wrap">
-                      <h3>{t(title)}</h3>
-                      <p>{t(body)}</p>
+                      <h3>{item.title}</h3>
+                      <p>{item.body}</p>
                       <time dateTime={item.createdAt}>
                         {formatDateForDisplay(date)}
                       </time>

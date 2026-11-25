@@ -6,7 +6,7 @@ import { getApiBaseUrl } from './apiBaseUrl'
 /**
  * Registro de notificaciones push (FCM) en ANTARES Paciente.
  *
- * - Pide permiso (iOS) y registra el dispositivo en Capacitor.
+ * - Pide permiso solo desde la activación explícita y registra en Capacitor.
  * - Con el token FCM obtenido, lo registra en el backend
  *   (POST /api/v1/notifications/devices). El endpoint exige JWT: mientras el
  *   login demo no esté conectado el registro puede devolver 401 — se degrada
@@ -21,6 +21,7 @@ import { getApiBaseUrl } from './apiBaseUrl'
 interface PushRegistrationOptions {
   language?: 'es' | 'en'
   onOpenHome?: () => void
+  canPrompt?: () => boolean
 }
 
 // Los listeners del plugin se registran una sola vez por sesión; el guard evita
@@ -91,7 +92,18 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
     await syncPushLanguage(currentLanguage)
     return
   }
+  let permission
+  try {
+    permission = options.canPrompt?.()
+      ? await PushNotifications.requestPermissions()
+      : await PushNotifications.checkPermissions()
+  } catch {
+    return
+  }
+  if (permission.receive !== 'granted') return
+  if (started || (options.canPrompt && !options.canPrompt())) return
   started = true
+  registrationEnabled = true
 
   void PushNotifications.addListener('registration', (token: Token) => {
     latestDevice = { token: token.value, platform }
@@ -109,11 +121,6 @@ export async function registerForPush(options: PushRegistrationOptions = {}): Pr
   })
 
   try {
-    const permission = await PushNotifications.requestPermissions()
-    if (permission.receive !== 'granted') {
-      console.log('[push] Permiso de notificaciones denegado')
-      return
-    }
     await PushNotifications.register()
     console.log('[push] Registro iniciado — el token llega por el evento "registration"')
   } catch (error) {

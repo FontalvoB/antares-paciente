@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WellnessCloseDay } from "../checkin/WellnessCloseDay";
@@ -78,7 +78,7 @@ describe("WellnessCloseDay", () => {
     fireEvent.click(close);
 
     const summary = await screen.findByRole("heading", { name: "Día cerrado" });
-    expect(document.activeElement).toBe(summary);
+    await waitFor(() => expect(document.activeElement).toBe(summary));
     expect(screen.getByText(EFFECT_COPY.gentleSleep)).toBeTruthy();
     expect(screen.getByText(EFFECT_COPY.hunger)).toBeTruthy();
     expect(screen.getByRole("status").textContent).toContain("Guardado en este dispositivo");

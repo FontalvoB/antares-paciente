@@ -144,7 +144,14 @@ function normalizePosition(position: LocationPosition): SosCoordinates | null {
   };
 }
 
-function requestCoordinates(): Promise<SosCoordinates | null> {
+async function requestCoordinates(allowPrompt: boolean): Promise<SosCoordinates | null> {
+  if (!allowPrompt && !Capacitor.isNativePlatform()) {
+    try {
+      if ((await navigator.permissions.query({ name: "geolocation" })).state !== "granted") return null;
+    } catch {
+      return null;
+    }
+  }
   if (locationFlight) return locationFlight;
   if (!hasGeolocation()) return Promise.resolve(null);
   const request = new Promise<SosCoordinates | null>((resolve) => {
@@ -162,7 +169,7 @@ function requestCoordinates(): Promise<SosCoordinates | null> {
         try {
           let permissions = await Geolocation.checkPermissions();
           if (settled) return;
-          if (permissions.location !== "granted" && permissions.coarseLocation !== "granted") {
+          if (allowPrompt && permissions.location !== "granted" && permissions.coarseLocation !== "granted") {
             permissions = await Geolocation.requestPermissions({ permissions: ["location"] });
           }
           if (settled) return;
@@ -196,7 +203,7 @@ function requestCoordinates(): Promise<SosCoordinates | null> {
  * La detección de país puede dar 8 s al permiso inicial. Ambas operaciones
  * comparten un único request nativo y nunca envían ubicación a un geocodificador.
  */
-export function getCoordinatesBestEffort(options: { timeoutMs?: number } = {}): Promise<SosCoordinates | null> {
+export function getCoordinatesBestEffort(options: { timeoutMs?: number; allowPrompt?: boolean } = {}): Promise<SosCoordinates | null> {
   const requested = options.timeoutMs ?? 2500;
   const timeout = Number.isFinite(requested) && requested > 0 ? Math.min(requested, POSITION_REQUEST_MS + 500) : 2500;
   return new Promise((resolve) => {
@@ -208,7 +215,7 @@ export function getCoordinatesBestEffort(options: { timeoutMs?: number } = {}): 
       resolve(coordinates);
     };
     const timer = window.setTimeout(() => done(null), timeout);
-    void requestCoordinates().then(done, () => done(null));
+    void requestCoordinates(options.allowPrompt ?? true).then(done, () => done(null));
   });
 }
 
@@ -218,8 +225,8 @@ export interface EmergencyLocationResult {
   status: "located" | "unavailable" | "unsupported";
 }
 
-export async function getEmergencyLocation(): Promise<EmergencyLocationResult> {
-  const coordinates = await getCoordinatesBestEffort({ timeoutMs: POSITION_REQUEST_MS });
+export async function getEmergencyLocation(allowPrompt = true): Promise<EmergencyLocationResult> {
+  const coordinates = await getCoordinatesBestEffort({ timeoutMs: POSITION_REQUEST_MS, allowPrompt });
   if (!coordinates) return { country: null, coordinates: null, status: "unavailable" };
   const country = countryFromCoordinates(coordinates);
   return { country, coordinates, status: country ? "located" : "unsupported" };

@@ -1,5 +1,5 @@
 import { IonIcon } from "@ionic/react";
-import { barbellOutline, fitnessOutline, trendingDownOutline } from "ionicons/icons";
+import { barbellOutline, checkmarkCircleOutline, fitnessOutline, trendingDownOutline } from "ionicons/icons";
 import { useT } from "../../../../../i18n/I18nContext";
 import type { ObjectiveDraft, WellnessGoal } from "../../../domain";
 
@@ -19,9 +19,10 @@ export const GOAL_OPTIONS = {
   },
 } as const;
 
-export function GoalStep({ draft, onChange }: {
+export function GoalStep({ draft, onChange, allowedGoals = Object.keys(GOAL_OPTIONS) as WellnessGoal[] }: {
   draft: ObjectiveDraft;
   onChange: (patch: Partial<ObjectiveDraft>) => void;
+  allowedGoals?: readonly WellnessGoal[];
 }) {
   const t = useT();
 
@@ -29,7 +30,7 @@ export function GoalStep({ draft, onChange }: {
     <fieldset style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <legend className="wl-sub">{t("Elige una meta para tu plan.")}</legend>
       <div className="wl-options">
-        {(Object.keys(GOAL_OPTIONS) as WellnessGoal[]).map((goal, index) => {
+        {allowedGoals.map((goal, index) => {
           const { label, icon } = GOAL_OPTIONS[goal];
           const selected = draft.goal === goal;
           return (
@@ -47,6 +48,7 @@ export function GoalStep({ draft, onChange }: {
               <span className="wl-option-body">
                 <b>{t(label)}</b>
               </span>
+              {selected && <IonIcon className="wl-option-selected" icon={checkmarkCircleOutline} aria-hidden="true" />}
             </button>
           );
         })}

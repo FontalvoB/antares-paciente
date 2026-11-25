@@ -122,6 +122,7 @@ const POINTS_PER_LEVEL = 500;
 const PLAN_KEY = "wellness.plan.v1";
 const PLAN_VERSIONS_KEY = "wellness.plan.versions.v1";
 const PROTOCOL_KEY = "wellness.protocol.v1";
+const PROTOCOL_CHANGE = "wellness-protocol-changed";
 const BATTERIES_KEY = "wellness.batteries.v1";
 let unsavedPlan: WellnessPlanSnapshot | null = null;
 
@@ -230,6 +231,7 @@ export function savePlanSnapshot(
     version: input.version ?? (previous ? previous.version + 1 : 1),
   }) as WellnessPlanSnapshot;
   unsavedPlan = write(PLAN_KEY, snapshot) ? null : snapshot;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(PROTOCOL_CHANGE));
   return snapshot;
 }
 
@@ -266,6 +268,7 @@ export function clearWellnessState(): void {
       /* noop */
     }
   }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(PROTOCOL_CHANGE));
 }
 
 export function loadProtocolHistory(): WellnessProtocolHistory {
@@ -273,7 +276,19 @@ export function loadProtocolHistory(): WellnessProtocolHistory {
 }
 
 export function saveProtocolHistory(history: WellnessProtocolHistory): void {
-  write(PROTOCOL_KEY, history);
+  if (write(PROTOCOL_KEY, history)) window.dispatchEvent(new Event(PROTOCOL_CHANGE));
+}
+
+export function subscribeProtocolHistory(refresh: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === PROTOCOL_KEY || event.key === PLAN_KEY || event.key === null) refresh();
+  };
+  window.addEventListener(PROTOCOL_CHANGE, refresh);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(PROTOCOL_CHANGE, refresh);
+    window.removeEventListener("storage", onStorage);
+  };
 }
 
 export function loadBatteriesCompleted(): number {
