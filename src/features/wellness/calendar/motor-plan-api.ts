@@ -13,7 +13,17 @@ export const MOTOR_PLAN_STATE = {
   locked: "Plan bloqueado",
 } as const;
 
+export interface MotorNutritionTargets {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number;
+  waterMl: number;
+}
+
 export interface MotorDay {
+  nutrition?: MotorNutritionTargets;
   today: number;
   todayLocalDate: string;
   timeZoneId?: string;

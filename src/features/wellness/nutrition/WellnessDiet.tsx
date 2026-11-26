@@ -10,6 +10,7 @@ import { analyzeFoodImage } from "../../../utils/foodAiApi";
 import type { FoodAnalysisResult } from "../../../utils/foodAiApi";
 import { getWellnessHomeData, localISODate } from "../state/wellness-home-store";
 import { checkinHistory, checkinOwner } from "../checkin/checkin-store";
+import { useMotorDay } from "../calendar/useMotorDay";
 import { dailyEffects, EFFECT_COPY } from "../checkin/close-day";
 import { buildDietDay, nextDish, sumMacros } from "./diet-plan";
 import type { DietMacros } from "./diet-plan";
@@ -96,6 +97,10 @@ function WellnessDietDay({ today }: { today: Date }) {
   const { user, navigate } = useApp();
   const { t, lang } = useI18n();
   const home = getWellnessHomeData(user?.nombre ?? "", today);
+  const motor = useMotorDay();
+  const targets = motor.kind === "ready" ? motor.day.nutrition : undefined;
+  const displayDay = motor.kind === "ready" ? motor.day.today : motor.kind === "legacy" ? home.day : null;
+  const legacy = motor.kind === "legacy";
   const prefs = readDietPlanDetails();
   const [log, setLog] = useState(() => readDietDay(today, home.plan.startDate));
   const [saveError, setSaveError] = useState(false);
@@ -114,7 +119,9 @@ function WellnessDietDay({ today }: { today: Date }) {
   const { nutrition, messages } = dailyEffects(localISODate(today), checkinHistory(checkinOwner(user)), home.day);
   const autoSimple = log.autoSimple || nutrition.simpleMenu;
   const simplified = log.manualSimple || autoSimple;
-  const plan = buildDietDay({ ...home.plan, weightKg: prefs.weightKg }, home.day, prefs, log.choices, simplified);
+  const plan = buildDietDay({ ...home.plan, weightKg: prefs.weightKg, ...targets },
+    displayDay ?? home.day, prefs, log.choices, simplified);
+  const waterGoal = targets?.waterMl ?? (legacy ? plan.waterMl : null);
   const eaten = Object.values(log.eaten);
   const consumed = sumMacros(eaten.map((meal) => meal.values));
   const measuredFiber = eaten.flatMap(({ values }) =>
@@ -186,7 +193,7 @@ function WellnessDietDay({ today }: { today: Date }) {
               <IonIcon icon={arrowBackOutline} slot="icon-only" aria-hidden="true" />
             </IonButton>
             <div>
-              <p className="wp-eyebrow">{t("Día {day}", { day: format(home.day) })}</p>
+              {displayDay !== null && <p className="wp-eyebrow">{t("Día {day}", { day: format(displayDay) })}</p>}
               <h1 className="wp-title">{t("Dieta de hoy")}</h1>
             </div>
           </div>
@@ -197,9 +204,16 @@ function WellnessDietDay({ today }: { today: Date }) {
           <section className="wp-card wl-diet-summary">
             <h2>{t("Resumen del día")}</h2>
             <p className="wl-diet-energy">{energy(plan.total.kcal)}</p>
-            <p>{t("Meta diaria: {energy}", { energy: energy(home.plan.kcal) })}</p>
-            <p>{macros(plan.total)}</p>
-            <p>{t("Meta de fibra: {fiber}", { fiber: grams(plan.fiberG) })}</p>
+            {targets || legacy ? (
+              <>
+                <p>{t("Meta diaria: {energy}", { energy: energy(targets?.kcal ?? home.plan.kcal) })}</p>
+                <p>{macros(targets ?? plan.total)}</p>
+                <p>{t("Meta de fibra: {fiber}", { fiber: grams(targets?.fiberG ?? plan.fiberG) })}</p>
+              </>
+            ) : (
+              <p role="status">{motor.kind === "loading" ? t("Consultando el plan…")
+                : motor.kind === "locked" ? t("Plan bloqueado") : t("Día del plan no disponible")}</p>
+            )}
             <div className="wl-diet-log" role="status">
               <strong>{t("{count} de 4 comidas registradas", { count: format(eaten.length) })}</strong>
               {eaten.length > 0 && <p>{energy(consumed.kcal)} · {macros(consumed)}</p>}
@@ -213,13 +227,17 @@ function WellnessDietDay({ today }: { today: Date }) {
 
           <section className="wp-card wl-diet-water">
             <h2><IonIcon icon={waterOutline} aria-hidden="true" /> {t("Agua de hoy")}</h2>
-            <p role="status">{t("{amount} de {goal} ml", {
-              amount: format(log.waterMl), goal: format(plan.waterMl),
-            })}</p>
-            <IonProgressBar
-              aria-label={t("Progreso de agua")}
-              value={plan.waterMl > 0 ? Math.min(1, log.waterMl / plan.waterMl) : 0}
-            />
+            {waterGoal !== null && (
+              <>
+                <p role="status">{t("{amount} de {goal} ml", {
+                  amount: format(log.waterMl), goal: format(waterGoal),
+                })}</p>
+                <IonProgressBar
+                  aria-label={t("Progreso de agua")}
+                  value={waterGoal > 0 ? Math.min(1, log.waterMl / waterGoal) : 0}
+                />
+              </>
+            )}
             <IonButton fill="outline" onClick={() => update(() => addWaterServing(today))}>
               {t("+250 ml")}
             </IonButton>
