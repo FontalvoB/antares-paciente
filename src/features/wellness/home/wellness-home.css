@@ -122,3 +122,6 @@
 .wh-screen .wh-add::part(native) { min-height: 38px; }
 
 .wh-module-art { display: grid; place-items: center; width: 56px; flex-shrink: 0; }
+
+.wh-adjustments { padding-inline-start: 1.25rem; list-style: disc; }
+.wh-adjustments li + li { margin-block-start: .35rem; }

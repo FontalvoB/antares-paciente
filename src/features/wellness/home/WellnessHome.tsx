@@ -189,6 +189,14 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
           {motor.kind === "ready" && motor.stale && <p role="status">{t("No se pudo actualizar el plan.")}</p>}
         </div>
       )}
+      {syncedDay?.why && syncedDay.why.length > 0 && (
+        <section className="wh-card" aria-labelledby="wh-adjustments-title">
+          <div className="wh-card-head"><h2 id="wh-adjustments-title">{t("Por qué cambió tu plan")}</h2></div>
+          <ul className="wh-body wh-adjustments">
+            {syncedDay.why.map((reason) => <li key={reason.en}>{lang === "en" ? reason.en : reason.es}</li>)}
+          </ul>
+        </section>
+      )}
       <section className="wh-task-list" aria-label={t("Actividades del día")}>
         {tasks.map(task => <IonButton key={task.id} fill="clear" className="wh-task" onClick={task.action}>
           <IonIcon className="wh-task-icon" icon={task.icon} aria-hidden="true" />

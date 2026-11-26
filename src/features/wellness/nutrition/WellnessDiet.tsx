@@ -102,6 +102,7 @@ function WellnessDietDay({ today }: { today: Date }) {
   const displayDay = motor.kind === "ready" ? motor.day.today : motor.kind === "legacy" ? home.day : null;
   const legacy = motor.kind === "legacy";
   const serverMenu = motor.kind === "ready" ? motor.day.mealPlan : undefined;
+  const lighterDinner = motor.kind === "ready" && motor.day.lighterDinner === true;
   const localPrefs = readDietPlanDetails();
   const prefs = serverMenu ?? localPrefs;
   const [log, setLog] = useState(() => readDietDay(today, home.plan.startDate));
@@ -118,8 +119,8 @@ function WellnessDietDay({ today }: { today: Date }) {
     if (phase !== "capture") modalTitle.current?.focus();
   }, [phase]);
 
-  const { nutrition, messages } = dailyEffects(localISODate(today), checkinHistory(checkinOwner(user)), home.day);
-  const autoSimple = serverMenu?.simplified ?? (legacy && (log.autoSimple || nutrition.simpleMenu));
+  const localEffects = legacy ? dailyEffects(localISODate(today), checkinHistory(checkinOwner(user)), home.day) : null;
+  const autoSimple = serverMenu?.simplified ?? (legacy && (log.autoSimple || localEffects?.nutrition.simpleMenu === true));
   const simplified = autoSimple || (legacy && log.manualSimple);
   const legacyPlan = legacy ? buildDietDay({ ...home.plan, weightKg: localPrefs.weightKg },
     home.day, prefs, log.choices, simplified) : null;
@@ -270,15 +271,15 @@ function WellnessDietDay({ today }: { today: Date }) {
             </button>
             {simplified && (
               <p role="status">
-                {(serverMenu?.simplified || nutrition.simpleMenu) ? t(EFFECT_COPY.simpleMenu) : log.autoSimple
+                {(serverMenu?.simplified || localEffects?.nutrition.simpleMenu) ? t(EFFECT_COPY.simpleMenu) : log.autoSimple
                   ? t("El menú tiene menos opciones porque registraste menos del 60 % de las comidas en cada uno de los dos días anteriores.")
                   : t("El menú tiene menos opciones para que sea más fácil elegir.")}
               </p>
             )}
           </section>}
 
-          {nutrition.blockCuts && (
-            <p className="wp-card">{t(messages.includes(EFFECT_COPY.dizziness) ? EFFECT_COPY.dizziness : EFFECT_COPY.hunger)}</p>
+          {localEffects?.nutrition.blockCuts && (
+            <p className="wp-card">{t(localEffects.messages.includes(EFFECT_COPY.dizziness) ? EFFECT_COPY.dizziness : EFFECT_COPY.hunger)}</p>
           )}
           {saveError && !activeMeal && <p role="alert">{t("No se pudo guardar el registro. Inténtalo de nuevo.")}</p>}
 
@@ -294,7 +295,7 @@ function WellnessDietDay({ today }: { today: Date }) {
                   <h2 id={`wl-meal-${meal.id}`}>{name}</h2>
                   {entry && <span className="wp-done"><IonIcon icon={checkmarkCircle} aria-hidden="true" /> {t("Registrada")}</span>}
                 </div>
-                {meal.id === "dinner" && nutrition.earlierDinner && <p>{t(EFFECT_COPY.dinner)}</p>}
+                {meal.id === "dinner" && (lighterDinner || localEffects?.nutrition.earlierDinner) && <p>{t(EFFECT_COPY.dinner)}</p>}
                 {confirmedPhoto ? (
                   <p>{t("Registro confirmado")}{confirmedPhoto.grams !== null && <> · {grams(confirmedPhoto.grams)}</>}</p>
                 ) : (
