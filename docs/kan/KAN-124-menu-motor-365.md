@@ -2,7 +2,9 @@
 
 Dieta de hoy solicita `/api/v1/people/me/plan?includeMenu=true` y muestra los
 platos, porciones, preferencias y modo simplificado recibidos del motor.
-El calendario sin menú sigue sirviendo a las demás pantallas. La meta de
+El calendario sin menú sigue sirviendo a las demás pantallas. Si existe
+consentimiento de datos sensibles, la misma consulta también puede solicitar
+la sincronización de KAN-153. La meta de
 nutrición no cambia al elegir otro plato. Una elección se guarda localmente
 con el registro del día, igual que antes, y al reabrir se verifica que siga
 disponible y que la combinación mantenga las kcal y los macros dentro de

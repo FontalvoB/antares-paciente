@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { loadCheckins, saveCheckin, syncCheckins } from "../checkin/checkin-store";
+import { checkinHistory, loadCheckins, motorCheckinOwner, saveCheckin, syncCheckins } from "../checkin/checkin-store";
 import type { DailyCheckin } from "../checkin/close-day";
 import { deleteWellnessData } from "../privacy/privacy-consent-store";
 
@@ -75,5 +75,30 @@ describe("check-in por fecha local", () => {
     await saveCheckin(owner, date, input, beforeMidnight);
     await saveCheckin(owner, "2026-11-25", input, afterMidnight);
     expect(Object.keys(loadCheckins(owner))).toEqual([date, "2026-11-25"]);
+  });
+
+  it("retries the read of a conflict without sending the closure again", async () => {
+    const personId = "linked-person";
+    const scope = motorCheckinOwner(owner, personId);
+    const record = await saveCheckin(scope, date, input, beforeMidnight, 7, personId);
+    const send = vi.fn().mockResolvedValue("conflict");
+    const reconcile = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(true);
+    await syncCheckins(scope, send, reconcile);
+    expect(loadCheckins(scope)["motor:7"]).toEqual({ ...record, status: "conflict" });
+    await syncCheckins(scope, send, reconcile);
+    await syncCheckins(scope, send, reconcile);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(reconcile).toHaveBeenCalledTimes(2);
+    expect(loadCheckins(scope)["motor:7"]).toMatchObject({ status: "conflict", confirmedConflict: true });
+  });
+
+  it("preserves unbound records and separates demo and real histories", async () => {
+    const scope = motorCheckinOwner(owner, "linked-person");
+    await saveCheckin(owner, date, input, beforeMidnight, 7);
+    await saveCheckin(owner, date, { ...input, pain: 3 }, beforeMidnight);
+    await saveCheckin(scope, date, { ...input, pain: 8 }, beforeMidnight, 7, "linked-person");
+    expect(checkinHistory(owner)[date].pain).toBe(3);
+    expect(loadCheckins(owner)["motor:7"].status).toBe("pending");
+    expect(loadCheckins(scope)["motor:7"].input.pain).toBe(8);
   });
 });

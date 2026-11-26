@@ -5610,5 +5610,11 @@
   "Plan en mantenimiento": "Plan en mantenimiento",
   "Plan bloqueado": "Plan bloqueado",
   "Consultando el plan…": "Consultando el plan…",
-  "Día del plan no disponible": "Día del plan no disponible"
+  "Día del plan no disponible": "Día del plan no disponible",
+  "Última sincronización: {time}": "Última sincronización: {time}",
+  "Motor {engine} · Parámetros {params}": "Motor {engine} · Parámetros {params}",
+  "No se pudo actualizar el plan.": "No se pudo actualizar el plan.",
+  "Sincronización del Motor 365": "Sincronización del Motor 365",
+  "Tu cuenta no tiene un plan vinculado.": "Tu cuenta no tiene un plan vinculado.",
+  "Se conservó el cierre que ya estaba registrado en el servidor.": "Se conservó el cierre que ya estaba registrado en el servidor."
 }

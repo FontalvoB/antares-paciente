@@ -97,7 +97,7 @@ function WellnessDietDay({ today }: { today: Date }) {
   const { user, navigate } = useApp();
   const { t, lang } = useI18n();
   const home = getWellnessHomeData(user?.nombre ?? "", today);
-  const motor = useMotorDay(true);
+  const motor = useMotorDay({ includeMenu: true });
   const targets = motor.kind === "ready" ? motor.day.nutrition : undefined;
   const displayDay = motor.kind === "ready" ? motor.day.today : motor.kind === "legacy" ? home.day : null;
   const legacy = motor.kind === "legacy";

@@ -53,10 +53,7 @@ import {
 import { WellnessNotifications } from "./features/wellness/notifications/WellnessNotifications";
 import { WellnessReminderHost } from "./features/wellness/notifications/WellnessReminderHost";
 import { WellnessVitals } from "./features/wellness/vitals/WellnessVitals";
-import {
-  checkinOwner,
-  syncCheckins,
-} from "./features/wellness/checkin/checkin-store";
+import { checkinOwner, syncMotorCheckins } from "./features/wellness/checkin/checkin-store";
 import { ProfilePage } from "./pages/ProfilePage";
 import { BrandWordmark } from "./components/BrandWordmark";
 
@@ -139,7 +136,11 @@ function Router() {
         );
         break;
       case "wellness-year":
-        content = <WellnessYearPage />;
+        content = (
+          <SensitiveDataScreen>
+            <WellnessYearPage />
+          </SensitiveDataScreen>
+        );
         break;
       case "prof":
         content = <ProfilePage />;
@@ -189,18 +190,18 @@ function Shell() {
   const { lang } = useI18n();
   const legalAccess = useAccountLegalAccess(flow === "app" && !authLoading);
   const wellnessOwner = checkinOwner(user);
+  const motorAccount = sessionUserId(getAccessToken());
   const privacyActor = wellnessPrivacyActor(user);
 
   useEffect(() => {
     if (flow !== "app" || !legalAccess.canEnter) return;
     const sync = () => {
-      if (readWellnessConsent("sensitive-data", privacyActor))
-        void syncCheckins(wellnessOwner);
+      if (motorAccount) void syncMotorCheckins(motorAccount);
     };
     sync();
     window.addEventListener("online", sync);
     return () => window.removeEventListener("online", sync);
-  }, [flow, legalAccess.canEnter, wellnessOwner, privacyActor]);
+  }, [flow, legalAccess.canEnter, motorAccount]);
 
   // Inset global del teclado virtual (una sola instancia para toda la app).
   useKeyboardInset();
