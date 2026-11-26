@@ -19,7 +19,7 @@ import {
   saveDishChoice, savePhotoDraft, setDietSimplified,
 } from "./diet-store";
 import type { PhotoDraft, PhotoEstimate } from "./diet-store";
-import { FOODS } from "./meal-catalog";
+import { FOODS, MEAL_IDS } from "./meal-catalog";
 import type { FoodId, MealId } from "./meal-catalog";
 import "../wellness.css";
 import "../protocol/wellness-protocol.css";
@@ -398,18 +398,18 @@ function WellnessDietDay({ today }: { today: Date }) {
           </div>
         )}
       </IonModal>
-      {plan && <VitaEntry
+      <VitaEntry
         module="diet"
         summary={{
-          day: displayDay ?? home.day,
-          kcalGoal: Math.round(targets?.kcal ?? plan.total.kcal),
+          day: displayDay ?? undefined,
+          kcalGoal: targets?.kcal ?? (legacyPlan ? Math.round(home.plan.kcal) : undefined),
           kcalLogged: Math.round(consumed.kcal),
           mealsLogged: eaten.length,
-          mealsTotal: plan.meals.length,
-          simplified,
-          vegetarian: prefs.vegetarian,
+          mealsTotal: MEAL_IDS.length,
+          simplified: plan ? simplified : undefined,
+          vegetarian: plan ? prefs.vegetarian : undefined,
         }}
-      />}
+      />
     </Screen>
   );
 }
