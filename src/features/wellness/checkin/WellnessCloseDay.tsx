@@ -130,9 +130,11 @@ export function WellnessCloseDay() {
         {!canSubmit ? <p role="status">{t(motor.kind === "locked" ? "Plan bloqueado" : motor.kind === "loading" ? "Consultando el plan…" : "Día del plan no disponible")}</p> : saved ? (
           <section className="wp-card wc-card">
             <p className="wc-status" role="status">
-              {record?.status === "synced" || serverRecorded
+              {(record?.serverDay !== undefined && record.status === "synced") || serverRecorded
                 ? t("Cierre sincronizado.")
-                : t("Guardado en este dispositivo. Se sincronizará al volver la conexión.")}
+                : record?.serverDay === undefined
+                  ? t("Cierre guardado en este dispositivo.")
+                  : t("Guardado en este dispositivo. Se sincronizará al volver la conexión.")}
             </p>
             {effects && <><h2>{t("Tu plan para mañana")}</h2>
             {effects.messages.length ? (

@@ -67,7 +67,7 @@ describe("WellnessCloseDay", () => {
     expect(loadCheckins("patient")).toEqual({});
   });
 
-  it("muestra el resumen offline, actualiza el estado y conserva un solo cierre al reabrir", async () => {
+  it("muestra el resumen offline y conserva como local el cierre sin ordinal del motor", async () => {
     const online = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     const view = render(<WellnessCloseDay />);
     fill("Adherencia (%)", "70");
@@ -85,14 +85,15 @@ describe("WellnessCloseDay", () => {
     await waitFor(() => expect(document.activeElement).toBe(summary));
     expect(screen.getByText(EFFECT_COPY.gentleSleep)).toBeTruthy();
     expect(screen.getByText(EFFECT_COPY.hunger)).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toContain("Guardado en este dispositivo");
+    expect(screen.getByRole("status").textContent).toBe("Cierre guardado en este dispositivo.");
     const entries = Object.values(loadCheckins("patient"));
     expect(entries).toHaveLength(1);
     expect(entries[0].input).toMatchObject({ exercised: false, weightKg: 72.5, waistCm: null });
 
     online.mockReturnValue(true);
     await act(async () => { await syncCheckins("patient"); });
-    expect(screen.getByRole("status").textContent).toBe("Cierre sincronizado.");
+    expect(screen.getByRole("status").textContent).toBe("Cierre guardado en este dispositivo.");
+    expect(Object.values(loadCheckins("patient"))[0].status).toBe("pending");
     view.unmount();
     render(<WellnessCloseDay />);
     expect(screen.getByRole("heading", { name: "Día cerrado" })).toBeTruthy();

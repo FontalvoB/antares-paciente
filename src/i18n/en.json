@@ -4916,6 +4916,7 @@
   "Revisa la fecha del dispositivo. No puedes cerrar un día futuro.": "Check your device date. You can only close today or a past day.",
   "No se pudo guardar el cierre. Inténtalo de nuevo.": "Could not save your check-in. Try again.",
   "Cierre sincronizado.": "Check-in synced.",
+  "Cierre guardado en este dispositivo.": "Check-in saved on this device.",
   "Guardado en este dispositivo. Se sincronizará al volver la conexión.": "Saved on this device. It will sync when you’re back online.",
   "Tu plan para mañana": "Your plan for tomorrow",
   "Tu plan de mañana sigue igual.": "Your plan for tomorrow stays the same.",

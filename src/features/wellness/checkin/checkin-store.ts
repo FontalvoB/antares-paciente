@@ -2,6 +2,7 @@ import type { UserProfile } from "../../../types";
 import { localISODate, parseLocalDate } from "../state/wellness-home-store";
 import type { DailyCheckin } from "./close-day";
 import { motorPlanUserId, sendMotorClosure } from "../calendar/motor-plan-api";
+import { readWellnessConsent } from "../privacy/privacy-consent-store";
 
 export interface SavedCheckin {
   date: string;
@@ -75,13 +76,13 @@ export function saveCheckin(owner: string, date: string, input: DailyCheckin, no
   });
 }
 
-type SendCheckin = (record: SavedCheckin) => Promise<void>;
+type SendCheckin = (record: SavedCheckin) => Promise<void | false>;
 
 function sendForOwner(owner: string): SendCheckin {
   return async (record) => {
     // Los cierres del flujo legado permanecen locales. Un cierre del motor
     // solo se marca sincronizado cuando la API del mismo usuario lo confirma.
-    if (record.serverDay === undefined) return;
+    if (record.serverDay === undefined || !readWellnessConsent("sensitive-data", owner)) return false;
     if (motorPlanUserId() !== owner) throw new Error("Motor 365 session changed");
     await sendMotorClosure(owner, record.serverDay, record.input);
   };
@@ -98,7 +99,7 @@ export function syncCheckins(owner: string, send: SendCheckin = sendForOwner(own
       const key = checkinKey(record.date, record.serverDay);
       if (loadCheckins(owner)[key]?.idempotencyKey !== record.idempotencyKey) continue;
       try {
-        await send(record);
+        if (await send(record) === false) continue;
         const current = loadCheckins(owner)[key];
         if (current?.idempotencyKey === record.idempotencyKey) {
           writeCheckin(owner, { ...current, status: "synced" });
