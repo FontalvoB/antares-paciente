@@ -5610,5 +5610,11 @@
   "Plan en mantenimiento": "Maintenance plan",
   "Plan bloqueado": "Plan locked",
   "Consultando el plan…": "Loading the plan…",
-  "Día del plan no disponible": "Plan day unavailable"
+  "Día del plan no disponible": "Plan day unavailable",
+  "Última sincronización: {time}": "Last synced: {time}",
+  "Motor {engine} · Parámetros {params}": "Engine {engine} · Parameters {params}",
+  "No se pudo actualizar el plan.": "Couldn't refresh the plan.",
+  "Sincronización del Motor 365": "Motor 365 synchronization",
+  "Tu cuenta no tiene un plan vinculado.": "Your account has no linked plan.",
+  "Se conservó el cierre que ya estaba registrado en el servidor.": "The check-in already on the server was kept."
 }

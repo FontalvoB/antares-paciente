@@ -8,6 +8,21 @@ local se conserva para el modo legado sin persona en el Motor 365. El chequeo
 previo puede reducir o detener la sesión, sin adelantar desbloqueos ni añadir
 ejercicios que no enviara el servidor.
 
+## Sincronización Motor 365 (KAN-153)
+
+El modo real se vincula por la sesión. El día civil, las metas y las versiones
+proceden del plan del servidor. Con el consentimiento de datos sensibles, la
+lectura de inicio y Año 365 trae cierres y eventos del mismo contexto. El
+indicador usa la hora de la última lectura aceptada y señala fallos de
+actualización si aún se puede mostrar ese día.
+
+El cierre pendiente conserva fecha, ordinal y persona. Solo se envía por la
+ruta condicional a la persona vinculada de esa cuenta. Si la API confirma que
+ya existe un cierre distinto, Antares lee ese día y preserva el cierre del
+servidor. Puede reintentar la lectura tras un corte. El modo demo guarda sus
+datos localmente. Los registros anteriores sin un vínculo de persona
+verificable se conservan en el dispositivo para evitar asignarlos a otra cuenta.
+
 Onboarding nuevo de Agentic Wellness IA. Reemplaza el onboarding de cédula/seguro.
 El plan real lo calcula el backend (`/v1`, KAN-130); aquí hay mock + vista previa.
 

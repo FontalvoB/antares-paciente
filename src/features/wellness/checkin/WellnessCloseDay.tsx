@@ -9,7 +9,8 @@ import { formatWellnessMeasurement, loadUnitPrefs, parseWellnessMeasurement } fr
 import type { UnitPrefs } from "../vitals/unit-prefs";
 import { parseNumberInput, RANGES } from "../domain/draft";
 import { loadPlanSnapshot, localISODate, parseLocalDate, planDay } from "../state/wellness-home-store";
-import { checkinHistory, checkinKey, checkinOwner, loadCheckins, saveCheckin, subscribeCheckins, syncCheckins } from "./checkin-store";
+import { checkinHistory, checkinKey, checkinOwner, loadCheckins, motorCheckinOwner, saveCheckin, subscribeCheckins, syncMotorCheckins } from "./checkin-store";
+import { motorPlanUserId } from "../calendar/motor-plan-api";
 import { useMotorDay } from "../calendar/useMotorDay";
 import { dailyEffects, shiftLocalDate, SYMPTOMS } from "./close-day";
 import type { DailyCheckin } from "./close-day";
@@ -37,12 +38,16 @@ export function WellnessCloseDay() {
   const [legacyDate] = useState(() => localISODate(new Date()));
   const motor = useMotorDay();
   const remote = motor.kind === "ready" ? motor.day : undefined;
+  const account = motorPlanUserId();
+  const personId = remote?.personId;
+  const scope = account && personId ? motorCheckinOwner(account, personId)
+    : motor.kind === "legacy" ? owner : undefined;
   const date = remote?.todayLocalDate ?? legacyDate;
   const key = checkinKey(date, remote?.today);
-  const [records, setRecords] = useState(() => loadCheckins(owner));
-  const record = records[key];
+  const [records, setRecords] = useState(() => ({ scope, values: scope ? loadCheckins(scope) : {} }));
+  const record = scope && records.scope === scope ? records.values[key] : undefined;
   const serverRecorded = remote?.logStatus === "recorded";
-  const canSubmit = motor.kind === "legacy" || motor.kind === "ready";
+  const canSubmit = Boolean(scope);
   const [values, setValues] = useState<Partial<Record<Field, { raw: string; prefs: UnitPrefs }>>>({});
   const [symptoms, setSymptoms] = useState<DailyCheckin["symptoms"]>([]);
   const [exercise, setExercise] = useState<"yes" | "no">();
@@ -55,11 +60,12 @@ export function WellnessCloseDay() {
   const attempted = failedAttempts > 0;
 
   useEffect(() => {
-    const refresh = () => setRecords(loadCheckins(owner));
-    const unsubscribe = subscribeCheckins(owner, refresh);
+    if (!scope) return;
+    const refresh = () => setRecords({ scope, values: loadCheckins(scope) });
+    const unsubscribe = subscribeCheckins(scope, refresh);
     refresh();
     return unsubscribe;
-  }, [owner]);
+  }, [scope]);
 
   useEffect(() => {
     if (saved) title.current?.focus();
@@ -85,7 +91,7 @@ export function WellnessCloseDay() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving || saved || !canSubmit) return;
+    if (saving || saved || !scope || (account && motorPlanUserId() !== account)) return;
     setSaveError(undefined);
     const [adherence, sleepHours, energy, pain, weightKg, waistCm] = parsed;
     if (invalid.some(Boolean) || !exercise ||
@@ -95,12 +101,12 @@ export function WellnessCloseDay() {
     }
     setSaving(true);
     try {
-      await saveCheckin(owner, date, {
+      await saveCheckin(scope, date, {
         adherence, sleepHours, energy, pain, symptoms, weightKg, waistCm,
         exercised: exercise === "yes",
-      }, new Date(), remote?.today);
-      setRecords(loadCheckins(owner));
-      void syncCheckins(owner);
+      }, new Date(), remote?.today, personId);
+      setRecords({ scope, values: loadCheckins(scope) });
+      if (account) void syncMotorCheckins(account);
     } catch (error) {
       setSaveError(error instanceof RangeError
         ? "Revisa la fecha del dispositivo. No puedes cerrar un día futuro."
@@ -127,10 +133,13 @@ export function WellnessCloseDay() {
           </h1>
           {canSubmit && <p className="wp-eyebrow"><time dateTime={date}>{formattedDate}</time></p>}
         </header>
-        {!canSubmit ? <p role="status">{t(motor.kind === "locked" ? "Plan bloqueado" : motor.kind === "loading" ? "Consultando el plan…" : "Día del plan no disponible")}</p> : saved ? (
+        {!canSubmit ? <p role="status">{t(motor.kind === "locked" ? "Plan bloqueado" :
+          motor.kind === "loading" ? "Consultando el plan…" :
+          motor.kind === "unlinked" ? "Tu cuenta no tiene un plan vinculado." : "Día del plan no disponible")}</p> : saved ? (
           <section className="wp-card wc-card">
             <p className="wc-status" role="status">
-              {(record?.serverDay !== undefined && record.status === "synced") || serverRecorded
+              {record?.status === "conflict" ? t("Se conservó el cierre que ya estaba registrado en el servidor.") :
+                (record?.serverDay !== undefined && record.status === "synced") || serverRecorded
                 ? t("Cierre sincronizado.")
                 : record?.serverDay === undefined
                   ? t("Cierre guardado en este dispositivo.")

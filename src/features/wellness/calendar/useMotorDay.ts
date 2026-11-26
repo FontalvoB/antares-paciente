@@ -1,37 +1,52 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "../../../utils/apiClient";
-import { cachedMotorDay, clearCachedMotorDay, motorPlanUserId, readMotorDay, type MotorDay } from "./motor-plan-api";
+import { syncMotorCheckins } from "../checkin/checkin-store";
+import { cachedMotorDay, clearCachedMotorDay, isCurrentMotorDay, MOTOR_CLOSURE_CONFIRMED, motorPlanUserId, readMotorDay, type MotorDay } from "./motor-plan-api";
 
 type MotorDayState =
-  | { kind: "legacy" | "loading" | "locked" | "error" }
-  | { kind: "ready"; day: MotorDay };
+  | { kind: "legacy" | "loading" | "unlinked" | "locked" | "error" }
+  | { kind: "ready"; day: MotorDay; stale?: boolean };
 
-export function useMotorDay(): MotorDayState {
+export function useMotorDay(historyDays = 28): MotorDayState {
   const account = motorPlanUserId();
   const [loaded, setLoaded] = useState<{ account: string; value: MotorDayState }>();
   useEffect(() => {
     if (!account) return;
     let controller: AbortController | undefined;
+    let lastGood = cachedMotorDay(account);
+    const unavailable = () => {
+      const day = lastGood && isCurrentMotorDay(lastGood) ? lastGood : cachedMotorDay(account);
+      setLoaded({ account, value: day ? { kind: "ready", day, stale: true } : { kind: "error" } });
+    };
     const load = () => {
       controller?.abort();
+      if (motorPlanUserId() !== account) {
+        lastGood = undefined;
+        return;
+      }
       if (!navigator.onLine) {
-        const day = cachedMotorDay(account);
-        setLoaded({ account, value: day ? { kind: "ready", day } : { kind: "error" } });
+        unavailable();
         return;
       }
       const current = new AbortController();
       controller = current;
-      void readMotorDay(account, current.signal).then(
+      void readMotorDay(account, current.signal, historyDays).then(
         (day) => {
-          if (!current.signal.aborted) setLoaded({ account, value: { kind: "ready", day } });
+          if (current.signal.aborted) return;
+          lastGood = day;
+          setLoaded({ account, value: { kind: "ready", day } });
+          void syncMotorCheckins(account);
         },
         (error: unknown) => {
           if (current.signal.aborted) return;
-          const kind = error instanceof ApiError && error.status === 404 && error.code === "person_not_found"
-            ? "legacy" : error instanceof ApiError && error.status === 409 ? "locked" : "error";
-          if (kind === "legacy" || kind === "locked") clearCachedMotorDay(account);
-          const day = kind === "error" && !navigator.onLine ? cachedMotorDay(account) : undefined;
-          setLoaded({ account, value: day ? { kind: "ready", day } : { kind } });
+          if (error instanceof ApiError && [401, 403, 404, 409].includes(error.status)) {
+            lastGood = undefined;
+            clearCachedMotorDay(account);
+            const kind = error.status === 404 ? "unlinked" : error.status === 409 ? "locked" : "error";
+            setLoaded({ account, value: { kind } });
+          } else {
+            unavailable();
+          }
         },
       );
     };
@@ -40,13 +55,15 @@ export function useMotorDay(): MotorDayState {
     window.addEventListener("online", load);
     window.addEventListener("offline", load);
     window.addEventListener("focus", load);
+    window.addEventListener(MOTOR_CLOSURE_CONFIRMED, load);
     return () => {
       controller?.abort();
       window.clearInterval(timer);
       window.removeEventListener("online", load);
       window.removeEventListener("offline", load);
       window.removeEventListener("focus", load);
+      window.removeEventListener(MOTOR_CLOSURE_CONFIRMED, load);
     };
-  }, [account]);
+  }, [account, historyDays]);
   return !account ? { kind: "legacy" } : loaded?.account === account ? loaded.value : { kind: "loading" };
 }
