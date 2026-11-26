@@ -7,7 +7,12 @@ type MotorDayState =
   | { kind: "legacy" | "loading" | "unlinked" | "locked" | "error" }
   | { kind: "ready"; day: MotorDay; stale?: boolean };
 
-export function useMotorDay(historyDays = 28): MotorDayState {
+interface MotorDayOptions {
+  historyDays?: number;
+  includeMenu?: boolean;
+}
+
+export function useMotorDay({ historyDays = 28, includeMenu = false }: MotorDayOptions = {}): MotorDayState {
   const account = motorPlanUserId();
   const [loaded, setLoaded] = useState<{ account: string; value: MotorDayState }>();
   useEffect(() => {
@@ -30,7 +35,7 @@ export function useMotorDay(historyDays = 28): MotorDayState {
       }
       const current = new AbortController();
       controller = current;
-      void readMotorDay(account, current.signal, historyDays).then(
+      void readMotorDay(account, current.signal, historyDays, includeMenu).then(
         (day) => {
           if (current.signal.aborted) return;
           lastGood = day;
@@ -64,6 +69,6 @@ export function useMotorDay(historyDays = 28): MotorDayState {
       window.removeEventListener("focus", load);
       window.removeEventListener(MOTOR_CLOSURE_CONFIRMED, load);
     };
-  }, [account, historyDays]);
+  }, [account, historyDays, includeMenu]);
   return !account ? { kind: "legacy" } : loaded?.account === account ? loaded.value : { kind: "loading" };
 }

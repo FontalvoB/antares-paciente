@@ -2,6 +2,7 @@ import { apiFetch } from "../../../utils/apiClient";
 import { getAccessToken } from "../../../utils/authApi";
 import { sessionUserId } from "../../../utils/sessionIdentity";
 import type { DailyCheckin } from "../checkin/close-day";
+import type { MealId } from "../nutrition/meal-catalog";
 import { readWellnessConsent } from "../privacy/privacy-consent-store";
 
 const PLAN = "/api/v1/people/me";
@@ -23,7 +24,32 @@ export interface MotorNutritionTargets {
   waterMl: number;
 }
 
+export interface MotorMealPlan {
+  vegetarian: boolean;
+  dairyFree: boolean;
+  simplified: boolean;
+  totals: MotorMealTotals;
+  meals: {
+    id: MealId;
+    name: MotorText;
+    targetKcal: number;
+    options: {
+      id: number;
+      items: { food: string; name: MotorText; grams: number }[];
+      totals: MotorMealTotals;
+    }[];
+  }[];
+}
+
+interface MotorMealTotals {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export interface MotorDay {
+  mealPlan?: MotorMealPlan;
   nutrition?: MotorNutritionTargets;
   today: number;
   todayLocalDate: string;
@@ -118,9 +144,15 @@ export function clearCachedMotorDay(owner: string) {
   try { localStorage.removeItem(cacheKey(owner)); } catch { /* almacenamiento no disponible */ }
 }
 
-export async function readMotorDay(expectedUserId: string, signal: AbortSignal, historyDays: number) {
-  const query = readWellnessConsent("sensitive-data", expectedUserId) ? `?includeSync=true&historyDays=${historyDays}` : "";
-  const day = await apiFetch<MotorDay>(PLAN + "/plan" + query, { expectedUserId, signal, cache: "no-store" });
+export async function readMotorDay(expectedUserId: string, signal: AbortSignal, historyDays: number, includeMenu = false) {
+  const params = new URLSearchParams();
+  if (readWellnessConsent("sensitive-data", expectedUserId)) {
+    params.set("includeSync", "true");
+    params.set("historyDays", String(historyDays));
+  }
+  if (includeMenu) params.set("includeMenu", "true");
+  const query = params.toString();
+  const day = await apiFetch<MotorDay>(PLAN + "/plan" + (query ? `?${query}` : ""), { expectedUserId, signal, cache: "no-store" });
   if (!isMotorDay(day) || day.real !== true) throw new Error("Invalid Motor 365 day");
   if (signal.aborted || motorPlanUserId() !== expectedUserId) throw new DOMException("Session changed", "AbortError");
   const personId = day.sync?.personId;

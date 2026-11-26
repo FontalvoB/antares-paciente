@@ -12,15 +12,15 @@ import { getWellnessHomeData, localISODate } from "../state/wellness-home-store"
 import { checkinHistory, checkinOwner } from "../checkin/checkin-store";
 import { useMotorDay } from "../calendar/useMotorDay";
 import { dailyEffects, EFFECT_COPY } from "../checkin/close-day";
-import { buildDietDay, nextDish, sumMacros } from "./diet-plan";
+import { buildDietDay, buildMotorDietDay, nextDish, sumMacros } from "./diet-plan";
 import type { DietMacros } from "./diet-plan";
 import {
   addWaterServing, logDietMeal, readDietDay, readDietPlanDetails,
   saveDishChoice, savePhotoDraft, setDietSimplified,
 } from "./diet-store";
 import type { PhotoDraft, PhotoEstimate } from "./diet-store";
-import { FOODS } from "./meal-catalog";
-import type { MealId } from "./meal-catalog";
+import { FOODS, MEAL_IDS } from "./meal-catalog";
+import type { FoodId, MealId } from "./meal-catalog";
 import "../wellness.css";
 import "../protocol/wellness-protocol.css";
 import "./wellness-diet.css";
@@ -97,11 +97,13 @@ function WellnessDietDay({ today }: { today: Date }) {
   const { user, navigate } = useApp();
   const { t, lang } = useI18n();
   const home = getWellnessHomeData(user?.nombre ?? "", today);
-  const motor = useMotorDay();
+  const motor = useMotorDay({ includeMenu: true });
   const targets = motor.kind === "ready" ? motor.day.nutrition : undefined;
   const displayDay = motor.kind === "ready" ? motor.day.today : motor.kind === "legacy" ? home.day : null;
   const legacy = motor.kind === "legacy";
-  const prefs = readDietPlanDetails();
+  const serverMenu = motor.kind === "ready" ? motor.day.mealPlan : undefined;
+  const localPrefs = readDietPlanDetails();
+  const prefs = serverMenu ?? localPrefs;
   const [log, setLog] = useState(() => readDietDay(today, home.plan.startDate));
   const [saveError, setSaveError] = useState(false);
   const [analysisError, setAnalysisError] = useState(false);
@@ -117,17 +119,20 @@ function WellnessDietDay({ today }: { today: Date }) {
   }, [phase]);
 
   const { nutrition, messages } = dailyEffects(localISODate(today), checkinHistory(checkinOwner(user)), home.day);
-  const autoSimple = log.autoSimple || nutrition.simpleMenu;
-  const simplified = log.manualSimple || autoSimple;
-  const plan = buildDietDay({ ...home.plan, weightKg: prefs.weightKg, ...targets },
-    displayDay ?? home.day, prefs, log.choices, simplified);
-  const waterGoal = targets?.waterMl ?? (legacy ? plan.waterMl : null);
+  const autoSimple = serverMenu?.simplified ?? (legacy && (log.autoSimple || nutrition.simpleMenu));
+  const simplified = autoSimple || (legacy && log.manualSimple);
+  const legacyPlan = legacy ? buildDietDay({ ...home.plan, weightKg: localPrefs.weightKg },
+    home.day, prefs, log.choices, simplified) : null;
+  const plan = serverMenu && targets ? buildMotorDietDay(serverMenu, targets.kcal, log.choices) : legacyPlan;
+  const waterGoal = targets?.waterMl ?? legacyPlan?.waterMl ?? null;
+  const macroGoal = targets ?? legacyPlan?.total;
+  const fiberGoal = targets?.fiberG ?? legacyPlan?.fiberG;
   const eaten = Object.values(log.eaten);
   const consumed = sumMacros(eaten.map((meal) => meal.values));
   const measuredFiber = eaten.flatMap(({ values }) =>
     "fiberG" in values && values.fiberG !== null ? [values.fiberG] : [],
   );
-  const activeDish = plan.meals.find(({ id }) => id === activeMeal);
+  const activeDish = plan?.meals.find(({ id }) => id === activeMeal);
   const draft = activeMeal ? log.pending[activeMeal] ?? EMPTY_PHOTO : EMPTY_PHOTO;
   const photo = parsePhoto(draft);
   const numbers = new Intl.NumberFormat(lang === "en" ? "en-US" : "es-CO", { maximumFractionDigits: 1 });
@@ -203,17 +208,18 @@ function WellnessDietDay({ today }: { today: Date }) {
         <div className="wl-diet-body">
           <section className="wp-card wl-diet-summary">
             <h2>{t("Resumen del día")}</h2>
-            <p className="wl-diet-energy">{energy(plan.total.kcal)}</p>
-            {targets || legacy ? (
+            {plan && <p className="wl-diet-energy">{energy(plan.total.kcal)}</p>}
+            {macroGoal && fiberGoal !== undefined ? (
               <>
                 <p>{t("Meta diaria: {energy}", { energy: energy(targets?.kcal ?? home.plan.kcal) })}</p>
-                <p>{macros(targets ?? plan.total)}</p>
-                <p>{t("Meta de fibra: {fiber}", { fiber: grams(targets?.fiberG ?? plan.fiberG) })}</p>
+                <p>{macros(macroGoal)}</p>
+                <p>{t("Meta de fibra: {fiber}", { fiber: grams(fiberGoal) })}</p>
               </>
             ) : (
               <p role="status">{motor.kind === "loading" ? t("Consultando el plan…")
                 : motor.kind === "locked" ? t("Plan bloqueado") : t("Día del plan no disponible")}</p>
             )}
+            {motor.kind === "ready" && !plan && <p role="status">{t("Día del plan no disponible")}</p>}
             <div className="wl-diet-log" role="status">
               <strong>{t("{count} de 4 comidas registradas", { count: format(eaten.length) })}</strong>
               {eaten.length > 0 && <p>{energy(consumed.kcal)} · {macros(consumed)}</p>}
@@ -243,7 +249,7 @@ function WellnessDietDay({ today }: { today: Date }) {
             </IonButton>
           </section>
 
-          <section className="wp-card">
+          {(serverMenu || legacy) && <section className="wp-card">
             <h2>{t("Preferencias de alimentación")}</h2>
             <div className="wl-diet-preferences">
               <IonChip outline={!prefs.vegetarian}>
@@ -257,26 +263,26 @@ function WellnessDietDay({ today }: { today: Date }) {
               type="button"
               className={`wl-chip${simplified ? " is-selected" : ""}`}
               aria-pressed={simplified}
-              disabled={autoSimple}
+              disabled={!legacy || autoSimple}
               onClick={() => update(() => setDietSimplified(!log.manualSimple))}
             >
               {t("Modo simplificado")}
             </button>
             {simplified && (
               <p role="status">
-                {nutrition.simpleMenu ? t(EFFECT_COPY.simpleMenu) : log.autoSimple
+                {(serverMenu?.simplified || nutrition.simpleMenu) ? t(EFFECT_COPY.simpleMenu) : log.autoSimple
                   ? t("El menú tiene menos opciones porque registraste menos del 60 % de las comidas en cada uno de los dos días anteriores.")
                   : t("El menú tiene menos opciones para que sea más fácil elegir.")}
               </p>
             )}
-          </section>
+          </section>}
 
           {nutrition.blockCuts && (
             <p className="wp-card">{t(messages.includes(EFFECT_COPY.dizziness) ? EFFECT_COPY.dizziness : EFFECT_COPY.hunger)}</p>
           )}
           {saveError && !activeMeal && <p role="alert">{t("No se pudo guardar el registro. Inténtalo de nuevo.")}</p>}
 
-          {plan.meals.map((meal) => {
+          {plan?.meals.map((meal) => {
             const entry = log.eaten[meal.id];
             const pending = log.pending[meal.id];
             const name = t(meal.label);
@@ -293,8 +299,8 @@ function WellnessDietDay({ today }: { today: Date }) {
                   <p>{t("Registro confirmado")}{confirmedPhoto.grams !== null && <> · {grams(confirmedPhoto.grams)}</>}</p>
                 ) : (
                   <ul className="wl-diet-ingredients">
-                    {meal.ingredients.map(({ id, grams: portion }) => (
-                      <li key={id}><span>{t(FOODS[id][0])}</span><span>{grams(portion)}</span></li>
+                    {meal.ingredients.map(({ id, name, grams: portion }) => (
+                      <li key={id}><span>{name ? (lang === "en" ? name.en : name.es) : t(FOODS[id as FoodId][0])}</span><span>{grams(portion)}</span></li>
                     ))}
                   </ul>
                 )}
@@ -337,7 +343,7 @@ function WellnessDietDay({ today }: { today: Date }) {
           setSaveError(false);
         }}
       >
-        {activeMeal && activeDish && (
+        {plan && activeMeal && activeDish && (
           <div className="wl-diet-dialog">
             <h2 tabIndex={-1} ref={modalTitle}>
               {phase === "review" ? t("Revisar registro") : t("Foto de comida")} · {t(activeDish.label)}
@@ -395,13 +401,13 @@ function WellnessDietDay({ today }: { today: Date }) {
       <VitaEntry
         module="diet"
         summary={{
-          day: home.day,
-          kcalGoal: Math.round(plan.total.kcal),
+          day: displayDay ?? undefined,
+          kcalGoal: targets?.kcal ?? (legacyPlan ? Math.round(home.plan.kcal) : undefined),
           kcalLogged: Math.round(consumed.kcal),
           mealsLogged: eaten.length,
-          mealsTotal: plan.meals.length,
-          simplified,
-          vegetarian: prefs.vegetarian,
+          mealsTotal: MEAL_IDS.length,
+          simplified: plan ? simplified : undefined,
+          vegetarian: plan ? prefs.vegetarian : undefined,
         }}
       />
     </Screen>

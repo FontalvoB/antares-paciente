@@ -1,3 +1,4 @@
+import type { MotorMealPlan } from "../calendar/motor-plan-api";
 import { FOODS, MEAL_CATALOG, MEAL_IDS } from "./meal-catalog";
 import type { FoodId, MealId, TemplateItem } from "./meal-catalog";
 
@@ -18,17 +19,18 @@ export interface DietPreferences {
   dairyFree: boolean;
 }
 
-interface Ingredient {
-  id: FoodId;
+interface Ingredient<Id extends string> {
+  id: Id;
   grams: number;
+  name?: { es: string; en: string };
 }
 
-interface Dish extends DietMacros {
-  ingredients: Ingredient[];
+interface Dish<Id extends string = string> extends DietMacros {
+  ingredients: Ingredient<Id>[];
   option: number;
 }
 
-export interface DietMeal extends Dish {
+export interface DietMeal<Id extends string = string> extends Dish<Id> {
   id: MealId;
   label: string;
   canSwap: boolean;
@@ -84,7 +86,7 @@ function buildDish(
   share: number,
   prefs: DietPreferences,
   option: number,
-): Dish {
+): Dish<FoodId> {
   const items = template.map(([role, ids, fixed]) => {
     const id = ids.find((candidate) => okFood(candidate, prefs));
     if (!id) throw new Error("Incompatible v5.2 meal template");
@@ -126,7 +128,7 @@ export function buildDietDay(
     const selected = rotated.find(({ option }) => option === choices[MEAL_IDS[index]]);
     return [rotated[0], selected && selected !== rotated[0] ? selected : rotated[1]];
   });
-  const meals: DietMeal[] = MEAL_IDS.map((id, index) => {
+  const meals: DietMeal<FoodId>[] = MEAL_IDS.map((id, index) => {
     const dishes = options[index];
     const dish = dishes.find(({ option }) => option === choices[id]) ?? dishes[0];
     return { ...dish, id, label: MEAL_CATALOG[index].label, canSwap: dishes.length > 1 };
@@ -150,12 +152,56 @@ export function buildDietDay(
   };
 }
 
+export function buildMotorDietDay(menu: MotorMealPlan, targetKcal: number, choices: MealChoices) {
+  const options = MEAL_IDS.map(id => menu.meals.find(slot => slot.id === id)?.options.map(dish => ({
+    option: dish.id,
+    ingredients: dish.items.map(({ food, name, grams }) => ({ id: food, name, grams })),
+    kcal: dish.totals.kcal,
+    proteinG: dish.totals.protein,
+    carbsG: dish.totals.carbs,
+    fatG: dish.totals.fat,
+  })) ?? []);
+  if (options.some(dishes => !dishes.length)) return null;
+
+  const defaults: DietMeal[] = MEAL_IDS.map((id, index) => ({
+    ...options[index][0], id, label: MEAL_CATALOG[index].label, canSwap: false,
+  }));
+  const baseline = sumMacros(defaults);
+  const selected = defaults.map((meal, index) => ({
+    ...meal,
+    ...options[index].find(dish => dish.option === choices[meal.id]),
+  }));
+  const total = sumMacros(selected);
+  // Un cambio de perfil o de parámetros puede invalidar las elecciones anteriores.
+  const valid = inBudget(total, baseline, targetKcal);
+  const meals = valid ? selected : defaults;
+  const plan = { options, meals, total: valid ? total : baseline, baseline, targetKcal };
+  return { ...plan, meals: meals.map(meal => ({ ...meal, canSwap: nextDish(plan, meal.id) !== meal.option })) };
+}
+
+function canReplace(total: DietMacros, baseline: DietMacros, meal: Dish, dish: Dish, targetKcal?: number) {
+  const after = {
+    kcal: total.kcal - meal.kcal + dish.kcal,
+    proteinG: total.proteinG - meal.proteinG + dish.proteinG,
+    carbsG: total.carbsG - meal.carbsG + dish.carbsG,
+    fatG: total.fatG - meal.fatG + dish.fatG,
+  };
+  return inBudget(after, baseline, targetKcal) && MACRO_KEYS.every(key =>
+    Math.abs(after[key] - total[key]) <= Math.min(total[key], after[key]) * DIET_TOLERANCE);
+}
+
+function inBudget(total: DietMacros, baseline: DietMacros, targetKcal?: number) {
+  return (targetKcal === undefined || Math.abs(total.kcal - targetKcal) <= targetKcal * DIET_TOLERANCE)
+    && MACRO_KEYS.every(key => Math.abs(total[key] - baseline[key]) <= baseline[key] * DIET_TOLERANCE);
+}
+
 export function nextDish(
   plan: {
     meals: readonly DietMeal[];
     options: readonly Dish[][];
     total: DietMacros;
     baseline: DietMacros;
+    targetKcal?: number;
   },
   id: MealId,
 ) {
@@ -164,13 +210,7 @@ export function nextDish(
   const options = plan.options[index];
   const current = options.findIndex(({ option }) => option === meal.option);
   const remaining = options.slice(current + 1).concat(options.slice(0, current));
-  const alternative = remaining.find((dish) => MACRO_KEYS.every((key) => {
-    const currentTotal = plan.total[key];
-    const afterSwap = currentTotal - meal[key] + dish[key];
-    const baseline = plan.baseline[key];
-    return Math.abs(afterSwap - currentTotal) <= Math.min(currentTotal, afterSwap) * DIET_TOLERANCE
-      && Math.abs(afterSwap - baseline) <= baseline * DIET_TOLERANCE;
-  }));
+  const alternative = remaining.find(dish => canReplace(plan.total, plan.baseline, meal, dish, plan.targetKcal));
   return alternative?.option ?? meal.option;
 }
 

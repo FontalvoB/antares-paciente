@@ -24,7 +24,7 @@ export function WellnessYearPage() {
   const reducedMotion = useReducedMotion();
   const locale = lang === "en" ? "en-US" : "es-ES";
   const owner = checkinOwner(user);
-  const motor = useMotorDay(365);
+  const motor = useMotorDay({ historyDays: 365 });
   const remote = motor.kind === "ready" ? motor.day : undefined;
   const legacy = motor.kind === "legacy";
   const [plan] = useState(loadPlanSnapshot);
