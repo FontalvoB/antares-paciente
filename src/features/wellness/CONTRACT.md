@@ -1,5 +1,13 @@
 # Módulo `features/wellness` — contrato de KAN-136
 
+**Ejercicio del Motor 365 (KAN-125).** La pantalla usa el día, la fase, la lista
+de ejercicios, su dosis y los textos ES/EN de `GET /api/v1/people/me/plan`.
+La sesión guardada queda ligada a la cuenta, el día y los ejercicios del plan.
+Una pausa, un bloqueo o una carga fallida no activa una rutina local. La rutina
+local se conserva para el modo legado sin persona en el Motor 365. El chequeo
+previo puede reducir o detener la sesión, sin adelantar desbloqueos ni añadir
+ejercicios que no enviara el servidor.
+
 Onboarding nuevo de Agentic Wellness IA. Reemplaza el onboarding de cédula/seguro.
 El plan real lo calcula el backend (`/v1`, KAN-130); aquí hay mock + vista previa.
 
