@@ -6,7 +6,7 @@ type MotorDayState =
   | { kind: "legacy" | "loading" | "locked" | "error" }
   | { kind: "ready"; day: MotorDay };
 
-export function useMotorDay(): MotorDayState {
+export function useMotorDay(includeMenu = false): MotorDayState {
   const account = motorPlanUserId();
   const [loaded, setLoaded] = useState<{ account: string; value: MotorDayState }>();
   useEffect(() => {
@@ -21,7 +21,7 @@ export function useMotorDay(): MotorDayState {
       }
       const current = new AbortController();
       controller = current;
-      void readMotorDay(account, current.signal).then(
+      void readMotorDay(account, current.signal, includeMenu).then(
         (day) => {
           if (!current.signal.aborted) setLoaded({ account, value: { kind: "ready", day } });
         },
@@ -47,6 +47,6 @@ export function useMotorDay(): MotorDayState {
       window.removeEventListener("offline", load);
       window.removeEventListener("focus", load);
     };
-  }, [account]);
+  }, [account, includeMenu]);
   return !account ? { kind: "legacy" } : loaded?.account === account ? loaded.value : { kind: "loading" };
 }

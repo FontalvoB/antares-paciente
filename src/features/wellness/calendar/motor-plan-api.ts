@@ -2,6 +2,7 @@ import { apiFetch } from "../../../utils/apiClient";
 import { getAccessToken } from "../../../utils/authApi";
 import { sessionUserId } from "../../../utils/sessionIdentity";
 import type { DailyCheckin } from "../checkin/close-day";
+import type { MealId } from "../nutrition/meal-catalog";
 import { readWellnessConsent } from "../privacy/privacy-consent-store";
 
 const PLAN = "/api/v1/people/me";
@@ -22,7 +23,32 @@ export interface MotorNutritionTargets {
   waterMl: number;
 }
 
+export interface MotorMealPlan {
+  vegetarian: boolean;
+  dairyFree: boolean;
+  simplified: boolean;
+  totals: MotorMealTotals;
+  meals: {
+    id: MealId;
+    name: MotorText;
+    targetKcal: number;
+    options: {
+      id: number;
+      items: { food: string; name: MotorText; grams: number }[];
+      totals: MotorMealTotals;
+    }[];
+  }[];
+}
+
+interface MotorMealTotals {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export interface MotorDay {
+  mealPlan?: MotorMealPlan;
   nutrition?: MotorNutritionTargets;
   today: number;
   todayLocalDate: string;
@@ -88,8 +114,8 @@ export function clearCachedMotorDay(owner: string) {
   try { localStorage.removeItem(cacheKey(owner)); } catch { /* almacenamiento no disponible */ }
 }
 
-export async function readMotorDay(expectedUserId: string, signal: AbortSignal) {
-  const day = await apiFetch<MotorDay>(PLAN + "/plan", { expectedUserId, signal });
+export async function readMotorDay(expectedUserId: string, signal: AbortSignal, includeMenu = false) {
+  const day = await apiFetch<MotorDay>(PLAN + (includeMenu ? "/plan?includeMenu=true" : "/plan"), { expectedUserId, signal });
   if (!isMotorDay(day)) throw new Error("Invalid Motor 365 day");
   if (day.timeZoneId && readWellnessConsent("sensitive-data", expectedUserId)) {
     try {
