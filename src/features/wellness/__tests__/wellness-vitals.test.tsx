@@ -6,6 +6,8 @@ import { WellnessVitals } from "../vitals/WellnessVitals";
 import { loadVitals, saveVital, VITAL_METRICS } from "../vitals/vitals-store";
 
 const navigate = vi.hoisted(() => vi.fn());
+// KAN-167: el orbe de Vita tiene sus propias pruebas (vita-entry.test.tsx).
+vi.mock("../vita", () => ({ VitaEntry: () => null }));
 vi.mock("../../../context/AppContext", () => ({
   useApp: () => ({ user: { id: "patient" }, navigate, vitalsReturnTo: "protocol" }),
 }));

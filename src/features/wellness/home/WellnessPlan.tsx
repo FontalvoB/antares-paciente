@@ -6,6 +6,7 @@ import { arrowForward, barbellOutline, barChartOutline, checkmark, chevronForwar
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { WellnessFrame, WellnessPreview } from "./WellnessFrame";
+import { VitaEntry } from "../vita";
 
 export function WellnessPlan() {
   const { user, navigate, openTests, openPanic } = useApp();
@@ -41,5 +42,7 @@ export function WellnessPlan() {
     </IonButton>
     <section className="wh-modules" aria-label={t("Accesos rápidos")}>{modules.map(module => <IonButton fill="clear" className={`wh-module${module.title === "SOS" ? " wh-module-sos" : ""}`} key={module.title} onClick={module.action}><span className="wh-module-copy"><IonIcon icon={module.icon} /><strong>{t(module.title)}</strong><span>{t(module.copy)}</span></span><span className="wh-module-art" aria-hidden="true"><WellnessModuleArt kind={module.title} /></span></IonButton>)}</section>
     <WellnessPreview title={preview} open={!!preview} onClose={() => setPreview("")} />
+    {/* KAN-167: panel único de Vita, abierto por el orbe y el compositor de WellnessFrame. */}
+    <VitaEntry module="plan" docked={false} />
   </WellnessFrame>;
 }

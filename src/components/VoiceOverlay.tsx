@@ -56,6 +56,7 @@ import {
   toolRequestAppointment,
   toolRescheduleAppointment,
 } from "../utils/voiceApi";
+import { clearVitaVoiceOrigin, readVitaVoiceOrigin, sendVitaVoiceTurn } from "../services/chat/vita-origin";
 
 /**
  * Agente de voz — integración ElevenLabs (change integración-elevenlabs).
@@ -124,6 +125,10 @@ function VoiceShell({
   const t = useT();
   const { voiceOpen, voiceMinimized, minimizeVoice, openVoice, closeVoice } =
     useApp();
+  // KAN-167: el origen de módulo de Vita dura lo que dura la sesión de voz.
+  useEffect(() => {
+    if (!voiceOpen) clearVitaVoiceOrigin();
+  }, [voiceOpen]);
   const dismissingToMinimize = useRef(false);
   const [modalClosing, setModalClosing] = useState(false);
   const [text, setText] = useState("");
@@ -421,7 +426,12 @@ export function VoiceOverlay() {
       assistant.setProcessing();
       void (async () => {
         try {
-          const botMessage = await sendVoiceMessage(text);
+          // KAN-167: si la voz se abrió desde Vita, el turno va por el mismo
+          // servicio de chat sin hilo ni usuario del cliente y con el módulo.
+          const origin = readVitaVoiceOrigin();
+          const botMessage = origin
+            ? await sendVitaVoiceTurn(text, lang, origin)
+            : await sendVoiceMessage(text);
           if (!speechActive.current) return;
           if (!botMessage) {
             speechActive.current = false;
@@ -1090,7 +1100,15 @@ function ElevenVoiceBody({
       // idioma antes de emitir la credencial. Vita replica solo ese idioma al
       // iniciar el SDK, sin sustituir prompt, herramientas ni identidad.
       const language = langRef.current;
-      const session = await requestVoiceSession(language, threadId, signal);
+      // KAN-167: el hilo estable `proactive-<id>` lo deriva el backend del JWT;
+      // no se envía para no exponer el id del paciente. El origen de módulo de
+      // Vita (si la voz se abrió desde el orbe) viaja acotado y saneado.
+      const origin = readVitaVoiceOrigin();
+      const sessionThread = threadId.startsWith("proactive-") ? undefined : threadId;
+      // Sin origen se conserva la llamada de 3 argumentos del contrato existente.
+      const session = origin
+        ? await requestVoiceSession(language, sessionThread, signal, { moduleContext: origin })
+        : await requestVoiceSession(language, sessionThread, signal);
       if (session) onServerSession(session);
       if (isCancelled()) return;
       assertActive();

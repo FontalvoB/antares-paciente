@@ -150,7 +150,16 @@ describe("WellnessHome (KAN-142)", () => {
     openInbox();
     fireEvent.click(screen.getByText("Continuar cuestionarios"));
     expect(state.openTests).toHaveBeenCalled();
-    fireEvent.click(screen.getByLabelText("Hablar con Vita"));
+    // KAN-167: el orbe de la cabecera es la entrada única de Vita; abre su
+    // panel (voz, texto e imagen) y la llamada de voz sigue disponible dentro.
+    const orb = screen.getByLabelText("Hablar con Vita");
+    expect(orb.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(orb);
+    expect(orb.getAttribute("aria-expanded")).toBe("true");
+    expect(state.openVoice).not.toHaveBeenCalled();
+    const panel = document.querySelector<HTMLElement>('[data-vita-panel="home"]')!;
+    expect(document.querySelectorAll(".vita-entry-trigger")).toHaveLength(0);
+    fireEvent.click(within(panel).getByLabelText("Hablar con Vita"));
     expect(state.openVoice).toHaveBeenCalled();
   });
 

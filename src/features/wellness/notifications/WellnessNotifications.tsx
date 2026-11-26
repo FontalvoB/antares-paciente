@@ -17,6 +17,7 @@ import {
 } from "./reminder-preferences";
 import { supportsNativeReminders } from "./reminder-scheduler";
 import "./wellness-notifications.css";
+import { VitaEntry } from "../vita";
 
 const DETAILS = {
   protocol: ["Recordatorio del protocolo", "A la hora elegida, si aún no has empezado."],
@@ -195,6 +196,7 @@ export function WellnessNotifications() {
           </IonPopover>
         </main>
       </Scroll>
+      <VitaEntry module="notifications" />
     </Screen>
   );
 }

@@ -14,6 +14,7 @@ import { YearCalendar } from "./YearCalendar";
 import { buildCalendar, planMilestones, selectRange, summarizeMonth } from "./year-data";
 import type { Period } from "./year-data";
 import "./wellness-year.css";
+import { VitaEntry } from "../vita";
 
 const EMPTY_HISTORY: CheckinHistory = {};
 
@@ -166,6 +167,7 @@ export function WellnessYearPage() {
           <p className="wy-card wy-empty" role="status">{t("Tu calendario estará disponible cuando tengas un plan.")}</p>
         )}
       </Scroll>
+      <VitaEntry module="year" />
     </Screen>
   );
 }

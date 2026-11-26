@@ -47,8 +47,13 @@ export async function uploadVitaAttachment(file: File, threadId: string, languag
   const expectedUserId = legalConsentOwner();
   await requireLegalConsent("chat", language, signal);
   const body = new FormData();
-  body.append("file", file);
-  body.append("threadId", threadId);
+  // KAN-167: el nombre original puede contener datos personales; viaja uno
+  // neutro con la extensión del tipo real (el backend valida tipo y contenido).
+  const extension = file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg";
+  body.append("file", file, `adjunto.${extension}`);
+  // KAN-167: sin hilo, el adjunto queda sin atar y el AI Service lo acepta en
+  // el hilo que el backend derive del JWT (no se envía el id del paciente).
+  if (threadId.trim()) body.append("threadId", threadId);
   body.append("language", language);
   return apiFetch<VitaAttachment>(ATTACHMENTS, { method: "POST", body, signal, expectedUserId, timeoutMs: 60_000 });
 }

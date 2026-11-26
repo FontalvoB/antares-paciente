@@ -1,0 +1,503 @@
+/* KAN-167 — Vita transversal: orbe persistente + panel. Solo tokens de
+   theme/variables.css. Profundidad sutil, radios 20-24 px, Space Grotesk en
+   títulos e Inter en cuerpo. Animaciones solo en transform/opacity. */
+
+/* ---------- Dock (orbe / pestaña) ---------- */
+.vita-dock {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--nav-h) + 14px);
+  z-index: 30;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+/* Si el SOS rápido está visible (barra inferior oculta), el orbe sube por
+   encima de él para no taparlo. El SOS vive en un portal a <body>. */
+body:has(.sos-quick-access) .vita-dock {
+  bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 88px + 58px + 14px);
+}
+/* Con el teclado abierto el orbe se retira: nunca tapa el campo activo. */
+html.kb-open .vita-dock {
+  display: none;
+}
+/* Con el panel abierto el orbe no compite (sigue en el DOM para devolver el foco). */
+.vita-dock.is-open {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Espacio extra al final del scroll para que el orbe no tape la última acción. */
+.screen:has(.vita-dock:not(.is-minimized)) > .screen-scroll {
+  padding-bottom: calc(var(--nav-h) + 84px);
+}
+.vita-dock > * {
+  pointer-events: auto;
+}
+/* El aviso va a la izquierda del orbe, en la misma franja inferior que ya
+   ocupa el orbe, para no tapar acciones principales de la pantalla. */
+.vita-dock-orb-wrap {
+  position: relative;
+  margin-right: 14px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.vita-entry-trigger {
+  width: 60px;
+  height: 60px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.vita-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--brand-green-soft) 0%, var(--teal) 55%, var(--teal-d) 100%);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--teal) 30%, transparent), var(--shadow-sm);
+  transition: transform 160ms var(--ease);
+}
+.vita-entry-trigger:active .vita-orb {
+  transform: scale(0.94);
+}
+.vita-orb img {
+  position: relative;
+  z-index: 1;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--wh);
+}
+.vita-orb-halo {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--teal-l);
+  opacity: 0.9;
+}
+.vita-orb-halo.is-breathing {
+  animation: vitaBreathe 3.6s var(--ease) infinite;
+}
+@keyframes vitaBreathe {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.1); opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vita-orb-halo.is-breathing { animation: none; }
+  .vita-orb { transition: none; }
+}
+
+/* Pestaña minimizada: compacta, pegada al borde derecho, siempre visible. */
+ion-button.vita-dock-tab {
+  width: 48px;
+  height: 56px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 22px 0 0 22px;
+  --background: linear-gradient(150deg, var(--brand-green-soft), var(--teal-d));
+  --color: var(--wh);
+  --box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md);
+  border-radius: 22px 0 0 22px;
+}
+.vita-dock-tab-content {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.vita-dock-tab-content ion-icon {
+  font-size: 14px;
+}
+.vita-dock-tab-content img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid var(--wh);
+}
+
+.vita-entry-trigger:focus-visible,
+ion-button.vita-dock-tab:focus-visible,
+.vita-nudge ion-button:focus-visible,
+.vita-panel ion-button:focus-visible {
+  outline: 3px solid var(--wellness-action);
+  outline-offset: 3px;
+}
+
+/* Aviso proactivo diario. */
+.vita-nudge {
+  display: flex;
+  align-items: flex-start;
+  width: min(232px, calc(100vw - 96px));
+  border-radius: 20px;
+  background: var(--wh);
+  border: 1px solid var(--teal-l);
+  box-shadow: var(--shadow-md);
+}
+ion-button.vita-nudge-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  height: auto;
+  --padding-start: 14px;
+  --padding-end: 4px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --color: var(--tx);
+  --background-activated: var(--teal-l);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+}
+.vita-nudge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+.vita-nudge-text strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 14px;
+  color: var(--teal-d);
+}
+ion-button.vita-nudge-close {
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--mu);
+}
+
+/* ---------- Panel ---------- */
+ion-modal.vita-panel-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 430px;
+}
+@media (min-width: 768px) {
+  ion-modal.vita-panel-modal {
+    --height: min(92%, 780px);
+    --border-radius: 24px;
+  }
+}
+.vita-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--g0);
+  color: var(--tx);
+  font-family: "Inter", system-ui, sans-serif;
+}
+.vita-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 6px 14px 16px;
+  background: linear-gradient(160deg, var(--teal-d) 0%, var(--teal) 62%, var(--brand-green-soft) 100%);
+  color: var(--wh);
+  border-radius: 0 0 24px 24px;
+  box-shadow: var(--shadow-sm);
+}
+.vita-panel-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wh) 18%, transparent);
+}
+.vita-panel-avatar img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.vita-panel-identity {
+  flex: 1;
+  min-width: 0;
+}
+.vita-panel-identity h2 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.vita-panel-identity p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--wh);
+  opacity: 0.9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vita-panel ion-button.vita-panel-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--wh);
+  --border-radius: 50%;
+}
+.vita-panel ion-button.vita-panel-icon:focus-visible {
+  outline-color: var(--wh);
+}
+/* Deshabilitado por superficie (criterio global), adaptado a la cabecera teal. */
+.vita-panel ion-button.vita-panel-icon.button-disabled,
+.vita-panel ion-button.vita-panel-icon.button-disabled::part(native) {
+  --background: transparent;
+  background: transparent;
+  color: color-mix(in srgb, var(--wh) 72%, transparent);
+}
+.vita-panel-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: var(--teal-l);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--teal-d);
+}
+.vita-panel-note ion-icon {
+  flex: none;
+  font-size: 16px;
+  margin-top: 1px;
+}
+.vita-panel-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Reserva bajo el último mensaje para el SOS global, que flota encima. */
+  padding: 14px 16px 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.vita-panel-empty p {
+  margin: 6px 0 12px;
+  font-size: 14px;
+  color: var(--mu);
+}
+.vita-panel-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vita-panel-prompts ion-button {
+  margin: 0;
+  min-height: 44px;
+  height: auto;
+  --border-radius: 20px;
+  --border-width: 1px;
+  --border-color: var(--bd);
+  --background: var(--wh);
+  --color: var(--teal-d);
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+}
+.vita-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 86%;
+}
+.vita-msg-user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.vita-msg-bot {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+.vita-bubble {
+  padding: 10px 13px;
+  border-radius: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  box-shadow: var(--shadow-sm);
+}
+.vita-msg-bot .vita-bubble {
+  border-bottom-left-radius: 8px;
+}
+.vita-bubble p {
+  margin: 0;
+}
+.vita-msg-user .vita-bubble {
+  background: linear-gradient(150deg, var(--teal) 0%, var(--teal-d) 100%);
+  border-color: transparent;
+  color: var(--wh);
+  border-bottom-right-radius: 8px;
+}
+.vita-bubble-failed {
+  background: var(--org-l);
+  border-color: var(--org-l);
+  color: var(--org-d);
+}
+.vita-bubble-typing ion-spinner {
+  width: 28px;
+  height: 16px;
+  color: var(--teal);
+}
+.vita-msg-time {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--mu);
+}
+.vita-panel-draft {
+  padding: 8px 16px 0;
+  font-size: 12px;
+  color: var(--mu);
+}
+.vita-panel-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.vita-panel .vita-file-chip,
+.vita-msg .vita-file-chip {
+  max-width: 100%;
+  margin: 0 0 6px;
+}
+.vita-msg-user .vita-file-chip {
+  --background: color-mix(in srgb, var(--wh) 18%, transparent);
+  --color: var(--wh);
+  color: var(--wh);
+}
+.vita-panel-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 8px 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  padding: 6px;
+  border-radius: 24px;
+  background: var(--wh);
+  border: 1px solid var(--bd);
+  box-shadow: var(--shadow-md);
+}
+.vita-panel ion-button.vita-panel-tool {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--teal-d);
+  --border-radius: 50%;
+}
+.vita-panel-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 11px;
+  --padding-bottom: 11px;
+  --background: transparent;
+  --color: var(--tx);
+  --placeholder-color: var(--mu);
+  --placeholder-opacity: 1;
+  font-size: 15px;
+}
+@media (max-width: 360px) {
+  .vita-panel-input {
+    font-size: 14px;
+    --padding-start: 4px;
+    --padding-end: 4px;
+  }
+  .vita-panel-composer {
+    margin-left: 8px;
+    margin-right: 8px;
+    gap: 2px;
+  }
+}
+.vita-panel-input textarea::placeholder {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vita-panel ion-button.vita-panel-send {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 50%;
+  --background: linear-gradient(150deg, var(--brand-green-soft), var(--teal-d));
+  --color: var(--wh);
+}
+.vita-panel ion-button.vita-panel-send::part(native) {
+  border-radius: 50%;
+}
+.vita-panel ion-button.vita-panel-send.button-disabled,
+.vita-panel ion-button.vita-panel-send.button-disabled::part(native) {
+  --background-hover: var(--teal-l);
+  --background-focused: var(--teal-l);
+  --background-activated: var(--teal-l);
+  --background-hover-opacity: 0;
+  --background-focused-opacity: 0;
+  --background: var(--teal-l);
+  background: var(--teal-l);
+  color: var(--teal-d);
+  border-radius: 50%;
+}
+.vita-panel ion-button.vita-panel-tool.button-disabled,
+.vita-panel ion-button.vita-panel-tool.button-disabled::part(native) {
+  --background: transparent;
+  background: transparent;
+  color: var(--mu);
+}
+
+/* Foco visible del campo de texto: el compositor entero muestra el anillo
+   (contraste ≥3:1 del teal sobre blanco) cuando el textarea tiene foco. */
+.vita-panel-composer:has(.vita-panel-input.has-focus),
+.vita-panel-composer:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px var(--teal), var(--shadow-md);
+}
+
+/* Texto del usuario no persistido (historial restaurado). */
+.vita-msg-user .vita-msg-private {
+  font-style: italic;
+  opacity: 0.92;
+}
+
+/* Recordatorios (KAN-176) con el panel abierto: se colocan bajo la cabecera
+   y la nota del panel (`--vita-overlay-top` lo mide VitaEntry al presentarse). */
+body.vita-panel-open ion-toast.wellness-reminder-toast {
+  --ion-safe-area-top: var(--vita-overlay-top, calc(env(safe-area-inset-top, 0px) + 150px));
+}

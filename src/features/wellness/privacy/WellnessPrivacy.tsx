@@ -18,6 +18,7 @@ import { downloadWellnessExport } from "./wellness-export";
 import { AccountLegalSummary } from "./AccountLegalGate";
 import { ServerPrivacyRequests } from "./ServerPrivacyRequests";
 import "./wellness-privacy.css";
+import { VitaEntry } from "../vita";
 
 const DRAFT = "Borrador para revisión legal";
 const SAVE_ERROR = "No pudimos guardar tu decisión. Intenta de nuevo.";
@@ -117,6 +118,7 @@ export function SensitiveDataGate({ actor, onBack, standalone = false, children 
       <Scroll className="wellness-privacy-scroll">
         <main className="wellness-privacy">{content}</main>
       </Scroll>
+      <VitaEntry module="privacy" />
     </Screen>
   ) : content;
 }
@@ -249,6 +251,7 @@ export function WellnessPrivacy() {
           { text: t("Borrar datos"), role: "destructive", handler: deleteData },
         ]}
       />
+      <VitaEntry module="privacy" />
     </Screen>
   );
 }

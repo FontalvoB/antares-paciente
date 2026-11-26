@@ -26,6 +26,7 @@ import {
   type PlanDiffRow,
 } from "../state/goal-change";
 import "../wellness.css";
+import { VitaEntry } from "../vita";
 
 type Stage = "confirm" | "form" | "done";
 
@@ -303,6 +304,7 @@ export function WellnessGoalPage() {
           </div>
         </div>
       </div>
+      <VitaEntry module="goal" />
     </Screen>
   );
 }

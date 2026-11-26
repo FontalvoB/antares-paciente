@@ -5,6 +5,7 @@ import { Screen, Scroll } from "../../../components/Screen";
 import { LanguageToggle } from "../../../components/LanguageToggle";
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
+import { useVitaPanel } from "../vita";
 import "./wellness-home.css";
 
 /** Layout compartido de las dos referencias. El orbe y la órbita son decorativos. */
@@ -14,6 +15,10 @@ export function WellnessFrame({ children, inbox, back = false }: { children: Rea
   const [menuEvent, setMenuEvent] = useState<Event>();
   const [inboxOpen, setInboxOpen] = useState(false);
   const name = user.nombre?.trim().split(/\s+/)[0];
+  // KAN-167: entrada única de Vita. El orbe y el compositor abren el panel de
+  // VitaEntry (voz, texto e imagen); si la pantalla no monta ese panel, abren la voz.
+  const vita = useVitaPanel();
+  const askVita = () => { if (!vita.open()) openVoice(); };
   return <Screen hideNav className="wh-screen">
     <Scroll noNav className="wh-scroll">
       <div className="wh-content">
@@ -25,7 +30,7 @@ export function WellnessFrame({ children, inbox, back = false }: { children: Rea
             <IonButton fill="clear" className="wh-icon-button" aria-label={t("Más opciones")} onClick={e => setMenuEvent(e.nativeEvent)}><IonIcon icon={ellipsisHorizontal} /></IonButton>
           </div>
           <div className="wh-welcome">
-            <IonButton fill="clear" className="wh-orb-button" onClick={openVoice} aria-label={t("Hablar con Vita")}><span className="wh-orb" /></IonButton>
+            <button type="button" className="wh-orb-button" onClick={askVita} aria-label={t("Hablar con Vita")} aria-haspopup="dialog" aria-expanded={vita.expanded ? "true" : "false"}><span className="wh-orb" /></button>
             <div className="wh-bubble"><p>{t("Tu Agente de Bienestar IA")}</p><h1>{name ? t("¡Hola, {name}!", { name }) : t("¡Hola!")}</h1><span className="wh-orbit" aria-hidden="true" /></div>
           </div>
         </header>
@@ -34,7 +39,7 @@ export function WellnessFrame({ children, inbox, back = false }: { children: Rea
     </Scroll>
     <div className="wh-composer">
       <IonButton fill="clear" className="wh-add" aria-label={t("Accesos rápidos")} onClick={e => setMenuEvent(e.nativeEvent)}><IonIcon icon={addOutline} /></IonButton>
-      <IonButton fill="clear" className="wh-ask" onClick={openVoice}>{t("Pregúntame o cuéntame cómo te sientes...")}</IonButton>
+      <IonButton fill="clear" className="wh-ask" onClick={askVita} aria-haspopup="dialog">{t("Pregúntame o cuéntame cómo te sientes...")}</IonButton>
     </div>
     <IonPopover isOpen={!!menuEvent} event={menuEvent} onDidDismiss={() => setMenuEvent(undefined)} dismissOnSelect>
       <IonList lines="none">

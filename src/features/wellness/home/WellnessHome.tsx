@@ -10,6 +10,7 @@ import type { PaidGeneration } from "../generation/wellness-journey-api";
 import { useGeneration } from "../generation/useGeneration";
 import { WellnessFrame, WellnessPreview } from "./WellnessFrame";
 import "./wellness-home.css";
+import { VitaEntry } from "../vita";
 
 const ARTIFACT_LABEL = {
   exercise: "Ejercicio",
@@ -265,6 +266,21 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
 
 
       <WellnessPreview title="Pódcast del día" open={podcastOpen} onClose={() => setPodcastOpen(false)} icon={headsetOutline} />
+      {/* KAN-167: panel único de Vita. Lo abren el orbe y el compositor de
+          WellnessFrame (sin orbe flotante propio para no duplicar la entrada). */}
+      <VitaEntry
+        module="home"
+        docked={false}
+        summary={{
+          day: data.day,
+          totalDays: data.totalDays,
+          adherencePct: data.adherencePct,
+          streakDays: data.streakDays,
+          level: data.level,
+          protocolDone: data.protocolDone,
+          protocolTotal: data.protocol.length,
+        }}
+      />
     </WellnessFrame>
   );
 }
