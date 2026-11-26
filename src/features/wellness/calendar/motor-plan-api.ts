@@ -1,0 +1,44 @@
+import { apiFetch } from "../../../utils/apiClient";
+import { getAccessToken } from "../../../utils/authApi";
+import { sessionUserId } from "../../../utils/sessionIdentity";
+import type { DailyCheckin } from "../checkin/close-day";
+
+const PLAN = "/api/v1/people/me";
+
+export const MOTOR_PLAN_STATE = {
+  active: "Plan activo",
+  paused: "Plan en pausa",
+  maint: "Plan en mantenimiento",
+  locked: "Plan bloqueado",
+} as const;
+
+export interface MotorDay {
+  today: number;
+  todayLocalDate: string;
+  status: { state: "active" | "paused" | "maint" };
+  logStatus: "open" | "recorded" | "missing";
+  streak: number;
+}
+
+export function motorPlanUserId() {
+  return sessionUserId(getAccessToken());
+}
+
+export async function readMotorDay(expectedUserId: string, signal: AbortSignal) {
+  const day = await apiFetch<MotorDay>(PLAN + "/plan", { expectedUserId, signal });
+  if (!day || !Number.isInteger(day.today) || day.today < 1 || day.today > 365 ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(day.todayLocalDate) || !day.status ||
+    !["active", "paused", "maint"].includes(day.status.state)) throw new Error("Invalid Motor 365 day");
+  return day;
+}
+
+export function sendMotorClosure(expectedUserId: string, day: number, input: DailyCheckin) {
+  return apiFetch<void>(PLAN + "/logs/" + day, {
+    expectedUserId,
+    method: "PUT",
+    body: {
+      adh: input.adherence / 100, sleep: input.sleepHours, energy: input.energy, pain: input.pain,
+      sym: input.symptoms, w: input.weightKg, waist: input.waistCm, ex: input.exercised,
+    },
+  });
+}

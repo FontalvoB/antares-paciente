@@ -9,7 +9,8 @@ import { formatWellnessMeasurement, loadUnitPrefs, parseWellnessMeasurement } fr
 import type { UnitPrefs } from "../vitals/unit-prefs";
 import { parseNumberInput, RANGES } from "../domain/draft";
 import { loadPlanSnapshot, localISODate, parseLocalDate, planDay } from "../state/wellness-home-store";
-import { checkinHistory, checkinOwner, loadCheckins, saveCheckin, subscribeCheckins, syncCheckins } from "./checkin-store";
+import { checkinHistory, checkinKey, checkinOwner, loadCheckins, saveCheckin, subscribeCheckins, syncCheckins } from "./checkin-store";
+import { useMotorDay } from "../calendar/useMotorDay";
 import { dailyEffects, shiftLocalDate, SYMPTOMS } from "./close-day";
 import type { DailyCheckin } from "./close-day";
 import "../protocol/wellness-protocol.css";
@@ -33,8 +34,15 @@ export function WellnessCloseDay() {
   const { t, lang } = useI18n();
   const owner = checkinOwner(user);
   const prefs = loadUnitPrefs(owner, lang);
-  const [date] = useState(() => localISODate(new Date()));
-  const [record, setRecord] = useState(() => loadCheckins(owner)[date]);
+  const [legacyDate] = useState(() => localISODate(new Date()));
+  const motor = useMotorDay();
+  const remote = motor.kind === "ready" ? motor.day : undefined;
+  const date = remote?.todayLocalDate ?? legacyDate;
+  const key = checkinKey(date, remote?.today);
+  const [records, setRecords] = useState(() => loadCheckins(owner));
+  const record = records[key];
+  const serverRecorded = remote?.logStatus === "recorded";
+  const canSubmit = motor.kind === "legacy" || motor.kind === "ready";
   const [values, setValues] = useState<Partial<Record<Field, { raw: string; prefs: UnitPrefs }>>>({});
   const [symptoms, setSymptoms] = useState<DailyCheckin["symptoms"]>([]);
   const [exercise, setExercise] = useState<"yes" | "no">();
@@ -43,15 +51,15 @@ export function WellnessCloseDay() {
   const [saving, setSaving] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
   const issue = useRef<HTMLParagraphElement>(null);
-  const saved = Boolean(record);
+  const saved = Boolean(record) || serverRecorded;
   const attempted = failedAttempts > 0;
 
   useEffect(() => {
-    const refresh = () => setRecord(loadCheckins(owner)[date]);
+    const refresh = () => setRecords(loadCheckins(owner));
     const unsubscribe = subscribeCheckins(owner, refresh);
     refresh();
     return unsubscribe;
-  }, [owner, date]);
+  }, [owner]);
 
   useEffect(() => {
     if (saved) title.current?.focus();
@@ -77,7 +85,7 @@ export function WellnessCloseDay() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving || record) return;
+    if (saving || saved || !canSubmit) return;
     setSaveError(undefined);
     const [adherence, sleepHours, energy, pain, weightKg, waistCm] = parsed;
     if (invalid.some(Boolean) || !exercise ||
@@ -90,8 +98,8 @@ export function WellnessCloseDay() {
       await saveCheckin(owner, date, {
         adherence, sleepHours, energy, pain, symptoms, weightKg, waistCm,
         exercised: exercise === "yes",
-      });
-      setRecord(loadCheckins(owner)[date]);
+      }, new Date(), remote?.today);
+      setRecords(loadCheckins(owner));
       void syncCheckins(owner);
     } catch (error) {
       setSaveError(error instanceof RangeError
@@ -104,7 +112,7 @@ export function WellnessCloseDay() {
 
   const tomorrow = shiftLocalDate(date, 1);
   const startDate = loadPlanSnapshot()?.startDate ?? date;
-  const effects = record
+  const effects = record && motor.kind === "legacy"
     ? dailyEffects(tomorrow, checkinHistory(owner), planDay(startDate, parseLocalDate(tomorrow) ?? undefined))
     : null;
   const formattedDate = formatLocalizedDate(date, lang);
@@ -115,25 +123,25 @@ export function WellnessCloseDay() {
       <Scroll className="wp-scroll wc-scroll">
         <header className="wp-hero">
           <h1 className="wp-title" ref={title} tabIndex={-1}>
-            {record ? t("Día cerrado") : t("Cerrar el día")}
+            {saved ? t("Día cerrado") : t("Cerrar el día")}
           </h1>
-          <p className="wp-eyebrow"><time dateTime={date}>{formattedDate}</time></p>
+          {canSubmit && <p className="wp-eyebrow"><time dateTime={date}>{formattedDate}</time></p>}
         </header>
-        {record && effects ? (
+        {!canSubmit ? <p role="status">{t(motor.kind === "locked" ? "Plan bloqueado" : motor.kind === "loading" ? "Consultando el plan…" : "Día del plan no disponible")}</p> : saved ? (
           <section className="wp-card wc-card">
             <p className="wc-status" role="status">
-              {record.status === "synced"
+              {record?.status === "synced" || serverRecorded
                 ? t("Cierre sincronizado.")
                 : t("Guardado en este dispositivo. Se sincronizará al volver la conexión.")}
             </p>
-            <h2>{t("Tu plan para mañana")}</h2>
+            {effects && <><h2>{t("Tu plan para mañana")}</h2>
             {effects.messages.length ? (
               <ul className="wc-effects">
                 {effects.messages.map((message) => <li key={message}>{t(message)}</li>)}
               </ul>
             ) : (
               <p>{t("Tu plan de mañana sigue igual.")}</p>
-            )}
+            )}</>}
             <IonButton expand="block" onClick={() => navigate("home")}>{t("Volver al inicio")}</IonButton>
           </section>
         ) : (

@@ -7,6 +7,8 @@ import { useI18n } from "../../../i18n/I18nContext";
 import { formatDateForDisplay, toLocalISODate } from "../../../utils/dates";
 import { GENERATION_ARTIFACTS, type GenerationInboxItem } from "../generation/generation-store";
 import type { PaidGeneration } from "../generation/wellness-journey-api";
+import { MOTOR_PLAN_STATE } from "../calendar/motor-plan-api";
+import { useMotorDay } from "../calendar/useMotorDay";
 import { useGeneration } from "../generation/useGeneration";
 import { WellnessFrame, WellnessPreview } from "./WellnessFrame";
 import "./wellness-home.css";
@@ -50,6 +52,12 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
   const { user, navigate, openTests } = useApp();
   const { t, lang } = useI18n();
   const data = useWellnessOverview(user.nombre);
+  const motor = useMotorDay();
+  const planDay = motor.kind === "ready" ? motor.day.today : motor.kind === "legacy" ? data.day : null;
+  const streak = motor.kind === "ready" ? motor.day.streak : motor.kind === "legacy" ? data.streakDays : null;
+  const motorLabel = motor.kind === "ready" ? MOTOR_PLAN_STATE[motor.day.status.state]
+    : motor.kind === "locked" ? MOTOR_PLAN_STATE.locked
+      : motor.kind === "loading" ? "Consultando el plan…" : "Día del plan no disponible";
   const [podcastOpen, setPodcastOpen] = useState(false);
   const local = useGeneration(!paidGeneration);
   const artifacts = paidGeneration?.job ?? local.job?.artifacts;
@@ -160,9 +168,12 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
         </IonButton>
       </section>
       <section className="wh-stats" aria-label={t("Tu progreso")}>
-        <div className="wh-stat-day"><IonIcon icon={calendarOutline} aria-hidden="true" /><div><strong className="wh-day">{t("Día {day} de {total}", { day: String(data.day), total: String(data.totalDays) })}</strong><span>{t("Objetivo")}: {t(GOAL_LABEL[data.plan.goal])}</span></div></div>
+        <div className="wh-stat-day"><IonIcon icon={calendarOutline} aria-hidden="true" /><div>
+          <strong className="wh-day">{planDay === null ? t(motorLabel) : t("Día {day} de {total}", { day: String(planDay), total: String(data.totalDays) })}</strong>
+          <span>{motor.kind === "ready" ? t(motorLabel) : motor.kind === "legacy" ? `${t("Objetivo")}: ${t(GOAL_LABEL[data.plan.goal])}` : null}</span>
+        </div></div>
         <div><IonIcon icon={flameOutline} aria-hidden="true" /><div><strong>{number.format(data.points)} XP</strong><span>{t("Acumulados")}</span></div></div>
-        <div><IonIcon icon={flashOutline} aria-hidden="true" /><div><strong>{t("{count} días", { count: String(data.streakDays) })}</strong><span>{t("Racha")}</span></div></div>
+        <div><IonIcon icon={flashOutline} aria-hidden="true" /><div><strong>{streak === null ? "—" : t("{count} días", { count: String(streak) })}</strong><span>{t("Racha")}</span></div></div>
       </section>
       <section className="wh-task-list" aria-label={t("Actividades del día")}>
         {tasks.map(task => <IonButton key={task.id} fill="clear" className="wh-task" onClick={task.action}>
