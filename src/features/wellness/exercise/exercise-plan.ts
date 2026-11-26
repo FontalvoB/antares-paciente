@@ -38,12 +38,15 @@ export interface ExerciseDose {
   restSec?: number;
   rir?: string;
   minutes?: number;
+  holdSec?: number;
 }
 
 export interface PlannedExercise {
   id: string;
-  focus: string;
+  focus?: string;
   name: { es: string; en: string };
+  description?: { es: string; en: string };
+  allottedMinutes?: number;
   guide: {
     steps: { es: string; en: string }[];
     breathing: { es: string; en: string };

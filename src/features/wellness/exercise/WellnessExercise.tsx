@@ -6,6 +6,7 @@ import {
   IonIcon,
   IonProgressBar,
   IonRange,
+  IonSpinner,
   IonToggle,
 } from "@ionic/react";
 import {
@@ -24,12 +25,16 @@ import {
   completeProtocolStep,
   getWellnessHomeData,
   localISODate,
+  parseLocalDate,
 } from "../state/wellness-home-store";
 import {
   buildExerciseDay,
   type ExerciseCheckin,
   type PlannedExercise,
 } from "./exercise-plan";
+import { MOTOR_PLAN_STATE, motorPlanUserId, type MotorExerciseSession } from "../calendar/motor-plan-api";
+import { useMotorDay } from "../calendar/useMotorDay";
+import { motorExercisePlan } from "./motor-exercise-plan";
 import "../wellness.css";
 import "./wellness-exercise.css";
 import { VitaEntry } from "../vita";
@@ -48,10 +53,13 @@ const PENDING_KEY = "wellness.exercise.pending.v1";
 
 interface StoredCheckin extends ExerciseCheckin {
   date: string;
+  day?: number;
 }
 
 interface StoredSession {
   date: string;
+  day?: number;
+  fingerprint?: string;
   index: number;
   remaining: number;
   endAt: number | null;
@@ -77,6 +85,7 @@ function write(key: string, value: unknown): void {
 }
 
 function durationFor(exercise: PlannedExercise): number {
+  if (exercise.allottedMinutes !== undefined) return exercise.allottedMinutes * 60;
   const { sets, reps, restSec, minutes } = exercise.dose;
   if (minutes) return Math.max(60, Math.round(minutes * 60));
   return Math.max(
@@ -99,11 +108,60 @@ function sessionRemaining(session: StoredSession): number {
 }
 
 export function WellnessExercise() {
+  const motor = useMotorDay();
+  const { navigate } = useApp();
+  const { t } = useI18n();
+  if (motor.kind === "legacy") return <ExerciseScreen key="legacy" />;
+  const account = motorPlanUserId();
+  if (motor.kind === "ready" && motor.day.status.state !== "paused" && motor.day.exercise && account) {
+    const { today, todayLocalDate, exercise } = motor.day;
+    // No reanudar por índice si una actualización cambia la receta del día.
+    const fingerprint = JSON.stringify(exercise.items.map(({ id, minutes, strength }) => [id, minutes, strength]));
+    return <ExerciseScreen key={JSON.stringify([account, today, todayLocalDate, fingerprint])}
+      server={{ account, day: today, date: todayLocalDate, exercise, fingerprint }} />;
+  }
+  const loading = motor.kind === "loading";
+  const message = loading ? "Consultando el plan…"
+    : motor.kind === "locked" ? MOTOR_PLAN_STATE.locked
+    : motor.kind === "ready" && motor.day.status.state === "paused" ? MOTOR_PLAN_STATE.paused
+    : "Día del plan no disponible";
+  return (
+    <Screen>
+      <Scroll className="wx-scroll">
+        <header className="wx-hero wx-hero-top">
+          <IonButton className="wx-back" fill="outline" onClick={() => navigate("protocol")}
+            aria-label={t("Volver al protocolo")}>
+            <IonIcon icon={arrowBackOutline} slot="icon-only" aria-hidden="true" />
+          </IonButton>
+          <h1>{t("Ejercicio")}</h1>
+        </header>
+        <div className="wx-card" role="status">
+          {loading && <IonSpinner aria-hidden="true" />}
+          <p className="wx-body">{t(message)}</p>
+        </div>
+      </Scroll>
+      <VitaEntry module="exercise" summary={{ sessionActive: false,
+        ...(motor.kind === "ready" ? { day: motor.day.today } : {}) }} />
+    </Screen>
+  );
+}
+
+interface ServerExercise {
+  account: string;
+  day: number;
+  date: string;
+  exercise: MotorExerciseSession;
+  fingerprint: string;
+}
+
+function ExerciseScreen({ server }: { server?: ServerExercise }) {
   const { user, navigate, showToast } = useApp();
   const { t, lang } = useI18n();
   const number = new Intl.NumberFormat(lang);
   const today = new Date();
-  const date = localISODate(today);
+  const date = server?.date ?? localISODate(today);
+  const checkinKey = server ? CHECKIN_KEY + "." + server.account : CHECKIN_KEY;
+  const sessionKey = server ? SESSION_KEY + "." + server.account : SESSION_KEY;
   const owner = checkinOwner(user);
   const home = getWellnessHomeData(user?.nombre ?? "", today);
   const effects = useMemo(
@@ -111,11 +169,12 @@ export function WellnessExercise() {
     [date, owner, home.day],
   );
   const [checkin, setCheckin] = useState<StoredCheckin>(() => {
-    const stored = read<StoredCheckin | null>(CHECKIN_KEY, null);
-    return stored && stored.date === localISODate(new Date())
+    const stored = read<StoredCheckin | null>(checkinKey, null);
+    return stored && stored.date === date && stored.day === server?.day
       ? stored
       : {
-          date: localISODate(new Date()),
+          date,
+          day: server?.day,
           pain: 0,
           fatigue: false,
           dizziness: false,
@@ -123,7 +182,7 @@ export function WellnessExercise() {
   });
   const plan = useMemo(
     () =>
-      buildExerciseDay({
+      server ? motorExercisePlan(server.day, server.exercise, checkin) : buildExerciseDay({
         goal: home.plan.goal,
         day: home.day,
         dailyEffects: effects,
@@ -133,11 +192,12 @@ export function WellnessExercise() {
           dizziness: checkin.dizziness,
         } : undefined,
       }),
-    [home.plan.goal, home.day, checkin, effects, date],
+    [server, home.plan.goal, home.day, checkin, effects, date],
   );
   const [session, setSession] = useState<StoredSession | null>(() => {
-    const stored = read<StoredSession | null>(SESSION_KEY, null);
-    return stored && stored.date === localISODate(new Date()) ? stored : null;
+    const stored = read<StoredSession | null>(sessionKey, null);
+    return stored && stored.date === date && stored.day === server?.day &&
+      stored.fingerprint === server?.fingerprint ? stored : null;
   });
   const [remaining, setRemaining] = useState(() =>
     session ? sessionRemaining(session) : 0,
@@ -146,8 +206,8 @@ export function WellnessExercise() {
 
   const updateCheckin = (patch: Partial<ExerciseCheckin>) => {
     setCheckin((prev) => {
-      const next = { ...prev, ...patch, date: localISODate(new Date()) };
-      write(CHECKIN_KEY, next);
+      const next = { ...prev, ...patch, date, day: server?.day };
+      write(checkinKey, next);
       return next;
     });
   };
@@ -174,7 +234,9 @@ export function WellnessExercise() {
     if (plan.exercises.length === 0) return;
     const duration = durationFor(plan.exercises[0]);
     const initial: StoredSession = {
-      date: localISODate(new Date()),
+      date,
+      day: server?.day,
+      fingerprint: server?.fingerprint,
       index: 0,
       remaining: duration,
       endAt: Date.now() + duration * 1000,
@@ -183,7 +245,7 @@ export function WellnessExercise() {
     };
     setSession(initial);
     setRemaining(initial.remaining);
-    write(SESSION_KEY, initial);
+    write(sessionKey, initial);
   };
 
   const togglePause = () => {
@@ -195,13 +257,13 @@ export function WellnessExercise() {
         endAt: Date.now() + session.remaining * 1000,
       };
       setSession(next);
-      write(SESSION_KEY, next);
+      write(sessionKey, next);
     } else {
       const left = sessionRemaining(session);
       const next = { ...session, paused: true, endAt: null, remaining: left };
       setSession(next);
       setRemaining(left);
-      write(SESSION_KEY, next);
+      write(sessionKey, next);
     }
   };
 
@@ -222,16 +284,16 @@ export function WellnessExercise() {
     };
     setSession(next);
     setRemaining(duration);
-    write(SESSION_KEY, next);
+    write(sessionKey, next);
   };
 
   const finishSession = () => {
-    const result = completeProtocolStep("exercise");
+    const result = completeProtocolStep("exercise", parseLocalDate(date) ?? today);
     write(PENDING_KEY, {
-      date: localISODate(new Date()),
+      date,
       completedAt: new Date().toISOString(),
     });
-    window.localStorage.removeItem(SESSION_KEY);
+    window.localStorage.removeItem(sessionKey);
     setSession(null);
     setFinished(true);
     showToast(
@@ -243,7 +305,7 @@ export function WellnessExercise() {
   };
 
   const closeSession = () => {
-    write(SESSION_KEY, session);
+    write(sessionKey, session);
     setSession(null);
   };
 
@@ -294,7 +356,7 @@ export function WellnessExercise() {
                 })}
               </p>
               <h1>
-                {t(currentExercise.name.es)}
+                {currentExercise.name[lang]}
               </h1>
             </div>
           </header>
@@ -350,7 +412,7 @@ export function WellnessExercise() {
             </IonButton>
             <div>
               <p className="wx-eyebrow">{t("Ejercicio")}</p>
-              <h1>{t(plan.typeName.es)}</h1>
+              <h1>{plan.typeName[lang]}</h1>
             </div>
             <IonBadge className="wx-badge" color="light">
               {t("Semana {week}", { week: number.format(plan.week) })}
@@ -360,7 +422,7 @@ export function WellnessExercise() {
             {t("Día {day} · {minutes} min · Fase {phase}", {
               day: number.format(plan.day),
               minutes: number.format(plan.minutes),
-              phase: t(plan.phaseName.es),
+              phase: plan.phaseName[lang],
             })}
           </p>
           {plan.deload && (
@@ -412,7 +474,7 @@ export function WellnessExercise() {
           </div>
         </section>
 
-        {effects.messages.filter((message) => EXERCISE_MESSAGES.has(message)).map((message) => (
+        {!server && effects.messages.filter((message) => EXERCISE_MESSAGES.has(message)).map((message) => (
           <p className="wx-note" key={message}>{t(message)}</p>
         ))}
         {plan.adaptationNote && (
@@ -431,7 +493,7 @@ export function WellnessExercise() {
           </p>
         ) : (
           <>
-            <ol className="wx-list">
+            <ol className="wx-list" aria-label={t("Ejercicio")}>
               {plan.exercises.map((exercise, index) => (
                 <li className="wx-card" key={`${exercise.id}-${index}`}>
                   <div className="wx-ex-head">
@@ -439,10 +501,19 @@ export function WellnessExercise() {
                       {index + 1}
                     </span>
                     <h2>
-                      {t(exercise.name.es)}
+                      {exercise.name[lang]}
                     </h2>
                   </div>
-                  <p className="wx-dose">{doseLabel(exercise, t)}</p>
+                  {exercise.description && <p className="wx-body">{exercise.description[lang]}</p>}
+                  {exercise.allottedMinutes !== undefined && (
+                    <p className="wx-dose">{t("{minutes} min", { minutes: number.format(exercise.allottedMinutes) })}</p>
+                  )}
+                  {exercise.dose.minutes === undefined || exercise.allottedMinutes === undefined ? (
+                    <p className="wx-dose">{doseLabel(exercise, t)}</p>
+                  ) : null}
+                  {!!exercise.dose.holdSec && (
+                    <p className="wx-body">{t("Sostén {seconds} s", { seconds: number.format(exercise.dose.holdSec) })}</p>
+                  )}
                   <ExerciseTechnique exercise={exercise} compact />
                 </li>
               ))}
@@ -461,7 +532,7 @@ export function WellnessExercise() {
             <ul className="wx-unlocks">
               {plan.nextUnlocks.map((unlock) => (
                 <li key={unlock.id}>
-                  <span>{t(unlock.name.es)}</span>
+                  <span>{unlock.name[lang]}</span>
                   <span>
                     {t("Semana {week}", { week: String(unlock.week) })}
                   </span>
@@ -478,8 +549,8 @@ export function WellnessExercise() {
       <VitaEntry
         module="exercise"
         summary={{
-          day: home.day,
-          goal: home.plan.goal,
+          day: plan.day,
+          ...(!server ? { goal: home.plan.goal } : {}),
           exercisesTotal: plan.exercises.length,
           sessionActive: Boolean(session),
         }}
@@ -516,22 +587,22 @@ function ExerciseTechnique({
       <summary>{t("Técnica y respiración")}</summary>
       <ol>
         {guide.steps.map((step, index) => (
-          <li key={index}>{t(step.es)}</li>
+          <li key={index}>{step[lang]}</li>
         ))}
       </ol>
       <p>
-        <strong>{t("Respiración")}:</strong> {t(guide.breathing.es)}
+        <strong>{t("Respiración")}:</strong> {guide.breathing[lang]}
       </p>
       {guide.mistakes.length > 0 && (
         <p>
-          <strong>{t("Evita")}:</strong> {new Intl.ListFormat(lang).format(guide.mistakes.map(({ es }) => t(es)))}
+          <strong>{t("Evita")}:</strong> {new Intl.ListFormat(lang).format(guide.mistakes.map(mistake => mistake[lang]))}
         </p>
       )}
       <p>
-        <strong>{t("Más fácil")}:</strong> {t(guide.easier.es)}
+        <strong>{t("Más fácil")}:</strong> {guide.easier[lang]}
       </p>
       <p>
-        <strong>{t("Más difícil")}:</strong> {t(guide.harder.es)}
+        <strong>{t("Más difícil")}:</strong> {guide.harder[lang]}
       </p>
     </details>
   );

@@ -20,6 +20,29 @@ export interface MotorDay {
   status: { state: "active" | "paused" | "maint" };
   logStatus: "open" | "recorded" | "missing";
   streak: number;
+  exercise?: MotorExerciseSession | null;
+}
+
+type MotorText = { es: string; en: string };
+interface MotorTechnique { n: string; s: string[]; b: string; m: string; e: string; h: string }
+
+export interface MotorExerciseSession {
+  type: string;
+  name: MotorText;
+  week: number;
+  level: number;
+  minutes: number;
+  deload: boolean;
+  phase: { name: MotorText; level: number };
+  items: {
+    id: string;
+    minutes: number;
+    lowImpact: boolean;
+    description: MotorText;
+    guide: { es: MotorTechnique; en: MotorTechnique };
+    strength: { sets: number; reps: number; restSeconds: number; holdSeconds: number; repsInReserve: string } | null;
+  }[];
+  nextUnlocks: { id: string; week: number; name: MotorText }[];
 }
 
 export function motorPlanUserId() {
