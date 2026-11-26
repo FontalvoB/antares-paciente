@@ -50,6 +50,8 @@ interface MotorMealTotals {
 
 export interface MotorDay {
   mealPlan?: MotorMealPlan;
+  why?: MotorText[];
+  lighterDinner?: boolean;
   nutrition?: MotorNutritionTargets;
   today: number;
   todayLocalDate: string;
