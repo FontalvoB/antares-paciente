@@ -4,7 +4,7 @@ import { IonButton, IonIcon, IonItem, IonLabel, IonList, IonProgressBar } from "
 import { barbellOutline, calendarOutline, checkmark, clipboardOutline, flashOutline, flameOutline, headsetOutline, restaurantOutline } from "ionicons/icons";
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
-import { formatDateForDisplay, toLocalISODate } from "../../../utils/dates";
+import { formatDateForDisplay, formatLocalizedDate, toLocalISODate } from "../../../utils/dates";
 import { GENERATION_ARTIFACTS, type GenerationInboxItem } from "../generation/generation-store";
 import type { PaidGeneration } from "../generation/wellness-journey-api";
 import { MOTOR_PLAN_STATE } from "../calendar/motor-plan-api";
@@ -53,11 +53,13 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
   const { t, lang } = useI18n();
   const data = useWellnessOverview(user.nombre);
   const motor = useMotorDay();
+  const syncedDay = motor.kind === "ready" ? motor.day : undefined;
   const planDay = motor.kind === "ready" ? motor.day.today : motor.kind === "legacy" ? data.day : null;
   const streak = motor.kind === "ready" ? motor.day.streak : motor.kind === "legacy" ? data.streakDays : null;
   const motorLabel = motor.kind === "ready" ? MOTOR_PLAN_STATE[motor.day.status.state]
     : motor.kind === "locked" ? MOTOR_PLAN_STATE.locked
-      : motor.kind === "loading" ? "Consultando el plan…" : "Día del plan no disponible";
+      : motor.kind === "loading" ? "Consultando el plan…"
+        : motor.kind === "unlinked" ? "Tu cuenta no tiene un plan vinculado." : "Día del plan no disponible";
   const [podcastOpen, setPodcastOpen] = useState(false);
   const local = useGeneration(!paidGeneration);
   const artifacts = paidGeneration?.job ?? local.job?.artifacts;
@@ -171,10 +173,22 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
         <div className="wh-stat-day"><IonIcon icon={calendarOutline} aria-hidden="true" /><div>
           <strong className="wh-day">{planDay === null ? t(motorLabel) : t("Día {day} de {total}", { day: String(planDay), total: String(data.totalDays) })}</strong>
           <span>{motor.kind === "ready" ? t(motorLabel) : motor.kind === "legacy" ? `${t("Objetivo")}: ${t(GOAL_LABEL[data.plan.goal])}` : null}</span>
+          {syncedDay && <time dateTime={syncedDay.todayLocalDate}>{formatLocalizedDate(syncedDay.todayLocalDate, lang)}</time>}
         </div></div>
         <div><IonIcon icon={flameOutline} aria-hidden="true" /><div><strong>{number.format(data.points)} XP</strong><span>{t("Acumulados")}</span></div></div>
         <div><IonIcon icon={flashOutline} aria-hidden="true" /><div><strong>{streak === null ? "—" : t("{count} días", { count: String(streak) })}</strong><span>{t("Racha")}</span></div></div>
       </section>
+      {syncedDay?.syncedAt && syncedDay.engine_ver && syncedDay.params_version !== undefined && (
+        <div className="wh-body" aria-label={t("Sincronización del Motor 365")}>
+          <p><time dateTime={syncedDay.syncedAt}>{t("Última sincronización: {time}", {
+            time: new Intl.DateTimeFormat(lang, { dateStyle: "short", timeStyle: "short" }).format(new Date(syncedDay.syncedAt)),
+          })}</time></p>
+          <p>{t("Motor {engine} · Parámetros {params}", {
+            engine: syncedDay.engine_ver, params: number.format(syncedDay.params_version),
+          })}</p>
+          {motor.kind === "ready" && motor.stale && <p role="status">{t("No se pudo actualizar el plan.")}</p>}
+        </div>
+      )}
       <section className="wh-task-list" aria-label={t("Actividades del día")}>
         {tasks.map(task => <IonButton key={task.id} fill="clear" className="wh-task" onClick={task.action}>
           <IonIcon className="wh-task-icon" icon={task.icon} aria-hidden="true" />

@@ -5,18 +5,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Screen, Scroll } from "../../../components/Screen";
 import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
+import { useMotorDay } from "../calendar/useMotorDay";
 import { checkinHistory, checkinOwner, subscribeCheckins } from "../checkin/checkin-store";
-import type { CheckinHistory } from "../checkin/close-day";
 import { loadPlanSnapshot, loadPlanVersions, localISODate, parseLocalDate, planDay } from "../state/wellness-home-store";
 import { bodyMeasurementFormatter, loadUnitPrefs } from "../vitals/unit-prefs";
 import { MeasurementCurve } from "./MeasurementCurve";
 import { YearCalendar } from "./YearCalendar";
 import { buildCalendar, planMilestones, selectRange, summarizeMonth } from "./year-data";
-import type { Period } from "./year-data";
+import type { CalendarHistory, Period } from "./year-data";
 import "./wellness-year.css";
 import { VitaEntry } from "../vita";
 
-const EMPTY_HISTORY: CheckinHistory = {};
+const EMPTY_HISTORY: CalendarHistory = {};
 
 export function WellnessYearPage() {
   const { user, navigate } = useApp();
@@ -24,6 +24,9 @@ export function WellnessYearPage() {
   const reducedMotion = useReducedMotion();
   const locale = lang === "en" ? "en-US" : "es-ES";
   const owner = checkinOwner(user);
+  const motor = useMotorDay(365);
+  const remote = motor.kind === "ready" ? motor.day : undefined;
+  const legacy = motor.kind === "legacy";
   const [plan] = useState(loadPlanSnapshot);
   const [versions] = useState(loadPlanVersions);
   const units = useMemo(() => loadUnitPrefs(owner), [owner]);
@@ -32,9 +35,13 @@ export function WellnessYearPage() {
   const [month, setMonth] = useState("");
   const title = useRef<HTMLHeadingElement>(null);
   const calendar = useRef<HTMLElement>(null);
-  const start = plan?.startDate ?? "";
-  const today = localISODate(new Date());
-  const history = checkins.owner === owner ? checkins.history : EMPTY_HISTORY;
+  const snapshot = remote?.sync;
+  const start = legacy ? plan?.startDate ?? "" : snapshot ? remote?.startDate ?? "" : "";
+  const today = remote?.todayLocalDate ?? localISODate(new Date());
+  const realHistory: CalendarHistory = useMemo(() => snapshot
+    ? Object.fromEntries(snapshot.logs.map(log => [log.date, { ...log, adherence: log.adherence * 100 }]))
+    : EMPTY_HISTORY, [snapshot]);
+  const history = legacy && checkins.owner === owner ? checkins.history : realHistory;
 
   useEffect(() => {
     const refresh = () => setCheckins({ owner, history: checkinHistory(owner) });
@@ -55,10 +62,18 @@ export function WellnessYearPage() {
   const range = useMemo(() => selectRange(days, period, monthId, today), [days, period, monthId, today]);
   const milestones = useMemo(() => {
     if (!range.length) return [];
+    if (snapshot) {
+      const dateByDay = new Map(range.map(({ number, date }) => [number, date]));
+      return snapshot.events.flatMap((event, index) => {
+        const date = dateByDay.get(event.d);
+        return date ? [{ date, time: `${date}-${index}`, label: event[lang] }] : [];
+      });
+    }
+    if (!legacy) return [];
     return planMilestones(versions, start, today)
       .filter(({ date }) => date >= range[0].date && date <= range[range.length - 1].date)
       .sort((a, b) => a.time.localeCompare(b.time));
-  }, [versions, start, today, range]);
+  }, [versions, start, today, range, snapshot, legacy, lang]);
   const monthFormat = useMemo(() => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }), [locale]);
   const dateFormat = useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: "medium" }), [locale]);
   const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);
@@ -148,10 +163,12 @@ export function WellnessYearPage() {
               )}
               {milestones.length > 0 && (
                 <ul className="wy-milestones" aria-label={t("Hitos del plan")}>
-                  {milestones.map(({ date, time }, index) => (
-                    <li key={`${time}-${index}`}>
+                  {milestones.map((milestone, index) => (
+                    <li key={`${milestone.time}-${index}`}>
                       <span aria-hidden="true" />
-                      {t("Cambio de plan · {date}", { date: dateFormat.format(parseLocalDate(date)!) })}
+                      {"label" in milestone
+                        ? `${dateFormat.format(parseLocalDate(milestone.date)!)} · ${milestone.label}`
+                        : t("Cambio de plan · {date}", { date: dateFormat.format(parseLocalDate(milestone.date)!) })}
                     </li>
                   ))}
                 </ul>
@@ -160,11 +177,12 @@ export function WellnessYearPage() {
 
             <section ref={calendar} className="wy-card" aria-labelledby="wy-calendar">
               <h2 id="wy-calendar">{t("Calendario del plan")}</h2>
-              <YearCalendar months={months} today={today} initialDay={planDay(start)} />
+              <YearCalendar months={months} today={today} initialDay={remote?.today ?? planDay(start)} />
             </section>
           </div>
         ) : (
-          <p className="wy-card wy-empty" role="status">{t("Tu calendario estará disponible cuando tengas un plan.")}</p>
+          <p className="wy-card wy-empty" role="status">{t(motor.kind === "loading" ? "Consultando el plan…" :
+            legacy || motor.kind === "unlinked" ? "Tu calendario estará disponible cuando tengas un plan." : "Día del plan no disponible")}</p>
         )}
       </Scroll>
       <VitaEntry module="year" />

@@ -1,15 +1,18 @@
 import type { UserProfile } from "../../../types";
 import { localISODate, parseLocalDate } from "../state/wellness-home-store";
 import type { DailyCheckin } from "./close-day";
-import { motorPlanUserId, sendMotorClosure } from "../calendar/motor-plan-api";
+import { ApiError } from "../../../utils/apiClient";
+import { MOTOR_CLOSURE_CONFIRMED, cachedMotorPerson, confirmStoredMotorClosure, motorPlanUserId, sendMotorClosure } from "../calendar/motor-plan-api";
 import { readWellnessConsent } from "../privacy/privacy-consent-store";
 
 export interface SavedCheckin {
   date: string;
   serverDay?: number;
+  personId?: string;
   idempotencyKey: string;
   input: DailyCheckin;
-  status: "pending" | "synced";
+  status: "pending" | "synced" | "conflict";
+  confirmedConflict?: boolean;
 }
 
 const STORAGE_PREFIX = "wellness.checkins.v1.";
@@ -17,6 +20,10 @@ const CHANGE_EVENT = "wellness-checkins-changed";
 
 export function checkinOwner(user: Partial<UserProfile> | undefined): string {
   return user?.id || user?.cedula || user?.email || "local";
+}
+
+export function motorCheckinOwner(account: string, personId: string): string {
+  return `motor-real:${account}:${personId}`;
 }
 
 function storageKey(owner: string): string {
@@ -47,7 +54,8 @@ function writeCheckin(owner: string, record: SavedCheckin): void {
 
 export function checkinHistory(owner: string): Record<string, DailyCheckin> {
   return Object.fromEntries(
-    Object.values(loadCheckins(owner)).map(({ date, input }) => [date, input]),
+    Object.values(loadCheckins(owner)).filter(({ serverDay }) => serverDay === undefined)
+      .map(({ date, input }) => [date, input]),
   );
 }
 
@@ -56,7 +64,8 @@ function withCheckinLock<T>(owner: string, action: () => T | Promise<T>): Promis
   return Promise.resolve().then(action);
 }
 
-export function saveCheckin(owner: string, date: string, input: DailyCheckin, now = new Date(), serverDay?: number) {
+export function saveCheckin(owner: string, date: string, input: DailyCheckin, now = new Date(), serverDay?: number,
+  personId?: string) {
   return withCheckinLock(owner, () => {
     if (!parseLocalDate(date) || (serverDay === undefined && date > localISODate(now)) ||
       (serverDay !== undefined && (!Number.isInteger(serverDay) || serverDay < 1 || serverDay > 365)))
@@ -67,6 +76,7 @@ export function saveCheckin(owner: string, date: string, input: DailyCheckin, no
     const record: SavedCheckin = {
       date,
       serverDay,
+      personId,
       input,
       idempotencyKey: `${storageKey(owner)}:${key}`,
       status: "pending",
@@ -76,34 +86,54 @@ export function saveCheckin(owner: string, date: string, input: DailyCheckin, no
   });
 }
 
-type SendCheckin = (record: SavedCheckin) => Promise<void | false>;
+type SendCheckin = (record: SavedCheckin) => Promise<void | false | "conflict">;
+type ReconcileCheckin = (record: SavedCheckin) => Promise<boolean>;
 
-function sendForOwner(owner: string): SendCheckin {
-  return async (record) => {
-    // Los cierres del flujo legado permanecen locales. Un cierre del motor
-    // solo se marca sincronizado cuando la API del mismo usuario lo confirma.
-    if (record.serverDay === undefined || !readWellnessConsent("sensitive-data", owner)) return false;
-    if (motorPlanUserId() !== owner) throw new Error("Motor 365 session changed");
-    await sendMotorClosure(owner, record.serverDay, record.input);
-  };
-}
 const syncing = new Map<string, Promise<void>>();
 
-export function syncCheckins(owner: string, send: SendCheckin = sendForOwner(owner)): Promise<void> {
+export function syncMotorCheckins(account: string) {
+  const personId = cachedMotorPerson(account);
+  if (!personId || motorPlanUserId() !== account) return;
+  const inScope = (record: SavedCheckin) => record.personId === personId && motorPlanUserId() === account &&
+    cachedMotorPerson(account) === personId && Boolean(readWellnessConsent("sensitive-data", account));
+  const send: SendCheckin = async (record) => {
+    if (!inScope(record) || record.serverDay === undefined) return false;
+    try {
+      await sendMotorClosure(account, personId, record.serverDay, record.input);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409 && error.code === "log_already_recorded") return "conflict";
+      throw error;
+    }
+  };
+  const reconcile: ReconcileCheckin = record => inScope(record) && record.serverDay !== undefined
+    ? confirmStoredMotorClosure(account, personId, record.serverDay)
+    : Promise.resolve(false);
+  return syncCheckins(motorCheckinOwner(account, personId), send, reconcile);
+}
+
+export function syncCheckins(owner: string, send: SendCheckin = async () => false, reconcile?: ReconcileCheckin): Promise<void> {
   const running = syncing.get(owner);
   if (running) return running;
   const work = withCheckinLock(owner, async () => {
-    const queue = Object.values(loadCheckins(owner)).filter(({ status }) => status === "pending");
+    const queue = Object.values(loadCheckins(owner)).filter(({ status, confirmedConflict }) =>
+      status === "pending" || (status === "conflict" && !confirmedConflict && reconcile));
     for (const record of queue) {
       if (!navigator.onLine) break;
       const key = checkinKey(record.date, record.serverDay);
       if (loadCheckins(owner)[key]?.idempotencyKey !== record.idempotencyKey) continue;
       try {
-        if (await send(record) === false) continue;
-        const current = loadCheckins(owner)[key];
-        if (current?.idempotencyKey === record.idempotencyKey) {
-          writeCheckin(owner, { ...current, status: "synced" });
+        let conflicted = record.status === "conflict";
+        if (!conflicted) {
+          const result = await send(record);
+          if (result === false || loadCheckins(owner)[key]?.idempotencyKey !== record.idempotencyKey) continue;
+          conflicted = result === "conflict";
+          writeCheckin(owner, { ...record, status: conflicted ? "conflict" : "synced" });
         }
+        if (conflicted) {
+          if (!await reconcile?.(record) || loadCheckins(owner)[key]?.idempotencyKey !== record.idempotencyKey) continue;
+          writeCheckin(owner, { ...record, status: "conflict", confirmedConflict: true });
+        }
+        if (record.personId) window.dispatchEvent(new Event(MOTOR_CLOSURE_CONFIRMED));
       } catch {
         // El registro sigue pendiente y se vuelve a intentar al reconectar.
       }

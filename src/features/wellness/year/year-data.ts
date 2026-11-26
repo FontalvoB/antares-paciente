@@ -1,4 +1,4 @@
-import type { CheckinHistory, DailyCheckin } from "../checkin/close-day";
+import type { DailyCheckin } from "../checkin/close-day";
 import {
   localISODate,
   parseLocalDate,
@@ -7,12 +7,14 @@ import {
 import type { WellnessPlanVersion } from "../state/wellness-home-store";
 
 export type DayStatus = "complete" | "partial" | "missing" | "future";
+type CalendarCheckin = Pick<DailyCheckin, "adherence" | "weightKg" | "waistCm">;
+export type CalendarHistory = Readonly<Record<string, CalendarCheckin | undefined>>;
 
 export interface PlanDay {
   date: string;
   number: number;
   status: DayStatus;
-  checkin?: DailyCheckin;
+  checkin?: CalendarCheckin;
 }
 
 export interface PlanMonth {
@@ -23,7 +25,7 @@ export interface PlanMonth {
 export type Period = "7" | "30" | "90" | "month";
 export type Measurement = "weightKg" | "waistCm";
 
-export function buildCalendar(start: string, today: string, history: CheckinHistory): PlanMonth[] {
+export function buildCalendar(start: string, today: string, history: CalendarHistory): PlanMonth[] {
   const date = parseLocalDate(start);
   if (!date) return [];
   const months: PlanMonth[] = [];
