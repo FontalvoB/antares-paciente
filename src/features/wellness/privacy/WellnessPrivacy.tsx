@@ -15,6 +15,8 @@ import {
 } from "./privacy-consent-store";
 import type { WellnessConsentScope } from "./privacy-consent-store";
 import { downloadWellnessExport } from "./wellness-export";
+import { AccountLegalSummary } from "./AccountLegalGate";
+import { ServerPrivacyRequests } from "./ServerPrivacyRequests";
 import "./wellness-privacy.css";
 import { VitaEntry } from "../vita";
 
@@ -186,6 +188,7 @@ export function WellnessPrivacy() {
             <p className="wellness-privacy-draft">{t(DRAFT)}</p>
           </header>
 
+          <AccountLegalSummary />
           <section className="wellness-privacy-card">
             <h2>{t("Qué recogemos")}</h2>
             <p>{t(SENSITIVE)}</p>
@@ -229,6 +232,7 @@ export function WellnessPrivacy() {
             <p role="status" aria-atomic="true">{status}</p>
             {error && <p role="alert" className="wellness-privacy-error">{error}</p>}
           </section>
+          <ServerPrivacyRequests key={actor} />
         </main>
       </Scroll>
       <IonAlert

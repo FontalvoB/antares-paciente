@@ -1,14 +1,16 @@
 import { IonButton } from "@ionic/react";
 import { useId } from "react";
-import { useT } from "../../../../i18n/I18nContext";
+import { useI18n } from "../../../../i18n/I18nContext";
 import type { GateResult } from "../../domain";
+import type { UnitPrefs } from "../../vitals/unit-prefs";
 import { issueParams } from "./steps/DataStep";
 
-export function GateNotice({ gate, onGoToStep }: {
+export function GateNotice({ gate, onGoToStep, prefs }: {
   gate: GateResult;
   onGoToStep: (step: number) => void;
+  prefs: UnitPrefs;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const noticeId = useId();
   if (gate.ok) return <></>;
 
@@ -18,7 +20,7 @@ export function GateNotice({ gate, onGoToStep }: {
       {gate.issues.map((issue, index) => (
         <div className="wl-gate-issue" key={`${noticeId}-${index}`} style={{ flexWrap: "wrap", alignItems: "center" }}>
           <span id={`${noticeId}-${index}`} style={{ flex: "1 1 12rem" }}>
-            {t(issue.messageKey, issueParams(issue))}
+            {t(issue.messageKey, issueParams(issue, lang, prefs))}
           </span>
           <IonButton
             type="button"

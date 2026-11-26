@@ -1,9 +1,10 @@
 import { IonButton, IonIcon, IonProgressBar } from "@ionic/react";
 import { arrowBackOutline, arrowForwardOutline, clipboardOutline, compassOutline, fitnessOutline, heartOutline, leafOutline, personOutline, restaurantOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { useEffect, useId, useRef, useState } from "react";
-import { useT } from "../../../../i18n/I18nContext";
+import { useI18n } from "../../../../i18n/I18nContext";
 import { OBJECTIVE_STEP, evaluateGate } from "../../domain";
 import type { GateIssue, GateResult, ObjectiveDraft, WellnessGoal } from "../../domain";
+import { loadUnitPrefs } from "../../vitals/unit-prefs";
 import { GateNotice } from "./GateNotice";
 import { ActivityStep } from "./steps/ActivityStep";
 import { DataStep, dataIssues, issueParams, readMeasurements } from "./steps/DataStep";
@@ -70,17 +71,20 @@ function getLocalGate(draft: ObjectiveDraft): GateResult {
   return { ok: validated.length === 0, issues: validated };
 }
 
-export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, allowedGoals, presentation }: {
+export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate, onExit, unitOwner, allowedGoals, presentation }: {
   draft: ObjectiveDraft;
   onChange: (patch: Partial<ObjectiveDraft>) => void;
   gate: GateResult | null;
   generating: boolean;
   onGenerate: () => void;
   onExit?: () => void;
+  /** Propietario de las preferencias de unidades; por defecto el email del draft. */
+  unitOwner?: string;
   allowedGoals?: readonly WellnessGoal[];
   presentation?: "paid";
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
+  const prefs = loadUnitPrefs(unitOwner ?? (draft.email || "local"), lang);
   const headingId = useId();
   const errorId = useId();
   const content = useRef<HTMLDivElement>(null);
@@ -155,7 +159,7 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
   const goForward = () => {
     // Ionic puede actualizar el control antes de entregar su evento a React.
     const patch = step === OBJECTIVE_STEP.data && content.current
-      ? readMeasurements(content.current, draft)
+      ? readMeasurements(content.current, draft, prefs)
       : {};
     const terms = content.current?.querySelector<HTMLIonCheckboxElement>('ion-checkbox[data-wl-field="terms"]');
     if (terms && typeof terms.checked === "boolean") {
@@ -221,13 +225,13 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
 
       {visibleError && (
         <p id={errorId} className="wl-note wl-note-danger" role="alert">
-          {t(visibleError.messageKey, issueParams(visibleError))}
+          {t(visibleError.messageKey, issueParams(visibleError, lang, prefs))}
         </p>
       )}
 
       <div ref={content} className="wl-content">
         {step === OBJECTIVE_STEP.goal && <GoalStep {...stepProps} allowedGoals={allowedGoals} />}
-        {step === OBJECTIVE_STEP.data && <DataStep {...stepProps} />}
+        {step === OBJECTIVE_STEP.data && <DataStep {...stepProps} prefs={prefs} />}
         {step === OBJECTIVE_STEP.activity && <ActivityStep {...stepProps} />}
         {step === OBJECTIVE_STEP.preferences && <PreferencesStep {...stepProps} />}
         {step === OBJECTIVE_STEP.parq && <ParqStep {...stepProps} showAnswerCount={paid} />}
@@ -236,18 +240,19 @@ export function ObjectiveWizard({ draft, onChange, gate, generating, onGenerate,
         {step === OBJECTIVE_STEP.generate && (
           <>
             <GateNotice
+              prefs={prefs}
               gate={finalGate}
               onGoToStep={(target) => {
                 const field = finalGate.issues.find((issue) => issue.step === target)?.field;
                 goToStep(target, field);
               }}
             />
-            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} hideAction={paid} />
+            <GenerateStep draft={draft} generating={generating} blocked={!finalGate.ok} onGenerate={onGenerate} hideAction={paid} prefs={prefs} />
           </>
         )}
       </div>
       {bmiIssue && (
-        <GateNotice gate={{ ok: false, issues: [bmiIssue] }} onGoToStep={(target) => goToStep(target, bmiIssue.field)} />
+        <GateNotice gate={{ ok: false, issues: [bmiIssue] }} onGoToStep={(target) => goToStep(target, bmiIssue.field)} prefs={prefs} />
       )}
 
       <div className="wl-footer">

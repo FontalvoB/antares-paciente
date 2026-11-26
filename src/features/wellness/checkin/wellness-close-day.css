@@ -41,9 +41,19 @@ form.wc-card > :not(ion-input) {
   border: 0;
 }
 
-.wc-card legend {
+.wc-card legend,
+.wc-radio-label {
   padding: 0;
   font-weight: 600;
+}
+
+.wc-radio-label {
+  min-height: 0;
+  font-size: inherit;
+}
+
+.wc-radio-label ion-label {
+  margin: 0;
 }
 
 .wc-options {
@@ -54,6 +64,10 @@ form.wc-card > :not(ion-input) {
 
 .wc-card :is(ion-checkbox, ion-radio, ion-button, ion-input) {
   min-height: 44px;
+}
+
+.wc-options :is(ion-checkbox, ion-radio) {
+  min-width: 44px;
 }
 
 .wc-card ion-input {

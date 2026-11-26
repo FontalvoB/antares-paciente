@@ -64,7 +64,7 @@ export function WellnessPreview({ title, open, onClose, icon = sparklesOutline }
   const { t } = useI18n();
   return <IonModal isOpen={open} onDidDismiss={onClose} className="wh-detail-modal">
     <div className="wh-preview wh-modal-content"><IonButton fill="clear" className="wh-modal-close" onClick={onClose} aria-label={t("Cerrar")}><IonIcon icon={closeOutline} /></IonButton>
-      <IonIcon className="wh-preview-icon" icon={icon} /><h2>{t(title)}</h2><p>{t("Próximamente")}</p><p>{t("Estamos preparando este espacio para ti. Por ahora, puedes continuar con las actividades de tu plan.")}</p><IonButton onClick={onClose}>{t("Volver")}</IonButton>
+      <IonIcon className="wh-preview-icon" icon={icon} /><h2>{title && t(title)}</h2><p>{t("Próximamente")}</p><p>{t("Estamos preparando este espacio para ti. Por ahora, puedes continuar con las actividades de tu plan.")}</p><IonButton onClick={onClose}>{t("Volver")}</IonButton>
     </div>
   </IonModal>;
 }

@@ -25,6 +25,7 @@ export function PasswordStep({
 }) {
   const t = useT();
   const requirementsId = useId();
+  const mismatchId = useId();
   const [confirmVisited, setConfirmVisited] = useState(false);
   const requirements = [
     { label: t("8 caracteres o más"), met: password.length >= 8 },
@@ -88,11 +89,12 @@ export function PasswordStep({
         enterkeyhint="done"
         required
         disabled={busy}
-        errorText={t("Las contraseñas no coinciden.")}
         value={confirm}
+        aria-describedby={mismatch ? mismatchId : undefined}
         onIonBlur={() => setConfirmVisited(true)}
         onIonInput={(event) => onConfirmChange(event.detail.value ?? "")}
       />
+      {mismatch && <p id={mismatchId} className="wl-note wl-note-danger" role="alert">{t("Las contraseñas no coinciden.")}</p>}
       {error && <p className="wl-note wl-note-danger" role="alert">{t(error)}</p>}
       <div className="wl-footer wl-footer-stack">
         <AuthSubmitButton

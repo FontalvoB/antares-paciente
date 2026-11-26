@@ -502,6 +502,66 @@
   }
 }
 
+.wh-scroll .lang-toggle,
+.wp-scroll ion-button,
+.wx-scroll :is(ion-button, ion-toggle, ion-range),
+.onb-page :is(ion-button, ion-input, ion-checkbox) {
+  min-height: 44px;
+}
+
+:is(.wh-scroll, .wp-scroll, .wx-scroll, .onb-page, .wl-diet-dialog) ion-button::part(native):focus-visible {
+  outline: 2px solid var(--wellness-navy);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 5px var(--wh);
+}
+
+:is(.onb-page, .wp-scroll, .wx-scroll, .wl-diet-dialog)
+  :is(ion-input, ion-checkbox, ion-radio, ion-range, ion-toggle):focus-within,
+.wx-tech summary:focus-visible {
+  outline: 2px solid var(--wellness-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+:is(.wl-option, .wl-chip, .wl-answer, .wp-mood)[aria-pressed="true"]::after {
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 6px;
+  height: 11px;
+  margin-inline-start: 8px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.wl-option[aria-pressed="true"]::after {
+  margin-inline-start: auto;
+}
+
+.onb-page .label-text-wrapper,
+.wc-card .label-text-wrapper,
+.wl-diet-fields .label-text-wrapper {
+  white-space: normal;
+}
+
+:is(.onb-page, .wc-card, .wl-diet-fields) ion-input .native-input {
+  min-height: 44px;
+}
+
+:is(.onb-page, .wc-card) ion-checkbox {
+  --border-color: var(--wellness-muted);
+}
+
+.wx-scroll ion-toggle {
+  --track-background: var(--wellness-muted);
+}
+
+.wx-scroll ion-range {
+  --bar-background: var(--wellness-muted);
+  --knob-background: var(--wellness-primary);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wl-progress > i,
   .wl-option {

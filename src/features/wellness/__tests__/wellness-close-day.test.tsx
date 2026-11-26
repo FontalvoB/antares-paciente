@@ -21,11 +21,11 @@ vi.mock("../../../components/Screen", () => ({
 vi.mock("@ionic/react", () => ({
   IonButton: ({ children, type = "button", onClick, disabled }: ComponentProps<"button">) =>
     <button {...{ type, onClick, disabled }}>{children}</button>,
-  IonInput: ({ label, value, required, onIonInput }: {
-    label: string; value: string; required: boolean;
+  IonInput: ({ label, type, value, required, onIonInput }: {
+    label: string; type: string; value: string; required: boolean;
     onIonInput: (event: { detail: { value: string } }) => void;
   }) => (
-    <label>{label}<input type="number" required={required} value={value} onChange={(event) =>
+    <label>{label}<input type={type} required={required} value={value} onChange={(event) =>
       onIonInput({ detail: { value: event.currentTarget.value } })} /></label>
   ),
   IonCheckbox: ({ children, checked, onIonChange }: {
@@ -40,6 +40,8 @@ vi.mock("@ionic/react", () => ({
   }) => <div onChange={(event) => onIonChange({ detail: { value: (event.target as HTMLInputElement).value } })}>{children}</div>,
   IonRadio: ({ children, value }: { children: ReactNode; value: string }) =>
     <label><input type="radio" name="exercised" value={value} />{children}</label>,
+  IonLabel: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+  IonListHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 beforeEach(() => {
@@ -51,7 +53,7 @@ afterEach(() => {
 });
 
 function fill(label: string, value: string) {
-  fireEvent.change(screen.getByRole("spinbutton", { name: label }), { target: { value } });
+  fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
 
 describe("WellnessCloseDay", () => {
@@ -59,7 +61,7 @@ describe("WellnessCloseDay", () => {
     render(<WellnessCloseDay />);
     expect(screen.getByRole("heading", { name: "Cerrar el día" })).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: "Náuseas" })).toBeTruthy();
-    expect(screen.getByRole("spinbutton", { name: "Cintura (cm, opcional)" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Cintura (cm, opcional)" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Cerrar el día" }));
     expect(screen.getByRole("alert").textContent).toContain("Revisa los valores");
     expect(loadCheckins("patient")).toEqual({});

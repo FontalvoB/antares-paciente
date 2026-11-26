@@ -5,6 +5,8 @@
   --wh-gradient: linear-gradient(105deg, #dfc8de, #8ca7e4);
   background: var(--wh-pearl); color: var(--wh-ink); font-family: "Inter", sans-serif;
   isolation: isolate;
+  /* El fondo decorativo (::before) sobresale: se recorta sin crear contenedor desplazable (hidden como respaldo). */
+  overflow: hidden; overflow: clip;
 }
 .wh-screen::before { content: ""; position: absolute; inset: 35% -20% -25%; z-index: -1; pointer-events: none; background: radial-gradient(ellipse at 15% 65%, #fbe7e9a8, transparent 60%), radial-gradient(ellipse at 90% 80%, #b8cef770, transparent 65%); border-radius: 48% 70% 0 0; transform: rotate(-12deg); }
 .wh-screen .screen-scroll.wh-scroll { padding: max(14px, env(safe-area-inset-top)) 16px 106px; background: transparent; }
