@@ -1,6 +1,95 @@
-/* KAN-167 — Vita transversal: orbe persistente + panel. Solo tokens de
-   theme/variables.css. Profundidad sutil, radios 20-24 px, Space Grotesk en
+/* KAN-167 — Vita transversal: orbe persistente + panel. Tokens del tema,
+   profundidad sutil, radios 20-24 px, Space Grotesk en
    títulos e Inter en cuerpo. Animaciones solo en transform/opacity. */
+
+/* Entrada de Inicio: escribe, adjunta o abre la sesión de voz de Vita. */
+.vita-home-composer {
+  --vita-home-accent: var(--wh-home-accent, var(--pur));
+  --vita-home-line: var(--wh-home-line, var(--pur-l));
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--vita-home-line);
+  border-radius: 30px;
+  background: var(--wh-home-white, var(--wh));
+  box-shadow: 0 7px 22px color-mix(in srgb, var(--vita-home-accent) 10%, transparent);
+  animation: vitaHomeReveal 260ms ease-out both;
+}
+.vita-home-composer:focus-within {
+  border-color: var(--vita-home-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vita-home-accent) 32%, transparent);
+}
+.vita-home-composer .vita-home-input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  min-height: 44px;
+  font-size: 16px;
+  --padding-start: 3px;
+  --padding-end: 3px;
+  --color: var(--wh-home-ink, var(--tx));
+  --placeholder-color: var(--wh-home-muted, var(--mu));
+  --placeholder-opacity: 1;
+}
+.vita-home-composer ion-button.vita-home-tool {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 50%;
+  --color: var(--vita-home-accent);
+}
+.vita-home-tool ion-icon {
+  font-size: 21px;
+}
+.vita-home-tool::part(native) {
+  transition: transform 140ms ease-out;
+}
+.vita-home-tool:active::part(native) {
+  transform: scale(.92);
+}
+.vita-home-composer ion-button.vita-home-send {
+  --background: var(--vita-home-line);
+  --background-hover: var(--vita-home-accent);
+}
+.vita-home-composer ion-button.vita-home-send.button-disabled {
+  opacity: .5;
+}
+.vita-home-composer ion-button.vita-home-mic {
+  position: relative;
+  isolation: isolate;
+  --background: linear-gradient(150deg, color-mix(in srgb, var(--vita-home-accent) 83%, var(--wh)), var(--vita-home-accent));
+  --color: var(--wh);
+}
+.vita-home-mic::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border: 1px solid var(--vita-home-accent);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: vitaHomeMicPulse 1.75s 450ms ease-out 2;
+}
+@keyframes vitaHomeReveal {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes vitaHomeMicPulse {
+  0% { opacity: .6; transform: scale(.95); }
+  80%, 100% { opacity: 0; transform: scale(1.23); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vita-home-composer,
+  .vita-home-mic::after { animation: none; }
+  .vita-home-tool::part(native) { transition: none; }
+  .vita-home-tool:active::part(native) { transform: none; }
+}
 
 /* ---------- Dock (orbe / pestaña) ---------- */
 .vita-dock {

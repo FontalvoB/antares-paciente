@@ -15,9 +15,12 @@ import { VitaEntry } from "../vita";
 | --------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | `module`  | `VitaModuleId` (`home`, `protocol`, `diet`, `exercise`, `close-day`, `goal`, `profile`, `privacy`, `notifications`, `vitals`) | Pantalla de origen: historial, sugerencias rápidas y contexto. |
 | `summary` | `Record<string, string \| number \| boolean \| null \| undefined>` (opcional) | Resumen del estado visible. Solo pasan claves de la lista permitida. |
+| `docked` | `boolean` (opcional) | Muestra el orbe flotante. Inicio usa `false` porque tiene su propio orbe. |
+| `homeComposer` | `boolean` (opcional) | Muestra el compositor en Inicio. Comparte el panel y la sesión de voz existentes. |
 
-Se monta una vez por pantalla, como último hijo de `<Screen>`. También aparece en la
-pantalla de consentimiento de datos sensibles (`module="privacy"`, sin resumen).
+Se monta una vez por pantalla. En Inicio se coloca junto al saludo con
+`docked={false}` y `homeComposer`. También aparece en la pantalla de
+consentimiento de datos sensibles (`module="privacy"`, sin resumen).
 
 ## Identidad y privacidad en las solicitudes
 
@@ -44,6 +47,9 @@ pantalla de consentimiento de datos sensibles (`module="privacy"`, sin resumen).
 - **Panel**: `IonModal` con foco atrapado. Escape, el botón y el fondo lo cierran, y el
   foco vuelve al disparador. Anillo de foco en el compositor. Con el panel abierto, los
   recordatorios superiores (KAN-176) bajan bajo su cabecera.
+- **Compositor de Inicio**: permite enviar texto con el botón o con Enter, abrir la voz
+  y elegir adjuntos. El borrador de texto vive en memoria y los adjuntos solo se envían
+  desde el panel, donde se pueden revisar.
 - **Voz**: `setVitaVoiceOrigin` antes de `openVoice`. `VoiceOverlay` lo lee en cada
   solicitud de sesión, incluidos los reintentos, y lo borra al cerrarse la voz.
 

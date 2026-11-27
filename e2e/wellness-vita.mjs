@@ -151,7 +151,7 @@ try {
       await expect(homeOrb).toBeVisible();
       await expect(homeOrb).toHaveAttribute("aria-expanded", "false");
       await expect(homeOrb).toHaveAttribute("aria-haspopup", "dialog");
-      await expect(homeOrb).toHaveAttribute("aria-label", c.voice);
+      await expect(homeOrb).toHaveAttribute("aria-label", lang === "en" ? "Open Vita conversation" : "Abrir conversación con Vita");
       await page.waitForTimeout(1200);
       assert.equal(await page.locator(".vita-entry-trigger, .vita-dock").count(), 0, `entrada duplicada de Vita en Home ${tag}`);
       assert.equal(await page.getByText(c.nudge).count(), 0);
@@ -199,17 +199,14 @@ try {
       await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest("button.wh-orb-button")))).toBe(true);
       await expect(homeOrb).toHaveAttribute("aria-expanded", "false");
 
-      // El compositor de la cabecera abre el mismo panel (una sola entrada).
-      await page.locator("ion-button.wh-ask").click();
+      // El compositor de Inicio envía el mensaje y abre el mismo panel.
+      const homeComposer = page.locator("[data-vita-home-composer]");
+      const homeMessage = lang === "en" ? "What should I do now?" : "¿Qué hago ahora?";
+      await homeComposer.getByRole("textbox").fill(homeMessage);
+      await homeComposer.getByRole("button", { name: c.send, exact: true }).click();
       await expect(dialog.locator("h2", { hasText: "Vita" })).toBeVisible();
       assert.equal(await page.locator("ion-modal.vita-panel-modal.show-modal").count(), 1);
-      await page.keyboard.press("Escape");
-      await expect(page.locator("ion-modal.vita-panel-modal.show-modal")).toHaveCount(0);
-
-      // Home: enviar texto.
-      await homeOrb.click();
-      await dialog.getByRole("textbox", { name: c.input }).fill(lang === "en" ? "What should I do now?" : "¿Qué hago ahora?");
-      await dialog.locator("ion-button.vita-panel-send").click();
+      await expect(dialog.getByText(homeMessage, { exact: true })).toBeVisible();
       await expect(dialog.getByText(lang === "en" ? "Try one small step today." : "Prueba un paso pequeño hoy.")).toBeVisible();
       const homeBody = chatBodies.at(-1);
       assert.equal(homeBody.moduleContext.module, "home");

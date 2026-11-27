@@ -16,12 +16,13 @@
  * (`openVoice`); el texto y las imágenes, el servicio de chat existente.
  */
 import { useEffect, useRef, useState } from "react";
-import type { ChangeEvent, KeyboardEvent } from "react";
+import type { ChangeEvent, FormEvent, KeyboardEvent } from "react";
 import {
   IonActionSheet,
   IonButton,
   IonChip,
   IonIcon,
+  IonInput,
   IonModal,
   IonNote,
   IonProgressBar,
@@ -30,6 +31,7 @@ import {
 } from "@ionic/react";
 import { CameraSource } from "@capacitor/camera";
 import {
+  arrowUpOutline,
   attachOutline,
   cameraOutline,
   close,
@@ -71,6 +73,8 @@ export interface VitaEntryProps {
    * (cabeceras con orbe de Vita, como `WellnessFrame`).
    */
   docked?: boolean;
+  /** Muestra el compositor de Inicio junto al panel, sin otro historial. */
+  homeComposer?: boolean;
 }
 
 /** Nombre visible del módulo (clave i18n en español). */
@@ -110,7 +114,10 @@ const NUDGE_DELAY_MS = 900;
 /** El aviso se retira solo para no tapar contenido de forma prolongada. */
 const NUDGE_VISIBLE_MS = 8000;
 
-export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
+const ionButtonFocusTarget = (button: HTMLIonButtonElement) =>
+  button.shadowRoot?.querySelector<HTMLElement>("[part=native]") ?? button;
+
+export function VitaEntry({ module, summary, docked = true, homeComposer = false }: VitaEntryProps) {
   const { openVoice } = useApp();
   const { t, lang } = useI18n();
   const conversation = useVitaConversation(module, summary);
@@ -121,15 +128,20 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
   const [minimized, setMinimized] = useState(readVitaMinimized);
   const [nudge, setNudge] = useState(false);
   const [text, setText] = useState("");
+  const [homeDraft, setHomeDraft] = useState({ scope: conversation.scope, text: "" });
   const [sheetOpen, setSheetOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const tab = useRef<HTMLIonButtonElement>(null);
+  const attachmentButton = useRef<HTMLIonButtonElement>(null);
   const input = useRef<HTMLIonTextareaElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const listEnd = useRef<HTMLDivElement>(null);
+  const homePanelAction = useRef<"send" | "attach" | null>(null);
   const titleId = `vita-panel-title-${module}`;
   const moduleName = t(MODULE_LABEL[module]);
   const busy = conversation.pending || draft.phase !== null;
+  const homeText = homeDraft.scope === conversation.scope ? homeDraft.text : "";
+  const setHomeText = (value: string) => setHomeDraft({ scope: conversation.scope, text: value });
   const locale = lang === "en" ? "en-US" : "es-ES";
 
   // Aviso proactivo: como máximo una vez por día local y por cuenta. Se marca
@@ -189,6 +201,12 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
   const opener = useRef<HTMLElement | null>(null);
   const focusTrigger = () => requestAnimationFrame(() => (trigger.current ?? tab.current ?? opener.current)?.focus());
 
+  const openHomePanel = (action: "send" | "attach", origin: HTMLElement) => {
+    opener.current = origin;
+    homePanelAction.current = action;
+    openPanel();
+  };
+
   useEffect(() => {
     if (docked) return;
     return onVitaPanelRequest(() => {
@@ -213,6 +231,22 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
     // El foco vuelve al campo: el botón de enviar queda deshabilitado tras enviar.
     void input.current?.setFocus?.();
     await conversation.send({ text: message, attachments: files, promptKey: value === text ? undefined : promptKey });
+  };
+
+  const submitFromHome = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const message = homeText.trim();
+    if (busy || !message) return;
+    openHomePanel("send", event.currentTarget);
+    setHomeText("");
+    // Los adjuntos solo se envían desde el panel, donde están a la vista.
+    void conversation.send({ text: message });
+  };
+
+  const openModuleVoice = () => {
+    // La sesión de voz recibe el mismo contexto acotado del módulo.
+    setVitaVoiceOrigin(buildVitaModuleContext(module, summary));
+    openVoice();
   };
 
   const attachFromCamera = (source: CameraSource) => {
@@ -243,6 +277,62 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
 
   return (
     <>
+      {homeComposer && (
+        <form
+          className="vita-home-composer"
+          data-vita-home-composer
+          aria-label={t("Conversación con Vita")}
+          tabIndex={-1}
+          onSubmit={submitFromHome}
+        >
+          <IonButton
+            fill="clear"
+            type="button"
+            className="vita-home-tool vita-home-attach"
+            aria-label={t("Adjuntar al chat")}
+            aria-haspopup="dialog"
+            disabled={busy || draft.files.length >= VITA_ATTACHMENT_LIMIT}
+            onClick={(event) => {
+              openHomePanel("attach", ionButtonFocusTarget(event.currentTarget));
+              if (homeText.trim() && !text.trim()) {
+                setText(homeText);
+                setHomeText("");
+              }
+            }}
+          >
+            <IonIcon slot="icon-only" icon={attachOutline} aria-hidden="true" />
+          </IonButton>
+          <IonInput
+            key={lang}
+            type="text"
+            className="vita-home-input"
+            aria-label={t("Escribe a Vita…")}
+            placeholder={t("Escribe a Vita…")}
+            autocomplete="off"
+            enterkeyhint="send"
+            value={homeText}
+            onIonInput={(event) => setHomeText(event.detail.value ?? "")}
+          />
+          <IonButton
+            type="submit"
+            className="vita-home-tool vita-home-send"
+            aria-label={t("Enviar")}
+            aria-haspopup="dialog"
+            disabled={busy || !homeText.trim()}
+          >
+            <IonIcon slot="icon-only" icon={arrowUpOutline} aria-hidden="true" />
+          </IonButton>
+          <IonButton
+            type="button"
+            className="vita-home-tool vita-home-mic"
+            aria-label={t("Hablar con Vita")}
+            aria-haspopup="dialog"
+            onClick={openModuleVoice}
+          >
+            <IonIcon slot="icon-only" icon={mic} aria-hidden="true" />
+          </IonButton>
+        </form>
+      )}
       {docked && <VitaOrb
         module={module}
         label={t("Preguntar a Vita sobre {modulo}", { modulo: moduleName })}
@@ -268,11 +358,20 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
         aria-labelledby={titleId}
         onDidPresent={() => {
           placeOverlays();
-          void input.current?.setFocus();
+          const action = homePanelAction.current;
+          homePanelAction.current = null;
+          if (action === "attach") {
+            // Ionic devuelve el foco a este botón al cerrar el selector.
+            if (attachmentButton.current) ionButtonFocusTarget(attachmentButton.current).focus();
+            setSheetOpen(true);
+          } else if (!action) {
+            void input.current?.setFocus();
+          }
         }}
         onDidDismiss={() => {
           setOpen(false);
           setSheetOpen(false);
+          homePanelAction.current = null;
           focusTrigger();
         }}
       >
@@ -423,6 +522,7 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
               onChange={onFile}
             />
             <IonButton
+              ref={attachmentButton}
               fill="clear"
               className="vita-panel-tool"
               aria-label={t("Adjuntar al chat")}
@@ -435,11 +535,7 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
               fill="clear"
               className="vita-panel-tool"
               aria-label={t("Hablar con Vita")}
-              onClick={() => {
-                // La sesión de voz recibe el mismo contexto acotado del módulo.
-                setVitaVoiceOrigin(buildVitaModuleContext(module, summary));
-                openVoice();
-              }}
+              onClick={openModuleVoice}
             >
               <IonIcon slot="icon-only" icon={mic} aria-hidden="true" />
             </IonButton>

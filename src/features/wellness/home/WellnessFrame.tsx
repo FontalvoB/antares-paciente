@@ -8,8 +8,8 @@ import { useI18n } from "../../../i18n/I18nContext";
 import { useVitaPanel } from "../vita";
 import "./wellness-home.css";
 
-/** Layout compartido de las dos referencias. El orbe y la órbita son decorativos. */
-export function WellnessFrame({ children, inbox, back = false }: { children: ReactNode; inbox?: ReactNode; back?: boolean }) {
+/** La portada tiene su propio compositor, mientras que el plan conserva su acceso compacto. */
+export function WellnessFrame({ children, inbox, back = false, homeComposer }: { children: ReactNode; inbox?: ReactNode; back?: boolean; homeComposer?: ReactNode }) {
   const { user, navigate, openVoice, openTests, openPanic } = useApp();
   const { t } = useI18n();
   const [menuEvent, setMenuEvent] = useState<Event>();
@@ -19,7 +19,7 @@ export function WellnessFrame({ children, inbox, back = false }: { children: Rea
   // VitaEntry (voz, texto e imagen); si la pantalla no monta ese panel, abren la voz.
   const vita = useVitaPanel();
   const askVita = () => { if (!vita.open()) openVoice(); };
-  return <Screen hideNav className="wh-screen">
+  return <Screen hideNav className={homeComposer ? "wh-screen wh-screen-home" : "wh-screen"}>
     <Scroll noNav className="wh-scroll">
       <div className="wh-content">
         <header className="wh-header">
@@ -29,18 +29,25 @@ export function WellnessFrame({ children, inbox, back = false }: { children: Rea
             <IonButton fill="clear" className="wh-icon-button" aria-label={t(inbox ? "Bandeja" : "Notificaciones")} onClick={() => inbox ? setInboxOpen(true) : navigate("wellness-notifications")}><IonIcon icon={notifications} /></IonButton>
             <IonButton fill="clear" className="wh-icon-button" aria-label={t("Más opciones")} onClick={e => setMenuEvent(e.nativeEvent)}><IonIcon icon={ellipsisHorizontal} /></IonButton>
           </div>
-          <div className="wh-welcome">
-            <button type="button" className="wh-orb-button" onClick={askVita} aria-label={t("Hablar con Vita")} aria-haspopup="dialog" aria-expanded={vita.expanded ? "true" : "false"}><span className="wh-orb" /></button>
-            <div className="wh-bubble"><p>{t("Tu Agente de Bienestar IA")}</p><h1>{name ? t("¡Hola, {name}!", { name }) : t("¡Hola!")}</h1><span className="wh-orbit" aria-hidden="true" /></div>
+          <div className={homeComposer ? "wh-home-hero" : undefined}>
+            <div className="wh-welcome">
+              <button type="button" className="wh-orb-button" onClick={askVita} aria-label={homeComposer ? t("Abrir conversación con Vita") : t("Hablar con Vita")} aria-haspopup="dialog" aria-expanded={vita.expanded ? "true" : "false"}><span className="wh-orb" /></button>
+              <div className="wh-bubble">
+                <p>{homeComposer && <strong className="wh-home-vita-name">{t("Vita")}</strong>}{t("Tu Agente de Bienestar IA")}</p>
+                <h1>{name ? t("¡Hola, {name}!", { name }) : t("¡Hola!")}</h1>
+                <span className="wh-orbit" aria-hidden="true" />
+              </div>
+            </div>
+            {homeComposer}
           </div>
         </header>
         {children}
       </div>
     </Scroll>
-    <div className="wh-composer">
+    {!homeComposer && <div className="wh-composer">
       <IonButton fill="clear" className="wh-add" aria-label={t("Accesos rápidos")} onClick={e => setMenuEvent(e.nativeEvent)}><IonIcon icon={addOutline} /></IonButton>
       <IonButton fill="clear" className="wh-ask" onClick={askVita} aria-haspopup="dialog">{t("Pregúntame o cuéntame cómo te sientes...")}</IonButton>
-    </div>
+    </div>}
     <IonPopover isOpen={!!menuEvent} event={menuEvent} onDidDismiss={() => setMenuEvent(undefined)} dismissOnSelect>
       <IonList lines="none">
         <IonItem button onClick={() => navigate("home")}>{t("Inicio")}</IonItem>

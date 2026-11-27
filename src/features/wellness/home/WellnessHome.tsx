@@ -1,5 +1,6 @@
 import { GOAL_LABEL, useWellnessOverview } from "./useWellnessOverview";
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { IonButton, IonIcon, IonItem, IonLabel, IonList, IonProgressBar } from "@ionic/react";
 import { barbellOutline, calendarOutline, checkmark, clipboardOutline, flashOutline, flameOutline, headsetOutline, restaurantOutline } from "ionicons/icons";
 import { useApp } from "../../../context/AppContext";
@@ -13,6 +14,7 @@ import { useGeneration } from "../generation/useGeneration";
 import { WellnessFrame, WellnessPreview } from "./WellnessFrame";
 import "./wellness-home.css";
 import { VitaEntry } from "../vita";
+import { WellnessQuickAccess } from "./WellnessQuickAccess";
 
 const ARTIFACT_LABEL = {
   exercise: "Ejercicio",
@@ -85,7 +87,20 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
     { id: "diet", title: "Nutrición", subtitle: "Registra tus comidas de hoy", icon: restaurantOutline, done: data.protocol.find(s => s.id === "diet")!.done, action: () => navigate("wellness-diet") },
   ];
   return (
-    <WellnessFrame inbox={<>{/* Se conserva la bandeja y sus estados de generación. */}
+    <WellnessFrame homeComposer={<VitaEntry
+      module="home"
+      docked={false}
+      homeComposer
+      summary={{
+        day: data.day,
+        totalDays: data.totalDays,
+        adherencePct: data.adherencePct,
+        streakDays: data.streakDays,
+        level: data.level,
+        protocolDone: data.protocolDone,
+        protocolTotal: data.protocol.length,
+      }}
+    />} inbox={<>{/* Se conserva la bandeja y sus estados de generación. */}
         <section className="wh-card wh-inbox" aria-labelledby="wh-inbox-title">
           <div className="wh-card-head">
             <h2 id="wh-inbox-title">{t("Bandeja")}</h2>
@@ -159,30 +174,36 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
         )}
 
     </>}>
-      <section className="wh-daily" aria-labelledby="wh-protocol-title">
-        <h2 id="wh-protocol-title">{t("Protocolo de hoy")}</h2>
-        <IonButton fill="clear" className="wh-ring-button" onClick={() => navigate("wellness-plan")} aria-label={t("Ver mi plan de bienestar")}>
-          <span className="wh-ring">
-            <span className="wh-ring-copy"><span>{t("Progreso del día")}</span><strong>{percent}%</strong>
-              <span className="wh-ring-count"><IonIcon icon={checkmark} aria-hidden="true" />{t("{done} de {total}", { done: String(data.protocolDone), total: String(data.protocol.length) })}</span>
+      <WellnessQuickAccess />
+      <div className="wh-home-overview">
+        <section className="wh-daily" aria-labelledby="wh-protocol-title">
+          <h2 id="wh-protocol-title">{t("Protocolo de hoy")}</h2>
+          <IonButton fill="clear" className="wh-ring-button" onClick={() => navigate("wellness-plan")} aria-label={t("Ver mi plan de bienestar")}>
+            <span className="wh-ring" style={{ "--wh-completion": `${percent}%` } as CSSProperties}>
+              <span className="wh-ring-copy"><span>{t("Progreso del día")}</span><strong>{percent}%</strong>
+                <span className="wh-ring-count"><IonIcon icon={checkmark} aria-hidden="true" />{t("{done} de {total}", { done: String(data.protocolDone), total: String(data.protocol.length) })}</span>
+              </span>
             </span>
-          </span>
-        </IonButton>
-      </section>
-      <section className="wh-stats" aria-label={t("Tu progreso")}>
-        <div className="wh-stat-day"><IonIcon icon={calendarOutline} aria-hidden="true" /><div>
-          <strong className="wh-day">{planDay === null ? t(motorLabel) : t("Día {day} de {total}", { day: String(planDay), total: String(data.totalDays) })}</strong>
-          <span>{motor.kind === "ready" ? t(motorLabel) : motor.kind === "legacy" ? `${t("Objetivo")}: ${t(GOAL_LABEL[data.plan.goal])}` : null}</span>
-          {syncedDay && <time dateTime={syncedDay.todayLocalDate}>{formatLocalizedDate(syncedDay.todayLocalDate, lang)}</time>}
-        </div></div>
-        <div><IonIcon icon={flameOutline} aria-hidden="true" /><div>
-          <strong>{data.rewards.account && !data.rewards.snapshot ? "—" : `${number.format(data.points)} XP`}</strong>
-          {data.rewards.snapshot ? <span>{t("Nivel {level} · {name}", {
-            level: String(data.rewards.snapshot.level), name: t(data.rewards.snapshot.levelName),
-          })}</span> : <span>{t("Acumulados")}</span>}
-        </div></div>
-        <div><IonIcon icon={flashOutline} aria-hidden="true" /><div><strong>{streak === null ? "—" : t("{count} días", { count: String(streak) })}</strong><span>{t("Racha")}</span></div></div>
-      </section>
+          </IonButton>
+        </section>
+        <section className="wh-home-stats" aria-labelledby="wh-home-stats-title">
+          <h2 id="wh-home-stats-title">{t("Tu progreso")}</h2>
+          <div className="wh-stats">
+            <div className="wh-stat-day"><IonIcon icon={calendarOutline} aria-hidden="true" /><div>
+              <strong className="wh-day">{planDay === null ? t(motorLabel) : t("Día {day} de {total}", { day: String(planDay), total: String(data.totalDays) })}</strong>
+              <span>{motor.kind === "ready" ? t(motorLabel) : motor.kind === "legacy" ? `${t("Objetivo")}: ${t(GOAL_LABEL[data.plan.goal])}` : null}</span>
+              {syncedDay && <time dateTime={syncedDay.todayLocalDate}>{formatLocalizedDate(syncedDay.todayLocalDate, lang)}</time>}
+            </div></div>
+            <div><IonIcon icon={flameOutline} aria-hidden="true" /><div>
+              <strong>{data.rewards.account && !data.rewards.snapshot ? "—" : `${number.format(data.points)} XP`}</strong>
+              {data.rewards.snapshot ? <span>{t("Nivel {level} · {name}", {
+                level: String(data.rewards.snapshot.level), name: t(data.rewards.snapshot.levelName),
+              })}</span> : <span>{t("Acumulados")}</span>}
+            </div></div>
+            <div><IonIcon icon={flashOutline} aria-hidden="true" /><div><strong>{streak === null ? "—" : t("{count} días", { count: String(streak) })}</strong><span>{t("Racha")}</span></div></div>
+          </div>
+        </section>
+      </div>
       {syncedDay?.syncedAt && syncedDay.engine_ver && syncedDay.params_version !== undefined && (
         <div className="wh-body" aria-label={t("Sincronización del Motor 365")}>
           <p><time dateTime={syncedDay.syncedAt}>{t("Última sincronización: {time}", {
@@ -202,7 +223,8 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
           </ul>
         </section>
       )}
-      <section className="wh-task-list" aria-label={t("Actividades del día")}>
+      <section className="wh-task-list" aria-labelledby="wh-home-activities-title">
+        <h2 id="wh-home-activities-title">{t("Actividades del día")}</h2>
         {tasks.map(task => <IonButton key={task.id} fill="clear" className="wh-task" onClick={task.action}>
           <IonIcon className="wh-task-icon" icon={task.icon} aria-hidden="true" />
           <span className="wh-task-content"><span className="wh-task-heading"><strong>{t(task.title)}</strong><span className="wh-task-status">{t(task.id === "podcast" ? "Próximamente" : task.done ? "Completado" : "Incompleto")}</span></span>
@@ -304,21 +326,6 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
 
 
       <WellnessPreview title="Pódcast del día" open={podcastOpen} onClose={() => setPodcastOpen(false)} icon={headsetOutline} />
-      {/* KAN-167: panel único de Vita. Lo abren el orbe y el compositor de
-          WellnessFrame (sin orbe flotante propio para no duplicar la entrada). */}
-      <VitaEntry
-        module="home"
-        docked={false}
-        summary={{
-          day: data.day,
-          totalDays: data.totalDays,
-          adherencePct: data.adherencePct,
-          streakDays: data.streakDays,
-          level: data.level,
-          protocolDone: data.protocolDone,
-          protocolTotal: data.protocol.length,
-        }}
-      />
     </WellnessFrame>
   );
 }

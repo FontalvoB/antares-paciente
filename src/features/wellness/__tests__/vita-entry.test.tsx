@@ -174,9 +174,10 @@ describe("VitaEntry — entrada única en Home (WellnessFrame)", () => {
     expect(frameOrb.getAttribute("aria-expanded")).toBe("false");
   });
 
-  it("el compositor de la cabecera abre el mismo panel", () => {
+  it("el acceso a adjuntos del compositor abre el mismo panel", () => {
     render(<WellnessHome />);
-    fireEvent.click(screen.getByText("Pregúntame o cuéntame cómo te sientes..."));
+    const composer = screen.getByRole("form", { name: "Conversación con Vita" });
+    fireEvent.click(within(composer).getByRole("button", { name: "Adjuntar al chat" }));
     expect(document.querySelectorAll('[data-vita-panel="home"]')).toHaveLength(1);
   });
 });
