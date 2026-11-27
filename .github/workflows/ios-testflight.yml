@@ -1,8 +1,8 @@
 # =============================================================================
 # iOS · TestFlight — CI/CD de ANTARES Paciente (Ionic + Capacitor 8)
 #
-# Flujo: push/merge a `dev` → validaciones (lint, tests, i18n, build web)
-#        → firma (fastlane match) → archive Release → IPA → TestFlight.
+# Push/merge a `dev` → validaciones (lint, tests, i18n, build web).
+# Solo el payload de Copp Adresd legado puede pasar al upload de TestFlight.
 #
 # Manual: Actions ▸ "iOS · TestFlight" ▸ Run workflow (con opción dry-run).
 #
@@ -36,7 +36,7 @@ on:
       skip_upload:
         description: "Dry run: compilar/archivar sin subir a TestFlight"
         type: boolean
-        default: false
+        default: true
       build_number:
         description: "Forzar número de build (vacío = último de TestFlight + 1)"
         type: string
@@ -68,6 +68,8 @@ jobs:
     # Imagen fija (no `ubuntu-latest`): evita migraciones sorpresa de runner.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    outputs:
+      legacy_upload_allowed: ${{ steps.destination.outputs.legacy_upload_allowed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -93,10 +95,29 @@ jobs:
       - name: Guardas de release (ATS y número de build dinámico)
         run: npm run release:check
 
+      - name: Probar la guarda de destino TestFlight
+        run: node --test scripts/check-ios-upload-destination.test.mjs
+
       - name: Build web de producción (vite)
         run: npm run build
         env:
           VITE_CHAT_NUTRITION_ENABLED: "true"
+
+      - name: Resolver destino legacy de TestFlight
+        id: destination
+        env:
+          SKIP_UPLOAD: ${{ inputs.skip_upload }}
+        run: |
+          if node scripts/check-ios-upload-destination.mjs dist/ios-release-target.json com.coppadresd.mobile; then
+            echo "legacy_upload_allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "legacy_upload_allowed=false" >> "$GITHUB_OUTPUT"
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$SKIP_UPLOAD" != "true" ]; then
+              echo "::error::El build solicitado no puede publicarse en la ficha de Copp Adresd (KAN-182)."
+              exit 1
+            fi
+            echo "::notice::El upload legado se omite para este payload (KAN-182)."
+          fi
 
       - name: Publicar `dist/` para el job de firma
         uses: actions/upload-artifact@v7
@@ -111,9 +132,12 @@ jobs:
   testflight:
     name: iOS → TestFlight
     needs: quality
-    # Los PRs solo validan: nunca suben builds (los secretos y el upload
-    # ocurren en push/merge a dev o vía workflow_dispatch).
-    if: github.event_name != 'pull_request'
+    # Los PRs nunca firman. El dry run manual solo archiva; los demás
+    # eventos necesitan que el build de producción coincida con el legado.
+    if: >-
+      github.event_name != 'pull_request' &&
+      (needs.quality.outputs.legacy_upload_allowed == 'true' ||
+       (github.event_name == 'workflow_dispatch' && inputs.skip_upload))
     # La imagen xcode-27 es ARM64 e incluye el SDK de iOS 27.
     runs-on: xcode-27
     timeout-minutes: 120

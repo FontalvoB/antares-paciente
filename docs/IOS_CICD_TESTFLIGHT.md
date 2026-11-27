@@ -1,14 +1,33 @@
 # CI/CD iOS → TestFlight (ANTARES Paciente)
 
-Pipeline automatizado que lleva el código de `dev` hasta TestFlight sin abrir Xcode:
-validaciones → build web de producción → Capacitor sync → firma de distribución →
-archive Release → IPA → upload a App Store Connect.
+El pipeline valida `dev` y compila el bundle web de producción. El canal
+existente de TestFlight solo acepta builds de Copp Adresd legado.
 
 - **Workflow**: `.github/workflows/ios-testflight.yml`
 - **Automatización**: `fastlane/` (Fastfile, Appfile, Matchfile) + `Gemfile`
 - **Estado actual (verificado)**: implementado; requiere completar los
   [secretos](#secretos-de-github-actions) una sola vez (sección
   [Puesta en marcha](#puesta-en-marcha-pasos-humanos)).
+
+---
+
+## Protección del canal legado (KAN-182)
+
+- Push/merge a `dev` valida el build. Solo llega a firma y upload si el
+  build de producción declara gateway `https://erp.coppadresd.com` y web
+  `https://coppadresd.com` o `https://www.coppadresd.com`. Los builds de
+  Agentic Wellness siguen pasando por las validaciones, sin firmar ni publicar
+  en la ficha legado.
+- La ejecución manual tiene `skip_upload` activado por defecto. Si se solicita
+  upload con un destino distinto o sin manifiesto, el workflow falla antes
+  de firmar. Dry run sigue disponible para archivar sin subir.
+- `fastlane ios beta` vuelve a comprobar el manifiesto copiado a
+  `ios/App/App/public` por Capacitor, y verifica el `CFBundleIdentifier`
+  del IPA exportado antes de subirlo. El manifiesto se genera con el mismo
+  ambiente con el que Vite construye el payload, no con el ambiente de firma.
+- La guarda no crea el canal de Agentic Wellness. Hace falta el App ID,
+  la ficha independiente, su firma y sus capacidades, y probar la primera
+  build interna en un iPhone antes de activar el nuevo upload.
 
 ---
 
