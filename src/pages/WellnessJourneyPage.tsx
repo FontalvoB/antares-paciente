@@ -42,6 +42,7 @@ export function WellnessJourneyPage({ userId, children }: {
     placeholderData: keepPreviousData,
     staleTime: 0,
     retry: false,
+    refetchOnWindowFocus: true,
     refetchInterval: (query) => isPreparing(query.state.data?.status) ? 1000 : false,
   });
   const [draft, setDraft] = useState<ObjectiveDraft>(() => ({
@@ -51,7 +52,11 @@ export function WellnessJourneyPage({ userId, children }: {
   const [actionError, setActionError] = useState<"submit" | "retry" | null>(null);
   const locked = useRef(false);
   const submissionId = useRef<string | null>(null);
-  const job = generation.data;
+  const accessError = generation.error instanceof ApiError ? generation.error.code : null;
+  // Una revalidación denegada prevalece sobre el plan que React Query conserva.
+  const accessDenied = accessError === "membership_inactive" || accessError === "consent_required"
+    || accessError === "journey_unavailable";
+  const job = accessDenied ? undefined : generation.data;
 
   const changeDraft = (patch: Partial<ObjectiveDraft>) => {
     submissionId.current = null;
@@ -77,6 +82,10 @@ export function WellnessJourneyPage({ userId, children }: {
       await client.cancelQueries({ queryKey: generationKey, exact: true });
       client.setQueryData(generationKey, next);
     } catch (error) {
+      if (error instanceof ApiError && error.code === "membership_inactive") {
+        await generation.refetch();
+        return;
+      }
       if (error instanceof ApiError && error.status === 409) {
         const current = await generation.refetch();
         if (current.data) return;
@@ -134,10 +143,11 @@ export function WellnessJourneyPage({ userId, children }: {
         {generation.isError && (
           <div className="journey-status" data-status="failed">
             <p role="alert">
-              {t(generation.error instanceof ApiError &&
-                (generation.error.code === "journey_unavailable" || generation.error.code === "consent_required")
-                ? "Confirma tu membresía y acepta la versión vigente de los documentos para continuar."
-                : "No pudimos consultar tu plan. Intenta de nuevo.")}
+              {accessError === "membership_inactive"
+                ? t("Tu membresía no está activa. Revísala en la web para recuperar el acceso.")
+                : accessDenied
+                  ? t("Confirma tu membresía y acepta la versión vigente de los documentos para continuar.")
+                  : t("No pudimos consultar tu plan. Intenta de nuevo.")}
             </p>
             <IonButton fill="outline" disabled={generation.isFetching} onClick={() => void generation.refetch()}>{t("Reintentar conexión")}</IonButton>
             <IonButton fill="clear" onClick={logout}>{t("Cerrar sesión")}</IonButton>
