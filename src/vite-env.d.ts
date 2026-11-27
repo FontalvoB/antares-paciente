@@ -15,6 +15,8 @@ interface ImportMetaEnv {
   readonly VITE_CHAT_NUTRITION_ENABLED?: string;
   /** Tipo clínico general para archivar adjuntos Vita con JWT app. */
   readonly VITE_VITA_GENERAL_DOCUMENT_TYPE_ID?: string;
+  /** Piloto tap-to-talk. Sin valor conserva la voz vigente. */
+  readonly VITE_VITA_PRIVATE_TURN?: string;
   /** `"true"` habilita las herramientas de dev en un build de pruebas (`sync:dev`). */
   readonly VITE_DEV_TOOLS?: string;
 }

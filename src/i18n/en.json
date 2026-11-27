@@ -1,4 +1,11 @@
 {
+  "Tocar para hablar": "Tap to talk",
+  "Enviar grabación": "Send recording",
+  "Preparando el micrófono…": "Getting the microphone ready…",
+  "Grabando. Toca enviar antes de 20 segundos.": "Recording. Tap send within 20 seconds.",
+  "Procesando el turno de voz…": "Processing the voice turn…",
+  "Reproducir respuesta": "Play answer",
+  "No se pudo completar el turno de voz.": "The voice turn could not be completed.",
   "1": "1",
   "2": "2",
   "3": "3",
