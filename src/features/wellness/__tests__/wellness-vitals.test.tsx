@@ -111,12 +111,12 @@ describe("WellnessVitals", () => {
     expect(history().getByText("Diastólica")).toBeTruthy();
   });
 
-  it("muestra cambios del día y revela la tendencia al ampliar a tres registros", async () => {
+  it("muestra cambios del día y no interpreta una tendencia local", async () => {
     await saveVital("patient", "heartRate", 70, "apple", dayAgo(20));
     await saveVital("patient", "heartRate", 80, "watch", dayAgo(5));
     await saveVital("patient", "heartRate", 82, "apple", dayAgo(0));
     render(<WellnessVitals />);
-    expect(history().queryByText(/Tendencia:/)).toBeNull();
+    expect(history().getByText("No hay datos suficientes para mostrar una tendencia.")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Frecuencia cardíaca (lpm)"), { target: { value: "81" } });
     fireEvent.click(screen.getByRole("button", { name: "Guardar medición" }));
     expect(await history().findByText("Cambios del día")).toBeTruthy();
@@ -124,9 +124,9 @@ describe("WellnessVitals", () => {
     expect(history().getByText("81 lpm")).toBeTruthy();
     expect(history().getByText("Manual")).toBeTruthy();
     expect(history().getByText("Apple")).toBeTruthy();
-    expect(history().queryByText(/Tendencia:/)).toBeNull();
+    expect(history().getByText("No hay datos suficientes para mostrar una tendencia.")).toBeTruthy();
     fireEvent.click(history().getByRole("button", { name: "30 días" }));
-    expect(history().getByText("Tendencia: Manteniéndose")).toBeTruthy();
+    expect(history().getByText("Tendencia no disponible.")).toBeTruthy();
   });
 
   it("cambia la presentación de peso sin reescribir valores", async () => {
