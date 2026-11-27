@@ -283,12 +283,16 @@ platform :ios do
   desc "Flujo completo: build web + sync + firma + archive + IPA + upload a TestFlight"
   lane :beta do |options|
     skip_web_build = options[:skip_web_build] || ENV["FASTLANE_SKIP_WEB_BUILD"] == "true"
-    api_key = asc_api_key
 
     # 1-3) Dependencias + build Ionic + Capacitor sync (en CI el bundle web ya
     #       viene validado como artefacto y se pasa skip_web_build:true).
     prepare_web!(skip_web_build)
     sh("npm", "run", "release:check")
+
+    # Comprobar la copia sincronizada que Xcode empaqueta, no el .env local.
+    sh("node", repo_path("scripts/check-ios-upload-destination.mjs"),
+       repo_path("ios/App/App/public/ios-release-target.json"), APP_IDENTIFIER)
+    api_key = asc_api_key
 
     # 4) Número de build único y creciente (TestFlight + 1 salvo BUILD_NUMBER).
     build_number = next_build_number(api_key)
@@ -296,6 +300,11 @@ platform :ios do
 
     # 5-7) Firma de distribución + archive Release + IPA.
     ipa = archive_and_export!(api_key, build_number)
+
+    actual_bundle = get_ipa_info_plist_value(ipa: ipa, key: "CFBundleIdentifier").to_s
+    unless actual_bundle == APP_IDENTIFIER
+      UI.user_error!("El bundle identifier del IPA no corresponde a la ficha de Copp Adresd. No se subirá a TestFlight.")
+    end
 
     # 8-9) Upload a App Store Connect y publicación en TestFlight.
     groups = ENV["TESTFLIGHT_GROUPS"].to_s.split(",").map(&:strip).reject(&:empty?)

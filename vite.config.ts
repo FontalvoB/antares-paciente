@@ -14,7 +14,27 @@ export default defineConfig(({ mode }) => {
   const gatewayWsTarget = gatewayTarget.replace(/^http/, "ws");
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: "ios-release-target",
+        apply: "build",
+        generateBundle() {
+          // Captura del modo y las URL públicas efectivas del mismo build que
+          // Capacitor incluye en el IPA. No se lee el .env del runner de firma.
+          this.emitFile({
+            type: "asset",
+            fileName: "ios-release-target.json",
+            source: JSON.stringify({
+              schema: 1,
+              mode,
+              gateway: env.VITE_GATEWAY_BASE_URL ?? "",
+              web: env.VITE_WEB_BASE_URL ?? "",
+            }),
+          });
+        },
+      },
+    ],
     build: {
       // Antes todo node_modules caía en un index de ~3.2 MB. Con Rolldown
       // codeSplitting se separa por librería (cache por dependencia); "vendor"
