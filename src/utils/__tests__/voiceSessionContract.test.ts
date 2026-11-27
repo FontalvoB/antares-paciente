@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { linkedVoiceSessionId, requestVoiceSession, revokeVoiceSession, voiceSessionStartOptions } from "../voiceApi";
+import { linkedVoiceSessionId, requestVoiceSession, revokeVoiceSession, VoiceTransportUnavailableError, voiceSessionStartOptions } from "../voiceApi";
 vi.mock("../legalConsents", async original => ({ ...await original<object>(), requireLegalConsent: vi.fn().mockResolvedValue(undefined) }));
 
+const GATEWAY_SOCKET = window.location.origin.replace(/^http/, "ws") + "/synthetic-voice";
 describe("contrato de sesión Vita", () => {
   afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); });
-  const session = { runtimeMode: "vita" as const, signedUrl: "wss://synthetic.invalid", agentId: "agent", conversationId: "conversation", threadId: "thread", sessionId: "session", sessionToken: "opaque-synthetic", expiresAt: new Date(Date.now() + 60_000).toISOString() };
+  const session = { runtimeMode: "vita" as const, signedUrl: GATEWAY_SOCKET, agentId: "agent", conversationId: "conversation", threadId: "thread", sessionId: "session", sessionToken: "opaque-synthetic", expiresAt: new Date(Date.now() + 60_000).toISOString() };
   it("solo entrega el token reducido como variable secreta en modo vita", () => {
     expect(voiceSessionStartOptions(session, "thread")).toEqual({ signedUrl: session.signedUrl, dynamicVariables: { secret__vita_session_token: "opaque-synthetic" } });
     expect(voiceSessionStartOptions({ ...session, runtimeMode: "legacy" }, "thread")).toEqual({ signedUrl: session.signedUrl });
@@ -25,6 +26,17 @@ describe("contrato de sesión Vita", () => {
   });
   it.each(["threadId", "sessionId", "sessionToken", "expiresAt", "conversationId"])("falla cerrado si falta %s", key => {
     expect(() => voiceSessionStartOptions({ ...session, [key]: undefined }, "thread")).toThrow();
+  });
+  it.each([
+    "wss://voice-provider.example.test/socket",
+    `ws://${window.location.host}.example.test/socket`,
+    `ws://user@${window.location.host}/socket`,
+    `http://${window.location.host}/not-a-websocket`,
+  ])("rechaza transporte fuera del gateway: %s", signedUrl => {
+    expect(() => voiceSessionStartOptions({ ...session, signedUrl }, "thread"))
+      .toThrow(VoiceTransportUnavailableError);
+    expect(() => voiceSessionStartOptions({ ...session, signedUrl, runtimeMode: "legacy" }, "thread"))
+      .toThrow(VoiceTransportUnavailableError);
   });
   it("rechaza expiración y cambio del hilo firmado", () => {
     expect(() => voiceSessionStartOptions({ ...session, expiresAt: new Date(0).toISOString() }, "thread")).toThrow();

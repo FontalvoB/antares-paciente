@@ -51,6 +51,7 @@ interface SpeechRecognitionLike extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   maxAlternatives: number;
+  processLocally?: boolean;
   start(): void;
   stop(): void;
   abort(): void;
@@ -59,7 +60,10 @@ interface SpeechRecognitionLike extends EventTarget {
   onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
 }
 
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+type SpeechRecognitionConstructor = {
+  new (): SpeechRecognitionLike;
+  available?(options: { langs: string[]; processLocally: true }): Promise<string>;
+};
 
 interface SpeechRecognitionWindow {
   SpeechRecognition?: SpeechRecognitionConstructor;
@@ -87,6 +91,8 @@ export interface UseSpeechAssistantOptions {
   onListeningEnd?: () => void;
   /** Idioma de la app ('es' | 'en'): STT y TTS siguen al selector de idioma. */
   lang?: SpeechLang;
+  /** No permitir un fallback que pueda enviar audio o texto a terceros. */
+  requireLocal?: boolean;
 }
 
 export function useSpeechAssistant({
@@ -94,6 +100,7 @@ export function useSpeechAssistant({
   onError,
   onListeningEnd,
   lang = "es",
+  requireLocal = false,
 }: UseSpeechAssistantOptions) {
   const [supported, setSupported] = useState<boolean | null>(null);
   const [state, setState] = useState<SpeechAssistantState>("idle");
@@ -127,12 +134,31 @@ export function useSpeechAssistant({
     }
   }, [lang]);
 
-  // Detectar soporte una sola vez al montar.
+  // El Web Speech genérico puede subir el micrófono. Solo ofrecer el modo
+  // privado si el navegador confirma soporte y el idioma ya está instalado.
   useEffect(() => {
     const w = window as unknown as SpeechRecognitionWindow;
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-    setSupported(Boolean(Ctor));
-  }, []);
+    if (!requireLocal) {
+      setSupported(Boolean(Ctor));
+      return;
+    }
+    let active = true;
+    setSupported(false);
+    if (Ctor?.available && "processLocally" in Ctor.prototype) {
+      void (async () => {
+        try {
+          const availability = await Ctor.available!({
+            langs: [SPEECH_LOCALES[lang]], processLocally: true,
+          });
+          if (active) setSupported(availability === "available");
+        } catch {
+          // Sin garantía del sistema, queda disponible el chat de texto.
+        }
+      })();
+    }
+    return () => { active = false; };
+  }, [lang, requireLocal]);
 
   /** Resetea el buffer del turno y reagenda la finalización. */
   const scheduleFinalize = useCallback(
@@ -155,7 +181,7 @@ export function useSpeechAssistant({
   const startListening = useCallback(() => {
     const w = window as unknown as SpeechRecognitionWindow;
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-    if (!Ctor) return;
+    if (!Ctor || (requireLocal && (!supported || !("processLocally" in Ctor.prototype)))) return;
     wantListeningRef.current = true;
     mutedRef.current = false;
     setMuted(false);
@@ -164,6 +190,7 @@ export function useSpeechAssistant({
     let recognition = recognitionRef.current;
     if (!recognition) {
       recognition = new Ctor();
+      if (requireLocal) recognition.processLocally = true;
       recognitionRef.current = recognition;
       recognition.lang = SPEECH_LOCALES[langRef.current];
       recognition.continuous = true;
@@ -192,6 +219,7 @@ export function useSpeechAssistant({
       recognition.onerror = (event) => {
         // `no-speech` y `aborted` son estados normales del ciclo continuo.
         if (event.error !== "no-speech" && event.error !== "aborted") {
+          if (requireLocal) wantListeningRef.current = false;
           onError?.(event.error);
         }
       };
@@ -214,7 +242,7 @@ export function useSpeechAssistant({
     } catch {
       /* ya activo: ignorar */
     }
-  }, [onError, onListeningEnd, scheduleFinalize]);
+  }, [onError, onListeningEnd, requireLocal, scheduleFinalize, supported]);
 
   /** Pausa el micrófono sin cerrar el overlay (estado "muted" visual). */
   const stopListening = useCallback(() => {
@@ -260,7 +288,11 @@ export function useSpeechAssistant({
         const locale = SPEECH_LOCALES[langRef.current];
         const matchVoice = synth
           .getVoices()
-          .find((v) => v.lang.toLowerCase().startsWith(locale.slice(0, 2)));
+          .find((v) => (!requireLocal || v.localService) && v.lang.toLowerCase().startsWith(locale.slice(0, 2)));
+        if (requireLocal && !matchVoice) {
+          resolve();
+          return;
+        }
         if (matchVoice) utterance.voice = matchVoice;
         utterance.lang = matchVoice?.lang ?? locale;
         utterance.rate = 1;
@@ -275,7 +307,7 @@ export function useSpeechAssistant({
         setState("speaking");
         synth.speak(utterance);
       }),
-    [],
+    [requireLocal],
   );
 
   /** Corta la síntesis al instante (colgar o cerrar el overlay). */
