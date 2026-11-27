@@ -25,6 +25,16 @@
   --wellness-dock-height: 72px;
   --wellness-dock-clearance: 12px;
   --wellness-session-end: #0e4b62;
+  /* Portada de Bienestar: superficies lavanda y contraste de texto. */
+  --wh-home-canvas: #f7f5fc;
+  --wh-home-ink: #20183e;
+  --wh-home-muted: #57506e;
+  --wh-home-accent: #6141a7;
+  --wh-home-line: #e5ddf5;
+  --wh-home-white: #fff;
+  --wh-home-tint: #f0eafb;
+  --wh-home-highlight: #b89ce9;
+  --wh-home-shadow: 0 5px 16px #42246e0d;
   --macro-carbs: #b7791f;
   --macro-protein: #1d4e79;
   --macro-fat: #2c7da0;

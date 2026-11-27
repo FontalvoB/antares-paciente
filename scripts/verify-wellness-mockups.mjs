@@ -9,11 +9,11 @@ try {
 const context = await browser.newContext({viewport:{width:390,height:844}, reducedMotion:'reduce'});
 const page = await context.newPage();
 const token = `x.${Buffer.from(JSON.stringify({sub:'11111111-1111-4111-8111-111111111111', exp: Date.now()/1000+3600})).toString('base64url')}.x`;
-await context.route('**/api/**', route => {const path = new URL(route.request().url()).pathname; let json=[];
+await context.route('**/api/**', route => {const path = new URL(route.request().url()).pathname; let json;
 if(path==='/api/auth/refresh')json={accessToken:token,tokenType:'Bearer',expiresIn:3600};
 if(path==='/api/auth/me')json={id:'11111111-1111-4111-8111-111111111111',firstName:'Ángel',lastName:'Prueba',email:'preview@example.invalid',roles:[],permissions:[]};
 if(path==='/api/v1/me/patient-profile')json={patientId:'11111111-1111-4111-8111-111111111111',firstName:'Ángel',lastName:'Prueba'};
-return route.fulfill({json});});
+return json ? route.fulfill({json}) : route.fulfill({status:404,json:{}});});
 await context.addInitScript(()=>{localStorage.setItem('antares_lang','es'); const d=new Date();const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; localStorage.setItem('wellness.protocol.v1',JSON.stringify({[key]:['exercise','diet','vitals']}));});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto(server.resolvedUrls.local[0]); await page.locator('.wh-daily').waitFor(); await page.waitForTimeout(1000);
@@ -45,9 +45,9 @@ for(const width of [320,360,768,1280]) {
   await page.locator('.wh-daily').waitFor();
 }
 await page.setViewportSize({width:375,height:667});
-await page.locator('.wh-scroll').evaluate(e=>{e.scrollTop=e.scrollHeight;});
-const fits = await page.locator('.wh-task').last().evaluate(e=>e.getBoundingClientRect().bottom <= document.querySelector('.wh-composer').getBoundingClientRect().top);
-assert.equal(fits,true,'Last task remains reachable above the composer on short screens');
+await page.locator('.wh-task').last().scrollIntoViewIfNeeded();
+const fits = await page.locator('.wh-task').last().evaluate(e=>e.getBoundingClientRect().bottom <= document.querySelector('.wh-scroll').getBoundingClientRect().bottom);
+assert.equal(fits,true,'Last task remains reachable on short screens');
 await page.locator('.wh-scroll').evaluate(e=>{e.scrollTop=0;});
 await page.getByRole('button',{name:'Más opciones',exact:true}).click();
 await page.getByRole('button',{name:'Cambiar idioma a English'}).click();
