@@ -339,7 +339,7 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
               {tap.phase === "recording" && <span>{t("Grabando. Toca enviar antes de 20 segundos.")}</span>}
               {tap.phase === "sending" && <span>{t("Procesando el turno de voz…")}</span>}
               {tap.result && <div>
-                <p>{tap.result.transcript}</p>
+                {tap.result.transcript && <p>{tap.result.transcript}</p>}
                 <p>{tap.result.reply}</p>
                 <IonButton fill="clear" size="small" onClick={tap.play}>{t("Reproducir respuesta")}</IonButton>
               </div>}
