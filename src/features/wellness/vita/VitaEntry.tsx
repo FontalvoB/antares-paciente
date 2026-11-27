@@ -56,6 +56,7 @@ import { buildVitaModuleContext } from "./context";
 import type { VitaModuleId, VitaModuleSummary } from "./context";
 import { markVitaNudgeShown, readVitaMinimized, shouldShowVitaNudge, writeVitaMinimized } from "./dock";
 import { useVitaConversation } from "./useVitaConversation";
+import { useVitaTapTurn } from "./useVitaTapTurn";
 import { VitaOrb } from "./VitaOrb";
 import { onVitaPanelRequest, setVitaPanelExpanded } from "./panel-store";
 import "./vita.css";
@@ -118,6 +119,8 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
   // Sin hilo: el adjunto queda sin atar y el backend deriva el hilo del JWT.
   const draft = useVitaAttachmentDraft("", conversation.scope);
   const [open, setOpen] = useState(false);
+  const privateVoice = import.meta.env.VITE_VITA_PRIVATE_TURN === "true";
+  const tap = useVitaTapTurn(privateVoice && open, lang);
   const [minimized, setMinimized] = useState(readVitaMinimized);
   const [nudge, setNudge] = useState(false);
   const [text, setText] = useState("");
@@ -329,6 +332,21 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
             <span>{t("Vita te orienta sobre hábitos y te ayuda a seguir tu plan publicado. No diagnostica ni cambia tratamientos.")}</span>
           </p>
 
+          {privateVoice && (tap.error || tap.result || tap.phase !== "idle") && (
+            <div className="vita-panel-note" role="status">
+              {tap.error && <span>{t(tap.error)}</span>}
+              {tap.phase === "preparing" && <span>{t("Preparando el micrófono…")}</span>}
+              {tap.phase === "recording" && <span>{t("Grabando. Toca enviar antes de 20 segundos.")}</span>}
+              {tap.phase === "sending" && <span>{t("Procesando el turno de voz…")}</span>}
+              {tap.result && <div>
+                <p>{tap.result.transcript}</p>
+                <p>{tap.result.reply}</p>
+                <IonButton fill="clear" size="small" onClick={tap.play}>{t("Reproducir respuesta")}</IonButton>
+              </div>}
+              {tap.phase !== "idle" && <IonButton fill="clear" size="small" onClick={tap.cancel}>{t("Cancelar")}</IonButton>}
+            </div>
+          )}
+
           <div className="vita-panel-log" role="log" aria-live="polite" aria-label={t("Conversación con Vita")}>
             {!conversation.messages.length && (
               <div className="vita-panel-empty">
@@ -431,18 +449,30 @@ export function VitaEntry({ module, summary, docked = true }: VitaEntryProps) {
             >
               <IonIcon slot="icon-only" icon={attachOutline} aria-hidden="true" />
             </IonButton>
-            <IonButton
-              fill="clear"
-              className="vita-panel-tool"
-              aria-label={t("Hablar con Vita")}
-              onClick={() => {
-                // La sesión de voz recibe el mismo contexto acotado del módulo.
-                setVitaVoiceOrigin(buildVitaModuleContext(module, summary));
-                openVoice();
-              }}
-            >
-              <IonIcon slot="icon-only" icon={mic} aria-hidden="true" />
-            </IonButton>
+            {privateVoice ? (
+              <IonButton
+                fill="clear"
+                className="vita-panel-tool"
+                aria-label={tap.phase === "recording" ? t("Enviar grabación") : t("Tocar para hablar")}
+                disabled={tap.phase === "preparing" || tap.phase === "sending"}
+                onClick={() => tap.phase === "recording" ? tap.send() : void tap.start()}
+              >
+                <IonIcon slot="icon-only" icon={tap.phase === "recording" ? sendIcon : mic} aria-hidden="true" />
+              </IonButton>
+            ) : (
+              <IonButton
+                fill="clear"
+                className="vita-panel-tool"
+                aria-label={t("Hablar con Vita")}
+                onClick={() => {
+                  // La sesión de voz recibe el mismo contexto acotado del módulo.
+                  setVitaVoiceOrigin(buildVitaModuleContext(module, summary));
+                  openVoice();
+                }}
+              >
+                <IonIcon slot="icon-only" icon={mic} aria-hidden="true" />
+              </IonButton>
+            )}
             <IonTextarea
               ref={input}
               rows={1}
