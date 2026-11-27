@@ -91,13 +91,13 @@ export function savePhotoDraft(today: Date, id: MealId, draft?: PhotoDraft) {
   }));
 }
 
-export function logDietMeal(today: Date, id: MealId, option: number, values: MealLog["values"]) {
+export function logDietMeal(today: Date, id: MealId, option: number, values: MealLog["values"], demo = true) {
   updateDay(today, (day) => ({
     ...day,
     eaten: { ...day.eaten, [id]: { values } },
     choices: { ...day.choices, [id]: option },
     pending: { ...day.pending, [id]: undefined },
   }));
-  completeProtocolStep("diet", today);
+  if (demo) completeProtocolStep("diet", today);
 }
 

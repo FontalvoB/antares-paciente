@@ -11,6 +11,8 @@ import type { FoodAnalysisResult } from "../../../utils/foodAiApi";
 import { getWellnessHomeData, localISODate } from "../state/wellness-home-store";
 import { checkinHistory, checkinOwner } from "../checkin/checkin-store";
 import { useMotorDay } from "../calendar/useMotorDay";
+import { motorPlanUserId } from "../calendar/motor-plan-api";
+import { submitProtocolStep } from "../protocol/protocol-rewards-api";
 import { dailyEffects, EFFECT_COPY } from "../checkin/close-day";
 import { buildDietDay, buildMotorDietDay, nextDish, sumMacros } from "./diet-plan";
 import type { DietMacros } from "./diet-plan";
@@ -94,7 +96,7 @@ export function WellnessDiet() {
 }
 
 function WellnessDietDay({ today }: { today: Date }) {
-  const { user, navigate } = useApp();
+  const { user, navigate, showToast } = useApp();
   const { t, lang } = useI18n();
   const home = getWellnessHomeData(user?.nombre ?? "", today);
   const motor = useMotorDay({ includeMenu: true });
@@ -155,6 +157,17 @@ function WellnessDietDay({ today }: { today: Date }) {
       setSaveError(true);
       return false;
     }
+  }
+
+  function recordMeal(id: MealId, option: number, values: Parameters<typeof logDietMeal>[3]) {
+    const account = motorPlanUserId();
+    const saved = update(() => logDietMeal(today, id, option, values, !account));
+    if (saved && account && motor.kind === "ready") {
+      void submitProtocolStep(account, motor.day.todayLocalDate, "diet").catch(() => {
+        showToast(t("No pudimos guardar el paso. Inténtalo de nuevo."), "warn");
+      });
+    }
+    return saved;
   }
 
   function openPhoto(id: MealId) {
@@ -309,9 +322,9 @@ function WellnessDietDay({ today }: { today: Date }) {
                 <div className="wl-diet-actions">
                   {!entry && (
                     <>
-                      <IonButton onClick={() => update(() => logDietMeal(today, meal.id, meal.option, {
+                      <IonButton onClick={() => recordMeal(meal.id, meal.option, {
                         kcal: meal.kcal, proteinG: meal.proteinG, carbsG: meal.carbsG, fatG: meal.fatG,
-                      }))}>
+                      })}>
                         {t("Lo comí")}
                       </IonButton>
                       {meal.canSwap && (
@@ -381,7 +394,7 @@ function WellnessDietDay({ today }: { today: Date }) {
                   ))}
                 </div>
                 <IonButton disabled={!photo} onClick={() => {
-                  if (photo && update(() => logDietMeal(today, activeMeal, activeDish.option, photo))) closePhoto();
+                  if (photo && recordMeal(activeMeal, activeDish.option, photo)) closePhoto();
                 }}>
                   {t("Confirmar registro")}
                 </IonButton>

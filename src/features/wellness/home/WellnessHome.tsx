@@ -55,7 +55,7 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
   const motor = useMotorDay();
   const syncedDay = motor.kind === "ready" ? motor.day : undefined;
   const planDay = motor.kind === "ready" ? motor.day.today : motor.kind === "legacy" ? data.day : null;
-  const streak = motor.kind === "ready" ? motor.day.streak : motor.kind === "legacy" ? data.streakDays : null;
+  const streak = data.rewards.account ? data.rewards.snapshot?.streak ?? null : data.streakDays;
   const motorLabel = motor.kind === "ready" ? MOTOR_PLAN_STATE[motor.day.status.state]
     : motor.kind === "locked" ? MOTOR_PLAN_STATE.locked
       : motor.kind === "loading" ? "Consultando el plan…"
@@ -175,7 +175,12 @@ export function WellnessHome({ paidGeneration }: { paidGeneration?: PaidGenerati
           <span>{motor.kind === "ready" ? t(motorLabel) : motor.kind === "legacy" ? `${t("Objetivo")}: ${t(GOAL_LABEL[data.plan.goal])}` : null}</span>
           {syncedDay && <time dateTime={syncedDay.todayLocalDate}>{formatLocalizedDate(syncedDay.todayLocalDate, lang)}</time>}
         </div></div>
-        <div><IonIcon icon={flameOutline} aria-hidden="true" /><div><strong>{number.format(data.points)} XP</strong><span>{t("Acumulados")}</span></div></div>
+        <div><IonIcon icon={flameOutline} aria-hidden="true" /><div>
+          <strong>{data.rewards.account && !data.rewards.snapshot ? "—" : `${number.format(data.points)} XP`}</strong>
+          {data.rewards.snapshot ? <span>{t("Nivel {level} · {name}", {
+            level: String(data.rewards.snapshot.level), name: t(data.rewards.snapshot.levelName),
+          })}</span> : <span>{t("Acumulados")}</span>}
+        </div></div>
         <div><IonIcon icon={flashOutline} aria-hidden="true" /><div><strong>{streak === null ? "—" : t("{count} días", { count: String(streak) })}</strong><span>{t("Racha")}</span></div></div>
       </section>
       {syncedDay?.syncedAt && syncedDay.engine_ver && syncedDay.params_version !== undefined && (
