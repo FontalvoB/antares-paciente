@@ -21,3 +21,12 @@ categorías, la app la ofrece en el formato solicitado. Un comprobante de
 recepción o una descarga acotada no cuenta como entrega integral. La copia
 integral cierra el trámite al servirse por primera vez y puede volver a
 descargarse hasta la fecha de vencimiento.
+
+Cuando un operador verifica una solicitud de borrado, el comprobante muestra
+su fecha límite para la eliminación elegible. Un trámite verificado o una
+supresión de preferencias no equivalen a un borrado completo.
+
+`COP_PRIVACY_QA_COVERAGE=1` añade la prueba de cierre por fuente a la
+prueba de borrado (`COP_PRIVACY_QA_DELETION=1`). Comprueba que faltantes de
+proveedores, archivos y backups impiden el cierre. Los acuses externos del
+ensayo son sintéticos. Esta prueba no hace operaciones en proveedores.

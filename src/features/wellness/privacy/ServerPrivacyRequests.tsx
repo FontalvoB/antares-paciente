@@ -15,6 +15,7 @@ interface Receipt {
   kind: RequestBody["kind"];
   format: Format | null;
   receivedAt: string;
+  review?: { verifiedAt: string; dueAt: string } | null;
 }
 interface ReadyExport { requestId: string; format: Format; expiresAt: string }
 type Pending = Record<RequestBody["kind"], Receipt | null> & {
@@ -148,6 +149,15 @@ function RequestsPanel({ expectedUserId }: { expectedUserId: string }) {
                   : t("Borrado solicitado")}</strong>
                 {" · "}<time dateTime={receipt.receivedAt}>{formatDateForDisplay(toLocalISODate(new Date(receipt.receivedAt)))}</time>
                 <br />{t("Comprobante {id}", { id: receipt.id })}
+                {receipt.kind === "deletion" && receipt.review && (
+                  <>
+                    <br />{t("Solicitud de borrado verificada")}
+                    <br />{t("Fecha límite para los datos que podemos borrar")}{" "}
+                    <time dateTime={receipt.review.dueAt}>
+                      {formatDateForDisplay(toLocalISODate(new Date(receipt.review.dueAt)))}
+                    </time>
+                  </>
+                )}
               </p>
             ))}
           </div>
