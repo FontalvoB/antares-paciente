@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "../../../utils/apiClient";
 import { syncMotorCheckins } from "../checkin/checkin-store";
-import { cachedMotorDay, clearCachedMotorDay, isCurrentMotorDay, MOTOR_CLOSURE_CONFIRMED, motorPlanUserId, readMotorDay, type MotorDay } from "./motor-plan-api";
+import { cachedMotorDay, clearCachedMotorDay, isCurrentMotorDay, MOTOR_ADJUSTMENT_CHANGED, MOTOR_CLOSURE_CONFIRMED, motorPlanUserId, readMotorDay, type MotorDay } from "./motor-plan-api";
 
 type MotorDayState =
   | { kind: "legacy" | "loading" | "unlinked" | "locked" | "error" }
@@ -20,7 +20,8 @@ export function useMotorDay({ historyDays = 28, includeMenu = false }: MotorDayO
     let controller: AbortController | undefined;
     let lastGood = cachedMotorDay(account);
     const unavailable = () => {
-      const day = lastGood && isCurrentMotorDay(lastGood) ? lastGood : cachedMotorDay(account);
+      const day = lastGood && lastGood.aiAdjustment?.status !== "applied" && isCurrentMotorDay(lastGood)
+        ? lastGood : cachedMotorDay(account);
       setLoaded({ account, value: day ? { kind: "ready", day, stale: true } : { kind: "error" } });
     };
     const load = () => {
@@ -61,6 +62,7 @@ export function useMotorDay({ historyDays = 28, includeMenu = false }: MotorDayO
     window.addEventListener("offline", load);
     window.addEventListener("focus", load);
     window.addEventListener(MOTOR_CLOSURE_CONFIRMED, load);
+    window.addEventListener(MOTOR_ADJUSTMENT_CHANGED, load);
     return () => {
       controller?.abort();
       window.clearInterval(timer);
@@ -68,6 +70,7 @@ export function useMotorDay({ historyDays = 28, includeMenu = false }: MotorDayO
       window.removeEventListener("offline", load);
       window.removeEventListener("focus", load);
       window.removeEventListener(MOTOR_CLOSURE_CONFIRMED, load);
+      window.removeEventListener(MOTOR_ADJUSTMENT_CHANGED, load);
     };
   }, [account, historyDays, includeMenu]);
   return !account ? { kind: "legacy" } : loaded?.account === account ? loaded.value : { kind: "loading" };

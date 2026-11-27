@@ -5617,5 +5617,12 @@
   "No se pudo actualizar el plan.": "Couldn't refresh the plan.",
   "Sincronización del Motor 365": "Motor 365 synchronization",
   "Tu cuenta no tiene un plan vinculado.": "Your account has no linked plan.",
-  "Se conservó el cierre que ya estaba registrado en el servidor.": "The check-in already on the server was kept."
+  "Se conservó el cierre que ya estaba registrado en el servidor.": "The check-in already on the server was kept.",
+  "Ajuste de plan con IA": "AI plan adjustment",
+  "Solicitar ajuste": "Request adjustment",
+  "Volver al plan base": "Return to the base plan",
+  "Actualizando tu plan…": "Updating your plan…",
+  "No pudimos actualizar tu plan. Intenta de nuevo.": "We couldn't update your plan. Try again.",
+  "El motor revisa cada propuesta. Puedes volver al plan base.": "The engine checks every proposal. You can return to the base plan.",
+  "Plan del Motor 365": "Motor 365 plan"
 }

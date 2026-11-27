@@ -5617,5 +5617,12 @@
   "No se pudo actualizar el plan.": "No se pudo actualizar el plan.",
   "Sincronización del Motor 365": "Sincronización del Motor 365",
   "Tu cuenta no tiene un plan vinculado.": "Tu cuenta no tiene un plan vinculado.",
-  "Se conservó el cierre que ya estaba registrado en el servidor.": "Se conservó el cierre que ya estaba registrado en el servidor."
+  "Se conservó el cierre que ya estaba registrado en el servidor.": "Se conservó el cierre que ya estaba registrado en el servidor.",
+  "Ajuste de plan con IA": "Ajuste de plan con IA",
+  "Solicitar ajuste": "Solicitar ajuste",
+  "Volver al plan base": "Volver al plan base",
+  "Actualizando tu plan…": "Actualizando tu plan…",
+  "No pudimos actualizar tu plan. Intenta de nuevo.": "No pudimos actualizar tu plan. Intenta de nuevo.",
+  "El motor revisa cada propuesta. Puedes volver al plan base.": "El motor revisa cada propuesta. Puedes volver al plan base.",
+  "Plan del Motor 365": "Plan del Motor 365"
 }

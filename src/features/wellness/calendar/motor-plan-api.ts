@@ -6,6 +6,7 @@ import type { MealId } from "../nutrition/meal-catalog";
 import { readWellnessConsent } from "../privacy/privacy-consent-store";
 
 const PLAN = "/api/v1/people/me";
+export const MOTOR_ADJUSTMENT_CHANGED = "wellness-motor-adjustment-changed";
 export const MOTOR_CLOSURE_CONFIRMED = "wellness-motor-closure-confirmed";
 
 export const MOTOR_PLAN_STATE = {
@@ -48,7 +49,15 @@ interface MotorMealTotals {
   fat: number;
 }
 
+export interface MotorAiDecision {
+  id: string;
+  status: "applied" | "rejected" | "unavailable" | "reverted";
+  reason: MotorText;
+}
+
 export interface MotorDay {
+  aiAdjustmentAvailable?: boolean;
+  aiAdjustment?: MotorAiDecision;
   mealPlan?: MotorMealPlan;
   why?: MotorText[];
   lighterDinner?: boolean;
@@ -168,6 +177,13 @@ export async function readMotorDay(expectedUserId: string, signal: AbortSignal, 
     } catch { /* el día recibido sigue disponible para esta pantalla */ }
   }
   return { ...day, personId, syncedAt };
+}
+
+export async function changeMotorAiAdjustment(expectedUserId: string, day: number, method: "POST" | "DELETE", signal: AbortSignal) {
+  await apiFetch<MotorAiDecision>(`${PLAN}/plan/${day}/ai-adjustment`, {
+    expectedUserId, method, signal, cache: "no-store", timeoutMs: 15_000,
+  });
+  if (motorPlanUserId() === expectedUserId) window.dispatchEvent(new Event(MOTOR_ADJUSTMENT_CHANGED));
 }
 
 export function sendMotorClosure(expectedUserId: string, personId: string, day: number, input: DailyCheckin) {
