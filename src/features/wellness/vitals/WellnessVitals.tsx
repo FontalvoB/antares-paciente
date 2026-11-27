@@ -19,7 +19,7 @@ import {
   loadVitals, saveVital, validVitalValue, VITAL_METRIC_IDS, VITAL_METRICS, VITAL_SOURCES,
 } from "./vitals-store";
 import type { VitalDay, VitalMetric, VitalReading, Vitals, VitalSource, VitalValue } from "./vitals-store";
-import { calendarDays, TREND_LABELS, VITAL_WINDOWS, vitalHistory, vitalSeries, vitalTrend } from "./vitals-trend";
+import { calendarDays, VITAL_WINDOWS, vitalHistory, vitalSeries } from "./vitals-trend";
 import type { VitalWindow } from "./vitals-trend";
 import "../protocol/wellness-protocol.css";
 import "./wellness-vitals.css";
@@ -102,7 +102,6 @@ function VitalsContent({ owner }: { owner: string }) {
   const unit = showUnit(displayUnit(metric, prefs));
   const meta = VITAL_METRICS[metric];
   const history = vitalHistory(ledger.vitals, metric, windowDays, now);
-  const trend = vitalTrend(metric, history);
   const pressure = metric === "bloodPressure";
   const value = parseNumberInput(raw.trim());
   const second = parseNumberInput(secondRaw.trim());
@@ -283,12 +282,17 @@ function VitalsContent({ owner }: { owner: string }) {
             <>
               <VitalChart history={history} metric={metric} unit={unit}
                 convert={(value) => toDisplayValue(metric, value, prefs)} format={(value) => number.format(value)} />
-              {trend && (
-                <div className="wv-trend" role="status">
-                  <strong>{t("Tendencia: {trend}", { trend: t(TREND_LABELS[trend]) })}</strong>
-                  <p>{t("La tendencia compara la estabilidad de tus registros. Más estabilidad se muestra como «Mejorando».")}</p>
-                </div>
-              )}
+              {/* KAN-161: no inferir categorías mientras no existan criterios profesionales en el servidor. */}
+              <div className="wv-trend" role="status">
+                {history.length < 3 ? (
+                  <p>{t("No hay datos suficientes para mostrar una tendencia.")}</p>
+                ) : (
+                  <>
+                    <strong>{t("Tendencia no disponible.")}</strong>
+                    <p>{t("La gráfica muestra tus registros. No es un diagnóstico ni una alerta médica.")}</p>
+                  </>
+                )}
+              </div>
               <ol className="wv-days">
                 {[...history].reverse().map((day) => (
                   <li key={day.date} className="wv-day">
