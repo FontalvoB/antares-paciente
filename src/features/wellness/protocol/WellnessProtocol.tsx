@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   IonAlert,
   IonBadge,
@@ -21,11 +21,12 @@ import { useApp } from "../../../context/AppContext";
 import { useI18n } from "../../../i18n/I18nContext";
 import { Screen, Scroll } from "../../../components/Screen";
 import { useMotorDay } from "../calendar/useMotorDay";
+import { useWellnessOverview } from "../home/useWellnessOverview";
+import { closeProtocolDay, submitProtocolStep } from "./protocol-rewards-api";
 import { checkinKey, checkinOwner, loadCheckins } from "../checkin/checkin-store";
 import {
   completeProtocolStep,
   localISODate,
-  getWellnessHomeData,
   type ProtocolStepId,
 } from "../state/wellness-home-store";
 import "../wellness.css";
@@ -72,55 +73,22 @@ const MOODS = [
   { id: "low", label: "Bajo" },
 ] as const;
 
-/** Próxima medianoche local (para refrescar el día sin reiniciar la app). */
-function msToNextMidnight(now = new Date()): number {
-  const next = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + 1,
-    0,
-    0,
-    2,
-  );
-  return Math.max(1000, next.getTime() - now.getTime());
-}
-
 export function WellnessProtocol() {
   const { user, navigate, showToast } = useApp();
   const { t } = useI18n();
-  const [revision, setRevision] = useState(0);
   const [chestOpen, setChestOpen] = useState(false);
+  const [chestXp, setChestXp] = useState(0);
+  const [busy, setBusy] = useState(false);
   const [mood, setMood] = useState<string | null>(null);
-
-  // Cambio de día: refresca a medianoche local y al volver a la app.
-  useEffect(() => {
-    const timer = window.setTimeout(
-      () => setRevision((value) => value + 1),
-      msToNextMidnight(),
-    );
-    const onVisible = () => {
-      if (document.visibilityState === "visible")
-        setRevision((value) => value + 1);
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [revision]);
-
-  const data = useMemo(() => {
-    // `revision` fuerza a releer el almacenamiento tras completar un paso o
-    // cambiar el día; el store no es reactivo por sí mismo.
-    void revision;
-    return getWellnessHomeData(user?.nombre ?? "");
-  }, [revision, user?.nombre]);
+  const data = useWellnessOverview(user?.nombre ?? "");
+  const { account, snapshot, unavailable, refresh } = data.rewards;
+  const ready = !account || Boolean(snapshot);
   const chestUnlocked = data.protocolDone >= 4;
   const motor = useMotorDay();
   const remote = motor.kind === "ready" ? motor.day : undefined;
   const day = remote?.today ?? (motor.kind === "legacy" ? data.day : null);
-  const closed = remote?.logStatus === "recorded" ||
-    loadCheckins(checkinOwner(user))[checkinKey(remote?.todayLocalDate ?? localISODate(new Date()), remote?.today)];
+  const closed = account ? snapshot?.today.closed || remote?.logStatus === "recorded"
+    : Boolean(loadCheckins(checkinOwner(user))[checkinKey(localISODate(new Date()))]);
   const chestDone =
     data.protocol.find((step) => step.id === "chest")?.done ?? false;
   const missing = useMemo(
@@ -131,7 +99,28 @@ export function WellnessProtocol() {
     [data],
   );
 
-  const complete = (id: ProtocolStepId) => {
+  const complete = async (id: ProtocolStepId) => {
+    if (account) {
+      if (busy || closed || !snapshot || snapshot.today.steps[id] !== undefined) return;
+      setBusy(true);
+      try {
+        const updated = await submitProtocolStep(account, snapshot.today.localDate, id);
+        if (!updated.receipt?.created) return;
+        const points = updated.receipt.amount;
+        if (id === "chest") {
+          setChestXp(points);
+          setChestOpen(true);
+        } else if (points > 0) {
+          showToast(t("+{points} puntos", { points: String(points) }), "ok");
+        }
+      } catch {
+        refresh();
+        showToast(t("No pudimos guardar el paso. Inténtalo de nuevo."), "warn");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     const result = completeProtocolStep(id);
     if (!result.completed) {
       if (id === "chest" && !result.chestUnlocked) {
@@ -141,14 +130,25 @@ export function WellnessProtocol() {
       }
       return;
     }
-    setRevision((value) => value + 1);
     if (id === "chest") {
+      setChestXp(result.pointsEarned);
       setChestOpen(true);
     } else if (result.dayComplete) {
       showToast(t("Día completo. Ganaste el bonus de secuencia."), "ok");
     } else {
       showToast(t("+{points} puntos", { points: "10" }), "ok");
     }
+  };
+
+  const close = async () => {
+    if (!account || motor.kind !== "unlinked") { navigate("wellness-checkin"); return; }
+    if (busy || closed || !snapshot) return;
+    setBusy(true);
+    try { await closeProtocolDay(account, snapshot.today.localDate); }
+    catch {
+      refresh();
+      showToast(t("No se pudo guardar el cierre. Inténtalo de nuevo."), "warn");
+    } finally { setBusy(false); }
   };
 
   return (
@@ -181,7 +181,7 @@ export function WellnessProtocol() {
             </span>
             <span className="wp-points">
               <IonIcon icon={starOutline} aria-hidden="true" />
-              {t("{points} puntos", { points: String(data.points) })}
+              {ready ? t("{points} puntos", { points: String(data.points) }) : "—"}
             </span>
           </div>
           <IonProgressBar
@@ -190,6 +190,11 @@ export function WellnessProtocol() {
             aria-label={t("Progreso del protocolo")}
           />
         </header>
+
+        {unavailable && <section className="wp-card">
+          <p role="status">{t("No pudimos cargar el protocolo. Inténtalo de nuevo.")}</p>
+          <IonButton fill="clear" onClick={refresh}>{t("Actualizar")}</IonButton>
+        </section>}
 
         <ol className="wp-steps">
           {data.protocol.map((step, index) => {
@@ -239,6 +244,7 @@ export function WellnessProtocol() {
                           type="button"
                           className={`wp-mood${mood === option.id ? " is-selected" : ""}`}
                           aria-pressed={mood === option.id}
+                          disabled={!ready || busy || closed}
                           onClick={() => {
                             setMood(option.id);
                             complete("emotional");
@@ -256,7 +262,7 @@ export function WellnessProtocol() {
                     <IonButton
                       expand="block"
                       className="wp-primary"
-                      disabled={locked}
+                      disabled={locked || !ready || busy || closed}
                       onClick={() => complete(step.id)}
                     >
                       {isChest
@@ -272,7 +278,8 @@ export function WellnessProtocol() {
                       color="primary"
                       expand="block"
                       className="wp-secondary"
-                      onClick={() => complete("exercise")}
+                      disabled={!ready || busy || closed}
+                      onClick={() => void complete("exercise")}
                     >
                       {t("Hice la versión reducida")}
                     </IonButton>
@@ -307,16 +314,16 @@ export function WellnessProtocol() {
             <div>
               <strong>{t("Día completo")}</strong>
               <p>
-                {t(
-                  "Tu secuencia sigue viva. El bonus de cierre ya está sumado.",
-                )}
+                {account && !closed
+                  ? t("El bonus de secuencia se suma al cerrar el día.")
+                  : t("Tu secuencia sigue viva. El bonus de cierre ya está sumado.")}
               </p>
             </div>
           </section>
         )}
 
-        {(chestDone || closed) && (
-          <IonButton expand="block" className="wp-primary" onClick={() => navigate("wellness-checkin")}>
+        {(chestDone || closed) && (!account || remote || !closed) && (
+          <IonButton expand="block" className="wp-primary" disabled={busy} onClick={() => void close()}>
             {closed ? t("Ver cierre del día") : t("Cerrar el día")}
           </IonButton>
         )}
@@ -330,7 +337,7 @@ export function WellnessProtocol() {
         isOpen={chestOpen}
         onDidDismiss={() => setChestOpen(false)}
         header={t("¡Cofre abierto!")}
-        message={t("Ganaste 10 puntos por completar tu protocolo de hoy.")}
+        message={t("+{points} puntos", { points: String(chestXp) })}
         buttons={[
           {
             text: t("Seguir"),

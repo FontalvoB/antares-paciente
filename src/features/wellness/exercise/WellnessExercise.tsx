@@ -34,6 +34,7 @@ import {
 } from "./exercise-plan";
 import { MOTOR_PLAN_STATE, motorPlanUserId, type MotorExerciseSession } from "../calendar/motor-plan-api";
 import { useMotorDay } from "../calendar/useMotorDay";
+import { submitProtocolStep } from "../protocol/protocol-rewards-api";
 import { motorExercisePlan } from "./motor-exercise-plan";
 import "../wellness.css";
 import "./wellness-exercise.css";
@@ -288,7 +289,7 @@ function ExerciseScreen({ server }: { server?: ServerExercise }) {
   };
 
   const finishSession = () => {
-    const result = completeProtocolStep("exercise", parseLocalDate(date) ?? today);
+    const result = server ? null : completeProtocolStep("exercise", parseLocalDate(date) ?? today);
     write(PENDING_KEY, {
       date,
       completedAt: new Date().toISOString(),
@@ -296,12 +297,15 @@ function ExerciseScreen({ server }: { server?: ServerExercise }) {
     window.localStorage.removeItem(sessionKey);
     setSession(null);
     setFinished(true);
-    showToast(
-      result.completed
-        ? t("Ejercicio completado y guardado en tu teléfono.")
-        : t("Ejercicio ya estaba completo hoy."),
-      "ok",
-    );
+    if (server) {
+      void submitProtocolStep(server.account, server.date, "exercise").then(
+        () => showToast(t("Ejercicio completado y guardado en tu teléfono."), "ok"),
+        () => showToast(t("No pudimos guardar el paso. Inténtalo de nuevo."), "warn"),
+      );
+    } else {
+      showToast(result?.completed ? t("Ejercicio completado y guardado en tu teléfono.")
+        : t("Ejercicio ya estaba completo hoy."), "ok");
+    }
   };
 
   const closeSession = () => {
