@@ -9,6 +9,8 @@ const routePath = "/api/auth/privacy/requests";
 const userA = "17000000-0000-4000-8000-000000000001";
 const userB = "17000000-0000-4000-8000-000000000002";
 const inactive = "17000000-0000-4000-8000-000000000003";
+const checkCoverage = process.env.COP_PRIVACY_QA_COVERAGE === "1";
+const checkDeletion = process.env.COP_PRIVACY_QA_DELETION === "1";
 const checkFulfillment = process.env.COP_PRIVACY_QA_FULFILLMENT === "1";
 const checkDownload = process.env.COP_PRIVACY_QA_EXPORT === "1";
 const secretFile = process.env.COP_PRIVACY_QA_SECRET_FILE;
@@ -204,6 +206,121 @@ try {
     assert.equal(json.scope, "reviewed_full_copy");
     assert.equal(json.datasets.length, 8);
     console.log("PASS ERP fulfillment, complete manifest, own-account delivery and closure only on delivery");
+  }
+
+  if (checkDeletion) {
+    const deletion = (await (await req(token(userA))).json()).deletion;
+    const standard = await (await req(token(userB), { kind: "deletion", confirmed: true })).json();
+    const erpClaims = { security_stamp: "kan170-synthetic-stamp", permission: "Privacy.ReviewDeletion" };
+    const operator = token(userB, "erp", erpClaims);
+    const execute = (id, step, bearer, data) =>
+      context.request.put(`${backend}/api/auth/privacy/deletions/${id}/${step}`, {
+        headers: { authorization: "Bearer " + bearer }, data,
+      });
+    const early = new Date(Date.parse(deletion.receivedAt) + 21 * 86400000).toISOString();
+    const review = { userId: userA, identityEvidence: "qa:verified-a", policyReference: "qa:shorter-rule",
+      earlierDueAt: early };
+    const remove = { userId: userA, confirmedEligible: true, evidenceReference: "qa:preferences-review" };
+
+    assert.equal((await execute(deletion.id, "verification", token(userA), review)).status(), 403);
+    assert.equal((await execute(deletion.id, "verification", token(userB, "erp", { security_stamp: erpClaims.security_stamp }), review)).status(), 403);
+    assert.equal((await execute(deletion.id, "preferences", operator, remove)).status(), 409);
+    assert.equal((await execute(deletion.id, "verification", operator, { ...review, userId: userB })).status(), 404);
+    const verified = await execute(deletion.id, "verification", operator, review);
+    assert.equal(verified.status(), 200, await verified.text());
+    const reviewed = await verified.json();
+    assert.equal(Date.parse(reviewed.dueAt), Date.parse(early));
+    assert.ok(Date.parse(reviewed.verifiedAt) >= Date.parse(deletion.receivedAt));
+    const fallback = await execute(standard.id, "verification", operator,
+      { userId: userB, identityEvidence: "qa:verified-b", policyReference: "qa:base-rule" });
+    assert.equal(fallback.status(), 200);
+    const next = await fallback.json();
+    assert.equal(Date.parse(next.dueAt) - Date.parse(next.verifiedAt), 90 * 86400000);
+    const shorter = new Date(Date.parse(standard.receivedAt) + 12 * 86400000).toISOString();
+    const tightened = await execute(standard.id, "verification", operator,
+      { userId: userB, identityEvidence: "qa:verified-b", policyReference: "qa:corrected", earlierDueAt: shorter });
+    assert.equal(tightened.status(), 200);
+    assert.equal(Date.parse((await tightened.json()).dueAt), Date.parse(shorter));
+    assert.equal((await execute(standard.id, "verification", operator,
+      { userId: userB, identityEvidence: "qa:verified-b", policyReference: "qa:base-rule" })).status(), 409);
+    assert.equal((await execute(deletion.id, "preferences", operator,
+      { ...remove, confirmedEligible: false })).status(), 400);
+    assert.equal((await execute(deletion.id, "preferences", operator, { ...remove, userId: userB })).status(), 404);
+    const erased = await Promise.all([1, 2].map(() =>
+      execute(deletion.id, "preferences", operator, remove)));
+    assert.deepEqual(erased.map(r => r.status()), [200, 200]);
+    const outcomes = await Promise.all(erased.map(r => r.json()));
+    assert.equal(outcomes[0].rowsErased, 1);
+    assert.deepEqual(outcomes[0], outcomes[1]);
+    assert.ok(Date.parse(outcomes[0].completedAt) < Date.parse(early));
+    const mine = (await (await req(token(userA))).json()).deletion;
+    assert.equal(mine.id, deletion.id, "limited erasure must not close the request");
+    assert.equal(Date.parse(mine.review.dueAt), Date.parse(early));
+    assert.doesNotMatch(JSON.stringify(mine), /qa:verified-a|qa:shorter-rule/);
+
+    await page.getByRole("button", { name: "Volver al perfil" }).click();
+    await openPrivacy();
+    await expect(panel.getByRole("status")).toContainText("Solicitud de borrado verificada");
+    await expect(panel.getByRole("status")).toContainText("Fecha límite para los datos que podemos borrar");
+    await expect(panel.getByRole("status")).not.toContainText("Borrado completado");
+    console.log("PASS verified deletion deadline, earlier override and idempotent preferences step");
+    if (checkCoverage) {
+      const final = { userId: userA, inventoryReference: "qa:complete-inventory",
+        restoreReference: "qa:independent-restore-reconciliation" };
+      assert.equal((await execute(deletion.id, "completion", token(userA), final)).status(), 403);
+      const premature = await execute(deletion.id, "completion", operator, final);
+      assert.equal(premature.status(), 409);
+      assert.ok((await premature.json()).missingSources.includes("openai"));
+      assert.equal((await execute(deletion.id, "device-tokens", operator, { ...remove, userId: userB })).status(), 404);
+      const deviceReview = { ...remove, evidenceReference: "qa:device-review" };
+      const push = await execute(deletion.id, "device-tokens", operator, deviceReview);
+      assert.equal(push.status(), 200);
+      const pushReceipt = await push.json();
+      assert.equal(pushReceipt.rowsErased, 2);
+      assert.deepEqual(await (await execute(deletion.id, "device-tokens", operator, deviceReview)).json(), pushReceipt);
+
+      const attest = (source, data) => execute(deletion.id, "sources/" + source, operator,
+        { userId: userA, evidenceReference: "qa:source-" + source, ...data });
+      assert.equal((await attest("auth-preferences", { outcome: "absent", remainingCount: 0 })).status(), 400);
+      assert.equal((await attest("rds-manual", { outcome: "erased", remainingCount: 0 })).status(), 400);
+      assert.equal((await attest("rds-manual", { outcome: "expired", remainingCount: 0 })).status(), 400);
+      assert.equal((await attest("retired-archives", { outcome: "erased", remainingCount: 0,
+        actionReference: "qa:archive-purge" })).status(), 400);
+      assert.equal((await attest("clinical-records", { outcome: "retained", remainingCount: 1 })).status(), 400);
+      assert.equal((await attest("clinical-records", { outcome: "retained", remainingCount: 1,
+        policyReference: "qa:clinical-exception", reviewAt: new Date(Date.now() + 30 * 86400000).toISOString() })).status(), 200);
+      assert.equal((await attest("retired-archives", { outcome: "erased", remainingCount: 0,
+        actionReference: "qa:archive-purge", archiveReference: "qa:archive-manifest",
+        restoreReference: "qa:archive-restored" })).status(), 200);
+      for (const source of ["rds-pitr", "rds-manual", "s3-versions", "external-backups"]) {
+        assert.equal((await attest(source, { outcome: "expired", remainingCount: 0,
+          actionReference: "qa:expiration-confirmed", restoreReference: "qa:restored-replayed" })).status(), 200);
+      }
+      const remaining = ["identity-profile", "wellness-legacy", "wellness-motor365", "consumer-vitals",
+        "telemedicine", "community", "ai-service", "food-ai-storage", "audit-consents",
+        "service-logs", "anthropic", "elevenlabs", "twilio", "whatsapp-meta", "transactional-email", "mobile-push"];
+      for (const source of remaining) assert.equal((await attest(source, { outcome: "absent", remainingCount: 0 })).status(), 200);
+      const pendingAck = await execute(deletion.id, "completion", operator, final);
+      assert.equal(pendingAck.status(), 409);
+      assert.deepEqual((await pendingAck.json()).missingSources, ["openai"]);
+      const confirmation = { outcome: "erased", remainingCount: 0, actionReference: "qa:processor-confirmed" };
+      assert.equal((await attest("openai", confirmation)).status(), 200);
+      assert.equal((await attest("openai", { ...confirmation, actionReference: "qa:changed" })).status(), 409);
+      const finalResponse = await execute(deletion.id, "completion", operator, final);
+      assert.equal(finalResponse.status(), 200);
+      const closed = await finalResponse.json();
+      assert.equal(closed.sourcesVerified, 25);
+      assert.ok(closed.completedAt);
+      assert.deepEqual(await (await execute(deletion.id, "completion", operator, final)).json(), closed);
+      assert.equal((await (await req(token(userA))).json()).deletion, null);
+      const ownReceipt = await (await getReceipt(userA, deletion.id)).json();
+      assert.equal(ownReceipt.completedAt, closed.completedAt);
+      await page.getByRole("button", { name: "Volver al perfil" }).click();
+      await openPrivacy();
+      await expect(panel.getByRole("status")).not.toContainText("Borrado solicitado");
+      console.log("PASS per-source coverage, provider confirmation, archive/backup guards and audited closure");
+    }
+
   }
 
   emulateUnavailable = true;

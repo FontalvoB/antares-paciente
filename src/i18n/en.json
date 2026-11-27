@@ -5630,5 +5630,7 @@
   "Actualizando tu plan…": "Updating your plan…",
   "No pudimos actualizar tu plan. Intenta de nuevo.": "We couldn't update your plan. Try again.",
   "El motor revisa cada propuesta. Puedes volver al plan base.": "The engine checks every proposal. You can return to the base plan.",
-  "Plan del Motor 365": "Motor 365 plan"
+  "Plan del Motor 365": "Motor 365 plan",
+  "Solicitud de borrado verificada": "Deletion request verified",
+  "Fecha límite para los datos que podemos borrar": "Deadline for data we can delete"
 }
