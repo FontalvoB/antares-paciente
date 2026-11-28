@@ -46,6 +46,7 @@ import {
   voiceSessionStartOptions,
   linkedVoiceSessionId,
   VoiceSessionContractError,
+  VoiceTransportUnavailableError,
   type VoiceSession,
   toolCancelAppointment,
   toolGetAvailabilitySlots,
@@ -418,6 +419,7 @@ export function VoiceOverlay() {
     // STT/TTS siguen al selector de idioma de la app (cambio en caliente
     // soportado: el recognizer se relanza con el locale nuevo).
     lang,
+    requireLocal: true,
     onFinalTranscript: (text) => {
       // KAN-137: el SOS por voz no depende de la IA ni bloquea el turno.
       if (isSosUtterance(text)) requestSos("voice");
@@ -862,9 +864,9 @@ export function VoiceOverlay() {
         >
           <div className="overlay overlay-voice">
             <p>
-              {t(
-                "La conexión de voz no está disponible. Puedes revisar la autorización para usar voz del dispositivo y chat.",
-              )}
+              {assistant.supported
+                ? t("La conexión de voz no está disponible. Puedes revisar la autorización para usar voz del dispositivo y chat.")
+                : t("La voz no está disponible. Puedes seguir hablando con Vita por chat de texto.")}
             </p>
             {assistant.supported && (
               <IonButton
@@ -1116,14 +1118,14 @@ function ElevenVoiceBody({
         onFallback();
         return;
       }
+      const startOptions = voiceSessionStartOptions(session, threadId, language);
       sdkStarted.current = true;
-      await eleven.startSession(
-        voiceSessionStartOptions(session, threadId, language),
-      );
+      await eleven.startSession(startOptions);
       if (isCancelled() || signal?.aborted) await eleven.endSession();
     } catch (error) {
       if (!isCancelled() && !signal?.aborted) {
         if (error instanceof VoiceSessionContractError) onInvalidSession();
+        else if (error instanceof VoiceTransportUnavailableError) onFallback();
         else if (isLegalConsentError(error)) onConsentBlocked(error);
         else onFallback();
       }

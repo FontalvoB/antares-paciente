@@ -6,8 +6,8 @@
  *  - La app pide la sesión al backend .NET (POST /api/v1/chat/voice/session,
  *    JWT aud=app). El backend valida identidad/estado/auditoría y devuelve un
  *    signed URL de vida corta. La API key JAMÁS llega al frontend.
- *  - Con el signed URL, la app conecta directo al WebSocket de ElevenLabs con
- *    el SDK oficial (`@elevenlabs/react`).
+ *  - El SDK solo puede abrir un WebSocket del gateway. Una sesión antigua
+ *    que devuelva un WebSocket directo del proveedor no activa el micrófono.
  *  - Las client tools las ejecuta ESTE dispositivo con el JWT del paciente
  *    contra endpoints reales del backend: la identidad no depende de datos
  *    que ElevenLabs pueda reenviar (nunca confiar solo en el agente).
@@ -48,6 +48,22 @@ export interface VoiceSession {
 }
 
 export class VoiceSessionContractError extends Error {}
+export class VoiceTransportUnavailableError extends Error {}
+
+/** La URL firmada es una credencial, no una autoridad para elegir destino. */
+function assertGatewayVoiceUrl(signedUrl: string): void {
+  try {
+    const gateway = new URL(getApiBaseUrl() || window.location.origin);
+    const socket = new URL(signedUrl);
+    const isSecure = gateway.protocol === "https:" && socket.protocol === "wss:";
+    const isDev = import.meta.env.DEV && gateway.protocol === "http:" && socket.protocol === "ws:";
+    if ((isSecure || isDev) && gateway.host === socket.host
+      && !socket.username && !socket.password && !socket.hash) return;
+  } catch {
+    // Una URL no interpretable tampoco es un canal de voz autorizado.
+  }
+  throw new VoiceTransportUnavailableError();
+}
 
 /** Solo el vínculo de sesión/hilo emitido por el servidor autoriza agrupar. */
 export function linkedVoiceSessionId(session: VoiceSession, threadId: string): string | undefined {
@@ -61,9 +77,13 @@ export function linkedVoiceSessionId(session: VoiceSession, threadId: string): s
 export function voiceSessionStartOptions(session: VoiceSession, threadId: string, language?: "es" | "en") {
   if (!session.signedUrl || (session.runtimeMode && !["legacy", "vita"].includes(session.runtimeMode))) throw new VoiceSessionContractError();
   const linked = linkedVoiceSessionId(session, threadId);
-  if (session.runtimeMode !== "vita") return { signedUrl: session.signedUrl };
+  if (session.runtimeMode !== "vita") {
+    assertGatewayVoiceUrl(session.signedUrl);
+    return { signedUrl: session.signedUrl };
+  }
   if (!linked || !session.sessionToken || !session.conversationId
     || !session.expiresAt || !Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()) throw new VoiceSessionContractError();
+  assertGatewayVoiceUrl(session.signedUrl);
   return {
     signedUrl: session.signedUrl,
     dynamicVariables: { secret__vita_session_token: session.sessionToken },
@@ -129,7 +149,7 @@ export async function requestVoiceSession(
     return data.signedUrl || data.runtimeMode ? data : null;
   } catch (error) {
     if (isLegalConsentError(error)) throw error;
-    console.warn("[voice] No se pudo iniciar la sesión de voz:", error);
+    console.warn("[voice] No se pudo iniciar la sesión de voz.");
     return null;
   }
 }

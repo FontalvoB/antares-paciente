@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VoiceOverlay } from "../VoiceOverlay";
 import { consentFailure, requireLegalConsent, verifyLegalConsent, withdrawLegalConsent } from "../../utils/legalConsents";
 
+const GATEWAY_SOCKET = window.location.origin.replace(/^http/, "ws") + "/synthetic-voice";
 const mocks = vi.hoisted(() => ({
   lang: "es" as "es" | "en",
   stop: null as (() => Promise<void>) | null,
@@ -64,7 +65,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     mocks.eleven.status = "connected";
     mocks.eleven.endSession.mockImplementation(() => { mocks.sdkCallbacks.onDisconnect?.(); });
     mocks.speech.supported = true;
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid" });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET });
     mocks.revoke.mockReset().mockResolvedValue(true);
     vi.mocked(requireLegalConsent).mockResolvedValue(undefined);
     vi.mocked(verifyLegalConsent).mockResolvedValue({ accepted: true } as Awaited<ReturnType<typeof verifyLegalConsent>>);
@@ -79,10 +80,10 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     ["vita", "en"], ["vita", "es"], ["legacy", "en"], ["legacy", "es"],
   ] as const)("inicia %s con idioma app %s y solo permite override de language en Vita", async (runtimeMode, language) => {
     mocks.lang = language;
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode, conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET, runtimeMode, conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() });
     render(<VoiceOverlay />);
     await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({
-      signedUrl: "wss://example.invalid",
+      signedUrl: GATEWAY_SOCKET,
       ...(runtimeMode === "vita" ? {
         dynamicVariables: { secret__vita_session_token: "synthetic-context" },
         overrides: { agent: { language } },
@@ -98,16 +99,16 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     const { rerender } = render(<VoiceOverlay />);
     await waitFor(() => expect(mocks.session).toHaveBeenCalledWith("en", "thread-a", expect.any(AbortSignal)));
     mocks.lang = "es"; rerender(<VoiceOverlay />);
-    await act(async () => finish({ signedUrl: "wss://example.invalid", runtimeMode: "vita", conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() }));
+    await act(async () => finish({ signedUrl: GATEWAY_SOCKET, runtimeMode: "vita", conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() }));
     expect(mocks.eleven.startSession).toHaveBeenCalledExactlyOnceWith({
-      signedUrl: "wss://example.invalid",
+      signedUrl: GATEWAY_SOCKET,
       dynamicVariables: { secret__vita_session_token: "synthetic-context" },
       overrides: { agent: { language: "en" } },
     });
   });
 
   it("la limpieza espera el SDK y la revocación, y descarta eventos anteriores", async () => {
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "server-session", threadId: "thread-a", conversationId: "linked-legacy" });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET, runtimeMode: "legacy", sessionId: "server-session", threadId: "thread-a", conversationId: "linked-legacy" });
     let finishRevoke!: (value: boolean) => void;
     mocks.revoke.mockReturnValueOnce(new Promise(resolve => { finishRevoke = resolve; }));
     render(<VoiceOverlay />);
@@ -126,7 +127,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
   });
 
   it("una revocación no confirmada rechaza la limpieza y puede reintentarse", async () => {
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "server-session", threadId: "thread-a", conversationId: "linked-legacy" });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET, runtimeMode: "legacy", sessionId: "server-session", threadId: "thread-a", conversationId: "linked-legacy" });
     mocks.revoke.mockResolvedValue(false);
     render(<VoiceOverlay />);
     await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalled());
@@ -157,7 +158,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
     act(() => { pending = mocks.stop!(); });
     expect(mocks.eleven.startSession).not.toHaveBeenCalled();
     await act(async () => {
-      finish({ signedUrl: "wss://example.invalid", sessionId: "late-server", threadId: "thread-a", runtimeMode: "legacy" });
+      finish({ signedUrl: GATEWAY_SOCKET, sessionId: "late-server", threadId: "thread-a", runtimeMode: "legacy" });
       await pending;
     });
     expect(mocks.revoke).toHaveBeenCalledWith("late-server", expect.any(String));
@@ -363,10 +364,10 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
   });
 
   it.each(["vita", "legacy"] as const)("abre %s vinculado y revoca con JWT original sin refrescar la cuenta nueva", async runtimeMode => {
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode, conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", ...(runtimeMode === "vita" ? { sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() } : {}) });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET, runtimeMode, conversationId: "conversation", sessionId: "server-session", threadId: "thread-a", ...(runtimeMode === "vita" ? { sessionToken: "synthetic-context", expiresAt: new Date(Date.now() + 60_000).toISOString() } : {}) });
     const originalToken = localStorage.getItem("copp_access_token");
     const { unmount } = render(<VoiceOverlay />);
-    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({ signedUrl: "wss://example.invalid", ...(runtimeMode === "vita" ? { dynamicVariables: { secret__vita_session_token: "synthetic-context" }, overrides: { agent: { language: "es" } } } : {}) }));
+    await waitFor(() => expect(mocks.eleven.startSession).toHaveBeenCalledWith({ signedUrl: GATEWAY_SOCKET, ...(runtimeMode === "vita" ? { dynamicVariables: { secret__vita_session_token: "synthetic-context" }, overrides: { agent: { language: "es" } } } : {}) }));
     expect(mocks.app.registerVoiceSession).toHaveBeenCalledWith("server-session", "thread-a");
     act(() => mocks.callbacks.onMessage({ message: "Mensaje sintético", role: "user", source: "user", event_id: 2 }));
     expect(mocks.app.upsertVoiceMessage.mock.calls.at(-1)![0]).toMatchObject({ voiceSessionId: "server-session", voiceRuntime: runtimeMode });
@@ -379,7 +380,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
   });
 
   it("legacy vinculado recarga el historial solo después del DELETE, sin reinvocar al agente", async () => {
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "linked-legacy", threadId: "thread-a" });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET, runtimeMode: "legacy", sessionId: "linked-legacy", threadId: "thread-a" });
     let finish!: (value: boolean) => void;
     mocks.revoke.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
     const { rerender } = render(<VoiceOverlay />);
@@ -404,7 +405,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
   });
 
   it("legacy con sessionId sin hilo falla cerrado antes de conectar", async () => {
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "legacy", sessionId: "incomplete" });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET, runtimeMode: "legacy", sessionId: "incomplete" });
     render(<VoiceOverlay />);
     await waitFor(() => expect(mocks.app.closeVoice).toHaveBeenCalled());
     expect(mocks.eleven.startSession).not.toHaveBeenCalled();
@@ -412,7 +413,7 @@ describe("VoiceOverlay: regresión de controles y degradación", () => {
   });
 
   it("modo Vita incompleto no abre SDK ni fallback y revoca la sesión recibida", async () => {
-    mocks.session.mockResolvedValue({ signedUrl: "wss://example.invalid", runtimeMode: "vita", sessionId: "server-session" });
+    mocks.session.mockResolvedValue({ signedUrl: GATEWAY_SOCKET, runtimeMode: "vita", sessionId: "server-session" });
     render(<VoiceOverlay />);
     await waitFor(() => expect(mocks.app.closeVoice).toHaveBeenCalled());
     expect(mocks.eleven.startSession).not.toHaveBeenCalled();
